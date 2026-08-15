@@ -556,6 +556,7 @@ mod damage_history;
 mod damage_limits;
 mod damage_redirection;
 mod decisions_and_effects;
+mod deep_spawn;
 mod delayed_triggers;
 mod detain;
 mod disharmony;

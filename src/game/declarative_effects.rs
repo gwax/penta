@@ -69,6 +69,7 @@ impl Game {
                         ResolvedEffectPayment::Mana(crate::ManaCost::new(amount, 0))
                     }
                     EffectPaymentCostDef::Life(amount) => ResolvedEffectPayment::Life(amount),
+                    EffectPaymentCostDef::Mill(amount) => ResolvedEffectPayment::Mill(amount),
                 };
                 self.queue_pay_or(
                     *player,

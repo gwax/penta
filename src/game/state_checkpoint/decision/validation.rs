@@ -20,6 +20,7 @@ fn resolved_effect_payment(
             super::super::ResolvedEffectPayment::Mana(ManaCost::new(amount, 0))
         }
         EffectPaymentCostDef::Life(amount) => super::super::ResolvedEffectPayment::Life(amount),
+        EffectPaymentCostDef::Mill(amount) => super::super::ResolvedEffectPayment::Mill(amount),
     };
     Some((*player, payment))
 }

@@ -37,6 +37,7 @@ pub(super) struct SacrificeFollowup {
 pub(super) enum ResolvedEffectPayment {
     Mana(ManaCost),
     Life(u16),
+    Mill(u16),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

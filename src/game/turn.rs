@@ -473,6 +473,22 @@ impl Game {
                 }
             }
         }
+        // The untap is done, so anything that only had to survive it is
+        // finished. Dropping these here rather than with the turn-start pass
+        // above is what makes "until your next upkeep" cover the untap step
+        // the way the words do.
+        let active = self.active_player;
+        self.damage_preventions
+            .retain(|prevention| prevention.expiration.survives_untap_step(active));
+        self.damage_redirects
+            .retain(|redirect| redirect.expiration.survives_untap_step(active));
+        self.resolved_play_restrictions
+            .retain(|restriction| restriction.expiration.survives_untap_step(active));
+        for permanent in &mut self.battlefield {
+            permanent
+                .resolved_continuous_effects
+                .retain(|effect| effect.expiration.survives_untap_step(active));
+        }
         if !self.untap_pending {
             self.spend_untap_skips();
             self.handle_upkeep_triggers();

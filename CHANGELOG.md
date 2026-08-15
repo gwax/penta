@@ -40,6 +40,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **"Until your next upkeep" ended before the untap step rather than at the
+  upkeep.** Continuous effects expired as the turn began, which is one step
+  early: the untap step comes first, so an untap prohibition written this way
+  never reached the untap it was meant to stop. These effects now expire once
+  the untap is done. Effects that do not care about the untap step, such as a
+  granted keyword, behave as before.
+
 - **A creature blocking two attackers dealt its damage to each of them.**
   Combat damage ran attacker by attacker and each pass dealt every blocker its
   full power, so a creature holding off two attackers hit both for its whole
@@ -98,6 +105,10 @@ distinguishes snapshots of the covered source and build inputs.
   Mesa Pegasus, Timber Wolves, Helm of Chatzuk, War Elephant, Icatian Infantry,
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
+
+- **Deep Spawn**, with milling as an unless-payment. A library shorter than
+  the amount mills what it has rather than failing to pay, so the choice is a
+  real one down to the last card.
 
 - **Word of Binding**, the X-linked target count reached through the casting
   path rather than an activation. Cast-time revalidation read the count

@@ -3,11 +3,12 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
-    ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
-    DiscardSelectionDef, EffectDef, EffectRecipientDef, InstalledTriggerDef, LikelihoodDef,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation,
-    ReplacementEffectDef, ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ChoiceVisibilityDef, ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
+    DamagePreventionDef, DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
+    InstalledTriggerDef, LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, PayOrDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -403,8 +404,63 @@ pub(in crate::card::sets) static ORDER_OF_LEITBUR: CardRecord = CardRecord::new(
         ]),
 );
 
+static DEEP_SPAWN_SHROUD: AbilityDef = abilities::shroud();
+
+/// One activation buys three things at once, and the untap prohibition is
+/// what pays for the other two: shroud until end of turn, no untap next turn,
+/// and the tap that puts the creature away in the first place.
+static DEEP_SPAWN_HIDE: [EffectDef; 3] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::add_ability(&DEEP_SPAWN_SHROUD),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    // Until the upkeep after next, which outlives the untap step it has to
+    // reach: an until-end-of-turn effect would be gone before the untap
+    // happens at all.
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+        duration: ResolvedEffectDurationDef::UntilYourNextUpkeep,
+    },
+    EffectDef::Tap {
+        object: EffectRecipientDef::Source,
+    },
+];
+
+static DEEP_SPAWN_SACRIFICE: EffectDef = EffectDef::Sacrifice {
+    object: EffectRecipientDef::Source,
+};
+
 // FEM 17 — Deep Spawn
-// Audit: blocked — Needs an unless-clause whose cost is milling rather than mana for “At the beginning of your upkeep, sacrifice this creature unless you mill two cards”. Its shroud ability is available.
+pub(in crate::card::sets) static DEEP_SPAWN: CardRecord = CardRecord::new(
+    cards::DEEP_SPAWN,
+    "Deep Spawn",
+    CardArt::new("69c9e4a5-735f-471c-ab1a-6e6d50ba5724", "Mark Tedin"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{5}{U}{U}{U}"), &["Homarid"], 6, 6).with_abilities(&[
+        abilities::trample(),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, sacrifice this creature unless you mill two cards.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::PayOr(PayOrDef {
+                payment: EffectPaymentDef::mill(PlayerSetDef::Related(PlayerRelation::You), 2),
+                if_paid: None,
+                otherwise: Some(&DEEP_SPAWN_SACRIFICE),
+                visibility: ChoiceVisibilityDef::Public,
+            }),
+        ),
+        AbilityDef::activated(
+            "{U}: This creature gains shroud until end of turn and doesn't untap during your \
+             next untap step. Tap this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{U}"))],
+            EffectDef::Sequence(&DEEP_SPAWN_HIDE),
+        ),
+    ]),
+);
 
 // FEM 18a — High Tide
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Until end of turn, whenever a player taps an Island for mana, that player adds an additional {U}”.
@@ -2072,6 +2128,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ICATIAN_SKIRMISHERS,
     &ICATIAN_TOWN,
     &ORDER_OF_LEITBUR,
+    &DEEP_SPAWN,
     &HOMARID,
     &HOMARID_SHAMAN,
     &HOMARID_WARRIOR,

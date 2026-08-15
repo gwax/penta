@@ -416,7 +416,8 @@ impl HandcraftedPolicy {
                         Self::target_condition_in_value(amount)
                     }
                     crate::card::EffectPaymentCostDef::Mana(_)
-                    | crate::card::EffectPaymentCostDef::Life(_) => None,
+                    | crate::card::EffectPaymentCostDef::Life(_)
+                    | crate::card::EffectPaymentCostDef::Mill(_) => None,
                 };
                 payment_condition.or_else(|| {
                     payment

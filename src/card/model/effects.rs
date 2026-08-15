@@ -163,6 +163,10 @@ pub enum EffectPaymentCostDef {
     /// A generic mana payment whose amount is evaluated at resolution.
     GenericMana(ValueDef),
     Life(u16),
+    /// Mill this many cards. Never impossible: a library shorter than the
+    /// amount mills what it has (CR 701.13b), so this branch of an "unless"
+    /// is always open and the choice is a real one even at one card left.
+    Mill(u16),
 }
 
 /// A payment offered while an effect or replacement procedure resolves.
@@ -199,6 +203,14 @@ impl EffectPaymentDef {
         Self {
             payer,
             cost: EffectPaymentCostDef::Life(amount),
+        }
+    }
+
+    #[must_use]
+    pub const fn mill(payer: PlayerSetDef, amount: u16) -> Self {
+        Self {
+            payer,
+            cost: EffectPaymentCostDef::Mill(amount),
         }
     }
 }

@@ -31,15 +31,35 @@ pub(super) enum ContinuousEffectExpiration {
 }
 
 impl ContinuousEffectExpiration {
+    /// Whether this effect is still live as a turn begins, which is before
+    /// the untap step. An until-your-next-upkeep effect is: the untap step
+    /// comes first, so anything that has to be read there -- an untap
+    /// prohibition above all -- is still in force. It goes at the upkeep
+    /// itself, through [`Self::survives_untap_step`].
     pub(super) fn survives_turn_start(
         self,
-        active_player: PlayerId,
+        _active_player: PlayerId,
         turns_started: [u32; 2],
     ) -> bool {
         match self {
-            Self::UpkeepOf(player) => player != active_player,
             Self::TurnOf { player, turn } => turns_started[player.index()] < turn,
-            Self::EndOfTurn | Self::EndOfCombat | Self::WhileSourceTapped | Self::Never => true,
+            Self::UpkeepOf(_)
+            | Self::EndOfTurn
+            | Self::EndOfCombat
+            | Self::WhileSourceTapped
+            | Self::Never => true,
+        }
+    }
+
+    /// Whether this effect outlives the untap step it was carried into.
+    pub(super) fn survives_untap_step(self, active_player: PlayerId) -> bool {
+        match self {
+            Self::UpkeepOf(player) => player != active_player,
+            Self::TurnOf { .. }
+            | Self::EndOfTurn
+            | Self::EndOfCombat
+            | Self::WhileSourceTapped
+            | Self::Never => true,
         }
     }
 
