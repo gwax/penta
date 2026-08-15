@@ -896,7 +896,21 @@ pub(in crate::card::sets) static SKYLASHER: CardRecord = CardRecord::new(
 );
 
 // DGM 50 — Thrashing Mossdog
-// Audit: blocked — Needs scavenge's graveyard activation timing, source-exile cost, and source-power counter amount.
+pub(in crate::card::sets) static THRASHING_MOSSDOG: CardRecord = CardRecord::new(
+    cards::THRASHING_MOSSDOG,
+    "Thrashing Mossdog",
+    CardArt::new("ffd0d63a-d947-4ce4-8e34-5c1521955b18", "Ryan Barger"),
+    CardSet::DragonsMaze,
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Plant", "Dog"], 3, 3).with_abilities(&[
+        abilities::reach(),
+        abilities::scavenge(
+            mana_cost!("{4}{G}{G}"),
+            "Scavenge {4}{G}{G} ({4}{G}{G}, Exile this card from your graveyard: Put a number \
+             of +1/+1 counters equal to this card's power on target creature. Scavenge only as \
+             a sorcery.)",
+        ),
+    ]),
+);
 
 // DGM 51 — Advent of the Wurm
 pub(in crate::card::sets) static ADVENT_OF_THE_WURM: CardRecord = CardRecord::new(
@@ -2637,6 +2651,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PHYTOBURST,
     &SARULI_GATEKEEPERS,
     &SKYLASHER,
+    &THRASHING_MOSSDOG,
     &ADVENT_OF_THE_WURM,
     &ARMORED_WOLF_RIDER,
     &ASCENDED_LAWMAGE,

@@ -1799,7 +1799,27 @@ pub(in crate::card::sets) static DISCIPLE_OF_THE_OLD_WAYS: CardRecord = CardReco
 );
 
 // GTC 119 — Experiment One
-// Audit: blocked — Evolve and regeneration shields are not declarative procedures.
+pub(in crate::card::sets) static EXPERIMENT_ONE: CardRecord = CardRecord::new(
+    cards::EXPERIMENT_ONE,
+    "Experiment One",
+    CardArt::new("2cc1d8d0-bb43-4962-ad29-bb6478aa986b", "Chase Stone"),
+    CardSet::Gatecrash,
+    // Evolve banks the counters and the regeneration spends them, so the
+    // same resource is both its size and its lives.
+    CardRules::new_creature(mana_cost!("{G}"), &["Human", "Ooze"], 1, 1).with_abilities(&[
+        abilities::evolve(),
+        AbilityDef::activated(
+            "Remove two +1/+1 counters from this creature: Regenerate it.",
+            &[AbilityCostDef::RemoveCountersFromSource {
+                kind: CounterKind::PlusOnePlusOne,
+                amount: 2,
+            }],
+            EffectDef::Regenerate {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+    ]),
+);
 
 // GTC 120 — Forced Adaptation
 pub(in crate::card::sets) static FORCED_ADAPTATION: CardRecord = CardRecord::new(
@@ -3815,6 +3835,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CROCANURA,
     &CROWNED_CERATOK,
     &DISCIPLE_OF_THE_OLD_WAYS,
+    &EXPERIMENT_ONE,
     &FORCED_ADAPTATION,
     &GREENSIDE_WATCHER,
     &GYRE_SAGE,

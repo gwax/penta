@@ -573,6 +573,7 @@ mod entry_replacements;
 mod equipment;
 mod erg_raiders;
 mod evolve;
+mod evolve_scavenge_cards;
 mod exalted;
 mod exile_source_costs;
 mod extra_turns;

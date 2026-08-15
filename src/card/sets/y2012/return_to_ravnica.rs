@@ -2568,7 +2568,31 @@ pub(in crate::card::sets) static GOBBLING_OOZE: CardRecord = CardRecord::new(
 );
 
 // RTR 127 — Golgari Decoy
-// Audit: blocked — Needs a forced-block requirement for every able creature, in addition to scavenge's graveyard activation.
+pub(in crate::card::sets) static GOLGARI_DECOY: CardRecord = CardRecord::new(
+    cards::GOLGARI_DECOY,
+    "Golgari Decoy",
+    CardArt::new("511a42a8-71ce-476f-98fa-fc0dc822edcf", "Marco Nelor"),
+    CardSet::ReturnToRavnica,
+    // A requirement, not a permission: it takes away the alternatives rather
+    // than letting anything block that could not already.
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Elf", "Rogue"], 2, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "All creatures able to block this creature do so.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MustBeBlockedBy(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                )),
+            },
+        ),
+        abilities::scavenge(
+            mana_cost!("{3}{G}{G}"),
+            "Scavenge {3}{G}{G} ({3}{G}{G}, Exile this card from your graveyard: Put a number \
+             of +1/+1 counters equal to this card's power on target creature. Scavenge only as \
+             a sorcery.)",
+        ),
+    ]),
+);
 
 static HORNCALLERS_CHANT_EFFECTS: [EffectDef; 2] = [
     EffectDef::CreateToken {
@@ -5047,6 +5071,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DRUIDS_DELIVERANCE,
     &GATECREEPER_VINE,
     &GOBBLING_OOZE,
+    &GOLGARI_DECOY,
     &HORNCALLERS_CHANT,
     &KOROZDA_MONITOR,
     &RUBBLEBACK_RHINO,

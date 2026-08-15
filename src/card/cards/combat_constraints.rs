@@ -64,3 +64,6 @@ pub const WAKE_THE_REFLECTIONS: CardDefinitionId = CardDefinitionId(1863);
 pub const DRUIDS_DELIVERANCE: CardDefinitionId = CardDefinitionId(1864);
 pub const GYRE_SAGE: CardDefinitionId = CardDefinitionId(1865);
 pub const SEWER_SHAMBLER: CardDefinitionId = CardDefinitionId(1866);
+pub const GOLGARI_DECOY: CardDefinitionId = CardDefinitionId(1867);
+pub const EXPERIMENT_ONE: CardDefinitionId = CardDefinitionId(1868);
+pub const THRASHING_MOSSDOG: CardDefinitionId = CardDefinitionId(1869);

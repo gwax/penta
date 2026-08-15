@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Golgari Decoy**, **Experiment One** and **Thrashing Mossdog**, three more
+  cards resting on evolve, scavenge and regeneration. The Decoy's block clause
+  is a lure -- every able blocker must block *it* -- rather than a requirement
+  on the blocker to block everything it can.
+
 - **Gyre Sage** and **Sewer Shambler**, with a mana ability whose amount is
   read off the permanent offering it. A mana ability's amount has to be known
   before it is activated, which a counter count is; it is resolved as the
