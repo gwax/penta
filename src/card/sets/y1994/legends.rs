@@ -305,7 +305,7 @@ pub(in crate::card::sets) static GREATER_REALM_OF_PRESERVATION: CardRecord = Car
 );
 
 // LEG 19 — Heaven's Gate
-// Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “One or more target creatures become white until end of turn”.
+// Audit: blocked — Setting a color for a duration works; the spell targets one or more creatures with no upper limit, and target declarations are enumerated as complete combinations, which has no bounded form.
 
 // LEG 20 — Holy Day
 pub(in crate::card::sets) static HOLY_DAY: CardRecord = CardRecord::new(
@@ -935,7 +935,7 @@ pub(in crate::card::sets) static REMOVE_SOUL: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “All damage that would be dealt this turn by target sorcery spell is dealt to that spell's controller instead”.
 
 // LEG 75 — Sea Kings' Blessing
-// Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “One or more target creatures become blue until end of turn”.
+// Audit: blocked — Setting a color for a duration works; the spell targets one or more creatures with no upper limit, and target declarations are enumerated as complete combinations, which has no bounded form.
 
 // LEG 76 — Segovian Leviathan
 pub(in crate::card::sets) static SEGOVIAN_LEVIATHAN: CardRecord = CardRecord::new(
@@ -1686,7 +1686,7 @@ pub(in crate::card::sets) static THE_WRETCHED: CardRecord = CardRecord::new(
 );
 
 // LEG 122 — Touch of Darkness
-// Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “One or more target creatures become black until end of turn”.
+// Audit: blocked — Setting a color for a duration works; the spell targets one or more creatures with no upper limit, and target declarations are enumerated as complete combinations, which has no bounded form.
 
 // LEG 123 — Transmutation
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Switch target creature's power and toughness until end of turn”.
@@ -1927,7 +1927,7 @@ pub(in crate::card::sets) static CROOKSHANK_KOBOLDS: CardRecord = CardRecord::ne
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “Untap target attacking creature and remove it from combat. Gain control of that creature until end of turn”.
 
 // LEG 143 — Dwarven Song
-// Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “One or more target creatures become red until end of turn”.
+// Audit: blocked — Setting a color for a duration works; the spell targets one or more creatures with no upper limit, and target declarations are enumerated as complete combinations, which has no bounded form.
 
 // LEG 144 — Eternal Warrior
 pub(in crate::card::sets) static ETERNAL_WARRIOR: CardRecord = CardRecord::new(
@@ -2889,7 +2889,7 @@ static TYPHOON_OPPONENT_ISLANDS: ObjectQueryDef = ObjectQueryDef::matching(
 );
 
 // LEG 208 — Sylvan Paradise
-// Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “One or more target creatures become green until end of turn”.
+// Audit: blocked — Setting a color for a duration works; the spell targets one or more creatures with no upper limit, and target declarations are enumerated as complete combinations, which has no bounded form.
 
 // LEG 209 — Typhoon
 pub(in crate::card::sets) static TYPHOON: CardRecord = CardRecord::new(
