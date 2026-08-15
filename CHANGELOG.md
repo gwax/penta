@@ -99,6 +99,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Candelabra of Tawnos**, with a target count taken from the X that was
+  paid. "Untap X target lands" links the two numbers, so an X larger than the
+  board offers no declaration rather than untapping fewer lands than paid for.
+
 - **Jade Statue**, with a during-combat activation window. The window is the
   whole combat phase on either player's turn rather than one step, so the
   Statue can animate before attackers are chosen or after blockers are, and

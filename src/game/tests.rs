@@ -530,6 +530,7 @@ mod blocking_after_death;
 mod blocking_prevention;
 mod blocking_relation;
 mod blocking_relationship;
+mod candelabra_of_tawnos;
 mod cannot_attack;
 mod cannot_block;
 mod casting_and_targets;

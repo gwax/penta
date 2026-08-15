@@ -193,6 +193,54 @@ impl AbilityTargetDef {
     /// keeps its plain number.
     pub const UNLIMITED: u8 = u8::MAX;
 
+    /// A count standing for "the X chosen as this was activated". Like
+    /// [`Self::UNLIMITED`] it is a sentinel rather than an `Option`, for the
+    /// same reason: no printed card names 254 targets, and every bounded
+    /// declaration keeps its plain number.
+    pub const CHOSEN_X: u8 = u8::MAX - 1;
+
+    /// "Exactly X target ...", where X is chosen as the ability is
+    /// activated. Both bounds are the same, because the count is the X that
+    /// was paid rather than a range the controller picks from afterwards.
+    #[must_use]
+    pub const fn exactly_chosen_x(predicate: AbilityTargetPredicate) -> Self {
+        Self {
+            predicate,
+            minimum: Self::CHOSEN_X,
+            maximum: Self::CHOSEN_X,
+            divided_total: None,
+        }
+    }
+
+    /// This slot's target count with any sentinel resolved against the X that
+    /// was actually chosen. Enumerating past the candidate list produces no
+    /// combinations, so an X larger than the board simply offers nothing --
+    /// which is the same as saying the activation is not legal for that X.
+    #[must_use]
+    pub const fn count_bounds(self, x: u16) -> (u8, u8) {
+        // An X past 255 cannot be a target count on any real board, so it
+        // saturates rather than wrapping.
+        let chosen = if x > u8::MAX as u16 {
+            u8::MAX
+        } else {
+            #[allow(clippy::cast_possible_truncation, reason = "guarded above")]
+            {
+                x as u8
+            }
+        };
+        let minimum = if self.minimum == Self::CHOSEN_X {
+            chosen
+        } else {
+            self.minimum
+        };
+        let maximum = if self.maximum == Self::CHOSEN_X {
+            chosen
+        } else {
+            self.maximum
+        };
+        (minimum, maximum)
+    }
+
     #[must_use]
     pub const fn exactly_one(predicate: AbilityTargetPredicate) -> Self {
         Self {

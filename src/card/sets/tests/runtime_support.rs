@@ -617,9 +617,11 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     [ZoneKind::Battlefield | ZoneKind::Hand | ZoneKind::Graveyard]
                 ) && definition.procedure == AbilityProcedureDef::Shared
                     && shared_activated_costs(definition.source_zones, definition.costs.as_slice())
-                    // An activation enumerates its targets once for every
-                    // affordable X, so a slot dividing X has no enumeration
-                    // to live in yet.
+                    // Conservative rather than forced: activations now
+                    // enumerate their targets per affordable X, so a divided
+                    // slot would have somewhere to live. Nothing prints one
+                    // on an activated ability yet, so nothing has exercised
+                    // the division arithmetic on this path.
                     && definition
                         .targets
                         .iter()

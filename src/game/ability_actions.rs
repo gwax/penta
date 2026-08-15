@@ -315,28 +315,29 @@ impl Game {
                         _ => None,
                     })
                     .unwrap_or(0);
-                for selections in self.legal_ability_target_selections(
-                    definition.targets,
-                    player,
-                    permanent.card.id,
-                    TriggerContext::empty(),
-                    // Targets are enumerated once for every affordable X, so
-                    // a slot that divided X would need the enumeration inside
-                    // that loop. The boundary test rejects one until it is.
-                    0,
-                ) {
-                    if ability
-                        .declarative_effect()
-                        .is_some_and(Self::effect_is_reconfigure)
-                        && permanent.attached_to.is_none()
-                        && selections
-                            .iter()
-                            .all(|selection| selection.targets().is_empty())
-                    {
-                        continue;
-                    }
-                    for cost_object in &cost_object_choices {
-                        for x in 0..=max_x {
+                // X is the outer loop because a slot may count or divide by
+                // it: "X target lands" offers a different set of declarations
+                // for each affordable X, so the targets have to be enumerated
+                // inside that loop rather than once for all of them.
+                for x in 0..=max_x {
+                    for selections in self.legal_ability_target_selections(
+                        definition.targets,
+                        player,
+                        permanent.card.id,
+                        TriggerContext::empty(),
+                        x,
+                    ) {
+                        if ability
+                            .declarative_effect()
+                            .is_some_and(Self::effect_is_reconfigure)
+                            && permanent.attached_to.is_none()
+                            && selections
+                                .iter()
+                                .all(|selection| selection.targets().is_empty())
+                        {
+                            continue;
+                        }
+                        for cost_object in &cost_object_choices {
                             actions.push(Action::ActivateAbility {
                                 source: permanent.card.id,
                                 ability: effective.origin,
@@ -511,18 +512,20 @@ impl Game {
                 } else {
                     0
                 };
-                for targets in self.legal_ability_target_selections(
-                    definition.targets,
-                    player,
-                    card.id,
-                    TriggerContext::empty(),
-                    0,
-                ) {
-                    for x in 0..=max_x {
+                // As on the battlefield path, X is the outer loop so a slot
+                // whose count comes from X sees the X it was enumerated for.
+                for x in 0..=max_x {
+                    for targets in self.legal_ability_target_selections(
+                        definition.targets,
+                        player,
+                        card.id,
+                        TriggerContext::empty(),
+                        x,
+                    ) {
                         actions.push(Action::ActivateAbility {
                             source: card.id,
                             ability: effective.origin,
-                            targets: targets.clone(),
+                            targets,
                             cost_object: None,
                             x,
                         });

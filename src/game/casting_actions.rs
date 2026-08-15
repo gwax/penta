@@ -908,7 +908,8 @@ impl Game {
                                 .map(|permanent| Target::Permanent(permanent.card.id))
                                 .collect::<Vec<_>>()
                         });
-                    for count in slot.minimum..=slot.maximum {
+                    let (minimum, maximum) = slot.count_bounds(x);
+                    for count in minimum..=maximum {
                         for targets in target_combinations(&candidates, usize::from(count)) {
                             let mut selected = prefix.clone();
                             selected.push(TargetSelection::new(id, targets));
@@ -947,7 +948,8 @@ impl Game {
                 selections = combined;
                 continue;
             }
-            for count in slot.minimum..=slot.maximum {
+            let (minimum, maximum) = slot.count_bounds(x);
+            for count in minimum..=maximum {
                 choices.extend(
                     target_combinations(&candidates, usize::from(count))
                         .into_iter()

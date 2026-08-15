@@ -883,8 +883,38 @@ pub(in crate::card::sets) static BATTERING_RAM: CardRecord = CardRecord::new(
 // ATQ 42 — Bronze Tablet
 // Audit: blocked — Needs permanent card-ownership changes plus the opponent's life-payment choice after the linked cards are exiled.
 
+/// "X target lands": the count is the X that was paid, not a range chosen
+/// afterwards, so an X larger than the number of lands on the battlefield
+/// offers no declaration at all.
+static CANDELABRA_X_LANDS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_chosen_x(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Land),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
 // ATQ 43 — Candelabra of Tawnos
-// Audit: blocked — Needs a persistent tap/untap restriction or event relation for “{X}, {T}: Untap X target lands”.
+pub(in crate::card::sets) static CANDELABRA_OF_TAWNOS: CardRecord = CardRecord::new(
+    cards::CANDELABRA_OF_TAWNOS,
+    "Candelabra of Tawnos",
+    CardArt::new("35a335bf-7358-460f-b7c9-1e8bc4300f64", "Douglas Shuler"),
+    CardSet::Antiquities,
+    // Any lands, not just your own: the printed text says "lands", which is
+    // what makes the card an answer as well as an engine.
+    CardRules::new_artifact(mana_cost!("{1}")).with_ability(AbilityDef::activated_with_targets(
+        "{X}, {T}: Untap X target lands.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{X}")),
+            AbilityCostDef::TapSource,
+        ],
+        &CANDELABRA_X_LANDS,
+        EffectDef::Untap {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    )),
+);
 
 // ATQ 44 — Clay Statue
 pub(in crate::card::sets) static CLAY_STATUE: CardRecord = CardRecord::new(
@@ -1717,6 +1747,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ASHNODS_BATTLE_GEAR,
     &ASHNODS_TRANSMOGRANT,
     &BATTERING_RAM,
+    &CANDELABRA_OF_TAWNOS,
     &CLAY_STATUE,
     &COLOSSUS_OF_SARDIA,
     &CORAL_HELM,

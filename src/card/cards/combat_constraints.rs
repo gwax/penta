@@ -26,3 +26,4 @@ pub const LIVING_ARTIFACT: CardDefinitionId = CardDefinitionId(1825);
 pub const INSTILL_ENERGY: CardDefinitionId = CardDefinitionId(1826);
 pub const HOWLING_MINE: CardDefinitionId = CardDefinitionId(1827);
 pub const JADE_STATUE: CardDefinitionId = CardDefinitionId(1828);
+pub const CANDELABRA_OF_TAWNOS: CardDefinitionId = CardDefinitionId(1829);
