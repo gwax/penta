@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Creature Bond.** A death trigger can read the dead creature's toughness
+  now, the way it could already read its power. Both come from last-known
+  information, because the creature is in the graveyard by the time the
+  trigger resolves.
+
 - **Ashnod's Transmogrant.** Its audit line asked for card-specific counter
   state; it puts one ordinary +1/+1 counter and adds a card type, both of which
   the vocabulary already had.

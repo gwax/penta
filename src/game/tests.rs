@@ -545,6 +545,7 @@ mod copy_effects;
 mod counted_bodies;
 mod counter_conditions;
 mod countering_and_mana;
+mod creature_bond;
 mod damage_dealt_by;
 mod damage_history;
 mod damage_limits;

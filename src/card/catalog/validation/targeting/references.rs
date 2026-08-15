@@ -683,6 +683,7 @@ fn validate_value_target_references(
         | ValueDef::ChosenX
         | ValueDef::SourcePower
         | ValueDef::TriggeringObjectPower
+        | ValueDef::TriggeringObjectToughness
         | ValueDef::SourceToughness
         | ValueDef::TriggerEventAmount
         | ValueDef::CardsInHandAbove { .. }

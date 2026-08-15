@@ -159,6 +159,9 @@ pub enum ValueDef {
     /// death trigger asks this about a creature that has already left, which
     /// is the only time it is interesting.
     TriggeringObjectPower,
+    /// The triggering object's toughness, read the same way and for the same
+    /// reason: a death trigger asks about a creature that has already left.
+    TriggeringObjectToughness,
     TargetPower(TargetIndex),
     /// The mana value of what a target slot points at, read from last-known
     /// information after a permanent or spell has left its zone.

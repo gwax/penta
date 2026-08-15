@@ -399,6 +399,7 @@ impl HandcraftedPolicy {
             // alone, so the caller falls back to its own heuristics.
             ValueDef::SourcePower
             | ValueDef::TriggeringObjectPower
+            | ValueDef::TriggeringObjectToughness
             | ValueDef::SourceToughness
             | ValueDef::TriggerEventAmount
             | ValueDef::CardsInHandAbove { .. }

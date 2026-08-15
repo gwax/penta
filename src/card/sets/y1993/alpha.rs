@@ -1075,7 +1075,35 @@ pub(in crate::card::sets) static COUNTERSPELL: CardRecord = CardRecord::new(
 );
 
 // LEA 55 — Creature Bond
-// Audit: blocked — Needs a characteristic-layer effect or dynamic value for “When enchanted creature dies, this Aura deals damage equal to that creature's toughness to the creature's controller”.
+pub(in crate::card::sets) static CREATURE_BOND: CardRecord = CardRecord::new(
+    cards::CREATURE_BOND,
+    "Creature Bond",
+    CardArt::new("ee4bd7d1-77e5-46e5-a594-c24469e88c4c", "Anson Maddocks"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{1}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::triggered(
+                "When enchanted creature dies, this Aura deals damage equal to that \
+                 creature's toughness to the creature's controller.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::AttachedToSource,
+                    Some(ZoneKind::Battlefield),
+                    Some(ZoneKind::Graveyard),
+                ),
+                // Both halves read the creature that died, so both come from
+                // last-known information: it is already in the graveyard by
+                // the time this resolves.
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
+                        ObjectRefDef::TriggeringObject,
+                    )),
+                    amount: ValueDef::TriggeringObjectToughness,
+                },
+            ),
+        ]),
+);
 
 // LEA 56 — Drain Power
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Target player activates a mana ability of each land they control. Then that player loses all unspent mana and you add the mana lost this way”.
@@ -5084,6 +5112,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CONTROL_MAGIC,
     &COPY_ARTIFACT,
     &COUNTERSPELL,
+    &CREATURE_BOND,
     &FEEDBACK,
     &FLIGHT,
     &INVISIBILITY,
