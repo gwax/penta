@@ -18,7 +18,7 @@ impl Game {
     pub fn regular_combat_damage_pending(&self) -> bool {
         self.result.is_none()
             && self.step == Step::CombatDamage
-            && self.pending_combat_attackers.is_empty()
+            && self.pending_combat_assignments.is_empty()
             && matches!(
                 &self.combat_damage_stage,
                 CombatDamageStage::FirstStrike { .. }
@@ -39,7 +39,7 @@ impl Game {
         if let Some(decision) = self.pending_decisions.first() {
             return Some(decision.observation.player);
         }
-        if let Some(attacker) = self.pending_combat_attackers.first().copied() {
+        if let Some(attacker) = self.pending_combat_assignments.first().copied() {
             return Some(self.combat_damage_assigner(attacker));
         }
         if let Some(pregame) = self.pregame {
@@ -148,7 +148,7 @@ impl Game {
             }
             return actions;
         }
-        if let Some(attacker) = self.pending_combat_attackers.first().copied() {
+        if let Some(attacker) = self.pending_combat_assignments.first().copied() {
             if player == self.combat_damage_assigner(attacker) {
                 actions.extend(self.combat_assignment_actions(attacker));
             }

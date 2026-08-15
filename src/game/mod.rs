@@ -836,7 +836,10 @@ pub struct Game {
     pending_triggers: Vec<PendingTrigger>,
     next_trigger_id: u32,
     last_seen_hands: [LastSeenHand; 2],
-    pending_combat_attackers: Vec<GameObjectId>,
+    /// Creatures still owing a combat damage assignment this step. Attackers
+    /// dividing among their blockers, and blockers dividing among the
+    /// attackers they block, wait in the same queue.
+    pending_combat_assignments: Vec<GameObjectId>,
     combat_damage_stage: CombatDamageStage,
     combat_blocked_attackers: Vec<GameObjectId>,
     /// The next ordinary turn in the two-player rotation. Extra turns sit in

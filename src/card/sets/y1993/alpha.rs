@@ -114,7 +114,6 @@ pub(in crate::card::sets) static BALANCE: CardRecord = CardRecord::new(
 );
 
 // LEA 4 — Benalish Hero
-// Audit: partial — Blocking with banding and band formation work; a band is not yet blocked as a group.
 pub(in crate::card::sets) static BENALISH_HERO: CardRecord = CardRecord::new(
     cards::BENALISH_HERO,
     "Benalish Hero",
@@ -586,7 +585,6 @@ pub(in crate::card::sets) static LANCE: CardRecord = CardRecord::new(
 );
 
 // LEA 28 — Mesa Pegasus
-// Audit: partial — Blocking with banding and band formation work; a band is not yet blocked as a group.
 pub(in crate::card::sets) static MESA_PEGASUS: CardRecord = CardRecord::new(
     cards::MESA_PEGASUS,
     "Mesa Pegasus",

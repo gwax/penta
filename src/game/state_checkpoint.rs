@@ -456,7 +456,7 @@ impl Game {
                 })
                 .map(|id| id.0),
             pending_combat_attackers: self
-                .pending_combat_attackers
+                .pending_combat_assignments
                 .iter()
                 .map(|id| id.0)
                 .collect(),
@@ -772,7 +772,7 @@ impl Game {
             pending_triggers: Vec::new(),
             next_trigger_id: checkpoint.next_trigger_id,
             last_seen_hands: [None, None],
-            pending_combat_attackers: ids(&checkpoint.pending_combat_attackers),
+            pending_combat_assignments: ids(&checkpoint.pending_combat_attackers),
             combat_damage_stage: parse_combat_stage(&checkpoint.combat_damage_stage),
             combat_blocked_attackers: ids(&checkpoint.combat_blocked_attackers),
             extra_turns: checkpoint

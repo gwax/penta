@@ -386,7 +386,7 @@ fn double_strike_recomputes_multi_blocker_assignment_for_the_second_step() {
 
     pass_priority_pair(&mut game);
 
-    assert_eq!(game.pending_combat_attackers, vec![attacker_id]);
+    assert_eq!(game.pending_combat_assignments, vec![attacker_id]);
     assert!(
         game.battlefield
             .iter()
@@ -427,12 +427,12 @@ fn first_strike_step_does_not_prompt_an_ineligible_multi_blocked_attacker() {
     game.advance_step();
 
     assert!(
-        game.pending_combat_attackers.is_empty(),
+        game.pending_combat_assignments.is_empty(),
         "the normal attacker is not asked to assign during the strike wave",
     );
     pass_priority_pair(&mut game);
     assert_eq!(
-        game.pending_combat_attackers,
+        game.pending_combat_assignments,
         vec![normal_id],
         "the normal attacker assigns when the regular damage step begins",
     );

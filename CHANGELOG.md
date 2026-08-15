@@ -40,6 +40,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A creature blocking two attackers dealt its damage to each of them.**
+  Combat damage ran attacker by attacker and each pass dealt every blocker its
+  full power, so a creature holding off two attackers hit both for its whole
+  power instead of dividing it once. Blockers now deal their damage in a pass
+  of their own, dividing it among what they block, and a division with more
+  than one legal split is offered as a choice like an attacker's.
+
 - **"Blocked by this creature" went blank once the creature left.** The
   relationship is recorded on the blocker, so a blocker that died in combat
   took the answer with it and its own death trigger found nothing. It is now
@@ -80,11 +87,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
-- **Attacking bands.** `BandAttackers` names two declared attackers and puts
-  them, with everything already banded with either, into one band; the engine
-  offers only the pairs CR 702.21b allows, which is one or more creatures with
-  banding plus at most one without. Each band member's `attackingBand` carries
-  the index they share. Benalish Hero and Mesa Pegasus.
+- **Banding.** `BandAttackers` names two declared attackers and puts them,
+  with everything already banded with either, into one band; the engine offers
+  only the pairs CR 702.21b allows, which is one or more creatures with banding
+  plus at most one without. Each band member's `attackingBand` carries the
+  index they share. A band is blocked as a group -- one declaration against any
+  member puts the blocker in front of all of them, for one block rather than
+  one per creature -- and a creature with banding on either side of a block
+  hands its controller the other creature's damage division. Benalish Hero and
+  Mesa Pegasus.
 
 - **Blocking an additional creature.** A creature blocks one attacker unless a
   card says otherwise. Two-Headed Giant of Foriys.

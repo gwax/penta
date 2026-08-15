@@ -172,14 +172,14 @@ fn attackers_on_different_defenders_cannot_band() {
 }
 
 #[test]
-fn both_identities_report_the_coverage_they_have() {
+fn both_identities_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
     for definition in [cards::BENALISH_HERO, cards::MESA_PEGASUS] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),
-            ImplementationStatus::Partial,
-            "{} still waits on blocking a band as a group",
+            ImplementationStatus::Complete,
+            "{} should be fully executable",
             card.name,
         );
     }

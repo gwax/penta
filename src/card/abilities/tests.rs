@@ -115,15 +115,12 @@ mod tests {
         assert!(!rules.has_executable_keyword(KeywordAbility::Shroud));
     }
 
-    /// Banding is the one keyword the engine implements in part: blocking
-    /// with it works, attacking in a band does not.
+    /// Banding is the widest keyword the engine executes: a declaration rule,
+    /// a blocking rule, and a damage-assignment rule in both directions.
     #[test]
-    fn banding_is_executable_but_only_partially_covered() {
+    fn banding_is_executable_and_completely_covered() {
         assert!(banding().is_executable());
-        assert_eq!(
-            banding().coverage.status,
-            crate::card::ImplementationStatus::Partial
-        );
+        assert_eq!(banding().coverage, AbilityCoverageDef::complete());
     }
 
     #[test]

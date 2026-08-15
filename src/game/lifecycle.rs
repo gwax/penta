@@ -202,7 +202,7 @@ impl Game {
             pending_triggers: Vec::new(),
             next_trigger_id: 0,
             last_seen_hands: [None, None],
-            pending_combat_attackers: Vec::new(),
+            pending_combat_assignments: Vec::new(),
             combat_damage_stage: CombatDamageStage::NotStarted,
             combat_blocked_attackers: Vec::new(),
             next_regular_player: PlayerId::Two,

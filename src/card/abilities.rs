@@ -4,16 +4,15 @@
 //! intrinsic rule, or grant site assigns identity when it attaches the clause.
 
 use super::model::{
-    AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
-    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef,
-    AppliedEffectDef, AppliedRuleDef, BasicLandType, BattlefieldEntryModificationDef, CardType,
-    ChoiceVisibilityDef, ChooseDef, ConditionDef, CounterKind, DamageEventMatcherDef,
-    DamagePreventionDef, DamageRecipientMatcherDef, EffectDef, EffectPaymentDef,
-    EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef, SplitIntoPilesDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef,
+    AppliedRuleDef, BasicLandType, BattlefieldEntryModificationDef, CardType, ChoiceVisibilityDef,
+    ChooseDef, ConditionDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
+    DamageRecipientMatcherDef, EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility,
+    ManaColor, ManaCost, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PartitionItemsDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    ScaledValueDef, SplitIntoPilesDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -114,11 +113,7 @@ pub const fn double_strike() -> AbilityDef {
 
 #[must_use]
 pub const fn banding() -> AbilityDef {
-    keyword("Banding", KeywordAbility::Banding).with_coverage(AbilityCoverageDef::partial(
-        "Blocking with banding moves the attacker's combat damage assignment to the \
-         defending player, which is implemented. Attacking in a band is not: bands are \
-         neither declared nor blocked as a group.",
-    ))
+    keyword("Banding", KeywordAbility::Banding)
 }
 
 #[must_use]

@@ -617,7 +617,7 @@ impl Game {
             permanent.blocking.clear();
             permanent.combat_damage_assignment.clear();
         }
-        self.pending_combat_attackers.clear();
+        self.pending_combat_assignments.clear();
         self.combat_damage_stage = CombatDamageStage::NotStarted;
         self.combat_blocked_attackers.clear();
     }

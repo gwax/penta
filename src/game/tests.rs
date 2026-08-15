@@ -110,7 +110,7 @@ pub(super) fn ready_game_with_seed(seed: u64) -> Game {
     game.battlefield.clear();
     game.stack.clear();
     game.pending_decisions.clear();
-    game.pending_combat_attackers.clear();
+    game.pending_combat_assignments.clear();
     game.combat_damage_stage = CombatDamageStage::NotStarted;
     game.combat_blocked_attackers.clear();
     for player in &mut game.players {
@@ -513,6 +513,8 @@ mod aura_death;
 mod aura_tap_triggers;
 mod aura_upkeep;
 mod banding;
+mod banding_assignment;
+mod banding_blocked;
 mod banding_formation;
 mod blocking_after_death;
 mod blocking_prevention;
