@@ -58,3 +58,5 @@ pub const TROSTANI_SELESNYAS_VOICE: CardDefinitionId = CardDefinitionId(1857);
 pub const VITU_GHAZI_GUILDMAGE: CardDefinitionId = CardDefinitionId(1858);
 pub const MASTER_OF_THE_PEARL_TRIDENT: CardDefinitionId = CardDefinitionId(1859);
 pub const SLEEP: CardDefinitionId = CardDefinitionId(1860);
+pub const CONGREGATE: CardDefinitionId = CardDefinitionId(1861);
+pub const WALL_OF_FROST: CardDefinitionId = CardDefinitionId(1862);

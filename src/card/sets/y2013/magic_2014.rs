@@ -17,9 +17,9 @@ use crate::card::{
     DamageEventMatcherDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
     PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, TargetConditionDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, TargetConditionDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -189,8 +189,34 @@ pub(in crate::card::sets) static CHARGING_GRIFFIN: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Every creature on the battlefield, both sides included: the card says "on
+/// the battlefield" rather than "you control".
+static CONGREGATE_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Any,
+);
+
+static CONGREGATE_AMOUNT: ScaledValueDef =
+    ScaledValueDef::new(ValueDef::CountMatchingObjects(&CONGREGATE_CREATURES), 2);
+
 // M14 14 — Congregate
-// Audit: blocked — ValueDef cannot multiply a battlefield object count by two.
+pub(in crate::card::sets) static CONGREGATE: CardRecord = CardRecord::new(
+    cards::CONGREGATE,
+    "Congregate",
+    CardArt::new("b792574a-4d8f-4c80-a958-7c0edbe391fc", "Mark Zug"),
+    CardSet::Magic2014,
+    CardRules::new_instant(mana_cost!("{3}{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player gains 2 life for each creature on the battlefield.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Scaled(&CONGREGATE_AMOUNT),
+        },
+    )),
+);
 
 // M14 15 — Dawnstrike Paladin
 pub(in crate::card::sets) static DAWNSTRIKE_PALADIN: CardRecord = CardRecord::new(
@@ -809,7 +835,28 @@ pub(in crate::card::sets) static TRAINED_CONDOR: CardRecord = CardRecord::new(
 // Audit: blocked — ValueDef cannot derive half of a targeted player's current library size.
 
 // M14 78 — Wall of Frost
-// Audit: blocked — No trigger event captures which creature the source blocked, and no duration reaches that creature's controller's next untap step.
+pub(in crate::card::sets) static WALL_OF_FROST: CardRecord = CardRecord::new(
+    cards::WALL_OF_FROST,
+    "Wall of Frost",
+    CardArt::new("d4000b46-7843-4c07-8332-a10f207e2cdc", "Mike Bierek"),
+    CardSet::Magic2014,
+    CardRules::new_creature(mana_cost!("{1}{U}{U}"), &["Wall"], 0, 7).with_abilities(&[
+        abilities::defender(),
+        // The blocked creature is the trigger's own object, so the skip
+        // lands on it rather than on whatever else is in the combat.
+        AbilityDef::triggered(
+            "Whenever this creature blocks a creature, that creature doesn't untap during its \
+             controller's next untap step.",
+            TriggerEventDef::Blocks {
+                blocked: ObjectPredicateDef::Any,
+            },
+            EffectDef::SkipNextUntapSteps {
+                object: EffectRecipientDef::TriggeringObject,
+                count: 1,
+            },
+        ),
+    ]),
+);
 
 // M14 79 — Warden of Evos Isle
 // Audit: blocked — Generic-cost reduction cannot be filtered to creature spells with effective flying.
@@ -2984,6 +3031,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CAPASHEN_KNIGHT,
     &CELESTIAL_FLARE,
     &CHARGING_GRIFFIN,
+    &CONGREGATE,
     &DAWNSTRIKE_PALADIN,
     &FORTIFY,
     &GRIFFIN_SENTINEL,
@@ -3013,6 +3061,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TIME_EBB,
     &TOME_SCOUR,
     &TRAINED_CONDOR,
+    &WALL_OF_FROST,
     &WATER_SERVANT,
     &WINDREADER_SPHINX,
     &ZEPHYR_CHARGE,
