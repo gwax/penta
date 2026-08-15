@@ -726,8 +726,43 @@ pub(in crate::card::sets) static ASHNODS_BATTLE_GEAR: CardRecord = CardRecord::n
     ]),
 );
 
+/// A counter and a type, both permanent: the artifact is gone by the time
+/// either lands, so nothing is scoped to it surviving.
+static ASHNODS_TRANSMOGRANT_EFFECT: [EffectDef; 2] = [
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Artifact)),
+        duration: ResolvedEffectDurationDef::Permanent,
+    },
+];
+
+static ASHNODS_TRANSMOGRANT_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Artifact)),
+        ]),
+    )];
+
 // ATQ 40 — Ashnod's Transmogrant
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “{T}, Sacrifice this artifact: Put a +1/+1 counter on target nonartifact creature. That creature becomes an artifact in addition to its other types”.
+pub(in crate::card::sets) static ASHNODS_TRANSMOGRANT: CardRecord = CardRecord::new(
+    cards::ASHNODS_TRANSMOGRANT,
+    "Ashnod's Transmogrant",
+    CardArt::new("2aa5b289-36ba-49b1-a5ac-f23bf71f8241", "Mark Tedin"),
+    CardSet::Antiquities,
+    CardRules::new_artifact(mana_cost!("{1}")).with_ability(AbilityDef::activated_with_targets(
+        "{T}, Sacrifice this artifact: Put a +1/+1 counter on target nonartifact creature. \
+         That creature becomes an artifact in addition to its other types.",
+        &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+        &ASHNODS_TRANSMOGRANT_TARGET,
+        EffectDef::Sequence(&ASHNODS_TRANSMOGRANT_EFFECT),
+    )),
+);
 
 static BATTERING_RAM_BANDING: AbilityDef = abilities::banding();
 
@@ -1597,6 +1632,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GAEAS_AVENGER,
     &AMULET_OF_KROOG,
     &ASHNODS_BATTLE_GEAR,
+    &ASHNODS_TRANSMOGRANT,
     &BATTERING_RAM,
     &CLAY_STATUE,
     &COLOSSUS_OF_SARDIA,

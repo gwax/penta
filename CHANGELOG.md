@@ -99,6 +99,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Ashnod's Transmogrant.** Its audit line asked for card-specific counter
+  state; it puts one ordinary +1/+1 counter and adds a card type, both of which
+  the vocabulary already had.
+
 - **Discarding at random as an activation cost.** Unlike the discard its payer
   chooses, nobody decides which cards go, so paying it needs no decision at
   all: the cards leave as the cost is paid, picked off the seeded generator.
