@@ -231,7 +231,16 @@ pub(in crate::card::sets) static SUNSPIRE_GATEKEEPERS: CardRecord = CardRecord::
 );
 
 // DGM 10 — Wake the Reflections
-// Audit: blocked — Needs populate's choice of a controlled creature token and token-copy creation.
+pub(in crate::card::sets) static WAKE_THE_REFLECTIONS: CardRecord = CardRecord::new(
+    cards::WAKE_THE_REFLECTIONS,
+    "Wake the Reflections",
+    CardArt::new("3db0074c-95cf-4d15-8fe1-7282803ec757", "Cynthia Sheppard"),
+    CardSet::DragonsMaze,
+    // Populate and nothing else, so a board with no creature token makes
+    // this a blank rather than an illegal cast.
+    CardRules::new_sorcery(mana_cost!("{W}"))
+        .with_ability(AbilityDef::spell("Populate.", abilities::populate())),
+);
 
 // DGM 11 — Aetherling
 pub(in crate::card::sets) static AETHERLING: CardRecord = CardRecord::new(
@@ -2602,6 +2611,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RIOT_CONTROL,
     &STEEPLE_ROC,
     &SUNSPIRE_GATEKEEPERS,
+    &WAKE_THE_REFLECTIONS,
     &AETHERLING,
     &MAZE_GLIDER,
     &MINDSTATIC,

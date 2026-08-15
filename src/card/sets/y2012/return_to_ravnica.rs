@@ -6,12 +6,12 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardBehavior, CardRules, CardSet,
     CardSupertype, CardType, CardTypeSet, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
-    CreatureTypeSetDef, DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
-    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities,
-    cards,
+    CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef, DiscardSelectionDef, EffectDef,
+    EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementChoiceDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZoneMoveCauseDef, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardDefinitionId, TargetIndex};
 use crate::mana_cost;
@@ -2464,8 +2464,29 @@ pub(in crate::card::sets) static DRUDGE_BEETLE: CardRecord = CardRecord::new(
     ]),
 );
 
+/// "Dealt to you", so the shield is scoped to its controller rather than
+/// covering the whole combat the way a Fog does.
+static DRUIDS_DELIVERANCE_EFFECTS: [EffectDef; 2] = [
+    EffectDef::PreventDamage {
+        prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::combat_to(
+            EffectRecipientDef::Controller,
+        )),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    abilities::populate(),
+];
+
 // RTR 123 — Druid's Deliverance
-// Audit: blocked — Needs a player-wide combat-damage prevention shield and populate's chosen token-copy procedure.
+pub(in crate::card::sets) static DRUIDS_DELIVERANCE: CardRecord = CardRecord::new(
+    cards::DRUIDS_DELIVERANCE,
+    "Druid's Deliverance",
+    CardArt::new("83b35961-f4d5-4e14-a793-335147110627", "Dan Murayama Scott"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_instant(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell(
+        "Prevent all combat damage that would be dealt to you this turn. Populate.",
+        EffectDef::Sequence(&DRUIDS_DELIVERANCE_EFFECTS),
+    )),
+);
 
 // RTR 124 — Gatecreeper Vine
 pub(in crate::card::sets) static GATECREEPER_VINE: CardRecord = CardRecord::new(
@@ -5007,6 +5028,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CHORUS_OF_MIGHT,
     &DEADBRIDGE_GOLIATH,
     &DRUDGE_BEETLE,
+    &DRUIDS_DELIVERANCE,
     &GATECREEPER_VINE,
     &GOBBLING_OOZE,
     &HORNCALLERS_CHANT,

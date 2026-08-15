@@ -237,6 +237,92 @@ fn the_guildmage_offers_both_abilities_at_their_own_costs() {
     assert_eq!(offered, 2, "six mana reaches both");
 }
 
+/// Populate on its own, with nothing else in the spell.
+#[test]
+fn wake_the_reflections_copies_a_token() {
+    let mut game = ready();
+    game.battlefield.push(creature(
+        10_000,
+        cards::ZOMBIE_TOKEN_2_2_BLACK,
+        PlayerId::One,
+    ));
+
+    let spell = card(20_000, cards::WAKE_THE_REFLECTIONS, PlayerId::One);
+    let spell_id = spell.id;
+    game.players[PlayerId::One.index()].hand.push(spell);
+    game.players[PlayerId::One.index()].mana_pool.white = 1;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == spell_id))
+        .expect("one white covers it");
+    game.apply(PlayerId::One, action)
+        .expect("the cast is legal");
+    drain_pending(&mut game);
+
+    assert_eq!(tokens(&game, cards::ZOMBIE_TOKEN_2_2_BLACK), 2);
+}
+
+/// Druid's Deliverance shields only its own controller, not the whole
+/// combat: their creature still takes what mine deals it.
+#[test]
+fn druids_deliverance_shields_only_its_controller() {
+    let mut game = ready();
+    game.active_player = PlayerId::Two;
+
+    let mut attacker = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::Two);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    let mut blocker = creature(10_001, cards::GRIZZLY_BEARS, PlayerId::One);
+    blocker.blocking = vec![attacker_id];
+    let blocker_id = blocker.card.id;
+    game.battlefield.push(blocker);
+
+    let spell = card(20_000, cards::DRUIDS_DELIVERANCE, PlayerId::One);
+    let spell_id = spell.id;
+    game.players[PlayerId::One.index()].hand.push(spell);
+    game.players[PlayerId::One.index()].mana_pool.green = 1;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+
+    game.step = Step::DeclareBlockers;
+    game.attackers_declared = true;
+    game.blockers_declared = true;
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == spell_id))
+        .expect("two mana covers it");
+    game.apply(PlayerId::One, action)
+        .expect("the cast is legal");
+    drain_pending(&mut game);
+
+    game.step = Step::CombatDamage;
+    game.deal_combat_damage();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        i16::from(rules::STARTING_LIFE),
+        "no combat damage reached its controller",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == attacker_id),
+        "but the shield is player-only, so their creature still traded",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == blocker_id),
+        "and so did mine",
+    );
+}
+
 #[test]
 fn both_cards_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -245,6 +331,8 @@ fn both_cards_report_complete_coverage() {
         cards::SUNDERING_GROWTH,
         cards::TROSTANI_SELESNYAS_VOICE,
         cards::VITU_GHAZI_GUILDMAGE,
+        cards::WAKE_THE_REFLECTIONS,
+        cards::DRUIDS_DELIVERANCE,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

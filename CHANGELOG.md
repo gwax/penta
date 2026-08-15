@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Wake the Reflections** and **Druid's Deliverance**, closing the populate
+  cluster. The Deliverance's shield is scoped to its controller rather than
+  covering the whole combat the way a Fog does, so creatures on both sides
+  still trade.
+
 - **Congregate** and **Wall of Frost**, two more stale audit lines. A doubled
   object count is what `Scaled` has always done, and the identity of the
   creature a Wall blocked is the block trigger's own object.

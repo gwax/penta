@@ -60,3 +60,5 @@ pub const MASTER_OF_THE_PEARL_TRIDENT: CardDefinitionId = CardDefinitionId(1859)
 pub const SLEEP: CardDefinitionId = CardDefinitionId(1860);
 pub const CONGREGATE: CardDefinitionId = CardDefinitionId(1861);
 pub const WALL_OF_FROST: CardDefinitionId = CardDefinitionId(1862);
+pub const WAKE_THE_REFLECTIONS: CardDefinitionId = CardDefinitionId(1863);
+pub const DRUIDS_DELIVERANCE: CardDefinitionId = CardDefinitionId(1864);
