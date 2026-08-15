@@ -586,6 +586,7 @@ mod filtered_player_prevention;
 mod gatecrash_stale_audits;
 mod ghouls;
 mod gloom;
+mod granted_ability_cards;
 mod guardian_beast;
 mod gyre_sage;
 mod held_tapped;

@@ -483,6 +483,14 @@ pub(in crate::card::sets) static SNAKE_TOKEN_1_1_POISONOUS: CardRecord = CardRec
         )),
 );
 
+pub(in crate::card::sets) static RAT_TOKEN_1_1_BLACK: CardRecord = CardRecord::new(
+    cards::RAT_TOKEN_1_1_BLACK,
+    "Rat",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Rat"], 1, 1).printed_colors(&[ManaColor::Black]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GERM_TOKEN_0_0_BLACK,
     &BEAST_TOKEN_3_3_GREEN,
@@ -525,6 +533,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DRAGON_TOKEN_6_6_RED,
     &SNAKE_TOKEN_1_1_POISONOUS,
     &WURM_TOKEN_6_6_GREEN,
+    &RAT_TOKEN_1_1_BLACK,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

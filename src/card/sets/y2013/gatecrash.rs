@@ -1127,8 +1127,52 @@ pub(in crate::card::sets) static ILLNESS_IN_THE_RANKS: CardRecord = CardRecord::
 // GTC 73 — Midnight Recovery
 // Audit: blocked — Cipher encoding and casting encoded spell copies without paying their mana costs are unavailable.
 
+static OGRE_SLUMLORD_DEATHTOUCH: AbilityDef = abilities::deathtouch();
+
+/// "Rats you control", with no "other" -- the Slumlord is an Ogre Rogue, so
+/// the clause never reaches it anyway, but a Rat it makes is covered.
+static OGRE_SLUMLORD_RATS: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::Subtype("Rat"),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    effect: AppliedEffectDef::add_ability(&OGRE_SLUMLORD_DEATHTOUCH),
+};
+
+static OGRE_SLUMLORD_DEATH: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+]);
+
 // GTC 74 — Ogre Slumlord
-// Audit: blocked — Needs a nontoken-creature death predicate and a static deathtouch grant to Rats.
+pub(in crate::card::sets) static OGRE_SLUMLORD: CardRecord = CardRecord::new(
+    cards::OGRE_SLUMLORD,
+    "Ogre Slumlord",
+    CardArt::new("29727bd1-9415-408a-99de-dd992e26e767", "Trevor Claxton"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{3}{B}{B}"), &["Ogre", "Rogue"], 3, 3).with_abilities(&[
+        AbilityDef::triggered(
+            "Whenever another nontoken creature dies, you may create a 1/1 black Rat creature \
+             token.",
+            TriggerEventDef::zone_changed(
+                OGRE_SLUMLORD_DEATH,
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            ),
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::CreateToken {
+                    token: cards::RAT_TOKEN_1_1_BLACK,
+                    count: ValueDef::Constant(1),
+                    tapped: false,
+                },
+            },
+        ),
+        AbilityDef::static_ability("Rats you control have deathtouch.", OGRE_SLUMLORD_RATS),
+    ]),
+);
 
 // GTC 75 — Sepulchral Primordial
 pub(in crate::card::sets) static SEPULCHRAL_PRIMORDIAL: CardRecord = CardRecord::new(
@@ -3832,6 +3876,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GUTTER_SKULK,
     &HORROR_OF_THE_DIM,
     &ILLNESS_IN_THE_RANKS,
+    &OGRE_SLUMLORD,
     &SEPULCHRAL_PRIMORDIAL,
     &SHADOW_ALLEY_DENIZEN,
     &SMOG_ELEMENTAL,

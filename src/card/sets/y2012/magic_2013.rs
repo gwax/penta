@@ -620,8 +620,37 @@ pub(in crate::card::sets) static SILVERCOAT_LION: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Cat"], 2, 2),
 );
 
+static SUBLIME_ARCHANGEL_EXALTED: AbilityDef = abilities::exalted();
+
+/// Each granted copy is its own instance, so attacking alone into a board of
+/// three other creatures is four separate triggers.
+static SUBLIME_ARCHANGEL_GRANT: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    effect: AppliedEffectDef::add_ability(&SUBLIME_ARCHANGEL_EXALTED),
+};
+
 // M13 36 — Sublime Archangel
-// Audit: blocked — Needs executable exalted and a static grant of separate exalted instances to other creatures.
+pub(in crate::card::sets) static SUBLIME_ARCHANGEL: CardRecord = CardRecord::new(
+    cards::SUBLIME_ARCHANGEL,
+    "Sublime Archangel",
+    CardArt::new("f5cc38bc-55a4-446a-b054-48fb90216946", "Cynthia Sheppard"),
+    CardSet::Magic2013,
+    CardRules::new_creature(mana_cost!("{2}{W}{W}"), &["Angel"], 4, 3).with_abilities(&[
+        abilities::flying(),
+        abilities::exalted(),
+        AbilityDef::static_ability(
+            "Other creatures you control have exalted.",
+            SUBLIME_ARCHANGEL_GRANT,
+        ),
+    ]),
+);
 
 // M13 37 — Touch of the Eternal
 // Audit: blocked — No effect can set a player's life total from a battlefield permanent count.
@@ -3967,6 +3996,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SAFE_PASSAGE,
     &SHOW_OF_VALOR,
     &SILVERCOAT_LION,
+    &SUBLIME_ARCHANGEL,
     &WAR_PRIEST_OF_THUNE,
     &WARCLAMP_MASTIFF,
     &ARCHAEOMANCER,

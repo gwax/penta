@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Ogre Slumlord** and **Sublime Archangel**, two cards that hand an ability
+  to a group. The Slumlord's is a keyword given to Rats, which brings a 1/1
+  black Rat token with it; the Archangel's is exalted, and each granted copy
+  is its own instance, so attacking alone scales with the board.
+
 - **Illness in the Ranks**, **Phantom General**, **Harvester of Souls** and
   **Soul of the Harvest**, four cards that read a permanent's token status.
   Two want tokens and two want everything but tokens: the General's anthem
