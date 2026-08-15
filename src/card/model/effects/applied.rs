@@ -137,6 +137,13 @@ pub enum AppliedRuleDef {
     /// keyword, so anything reading "a creature with defender" still finds
     /// one. Every other reason it cannot attack still applies.
     MayAttackDespiteDefender,
+    /// Summoning sickness does not stop the affected creature from attacking.
+    ///
+    /// "As though it had haste" and haste itself are not the same thing: this
+    /// buys the attack only. The creature still cannot use an ability with
+    /// {T} or {Q} in its cost, and anything reading "a creature with haste"
+    /// still does not find one.
+    MayAttackAsThoughHasty,
     /// Nothing can block the affected creature.
     CannotBeBlocked,
     /// Every creature matching this predicate that is able to block the

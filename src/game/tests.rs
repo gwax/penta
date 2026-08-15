@@ -571,6 +571,7 @@ mod filtered_player_prevention;
 mod guardian_beast;
 mod held_tapped;
 mod identity_and_mana;
+mod instill_energy;
 mod isd_dgm_deck_cards;
 mod laces;
 mod land_and_ability_layers;

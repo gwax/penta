@@ -74,6 +74,7 @@ impl Game {
             return false;
         }
         self.permanent_has_executable_keyword(permanent, KeywordAbility::Haste)
+            || self.has_applied_rule(permanent, AppliedRuleDef::MayAttackAsThoughHasty)
             || self.turns_started[permanent.controller.index()] > permanent.entered_controller_turn
     }
 

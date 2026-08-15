@@ -3649,7 +3649,37 @@ pub(in crate::card::sets) static ICE_STORM: CardRecord = CardRecord::new(
 );
 
 // LEA 202 — Instill Energy
-// Audit: blocked — Needs attacking as though hasty without the rest of haste, for "can attack as though it had haste". The once-each-turn untap ability is available.
+pub(in crate::card::sets) static INSTILL_ENERGY: CardRecord = CardRecord::new(
+    cards::INSTILL_ENERGY,
+    "Instill Energy",
+    CardArt::new("5bd38716-874c-4e3c-a315-837839a6258c", "Dameon Willich"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{G}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature can attack as though it had haste.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::MayAttackAsThoughHasty),
+                },
+            ),
+            // Free, but rationed: the once-each-turn clause is what keeps this
+            // from being an arbitrary number of blocks or an arbitrary number
+            // of activations of the creature's own tap ability.
+            AbilityDef::activated(
+                "{0}: Untap enchanted creature. Activate only during your turn and only once \
+                 each turn.",
+                &[],
+                EffectDef::Untap {
+                    object: EffectRecipientDef::AttachedPermanent,
+                },
+            )
+            .with_activation_timing(ActivationTimingDef::YourTurn)
+            .once_each_turn(),
+        ]),
+);
 
 // LEA 203 — Ironroot Treefolk
 pub(in crate::card::sets) static IRONROOT_TREEFOLK: CardRecord = CardRecord::new(
@@ -5318,6 +5348,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GRIZZLY_BEARS,
     &HURRICANE,
     &ICE_STORM,
+    &INSTILL_ENERGY,
     &IRONROOT_TREEFOLK,
     &LEY_DRUID,
     &LIFEFORCE,

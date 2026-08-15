@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Instill Energy**, with attacking as though hasty. The permission is
+  narrower than haste and stops where the printed text stops: the enchanted
+  creature may attack the turn it arrives, but its own {T} ability is still
+  summoning sick.
+
 - **Living Artifact**, with a vitality counter. It banks by the amount of the
   damage rather than one per event, and its upkeep offer is gated on having
   something to spend: "you may remove a counter" with none banked is not a
