@@ -266,6 +266,10 @@ pub struct ActivatedAbilityDef {
     /// each turn" clause allows this ability to be activated per turn from
     /// one object. `None` is the ordinary unlimited case.
     pub activation_limit: Option<u8>,
+    /// Whether anyone may activate it, not just the permanent's controller.
+    /// The permanent stays the ability's source whoever pays, so the damage
+    /// it deals is still the permanent's damage.
+    pub any_player_may_activate: bool,
 }
 
 impl ActivatedAbilityDef {
@@ -283,7 +287,16 @@ impl ActivatedAbilityDef {
             procedure: AbilityProcedureDef::Shared,
             timing: ActivationTimingDef::Any,
             activation_limit: None,
+            any_player_may_activate: false,
         }
+    }
+
+    /// "Any player may activate this ability." The permanent stays the
+    /// source, so what it does is still the permanent's doing.
+    #[must_use]
+    pub const fn open_to_any_player(mut self) -> Self {
+        self.any_player_may_activate = true;
+        self
     }
 
     #[must_use]

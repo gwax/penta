@@ -76,18 +76,35 @@ impl Game {
         id
     }
 
+    /// Whether any of this permanent's abilities is printed as open to every
+    /// player, which is what puts somebody else's permanent in a player's
+    /// action list at all.
+    fn has_open_activated_ability(&self, permanent: &Permanent) -> bool {
+        let mut open = false;
+        self.for_each_effective_ability(permanent, |effective| {
+            if let DeclarativeAbilityDef::Activated(definition) = effective.ability.definition
+                && definition.any_player_may_activate
+                && effective.ability.is_executable()
+            {
+                open = true;
+            }
+        });
+        open
+    }
+
     #[allow(clippy::too_many_lines)]
     pub(super) fn add_ability_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
-        for permanent in self
-            .battlefield
-            .iter()
-            .filter(|permanent| permanent.controller == player)
-        {
+        for permanent in self.battlefield.iter().filter(|permanent| {
+            // A permanent somebody else controls contributes only the
+            // abilities printed as open to everyone.
+            permanent.controller == player || self.has_open_activated_ability(permanent)
+        }) {
             // Mana abilities are exempt, and they are enumerated elsewhere,
             // so a named source contributes no actions from here at all.
             if self.activated_abilities_are_named(permanent) {
                 continue;
             }
+            let only_open_abilities = permanent.controller != player;
             let mut legacy_activations = Vec::new();
             let mut untyped_legacy_activation = None;
             let mut last_activated_origin = None;
@@ -104,6 +121,9 @@ impl Game {
                 let DeclarativeAbilityDef::Activated(definition) = ability.definition else {
                     return;
                 };
+                if only_open_abilities && !definition.any_player_may_activate {
+                    return;
+                }
                 // Copy-process exceptions can retain an activated ability
                 // whose structural origin is already present in the copied
                 // values. Actions identify an ability by that origin, so a

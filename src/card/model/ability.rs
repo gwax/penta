@@ -473,6 +473,21 @@ impl AbilityDef {
         self
     }
 
+    /// Opens an activated ability to every player, for a printed "any player
+    /// may activate this ability" clause. The permanent stays the source.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the clause is not an activated ability.
+    #[must_use]
+    pub const fn open_to_any_player(mut self) -> Self {
+        let DeclarativeAbilityDef::Activated(definition) = self.definition else {
+            panic!("only an activated ability can be opened to other players");
+        };
+        self.definition = DeclarativeAbilityDef::Activated(definition.open_to_any_player());
+        self
+    }
+
     /// Caps an activated ability at one activation each turn, for a printed
     /// "only once each turn" clause.
     ///

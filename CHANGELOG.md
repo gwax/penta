@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Abilities any player may activate.** A printed "any player may activate
+  this ability" now puts somebody else's permanent in your action list, for
+  that ability alone. The permanent stays the source, so what it does is still
+  its doing, and the player who activates is the one who pays. Ifh-Bíff Efreet.
+
 - **Xenic Poltergeist.** Its audit line asked for temporary artifact animation
   with a dynamic mana-value size. Animation is a card type and a base size
   applied together, both of which existed, and the size is the mana value of

@@ -863,8 +863,43 @@ pub(in crate::card::sets) static ERHNAM_DJINN: CardRecord = CardRecord::new(
 // ARN 49 — Ghazbán Ogre
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “At the beginning of your upkeep, if a player has more life than each other player, the player with the most life gains control of this creature”.
 
+/// Hurricane in miniature, and it catches the Efreet too: it flies, so its
+/// own ability hits it.
+static IFH_BIFF_STRIKE: [EffectDef; 2] = [
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+            ]),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::Any,
+        ),
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::EachPlayer,
+        amount: ValueDef::Constant(1),
+    },
+];
+
 // ARN 50 — Ifh-Bíff Efreet
-// Audit: blocked — Needs an activated ability that every player may activate while retaining the permanent as its damage source.
+pub(in crate::card::sets) static IFH_BIFF_EFREET: CardRecord = CardRecord::new(
+    cards::IFH_BIFF_EFREET,
+    "Ifh-Bíff Efreet",
+    CardArt::new("c0b10fb7-8667-42bf-aeb6-35767a82917b", "Jesper Myrfors"),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Efreet"], 3, 3).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::activated(
+            "{G}: This creature deals 1 damage to each creature with flying and each player. \
+             Any player may activate this ability.",
+            &[AbilityCostDef::Mana(mana_cost!("{G}"))],
+            EffectDef::Sequence(&IFH_BIFF_STRIKE),
+        )
+        .open_to_any_player(),
+    ]),
+);
 
 // ARN 51 — Metamorphosis
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Add X mana of any one color, where X is 1 plus the sacrificed creature's mana value. Spend this mana only to cast creature spells”.
@@ -1483,6 +1518,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RUKH_EGG,
     &DESERT_TWISTER,
     &ERHNAM_DJINN,
+    &IFH_BIFF_EFREET,
     &SANDSTORM,
     &SINGING_TREE,
     &WYLULI_WOLF,

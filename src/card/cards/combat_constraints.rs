@@ -13,3 +13,4 @@ pub const BLAZE_OF_GLORY: CardDefinitionId = CardDefinitionId(1812);
 pub const ERG_RAIDERS: CardDefinitionId = CardDefinitionId(1813);
 pub const PRIMORDIAL_OOZE: CardDefinitionId = CardDefinitionId(1814);
 pub const XENIC_POLTERGEIST: CardDefinitionId = CardDefinitionId(1815);
+pub const IFH_BIFF_EFREET: CardDefinitionId = CardDefinitionId(1816);
