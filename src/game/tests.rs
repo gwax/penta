@@ -551,6 +551,7 @@ mod damage_redirection;
 mod decisions_and_effects;
 mod delayed_triggers;
 mod detain;
+mod disharmony;
 mod entry_replacements;
 mod equipment;
 mod evolve;

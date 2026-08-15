@@ -175,6 +175,7 @@ fn play_option_json(option: &PlayOptionDef) -> Value {
             PlayRestriction::Normal => "normal",
             PlayRestriction::FromHandOnly => "fromHandOnly",
             PlayRestriction::BeforeCombatDamage => "beforeCombatDamage",
+            PlayRestriction::BeforeBlockersDeclared => "beforeBlockersDeclared",
         },
         "modes": option.modes.as_ref().map(|modes| json!({
             "minimum": modes.minimum,

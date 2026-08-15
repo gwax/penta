@@ -584,6 +584,12 @@ impl CardRules {
     }
 
     #[must_use]
+    pub const fn cast_only_before_blockers_declared(mut self) -> Self {
+        self.play_restriction = PlayRestriction::BeforeBlockersDeclared;
+        self
+    }
+
+    #[must_use]
     pub const fn play_restriction(&self) -> PlayRestriction {
         self.play_restriction
     }

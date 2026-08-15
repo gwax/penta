@@ -278,6 +278,11 @@ pub enum PlayRestriction {
     /// damage is about to be dealt, which is what makes Berserk a decision the
     /// defender can play around rather than a guaranteed blowout.
     BeforeCombatDamage,
+    /// "Cast this spell only during combat before blockers are declared." A
+    /// narrower window than [`Self::BeforeCombatDamage`]: it opens when combat
+    /// begins and shuts the moment blockers are on the table, which is what
+    /// makes pulling an attacker out of combat worth doing.
+    BeforeBlockersDeclared,
 }
 
 /// A catalog-level description of what can occupy one target slot.

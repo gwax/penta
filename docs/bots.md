@@ -656,9 +656,12 @@ rather than the bot-wire epoch.
 `Ugin's Nexus` (definition `1368`, debut set `khans-of-tarkir`) follows as an
 off-format interaction fixture and remains illegal in both shipped formats.
 
-A play option's `restriction` is `normal`, `fromHandOnly`, or
-`beforeCombatDamage`. Read the tag rather than assuming every otherwise valid
-option is available from any zone or at every casting window.
+A play option's `restriction` is `normal`, `fromHandOnly`,
+`beforeCombatDamage`, or `beforeBlockersDeclared`. Read the tag rather than
+assuming every otherwise valid option is available from any zone or at every
+casting window. The set is open: treat a tag you do not recognize as a window
+the engine will enforce for you, and keep choosing from the legal actions it
+offers rather than predicting them.
 
 Catalog target labels and simplified target projections are presentation data,
 not identity or a complete rules predicate. A richer semantic target can lack

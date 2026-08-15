@@ -2034,8 +2034,49 @@ pub(in crate::card::sets) static CROOKSHANK_KOBOLDS: CardRecord = CardRecord::ne
     CardRules::new_creature(mana_cost!("{0}"), &["Kobold"], 0, 1).printed_colors(&[ManaColor::Red]),
 );
 
+/// Control before the removal, though the card prints it after. A later
+/// instruction in the same resolution re-checks the target against "attacking
+/// creature", and removing it from combat makes it stop matching. The outcome
+/// is the same either way.
+static DISHARMONY_EFFECT: [EffectDef; 3] = [
+    EffectDef::Untap {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::GainControl {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        duration: ControlDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::RemoveFromCombat {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+];
+
 // LEG 142 — Disharmony
-// Audit: blocked — Needs duration-aware control-changing continuous effects for “Untap target attacking creature and remove it from combat. Gain control of that creature until end of turn”.
+pub(in crate::card::sets) static DISHARMONY: CardRecord = CardRecord::new(
+    cards::DISHARMONY,
+    "Disharmony",
+    CardArt::new("e09a6b9b-eb0e-475d-8558-08e347412790", "Bryon Wackwitz"),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{2}{R}"))
+        .cast_only_before_blockers_declared()
+        .with_abilities(&[
+            AbilityDef::enforced_when_cast(
+                "Cast this spell only during combat before blockers are declared.",
+                "The play option refuses the cast outside combat and once blockers are in.",
+            ),
+            AbilityDef::spell_with_targets(
+                "Untap target attacking creature and remove it from combat. Gain control of \
+                 that creature until end of turn.",
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Attacking,
+                    ]),
+                )],
+                EffectDef::Sequence(&DISHARMONY_EFFECT),
+            ),
+        ]),
+);
 
 // LEG 143 — Dwarven Song
 pub(in crate::card::sets) static DWARVEN_SONG: CardRecord = CardRecord::new(
@@ -4912,6 +4953,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CRIMSON_KOBOLDS,
     &CRIMSON_MANTICORE,
     &CROOKSHANK_KOBOLDS,
+    &DISHARMONY,
     &DWARVEN_SONG,
     &ETERNAL_WARRIOR,
     &FROST_GIANT,

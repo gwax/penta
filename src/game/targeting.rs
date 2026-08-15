@@ -147,6 +147,13 @@ impl Game {
                     | Step::End
                     | Step::Cleanup
             ),
+            // Combat has started and the blockers are not committed yet.
+            // There is no priority inside the blocker declaration itself --
+            // the defending player is choosing blocks and nobody may cast --
+            // so the window is exactly the two steps before it.
+            PlayRestriction::BeforeBlockersDeclared => {
+                matches!(self.step, Step::BeginningOfCombat | Step::DeclareAttackers)
+            }
         }
     }
 

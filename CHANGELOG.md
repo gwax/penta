@@ -99,6 +99,13 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Disharmony**, and the casting window it needs. "Only during combat before
+  blockers are declared" is narrower than any window the engine had; it is the
+  two steps before the declaration, because nobody holds priority inside the
+  declaration itself. A play option's `restriction` may now read
+  `beforeBlockersDeclared`; the set is open and unknown tags are safe to treat
+  as a window the engine enforces.
+
 - **Control Magic and Steal Artifact.** Both audit lines wanted an
   attachment-scoped control change. The control the engine already has is
   scoped to its source remaining on the battlefield, and for an Aura those are
