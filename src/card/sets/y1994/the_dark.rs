@@ -637,7 +637,28 @@ pub(in crate::card::sets) static MARSH_GAS: CardRecord = CardRecord::new(
 );
 
 // DRK 49 — Murk Dwellers
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature attacks and isn't blocked, it gets +2/+0 until end of combat”.
+pub(in crate::card::sets) static MURK_DWELLERS: CardRecord = CardRecord::new(
+    cards::MURK_DWELLERS,
+    "Murk Dwellers",
+    CardArt::new("a213450f-02f4-4c08-8da8-891ebfa8e237", "Drew Tucker"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Zombie"], 2, 2).with_ability(
+        AbilityDef::triggered(
+            "Whenever this creature attacks and isn't blocked, it gets +2/+0 until end of combat.",
+            TriggerEventDef::AttacksAndIsNotBlocked {
+                attacker: ObjectPredicateDef::Source,
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfCombat,
+            },
+        ),
+    ),
+);
 
 // DRK 50 — Nameless Race
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Nameless Race's power and toughness are each equal to the life paid as it entered”.
@@ -1759,6 +1780,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BOG_RATS,
     &GRAVE_ROBBERS,
     &MARSH_GAS,
+    &MURK_DWELLERS,
     &UNCLE_ISTVAN,
     &BALL_LIGHTNING,
     &BLOOD_MOON,

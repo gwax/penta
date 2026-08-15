@@ -18,8 +18,14 @@ pub(super) struct ContinuousEffectTimestamp(pub(super) u64);
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum ContinuousEffectExpiration {
     EndOfTurn,
+    /// Ends as the end-of-combat step finishes, which is earlier than the
+    /// cleanup that ends [`Self::EndOfTurn`].
+    EndOfCombat,
     UpkeepOf(PlayerId),
-    TurnOf { player: PlayerId, turn: u32 },
+    TurnOf {
+        player: PlayerId,
+        turn: u32,
+    },
     WhileSourceTapped,
     Never,
 }
@@ -33,12 +39,18 @@ impl ContinuousEffectExpiration {
         match self {
             Self::UpkeepOf(player) => player != active_player,
             Self::TurnOf { player, turn } => turns_started[player.index()] < turn,
-            Self::EndOfTurn | Self::WhileSourceTapped | Self::Never => true,
+            Self::EndOfTurn | Self::EndOfCombat | Self::WhileSourceTapped | Self::Never => true,
         }
     }
 
     pub(super) const fn survives_cleanup(self) -> bool {
-        !matches!(self, Self::EndOfTurn)
+        // An end-of-combat effect is already gone by cleanup; keeping it in
+        // this list would be harmless but says the wrong thing.
+        !matches!(self, Self::EndOfTurn | Self::EndOfCombat)
+    }
+
+    pub(super) const fn survives_end_of_combat(self) -> bool {
+        !matches!(self, Self::EndOfCombat)
     }
 }
 

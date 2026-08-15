@@ -203,8 +203,14 @@ pub(super) fn shared_resolving_apply(
     // Long-lived effects must consist entirely of leaves the permanent can
     // store. Until-end-of-turn retains the nonbattlefield ability-grant case.
     let long_lived = resolving_effect_supports_long_duration(effect);
-    let duration_is_supported = duration == ResolvedEffectDurationDef::UntilEndOfTurn
-        || duration == ResolvedEffectDurationDef::UntilYourNextUpkeep && long_lived
+    let duration_is_supported = matches!(
+        duration,
+        // An end-of-combat effect expires one step earlier than an
+        // end-of-turn one and is stored the same way, so whatever the shorter
+        // duration can carry the longer one can too.
+        ResolvedEffectDurationDef::UntilEndOfTurn | ResolvedEffectDurationDef::UntilEndOfCombat
+    ) || duration == ResolvedEffectDurationDef::UntilYourNextUpkeep
+        && long_lived
         || matches!(
             duration,
             ResolvedEffectDurationDef::UntilYourNextTurn | ResolvedEffectDurationDef::Permanent

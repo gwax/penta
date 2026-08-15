@@ -248,6 +248,11 @@ pub enum ResolvedEffectDurationDef {
     /// Until the next turn of the effect's controller begins. The affected
     /// turn is captured when the resolving effect is created.
     UntilYourNextTurn,
+    /// Until the current combat phase ends. Shorter than
+    /// [`Self::UntilEndOfTurn`]: it expires as the end-of-combat step
+    /// finishes rather than waiting for cleanup, so a creature pumped for one
+    /// combat is back to its printed size in the postcombat main phase.
+    UntilEndOfCombat,
     /// For as long as the effect's own source stays tapped. Unlike every
     /// other resolving duration this one has no deadline: the artifact that
     /// tapped to make it decides when it ends by untapping.

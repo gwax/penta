@@ -596,6 +596,7 @@ mod tutors_and_fetch_lands;
 mod unblocked_attackers;
 mod unleash;
 mod untap_skips;
+mod until_end_of_combat;
 mod wards;
 mod while_source_tapped;
 mod zone_effects;

@@ -325,6 +325,7 @@ pub(super) struct CopiedFromSnapshot {
 )]
 pub(super) enum ContinuousEffectExpirationSnapshot {
     EndOfTurn,
+    EndOfCombat,
     UpkeepOf { seat: usize },
     TurnOf { seat: usize, turn: u32 },
     WhileSourceTapped,

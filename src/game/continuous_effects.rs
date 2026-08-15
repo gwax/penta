@@ -57,6 +57,7 @@ impl Game {
                 .iter()
                 .any(|permanent| permanent.card.id == source && permanent.tapped),
             ContinuousEffectExpiration::EndOfTurn
+            | ContinuousEffectExpiration::EndOfCombat
             | ContinuousEffectExpiration::UpkeepOf(_)
             | ContinuousEffectExpiration::TurnOf { .. }
             | ContinuousEffectExpiration::Never => true,

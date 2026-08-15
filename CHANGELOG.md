@@ -63,6 +63,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **An until-end-of-combat duration.** The shortest lifetime the engine has:
+  it expires as the end-of-combat step finishes rather than waiting for
+  cleanup, so a creature pumped for one combat is back to its printed size in
+  the postcombat main phase, and a second combat starts it over. Murk
+  Dwellers.
+
 - **Two ISD–DGM Standard decks and their remaining catalog coverage.** Todd
   Anderson's Omnidoor Thragfire and Brian Braun-Duin's Naya Midrange January
   2013 Star City Games lists are built in at 60 cards plus 15-card sideboards.

@@ -283,6 +283,7 @@ impl Game {
             Step::CombatDamage => self.advance_combat_damage_step(),
             Step::EndOfCombat => {
                 self.destroy_end_of_combat_permanents();
+                self.expire_end_of_combat_effects();
                 self.clear_combat();
                 if self.advance_after_turn_phase(TurnPhaseResume::Step(Step::PostcombatMain)) {
                     return;
@@ -513,6 +514,23 @@ impl Game {
     /// CR 510.4-adjacent: "destroy that creature at end of combat" resolves
     /// while combat is still the current phase, which is earlier than the
     /// end step an ordinary delayed destruction waits for.
+    /// Ends the continuous effects that last only for one combat. Combat can
+    /// happen more than once in a turn, so this runs per combat phase rather
+    /// than waiting for cleanup.
+    fn expire_end_of_combat_effects(&mut self) {
+        for permanent in &mut self.battlefield {
+            permanent
+                .resolved_continuous_effects
+                .retain(|effect| effect.expiration.survives_end_of_combat());
+        }
+        self.damage_preventions
+            .retain(|prevention| prevention.expiration.survives_end_of_combat());
+        self.damage_redirects
+            .retain(|redirect| redirect.expiration.survives_end_of_combat());
+        self.resolved_play_restrictions
+            .retain(|restriction| restriction.expiration.survives_end_of_combat());
+    }
+
     fn destroy_end_of_combat_permanents(&mut self) {
         let doomed: Vec<_> = self
             .battlefield

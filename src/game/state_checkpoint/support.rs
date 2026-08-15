@@ -67,6 +67,7 @@ const fn expiration_snapshot(
 ) -> ContinuousEffectExpirationSnapshot {
     match expiration {
         ContinuousEffectExpiration::EndOfTurn => ContinuousEffectExpirationSnapshot::EndOfTurn,
+        ContinuousEffectExpiration::EndOfCombat => ContinuousEffectExpirationSnapshot::EndOfCombat,
         ContinuousEffectExpiration::UpkeepOf(player) => {
             ContinuousEffectExpirationSnapshot::UpkeepOf {
                 seat: player.index(),
@@ -90,6 +91,9 @@ fn parse_expiration(
 ) -> Result<ContinuousEffectExpiration, String> {
     match expiration {
         ContinuousEffectExpirationSnapshot::EndOfTurn => Ok(ContinuousEffectExpiration::EndOfTurn),
+        ContinuousEffectExpirationSnapshot::EndOfCombat => {
+            Ok(ContinuousEffectExpiration::EndOfCombat)
+        }
         ContinuousEffectExpirationSnapshot::UpkeepOf { seat } => Ok(
             ContinuousEffectExpiration::UpkeepOf(player_from_index(seat)?),
         ),

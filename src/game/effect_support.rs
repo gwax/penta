@@ -65,6 +65,7 @@ impl Game {
         debug_assert!(matches!(
             duration,
             ResolvedEffectDurationDef::UntilEndOfTurn
+                | ResolvedEffectDurationDef::UntilEndOfCombat
                 | ResolvedEffectDurationDef::Permanent
                 | ResolvedEffectDurationDef::UntilYourNextUpkeep
                 | ResolvedEffectDurationDef::UntilYourNextTurn
@@ -112,6 +113,7 @@ impl Game {
     ) -> ContinuousEffectExpiration {
         match duration {
             ResolvedEffectDurationDef::UntilEndOfTurn => ContinuousEffectExpiration::EndOfTurn,
+            ResolvedEffectDurationDef::UntilEndOfCombat => ContinuousEffectExpiration::EndOfCombat,
             ResolvedEffectDurationDef::UntilYourNextUpkeep => {
                 ContinuousEffectExpiration::UpkeepOf(controller)
             }
