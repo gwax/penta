@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Intangible Virtue**, **Army of the Damned** and **Endless Ranks of the
+  Dead**, three Innistrad token cards resting on a token predicate, a tapped
+  token creation and a halved count. Endless Ranks rounds down, so a single
+  Zombie makes none and the engine only starts at two.
+
 - **Clinging Mists** and **Village Survivors**, two more fateful-hour cards
   built from the threshold plus machinery that already existed. The Survivors
   has vigilance printed as well as granted, so losing the branch takes it from

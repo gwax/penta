@@ -593,6 +593,7 @@ mod howling_mine;
 mod identity_and_mana;
 mod instill_energy;
 mod isd_dgm_deck_cards;
+mod isd_token_cards;
 mod jade_statue;
 mod laces;
 mod land_and_ability_layers;

@@ -9,11 +9,12 @@ use crate::card::{
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
     ComparisonDef, ConditionalValueDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
     DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectExecutionDef, EffectPaymentDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayOptionDef,
-    PlayerRelation, PlayerSetDef, QuantifierDef, ReplacementConditionDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, SpellAdditionalCostDef, SpellForm,
-    TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    EffectRecipientDef, HalvedValueDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
+    PlayOptionDef, PlayerRelation, PlayerSetDef, QuantifierDef, ReplacementConditionDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, RoundingDef, SacrificedAmountDef,
+    SpellAdditionalCostDef, SpellForm, TargetConditionDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::game::{
     CardAbilityResolver, CardRuntime, PileChoice, PileChosen, PileSplit, PilesSeparated,
@@ -423,8 +424,37 @@ pub(in crate::card::sets) static GHOSTLY_POSSESSION: CardRecord = CardRecord::ne
         ]),
 );
 
+static INTANGIBLE_VIRTUE_VIGILANCE: AbilityDef = abilities::vigilance();
+
+static INTANGIBLE_VIRTUE_GRANT: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+    AppliedEffectDef::add_ability(&INTANGIBLE_VIRTUE_VIGILANCE),
+];
+
 // ISD 19 — Intangible Virtue
-// Audit: blocked — Needs a reusable predicate selecting only creature tokens for the static +1/+1 and vigilance grant.
+pub(in crate::card::sets) static INTANGIBLE_VIRTUE: CardRecord = CardRecord::new(
+    cards::INTANGIBLE_VIRTUE,
+    "Intangible Virtue",
+    CardArt::new("0dd21f5e-d284-4072-87b9-7f0e6140fe60", "Clint Cearley"),
+    CardSet::Innistrad,
+    // Creature *tokens*, so a nontoken creature beside them gets nothing --
+    // which is what makes this an enchantment for a token deck rather than
+    // an anthem.
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(AbilityDef::static_ability(
+        "Creature tokens you control get +1/+1 and have vigilance.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Token,
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::Composite(&INTANGIBLE_VIRTUE_GRANT),
+        },
+    )),
+);
 
 // ISD 20 — Mausoleum Guard
 pub(in crate::card::sets) static MAUSOLEUM_GUARD: CardRecord = CardRecord::new(
@@ -1568,7 +1598,25 @@ pub(in crate::card::sets) static ALTARS_REAP: CardRecord = CardRecord::new(
 );
 
 // ISD 87 — Army of the Damned
-// Audit: blocked — Needs token creation that puts thirteen Zombie tokens onto the battlefield tapped.
+pub(in crate::card::sets) static ARMY_OF_THE_DAMNED: CardRecord = CardRecord::new(
+    cards::ARMY_OF_THE_DAMNED,
+    "Army of the Damned",
+    CardArt::new("260a4544-a1eb-4d07-943f-0401ae288e13", "Ryan Pancoast"),
+    CardSet::Innistrad,
+    // Tapped, so the army cannot attack the turn it arrives; flashback is
+    // what makes the second one worth the wait.
+    CardRules::new_sorcery(mana_cost!("{5}{B}{B}{B}")).with_abilities(&[
+        AbilityDef::spell(
+            "Create thirteen tapped 2/2 black Zombie creature tokens.",
+            EffectDef::CreateToken {
+                token: cards::ZOMBIE_TOKEN_2_2_BLACK,
+                count: ValueDef::Constant(13),
+                tapped: true,
+            },
+        ),
+        abilities::flashback(mana_cost!("{7}{B}{B}{B}")),
+    ]),
+);
 
 // ISD 88 — Bitterheart Witch
 // Audit: blocked — Needs searching for a Curse and putting it onto the battlefield attached to a targeted player.
@@ -1684,8 +1732,39 @@ pub(in crate::card::sets) static DIREGRAF_GHOUL: CardRecord = CardRecord::new(
 // ISD 98 — Disciple of Griselbrand
 // Audit: blocked — Needs the last known toughness of a creature selected and sacrificed as an activation cost.
 
+static ENDLESS_RANKS_ZOMBIES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::Subtype("Zombie"),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+/// Rounded down, so a lone Zombie makes none and the engine only starts once
+/// there are two.
+static ENDLESS_RANKS_COUNT: HalvedValueDef = HalvedValueDef::new(
+    ValueDef::CountMatchingObjects(&ENDLESS_RANKS_ZOMBIES),
+    RoundingDef::Down,
+);
+
 // ISD 99 — Endless Ranks of the Dead
-// Audit: blocked — Needs integer division of the current Zombie count when determining how many tokens to create.
+pub(in crate::card::sets) static ENDLESS_RANKS_OF_THE_DEAD: CardRecord = CardRecord::new(
+    cards::ENDLESS_RANKS_OF_THE_DEAD,
+    "Endless Ranks of the Dead",
+    CardArt::new("5db15c5f-80b7-4f7f-985a-9bbec3199ad9", "Ryan Yee"),
+    CardSet::Innistrad,
+    CardRules::new_enchantment(mana_cost!("{2}{B}{B}")).with_ability(AbilityDef::triggered(
+        "At the beginning of your upkeep, create X 2/2 black Zombie creature tokens, where X is \
+         half the number of Zombies you control, rounded down.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::You,
+        },
+        EffectDef::CreateToken {
+            token: cards::ZOMBIE_TOKEN_2_2_BLACK,
+            count: ValueDef::Halved(&ENDLESS_RANKS_COUNT),
+            tapped: false,
+        },
+    )),
+);
 
 // ISD 100 — Falkenrath Noble
 pub(in crate::card::sets) static FALKENRATH_NOBLE: CardRecord = CardRecord::new(
@@ -5014,6 +5093,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GALLOWS_WARDEN,
     &GEIST_HONORED_MONK,
     &GHOSTLY_POSSESSION,
+    &INTANGIBLE_VIRTUE,
     &MAUSOLEUM_GUARD,
     &MIDNIGHT_HAUNTING,
     &MOMENT_OF_HEROISM,
@@ -5056,10 +5136,12 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STITCHERS_APPRENTICE,
     &THINK_TWICE,
     &ALTARS_REAP,
+    &ARMY_OF_THE_DAMNED,
     &BLOODGIFT_DEMON,
     &BUMP_IN_THE_NIGHT,
     &DEAD_WEIGHT,
     &DIREGRAF_GHOUL,
+    &ENDLESS_RANKS_OF_THE_DEAD,
     &FALKENRATH_NOBLE,
     &GHOULCALLERS_CHANT,
     &GRUESOME_DEFORMITY,

@@ -83,3 +83,6 @@ pub const GATHER_THE_TOWNSFOLK: CardDefinitionId = CardDefinitionId(1882);
 pub const THRABEN_DOOMSAYER: CardDefinitionId = CardDefinitionId(1883);
 pub const CLINGING_MISTS: CardDefinitionId = CardDefinitionId(1884);
 pub const VILLAGE_SURVIVORS: CardDefinitionId = CardDefinitionId(1885);
+pub const INTANGIBLE_VIRTUE: CardDefinitionId = CardDefinitionId(1886);
+pub const ARMY_OF_THE_DAMNED: CardDefinitionId = CardDefinitionId(1887);
+pub const ENDLESS_RANKS_OF_THE_DEAD: CardDefinitionId = CardDefinitionId(1888);
