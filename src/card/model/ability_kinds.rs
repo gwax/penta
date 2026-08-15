@@ -241,6 +241,10 @@ pub enum ActivationTimingDef {
     /// Only during an upkeep step, whoever is taking the turn. Tolaria opens
     /// on both, which is what makes it an answer to an attack.
     AnyUpkeep,
+    /// Only during the end-of-combat step. Combat is over and the damage is
+    /// dealt, so a land shooting an attacker here is finishing off something
+    /// that survived rather than stopping it.
+    EndOfCombat,
     /// Only when its controller could cast a sorcery: their own main phase,
     /// with the stack empty. Unlike the windows above, this one does depend
     /// on the stack, because that is what "as a sorcery" means.

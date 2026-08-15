@@ -508,6 +508,7 @@ mod activation_costs_and_turns;
 mod activation_timing;
 mod additional_costs;
 mod alternative_costs;
+mod arabian_lands;
 mod assigns_no_combat_damage;
 mod attachment_targets;
 mod attack_deterrents;

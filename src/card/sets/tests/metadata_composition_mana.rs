@@ -217,6 +217,7 @@ fn every_builtin_land_without_mana_is_named_explicitly() {
             "Bazaar of Baghdad",
             // Sacrifices creatures for life and taps for nothing.
             "Diamond Valley",
+            "Island of Wak-Wak",
             "Oasis",
             // The five Legends band lands do nothing but hand out "bands with
             // other legendary creatures", one color each.

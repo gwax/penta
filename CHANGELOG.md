@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Desert and Island of Wak-Wak.** Desert waits for the end-of-combat step,
+  which is a new activation window and the whole point of the card: it finishes
+  off something that survived rather than stopping it. Island of Wak-Wak is
+  Singing Tree's base-power setter pointed at a flier.
+
 - **Disharmony**, and the casting window it needs. "Only during combat before
   blockers are declared" is narrower than any window the engine had; it is the
   two steps before the declaration, because nobody holds priority inside the

@@ -7,3 +7,5 @@ pub const DWARVEN_SOLDIER: CardDefinitionId = CardDefinitionId(1796);
 pub const BATTERING_RAM: CardDefinitionId = CardDefinitionId(1797);
 pub const SINGING_TREE: CardDefinitionId = CardDefinitionId(1798);
 pub const GOBLIN_WAR_DRUMS: CardDefinitionId = CardDefinitionId(1801);
+pub const DESERT: CardDefinitionId = CardDefinitionId(1805);
+pub const ISLAND_OF_WAK_WAK: CardDefinitionId = CardDefinitionId(1806);

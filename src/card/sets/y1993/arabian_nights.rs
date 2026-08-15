@@ -2,15 +2,15 @@ use super::{CardRecord, PrintingRecord};
 use crate::Format;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
-    CardChoiceSourceDef, CardRules, CardSet, CardType, ComparisonDef, ControlDurationDef,
-    CounterKind, DamageEventMatcherDef, DamageKindDef, DamageLimitDef, DamagePreventionDef,
-    DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, EffectDef,
-    EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, LikelihoodDef,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayActionMatcherDef,
-    PlayRestrictionDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
+    CardArt, CardBehavior, CardChoiceSourceDef, CardRules, CardSet, CardType, ComparisonDef,
+    ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef, DamageLimitDef,
+    DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef,
+    EffectDef, EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
+    KeywordAbility, LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, PlayerSetDef,
+    ResolvedEffectDurationDef, SacrificedAmountDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -1266,8 +1266,39 @@ pub(in crate::card::sets) static CITY_OF_BRASS: CardRecord = CardRecord::new(
     ]),
 );
 
+/// "Target attacking creature", which the end-of-combat window still has
+/// standing in front of it: combat damage is dealt, but nothing is removed
+/// from combat until the step finishes.
+static DESERT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Attacking,
+    ]),
+)];
+
 // ARN 72 — Desert
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{T}: This land deals 1 damage to target attacking creature. Activate only during the end of combat step”.
+pub(in crate::card::sets) static DESERT: CardRecord = CardRecord::new(
+    cards::DESERT,
+    "Desert",
+    CardArt::new("201155ea-f474-4e13-acda-cb071a6ca977", "Jesper Myrfors"),
+    CardSet::ArabianNights,
+    CardRules::new_land(&[])
+        .with_subtypes(&["Desert"])
+        .with_abilities(&[
+            abilities::tap_for(ManaColor::Colorless),
+            AbilityDef::activated_with_targets(
+                "{T}: This land deals 1 damage to target attacking creature. Activate only \
+                 during the end of combat step.",
+                &[AbilityCostDef::TapSource],
+                &DESERT_TARGET,
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(1),
+                },
+            )
+            .with_activation_timing(ActivationTimingDef::EndOfCombat),
+        ]),
+);
 
 /// The life is whatever the creature's toughness was, which is last-known by
 /// the time this runs -- the creature is already gone, which is the point.
@@ -1314,8 +1345,30 @@ pub(in crate::card::sets) static ELEPHANT_GRAVEYARD: CardRecord = CardRecord::ne
     ]),
 );
 
+static ISLAND_OF_WAK_WAK_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+    ]),
+)];
+
 // ARN 75 — Island of Wak-Wak
-// Audit: blocked — Needs a characteristic-layer effect or dynamic value for “{T}: Target creature with flying has base power 0 until end of turn”.
+pub(in crate::card::sets) static ISLAND_OF_WAK_WAK: CardRecord = CardRecord::new(
+    cards::ISLAND_OF_WAK_WAK,
+    "Island of Wak-Wak",
+    CardArt::new("f09cbd18-79f1-49a0-a3bd-b380ff5ecf03", "Douglas Shuler"),
+    CardSet::ArabianNights,
+    CardRules::new_land(&[]).with_ability(AbilityDef::activated_with_targets(
+        "{T}: Target creature with flying has base power 0 until end of turn.",
+        &[AbilityCostDef::TapSource],
+        &ISLAND_OF_WAK_WAK_TARGET,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::set_base_power(ValueDef::Constant(0)),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // ARN 76 — Library of Alexandria
 pub(in crate::card::sets) static LIBRARY_OF_ALEXANDRIA: CardRecord = CardRecord::new(
@@ -1410,8 +1463,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RING_OF_MARUF,
     &BAZAAR_OF_BAGHDAD,
     &CITY_OF_BRASS,
+    &DESERT,
     &DIAMOND_VALLEY,
     &ELEPHANT_GRAVEYARD,
+    &ISLAND_OF_WAK_WAK,
     &LIBRARY_OF_ALEXANDRIA,
     &OASIS,
 ];
