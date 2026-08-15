@@ -593,6 +593,9 @@ fn validate_condition(
 ) -> Result<(), GrantedAbilityValidationError> {
     match condition {
         ConditionDef::Exists(query) => validate_query(query, target_count, scope),
+        ConditionDef::All(conditions) => conditions
+            .iter()
+            .try_for_each(|condition| validate_condition(*condition, target_count, scope)),
     }
 }
 

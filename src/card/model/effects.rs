@@ -83,6 +83,10 @@ pub enum CardChoiceSourceDef {
 pub enum ConditionDef {
     /// At least one object matches this zone, controller, and object query.
     Exists(ObjectQueryDef),
+    /// Every listed condition holds. An empty list is vacuously true, which
+    /// is what makes it safe to build one from a card's own list of named
+    /// permanents without a special case for the shortest one.
+    All(&'static [ConditionDef]),
 }
 
 /// How cards are selected for a discard effect.

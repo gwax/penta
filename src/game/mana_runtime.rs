@@ -1,10 +1,11 @@
 use super::{
     AbilityCostDef, AbilityDef, AbilityOrigin, AbilityProcedureDef, Action, ActivatedAbilityDef,
     AddManaEffectDef, AppliedStackEffect, CardBehavior, CardType, CharacteristicContext,
-    CounterKind, DeclarativeAbilityDef, EffectDef, Game, GameObjectId, Mana, ManaAbilityActivation,
-    ManaColor, ManaCost, ManaPaymentPurpose, ManaPool, ManaRestrictionDef, ManaSelectionDef,
-    ManaSource, ManaSpendEffectDef, Permanent, PlayerId, RetiredObject, StackObject,
-    TriggerEventObject, ZoneKind, fold_restricted_x, pay_cost_with_orders,
+    ConditionDef, CounterKind, DeclarativeAbilityDef, EffectDef, Game, GameObjectId, Mana,
+    ManaAbilityActivation, ManaColor, ManaCost, ManaPaymentPurpose, ManaPool, ManaRestrictionDef,
+    ManaSelectionDef, ManaSource, ManaSpendEffectDef, Permanent, PlayerId, RetiredObject,
+    StackObject, TriggerContext, TriggerEventObject, ZoneKind, fold_restricted_x,
+    pay_cost_with_orders,
 };
 use crate::AbilityProgramDef;
 
@@ -153,6 +154,47 @@ impl Game {
         Some(effect)
     }
 
+    /// Whether a condition standing outside any resolving effect holds, read
+    /// from the battlefield as it is now. `All` is the conjunction a card
+    /// spells out when it names more than one permanent.
+    pub(in crate::game) fn static_condition_holds(
+        &self,
+        condition: ConditionDef,
+        controller: PlayerId,
+        source: GameObjectId,
+    ) -> bool {
+        match condition {
+            ConditionDef::Exists(query) => self.any_object_matches_query_with_prospective(
+                query,
+                controller,
+                source,
+                TriggerContext::empty(),
+                None,
+            ),
+            ConditionDef::All(conditions) => conditions
+                .iter()
+                .all(|condition| self.static_condition_holds(*condition, controller, source)),
+        }
+    }
+
+    /// How much mana this effect actually produces, with any "add ... instead"
+    /// clause resolved against the board. Read once as the activation is
+    /// built, so every later reader -- payment planning, the pool, the
+    /// spend -- sees one consistent number.
+    pub(in crate::game) fn mana_amount_for(
+        &self,
+        effect: AddManaEffectDef,
+        controller: PlayerId,
+        source: GameObjectId,
+    ) -> u16 {
+        effect
+            .amount_override
+            .filter(|override_| {
+                self.static_condition_holds(override_.condition, controller, source)
+            })
+            .map_or(effect.amount, |override_| override_.amount)
+    }
+
     fn is_legacy_fellwar_stone_mana_ability(
         definition: ActivatedAbilityDef,
         ability: &AbilityDef,
@@ -175,7 +217,10 @@ impl Game {
         ability: &AbilityDef,
     ) -> Vec<ManaAbilityActivation> {
         let mut activations = Vec::new();
-        if let Some(effect) = Self::shared_add_mana_effect(definition, ability) {
+        if let Some(mut effect) = Self::shared_add_mana_effect(definition, ability) {
+            // Resolved here rather than at payment time so that the amount
+            // the planner counts on is the amount the pool receives.
+            effect.amount = self.mana_amount_for(effect, permanent.controller, permanent.card.id);
             let mut add_activation = |color| {
                 activations.push(ManaAbilityActivation {
                     source: permanent.card.id,

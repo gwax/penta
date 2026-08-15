@@ -134,6 +134,21 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
     }
 }
 
+/// The conditions an entry replacement may read, unwrapped through any
+/// conjunction. Each leaf still has to be a battlefield query the shared
+/// runtime can answer.
+fn shared_entry_replacement_condition(condition: ConditionDef) -> bool {
+    match condition {
+        ConditionDef::Exists(query) => {
+            query.zones == [ZoneKind::Battlefield] && shared_object_predicate(query.object)
+        }
+        ConditionDef::All(conditions) => conditions
+            .iter()
+            .copied()
+            .all(shared_entry_replacement_condition),
+    }
+}
+
 pub(super) fn shared_entry_replacement_effect(effect: ReplacementEffectDef) -> bool {
     match effect {
         ReplacementEffectDef::ModifyBattlefieldEntry(_)
@@ -147,11 +162,7 @@ pub(super) fn shared_entry_replacement_effect(effect: ReplacementEffectDef) -> b
             if_true,
             if_false,
         } => {
-            let condition_is_supported = match condition {
-                ConditionDef::Exists(query) => {
-                    query.zones == [ZoneKind::Battlefield] && shared_object_predicate(query.object)
-                }
-            };
+            let condition_is_supported = shared_entry_replacement_condition(condition);
             condition_is_supported
                 && if_true.iter().copied().all(shared_entry_replacement_effect)
                 && if_false

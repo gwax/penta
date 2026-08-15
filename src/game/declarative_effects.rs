@@ -92,6 +92,7 @@ impl Game {
                 restrictions,
                 spend_effects,
                 damage_to_controller,
+                amount_override,
                 // Resolving from the stack, the ability's own controller is
                 // the only recipient any current card names.
                 recipient: _,
@@ -107,6 +108,15 @@ impl Game {
                     restrictions,
                     spend_effects,
                 };
+                let amount = amount_override
+                    .filter(|override_| {
+                        self.static_condition_holds(
+                            override_.condition,
+                            object.controller,
+                            object.source.unwrap_or(object.id),
+                        )
+                    })
+                    .map_or(amount, |override_| override_.amount);
                 self.add_mana(
                     object.controller,
                     std::iter::repeat_n(mana, usize::from(amount)),

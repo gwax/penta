@@ -386,6 +386,7 @@ impl Game {
             spend_effects,
             damage_to_controller,
             recipient,
+            amount_override,
         } = effect
         else {
             return;
@@ -412,6 +413,11 @@ impl Game {
             restrictions,
             spend_effects,
         );
+        let amount = amount_override
+            .filter(|override_| {
+                self.static_condition_holds(override_.condition, controller, source.object)
+            })
+            .map_or(amount, |override_| override_.amount);
         self.add_mana(controller, std::iter::repeat_n(mana, usize::from(amount)));
         if damage_to_controller > 0 {
             self.damage_target_from(

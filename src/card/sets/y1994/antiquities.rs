@@ -3,12 +3,12 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
-    CardTypeSet, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef,
-    DamageSourceGroupDef, DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectPaymentDef,
-    EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor, ManaRestrictionDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation, PlayerSetDef,
-    ReplacementEffectDef, ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardTypeSet, ConditionDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef,
+    DamagePreventionDef, DamageSourceGroupDef, DiscardSelectionDef, EffectDef, EffectExecutionDef,
+    EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
+    ManaRestrictionDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation,
+    PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -1708,14 +1708,81 @@ pub(in crate::card::sets) static STRIP_MINE: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Each land names the other two, and a name predicate compares the name a
+/// record carries. That is "Urza's Power Plant" without a hyphen, which is
+/// both the printed name and the current Oracle one; the reference text of
+/// the other two lands still hyphenates it, and the rules text here follows
+/// the record so that what a reader sees and what the engine matches agree.
+const fn controls_named(name: &'static str) -> ConditionDef {
+    ConditionDef::Exists(ObjectQueryDef::matching(
+        ObjectPredicateDef::Named(name),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ))
+}
+
+static URZAS_MINE_ASSEMBLED: [ConditionDef; 2] = [
+    controls_named("Urza's Power Plant"),
+    controls_named("Urza's Tower"),
+];
+static URZAS_POWER_PLANT_ASSEMBLED: [ConditionDef; 2] = [
+    controls_named("Urza's Mine"),
+    controls_named("Urza's Tower"),
+];
+static URZAS_TOWER_ASSEMBLED: [ConditionDef; 2] = [
+    controls_named("Urza's Mine"),
+    controls_named("Urza's Power Plant"),
+];
+
 // ATQ 83a — Urza's Mine
-// Audit: blocked — Needs a mana amount conditioned on other permanents you control for “{T}: Add {C}. If you control an Urza's Power-Plant and an Urza's Tower, add {C}{C} instead”; this ability's cost has no mana in it.
+pub(in crate::card::sets) static URZA_S_MINE: CardRecord = CardRecord::new(
+    cards::URZA_S_MINE,
+    "Urza's Mine",
+    CardArt::new("ddf85792-470b-4b42-99ac-9cb43a575523", "Anson Maddocks"),
+    CardSet::Antiquities,
+    CardRules::new_land(&[]).with_ability(AbilityDef::activated_mana(
+        "{T}: Add {C}. If you control an Urza's Power Plant and an Urza's Tower, add {C}{C} \
+         instead.",
+        &[AbilityCostDef::TapSource],
+        EffectDef::AddMana(
+            AddManaEffectDef::one(ManaColor::Colorless)
+                .with_amount_override(ConditionDef::All(&URZAS_MINE_ASSEMBLED), 2),
+        ),
+    )),
+);
 
 // ATQ 84a — Urza's Power Plant
-// Audit: blocked — Needs a mana amount conditioned on other permanents you control for “{T}: Add {C}. If you control an Urza's Mine and an Urza's Tower, add {C}{C} instead”; this ability's cost has no mana in it.
+pub(in crate::card::sets) static URZA_S_POWER_PLANT: CardRecord = CardRecord::new(
+    cards::URZA_S_POWER_PLANT,
+    "Urza's Power Plant",
+    CardArt::new("94896e0b-859c-47e4-bf27-35ed37b841e0", "Mark Tedin"),
+    CardSet::Antiquities,
+    CardRules::new_land(&[]).with_ability(AbilityDef::activated_mana(
+        "{T}: Add {C}. If you control an Urza's Mine and an Urza's Tower, add {C}{C} instead.",
+        &[AbilityCostDef::TapSource],
+        EffectDef::AddMana(
+            AddManaEffectDef::one(ManaColor::Colorless)
+                .with_amount_override(ConditionDef::All(&URZAS_POWER_PLANT_ASSEMBLED), 2),
+        ),
+    )),
+);
 
 // ATQ 85a — Urza's Tower
-// Audit: blocked — Needs a mana amount conditioned on other permanents you control for “{T}: Add {C}. If you control an Urza's Mine and an Urza's Power-Plant, add {C}{C}{C} instead”; this ability's cost has no mana in it.
+pub(in crate::card::sets) static URZA_S_TOWER: CardRecord = CardRecord::new(
+    cards::URZA_S_TOWER,
+    "Urza's Tower",
+    CardArt::new("8ed85655-fc59-4a57-bcf9-75e1899dff78", "Mark Poole"),
+    CardSet::Antiquities,
+    CardRules::new_land(&[]).with_ability(AbilityDef::activated_mana(
+        "{T}: Add {C}. If you control an Urza's Mine and an Urza's Power Plant, add {C}{C}{C} \
+         instead.",
+        &[AbilityCostDef::TapSource],
+        EffectDef::AddMana(
+            AddManaEffectDef::one(ManaColor::Colorless)
+                .with_amount_override(ConditionDef::All(&URZAS_TOWER_ASSEMBLED), 3),
+        ),
+    )),
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARGIVIAN_ARCHAEOLOGIST,
@@ -1777,6 +1844,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MISHRA_S_FACTORY,
     &MISHRA_S_WORKSHOP,
     &STRIP_MINE,
+    &URZA_S_MINE,
+    &URZA_S_POWER_PLANT,
+    &URZA_S_TOWER,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

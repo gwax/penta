@@ -435,6 +435,9 @@ impl Game {
     ) -> bool {
         let ReplaceableEvent::BattlefieldEntry(entry) = &pending.event;
         match condition {
+            ConditionDef::All(conditions) => conditions
+                .iter()
+                .all(|condition| self.condition_holds(pending, context, *condition)),
             ConditionDef::Exists(query) => self.any_object_matches_query_with_prospective(
                 query,
                 context.controller,

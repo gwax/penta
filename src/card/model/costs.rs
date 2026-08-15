@@ -1,6 +1,6 @@
 use super::{
-    AppliedEffectDef, CounterKind, ManaColor, ManaCost, ObjectPredicateDef, ObjectRefDef,
-    PlayerRefDef, PlayerRelation,
+    AppliedEffectDef, ConditionDef, CounterKind, ManaColor, ManaCost, ObjectPredicateDef,
+    ObjectRefDef, PlayerRefDef, PlayerRelation,
 };
 
 /// One atomic cost. The surrounding rules procedure determines who pays it
@@ -239,6 +239,18 @@ pub struct AddManaEffectDef {
     /// a trigger watching everyone's lands says "its controller", meaning the
     /// player whose land was tapped rather than the watcher.
     pub recipient: PlayerRefDef,
+    /// A larger amount that replaces [`Self::amount`] while its condition
+    /// holds, for "add {C}. If you control ..., add {C}{C} instead". The
+    /// colour does not change, so this is an amount rather than a second
+    /// mana selection.
+    pub amount_override: Option<ManaAmountOverrideDef>,
+}
+
+/// "... add this much instead."
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ManaAmountOverrideDef {
+    pub condition: ConditionDef,
+    pub amount: u16,
 }
 
 impl AddManaEffectDef {
@@ -251,6 +263,7 @@ impl AddManaEffectDef {
             spend_effects: &[],
             damage_to_controller: 0,
             recipient: PlayerRefDef::EffectController,
+            amount_override: None,
         }
     }
 
@@ -263,7 +276,15 @@ impl AddManaEffectDef {
             spend_effects: &[],
             damage_to_controller: 0,
             recipient: PlayerRefDef::EffectController,
+            amount_override: None,
         }
+    }
+
+    /// "... If you control ..., add this much instead."
+    #[must_use]
+    pub const fn with_amount_override(mut self, condition: ConditionDef, amount: u16) -> Self {
+        self.amount_override = Some(ManaAmountOverrideDef { condition, amount });
+        self
     }
 
     #[must_use]

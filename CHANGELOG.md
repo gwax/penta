@@ -99,6 +99,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Urza's Mine**, **Urza's Power Plant**, and **Urza's Tower**, with a mana
+  amount conditioned on other permanents you control and a conjunction of
+  conditions to express it. The amount is resolved as the activation is
+  offered, so payment planning and the mana pool agree about what a tap is
+  worth, and losing a piece takes the bonus away again.
+
 - **Candelabra of Tawnos**, with a target count taken from the X that was
   paid. "Untap X target lands" links the two numbers, so an X larger than the
   board offers no declaration rather than untapping fewer lands than paid for.

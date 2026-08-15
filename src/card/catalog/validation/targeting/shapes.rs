@@ -329,6 +329,9 @@ fn validate_condition_shape(
 ) -> Result<(), GrantedAbilityValidationError> {
     match condition {
         ConditionDef::Exists(query) => validate_query_shape(query, targets),
+        ConditionDef::All(conditions) => conditions
+            .iter()
+            .try_for_each(|condition| validate_condition_shape(*condition, targets)),
     }
 }
 
