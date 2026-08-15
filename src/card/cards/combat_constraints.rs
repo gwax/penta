@@ -40,3 +40,4 @@ pub const SCAVENGING_GHOUL: CardDefinitionId = CardDefinitionId(1839);
 pub const CYCLONE: CardDefinitionId = CardDefinitionId(1840);
 pub const PARALYZE: CardDefinitionId = CardDefinitionId(1841);
 pub const SPORE_CLOUD: CardDefinitionId = CardDefinitionId(1842);
+pub const SENTINEL: CardDefinitionId = CardDefinitionId(1843);

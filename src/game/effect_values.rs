@@ -122,6 +122,9 @@ impl Game {
             ValueDef::Halved(halved) => {
                 halved.apply(self.effect_value(halved.value, object, context, scoped))
             }
+            ValueDef::Sum(sum) => self
+                .effect_value(sum.left, object, context, scoped)
+                .saturating_add(self.effect_value(sum.right, object, context, scoped)),
         }
     }
 

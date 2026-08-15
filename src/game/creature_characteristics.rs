@@ -53,6 +53,14 @@ impl Game {
                 ResolvedContinuousEffectKind::PowerToughness(
                     ResolvedPowerToughnessOperation::SetBasePower { power },
                 ) => Some((effect.timestamp, effect.component_order, Some(power), None)),
+                ResolvedContinuousEffectKind::PowerToughness(
+                    ResolvedPowerToughnessOperation::SetBaseToughness { toughness },
+                ) => Some((
+                    effect.timestamp,
+                    effect.component_order,
+                    None,
+                    Some(toughness),
+                )),
                 _ => None,
             })
             .collect::<Vec<_>>();
@@ -196,6 +204,9 @@ impl Game {
             ValueDef::Halved(halved) => {
                 halved.apply(self.static_stat_value(halved.value, source, controller))
             }
+            ValueDef::Sum(sum) => self
+                .static_stat_value(sum.left, source, controller)
+                .saturating_add(self.static_stat_value(sum.right, source, controller)),
             _ => 0,
         }
     }

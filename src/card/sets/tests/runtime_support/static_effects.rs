@@ -216,7 +216,8 @@ pub(in super::super) fn shared_static_applied_effect(
             | PowerToughnessOperationDef::Modify { power, toughness },
         )) => static_stat_value(power) && static_stat_value(toughness),
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
-            PowerToughnessOperationDef::SetBasePower(power),
+            PowerToughnessOperationDef::SetBasePower(power)
+            | PowerToughnessOperationDef::SetBaseToughness(power),
         )) => static_stat_value(power),
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::BasicLandTypes(
             SetOperationDef::Add(land_types)

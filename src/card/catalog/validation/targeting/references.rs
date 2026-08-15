@@ -673,6 +673,10 @@ fn validate_value_target_references(
         ValueDef::Halved(halved) => {
             validate_value_target_references(halved.value, target_count, scope)
         }
+        ValueDef::Sum(sum) => {
+            validate_value_target_references(sum.left, target_count, scope)?;
+            validate_value_target_references(sum.right, target_count, scope)
+        }
         ValueDef::IfCreatureDiedThisTurn(condition) => {
             validate_value_target_references(condition.then, target_count, scope)?;
             validate_value_target_references(condition.otherwise, target_count, scope)

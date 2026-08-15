@@ -106,6 +106,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Sentinel**, with a toughness-only base set and a summed value. Setting
+  only toughness is the mirror of the existing power-only setter and for the
+  same reason: a card that changes one half says only that half, so the
+  Sentinel keeps its printed power of 1 however large a creature it faces.
+
 - **Spore Cloud**, also needing no new engine work: per-permanent untap skips
   already existed, and its audit line asked for them as though they did not.
   Counting the skip per permanent rather than expressing it as a duration is

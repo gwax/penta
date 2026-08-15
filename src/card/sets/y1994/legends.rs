@@ -11,8 +11,8 @@ use crate::card::{
     ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
     ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
     ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    SumValueDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -4944,8 +4944,48 @@ pub(in crate::card::sets) static RELIC_BARRIER: CardRecord = CardRecord::new(
 // LEG 293 — Ring of Immortals
 // Audit: blocked — Needs a spell-on-stack target predicate that expresses the printed instant/Aura restriction for “{3}, {T}: Counter target instant or Aura spell that targets a permanent you control”.
 
+/// The printed "blocking or blocked by this creature" is the two one-sided
+/// relationships together: what the Sentinel is blocking, and what is
+/// blocking the Sentinel.
+static SENTINEL_COMBAT_PARTNER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::BlockedBySource,
+        ObjectPredicateDef::BlockingSource,
+    ]),
+)];
+
+/// One plus that creature's power, read as the ability resolves.
+static SENTINEL_TOUGHNESS: SumValueDef = SumValueDef::new(
+    ValueDef::Constant(1),
+    ValueDef::TargetPower(TargetIndex::PRIMARY),
+);
+
 // LEG 294 — Sentinel
-// Audit: blocked — Needs a summed value and a toughness-only base set; the blocking-or-blocked-by target predicate is available.
+pub(in crate::card::sets) static SENTINEL: CardRecord = CardRecord::new(
+    cards::SENTINEL,
+    "Sentinel",
+    CardArt::new(
+        "5c970830-95cf-4471-af28-43da635073d0",
+        "Randy Asplund-Faith",
+    ),
+    CardSet::Legends,
+    // Toughness alone: the Sentinel keeps its printed power of 1, and a
+    // free ability that could be used repeatedly is why the effect sets
+    // rather than modifies -- each use replaces the last.
+    CardRules::new_artifact_creature(mana_cost!("{4}"), &["Shapeshifter"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{0}: Change this creature's base toughness to 1 plus the power of target creature \
+             blocking or blocked by this creature.",
+            &[],
+            &SENTINEL_COMBAT_PARTNER,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::set_base_toughness(ValueDef::Sum(&SENTINEL_TOUGHNESS)),
+                duration: ResolvedEffectDurationDef::Permanent,
+            },
+        ),
+    ),
+);
 
 // LEG 295 — Serpent Generator
 pub(in crate::card::sets) static SERPENT_GENERATOR: CardRecord = CardRecord::new(
@@ -5450,6 +5490,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MARBLE_PRIEST,
     &PLANAR_GATE,
     &RELIC_BARRIER,
+    &SENTINEL,
     &SERPENT_GENERATOR,
     &ADVENTURERS_GUILDHOUSE,
     &CATHEDRAL_OF_SERRA,

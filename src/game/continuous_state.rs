@@ -85,6 +85,7 @@ pub(super) enum ResolvedAbilityOperation {
 pub(super) enum ResolvedPowerToughnessOperation {
     SetBase { power: i16, toughness: i16 },
     SetBasePower { power: i16 },
+    SetBaseToughness { toughness: i16 },
     Modify { power: i16, toughness: i16 },
 }
 

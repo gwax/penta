@@ -239,6 +239,10 @@ fn validate_value_shape(
         ValueDef::Negate(value) => validate_value_shape(*value, targets),
         ValueDef::Scaled(value) => validate_value_shape(value.value, targets),
         ValueDef::Halved(value) => validate_value_shape(value.value, targets),
+        ValueDef::Sum(value) => {
+            validate_value_shape(value.left, targets)?;
+            validate_value_shape(value.right, targets)
+        }
         ValueDef::IfCreatureDiedThisTurn(value) => {
             validate_value_shape(value.then, targets)?;
             validate_value_shape(value.otherwise, targets)

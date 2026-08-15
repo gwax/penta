@@ -284,7 +284,8 @@ fn static_object_applied_effect_supported(
                 && static_power_toughness_value_supported(toughness)
         }
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
-            PowerToughnessOperationDef::SetBasePower(power),
+            PowerToughnessOperationDef::SetBasePower(power)
+            | PowerToughnessOperationDef::SetBaseToughness(power),
         )) => static_power_toughness_value_supported(power),
         // Static animation is deliberately narrower than resolving
         // characteristic changes: it may add the creature card type, may
@@ -613,6 +614,10 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         }
         ValueDef::Scaled(scaled) => static_power_toughness_value_supported(scaled.value),
         ValueDef::Halved(halved) => static_power_toughness_value_supported(halved.value),
+        ValueDef::Sum(sum) => {
+            static_power_toughness_value_supported(sum.left)
+                && static_power_toughness_value_supported(sum.right)
+        }
         ValueDef::CreaturesDiedThisTurn
         | ValueDef::ChosenX
         | ValueDef::SourceCastX
@@ -638,6 +643,10 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
     match value {
         ValueDef::Constant(_) => true,
         ValueDef::CountMatchingObjects(query) => static_query_supported(*query),
+        ValueDef::Sum(sum) => {
+            static_cost_reduction_value_supported(sum.left)
+                && static_cost_reduction_value_supported(sum.right)
+        }
         ValueDef::CreaturesDiedThisTurn
         | ValueDef::ChosenX
         | ValueDef::SourceCastX

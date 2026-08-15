@@ -418,6 +418,7 @@ impl HandcraftedPolicy {
             | ValueDef::Negate(_)
             | ValueDef::Scaled(_)
             | ValueDef::Halved(_)
+            | ValueDef::Sum(_)
             | ValueDef::CreaturesDiedThisTurn => None,
         }
     }

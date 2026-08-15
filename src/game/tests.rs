@@ -255,6 +255,11 @@ pub(super) fn attach_constant_resolved_characteristics(
                             power: constant(power),
                         }
                     }
+                    PowerToughnessOperationDef::SetBaseToughness(toughness) => {
+                        ResolvedPowerToughnessOperation::SetBaseToughness {
+                            toughness: constant(toughness),
+                        }
+                    }
                     PowerToughnessOperationDef::Modify { power, toughness } => {
                         ResolvedPowerToughnessOperation::Modify {
                             power: constant(power),
@@ -632,6 +637,7 @@ mod rings;
 mod sacrificed_toughness;
 mod scavenge;
 mod search_and_reveal;
+mod sentinel;
 mod shroud_grants;
 mod silenced_sources;
 mod spell_colors;

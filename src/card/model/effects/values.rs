@@ -143,6 +143,10 @@ pub enum ValueDef {
     /// than one per thing counted. Held by reference for the same reason
     /// [`Self::Negate`] is: `ValueDef` stays one word wide.
     Scaled(&'static ScaledValueDef),
+    /// Two values added together, for "1 plus the power of ...". Held by
+    /// reference like the other compound forms so that `ValueDef` stays one
+    /// word wide.
+    Sum(&'static SumValueDef),
     /// Half of another value, rounded the way the card says. Rounding is only
     /// visible when a value is divided, so the direction belongs to the
     /// division rather than being a separate step over it.
@@ -185,6 +189,19 @@ pub enum ValueDef {
 pub struct ScaledValueDef {
     pub value: ValueDef,
     pub factor: i32,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct SumValueDef {
+    pub left: ValueDef,
+    pub right: ValueDef,
+}
+
+impl SumValueDef {
+    #[must_use]
+    pub const fn new(left: ValueDef, right: ValueDef) -> Self {
+        Self { left, right }
+    }
 }
 
 /// Which way a halved value rounds. A card that halves says so explicitly,
