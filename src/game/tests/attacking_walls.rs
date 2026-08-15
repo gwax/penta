@@ -111,10 +111,42 @@ fn the_wall_of_wonder_charges_itself_up() {
     assert_eq!(game.toughness(permanent(&game, wall)), Some(1));
 }
 
+/// A trigger can hand the permission out too, and it ends with the turn like
+/// any other resolved rule.
+#[test]
+fn a_spell_cast_can_free_the_cyclops_for_the_turn() {
+    let (mut game, cyclops) = wall_board(cards::NIVIX_CYCLOPS);
+    assert!(!can_attack(&game, cyclops), "defender holds it back");
+
+    let bolt = card(10_001, cards::LIGHTNING_BOLT, PlayerId::One);
+    let bolt_id = bolt.id;
+    game.players[PlayerId::One.index()].hand.push(bolt);
+    game.players[PlayerId::One.index()].mana_pool.red = 1;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == bolt_id))
+        .expect("the Bolt can be cast");
+    game.apply(PlayerId::One, action).expect("the Bolt is cast");
+    drain_pending(&mut game);
+
+    assert!(can_attack(&game, cyclops), "and the trigger frees it");
+    assert_eq!(game.power(permanent(&game, cyclops)), Some(4));
+    assert!(
+        game.permanent_has_executable_keyword(permanent(&game, cyclops), KeywordAbility::Defender),
+        "still a defender, still allowed to swing"
+    );
+}
+
 #[test]
 fn every_attacking_wall_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::ANIMATE_WALL, cards::WALL_OF_WONDER] {
+    for definition in [
+        cards::ANIMATE_WALL,
+        cards::WALL_OF_WONDER,
+        cards::NIVIX_CYCLOPS,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),

@@ -1455,7 +1455,7 @@ pub(in crate::card::sets) static NECROPOLIS_REGENT: CardRecord = CardRecord::new
 );
 
 // RTR 72 — Ogre Jailbreaker
-// Audit: blocked — Needs a Gate-control condition that removes defender's attack restriction without removing defender itself.
+// Audit: blocked — The permission to attack despite defender is available, but its condition counts Gates across the battlefield, and the static walk is only trusted with conditions reachable from the source itself.
 
 // RTR 73 — Pack Rat
 // Audit: blocked — Needs dynamic Rat-count power and toughness and creation of a copiable token copy of the source.

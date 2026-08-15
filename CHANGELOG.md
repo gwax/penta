@@ -74,6 +74,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Nivix Cyclops**, whose trigger hands out the attack-despite-defender
+  permission for a turn. Ogre Jailbreaker prints the same permission and stays
+  blocked: its condition counts Gates across the battlefield, and the static
+  walk is deliberately trusted only with conditions reachable from the source.
+  Its audit line now says so.
+
 - **Deadly Allure and Enlarge**, which hand out the must-be-blocked
   requirement for a turn rather than printing it as a static. The rule already
   reached both ways; only the two printed statics had been authored.

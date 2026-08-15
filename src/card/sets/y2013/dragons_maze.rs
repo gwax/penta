@@ -1343,8 +1343,42 @@ pub(in crate::card::sets) static MORGUE_BURST: CardRecord = CardRecord::new(
     ),
 );
 
+/// The pump and the permission arrive together and end together, so one
+/// Apply carries both. The Cyclops keeps defender throughout; what it gets
+/// is leave to ignore it for the turn.
+static NIVIX_CYCLOPS_CHARGE: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(3), ValueDef::Constant(0)),
+    AppliedEffectDef::Rule(AppliedRuleDef::MayAttackDespiteDefender),
+];
+
+static INSTANT_OR_SORCERY_YOU_CAST: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+    ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::HasType(CardType::Instant),
+        ObjectPredicateDef::HasType(CardType::Sorcery),
+    ]),
+]);
+
 // DGM 87 — Nivix Cyclops
-// Audit: blocked — Needs a turn-long permission to attack as though defender were absent without actually removing the defender ability.
+pub(in crate::card::sets) static NIVIX_CYCLOPS: CardRecord = CardRecord::new(
+    cards::NIVIX_CYCLOPS,
+    "Nivix Cyclops",
+    CardArt::new("87c6651d-72ca-43b3-94ca-d6c4c6b3ca3b", "Wayne Reynolds"),
+    CardSet::DragonsMaze,
+    CardRules::new_creature(mana_cost!("{1}{U}{R}"), &["Cyclops"], 1, 4).with_abilities(&[
+        abilities::defender(),
+        AbilityDef::triggered(
+            "Whenever you cast an instant or sorcery spell, this creature gets +3/+0 until end of \
+             turn and can attack this turn as though it didn't have defender.",
+            TriggerEventDef::SpellCast(INSTANT_OR_SORCERY_YOU_CAST),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&NIVIX_CYCLOPS_CHARGE),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // DGM 88 — Notion Thief
 // Audit: blocked — Needs a draw-event replacement that recognizes the first draw of each opponent's draw step and redirects every other draw.
@@ -2586,6 +2620,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &JELENN_SPHINX,
     &MAW_OF_THE_OBZEDAT,
     &MORGUE_BURST,
+    &NIVIX_CYCLOPS,
     &OBZEDATS_AID,
     &PILFERED_PLANS,
     &PUTREFY,

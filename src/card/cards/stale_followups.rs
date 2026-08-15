@@ -93,3 +93,4 @@ pub const ELVISH_SCOUT: CardDefinitionId = CardDefinitionId(1737);
 pub const GLYPH_OF_DESTRUCTION: CardDefinitionId = CardDefinitionId(1738);
 pub const DEADLY_ALLURE: CardDefinitionId = CardDefinitionId(1739);
 pub const ENLARGE: CardDefinitionId = CardDefinitionId(1740);
+pub const NIVIX_CYCLOPS: CardDefinitionId = CardDefinitionId(1741);
