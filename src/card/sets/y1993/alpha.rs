@@ -6,12 +6,13 @@ use crate::card::{
     ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
     CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef, DamagePreventionFollowUpDef,
     DamageRecipientMatcherDef, DamageSourceGroupDef, DiscardSelectionDef, EffectDef,
-    EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility,
-    LikelihoodDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementAbilityDef, ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
-    TurnKindDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, HalvedValueDef, InstalledTriggerDef,
+    KeywordAbility, LikelihoodDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ReplacementAbilityDef, ReplacementChoiceDef, ReplacementConditionDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, RoundingDef,
+    TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -3394,8 +3395,47 @@ static BERSERK_ATTACKED: TriggerConditionDef = TriggerConditionDef::TargetMatche
     object: ObjectPredicateDef::AttackedThisTurn,
 };
 
+static ASPECT_OF_WOLF_FORESTS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+/// One count read twice, rounded opposite ways. An odd number of Forests is
+/// the whole reason both halves are spelled out: five gives +2/+3.
+static ASPECT_OF_WOLF_POWER: HalvedValueDef = HalvedValueDef::new(
+    ValueDef::CountMatchingObjects(&ASPECT_OF_WOLF_FORESTS),
+    RoundingDef::Down,
+);
+static ASPECT_OF_WOLF_TOUGHNESS: HalvedValueDef = HalvedValueDef::new(
+    ValueDef::CountMatchingObjects(&ASPECT_OF_WOLF_FORESTS),
+    RoundingDef::Up,
+);
+
 // LEA 184 — Aspect of Wolf
-// Audit: blocked — Needs rounded division in dynamic power/toughness values for “Enchanted creature gets +X/+Y, where X is half the number of Forests you control, rounded down, and Y is half the number of Forests you control, rounded up”.
+pub(in crate::card::sets) static ASPECT_OF_WOLF: CardRecord = CardRecord::new(
+    cards::ASPECT_OF_WOLF,
+    "Aspect of Wolf",
+    CardArt::new("fd9ac9e6-1395-4fbd-80e2-645f0d910c29", "Jeff A. Menges"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{1}{G}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +X/+Y, where X is half the number of Forests you \
+                 control, rounded down, and Y is half the number of Forests you control, \
+                 rounded up.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Halved(&ASPECT_OF_WOLF_POWER),
+                        ValueDef::Halved(&ASPECT_OF_WOLF_TOUGHNESS),
+                    ),
+                },
+            ),
+        ]),
+);
 
 // LEA 185 — Berserk
 pub(in crate::card::sets) static BERSERK: CardRecord = CardRecord::new(
@@ -5388,6 +5428,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WALL_OF_FIRE,
     &WALL_OF_STONE,
     &WHEEL_OF_FORTUNE,
+    &ASPECT_OF_WOLF,
     &BERSERK,
     &BIRDS_OF_PARADISE,
     &CHANNEL,

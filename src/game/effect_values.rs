@@ -118,6 +118,9 @@ impl Game {
             ValueDef::Scaled(scaled) => self
                 .effect_value(scaled.value, object, context, scoped)
                 .saturating_mul(scaled.factor),
+            ValueDef::Halved(halved) => {
+                halved.apply(self.effect_value(halved.value, object, context, scoped))
+            }
         }
     }
 

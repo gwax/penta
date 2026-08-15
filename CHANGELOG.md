@@ -106,6 +106,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Aspect of Wolf**, with halving as a value form. The rounding direction
+  belongs to the division rather than sitting over it, which is what lets one
+  count of Forests be read twice and land on two different numbers: five
+  Forests is +2/+3.
+
 - **Part Water**, whose X-counted target slot needed no new engine work: the
   count sentinel added for Candelabra of Tawnos already covers a spell. Its
   {X}{X}{U} cost doubles X, so seven mana reaches three creatures rather than

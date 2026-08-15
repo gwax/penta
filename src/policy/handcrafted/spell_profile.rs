@@ -416,7 +416,8 @@ impl HandcraftedPolicy {
             | ValueDef::IfTargetMatches(_)
             | ValueDef::IfMatchingObjectCount(_)
             | ValueDef::Negate(_)
-            | ValueDef::Scaled(_) => None,
+            | ValueDef::Scaled(_)
+            | ValueDef::Halved(_) => None,
         }
     }
 }

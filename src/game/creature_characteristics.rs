@@ -193,6 +193,9 @@ impl Game {
             ValueDef::Scaled(scaled) => self
                 .static_stat_value(scaled.value, source, controller)
                 .saturating_mul(scaled.factor),
+            ValueDef::Halved(halved) => {
+                halved.apply(self.static_stat_value(halved.value, source, controller))
+            }
             _ => 0,
         }
     }

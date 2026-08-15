@@ -143,6 +143,10 @@ pub enum ValueDef {
     /// than one per thing counted. Held by reference for the same reason
     /// [`Self::Negate`] is: `ValueDef` stays one word wide.
     Scaled(&'static ScaledValueDef),
+    /// Half of another value, rounded the way the card says. Rounding is only
+    /// visible when a value is divided, so the direction belongs to the
+    /// division rather than being a separate step over it.
+    Halved(&'static HalvedValueDef),
     /// How many counters of one kind sit on the ability's own source.
     CountersOnSource(CounterKind),
     /// The morbid condition. Held by reference so that `ValueDef` stays one
@@ -177,6 +181,39 @@ pub enum ValueDef {
 pub struct ScaledValueDef {
     pub value: ValueDef,
     pub factor: i32,
+}
+
+/// Which way a halved value rounds. A card that halves says so explicitly,
+/// and the two halves of "half rounded down and half rounded up" are what
+/// make a single count into two different numbers.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum RoundingDef {
+    Down,
+    Up,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct HalvedValueDef {
+    pub value: ValueDef,
+    pub rounding: RoundingDef,
+}
+
+impl HalvedValueDef {
+    #[must_use]
+    pub const fn new(value: ValueDef, rounding: RoundingDef) -> Self {
+        Self { value, rounding }
+    }
+
+    /// Halves `total` the way this definition says. Rounding is applied
+    /// towards the named direction for negative totals too, so a negative
+    /// count does not quietly change which way it goes.
+    #[must_use]
+    pub const fn apply(&self, total: i32) -> i32 {
+        match self.rounding {
+            RoundingDef::Down => total.div_euclid(2),
+            RoundingDef::Up => total.div_euclid(2) + total.rem_euclid(2),
+        }
+    }
 }
 
 impl ScaledValueDef {

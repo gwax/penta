@@ -612,6 +612,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
             static_query_supported(*query)
         }
         ValueDef::Scaled(scaled) => static_power_toughness_value_supported(scaled.value),
+        ValueDef::Halved(halved) => static_power_toughness_value_supported(halved.value),
         ValueDef::ChosenX
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
@@ -648,6 +649,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::AnyMatchingObject(_)
         | ValueDef::Negate(_)
         | ValueDef::Scaled(_)
+        | ValueDef::Halved(_)
         | ValueDef::IfCreatureDiedThisTurn(_)
         | ValueDef::IfTargetMatches(_)
         | ValueDef::IfMatchingObjectCount(_)

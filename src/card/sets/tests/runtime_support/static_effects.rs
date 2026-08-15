@@ -312,13 +312,14 @@ pub(in super::super) fn shared_static_applied_effect(
 
 /// The values a static power/toughness bonus may be built from. They are the
 /// ones the layer walk can evaluate without reading a resolving spell, and a
-/// scale is allowed only over another such value.
+/// scale or a halving is allowed only over another such value.
 fn static_stat_value(value: crate::card::ValueDef) -> bool {
     match value {
         crate::card::ValueDef::Constant(_)
         | crate::card::ValueDef::AnyMatchingObject(_)
         | crate::card::ValueDef::CountMatchingObjects(_) => true,
         crate::card::ValueDef::Scaled(scaled) => static_stat_value(scaled.value),
+        crate::card::ValueDef::Halved(halved) => static_stat_value(halved.value),
         _ => false,
     }
 }

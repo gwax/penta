@@ -510,6 +510,7 @@ mod additional_costs;
 mod alternative_costs;
 mod arabian_lands;
 mod armageddon_clock;
+mod aspect_of_wolf;
 mod assigns_no_combat_damage;
 mod attachment_targets;
 mod attack_deterrents;
