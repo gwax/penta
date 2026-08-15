@@ -602,6 +602,12 @@ impl CardRules {
     }
 
     #[must_use]
+    pub const fn cast_only_after_an_opponents_upkeep(mut self) -> Self {
+        self.play_restriction = PlayRestriction::OpponentsTurnAfterUpkeep;
+        self
+    }
+
+    #[must_use]
     pub const fn play_restriction(&self) -> PlayRestriction {
         self.play_restriction
     }

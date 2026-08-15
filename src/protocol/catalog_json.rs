@@ -178,6 +178,7 @@ fn play_option_json(option: &PlayOptionDef) -> Value {
             PlayRestriction::BeforeBlockersDeclared => "beforeBlockersDeclared",
             PlayRestriction::OpponentsUpkeep => "opponentsUpkeep",
             PlayRestriction::DeclareAttackersStep => "declareAttackersStep",
+            PlayRestriction::OpponentsTurnAfterUpkeep => "opponentsTurnAfterUpkeep",
         },
         "modes": option.modes.as_ref().map(|modes| json!({
             "minimum": modes.minimum,

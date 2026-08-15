@@ -1086,7 +1086,30 @@ pub(in crate::card::sets) static REMOVE_SOUL: CardRecord = CardRecord::new(
 );
 
 // LEG 73 — Reset
-// Audit: blocked — Needs a spell-casting timing condition tied to the active turn and step for “Cast this spell only during an opponent's turn after their upkeep step”.
+pub(in crate::card::sets) static RESET: CardRecord = CardRecord::new(
+    cards::RESET,
+    "Reset",
+    CardArt::new("1c829d83-d5b8-4be7-80f7-55b42f52b309", "Nicola Leonard"),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{U}{U}"))
+        .cast_only_after_an_opponents_upkeep()
+        .with_abilities(&[
+            AbilityDef::enforced_when_cast(
+                "Cast this spell only during an opponent's turn after their upkeep step.",
+                "The play option refuses the cast on your own turn and during their upkeep.",
+            ),
+            AbilityDef::spell(
+                "Untap all lands you control.",
+                EffectDef::Untap {
+                    object: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                },
+            ),
+        ]),
+);
 
 // LEG 74 — Reverberation
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “All damage that would be dealt this turn by target sorcery spell is dealt to that spell's controller instead”.
@@ -5247,6 +5270,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PSIONIC_ENTITY,
     &RECALL,
     &REMOVE_SOUL,
+    &RESET,
     &SEA_KINGS_BLESSING,
     &SEGOVIAN_LEVIATHAN,
     &SPECTRAL_CLOAK,

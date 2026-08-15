@@ -122,9 +122,52 @@ fn the_teleport_makes_its_target_unblockable() {
 }
 
 #[test]
+fn the_reset_waits_for_an_opponents_turn_past_their_upkeep() {
+    let (mut game, _theirs, spell) = holding(cards::RESET);
+
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    assert!(!castable(&game, spell), "your own turn is not theirs");
+
+    game.active_player = PlayerId::Two;
+    game.step = Step::Upkeep;
+    assert!(!castable(&game, spell), "their turn, but still the upkeep");
+
+    game.step = Step::PrecombatMain;
+    assert!(castable(&game, spell), "their turn and past the upkeep");
+}
+
+#[test]
+fn the_reset_untaps_only_your_own_lands() {
+    let (mut game, _theirs, spell) = holding(cards::RESET);
+    let mut mine = creature(10_100, cards::ISLAND, PlayerId::One);
+    mine.tapped = true;
+    let mine_id = mine.card.id;
+    game.battlefield.push(mine);
+    let mut theirs = creature(10_101, cards::ISLAND, PlayerId::Two);
+    theirs.tapped = true;
+    let their_land = theirs.card.id;
+    game.battlefield.push(theirs);
+
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    cast_it(&mut game, spell);
+
+    let tapped = |id: GameObjectId| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .expect("still there")
+            .tapped
+    };
+    assert!(!tapped(mine_id), "yours came back");
+    assert!(tapped(their_land), "and theirs did not");
+}
+
+#[test]
 fn both_spells_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::FESTIVAL, cards::TELEPORT] {
+    for definition in [cards::FESTIVAL, cards::TELEPORT, cards::RESET] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),

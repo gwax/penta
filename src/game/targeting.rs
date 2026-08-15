@@ -150,6 +150,12 @@ impl Game {
                 self.step == Step::Upkeep && self.active_player != player
             }
             PlayRestriction::DeclareAttackersStep => self.step == Step::DeclareAttackers,
+            // Their turn, past the upkeep. Cleanup is excluded with it: no
+            // player receives priority there unless something has to be
+            // discarded, and the card is not meant to be held that long.
+            PlayRestriction::OpponentsTurnAfterUpkeep => {
+                self.active_player != player && !matches!(self.step, Step::Upkeep | Step::Cleanup)
+            }
             PlayRestriction::BeforeCombatDamage => !matches!(
                 self.step,
                 Step::CombatDamage

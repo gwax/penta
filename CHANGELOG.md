@@ -99,6 +99,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Reset**, the third card in the casting-window cluster, and the last of
+  those three windows: an opponent's turn past their upkeep. A play option's
+  `restriction` may read `opponentsTurnAfterUpkeep`.
+
 - **Festival and Teleport**, and the two casting windows they name. "Only
   during an opponent's upkeep" is the first window that depends on who is
   casting rather than only on the step, so the timing check now takes the
