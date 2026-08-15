@@ -241,6 +241,10 @@ pub enum ActivationTimingDef {
     /// Only during an upkeep step, whoever is taking the turn. Tolaria opens
     /// on both, which is what makes it an answer to an attack.
     AnyUpkeep,
+    /// Only during the combat phase, whoever is taking the turn. Every step
+    /// from the beginning of combat through the end of combat, which is what
+    /// lets an animated artifact block as well as attack.
+    DuringCombat,
     /// Only during the end-of-combat step. Combat is over and the damage is
     /// dealt, so a land shooting an attacker here is finishing off something
     /// that survived rather than stopping it.

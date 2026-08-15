@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Jade Statue**, with a during-combat activation window. The window is the
+  whole combat phase on either player's turn rather than one step, so the
+  Statue can animate before attackers are chosen or after blockers are, and
+  the animation expires with the combat rather than at cleanup.
+
 - **Howling Mine**, with an untapped-source trigger condition. The "if
   untapped" is an intervening-if, read both when the draw step begins and
   again as the trigger resolves, so tapping the Mine in response still denies

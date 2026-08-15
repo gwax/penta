@@ -20,6 +20,20 @@ impl Step {
         matches!(self, Self::PrecombatMain | Self::PostcombatMain)
     }
 
+    /// Whether this step is part of the combat phase. Every step from the
+    /// beginning of combat through the end of combat, on either player's
+    /// turn -- which is what an unqualified "during combat" asks for.
+    pub(super) const fn is_combat(self) -> bool {
+        matches!(
+            self,
+            Self::BeginningOfCombat
+                | Self::DeclareAttackers
+                | Self::DeclareBlockers
+                | Self::CombatDamage
+                | Self::EndOfCombat
+        )
+    }
+
     pub(super) const fn ends_phase(self) -> bool {
         matches!(
             self,

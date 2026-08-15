@@ -4,7 +4,7 @@ use crate::card::{
     ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
     ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
-    DamageEventMatcherDef, DamagePreventionDef, DamagePreventionFollowUpDef,
+    CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef, DamagePreventionFollowUpDef,
     DamageRecipientMatcherDef, DamageSourceGroupDef, DiscardSelectionDef, EffectDef,
     EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility,
     LikelihoodDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
@@ -4629,8 +4629,40 @@ pub(in crate::card::sets) static IVORY_CUP: CardRecord = CardRecord::new(
 // LEA 252 — Jade Monolith
 // Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{1}: The next time a source of your choice would deal damage to target creature this turn, that source deals that damage to you instead”.
 
+/// The Statue keeps its artifact type, so it is an artifact creature rather
+/// than a creature that used to be an artifact.
+static JADE_STATUE_ANIMATION: [AppliedEffectDef; 3] = [
+    AppliedEffectDef::add_card_types(
+        CardTypeSet::single(CardType::Creature).with(CardType::Artifact),
+    ),
+    AppliedEffectDef::add_creature_types(CreatureTypeSetDef::named(&["Golem"])),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(3), ValueDef::Constant(6)),
+];
+
 // LEA 253 — Jade Statue
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{2}: This artifact becomes a 3/6 Golem artifact creature until end of combat. Activate only during combat”.
+pub(in crate::card::sets) static JADE_STATUE: CardRecord = CardRecord::new(
+    cards::JADE_STATUE,
+    "Jade Statue",
+    CardArt::new("8d82d94b-ceef-4533-a4f2-b6442a61b839", "Dan Frazier"),
+    CardSet::Alpha,
+    // Combat only, and only for that combat. The window opens at the
+    // beginning of combat, which is early enough to attack, and stays open
+    // past the block declaration, which is what lets a Statue that was never
+    // a creature when blockers were chosen still be one when damage is dealt.
+    CardRules::new_artifact(mana_cost!("{4}")).with_ability(
+        AbilityDef::activated(
+            "{2}: This artifact becomes a 3/6 Golem artifact creature until end of combat. \
+             Activate only during combat.",
+            &[AbilityCostDef::Mana(mana_cost!("{2}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&JADE_STATUE_ANIMATION),
+                duration: ResolvedEffectDurationDef::UntilEndOfCombat,
+            },
+        )
+        .with_activation_timing(ActivationTimingDef::DuringCombat),
+    ),
+);
 
 // LEA 254 — Jayemdae Tome
 pub(in crate::card::sets) static JAYEMDAE_TOME: CardRecord = CardRecord::new(
@@ -5414,6 +5446,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ICY_MANIPULATOR,
     &IRON_STAR,
     &IVORY_CUP,
+    &JADE_STATUE,
     &JAYEMDAE_TOME,
     &JUGGERNAUT,
     &KORMUS_BELL,

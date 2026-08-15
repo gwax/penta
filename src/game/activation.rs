@@ -23,6 +23,7 @@ impl Game {
                 self.active_player == player && self.step == Step::Upkeep
             }
             ActivationTimingDef::AnyUpkeep => self.step == Step::Upkeep,
+            ActivationTimingDef::DuringCombat => self.step.is_combat(),
             ActivationTimingDef::EndOfCombat => self.step == Step::EndOfCombat,
             ActivationTimingDef::SorcerySpeed => {
                 self.active_player == player && self.step.is_main() && self.stack.is_empty()
