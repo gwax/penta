@@ -3781,7 +3781,14 @@ pub(in crate::card::sets) static THICKET_BASILISK: CardRecord = CardRecord::new(
 );
 
 // LEA 219 — Timber Wolves
-// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
+pub(in crate::card::sets) static TIMBER_WOLVES: CardRecord = CardRecord::new(
+    cards::TIMBER_WOLVES,
+    "Timber Wolves",
+    CardArt::new("bc2570a4-eef9-430d-b6c2-cd51d29b9d01", "Melissa A. Benson"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{G}"), &["Wolf"], 1, 1)
+        .with_abilities(&[abilities::banding()]),
+);
 
 // LEA 220 — Tranquility
 pub(in crate::card::sets) static TRANQUILITY: CardRecord = CardRecord::new(
@@ -4237,7 +4244,27 @@ pub(in crate::card::sets) static GLASSES_OF_URZA: CardRecord = CardRecord::new(
 );
 
 // LEA 246 — Helm of Chatzuk
-// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
+pub(in crate::card::sets) static HELM_OF_CHATZUK: CardRecord = CardRecord::new(
+    cards::HELM_OF_CHATZUK,
+    "Helm of Chatzuk",
+    CardArt::new("3792c6ef-c4e6-4923-9a51-7d28fbc5c393", "Mark Tedin"),
+    CardSet::Alpha,
+    CardRules::new_artifact(mana_cost!("{1}")).with_ability(AbilityDef::activated_with_targets(
+        "{1}, {T}: Target creature gains banding until end of turn.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{1}")),
+            AbilityCostDef::TapSource,
+        ],
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::add_ability(&abilities::banding()),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // LEA 247 — Howling Mine
 // Audit: blocked — Needs a hidden-zone decision and continuation for “At the beginning of each player's draw step, if this artifact is untapped, that player draws an additional card”.
@@ -5074,6 +5101,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SHANODIN_DRYADS,
     &STREAM_OF_LIFE,
     &THICKET_BASILISK,
+    &TIMBER_WOLVES,
     &TRANQUILITY,
     &TSUNAMI,
     &VERDURAN_ENCHANTRESS,
@@ -5095,6 +5123,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DINGUS_EGG,
     &DISRUPTING_SCEPTER,
     &GLASSES_OF_URZA,
+    &HELM_OF_CHATZUK,
     &ICY_MANIPULATOR,
     &IRON_STAR,
     &IVORY_CUP,

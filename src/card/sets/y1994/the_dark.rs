@@ -101,7 +101,16 @@ pub(in crate::card::sets) static HOLY_LIGHT: CardRecord = CardRecord::new(
 );
 
 // DRK 11 — Knights of Thorn
-// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Protection from red is available.
+pub(in crate::card::sets) static KNIGHTS_OF_THORN: CardRecord = CardRecord::new(
+    cards::KNIGHTS_OF_THORN,
+    "Knights of Thorn",
+    CardArt::new("ae541c73-9903-49e6-997a-db4701135145", "Christopher Rush"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{3}{W}"), &["Human", "Knight"], 2, 2).with_abilities(&[
+        abilities::protection_from(ManaColor::Red),
+        abilities::banding(),
+    ]),
+);
 
 // DRK 12 — Martyr's Cry
 // Audit: blocked — Needs a zone-object query and identity-preserving continuation for “Exile all white creatures. For each creature exiled this way, its controller draws a card”.
@@ -161,7 +170,14 @@ pub(in crate::card::sets) static MORALE: CardRecord = CardRecord::new(
 );
 
 // DRK 15 — Pikemen
-// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
+pub(in crate::card::sets) static PIKEMEN: CardRecord = CardRecord::new(
+    cards::PIKEMEN,
+    "Pikemen",
+    CardArt::new("bf2f6936-b50c-4907-9b55-ebf8a3fba8f5", "Dennis Detwiller"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Soldier"], 1, 1)
+        .with_abilities(&[abilities::first_strike(), abilities::banding()]),
+);
 
 // DRK 16 — Preacher
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “{T}: For as long as this creature remains tapped, gain control of target creature of an opponent's choice they control”.
@@ -1932,8 +1948,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DUST_TO_DUST,
     &EXORCIST,
     &HOLY_LIGHT,
+    &KNIGHTS_OF_THORN,
     &MIRACLE_WORKER,
     &MORALE,
+    &PIKEMEN,
     &SQUIRE,
     &TIVADARS_CRUSADE,
     &WITCH_HUNTER,

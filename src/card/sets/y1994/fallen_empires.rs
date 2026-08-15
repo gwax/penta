@@ -119,7 +119,35 @@ pub(in crate::card::sets) static FARRELS_ZEALOT: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a per-creature optional payment offered to the opposing controller, repeated for each attacking red creature; preventing one creature's combat damage is already expressible.
 
 // FEM 7a — Icatian Infantry
-// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
+pub(in crate::card::sets) static ICATIAN_INFANTRY: CardRecord = CardRecord::new(
+    cards::ICATIAN_INFANTRY,
+    "Icatian Infantry",
+    CardArt::new(
+        "f95d42d8-ba75-43bf-81b8-b02374f03e83",
+        "Edward P. Beard, Jr.",
+    ),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{W}"), &["Human", "Soldier"], 1, 1).with_abilities(&[
+        AbilityDef::activated(
+            "{1}: This creature gains first strike until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        AbilityDef::activated(
+            "{1}: This creature gains banding until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::add_ability(&abilities::banding()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // FEM 8a — Icatian Javelineers
 pub(in crate::card::sets) static ICATIAN_JAVELINEERS: CardRecord = CardRecord::new(
@@ -239,7 +267,14 @@ pub(in crate::card::sets) static ICATIAN_MONEYCHANGER: CardRecord = CardRecord::
 );
 
 // FEM 11 — Icatian Phalanx
-// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
+pub(in crate::card::sets) static ICATIAN_PHALANX: CardRecord = CardRecord::new(
+    cards::ICATIAN_PHALANX,
+    "Icatian Phalanx",
+    CardArt::new("7bc02d30-3eef-4a48-8b11-b4f37219ab3a", "Kaja Foglio"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{4}{W}"), &["Human", "Soldier"], 2, 4)
+        .with_abilities(&[abilities::banding()]),
+);
 
 // FEM 12 — Icatian Priest
 pub(in crate::card::sets) static ICATIAN_PRIEST: CardRecord = CardRecord::new(
@@ -1884,9 +1919,11 @@ pub(in crate::card::sets) static SVYELUNITE_TEMPLE: CardRecord = CardRecord::new
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &COMBAT_MEDIC,
     &FARRELS_ZEALOT,
+    &ICATIAN_INFANTRY,
     &ICATIAN_JAVELINEERS,
     &ICATIAN_LIEUTENANT,
     &ICATIAN_MONEYCHANGER,
+    &ICATIAN_PHALANX,
     &ICATIAN_PRIEST,
     &ICATIAN_SCOUT,
     &ICATIAN_TOWN,

@@ -180,7 +180,14 @@ pub(in crate::card::sets) static REPENTANT_BLACKSMITH: CardRecord = CardRecord::
 // Audit: blocked — Needs nested-game setup, execution, and result propagation for Shahrazad's library-backed subgame.
 
 // ARN 11 — War Elephant
-// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
+pub(in crate::card::sets) static WAR_ELEPHANT: CardRecord = CardRecord::new(
+    cards::WAR_ELEPHANT,
+    "War Elephant",
+    CardArt::new("7416c366-95cc-4799-b6c6-34d8fad8c202", "Kristen Bishop"),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{3}{W}"), &["Elephant"], 2, 2)
+        .with_abilities(&[abilities::trample(), abilities::banding()]),
+);
 
 // ARN 12 — Dandân
 pub(in crate::card::sets) static DANDAN: CardRecord = CardRecord::new(
@@ -1341,6 +1348,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MOORISH_CAVALRY,
     &PIETY,
     &REPENTANT_BLACKSMITH,
+    &WAR_ELEPHANT,
     &DANDAN,
     &FISHLIVER_OIL,
     &FLYING_MEN,

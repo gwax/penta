@@ -171,10 +171,23 @@ fn attackers_on_different_defenders_cannot_band() {
     );
 }
 
+/// Every identity that prints banding, or hands it out, and whose other
+/// clauses the engine already covers.
 #[test]
-fn both_identities_report_complete_coverage() {
+fn the_banding_identities_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::BENALISH_HERO, cards::MESA_PEGASUS] {
+    for definition in [
+        cards::BENALISH_HERO,
+        cards::MESA_PEGASUS,
+        cards::TIMBER_WOLVES,
+        cards::HELM_OF_CHATZUK,
+        cards::WAR_ELEPHANT,
+        cards::ICATIAN_INFANTRY,
+        cards::ICATIAN_PHALANX,
+        cards::KNIGHTS_OF_THORN,
+        cards::PIKEMEN,
+        cards::NALATHNI_DRAGON,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),

@@ -94,8 +94,9 @@ distinguishes snapshots of the covered source and build inputs.
   index they share. A band is blocked as a group -- one declaration against any
   member puts the blocker in front of all of them, for one block rather than
   one per creature -- and a creature with banding on either side of a block
-  hands its controller the other creature's damage division. Benalish Hero and
-  Mesa Pegasus.
+  hands its controller the other creature's damage division. Benalish Hero,
+  Mesa Pegasus, Timber Wolves, Helm of Chatzuk, War Elephant, Icatian Infantry,
+  Icatian Phalanx, Knights of Thorn, Pikemen, and Nalathni Dragon.
 
 - **Blocking an additional creature.** A creature blocks one attacker unless a
   card says otherwise. Two-Headed Giant of Foriys.
