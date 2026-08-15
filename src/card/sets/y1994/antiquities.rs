@@ -991,7 +991,7 @@ pub(in crate::card::sets) static MILLSTONE: CardRecord = CardRecord::new(
 );
 
 // ATQ 57 — Mishra's War Machine
-// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
+// Audit: blocked — Needs a discard as an unless-payment, and a follow-up that reads whether it was declined, for “deals 3 damage to you unless you discard a card. If it deals damage to you this way, tap it”. Unless-payments currently take mana only. Banding is implemented.
 
 // ATQ 58 — Obelisk of Undoing
 pub(in crate::card::sets) static OBELISK_OF_UNDOING: CardRecord = CardRecord::new(
@@ -1333,7 +1333,7 @@ pub(in crate::card::sets) static TRISKELION: CardRecord = CardRecord::new(
 );
 
 // ATQ 74 — Urza's Avenger
-// Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
+// Audit: blocked — Needs a modal activated ability for “gains your choice of banding, flying, first strike, or trample”; modes are currently a spell-only shape. Each of the four grants is implemented on its own.
 
 // ATQ 75 — Urza's Chalice
 pub(in crate::card::sets) static URZAS_CHALICE: CardRecord = CardRecord::new(
