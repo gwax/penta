@@ -63,6 +63,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Damage dealt to you this turn."** A running total per player,
+  accumulated as the damage lands rather than derived from life totals, so
+  gaining life in between does not erase it. Damage is also recorded under
+  each source group it belongs to, since a group such as "by artifacts" is
+  only answerable while the artifact is still the source. Simulacrum and
+  Reverse Polarity.
+
 - **"Can't attack if ..." as the mirror of "can't attack unless ...".** The
   negation is over the existential rather than the object -- stopped when
   anything matches, rather than when nothing does -- which a negated object

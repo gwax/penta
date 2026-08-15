@@ -678,6 +678,7 @@ fn validate_value_target_references(
         | ValueDef::SourceToughness
         | ValueDef::TriggerEventAmount
         | ValueDef::CardsInHandAbove { .. }
+        | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
         // This reads the share assigned to the target currently being
         // affected; the surrounding recipient carries the slot reference.

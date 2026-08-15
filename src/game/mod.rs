@@ -17,16 +17,17 @@ use crate::card::{
     CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext,
     CharacteristicOperationDef, ColorSet, ComparisonDef, ConditionDef, ControlDurationDef,
     CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef,
-    DamageRecipientMatcherDef, DamageSourceMatcherDef, DeclarativeAbilityDef, DiscardSelectionDef,
-    DividedTotal, DoubleFacedKind, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
-    EffectRecipientDef, EffectRecipientSetDef, HybridPair, KeywordAbility, ManaCost,
-    ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, QuantifierDef, ReplacementChoiceDef,
-    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    SetOperationDef, TapPurposeDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef,
-    ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, applicable_part_ids,
+    DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef, DeclarativeAbilityDef,
+    DiscardSelectionDef, DividedTotal, DoubleFacedKind, EffectDef, EffectPaymentCostDef,
+    EffectPaymentDef, EffectRecipientDef, EffectRecipientSetDef, HybridPair, KeywordAbility,
+    ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayActionKind, PlayOptionDef, PlayRestriction,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, QuantifierDef,
+    ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, SetOperationDef, TapPurposeDef, TargetPredicate, TargetSlotDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnPhaseDef,
+    TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities,
+    applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::Deck;
@@ -728,6 +729,11 @@ pub struct Game {
     next_continuous_effect_timestamp: u64,
     turn: u32,
     turns_started: [u32; 2],
+    /// Damage each player has been dealt this turn, in total and by the
+    /// named source groups. Accumulated as the damage is dealt, since a
+    /// group such as "unblocked creatures" is only answerable then.
+    damage_taken_this_turn: [u16; 2],
+    damage_taken_by_group_this_turn: [[u16; DamageSourceGroupDef::COUNT]; 2],
     active_player: PlayerId,
     priority: PlayerId,
     consecutive_passes: u8,

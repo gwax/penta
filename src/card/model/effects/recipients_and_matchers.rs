@@ -282,6 +282,40 @@ pub enum DamageKindDef {
     Combat,
 }
 
+/// A named group of damage sources a turn-long prevention can answer.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DamageSourceGroupDef {
+    CreaturesWithFlying,
+    AttackingCreaturesWithoutFlying,
+    Artifacts,
+    /// Attacking creatures nothing is blocking. The question is asked as the
+    /// damage arrives, so a blocker removed mid-combat changes the answer.
+    UnblockedCreatures,
+}
+
+impl DamageSourceGroupDef {
+    /// Every group, in the order their per-player damage accumulators are
+    /// stored. Appending is safe; reordering would misread a checkpoint.
+    pub const ALL: [Self; 4] = [
+        Self::CreaturesWithFlying,
+        Self::AttackingCreaturesWithoutFlying,
+        Self::Artifacts,
+        Self::UnblockedCreatures,
+    ];
+
+    pub const COUNT: usize = Self::ALL.len();
+
+    #[must_use]
+    pub const fn index(self) -> usize {
+        match self {
+            Self::CreaturesWithFlying => 0,
+            Self::AttackingCreaturesWithoutFlying => 1,
+            Self::Artifacts => 2,
+            Self::UnblockedCreatures => 3,
+        }
+    }
+}
+
 /// The source side of a prospective damage event.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum DamageSourceMatcherDef {

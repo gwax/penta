@@ -24,6 +24,12 @@ pub(super) struct GameSnapshot {
     pub(super) version: u32,
     pub(super) simulation_fingerprint: String,
     pub(super) turns_started: [u32; 2],
+    /// Damage each player has taken this turn, in total and per source
+    /// group. Absent from checkpoints that predate the accumulators.
+    #[serde(default)]
+    pub(super) damage_taken_this_turn: [u16; 2],
+    #[serde(default)]
+    pub(super) damage_taken_by_group_this_turn: Vec<Vec<u16>>,
     pub(super) next_decision_id: u32,
     pub(super) next_trigger_id: u32,
     pub(super) next_continuous_effect_timestamp: u64,

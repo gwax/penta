@@ -1,7 +1,7 @@
 use crate::ids::TargetIndex;
 
 use super::super::{CounterKind, ObjectPredicateDef, PlayerRelation, ZoneKind};
-use super::PlayerSetDef;
+use super::{DamageSourceGroupDef, PlayerSetDef};
 
 /// The two branches of a conditional value.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -116,6 +116,14 @@ pub enum ValueDef {
     CardsInHandAbove {
         player: PlayerRelation,
         threshold: u8,
+    },
+    /// How much damage a player has been dealt so far this turn, optionally
+    /// only from one named source group. Accumulated as the damage lands,
+    /// because a group such as "unblocked creatures" stops being answerable
+    /// once combat is over.
+    DamageTakenThisTurn {
+        player: PlayerRelation,
+        source: Option<DamageSourceGroupDef>,
     },
     /// How many objects match, for the "for each" clauses. Held by reference
     /// so that `ValueDef` stays small enough to embed freely.

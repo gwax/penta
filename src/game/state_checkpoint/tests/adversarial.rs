@@ -559,9 +559,12 @@ fn retained_trigger_state_never_serializes_unrebindable_hidden_object_ids() {
 #[test]
 fn a_checkpoint_missing_any_required_field_is_rejected_by_name() {
     // Top-level additive members belong in this explicit list so a genuinely
-    // required field cannot quietly become optional. Format 3 currently has
-    // none; nested additive members are exercised through their parent field.
-    const ADDITIVE: &[&str] = &[];
+    // required field cannot quietly become optional; nested additive members
+    // are exercised through their parent field.
+    //
+    // The damage accumulators default to zero, which is what a checkpoint
+    // taken before they existed means: no damage recorded this turn.
+    const ADDITIVE: &[&str] = &["damageTakenThisTurn", "damageTakenByGroupThisTurn"];
 
     let fixture = Fixture::played(120, 8_101);
     fixture.assert_baseline_rebuilds();

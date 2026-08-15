@@ -2142,8 +2142,44 @@ pub(in crate::card::sets) static SENGIR_VAMPIRE: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Both halves read the same running total, so the life gained and the damage
+/// dealt always agree.
+static DAMAGE_DEALT_TO_YOU_THIS_TURN: ValueDef = ValueDef::DamageTakenThisTurn {
+    player: PlayerRelation::You,
+    source: None,
+};
+
+static SIMULACRUM_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
 // LEA 128 — Simulacrum
-// Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “You gain life equal to the damage dealt to you this turn. Simulacrum deals damage to target creature you control equal to the damage dealt to you this turn”.
+pub(in crate::card::sets) static SIMULACRUM: CardRecord = CardRecord::new(
+    cards::SIMULACRUM,
+    "Simulacrum",
+    CardArt::new("35c3a78d-cc79-4187-929a-8aa1d1469990", "Mark Poole"),
+    CardSet::Alpha,
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "You gain life equal to the damage dealt to you this turn. Simulacrum deals damage to \
+         target creature you control equal to the damage dealt to you this turn.",
+        &SIMULACRUM_TARGET,
+        EffectDef::Sequence(&[
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: DAMAGE_DEALT_TO_YOU_THIS_TURN,
+            },
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: DAMAGE_DEALT_TO_YOU_THIS_TURN,
+            },
+        ]),
+    )),
+);
 
 // LEA 129 — Sinkhole
 pub(in crate::card::sets) static SINKHOLE: CardRecord = CardRecord::new(
@@ -4866,6 +4902,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ROYAL_ASSASSIN,
     &SCATHE_ZOMBIES,
     &SENGIR_VAMPIRE,
+    &SIMULACRUM,
     &SINKHOLE,
     &TERROR,
     &UNHOLY_STRENGTH,

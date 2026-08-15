@@ -421,6 +421,100 @@ impl Game {
     }
 
     #[allow(clippy::too_many_lines)]
+    /// Records damage a player has been dealt this turn, in total and under
+    /// each source group it belongs to. The groups are answered now rather
+    /// than later: "damage dealt by unblocked creatures" stops being
+    /// answerable once combat is over.
+    fn record_damage_taken(&mut self, player: PlayerId, amount: u16, source: Option<GameObjectId>) {
+        if amount == 0 {
+            return;
+        }
+        self.damage_taken_this_turn[player.index()] =
+            self.damage_taken_this_turn[player.index()].saturating_add(amount);
+        let Some(source) = source else {
+            return;
+        };
+        for group in crate::card::DamageSourceGroupDef::ALL {
+            if self.damage_source_is_in_group(source, Self::relational_source_filter(group)) {
+                let slot = &mut self.damage_taken_by_group_this_turn[player.index()][group.index()];
+                *slot = slot.saturating_add(amount);
+            }
+        }
+    }
+
+    pub(super) fn damage_taken_this_turn(
+        &self,
+        player: PlayerId,
+        group: Option<crate::card::DamageSourceGroupDef>,
+    ) -> u16 {
+        match group {
+            None => self.damage_taken_this_turn[player.index()],
+            Some(group) => self.damage_taken_by_group_this_turn[player.index()][group.index()],
+        }
+    }
+
+    /// Damage landing on a player: the life change, the running total the
+    /// turn keeps, and the note a source makes of having connected.
+    fn deal_damage_to_player(
+        &mut self,
+        player: PlayerId,
+        amount: u16,
+        source: Option<GameObjectId>,
+    ) {
+        self.record_damage_taken(player, amount, source);
+        self.deal_damage(player, amount);
+        if amount > 0
+            && let Some(damager) = source.and_then(|source| {
+                self.battlefield
+                    .iter_mut()
+                    .find(|permanent| permanent.card.id == source)
+            })
+            && damager.controller != player
+        {
+            damager.dealt_damage_to_opponent_this_turn = true;
+        }
+    }
+
+    /// Damage landing on a permanent. A planeswalker loses loyalty instead of
+    /// marking damage; everything else marks it and remembers what dealt it.
+    /// Answers whether the damage was actually dealt to something.
+    fn deal_damage_to_permanent(
+        &mut self,
+        id: GameObjectId,
+        amount: u16,
+        source: Option<GameObjectId>,
+        has_deathtouch: bool,
+    ) -> bool {
+        let Some(index) = self
+            .battlefield
+            .iter()
+            .position(|permanent| permanent.card.id == id)
+        else {
+            return false;
+        };
+        if self
+            .permanent_types(&self.battlefield[index])
+            .is_some_and(|types| types.contains(CardType::Planeswalker))
+        {
+            let remaining = self.battlefield[index]
+                .counters(CounterKind::Loyalty)
+                .saturating_sub(amount);
+            self.battlefield[index].set_counters(CounterKind::Loyalty, remaining);
+            return true;
+        }
+        let permanent = &mut self.battlefield[index];
+        permanent.damage = permanent.damage.saturating_add(amount);
+        if amount > 0 {
+            permanent.deathtouch_damage |= has_deathtouch;
+            if let Some(source) = source
+                && !permanent.damage_sources.contains(&source)
+            {
+                permanent.damage_sources.push(source);
+            }
+        }
+        true
+    }
+
     pub(super) fn damage_target_from_kind(
         &mut self,
         source: Option<GameObjectId>,
@@ -486,50 +580,11 @@ impl Game {
         let has_deathtouch = source_has_keyword(KeywordAbility::Deathtouch);
         let dealt_damage = match target {
             Some(Target::Player(player)) => {
-                self.deal_damage(player, amount);
-                if amount > 0
-                    && let Some(damager) = source.and_then(|source| {
-                        self.battlefield
-                            .iter_mut()
-                            .find(|permanent| permanent.card.id == source)
-                    })
-                    && damager.controller != player
-                {
-                    damager.dealt_damage_to_opponent_this_turn = true;
-                }
+                self.deal_damage_to_player(player, amount, source);
                 true
             }
             Some(Target::Permanent(id)) => {
-                if let Some(index) = self
-                    .battlefield
-                    .iter()
-                    .position(|permanent| permanent.card.id == id)
-                {
-                    if self
-                        .permanent_types(&self.battlefield[index])
-                        .is_some_and(|types| types.contains(CardType::Planeswalker))
-                    {
-                        let remaining = self.battlefield[index]
-                            .counters(CounterKind::Loyalty)
-                            .saturating_sub(amount);
-                        self.battlefield[index].set_counters(CounterKind::Loyalty, remaining);
-                        true
-                    } else {
-                        let permanent = &mut self.battlefield[index];
-                        permanent.damage = permanent.damage.saturating_add(amount);
-                        if amount > 0 {
-                            permanent.deathtouch_damage |= has_deathtouch;
-                            if let Some(source) = source
-                                && !permanent.damage_sources.contains(&source)
-                            {
-                                permanent.damage_sources.push(source);
-                            }
-                        }
-                        true
-                    }
-                } else {
-                    false
-                }
+                self.deal_damage_to_permanent(id, amount, source, has_deathtouch)
             }
             Some(Target::Card(_) | Target::Spell(_)) | None => false,
         };

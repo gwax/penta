@@ -5,12 +5,12 @@ use serde_json::Value;
 use super::{
     AbilitySourceRef, ApplicableReplacement, AppliedStackEffect, BasicLandTypeChange, CardInstance,
     CharacteristicSource, CombatDamageStage, ContinuousEffectExpiration, ContinuousEffectTimestamp,
-    CopiableAbility, CopiableCharacteristics, CounterKind, EffectResolutionContext,
-    EntryCompletion, Game, GameEvent, GameObjectId, GameStack, InstalledTrigger,
-    InstalledTriggerLifetime, Mana, ManaSource, ObjectBacking, PendingBattlefieldEntry,
-    PendingEvent, PendingReplacementEffect, Permanent, PlayerId, PlayerState, Pregame,
-    RelationalSourceFilter, ReplaceableEvent, ReplacementEffectContext, ReplayRng,
-    ResolvedAbilityOperation, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
+    CopiableAbility, CopiableCharacteristics, CounterKind, DamageSourceGroupDef,
+    EffectResolutionContext, EntryCompletion, Game, GameEvent, GameObjectId, GameStack,
+    InstalledTrigger, InstalledTriggerLifetime, Mana, ManaSource, ObjectBacking,
+    PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent, PlayerId,
+    PlayerState, Pregame, RelationalSourceFilter, ReplaceableEvent, ReplacementEffectContext,
+    ReplayRng, ResolvedAbilityOperation, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
     ResolvedDamagePrevention, ResolvedDamagePreventionCapacity, ResolvedDamagePreventionCoverage,
     ResolvedDamageRecipientMatcher, ResolvedDamageRedirect, ResolvedDamageSourceMatcher,
     ResolvedPlayRestriction, ResolvedPowerToughnessOperation, RetiredObject, ScopedEffect,
@@ -401,6 +401,12 @@ impl Game {
             version: crate::protocol::CHECKPOINT_VERSION,
             simulation_fingerprint: crate::protocol::SIMULATION_FINGERPRINT.to_owned(),
             turns_started: self.turns_started,
+            damage_taken_this_turn: self.damage_taken_this_turn,
+            damage_taken_by_group_this_turn: self
+                .damage_taken_by_group_this_turn
+                .iter()
+                .map(|groups| groups.to_vec())
+                .collect(),
             next_decision_id: self.next_decision_id,
             next_trigger_id: self.next_trigger_id,
             next_continuous_effect_timestamp: self.next_continuous_effect_timestamp,
@@ -693,6 +699,24 @@ impl Game {
             .collect::<Result<Vec<_>, _>>()?;
         let mut game = Self {
             format,
+            damage_taken_this_turn: checkpoint.damage_taken_this_turn,
+            damage_taken_by_group_this_turn: {
+                let mut groups = [[0; DamageSourceGroupDef::COUNT]; 2];
+                for (seat, stored) in checkpoint
+                    .damage_taken_by_group_this_turn
+                    .iter()
+                    .enumerate()
+                {
+                    // A shorter historical vector is tolerated: groups are
+                    // only ever appended.
+                    if let Some(row) = groups.get_mut(seat) {
+                        for (slot, value) in row.iter_mut().zip(stored) {
+                            *slot = *value;
+                        }
+                    }
+                }
+                groups
+            },
             seed: rollout_seed,
             rng: ReplayRng::new(rollout_seed),
             catalog,

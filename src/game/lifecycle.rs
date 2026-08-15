@@ -1,9 +1,10 @@
 use super::{
     BTreeMap, CardCatalog, CardDefinitionId, CardInstance, CharacteristicSource, CombatDamageStage,
-    ContinuousEffectTimestamp, CounterKind, Deck, Format, Game, GameError, GameEvent, GameObjectId,
-    GameStack, ManaPool, ObjectBacking, Permanent, PermanentLastKnownInformation, PhysicalCard,
-    PhysicalCardId, PlayerId, PlayerState, Pregame, ReplayRng, RetiredObject, StackObject, Step,
-    ValueDef, VecDeque, ZoneChangeOutcome, remove_card,
+    ContinuousEffectTimestamp, CounterKind, DamageSourceGroupDef, Deck, Format, Game, GameError,
+    GameEvent, GameObjectId, GameStack, ManaPool, ObjectBacking, Permanent,
+    PermanentLastKnownInformation, PhysicalCard, PhysicalCardId, PlayerId, PlayerState, Pregame,
+    ReplayRng, RetiredObject, StackObject, Step, ValueDef, VecDeque, ZoneChangeOutcome,
+    remove_card,
 };
 
 impl Game {
@@ -164,6 +165,8 @@ impl Game {
             next_continuous_effect_timestamp: u64::from(next_object_id),
             turn: 1,
             turns_started: [1, 0],
+            damage_taken_this_turn: [0; 2],
+            damage_taken_by_group_this_turn: [[0; DamageSourceGroupDef::COUNT]; 2],
             active_player: PlayerId::One,
             priority: PlayerId::One,
             consecutive_passes: 0,

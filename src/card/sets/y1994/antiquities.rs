@@ -7,8 +7,8 @@ use crate::card::{
     DamageSourceGroupDef, DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectPaymentDef,
     EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor, ManaRestrictionDef,
     ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRelation, PlayerSetDef,
-    ReplacementEffectDef, ResolvedEffectDurationDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    ReplacementEffectDef, ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -140,8 +140,30 @@ pub(in crate::card::sets) static MARTYRS_OF_KORLIS: CardRecord = CardRecord::new
     ),
 );
 
+/// Only what artifacts dealt counts, and it counts twice.
+static REVERSE_POLARITY_DOUBLED: ScaledValueDef = ScaledValueDef::new(
+    ValueDef::DamageTakenThisTurn {
+        player: PlayerRelation::You,
+        source: Some(DamageSourceGroupDef::Artifacts),
+    },
+    2,
+);
+
 // ATQ 7 — Reverse Polarity
-// Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “You gain X life, where X is twice the damage dealt to you so far this turn by artifacts”.
+pub(in crate::card::sets) static REVERSE_POLARITY: CardRecord = CardRecord::new(
+    cards::REVERSE_POLARITY,
+    "Reverse Polarity",
+    CardArt::new("da7ed8ba-3886-4779-a9b3-6892a7ed3527", "Justin Hampton"),
+    CardSet::Antiquities,
+    CardRules::new_instant(mana_cost!("{W}{W}")).with_ability(AbilityDef::spell(
+        "You gain X life, where X is twice the damage dealt to you so far this turn by \
+         artifacts.",
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Scaled(&REVERSE_POLARITY_DOUBLED),
+        },
+    )),
+);
 
 // ATQ 8 — Drafna's Restoration
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “Put any number of target artifact cards from target player's graveyard on top of their library in any order”.
@@ -1485,6 +1507,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARGIVIAN_BLACKSMITH,
     &CIRCLE_OF_PROTECTION_ARTIFACTS,
     &MARTYRS_OF_KORLIS,
+    &REVERSE_POLARITY,
     &ENERGY_FLUX,
     &HURKYLS_RECALL,
     &RECONSTRUCTION,

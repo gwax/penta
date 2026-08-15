@@ -400,6 +400,7 @@ impl HandcraftedPolicy {
             | ValueDef::SourceToughness
             | ValueDef::TriggerEventAmount
             | ValueDef::CardsInHandAbove { .. }
+            | ValueDef::DamageTakenThisTurn { .. }
             | ValueDef::CountMatchingObjects(_)
             | ValueDef::AnyMatchingObject(_)
             | ValueDef::CountersOnSource(_)

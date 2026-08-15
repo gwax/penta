@@ -452,6 +452,11 @@ impl Game {
             permanent.attacks_this_turn = 0;
             permanent.damage_sources.clear();
         }
+        // "Damage dealt to you this turn" resets with the turn, not with
+        // cleanup: a spell cast in the postcombat main phase still reads what
+        // combat did.
+        self.damage_taken_this_turn = [0; 2];
+        self.damage_taken_by_group_this_turn = [[0; crate::card::DamageSourceGroupDef::COUNT]; 2];
         let winter_orb = self.winter_orb_active();
         let smoke = self.count_behavior(CardBehavior::Smoke) > 0;
         let restricted_lands: Vec<_> = self

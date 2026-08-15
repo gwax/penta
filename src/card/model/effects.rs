@@ -951,17 +951,6 @@ impl EffectDef {
     }
 }
 
-/// A named group of damage sources a turn-long prevention can answer.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum DamageSourceGroupDef {
-    CreaturesWithFlying,
-    AttackingCreaturesWithoutFlying,
-    Artifacts,
-    /// Attacking creatures nothing is blocking. The question is asked as the
-    /// damage arrives, so a blocker removed mid-combat changes the answer.
-    UnblockedCreatures,
-}
-
 /// A major turn phase that a resolving effect can insert.
 ///
 /// This is intentionally narrower than [`TurnStepDef`]. Steps remain trigger

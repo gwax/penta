@@ -263,6 +263,7 @@ fn validate_value_shape(
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggerEventAmount
         | ValueDef::CardsInHandAbove { .. }
+        | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
         | ValueDef::DividedAmongTargets => Ok(()),
     }

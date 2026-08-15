@@ -53,6 +53,20 @@ impl Game {
             ValueDef::CountersOnSource(kind) => object.source.map_or(0, |source| {
                 i32::from(self.current_or_last_known_counters(source, kind))
             }),
+            ValueDef::DamageTakenThisTurn { player, source } => {
+                let player = [PlayerId::One, PlayerId::Two]
+                    .into_iter()
+                    .find(|candidate| {
+                        self.player_relation_matches(
+                            *candidate,
+                            player,
+                            object.controller,
+                            context.trigger,
+                        )
+                    })
+                    .unwrap_or(object.controller);
+                i32::from(self.damage_taken_this_turn(player, source))
+            }
             ValueDef::CardsInHandAbove { player, threshold } => {
                 let player = [PlayerId::One, PlayerId::Two]
                     .into_iter()
