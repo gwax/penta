@@ -185,6 +185,73 @@ fn removing_a_blocker_from_combat_clears_the_blocking_relationship() {
     assert_eq!(blocker.damage, 0);
 }
 
+/// Goblin Kites reaches both branches too, and the losing one takes the
+/// creature it just made fly. The delayed trigger has to remember which
+/// creature that was, which is the half a coin alone would not test.
+#[test]
+fn goblin_kites_sometimes_takes_the_creature_it_lifted() {
+    let (won, lost) = outcomes(|seed| {
+        let mut game = ready_game_with_seed(seed);
+        game.turns_started[PlayerId::One.index()] = 1;
+        game.battlefield
+            .push(creature(10_000, cards::GOBLIN_KITES, PlayerId::One));
+        let lifted = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One);
+        let lifted_id = lifted.card.id;
+        game.battlefield.push(lifted);
+        // A second creature the ability could have chosen instead, so the
+        // sacrifice has to name the one it actually lifted.
+        let bystander = creature(10_002, cards::MONSS_GOBLIN_RAIDERS, PlayerId::One);
+        let bystander_id = bystander.card.id;
+        game.battlefield.push(bystander);
+        game.players[PlayerId::One.index()].mana_pool.red = 1;
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::ActivateAbility { targets, .. } => targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .any(|target| *target == Target::Permanent(lifted_id)),
+                _ => false,
+            })
+            .expect("the Kites can lift the Lions");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        drain_pending(&mut game);
+
+        let lifted_permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == lifted_id)
+            .expect("still there before the end step");
+        assert!(
+            game.permanent_has_executable_keyword(lifted_permanent, KeywordAbility::Flying),
+            "the pump lands whichever way the coin goes"
+        );
+
+        game.step = Step::PostcombatMain;
+        game.advance_step();
+        game.finish_rules_procedure();
+        drain_pending(&mut game);
+
+        let survived = game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == lifted_id);
+        assert!(
+            game.battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == bystander_id),
+            "the creature it never lifted is never at risk"
+        );
+        survived
+    });
+
+    assert!(won > 0, "the coin can come up heads");
+    assert!(lost > 0, "and it can take the creature");
+}
+
 #[test]
 fn both_identities_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -192,6 +259,7 @@ fn both_identities_report_complete_coverage() {
         cards::ORCISH_CAPTAIN,
         cards::BOTTLE_OF_SULEIMAN,
         cards::MIJAE_DJINN,
+        cards::GOBLIN_KITES,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

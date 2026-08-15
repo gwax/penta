@@ -4,8 +4,8 @@ use crate::card::{
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
     ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
-    DiscardSelectionDef, EffectDef, EffectRecipientDef, LikelihoodDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation,
+    DiscardSelectionDef, EffectDef, EffectRecipientDef, InstalledTriggerDef, LikelihoodDef,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation,
     ReplacementEffectDef, ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef,
     TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
@@ -1077,8 +1077,66 @@ pub(in crate::card::sets) static GOBLIN_GRENADE: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Berserk's shape with a coin in it: pump now, and a delayed trigger that
+/// remembers the same target and may take it away.
+static GOBLIN_KITES_EFFECT: [EffectDef; 2] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::add_ability(&GOBLIN_KITES_FLYING),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+        "Flip a coin at the beginning of the next end step. If you lose the flip, sacrifice \
+         that creature.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::Any,
+        },
+        EffectDef::Randomized {
+            likelihood: LikelihoodDef::new(0.5),
+            on_success: &EffectDef::None,
+            on_failure: &GOBLIN_KITES_SACRIFICE,
+        },
+    ))),
+];
+
+static GOBLIN_KITES_FLYING: AbilityDef = abilities::flying();
+
+static GOBLIN_KITES_SACRIFICE: EffectDef = EffectDef::Sacrifice {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+};
+
+/// "Toughness 2 or less", said as a strict bound because that is the shape the
+/// predicate takes.
+static GOBLIN_KITES_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::ToughnessLessThan(ValueDef::Constant(3)),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
 // FEM 57 — Goblin Kites
-// Audit: blocked — Needs a deterministic recorded coin-flip choice and both result branches for “{R}: Target creature you control with toughness 2 or less gains flying until end of turn. Flip a coin at the beginning of the next end step. If you lose the flip, sacrifice that creature”.
+pub(in crate::card::sets) static GOBLIN_KITES: CardRecord = CardRecord::new(
+    cards::GOBLIN_KITES,
+    "Goblin Kites",
+    CardArt::new("a0a27ac3-2273-469a-92ba-3f4a3d55de6f", "Anson Maddocks"),
+    CardSet::FallenEmpires,
+    CardRules::new_enchantment(mana_cost!("{1}{R}")).with_ability(
+        AbilityDef::activated_with_targets(
+            "{R}: Target creature you control with toughness 2 or less gains flying until end \
+             of turn. Flip a coin at the beginning of the next end step. If you lose the \
+             flip, sacrifice that creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{R}"))],
+            &GOBLIN_KITES_TARGET,
+            EffectDef::Sequence(&GOBLIN_KITES_EFFECT),
+        ),
+    ),
+);
 
 // FEM 58a — Goblin War Drums
 // Audit: blocked — Needs menace as an executable minimum-blocker constraint and external keyword grant for “Creatures you control have menace”.
@@ -1996,6 +2054,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DWARVEN_SOLDIER,
     &GOBLIN_CHIRURGEON,
     &GOBLIN_GRENADE,
+    &GOBLIN_KITES,
     &ORCISH_CAPTAIN,
     &ORCISH_SPY,
     &ORCISH_VETERAN,

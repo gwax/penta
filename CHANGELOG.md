@@ -99,6 +99,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Goblin Kites.** Berserk's shape with a coin in it: a pump now, and a
+  delayed trigger that remembers the same creature and may take it away. Both
+  halves were already there.
+
 - **Sol'kanar the Swamp King.** Its audit line said trigger capture could not
   see a spell's color. It has been able to since the cast event started
   carrying locked characteristics; nothing was missing but the card.
