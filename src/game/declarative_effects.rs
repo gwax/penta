@@ -1,14 +1,14 @@
 use super::{
     AbilityProcedureDef, AbilitySourceRef, AddManaEffectDef, BattlefieldArrival, CardPartId,
-    CharacteristicSource, CopiableAbility, CounteredSpellZone, DeclarativeAbilityDef,
-    DiscardSelectionDef, DrawReplacement, EffectDef, EffectResolutionContext, Game, GameResult,
-    InstalledTrigger, InstalledTriggerLifetime, Mana, ManaPool, ManaSelectionDef, ManaSource,
-    Permanent, ResolvedEffectPayment, SacrificeFollowup, ScopedEffect, StackAbilityResolver,
-    StackObject, Target, TriggerCapture, ValueDef, WinReason, ZoneKind, ZoneMoveCause,
-    public_cards,
+    CharacteristicSource, CopiableAbility, CounteredSpellZone, DeclarativeAbilityDef, EffectDef,
+    EffectResolutionContext, Game, GameResult, InstalledTrigger, InstalledTriggerLifetime, Mana,
+    ManaPool, ManaSelectionDef, ManaSource, Permanent, ResolvedEffectPayment, SacrificeFollowup,
+    ScopedEffect, StackAbilityResolver, StackObject, Target, TriggerCapture, ValueDef, WinReason,
+    ZoneKind, ZoneMoveCause,
 };
 use crate::card::{EffectPaymentCostDef, InstalledTriggerLifetimeDef};
 
+mod hand_and_library;
 mod permanent_state;
 mod prevention;
 mod tapping;
@@ -213,43 +213,6 @@ impl Game {
                     }
                 }
             }
-            EffectDef::DrawCards { recipient, amount } => {
-                let amount = self
-                    .effect_value(amount, object, &context, scoped)
-                    .max(0)
-                    .try_into()
-                    .unwrap_or(u16::MAX);
-                let mut players = self
-                    .effect_recipients(recipient, object, &context, scoped)
-                    .into_iter()
-                    .filter_map(|target| match target {
-                        Target::Player(player) => Some(player),
-                        Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
-                    })
-                    .collect::<Vec<_>>();
-                // CR 121.2c: when multiple players draw, the active player
-                // performs every individual draw first, followed by the
-                // nonactive player. This order belongs to drawing rather than
-                // to the general `EachPlayer` recipient.
-                players.sort_by_key(|player| (*player != self.active_player, player.index()));
-                for player in players {
-                    self.draw_cards(player, amount);
-                }
-            }
-            EffectDef::ShuffleLibrary { player: recipient } => {
-                let mut players = self
-                    .effect_recipients(recipient, object, &context, scoped)
-                    .into_iter()
-                    .filter_map(|target| match target {
-                        Target::Player(player) => Some(player),
-                        Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
-                    })
-                    .collect::<Vec<_>>();
-                players.sort_by_key(|player| (*player != self.active_player, player.index()));
-                for player in players {
-                    self.rng.shuffle(&mut self.players[player.index()].library);
-                }
-            }
             EffectDef::EmptyManaPool { player: recipient } => {
                 for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
@@ -258,90 +221,18 @@ impl Game {
                     }
                 }
             }
-            EffectDef::Discard {
-                recipient,
-                amount,
-                selection: DiscardSelectionDef::RecipientChooses,
-            } => {
-                let amount = self.effect_value(amount, object, &context, scoped).max(0);
-                let cause = ZoneMoveCause::Effect {
-                    controller: object.controller,
-                };
-                let players = self
-                    .effect_recipients(recipient, object, &context, scoped)
-                    .into_iter()
-                    .filter_map(|target| match target {
-                        Target::Player(player) => Some(player),
-                        Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
-                    })
-                    .collect();
-                self.queue_effect_discards(players, amount, cause);
-            }
-            EffectDef::Discard {
-                recipient,
-                amount,
-                selection: DiscardSelectionDef::Random,
-            } => {
-                let amount = self
-                    .effect_value(amount, object, &context, scoped)
-                    .max(0)
-                    .try_into()
-                    .unwrap_or(u16::MAX);
-                let cause = ZoneMoveCause::Effect {
-                    controller: object.controller,
-                };
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Player(player) = target {
-                        self.discard_random(player, amount, cause);
-                    }
-                }
-            }
-            EffectDef::Discard {
-                recipient,
-                amount,
-                selection: DiscardSelectionDef::RandomMatching(predicate),
-            } => {
-                let amount = self
-                    .effect_value(amount, object, &context, scoped)
-                    .max(0)
-                    .try_into()
-                    .unwrap_or(u16::MAX);
-                let cause = ZoneMoveCause::Effect {
-                    controller: object.controller,
-                };
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Player(player) = target {
-                        self.discard_random_matching(
-                            player,
-                            amount,
-                            *predicate,
-                            object.source.unwrap_or(object.id),
-                            cause,
-                        );
-                    }
-                }
-            }
-            EffectDef::DiscardCards { object: recipient } => {
-                let recipients = self.effect_recipients(recipient, object, &context, scoped);
-                let cause = ZoneMoveCause::Effect {
-                    controller: object.controller,
-                };
-                for player in [self.active_player, self.active_player.opponent()] {
-                    let cards = recipients
-                        .iter()
-                        .filter_map(|target| match target {
-                            Target::Card(card) => Some(*card),
-                            Target::Player(_) | Target::Permanent(_) | Target::Spell(_) => None,
-                        })
-                        .filter(|card| {
-                            self.players[player.index()]
-                                .hand
-                                .iter()
-                                .any(|candidate| candidate.id == *card)
-                        })
-                        .collect::<Vec<_>>();
-                    self.discard_cards_with_cause(player, &cards, cause);
-                }
+            EffectDef::DrawCards { .. }
+            | EffectDef::ShuffleLibrary { .. }
+            | EffectDef::Discard { .. }
+            | EffectDef::DiscardCards { .. }
+            | EffectDef::Mill { .. }
+            | EffectDef::LookAtHand { .. }
+            | EffectDef::RevealHand { .. }
+            | EffectDef::LookAtTopAndSelect { .. }
+            | EffectDef::SearchZone { .. }
+            | EffectDef::ChooseCards { .. }
+            | EffectDef::ReplaceNextDrawThisTurn { .. } => {
+                self.resolve_hand_and_library_effect(scoped, object, &context);
             }
             EffectDef::LoseLife { recipient, amount } => {
                 let amount = self
@@ -467,152 +358,6 @@ impl Game {
                         effect: scoped.with_effect(*effect),
                     });
                     self.queue_chosen_sacrifice(player, predicate, source, followup, optional);
-                }
-            }
-            EffectDef::Mill {
-                player: recipient,
-                amount,
-            } => {
-                let count = self.effect_value(amount, object, &context, scoped).max(0);
-                let Ok(count) = usize::try_from(count) else {
-                    return;
-                };
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Player(player) = target {
-                        let milled = self.take_top_of_library(player, count);
-                        self.bury_cards(player, milled);
-                    }
-                }
-            }
-            EffectDef::LookAtHand { player: recipient } => {
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Player(seen) = target {
-                        self.last_seen_hands[object.controller.index()] =
-                            Some((seen, public_cards(&self.players[seen.index()].hand)));
-                    }
-                }
-            }
-            EffectDef::RevealHand { player: recipient } => {
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Player(revealer) = target {
-                        let hand = &self.players[revealer.index()].hand;
-                        let events = hand
-                            .iter()
-                            .map(|card| super::GameEvent::CardRevealed {
-                                player: revealer,
-                                card: card.id,
-                                definition: card.definition,
-                            })
-                            .collect::<Vec<_>>();
-                        let seen = public_cards(hand);
-                        self.events.extend(events);
-                        // Everyone saw it, so everyone remembers it.
-                        for viewer in &mut self.last_seen_hands {
-                            *viewer = Some((revealer, seen.clone()));
-                        }
-                    }
-                }
-            }
-            EffectDef::LookAtTopAndSelect {
-                player: recipient,
-                looker,
-                selection,
-            } => {
-                // The looker is resolved first and once: a spy that has left
-                // the table still finishes looking, but nobody else does it
-                // for them.
-                let Some(Target::Player(looker)) = self
-                    .effect_recipients(looker, object, &context, scoped)
-                    .into_iter()
-                    .next()
-                else {
-                    return;
-                };
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Player(player) = target {
-                        self.queue_top_card_selection(
-                            player,
-                            looker,
-                            selection,
-                            object,
-                            context.clone(),
-                            scoped,
-                        );
-                    }
-                }
-            }
-            EffectDef::SearchZone {
-                player: recipient,
-                source: source_zone,
-                object: predicate,
-                minimum,
-                maximum,
-                reveal,
-                destination,
-                placement,
-                shuffle,
-                enters_tapped,
-            } => {
-                let source = object.source.unwrap_or(object.id);
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Player(player) = target {
-                        self.queue_zone_search(
-                            player,
-                            source_zone,
-                            predicate,
-                            minimum,
-                            maximum,
-                            reveal,
-                            destination,
-                            placement,
-                            shuffle,
-                            enters_tapped,
-                            source,
-                            object.controller,
-                        );
-                    }
-                }
-            }
-            EffectDef::ChooseCards {
-                player: recipient,
-                sources,
-                object: predicate,
-                minimum,
-                maximum,
-                reveal,
-                destination,
-                placement,
-            } => {
-                let source = object.source.unwrap_or(object.id);
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Player(player) = target {
-                        self.queue_owned_card_choice(
-                            player,
-                            sources,
-                            predicate,
-                            minimum,
-                            maximum,
-                            reveal,
-                            destination,
-                            placement,
-                            source,
-                            object.controller,
-                        );
-                    }
-                }
-            }
-            EffectDef::ReplaceNextDrawThisTurn {
-                player: recipient,
-                effect,
-            } => {
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Player(player) = target {
-                        self.draw_replacements[player.index()].push_back(DrawReplacement {
-                            object: Box::new(object.clone()),
-                            context: context.clone(),
-                            effect: scoped.with_effect(*effect),
-                        });
-                    }
                 }
             }
             EffectDef::IfFormat {
