@@ -355,6 +355,7 @@ fn validate_trigger_condition_shape(
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::SourceIsTapped
+        | TriggerConditionDef::SourceIsUntapped
         | TriggerConditionDef::ControlsGreatestPowerCreature
         | TriggerConditionDef::SourceCounters { .. } => Ok(()),
     }

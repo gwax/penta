@@ -868,6 +868,7 @@ impl Game {
                     .find(|permanent| permanent.card.id == source)
                     .is_some_and(|permanent| permanent.dealt_damage_to_opponent_this_turn),
                 TriggerConditionDef::SourceIsTapped => self.current_or_last_known_tapped(source),
+                TriggerConditionDef::SourceIsUntapped => !self.current_or_last_known_tapped(source),
                 TriggerConditionDef::ObjectCount { .. } => {
                     unreachable!("the object-count arm is destructured above")
                 }

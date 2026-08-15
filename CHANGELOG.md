@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Howling Mine**, with an untapped-source trigger condition. The "if
+  untapped" is an intervening-if, read both when the draw step begins and
+  again as the trigger resolves, so tapping the Mine in response still denies
+  the extra card.
+
 - **Instill Energy**, with attacking as though hasty. The permission is
   narrower than haste and stops where the printed text stops: the enchanted
   creature may attack the turn it arrives, but its own {T} ability is still

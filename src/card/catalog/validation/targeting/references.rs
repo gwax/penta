@@ -620,7 +620,8 @@ fn validate_trigger_condition(
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
-        | TriggerConditionDef::SourceIsTapped => Ok(()),
+        | TriggerConditionDef::SourceIsTapped
+        | TriggerConditionDef::SourceIsUntapped => Ok(()),
     }
 }
 

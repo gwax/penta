@@ -4523,7 +4523,29 @@ pub(in crate::card::sets) static HELM_OF_CHATZUK: CardRecord = CardRecord::new(
 );
 
 // LEA 247 — Howling Mine
-// Audit: blocked — Needs a hidden-zone decision and continuation for “At the beginning of each player's draw step, if this artifact is untapped, that player draws an additional card”.
+pub(in crate::card::sets) static HOWLING_MINE: CardRecord = CardRecord::new(
+    cards::HOWLING_MINE,
+    "Howling Mine",
+    CardArt::new("51f8f6e1-a451-4262-90d3-5107caf54175", "Mark Poole"),
+    CardSet::Alpha,
+    // The condition is checked twice: once when the step begins, and again as
+    // the trigger resolves. Tapping the Mine in response to its own trigger is
+    // the standard way to deny the extra card, and that only works because the
+    // "if" is an intervening-if rather than a one-time reading.
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[AbilityDef::triggered_if(
+        "At the beginning of each player's draw step, if this artifact is untapped, that \
+         player draws an additional card.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Draw,
+            player: PlayerRelation::Any,
+        },
+        &TriggerConditionDef::SourceIsUntapped,
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::EventPlayer,
+            amount: ValueDef::Constant(1),
+        },
+    )]),
+);
 
 // LEA 248 — Icy Manipulator
 pub(in crate::card::sets) static ICY_MANIPULATOR: CardRecord = CardRecord::new(
@@ -5388,6 +5410,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GAUNTLET_OF_MIGHT,
     &GLASSES_OF_URZA,
     &HELM_OF_CHATZUK,
+    &HOWLING_MINE,
     &ICY_MANIPULATOR,
     &IRON_STAR,
     &IVORY_CUP,

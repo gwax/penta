@@ -393,6 +393,11 @@ pub enum TriggerConditionDef {
     /// Whether the ability's own source is tapped, using last-known
     /// information if it has left the battlefield.
     SourceIsTapped,
+    /// Whether the ability's own source is untapped, using last-known
+    /// information if it has left the battlefield. Not the negation of
+    /// [`Self::SourceIsTapped`] for an object that was never on the
+    /// battlefield, which is neither.
+    SourceIsUntapped,
     /// Whether this ability's controller controls a creature whose power is
     /// at least every other creature's, which is what "the greatest power or
     /// tied for the greatest power" asks. False when no creature is on the

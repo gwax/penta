@@ -359,6 +359,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::SourceIsTapped
+        | TriggerConditionDef::SourceIsUntapped
         | TriggerConditionDef::SpellsCastLastTurn { .. } => true,
     }
 }
