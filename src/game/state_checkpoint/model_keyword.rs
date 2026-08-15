@@ -25,6 +25,7 @@ pub(super) enum KeywordSnapshot {
     Shroud,
     Unleash,
     Intimidate,
+    Menace,
     Undying,
     Indestructible,
     AttacksEachCombatIfAble,

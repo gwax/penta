@@ -561,6 +561,7 @@ mod mana_ability_costs;
 mod mana_and_costs;
 mod mana_vault;
 mod meekstone;
+mod menace;
 mod modal_effects;
 mod morbid;
 mod must_block;

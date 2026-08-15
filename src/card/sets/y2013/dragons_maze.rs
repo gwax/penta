@@ -1209,8 +1209,29 @@ pub(in crate::card::sets) static GLEAM_OF_BATTLE: CardRecord = CardRecord::new(
 // DGM 74 — Goblin Test Pilot
 // Audit: blocked — Needs a uniformly random legal target choice when the activated ability resolves.
 
+static GRUUL_WAR_CHANT_EFFECT: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)),
+    AppliedEffectDef::add_ability(&abilities::menace()),
+];
+
 // DGM 75 — Gruul War Chant
-// Audit: blocked — Needs menace as an executable minimum-blocker constraint and a static grant to attacking creatures.
+pub(in crate::card::sets) static GRUUL_WAR_CHANT: CardRecord = CardRecord::new(
+    cards::GRUUL_WAR_CHANT,
+    "Gruul War Chant",
+    CardArt::new("7c3091d4-d0f8-43d6-9ecb-0fecb32fe698", "Dave Kendall"),
+    CardSet::DragonsMaze,
+    CardRules::new_enchantment(mana_cost!("{2}{R}{G}")).with_ability(AbilityDef::static_ability(
+        "Attacking creatures you control get +1/+0 and have menace.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Attacking,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::Composite(&GRUUL_WAR_CHANT_EFFECT),
+        },
+    )),
+);
 
 // DGM 76 — Haunter of Nightveil
 pub(in crate::card::sets) static HAUNTER_OF_NIGHTVEIL: CardRecord = CardRecord::new(
@@ -2616,6 +2637,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FERAL_ANIMIST,
     &GAZE_OF_GRANITE,
     &GLEAM_OF_BATTLE,
+    &GRUUL_WAR_CHANT,
     &HAUNTER_OF_NIGHTVEIL,
     &JELENN_SPHINX,
     &MAW_OF_THE_OBZEDAT,

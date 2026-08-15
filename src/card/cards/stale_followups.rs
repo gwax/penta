@@ -109,3 +109,6 @@ pub const SOMBERWALD_VIGILANTE: CardDefinitionId = CardDefinitionId(1753);
 pub const FORTRESS_CYCLOPS: CardDefinitionId = CardDefinitionId(1754);
 pub const HAMLET_CAPTAIN: CardDefinitionId = CardDefinitionId(1755);
 pub const GHOSTLY_POSSESSION: CardDefinitionId = CardDefinitionId(1756);
+pub const RIPSCALE_PREDATOR: CardDefinitionId = CardDefinitionId(1757);
+pub const MADCAP_SKILLS: CardDefinitionId = CardDefinitionId(1758);
+pub const GRUUL_WAR_CHANT: CardDefinitionId = CardDefinitionId(1759);

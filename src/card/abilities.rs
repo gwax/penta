@@ -161,6 +161,16 @@ pub const fn intimidate() -> AbilityDef {
     keyword("Intimidate", KeywordAbility::Intimidate)
 }
 
+/// "Menace (This creature can't be blocked except by two or more
+/// creatures.)"
+#[must_use]
+pub const fn menace() -> AbilityDef {
+    keyword(
+        "Menace (This creature can't be blocked except by two or more creatures.)",
+        KeywordAbility::Menace,
+    )
+}
+
 #[must_use]
 pub const fn undying() -> AbilityDef {
     keyword("Undying", KeywordAbility::Undying)

@@ -679,6 +679,11 @@ pub enum KeywordAbility {
     /// as the permanent enters, and no blocking while it carries one.
     Unleash,
     Intimidate,
+    /// CR 702.110. The creature cannot be blocked except by two or more
+    /// creatures. A constraint on the completed declaration rather than on
+    /// any one block: the first blocker is always legal, and it is finishing
+    /// with exactly one that the rules forbid.
+    Menace,
     Undying,
     Indestructible,
     /// "Attacks each combat if able." Not a printed keyword, but it behaves
@@ -716,6 +721,7 @@ impl KeywordAbility {
             Self::Hexproof => 12,
             Self::Intimidate => 13,
             Self::Undying => 14,
+            Self::Menace => 15,
             Self::AttacksEachCombatIfAble => 16,
             Self::Indestructible => 18,
             Self::Shroud => 19,

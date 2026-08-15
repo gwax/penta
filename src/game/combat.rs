@@ -329,6 +329,31 @@ impl Game {
             .any(|action| self.required_block(action).is_some())
     }
 
+    /// Whether some menacing attacker is blocked by exactly one creature.
+    ///
+    /// CR 702.110a is a constraint on the finished declaration, not on any
+    /// single block: the first blocker is perfectly legal and only becomes
+    /// illegal by being the last. So it is checked where the declaration
+    /// ends rather than where each block is offered.
+    pub(super) fn menace_is_unsatisfied(&self, player: PlayerId) -> bool {
+        self.battlefield
+            .iter()
+            .filter(|permanent| {
+                permanent.attacking
+                    && self.permanent_has_executable_keyword(permanent, KeywordAbility::Menace)
+            })
+            .any(|menacing| {
+                self.battlefield
+                    .iter()
+                    .filter(|candidate| {
+                        candidate.controller == player
+                            && candidate.blocking == Some(menacing.card.id)
+                    })
+                    .count()
+                    == 1
+            })
+    }
+
     fn available_blocker_actions(&self, player: PlayerId) -> Vec<Action> {
         let blockers: Vec<_> = self
             .battlefield

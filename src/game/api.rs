@@ -227,7 +227,9 @@ impl Game {
         if self.step == Step::DeclareBlockers && !self.blockers_declared {
             if player == self.active_player.opponent() {
                 let blocks = self.blocker_actions(player);
-                if !self.block_requirement_outstanding(&blocks) {
+                if !self.block_requirement_outstanding(&blocks)
+                    && !self.menace_is_unsatisfied(player)
+                {
                     actions.push(Action::FinishDeclaringBlockers);
                 }
                 actions.extend(blocks);

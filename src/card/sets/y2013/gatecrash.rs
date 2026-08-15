@@ -1401,8 +1401,30 @@ pub(in crate::card::sets) static HOMING_LIGHTNING: CardRecord = CardRecord::new(
 // GTC 97 — Legion Loyalist
 // Audit: blocked — Battalion is trigger-time-only, menace-style token blocking restrictions are unavailable, and its mass grants cannot be conditioned exactly.
 
+static MADCAP_SKILLS_EFFECT: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(3), ValueDef::Constant(0)),
+    AppliedEffectDef::add_ability(&abilities::menace()),
+];
+
 // GTC 98 — Madcap Skills
-// Audit: blocked — Menace is not an executable minimum-blocker constraint or grantable keyword.
+pub(in crate::card::sets) static MADCAP_SKILLS: CardRecord = CardRecord::new(
+    cards::MADCAP_SKILLS,
+    "Madcap Skills",
+    CardArt::new("57b01da4-1a20-44e5-b383-c6a54541ace1", "Anthony Palumbo"),
+    CardSet::Gatecrash,
+    CardRules::new_enchantment(mana_cost!("{1}{R}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +3/+0 and has menace.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&MADCAP_SKILLS_EFFECT),
+                },
+            ),
+        ]),
+);
 
 // GTC 99 — Mark for Death
 // Audit: blocked — Needs turn-long must-block and cannot-block constraints scoped to one opponent's creatures.
@@ -1476,7 +1498,14 @@ pub(in crate::card::sets) static MOLTEN_PRIMORDIAL: CardRecord = CardRecord::new
 // Audit: blocked — No resolving effect can make a creature unable to block for the turn.
 
 // GTC 103 — Ripscale Predator
-// Audit: blocked — Menace is not an executable minimum-blocker constraint.
+pub(in crate::card::sets) static RIPSCALE_PREDATOR: CardRecord = CardRecord::new(
+    cards::RIPSCALE_PREDATOR,
+    "Ripscale Predator",
+    CardArt::new("37c24d58-70ac-40dd-8fd7-bc4f8ba3ac68", "Volkan Baǵa"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{4}{R}{R}"), &["Dinosaur"], 6, 5)
+        .with_ability(abilities::menace()),
+);
 
 // GTC 104 — Scorchwalker
 pub(in crate::card::sets) static SCORCHWALKER: CardRecord = CardRecord::new(
@@ -3706,8 +3735,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FOUNDRY_STREET_DENIZEN,
     &HELLRAISER_GOBLIN,
     &HOMING_LIGHTNING,
+    &MADCAP_SKILLS,
     &MASSIVE_RAID,
     &MOLTEN_PRIMORDIAL,
+    &RIPSCALE_PREDATOR,
     &SCORCHWALKER,
     &SKINBRAND_GOBLIN,
     &TOWERING_THUNDERFIST,

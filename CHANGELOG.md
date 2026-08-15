@@ -74,6 +74,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Menace.** "Can't be blocked except by two or more creatures" is a
+  constraint on the finished declaration rather than on any one block: the
+  first blocker is legal and only becomes illegal by being the last, so the
+  declaration is what refuses to end. Ripscale Predator, Madcap Skills, and
+  Gruul War Chant, the last two granting it rather than printing it.
+
 - **Ghostly Possession**, which wears the same two-sided shield Gaseous Form
   has worn since Legends.
 
