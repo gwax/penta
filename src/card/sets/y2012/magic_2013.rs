@@ -945,8 +945,42 @@ pub(in crate::card::sets) static KRAKEN_HATCHLING: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{U}"), &["Kraken"], 0, 4),
 );
 
+/// "Other Merfolk creatures you control": narrower than Lord of Atlantis,
+/// which reaches every Merfolk on the battlefield including the opponent's.
+static MASTER_OF_THE_PEARL_TRIDENT_OTHERS: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Subtype("Merfolk"),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+]);
+
+static MASTER_OF_THE_PEARL_TRIDENT_GRANT: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+    AppliedEffectDef::add_ability(&MASTER_OF_THE_PEARL_TRIDENT_ISLANDWALK),
+];
+
+static MASTER_OF_THE_PEARL_TRIDENT_ISLANDWALK: AbilityDef =
+    abilities::landwalk(BasicLandType::Island);
+
 // M13 59 — Master of the Pearl Trident
-// Audit: blocked — Needs the printed islandwalk keyword and its defending-player land/blocking semantics.
+pub(in crate::card::sets) static MASTER_OF_THE_PEARL_TRIDENT: CardRecord = CardRecord::new(
+    cards::MASTER_OF_THE_PEARL_TRIDENT,
+    "Master of the Pearl Trident",
+    CardArt::new("e7decbd3-c754-451c-8d63-4f31f81412d2", "Ryan Pancoast"),
+    CardSet::Magic2013,
+    CardRules::new_creature(mana_cost!("{U}{U}"), &["Merfolk"], 2, 2).with_ability(
+        AbilityDef::static_ability(
+            "Other Merfolk creatures you control get +1/+1 and have islandwalk.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(
+                    MASTER_OF_THE_PEARL_TRIDENT_OTHERS,
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
+                effect: AppliedEffectDef::Composite(&MASTER_OF_THE_PEARL_TRIDENT_GRANT),
+            },
+        ),
+    ),
+);
 
 // M13 61 — Mind Sculpt
 pub(in crate::card::sets) static MIND_SCULPT: CardRecord = CardRecord::new(
@@ -1039,8 +1073,38 @@ pub(in crate::card::sets) static SCROLL_THIEF: CardRecord = CardRecord::new(
     ),
 );
 
+/// Both clauses reach the same set, so the skip lands on exactly the
+/// creatures the tap found rather than on whatever is tapped later.
+static SLEEP_THEIR_CREATURES: EffectRecipientDef = EffectRecipientDef::objects_controlled_by_target(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    TargetIndex::PRIMARY,
+);
+
+static SLEEP_EFFECTS: [EffectDef; 2] = [
+    EffectDef::Tap {
+        object: SLEEP_THEIR_CREATURES,
+    },
+    EffectDef::SkipNextUntapSteps {
+        object: SLEEP_THEIR_CREATURES,
+        count: 1,
+    },
+];
+
 // M13 67 — Sleep
-// Audit: blocked — Needs simultaneous mass tapping plus a next-untap-step skip attached to exactly those creatures.
+pub(in crate::card::sets) static SLEEP: CardRecord = CardRecord::new(
+    cards::SLEEP,
+    "Sleep",
+    CardArt::new("1e352497-1454-4917-b38c-4cc45424d876", "Chris Rahn"),
+    CardSet::Magic2013,
+    CardRules::new_sorcery(mana_cost!("{2}{U}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Tap all creatures target player controls. Those creatures don't untap during that \
+         player's next untap step.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::Sequence(&SLEEP_EFFECTS),
+    )),
+);
 
 // M13 68 — Spelltwine
 // Audit: blocked — Needs linked graveyard choices, spell copies, and permission to cast both copies without paying their costs.
@@ -3762,10 +3826,12 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HYDROSURGE,
     &JACE_MEMORY_ADEPT,
     &KRAKEN_HATCHLING,
+    &MASTER_OF_THE_PEARL_TRIDENT,
     &MIND_SCULPT,
     &NEGATE,
     &OMNISCIENCE,
     &SCROLL_THIEF,
+    &SLEEP,
     &SPHINX_OF_UTHUUN,
     &TALRAND_SKY_SUMMONER,
     &TALRANDS_INVOCATION,

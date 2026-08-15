@@ -114,6 +114,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Master of the Pearl Trident** and **Sleep**, whose audit lines named
+  islandwalk and the tap-plus-untap-skip pair as unavailable. Both had been
+  available for a while; the scoping is what needed care, since the Master
+  reaches only your own other Merfolk and Sleep only the targeted player's
+  creatures.
+
 - **Trostani, Selesnya's Voice** and **Vitu-Ghazi Guildmage**, closing all but
   one of the populate cluster. Trostani reads the entering creature's
   toughness rather than her own, and does not feed on her own arrival.
