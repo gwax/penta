@@ -667,6 +667,7 @@ mod static_keyword_predicates;
 mod street_spasm;
 mod targeted_answers;
 mod targeting_characteristics;
+mod token_status_cards;
 mod transmogrant;
 mod trigger_event_matchers;
 mod triggers_and_stack;

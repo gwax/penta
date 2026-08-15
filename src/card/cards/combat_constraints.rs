@@ -86,3 +86,7 @@ pub const VILLAGE_SURVIVORS: CardDefinitionId = CardDefinitionId(1885);
 pub const INTANGIBLE_VIRTUE: CardDefinitionId = CardDefinitionId(1886);
 pub const ARMY_OF_THE_DAMNED: CardDefinitionId = CardDefinitionId(1887);
 pub const ENDLESS_RANKS_OF_THE_DEAD: CardDefinitionId = CardDefinitionId(1888);
+pub const ILLNESS_IN_THE_RANKS: CardDefinitionId = CardDefinitionId(1889);
+pub const PHANTOM_GENERAL: CardDefinitionId = CardDefinitionId(1890);
+pub const HARVESTER_OF_SOULS: CardDefinitionId = CardDefinitionId(1891);
+pub const SOUL_OF_THE_HARVEST: CardDefinitionId = CardDefinitionId(1892);

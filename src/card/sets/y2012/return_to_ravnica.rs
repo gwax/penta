@@ -348,8 +348,38 @@ pub(in crate::card::sets) static MARTIAL_LAW: CardRecord = CardRecord::new(
 // RTR 15 — Palisade Giant
 // Audit: blocked — Needs a damage-redirection replacement covering you and every other permanent you control.
 
+static PHANTOM_GENERAL_TOKENS: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Token,
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
 // RTR 16 — Phantom General
-// Audit: blocked — Needs a battlefield predicate that distinguishes creature tokens from nontoken creatures.
+pub(in crate::card::sets) static PHANTOM_GENERAL: CardRecord = CardRecord::new(
+    cards::PHANTOM_GENERAL,
+    "Phantom General",
+    CardArt::new(
+        "11f42791-070a-4e3a-91c8-b801980abb76",
+        "Christopher Moeller",
+    ),
+    CardSet::ReturnToRavnica,
+    // The General is not itself a token, so its anthem never reaches it.
+    CardRules::new_creature(mana_cost!("{3}{W}"), &["Spirit", "Soldier"], 2, 3).with_ability(
+        AbilityDef::static_ability(
+            "Creature tokens you control get +1/+1.",
+            EffectDef::StaticApply {
+                recipient: PHANTOM_GENERAL_TOKENS,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+            },
+        ),
+    ),
+);
 
 // RTR 17 — Precinct Captain
 pub(in crate::card::sets) static PRECINCT_CAPTAIN: CardRecord = CardRecord::new(
@@ -4985,6 +5015,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KEENING_APPARITION,
     &KNIGHTLY_VALOR,
     &MARTIAL_LAW,
+    &PHANTOM_GENERAL,
     &PRECINCT_CAPTAIN,
     &REST_IN_PEACE,
     &ROOTBORN_DEFENSES,

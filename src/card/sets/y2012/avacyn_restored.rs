@@ -1550,8 +1550,39 @@ pub(in crate::card::sets) static GRISELBRAND: CardRecord = CardRecord::new(
         ]),
 );
 
+/// "Another nontoken creature", so a token dying is not a card and the Demon
+/// stays quiet; the exclusion of itself is the other half.
+static HARVESTER_OF_SOULS_DEATH: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+]);
+
 // AVR 107 — Harvester of Souls
-// Audit: blocked — Needs a token-status object predicate so the death trigger can exclude token creatures exactly.
+pub(in crate::card::sets) static HARVESTER_OF_SOULS: CardRecord = CardRecord::new(
+    cards::HARVESTER_OF_SOULS,
+    "Harvester of Souls",
+    CardArt::new("505c0d25-dc1f-402e-9183-01c273efe0e1", "Slawomir Maniak"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{4}{B}{B}"), &["Demon"], 5, 5).with_abilities(&[
+        abilities::deathtouch(),
+        AbilityDef::triggered(
+            "Whenever another nontoken creature dies, you may draw a card.",
+            TriggerEventDef::zone_changed(
+                HARVESTER_OF_SOULS_DEATH,
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            ),
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            },
+        ),
+    ]),
+);
 
 // AVR 108 — Homicidal Seclusion
 // Audit: blocked — Needs an exactly-one-creature condition that controls both the affected recipient and a lifelink grant in the static ability layer.
@@ -2957,8 +2988,40 @@ pub(in crate::card::sets) static SOMBERWALD_SAGE: CardRecord = CardRecord::new(
     ),
 );
 
+static SOUL_OF_THE_HARVEST_ENTRY: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+]);
+
 // AVR 195 — Soul of the Harvest
-// Audit: blocked — Needs a token-status object predicate so the entry trigger can exclude token creatures exactly.
+pub(in crate::card::sets) static SOUL_OF_THE_HARVEST: CardRecord = CardRecord::new(
+    cards::SOUL_OF_THE_HARVEST,
+    "Soul of the Harvest",
+    CardArt::new("078f5e79-18dd-44e5-a930-8dc288f0b535", "Eytan Zana"),
+    CardSet::AvacynRestored,
+    // Nontoken, so a board full of tokens draws nothing -- the Soul rewards
+    // creature cards rather than a token engine.
+    CardRules::new_creature(mana_cost!("{4}{G}{G}"), &["Elemental"], 6, 6).with_abilities(&[
+        abilities::trample(),
+        AbilityDef::triggered(
+            "Whenever another nontoken creature you control enters, you may draw a card.",
+            TriggerEventDef::zone_changed(
+                SOUL_OF_THE_HARVEST_ENTRY,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            },
+        ),
+    ]),
+);
 
 // AVR 196 — Terrifying Presence
 pub(in crate::card::sets) static TERRIFYING_PRESENCE: CardRecord = CardRecord::new(
@@ -3506,6 +3569,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DRIVER_OF_THE_DEAD,
     &EVERNIGHT_SHADE,
     &GRISELBRAND,
+    &HARVESTER_OF_SOULS,
     &HUMAN_FRAILTY,
     &HUNTED_GHOUL,
     &MAALFELD_TWINS,
@@ -3557,6 +3621,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RAIN_OF_THORNS,
     &SNARE_THE_SKIES,
     &SOMBERWALD_SAGE,
+    &SOUL_OF_THE_HARVEST,
     &TERRIFYING_PRESENCE,
     &TIMBERLAND_GUIDE,
     &TRIUMPH_OF_FEROCITY,

@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Illness in the Ranks**, **Phantom General**, **Harvester of Souls** and
+  **Soul of the Harvest**, four cards that read a permanent's token status.
+  Two want tokens and two want everything but tokens: the General's anthem
+  skips its own creature cards, and neither draw trigger fires off a token.
+
 - **Intangible Virtue**, **Army of the Damned** and **Endless Ranks of the
   Dead**, three Innistrad token cards resting on a token predicate, a tapped
   token creation and a halved count. Endless Ranks rounds down, so a single

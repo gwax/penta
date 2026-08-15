@@ -1089,7 +1089,31 @@ pub(in crate::card::sets) static HORROR_OF_THE_DIM: CardRecord = CardRecord::new
 );
 
 // GTC 69 — Illness in the Ranks
-// Audit: blocked — Continuous recipient predicates cannot distinguish creature tokens from nontoken creatures.
+pub(in crate::card::sets) static ILLNESS_IN_THE_RANKS: CardRecord = CardRecord::new(
+    cards::ILLNESS_IN_THE_RANKS,
+    "Illness in the Ranks",
+    CardArt::new("989a68c1-3b76-4c2d-9db3-23c45be3f9ff", "Nils Hamm"),
+    CardSet::Gatecrash,
+    // Every creature token, whoever controls it, which is what makes this a
+    // sideboard card rather than an anthem for one side.
+    CardRules::new_enchantment(mana_cost!("{B}")).with_ability(AbilityDef::static_ability(
+        "Creature tokens get -1/-1.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Token,
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-1),
+                ValueDef::Constant(-1),
+            ),
+        },
+    )),
+);
 
 // GTC 70 — Killing Glare
 // Audit: blocked — Target predicates cannot compare a creature's power with the spell's chosen X value.
@@ -3807,6 +3831,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GRISLY_SPECTACLE,
     &GUTTER_SKULK,
     &HORROR_OF_THE_DIM,
+    &ILLNESS_IN_THE_RANKS,
     &SEPULCHRAL_PRIMORDIAL,
     &SHADOW_ALLEY_DENIZEN,
     &SMOG_ELEMENTAL,
