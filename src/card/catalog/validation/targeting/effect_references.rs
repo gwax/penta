@@ -221,7 +221,8 @@ fn validate_effect_references(
         // The chosen player is recorded on the permanent, not read from a
         // target slot.
         // A prohibition names a card shape, never a target.
-        EffectDef::LandwalkCanBeBlocked(_)
+        EffectDef::IncreaseMatchingSpellCostBy { .. }
+        | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::CannotAttackIf(_)
         | EffectDef::None

@@ -73,6 +73,48 @@ impl Game {
         reduction
     }
 
+    /// What permanents on the battlefield add to this spell's cost. Read the
+    /// same way as the discount beside it, and kept separate from it because
+    /// the two are not opposite numbers: a discount is generic-only, while an
+    /// increase can name a colour.
+    pub(super) fn spell_cost_increase(&self, player: PlayerId, source: GameObjectId) -> ManaCost {
+        let Some((zone, card)) = self.card_in_nonbattlefield_zone(source) else {
+            return ManaCost::default();
+        };
+        let mut increase = ManaCost::default();
+        for permanent in &self.battlefield {
+            let Some(rules) = self.effective_rules(permanent) else {
+                continue;
+            };
+            for ability in rules.ability_clauses() {
+                if !ability.is_executable() {
+                    continue;
+                }
+                let Some(EffectDef::IncreaseMatchingSpellCostBy {
+                    spell,
+                    caster,
+                    amount,
+                }) = ability.declarative_effect()
+                else {
+                    continue;
+                };
+                if !self.player_relation_matches(
+                    player,
+                    caster,
+                    permanent.controller,
+                    TriggerContext::empty(),
+                ) {
+                    continue;
+                }
+                if !self.card_object_matches(spell, card, zone, permanent.card.id) {
+                    continue;
+                }
+                increase = add_mana_cost(increase, amount);
+            }
+        }
+        increase
+    }
+
     /// The values a cost reduction can read. There is no resolving object
     /// while a cost is being worked out, but static zone queries can still
     /// use the card being cast as their source.

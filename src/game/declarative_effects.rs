@@ -755,6 +755,7 @@ impl Game {
             })
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::IncreaseMatchingSpellCostBy { .. }
             | EffectDef::ReduceMatchingSpellCostBy { .. }
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)

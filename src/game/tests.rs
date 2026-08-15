@@ -565,6 +565,7 @@ mod damage_redirection;
 mod decisions_and_effects;
 mod deep_spawn;
 mod delayed_triggers;
+mod derelor;
 mod detain;
 mod disharmony;
 mod energy_tap;

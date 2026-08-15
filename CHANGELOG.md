@@ -106,6 +106,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Derelor**, with a coloured spell-cost increase. An increase is not a
+  discount with the sign flipped: a discount may only touch generic mana
+  (CR 601.2f), while this adds a black pip that only black mana pays. It
+  applies before any discount, so a discount cannot eat mana the increase then
+  adds back.
+
 - **Sentinel**, with a toughness-only base set and a summed value. Setting
   only toughness is the mirror of the existing power-only setter and for the
   same reason: a card that changes one half says only that half, so the

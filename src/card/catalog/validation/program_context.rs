@@ -139,6 +139,17 @@ fn validate_static_effect(
         }
         // The battlefield mirror: read off a permanent rather than the card
         // discounting itself, so it names the spells and their caster.
+        // The increase carries a whole mana cost rather than a value, so
+        // there is nothing here to check beyond the predicate and the player
+        // relation the discount beside it also checks.
+        EffectDef::IncreaseMatchingSpellCostBy { spell, caster, .. }
+            if position == StaticPosition::Root
+                && source_zones == [ZoneKind::Battlefield]
+                && static_object_predicate_supported(spell)
+                && static_player_relation_supported(caster) =>
+        {
+            Ok(())
+        }
         EffectDef::ReduceMatchingSpellCostBy {
             spell,
             caster,
@@ -400,6 +411,7 @@ fn validate_resolving_effect(
         EffectDef::StaticApply { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::ReduceGenericCostBy(_)
+        | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::ReduceMatchingSpellCostBy { .. }
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::CannotAttackIf(_)
@@ -783,6 +795,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::InstallTrigger(_) => "InstallTrigger",
         EffectDef::CannotBeForcedToSacrifice => "CannotBeForcedToSacrifice",
         EffectDef::ReduceGenericCostBy(_) => "ReduceGenericCostBy",
+        EffectDef::IncreaseMatchingSpellCostBy { .. } => "IncreaseMatchingSpellCostBy",
         EffectDef::ReduceMatchingSpellCostBy { .. } => "ReduceMatchingSpellCostBy",
         EffectDef::CannotAttackUnless(_) => "CannotAttackUnless",
         EffectDef::CannotAttackIf(_) => "CannotAttackIf",

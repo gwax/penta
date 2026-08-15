@@ -795,7 +795,25 @@ pub(in crate::card::sets) static BREEDING_PIT: CardRecord = CardRecord::new(
 );
 
 // FEM 36 — Derelor
-// Audit: blocked — Needs a cost increase in colored mana; the vocabulary can only discount generic mana on matching spells. Reading a spell's color is available.
+pub(in crate::card::sets) static DERELOR: CardRecord = CardRecord::new(
+    cards::DERELOR,
+    "Derelor",
+    CardArt::new("9eb2b79f-f09a-49dc-8e0f-7d711ba78981", "Anson Maddocks"),
+    CardSet::FallenEmpires,
+    // The tax is coloured, which is the whole joke: a 4/4 for four that makes
+    // every black spell after it harder to cast, including itself if a second
+    // one is already out.
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Thrull"], 4, 4).with_ability(
+        AbilityDef::static_ability(
+            "Black spells you cast cost {B} more to cast.",
+            EffectDef::IncreaseMatchingSpellCostBy {
+                spell: ObjectPredicateDef::Color(ManaColor::Black),
+                caster: PlayerRelation::You,
+                amount: mana_cost!("{B}"),
+            },
+        ),
+    ),
+);
 
 // FEM 37 — Ebon Praetor
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Sacrifice a creature: Remove a -2/-2 counter from this creature. If the sacrificed creature was a Thrull, put a +1/+0 counter on this creature. Activate only during your upkeep and only…”.
@@ -2179,6 +2197,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARMOR_THRULL,
     &BASAL_THRULL,
     &BREEDING_PIT,
+    &DERELOR,
     &HYMN_TO_TOURACH,
     &MINDSTAB_THRULL,
     &NECRITE,

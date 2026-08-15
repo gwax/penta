@@ -249,10 +249,17 @@ impl Game {
                                         .iter()
                                         .map(|selection| selection.targets().len())
                                         .sum();
+                                    // Increases apply before discounts,
+                                    // which is what keeps a discount from
+                                    // eating generic mana an increase then
+                                    // adds back (CR 601.2f).
                                     let payable_cost = reduce_generic(
-                                        add_generic(
-                                            cost,
-                                            extra_target_cost(definition, target_count),
+                                        add_mana_cost(
+                                            add_generic(
+                                                cost,
+                                                extra_target_cost(definition, target_count),
+                                            ),
+                                            self.spell_cost_increase(player, card.id),
                                         ),
                                         self.spell_cost_reduction(definition.id, player, card.id),
                                     );

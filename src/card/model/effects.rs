@@ -611,6 +611,16 @@ pub enum EffectDef {
     /// discounted: that one is a card in hand cutting its own cost and needs
     /// to name nothing, while this is read off a permanent and so has to say
     /// which spells, and cast by whom.
+    /// A permanent making matching spells cost more. The mirror of
+    /// [`Self::ReduceMatchingSpellCostBy`], but the amount is a whole mana
+    /// cost rather than a number: an increase can name a colour, which a
+    /// discount never does (CR 601.2f lets a reduction touch generic mana
+    /// only).
+    IncreaseMatchingSpellCostBy {
+        spell: ObjectPredicateDef,
+        caster: PlayerRelation,
+        amount: ManaCost,
+    },
     ReduceMatchingSpellCostBy {
         spell: ObjectPredicateDef,
         caster: PlayerRelation,

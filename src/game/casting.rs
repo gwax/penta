@@ -7,7 +7,7 @@ use super::{
     ManaCost, ManaPaymentPurpose, PendingBattlefieldEntry, Permanent, PlayActionKind,
     PlayOptionDef, PlayOptionId, PlayRestriction, PlayerId, StackObject, StackObjectKind, Target,
     TargetPredicate, TargetSlotDef, TargetSlotId, TriggerContext, ZoneKind, add_generic,
-    extra_target_cost, reduce_generic, remove_card,
+    add_mana_cost, extra_target_cost, reduce_generic, remove_card,
 };
 use crate::card::{BattlefieldEntryScalarChoiceDef, CardSet, ScalarChoiceListDef};
 
@@ -485,7 +485,7 @@ impl Game {
             return None;
         }
         cost = reduce_generic(
-            cost,
+            add_mana_cost(cost, self.spell_cost_increase(player, card_id)),
             self.spell_cost_reduction(definition.id, player, card_id),
         );
         let payment_purpose = ManaPaymentPurpose::Spell {

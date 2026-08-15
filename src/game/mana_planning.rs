@@ -39,9 +39,12 @@ impl Game {
                 let cost = self.configured_cast_mana_cost(*card, option, choices.costs())?;
                 Some((
                     reduce_generic(
-                        add_generic(
-                            cost,
-                            extra_target_cost(definition, choices.iter_targets().count()),
+                        add_mana_cost(
+                            add_generic(
+                                cost,
+                                extra_target_cost(definition, choices.iter_targets().count()),
+                            ),
+                            self.spell_cost_increase(player, *card),
                         ),
                         self.spell_cost_reduction(definition.id, player, *card),
                     ),
