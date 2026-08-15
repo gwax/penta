@@ -607,7 +607,8 @@ fn validate_trigger_condition(
         TriggerConditionDef::TargetMatches { slot, .. } => {
             validate_target_index(slot, target_count)
         }
-        TriggerConditionDef::SourceOnBattlefield
+        TriggerConditionDef::CreatureDiedThisTurn
+        | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped
         | TriggerConditionDef::ActivePlayer(_)
         | TriggerConditionDef::SpellsCastLastTurn { .. }

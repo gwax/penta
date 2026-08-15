@@ -28,10 +28,12 @@ pub enum CounterKind {
     /// Armageddon Clock's counter, which measures how much it is about to
     /// deal to everybody.
     Doom,
+    /// Osai Vultures' counter, one for each turn something died.
+    Carrion,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 13;
+    pub const COUNT: usize = 14;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -47,6 +49,7 @@ impl CounterKind {
         Self::MinusZeroMinusTwo,
         Self::Time,
         Self::Doom,
+        Self::Carrion,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -67,7 +70,8 @@ impl CounterKind {
             | Self::Credit
             | Self::Tide
             | Self::Time
-            | Self::Doom => (0, 0),
+            | Self::Doom
+            | Self::Carrion => (0, 0),
         }
     }
 
@@ -87,6 +91,7 @@ impl CounterKind {
             Self::MinusZeroMinusTwo => 10,
             Self::Time => 11,
             Self::Doom => 12,
+            Self::Carrion => 13,
         }
     }
 
@@ -106,6 +111,7 @@ impl CounterKind {
             Self::MinusZeroMinusTwo => "-0/-2",
             Self::Time => "time",
             Self::Doom => "doom",
+            Self::Carrion => "carrion",
         }
     }
 }

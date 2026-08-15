@@ -778,6 +778,7 @@ impl Game {
                 }
                 // Follows the attachment rather than being frozen when the
                 // Equipment moved, so the answer is about where it is now.
+                TriggerConditionDef::CreatureDiedThisTurn => self.creature_died_this_turn,
                 TriggerConditionDef::SourceMatches { object: predicate } => self
                     .battlefield
                     .iter()

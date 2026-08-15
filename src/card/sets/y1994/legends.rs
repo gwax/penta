@@ -490,8 +490,50 @@ pub(in crate::card::sets) static MOAT: CardRecord = CardRecord::new(
     )]),
 );
 
+/// Every end step, not only its controller's: something dying on either turn
+/// feeds it.
+static OSAI_VULTURES_CARRION: TriggerConditionDef = TriggerConditionDef::CreatureDiedThisTurn;
+
 // LEG 29 — Osai Vultures
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Remove two carrion counters from this creature: This creature gets +1/+1 until end of turn”.
+pub(in crate::card::sets) static OSAI_VULTURES: CardRecord = CardRecord::new(
+    cards::OSAI_VULTURES,
+    "Osai Vultures",
+    CardArt::new("f85614b3-62a3-4da9-a74a-7ea40fad1b52", "Dan Frazier"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Bird"], 1, 1).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered_if(
+            "At the beginning of each end step, if a creature died this turn, put a carrion \
+             counter on this creature.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::End,
+                player: PlayerRelation::Any,
+            },
+            &OSAI_VULTURES_CARRION,
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Carrion,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated(
+            "Remove two carrion counters from this creature: This creature gets +1/+1 until \
+             end of turn.",
+            &[AbilityCostDef::RemoveCountersFromSource {
+                kind: CounterKind::Carrion,
+                amount: 2,
+            }],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // LEG 30 — Petra Sphinx
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “{T}: Target player chooses a card name, then reveals the top card of their library. If that card has the chosen name, that player puts it into their hand. If it doesn't, the player puts…”.
@@ -4939,6 +4981,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KISMET,
     &LIFEBLOOD,
     &MOAT,
+    &OSAI_VULTURES,
     &PRESENCE_OF_THE_MASTER,
     &RIGHTEOUS_AVENGERS,
     &SEEKER,

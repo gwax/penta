@@ -398,6 +398,10 @@ pub enum TriggerConditionDef {
     /// tied for the greatest power" asks. False when no creature is on the
     /// battlefield at all.
     ControlsGreatestPowerCreature,
+    /// Whether a creature has gone to a graveyard this turn. The condition
+    /// form of the morbid value, for the intervening-ifs that ask rather than
+    /// pick an amount.
+    CreatureDiedThisTurn,
     /// Whether the ability's own source matches. The mirror of
     /// [`Self::AttachedPermanentMatches`] pointed at the source itself, for
     /// the intervening-ifs that ask what the permanent has been doing.

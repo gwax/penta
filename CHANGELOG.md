@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Osai Vultures**, with a carrion counter and morbid as an intervening-if.
+  "A creature died this turn" existed as a value that picks between two
+  amounts; as a condition it can now gate whether a trigger does anything at
+  all.
+
 - **Armageddon Clock**, with a doom counter and a way to take counters off.
   The counter vocabulary could add counters and clear a kind entirely, but not
   remove a few; removing some is the mirror of adding some.

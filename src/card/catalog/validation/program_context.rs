@@ -669,7 +669,8 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::AttachedPermanentMatches { object } => {
             static_object_predicate_supported(object)
         }
-        TriggerConditionDef::SourceOnBattlefield
+        TriggerConditionDef::CreatureDiedThisTurn
+        | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::SourceLoyalty { .. }

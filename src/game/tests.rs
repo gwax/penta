@@ -590,6 +590,7 @@ mod old_school_spells;
 mod old_school_upkeep;
 mod one_sided_block_triggers;
 mod open_activation;
+mod osai_vultures;
 mod poison;
 mod populate;
 mod power_blocking;

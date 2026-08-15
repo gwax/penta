@@ -349,7 +349,8 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::AttachedPermanentMatches { object } => {
             shared_object_predicate(object)
         }
-        TriggerConditionDef::SourceOnBattlefield
+        TriggerConditionDef::CreatureDiedThisTurn
+        | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped
         | TriggerConditionDef::ActivePlayer(_)
         | TriggerConditionDef::SourceLoyalty { .. }
@@ -370,7 +371,8 @@ fn shared_static_trigger_condition(condition: TriggerConditionDef) -> bool {
         condition,
         // Counters live on the source, so a static clause can read them from
         // exactly the input it has.
-        TriggerConditionDef::SourceOnBattlefield
+        TriggerConditionDef::CreatureDiedThisTurn
+        | TriggerConditionDef::SourceOnBattlefield
             | TriggerConditionDef::SourceUntapped
             | TriggerConditionDef::SourceCounters { .. }
             // Reachable from the source by following its attachment, which

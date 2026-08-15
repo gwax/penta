@@ -345,7 +345,8 @@ fn validate_trigger_condition_shape(
             validate_target_shape(slot, targets, RecipientExpectation::Object, false)?;
             validate_object_predicate_shape(object, targets)
         }
-        TriggerConditionDef::SourceOnBattlefield
+        TriggerConditionDef::CreatureDiedThisTurn
+        | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped
         | TriggerConditionDef::ActivePlayer(_)
         | TriggerConditionDef::SpellsCastLastTurn { .. }
