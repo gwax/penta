@@ -649,8 +649,28 @@ pub(in crate::card::sets) static ALCHEMISTS_APPRENTICE: CardRecord = CardRecord:
 // AVR 43 — Amass the Components
 // Audit: blocked — Needs a resolving hand-card choice after drawing and a continuation that puts the chosen card on the bottom of its owner's library.
 
+/// The only one of these that discounts both sides of the table, which is
+/// what the caster relation is for.
+static ARCANE_MELEE_SPELLS: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Instant),
+    ObjectPredicateDef::HasType(CardType::Sorcery),
+]);
+
 // AVR 44 — Arcane Melee
-// Audit: blocked — Needs a battlefield-wide generic cost reduction for instant and sorcery spells cast by every player.
+pub(in crate::card::sets) static ARCANE_MELEE: CardRecord = CardRecord::new(
+    cards::ARCANE_MELEE,
+    "Arcane Melee",
+    CardArt::new("f70eb8ee-3810-4cff-b87f-b6cf7849c018", "Jaime Jones"),
+    CardSet::AvacynRestored,
+    CardRules::new_enchantment(mana_cost!("{4}{U}")).with_ability(AbilityDef::static_ability(
+        "Instant and sorcery spells cost {2} less to cast.",
+        EffectDef::ReduceMatchingSpellCostBy {
+            spell: ARCANE_MELEE_SPELLS,
+            caster: PlayerRelation::Any,
+            amount: ValueDef::Constant(2),
+        },
+    )),
+);
 
 // AVR 45 — Captain of the Mists
 // Audit: blocked — Needs a tap-or-untap choice on a single activated ability; the shared modal vocabulary currently covers spells only.
@@ -3339,6 +3359,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &VOICE_OF_THE_PROVINCES,
     &ZEALOUS_STRIKE,
     &ALCHEMISTS_APPRENTICE,
+    &ARCANE_MELEE,
     &DREADWATERS,
     &FAVORABLE_WINDS,
     &FLEETING_DISTRACTION,

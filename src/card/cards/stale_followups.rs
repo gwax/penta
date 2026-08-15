@@ -112,3 +112,7 @@ pub const GHOSTLY_POSSESSION: CardDefinitionId = CardDefinitionId(1756);
 pub const RIPSCALE_PREDATOR: CardDefinitionId = CardDefinitionId(1757);
 pub const MADCAP_SKILLS: CardDefinitionId = CardDefinitionId(1758);
 pub const GRUUL_WAR_CHANT: CardDefinitionId = CardDefinitionId(1759);
+pub const GOBLIN_ELECTROMANCER: CardDefinitionId = CardDefinitionId(1760);
+pub const ARCANE_MELEE: CardDefinitionId = CardDefinitionId(1761);
+pub const PLANAR_GATE: CardDefinitionId = CardDefinitionId(1762);
+pub const MANA_MATRIX: CardDefinitionId = CardDefinitionId(1763);

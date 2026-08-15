@@ -25,6 +25,27 @@ pub(in super::super) fn shared_static_non_apply_effect(
                 && shared_object_predicate(query.object)
                 && shared_static_query(*query)
         }
+        // Read off a permanent rather than the card in hand, so the spell
+        // predicate and the caster relation are what have to be shared.
+        EffectDef::ReduceMatchingSpellCostBy {
+            spell,
+            caster,
+            amount,
+        } => {
+            battlefield_only(source_zones)
+                && shared_object_predicate(spell)
+                && matches!(
+                    caster,
+                    crate::card::PlayerRelation::Any
+                        | crate::card::PlayerRelation::You
+                        | crate::card::PlayerRelation::Opponent
+                )
+                && matches!(
+                    amount,
+                    crate::card::ValueDef::Constant(_)
+                        | crate::card::ValueDef::CountMatchingObjects(_)
+                )
+        }
         EffectDef::ReduceGenericCostBy(value) => {
             source_zones == [ZoneKind::Hand]
                 && matches!(
@@ -49,6 +70,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
     match effect {
         EffectDef::CannotBeForcedToSacrifice
         | EffectDef::ReduceGenericCostBy(_)
+        | EffectDef::ReduceMatchingSpellCostBy { .. }
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::CannotAttackIf(_)

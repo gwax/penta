@@ -555,6 +555,17 @@ pub enum EffectDef {
     /// This card costs that much less generic mana to cast. A static ability
     /// that works from the hand, where casting reads it.
     ReduceGenericCostBy(ValueDef),
+    /// Matching spells cost that much less generic mana to cast.
+    ///
+    /// The difference from [`Self::ReduceGenericCostBy`] is who is
+    /// discounted: that one is a card in hand cutting its own cost and needs
+    /// to name nothing, while this is read off a permanent and so has to say
+    /// which spells, and cast by whom.
+    ReduceMatchingSpellCostBy {
+        spell: ObjectPredicateDef,
+        caster: PlayerRelation,
+        amount: ValueDef,
+    },
     /// Creates a regeneration shield (CR 701.15). The shield is not the
     /// regeneration: it waits, and the next destruction this turn is replaced
     /// by tapping the permanent, removing it from combat, and removing all

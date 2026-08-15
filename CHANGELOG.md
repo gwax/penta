@@ -74,6 +74,11 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Spells you cast cost less to cast."** Read off a permanent rather than
+  the card in hand, so unlike a card discounting itself it has to name which
+  spells and whose. Several stack, and none can reach a cost's coloured pips.
+  Goblin Electromancer, Arcane Melee, Planar Gate, and Mana Matrix.
+
 - **Menace.** "Can't be blocked except by two or more creatures" is a
   constraint on the finished declaration rather than on any one block: the
   first blocker is legal and only becomes illegal by being the last, so the

@@ -164,6 +164,7 @@ fn validate_effect_target_shapes(
         }
         EffectDef::CreateToken { count, .. }
         | EffectDef::ReduceGenericCostBy(count)
+        | EffectDef::ReduceMatchingSpellCostBy { amount: count, .. }
         | EffectDef::AddManaEqualTo { amount: count, .. } => validate_value_shape(count, targets),
         EffectDef::IfCondition { condition, then } => {
             validate_trigger_condition_shape(*condition, targets)?;

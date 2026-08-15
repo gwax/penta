@@ -595,6 +595,7 @@ mod scavenge;
 mod search_and_reveal;
 mod shroud_grants;
 mod silenced_sources;
+mod spell_cost_reduction;
 mod spore;
 mod stale_followups;
 mod stat_counters;

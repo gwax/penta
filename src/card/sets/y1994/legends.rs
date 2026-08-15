@@ -4186,8 +4186,26 @@ pub(in crate::card::sets) static KRY_SHIELD: CardRecord = CardRecord::new(
 // LEG 284 — Life Matrix
 // Audit: blocked — Needs granting a counter-consuming activated ability to a targeted creature and an activation window restricted to your upkeep for “{4}, {T}: Put a matrix counter on target creature and that creature gains "Remove a matrix counter from this creature: Regenerate this creature." Activate only during your upkeep”.
 
+static INSTANT_OR_ENCHANTMENT: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Instant),
+    ObjectPredicateDef::HasType(CardType::Enchantment),
+]);
+
 // LEG 285 — Mana Matrix
-// Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Instant and enchantment spells you cast cost {2} less to cast”.
+pub(in crate::card::sets) static MANA_MATRIX: CardRecord = CardRecord::new(
+    cards::MANA_MATRIX,
+    "Mana Matrix",
+    CardArt::new("0a2a6d21-7731-4228-ab19-b5bc4e31a0d7", "Mark Tedin"),
+    CardSet::Legends,
+    CardRules::new_artifact(mana_cost!("{6}")).with_ability(AbilityDef::static_ability(
+        "Instant and enchantment spells you cast cost {2} less to cast.",
+        EffectDef::ReduceMatchingSpellCostBy {
+            spell: INSTANT_OR_ENCHANTMENT,
+            caster: PlayerRelation::You,
+            amount: ValueDef::Constant(2),
+        },
+    )),
+);
 
 // LEG 286 — Marble Priest
 pub(in crate::card::sets) static MARBLE_PRIEST: CardRecord = CardRecord::new(
@@ -4227,7 +4245,20 @@ pub(in crate::card::sets) static MARBLE_PRIEST: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “{3}, {T}: The next time a source of your choice would deal damage to you this turn, that damage is dealt to target creature of an opponent's choice instead”.
 
 // LEG 290 — Planar Gate
-// Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Creature spells you cast cost {2} less to cast”.
+pub(in crate::card::sets) static PLANAR_GATE: CardRecord = CardRecord::new(
+    cards::PLANAR_GATE,
+    "Planar Gate",
+    CardArt::new("2cf8dfaa-d844-428a-a940-0da989b4c9d1", "Melissa A. Benson"),
+    CardSet::Legends,
+    CardRules::new_artifact(mana_cost!("{6}")).with_ability(AbilityDef::static_ability(
+        "Creature spells you cast cost {2} less to cast.",
+        EffectDef::ReduceMatchingSpellCostBy {
+            spell: ObjectPredicateDef::HasType(CardType::Creature),
+            caster: PlayerRelation::You,
+            amount: ValueDef::Constant(2),
+        },
+    )),
+);
 
 // LEG 291 — Red Mana Battery
 // Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{T}, Remove any number of charge counters from this artifact: Add {R}, then add an additional {R} for each charge counter removed this way”.
@@ -4601,7 +4632,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FORETHOUGHT_AMULET,
     &HORN_OF_DEAFENING,
     &KRY_SHIELD,
+    &MANA_MATRIX,
     &MARBLE_PRIEST,
+    &PLANAR_GATE,
     &RELIC_BARRIER,
     &SERPENT_GENERATOR,
     &KARAKAS,

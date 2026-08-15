@@ -547,49 +547,6 @@ impl Game {
         .is_break()
     }
 
-    /// How much generic mana this card's own static clauses take off its
-    /// cost. Read from the hand, which is where casting reads it.
-    pub(super) fn spell_cost_reduction(
-        &self,
-        definition: CardDefinitionId,
-        player: PlayerId,
-        source: GameObjectId,
-    ) -> u16 {
-        let Some(card) = self.catalog.get(definition) else {
-            return 0;
-        };
-        card.rules
-            .ability_clauses()
-            .iter()
-            .filter(|ability| ability.is_executable())
-            .filter_map(|ability| match ability.declarative_effect()? {
-                EffectDef::ReduceGenericCostBy(value) => Some(value),
-                _ => None,
-            })
-            .map(|value| self.cost_reduction_value(value, player, source))
-            .fold(0, u16::saturating_add)
-    }
-
-    /// The values a cost reduction can read. There is no resolving object
-    /// while a cost is being worked out, but static zone queries can still
-    /// use the card being cast as their source.
-    pub(super) fn cost_reduction_value(
-        &self,
-        value: ValueDef,
-        player: PlayerId,
-        source: GameObjectId,
-    ) -> u16 {
-        match value {
-            ValueDef::Constant(amount) => u16::try_from(amount.max(0)).unwrap_or(u16::MAX),
-            ValueDef::CountMatchingObjects(query) => u16::try_from(
-                self.objects_matching_query(*query, player, source, TriggerContext::empty())
-                    .len(),
-            )
-            .unwrap_or(u16::MAX),
-            _ => 0,
-        }
-    }
-
     pub(super) fn maximum_x_for(
         &self,
         player: PlayerId,
@@ -973,3 +930,5 @@ pub(super) fn hybrid_pays_with(cost: ManaCost, color: ManaColor) -> bool {
         .into_iter()
         .any(|pair| cost.hybrid[pair.index()] > 0 && pair.contains(color))
 }
+
+include!("mana_planning/cost_reduction.rs");

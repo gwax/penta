@@ -3153,8 +3153,28 @@ pub(in crate::card::sets) static FALL_OF_THE_GAVEL: CardRecord = CardRecord::new
 // RTR 162 — Firemind's Foresight
 // Audit: blocked — Needs three sequential hidden-library searches with distinct exact mana-value predicates before one final shuffle.
 
+static INSTANT_OR_SORCERY: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Instant),
+    ObjectPredicateDef::HasType(CardType::Sorcery),
+]);
+
 // RTR 163 — Goblin Electromancer
-// Audit: blocked — Needs a battlefield-wide generic-cost reduction for instant and sorcery spells you cast.
+pub(in crate::card::sets) static GOBLIN_ELECTROMANCER: CardRecord = CardRecord::new(
+    cards::GOBLIN_ELECTROMANCER,
+    "Goblin Electromancer",
+    CardArt::new("725b112d-2637-45c1-aec8-e89981ba5fa3", "Svetlin Velinov"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{U}{R}"), &["Goblin", "Wizard"], 2, 2).with_ability(
+        AbilityDef::static_ability(
+            "Instant and sorcery spells you cast cost {1} less to cast.",
+            EffectDef::ReduceMatchingSpellCostBy {
+                spell: INSTANT_OR_SORCERY,
+                caster: PlayerRelation::You,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ),
+);
 
 // RTR 164 — Golgari Charm
 pub(in crate::card::sets) static GOLGARI_CHARM: CardRecord = CardRecord::new(
@@ -4845,6 +4865,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DREG_MANGLER,
     &ESSENCE_BACKLASH,
     &FALL_OF_THE_GAVEL,
+    &GOBLIN_ELECTROMANCER,
     &GOLGARI_CHARM,
     &GRISLY_SALVAGE,
     &HELLHOLE_FLAILER,

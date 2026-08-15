@@ -375,6 +375,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::Detain { .. }
         | EffectDef::GainControl { .. }
         | EffectDef::ReduceGenericCostBy(_)
+        | EffectDef::ReduceMatchingSpellCostBy { .. }
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::CannotAttackIf(_)

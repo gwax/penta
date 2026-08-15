@@ -126,7 +126,9 @@ fn validate_effect_references(
         | EffectDef::CreateTokenCopyOf { object } => {
             validate_recipient_target_references(object, target_count, scope)
         }
-        EffectDef::CreateToken { count, .. } | EffectDef::ReduceGenericCostBy(count) => {
+        EffectDef::CreateToken { count, .. }
+        | EffectDef::ReduceGenericCostBy(count)
+        | EffectDef::ReduceMatchingSpellCostBy { amount: count, .. } => {
             validate_value_target_references(count, target_count, scope)
         }
         EffectDef::SacrificeOfChoice { player, then, .. } => {

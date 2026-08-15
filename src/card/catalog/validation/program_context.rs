@@ -137,6 +137,20 @@ fn validate_static_effect(
         {
             Ok(())
         }
+        // The battlefield mirror: read off a permanent rather than the card
+        // discounting itself, so it names the spells and their caster.
+        EffectDef::ReduceMatchingSpellCostBy {
+            spell,
+            caster,
+            amount,
+        } if position == StaticPosition::Root
+            && source_zones == [ZoneKind::Battlefield]
+            && static_object_predicate_supported(spell)
+            && static_player_relation_supported(caster)
+            && static_cost_reduction_value_supported(amount) =>
+        {
+            Ok(())
+        }
         _ => Err(effect_operation_name(effect)),
     }
 }
@@ -378,6 +392,7 @@ fn validate_resolving_effect(
         EffectDef::StaticApply { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::ReduceGenericCostBy(_)
+        | EffectDef::ReduceMatchingSpellCostBy { .. }
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::CannotAttackIf(_)
         | EffectDef::LandwalkCanBeBlocked(_) => Err(effect_operation_name(effect)),
@@ -736,6 +751,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::InstallTrigger(_) => "InstallTrigger",
         EffectDef::CannotBeForcedToSacrifice => "CannotBeForcedToSacrifice",
         EffectDef::ReduceGenericCostBy(_) => "ReduceGenericCostBy",
+        EffectDef::ReduceMatchingSpellCostBy { .. } => "ReduceMatchingSpellCostBy",
         EffectDef::CannotAttackUnless(_) => "CannotAttackUnless",
         EffectDef::CannotAttackIf(_) => "CannotAttackIf",
         EffectDef::LandwalkCanBeBlocked(_) => "LandwalkCanBeBlocked",
