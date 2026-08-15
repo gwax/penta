@@ -123,3 +123,4 @@ pub const SEA_KINGS_BLESSING: CardDefinitionId = CardDefinitionId(1767);
 pub const TOUCH_OF_DARKNESS: CardDefinitionId = CardDefinitionId(1768);
 pub const DWARVEN_SONG: CardDefinitionId = CardDefinitionId(1769);
 pub const SYLVAN_PARADISE: CardDefinitionId = CardDefinitionId(1770);
+pub const TWO_HEADED_GIANT_OF_FORIYS: CardDefinitionId = CardDefinitionId(1771);

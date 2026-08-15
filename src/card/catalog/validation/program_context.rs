@@ -265,6 +265,8 @@ fn static_object_applied_effect_supported(
             | AppliedRuleDef::MayChooseNotToUntap
             | AppliedRuleDef::RemainsAttachedThroughProtection,
         ) => true,
+        // Zero extra blocks would be a rule that grants nothing.
+        AppliedEffectDef::Rule(AppliedRuleDef::MayBlockAdditionalCreatures(extra)) => extra > 0,
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::BasicLandTypes(operation)) => {
             match operation {
                 SetOperationDef::Add(types)

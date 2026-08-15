@@ -564,6 +564,7 @@ mod meekstone;
 mod menace;
 mod modal_effects;
 mod morbid;
+mod multi_block;
 mod must_block;
 mod old_school_interactions;
 mod old_school_permanents;

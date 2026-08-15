@@ -110,6 +110,12 @@ pub enum AppliedRuleDef {
     CannotBecomeEnchanted,
     /// The affected creature cannot block at all.
     CannotBlock,
+    /// How many creatures beyond the first the affected creature may block.
+    ///
+    /// [`u8::MAX`] means any number. Blocking one attacker is the default
+    /// allowance every creature has, so this counts the extra ones -- a card
+    /// reading "an additional creature" says one.
+    MayBlockAdditionalCreatures(u8),
     /// Another player cannot gain control of the affected permanent.
     CannotChangeController,
     /// The affected Aura stays attached even when protection would otherwise

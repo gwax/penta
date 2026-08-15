@@ -3134,7 +3134,26 @@ pub(in crate::card::sets) static TUNNEL: CardRecord = CardRecord::new(
 );
 
 // LEA 179 — Two-Headed Giant of Foriys
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can block an additional creature each combat”.
+pub(in crate::card::sets) static TWO_HEADED_GIANT_OF_FORIYS: CardRecord = CardRecord::new(
+    cards::TWO_HEADED_GIANT_OF_FORIYS,
+    "Two-Headed Giant of Foriys",
+    CardArt::new("31c687dc-ee0c-4e54-a2b3-5d8e633b3245", "Anson Maddocks"),
+    CardSet::Alpha,
+    CardRules::new_creature(mana_cost!("{4}{R}"), &["Giant"], 4, 4).with_abilities(&[
+        abilities::trample(),
+        AbilityDef::static_ability(
+            "This creature can block an additional creature each combat.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::Source,
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayBlockAdditionalCreatures(1)),
+            },
+        ),
+    ]),
+);
 
 // LEA 180 — Uthden Troll
 pub(in crate::card::sets) static UTHDEN_TROLL: CardRecord = CardRecord::new(
@@ -5007,6 +5026,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STONE_GIANT,
     &STONE_RAIN,
     &TUNNEL,
+    &TWO_HEADED_GIANT_OF_FORIYS,
     &UTHDEN_TROLL,
     &WALL_OF_FIRE,
     &WALL_OF_STONE,

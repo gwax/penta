@@ -262,6 +262,26 @@ impl Game {
         self.has_applied_rule(permanent, AppliedRuleDef::CannotAttack)
     }
 
+    /// Whether this creature may still be declared as a blocker.
+    ///
+    /// Every creature may block one attacker; a rule can raise that. The
+    /// allowance counts attackers rather than declarations, which is what
+    /// makes a band cost one blocker no matter how many creatures are in it.
+    fn has_blocks_left(&self, permanent: &Permanent) -> bool {
+        let mut allowance = 1_usize;
+        let _ = self.visit_applied_rules(permanent, |applied| {
+            if let AppliedRuleDef::MayBlockAdditionalCreatures(extra) = applied.rule {
+                allowance = if extra == u8::MAX {
+                    usize::MAX
+                } else {
+                    allowance.saturating_add(usize::from(extra))
+                };
+            }
+            ControlFlow::Continue(())
+        });
+        permanent.blocking.len() < allowance
+    }
+
     pub(super) fn cannot_block(&self, permanent: &Permanent) -> bool {
         if permanent.detained_until_turn_of.is_some() {
             return true;
@@ -360,7 +380,7 @@ impl Game {
             .filter(|permanent| {
                 permanent.controller == player
                     && !permanent.tapped
-                    && !permanent.is_blocking_anything()
+                    && self.has_blocks_left(permanent)
                     && self.power(permanent).is_some()
                     && !self.cannot_block(permanent)
             })
@@ -407,6 +427,10 @@ impl Game {
                             .zip(self.permanent_colors(blocker_permanent))
                             .any(|(attacker, blocker)| attacker && blocker);
                         let can_block = !(*unblockable
+                            // A second declaration against the same attacker
+                            // would spend one of the blocker's allowance on a
+                            // block it already has.
+                            || blocker_permanent.is_blocking(*attacker)
                             || self.cannot_be_blocked(attacker_permanent)
                             || self.blocking_is_prevented(attacker_permanent, blocker_permanent)
                             || self.blocker_may_only_block(blocker_permanent, attacker_permanent)
