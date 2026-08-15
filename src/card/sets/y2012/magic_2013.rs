@@ -1592,7 +1592,21 @@ pub(in crate::card::sets) static DUSKMANTLE_PROWLER: CardRecord = CardRecord::ne
 );
 
 // M13 92 — Duty-Bound Dead
-// Audit: blocked — Needs executable exalted plus a regeneration action.
+pub(in crate::card::sets) static DUTY_BOUND_DEAD: CardRecord = CardRecord::new(
+    cards::DUTY_BOUND_DEAD,
+    "Duty-Bound Dead",
+    CardArt::new("5150aa90-1284-4261-8625-2528139f0015", "Johannes Voss"),
+    CardSet::Magic2013,
+    // A 0/2 that regenerates: exalted is what gives it something to do on
+    // the attack, since alone it is the creature being pumped.
+    CardRules::new_creature(mana_cost!("{B}"), &["Skeleton"], 0, 2).with_abilities(&[
+        abilities::exalted(),
+        abilities::regenerate_self(
+            "{3}{B}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{3}{B}"))],
+        ),
+    ]),
+);
 
 // M13 93 — Essence Drain
 pub(in crate::card::sets) static ESSENCE_DRAIN: CardRecord = CardRecord::new(
@@ -2262,8 +2276,42 @@ pub(in crate::card::sets) static GOBLIN_ARSONIST: CardRecord = CardRecord::new(
 // M13 135 — Goblin Battle Jester
 // Audit: blocked — No turn-long effect can make a target creature unable to block.
 
+static HAMLETBACK_GOLIATH_COUNTERS: EffectDef = EffectDef::AddCounters {
+    object: EffectRecipientDef::Source,
+    kind: CounterKind::PlusOnePlusOne,
+    amount: ValueDef::TriggeringObjectPower,
+};
+
 // M13 136 — Hamletback Goliath
-// Audit: blocked — Trigger values cannot read the entering creature's power for the counter amount.
+pub(in crate::card::sets) static HAMLETBACK_GOLIATH: CardRecord = CardRecord::new(
+    cards::HAMLETBACK_GOLIATH,
+    "Hamletback Goliath",
+    CardArt::new(
+        "01ddeef1-f6f9-48c0-a93c-7bb3877c0e59",
+        "Paolo Parente & Brian Snõddy",
+    ),
+    CardSet::Magic2013,
+    // "Another creature", with no controller clause: the opponent's arrivals
+    // feed it too, which is what makes it worth its cost.
+    CardRules::new_creature(mana_cost!("{6}{R}"), &["Giant", "Warrior"], 6, 6).with_ability(
+        AbilityDef::triggered(
+            "Whenever another creature enters, you may put X +1/+1 counters on this creature, \
+             where X is that creature's power.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                ]),
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &HAMLETBACK_GOLIATH_COUNTERS,
+            },
+        ),
+    ),
+);
 
 // M13 137 — Kindled Fury
 pub(in crate::card::sets) static KINDLED_FURY: CardRecord = CardRecord::new(
@@ -2766,8 +2814,51 @@ pub(in crate::card::sets) static DUSKDALE_WURM: CardRecord = CardRecord::new(
 // M13 167 — Elderscale Wurm
 // Audit: blocked — Needs conditional life-total setting on entry and a damage replacement that enforces a life floor.
 
+static ELVISH_ARCHDRUID_ELVES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::Subtype("Elf"),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static ELVISH_ARCHDRUID_OTHER_ELVES: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Subtype("Elf"),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+]);
+
 // M13 168 — Elvish Archdruid
-// Audit: blocked — Activated mana abilities cannot produce an amount derived from the controller's Elf count.
+pub(in crate::card::sets) static ELVISH_ARCHDRUID: CardRecord = CardRecord::new(
+    cards::ELVISH_ARCHDRUID,
+    "Elvish Archdruid",
+    CardArt::new("bf8eba57-8c51-490b-995f-53eeb7ad574f", "Karl Kopinski"),
+    CardSet::Magic2013,
+    // The count includes the Archdruid itself, which is an Elf: a lone one
+    // taps for a single green rather than none.
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Elf", "Druid"], 2, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "Other Elf creatures you control get +1/+1.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ELVISH_ARCHDRUID_OTHER_ELVES,
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {G} for each Elf you control.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddManaEqualTo {
+                color: ManaColor::Green,
+                amount: ValueDef::CountMatchingObjects(&ELVISH_ARCHDRUID_ELVES),
+            },
+        ),
+    ]),
+);
 
 // M13 169 — Elvish Visionary
 pub(in crate::card::sets) static ELVISH_VISIONARY: CardRecord = CardRecord::new(
@@ -3850,6 +3941,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DISENTOMB,
     &DURESS,
     &DUSKMANTLE_PROWLER,
+    &DUTY_BOUND_DEAD,
     &ESSENCE_DRAIN,
     &GIANT_SCORPION,
     &HARBOR_BANDIT,
@@ -3879,6 +3971,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FLAMES_OF_THE_FIREBRAND,
     &FURNACE_WHELP,
     &GOBLIN_ARSONIST,
+    &HAMLETBACK_GOLIATH,
     &KINDLED_FURY,
     &KRENKO_MOB_BOSS,
     &KRENKOS_COMMAND,
@@ -3901,6 +3994,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CENTAUR_COURSER,
     &DEADLY_RECLUSE,
     &DUSKDALE_WURM,
+    &ELVISH_ARCHDRUID,
     &ELVISH_VISIONARY,
     &FARSEEK,
     &FLINTHOOF_BOAR,

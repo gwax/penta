@@ -67,3 +67,6 @@ pub const SEWER_SHAMBLER: CardDefinitionId = CardDefinitionId(1866);
 pub const GOLGARI_DECOY: CardDefinitionId = CardDefinitionId(1867);
 pub const EXPERIMENT_ONE: CardDefinitionId = CardDefinitionId(1868);
 pub const THRASHING_MOSSDOG: CardDefinitionId = CardDefinitionId(1869);
+pub const DUTY_BOUND_DEAD: CardDefinitionId = CardDefinitionId(1870);
+pub const HAMLETBACK_GOLIATH: CardDefinitionId = CardDefinitionId(1871);
+pub const ELVISH_ARCHDRUID: CardDefinitionId = CardDefinitionId(1872);

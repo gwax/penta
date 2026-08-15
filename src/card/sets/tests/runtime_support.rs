@@ -177,7 +177,10 @@ pub(super) fn shared_mana_effect(effect: EffectDef, choices_are_supported: bool)
     // as the ability is offered, so the amount is known before activation
     // just as a printed one is.
     if let EffectDef::AddManaEqualTo { amount, .. } = effect {
-        return matches!(amount, ValueDef::CountersOnSource(_));
+        return matches!(
+            amount,
+            ValueDef::CountersOnSource(_) | ValueDef::CountMatchingObjects(_)
+        );
     }
     let EffectDef::AddMana(mana) = effect else {
         return false;

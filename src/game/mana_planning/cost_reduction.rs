@@ -159,6 +159,9 @@ impl Game {
             ValueDef::CountersOnSource(kind) => permanent.counters(kind),
             other => self.cost_reduction_value(other, permanent.controller, permanent.card.id),
         }
+        // `cost_reduction_value` already answers constants and battlefield
+        // counts; anything it does not know reads as zero, which is why the
+        // boundary rule admits only the forms listed there.
     }
 
     pub(super) fn cost_reduction_value(

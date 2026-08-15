@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Duty-Bound Dead**, **Hamletback Goliath** and **Elvish Archdruid**. The
+  Archdruid extends the mana-ability amount from a counter count to a
+  battlefield count: either is knowable before the ability is activated, which
+  is the property the boundary rule actually cares about.
+
 - **Golgari Decoy**, **Experiment One** and **Thrashing Mossdog**, three more
   cards resting on evolve, scavenge and regeneration. The Decoy's block clause
   is a lure -- every able blocker must block *it* -- rather than a requirement
