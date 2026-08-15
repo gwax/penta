@@ -739,7 +739,7 @@ pub(in crate::card::sets) static BREEDING_PIT: CardRecord = CardRecord::new(
 );
 
 // FEM 36 — Derelor
-// Audit: blocked — Needs a spell-color predicate in trigger capture for “Black spells you cast cost {B} more to cast”.
+// Audit: blocked — Needs a cost increase in colored mana; the vocabulary can only discount generic mana on matching spells. Reading a spell's color is available.
 
 // FEM 37 — Ebon Praetor
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Sacrifice a creature: Remove a -2/-2 counter from this creature. If the sacrificed creature was a Thrull, put a +1/+0 counter on this creature. Activate only during your upkeep and only…”.
@@ -950,7 +950,7 @@ pub(in crate::card::sets) static THRULL_RETAINER: CardRecord = CardRecord::new(
 );
 
 // FEM 46 — Thrull Wizard
-// Audit: blocked — Needs a spell-color predicate in trigger capture for “{1}{B}: Counter target black spell unless that spell's controller pays {B} or {3}”.
+// Audit: blocked — Needs an unless-payment offering a choice between two mana costs. Reading a spell's color is available.
 
 // FEM 47 — Tourach's Chant
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Whenever a player puts a Forest onto the battlefield, this enchantment deals 3 damage to that player unless they put a -1/-1 counter on a creature they control”.

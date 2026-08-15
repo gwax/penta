@@ -99,6 +99,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Sol'kanar the Swamp King.** Its audit line said trigger capture could not
+  see a spell's color. It has been able to since the cast event started
+  carrying locked characteristics; nothing was missing but the card.
+
 - **Setting base power alone.** "Has base power 0" says half of what a base
   power-and-toughness effect says, and the layer kept only its latest setter,
   so there was no way to name one half without inventing the other. Base

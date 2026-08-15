@@ -3918,7 +3918,30 @@ pub(in crate::card::sets) static SIVITRI_SCARZAM: CardRecord = CardRecord::new(
 );
 
 // LEG 259 — Sol'kanar the Swamp King
-// Audit: blocked — Needs a spell-color predicate in trigger capture for “Whenever a player casts a black spell, you gain 1 life”.
+pub(in crate::card::sets) static SOLKANAR_THE_SWAMP_KING: CardRecord = CardRecord::new(
+    cards::SOLKANAR_THE_SWAMP_KING,
+    "Sol'kanar the Swamp King",
+    CardArt::new(
+        "7a20dcb0-5350-40e0-82d3-c8d0186fc9d2",
+        "Richard Kane Ferguson",
+    ),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{U}{B}{R}"), &["Demon"], 5, 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::landwalk(BasicLandType::Swamp),
+            AbilityDef::triggered(
+                "Whenever a player casts a black spell, you gain 1 life.",
+                // Any player's: the predicate names a color and nothing about
+                // who cast it.
+                TriggerEventDef::SpellCast(ObjectPredicateDef::Color(ManaColor::Black)),
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
 
 // LEG 260 — Stangg
 // Audit: blocked — Needs a zone-object query and identity-preserving continuation for “When Stangg enters, create Stangg Twin, a legendary 3/4 red and green Human Warrior creature token. Exile that token when Stangg leaves the battlefield. Sacrifice Stangg when that token…”.
@@ -4971,6 +4994,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RUBINIA_SOULSINGER,
     &SIR_SHANDLAR_OF_EBERYN,
     &SIVITRI_SCARZAM,
+    &SOLKANAR_THE_SWAMP_KING,
     &SUNASTIAN_FALCONER,
     &TETSUO_UMEZAWA,
     &THE_LADY_OF_THE_MOUNTAIN,
