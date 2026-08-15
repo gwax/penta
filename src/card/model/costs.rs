@@ -22,6 +22,10 @@ pub enum CostDef {
     DiscardSource,
     PayLife(u16),
     DiscardCards(u8),
+    /// Discard that many cards chosen at random from the payer's hand. Unlike
+    /// [`Self::DiscardCards`] nobody chooses, so paying it needs no decision:
+    /// the cards leave as the cost is paid.
+    DiscardCardsAtRandom(u8),
     SacrificePermanent {
         object: ObjectPredicateDef,
         controller: PlayerRelation,

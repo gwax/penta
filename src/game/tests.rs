@@ -599,6 +599,7 @@ mod prevention;
 mod prevention_modes;
 mod rabid_wombat;
 mod rampage;
+mod random_discard;
 mod regeneration;
 mod removal_and_keywords;
 mod replacements_and_presentation;

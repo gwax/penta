@@ -1750,7 +1750,29 @@ pub(in crate::card::sets) static AEOLIPILE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{2}, {T}: This turn, when target creature you control attacks and isn't blocked, it assigns no combat damage this turn and you put a cube counter on this artifact”.
 
 // FEM 86 — Draconian Cylix
-// Audit: blocked — Needs a random discard as an activation cost; the discard cost lets its payer choose which cards leave hand.
+pub(in crate::card::sets) static DRACONIAN_CYLIX: CardRecord = CardRecord::new(
+    cards::DRACONIAN_CYLIX,
+    "Draconian Cylix",
+    CardArt::new(
+        "a419c9e3-5615-44f9-9256-94a3022bb69f",
+        "Edward P. Beard, Jr.",
+    ),
+    CardSet::FallenEmpires,
+    CardRules::new_artifact(mana_cost!("{3}")).with_ability(AbilityDef::activated_with_targets(
+        "{2}, {T}, Discard a card at random: Regenerate target creature.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{2}")),
+            AbilityCostDef::TapSource,
+            AbilityCostDef::DiscardCardsAtRandom(1),
+        ],
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Regenerate {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    )),
+);
 
 // FEM 87 — Elven Lyre
 pub(in crate::card::sets) static ELVEN_LYRE: CardRecord = CardRecord::new(
@@ -2090,6 +2112,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &THELONITE_DRUID,
     &THORN_THALLID,
     &AEOLIPILE,
+    &DRACONIAN_CYLIX,
     &ELVEN_LYRE,
     &IMPLEMENTS_OF_SACRIFICE,
     &RING_OF_RENEWAL,

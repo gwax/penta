@@ -814,7 +814,30 @@ pub(in crate::card::sets) static COLOSSUS_OF_SARDIA: CardRecord = CardRecord::ne
 );
 
 // ATQ 47 — Coral Helm
-// Audit: blocked — Needs the clause's conditional recipient set or dynamic modifier value for “{3}, Discard a card at random: Target creature gets +2/+2 until end of turn”.
+pub(in crate::card::sets) static CORAL_HELM: CardRecord = CardRecord::new(
+    cards::CORAL_HELM,
+    "Coral Helm",
+    CardArt::new("6c6df9db-0a46-40a5-ae9d-59f47dae9056", "Amy Weber"),
+    CardSet::Antiquities,
+    CardRules::new_artifact(mana_cost!("{3}")).with_ability(AbilityDef::activated_with_targets(
+        "{3}, Discard a card at random: Target creature gets +2/+2 until end of turn.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{3}")),
+            AbilityCostDef::DiscardCardsAtRandom(1),
+        ],
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(2),
+                ValueDef::Constant(2),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // ATQ 48 — Cursed Rack
 // Audit: blocked — Needs a hidden-zone decision and continuation for “The chosen player's maximum hand size is four”.
@@ -1577,6 +1600,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BATTERING_RAM,
     &CLAY_STATUE,
     &COLOSSUS_OF_SARDIA,
+    &CORAL_HELM,
     &DRAGON_ENGINE,
     &FELDONS_CANE,
     &GOLGOTHIAN_SYLEX,

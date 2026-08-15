@@ -109,6 +109,7 @@ impl Game {
                 | AbilityCostDef::PayLife(_)
                 | AbilityCostDef::DiscardSource
                 | AbilityCostDef::DiscardCards(_)
+                | AbilityCostDef::DiscardCardsAtRandom(_)
                 | AbilityCostDef::SacrificePermanent { .. }
                 | AbilityCostDef::TapPermanent { .. }
                 | AbilityCostDef::Loyalty(_)
@@ -217,6 +218,7 @@ impl Game {
                     | AbilityCostDef::RemoveCountersFromSource { .. }
                     | AbilityCostDef::PayLife(_)
                     | AbilityCostDef::DiscardCards(_)
+                    | AbilityCostDef::DiscardCardsAtRandom(_)
                     | AbilityCostDef::SacrificePermanent { .. }
                     | AbilityCostDef::TapPermanent { .. }
                     | AbilityCostDef::ExileSource
@@ -400,6 +402,9 @@ impl Game {
                             }
                             permanent.activated_loyalty_this_turn = true;
                         }
+                    }
+                    AbilityCostDef::DiscardCardsAtRandom(amount) => {
+                        self.discard_at_random(player, usize::from(*amount));
                     }
                     AbilityCostDef::UntapSource
                     | AbilityCostDef::DiscardCards(_)

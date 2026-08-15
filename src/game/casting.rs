@@ -241,6 +241,7 @@ impl Game {
                 | AbilityCostDef::Loyalty(_)
                 | AbilityCostDef::ExileCardFromGraveyard(_)
                 | AbilityCostDef::DiscardCards(_)
+                | AbilityCostDef::DiscardCardsAtRandom(_)
                 | AbilityCostDef::SacrificePermanent { .. }
                 | AbilityCostDef::TapPermanent { .. }
                 | AbilityCostDef::Special(_) => {

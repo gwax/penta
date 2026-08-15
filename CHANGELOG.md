@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Discarding at random as an activation cost.** Unlike the discard its payer
+  chooses, nobody decides which cards go, so paying it needs no decision at
+  all: the cards leave as the cost is paid, picked off the seeded generator.
+  Coral Helm and Draconian Cylix.
+
 - **Desert and Island of Wak-Wak.** Desert waits for the end-of-combat step,
   which is a new activation window and the whole point of the card: it finishes
   off something that survived rather than stopping it. Island of Wak-Wak is

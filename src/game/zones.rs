@@ -239,6 +239,27 @@ impl Game {
             .collect()
     }
 
+    /// Discards that many cards picked at random from a player's hand.
+    ///
+    /// The picks come off the seeded generator one at a time, so a replay of
+    /// the same seed discards the same cards. Fewer cards in hand than asked
+    /// for discards the whole hand, which is what paying a cost you can only
+    /// partly afford would mean -- but activation legality already refuses
+    /// that case, so in practice the hand is always big enough.
+    pub(super) fn discard_at_random(&mut self, player: PlayerId, amount: usize) {
+        let mut chosen = Vec::with_capacity(amount);
+        let mut remaining: Vec<_> = self.players[player.index()]
+            .hand
+            .iter()
+            .map(|card| card.id)
+            .collect();
+        for _ in 0..amount.min(remaining.len()) {
+            let index = self.rng.index_below(remaining.len());
+            chosen.push(remaining.swap_remove(index));
+        }
+        self.discard_cards(player, &chosen);
+    }
+
     pub(super) fn discard_cards(&mut self, player: PlayerId, cards: &[GameObjectId]) {
         self.discard_cards_with_cause(player, cards, ZoneMoveCause::Rules);
         self.cleanup_pending = false;

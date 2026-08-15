@@ -329,7 +329,10 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
             | AbilityCostDef::SacrificeSource
             | AbilityCostDef::RemoveCountersFromSource { .. }
             | AbilityCostDef::PayLife(_)
-            | AbilityCostDef::Loyalty(_) => battlefield,
+            | AbilityCostDef::Loyalty(_)
+            // Nobody chooses which cards go, so a random discard needs no
+            // decision procedure -- only a permanent to activate from.
+            | AbilityCostDef::DiscardCardsAtRandom(_) => battlefield,
             AbilityCostDef::DiscardSource => hand,
             AbilityCostDef::UntapSource
             | AbilityCostDef::DiscardCards(_)

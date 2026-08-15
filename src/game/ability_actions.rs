@@ -164,6 +164,11 @@ impl Game {
                             self.players[player.index()].life
                                 < i16::try_from(*amount).unwrap_or(i16::MAX)
                         }
+                        // Nobody chooses, so the only question is whether the
+                        // hand is big enough to pay.
+                        AbilityCostDef::DiscardCardsAtRandom(amount) => {
+                            self.players[player.index()].hand.len() < usize::from(*amount)
+                        }
                         // A loyalty ability is sorcery speed, once per turn,
                         // and only removes counters the permanent has.
                         AbilityCostDef::Loyalty(change) => {
@@ -464,6 +469,7 @@ impl Game {
                         | AbilityCostDef::RemoveCountersFromSource { .. }
                         | AbilityCostDef::PayLife(_)
                         | AbilityCostDef::DiscardCards(_)
+                        | AbilityCostDef::DiscardCardsAtRandom(_)
                         | AbilityCostDef::SacrificePermanent { .. }
                         | AbilityCostDef::TapPermanent { .. }
                         | AbilityCostDef::ExileSource
@@ -547,6 +553,7 @@ impl Game {
                             | AbilityCostDef::PayLife(_)
                             | AbilityCostDef::DiscardSource
                             | AbilityCostDef::DiscardCards(_)
+                            | AbilityCostDef::DiscardCardsAtRandom(_)
                             | AbilityCostDef::SacrificePermanent { .. }
                             | AbilityCostDef::TapPermanent { .. }
                             | AbilityCostDef::Loyalty(_)
