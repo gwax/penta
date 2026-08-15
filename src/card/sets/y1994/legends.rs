@@ -1173,7 +1173,7 @@ pub(in crate::card::sets) static UNDERTOW: CardRecord = CardRecord::new(
 );
 
 // LEG 83 — Venarian Gold
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Enchanted creature doesn't untap during its controller's untap step if it has a sleep counter on it”.
+// Audit: blocked — Needs the X chosen as this Aura was cast to be readable by its enters trigger, for “put X sleep counters on it”; an enters trigger is a new object and reads X as zero. The untap prohibition, the counter check on the attached permanent, and the host controller's upkeep are all available.
 
 // LEG 84 — Wall of Vapor
 pub(in crate::card::sets) static WALL_OF_VAPOR: CardRecord = CardRecord::new(
@@ -4800,7 +4800,7 @@ pub(in crate::card::sets) static SERPENT_GENERATOR: CardRecord = CardRecord::new
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Sacrifice this artifact: Choose one. Activate only if there are two or more hatchling counters on this artifact”.
 
 // LEG 298 — Voodoo Doll
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “At the beginning of your end step, if this artifact is untapped, destroy this artifact and it deals damage to you equal to the number of pin counters on it”.
+// Audit: blocked — Needs a mana activation cost whose amount is read from the source rather than printed, for “{X}{X}, {T}: ... X is the number of pin counters on this artifact”. The upkeep tick, the untapped intervening-if, and damage equal to a counter count are all available.
 
 // LEG 299 — White Mana Battery
 // Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{T}, Remove any number of charge counters from this artifact: Add {W}, then add an additional {W} for each charge counter removed this way”.

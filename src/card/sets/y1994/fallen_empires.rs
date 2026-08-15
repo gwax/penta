@@ -551,7 +551,7 @@ pub(in crate::card::sets) static HOMARID_WARRIOR: CardRecord = CardRecord::new(
 );
 
 // FEM 23a — Merseine
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “Enchanted creature doesn't untap during its controller's untap step if this Aura has a net counter on it”.
+// Audit: blocked — Needs an activation cost that is another permanent's mana cost rather than a printed one, and a restriction naming the enchanted creature's controller as the only player who may activate. The untap prohibition, the counter check, and entering with counters are all available.
 
 // FEM 24 — River Merfolk
 pub(in crate::card::sets) static RIVER_MERFOLK: CardRecord = CardRecord::new(
