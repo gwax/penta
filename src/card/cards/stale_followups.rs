@@ -97,3 +97,5 @@ pub const NIVIX_CYCLOPS: CardDefinitionId = CardDefinitionId(1741);
 pub const HUNTED_GHOUL: CardDefinitionId = CardDefinitionId(1742);
 pub const FERVENT_CATHAR: CardDefinitionId = CardDefinitionId(1743);
 pub const MALICIOUS_INTENT: CardDefinitionId = CardDefinitionId(1744);
+pub const SERAPH_OF_THE_SWORD: CardDefinitionId = CardDefinitionId(1745);
+pub const ARMORED_TRANSPORT: CardDefinitionId = CardDefinitionId(1746);

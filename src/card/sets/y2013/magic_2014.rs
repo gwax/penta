@@ -14,11 +14,11 @@ use crate::card::{
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     CardTypeSet, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, CreatureTypeSetDef,
-    DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    DamageEventMatcherDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, TargetConditionDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -341,7 +341,24 @@ pub(in crate::card::sets) static SENTINEL_SLIVER: CardRecord = CardRecord::new(
 );
 
 // M14 31 — Seraph of the Sword
-// Audit: blocked — Combat-damage prevention is only available as a turn-scoped resolving effect, not a permanent static shield.
+pub(in crate::card::sets) static SERAPH_OF_THE_SWORD: CardRecord = CardRecord::new(
+    cards::SERAPH_OF_THE_SWORD,
+    "Seraph of the Sword",
+    CardArt::new("6caa91aa-f175-40cd-b984-f37cb2cae7db", "Jaime Jones"),
+    CardSet::Magic2014,
+    CardRules::new_creature(mana_cost!("{3}{W}"), &["Angel"], 3, 3).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::static_ability(
+            "Prevent all combat damage that would be dealt to this creature.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(
+                    DamageEventMatcherDef::COMBAT_TO_AFFECTED,
+                )),
+            },
+        ),
+    ]),
+);
 
 // M14 34 — Siege Mastodon
 pub(in crate::card::sets) static SIEGE_MASTODON: CardRecord = CardRecord::new(
@@ -2914,6 +2931,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &IMPOSING_SOVEREIGN,
     &INDESTRUCTIBILITY,
     &SENTINEL_SLIVER,
+    &SERAPH_OF_THE_SWORD,
     &SIEGE_MASTODON,
     &SOLEMN_OFFERING,
     &SOULMENDER,

@@ -166,6 +166,67 @@ fn demonic_torment_stops_only_what_its_host_deals() {
     );
 }
 
+/// A shield printed on the creature itself rather than granted, and read the
+/// same way: the Seraph takes nothing from combat at all.
+#[test]
+fn the_seraph_takes_no_combat_damage() {
+    let (mut game, _, seraph) = blocked_by_attacker(cards::SEDGE_TROLL, cards::SERAPH_OF_THE_SWORD);
+    game.deal_combat_damage();
+
+    assert_eq!(damage_on(&game, seraph), 0);
+    assert!(survives(&game, seraph));
+}
+
+/// Non-combat damage is a different event, and the Seraph's shield names
+/// combat.
+#[test]
+fn the_seraph_still_takes_damage_from_a_spell() {
+    let (mut game, _, seraph) = blocked_by_attacker(cards::SEDGE_TROLL, cards::SERAPH_OF_THE_SWORD);
+    game.damage_target_from(None, Some(Target::Permanent(seraph)), 2);
+
+    assert_eq!(damage_on(&game, seraph), 2);
+}
+
+/// The Transport's shield is narrower: it stops what its blockers deal and
+/// nothing else, so a creature outside the block still connects.
+#[test]
+fn the_transport_only_stops_its_own_blockers() {
+    // The Transport has to be the attacker: its shield names the creatures
+    // blocking it, and nothing blocks a blocker.
+    let (mut game, transport, _) =
+        blocked_by_attacker(cards::ARMORED_TRANSPORT, cards::SEDGE_TROLL);
+    game.deal_combat_damage();
+    assert_eq!(damage_on(&game, transport), 0, "its blocker deals nothing");
+
+    let other = creature(10_002, cards::SAVANNAH_LIONS, PlayerId::One);
+    let other_id = other.card.id;
+    game.battlefield.push(other);
+    game.damage_target_from(Some(other_id), Some(Target::Permanent(transport)), 1);
+
+    assert_eq!(
+        damage_on(&game, transport),
+        1,
+        "a creature it never met still hits it"
+    );
+}
+
+/// The other side of the same relationship, and the one that tells the
+/// predicate apart from a blanket shield: a creature the Transport is
+/// blocking is not a creature blocking the Transport, so its damage lands.
+#[test]
+fn the_transport_takes_damage_from_what_it_blocks() {
+    let (mut game, _, transport) =
+        blocked_by_attacker(cards::MONSS_GOBLIN_RAIDERS, cards::ARMORED_TRANSPORT);
+    game.deal_combat_damage();
+
+    // Its toughness is one, so the damage landing is the same fact as the
+    // Transport not being there any more.
+    assert!(
+        !survives(&game, transport),
+        "a blanket shield would have saved it"
+    );
+}
+
 #[test]
 fn every_wall_identity_reports_its_audited_coverage() {
     let catalog = poc::catalog().expect("catalog builds");

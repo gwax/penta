@@ -74,6 +74,11 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Seraph of the Sword and Armored Transport**, two static combat shields.
+  The Seraph's is blanket; the Transport's names only the creatures blocking
+  it, which is a narrower thing than it looks -- a creature the Transport is
+  blocking is not one blocking the Transport, and its damage lands.
+
 - **Hunted Ghoul, Fervent Cathar, and Malicious Intent.** All three were
   marked as needing blocking restrictions the engine already had: one names a
   creature type, and two hand the prohibition out for a turn.

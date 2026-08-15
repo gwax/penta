@@ -5,13 +5,13 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
-    DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef,
-    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
-    PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
-    cards,
+    ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef,
+    DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef,
+    DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
+    KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -3330,8 +3330,33 @@ pub(in crate::card::sets) static SHATTERING_BLOW: CardRecord = CardRecord::new(
     )),
 );
 
+/// Narrower than a blanket shield: it stops what its blockers deal and
+/// nothing else, so anything that is not in the block with it still lands.
+static ARMORED_TRANSPORT_SHIELD: DamageEventMatcherDef = DamageEventMatcherDef {
+    kind: DamageKindDef::Combat,
+    source: DamageSourceMatcherDef::Matching(ObjectPredicateDef::BlockingSource),
+    recipient: DamageRecipientMatcherDef::AffectedObject,
+};
+
 // GTC 226 — Armored Transport
-// Audit: blocked — Damage prevention cannot select only creatures currently blocking this source.
+pub(in crate::card::sets) static ARMORED_TRANSPORT: CardRecord = CardRecord::new(
+    cards::ARMORED_TRANSPORT,
+    "Armored Transport",
+    CardArt::new("0f42fe85-d455-4e24-bd0e-8a3ec3d112aa", "Cliff Childs"),
+    CardSet::Gatecrash,
+    CardRules::new_artifact_creature(mana_cost!("{3}"), &["Construct"], 2, 1).with_ability(
+        AbilityDef::static_ability(
+            "Prevent all combat damage that would be dealt to this creature by creatures \
+             blocking it.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(
+                    ARMORED_TRANSPORT_SHIELD,
+                )),
+            },
+        ),
+    ),
+);
 
 // GTC 227 — Boros Keyrune
 // Audit: blocked — Needs its colors, creature type, and base power/toughness authored as one end-of-turn characteristic effect.
@@ -3710,6 +3735,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MERFOLK_OF_THE_DEPTHS,
     &RUBBLEBELT_RAIDERS,
     &SHATTERING_BLOW,
+    &ARMORED_TRANSPORT,
     &MILLENNIAL_GARGOYLE,
     &RAZORTIP_WHIP,
     &SKYBLINDER_STAFF,
