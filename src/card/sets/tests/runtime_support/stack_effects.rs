@@ -89,7 +89,11 @@ fn shared_damage_prevention(prevention: crate::card::DamagePreventionDef) -> boo
 /// decision is allowed where they sit; this checks only their arguments.
 fn shared_decision_effect(effect: EffectDef) -> bool {
     match effect {
-        EffectDef::LookAtTopAndSelect { player, selection } => {
+        EffectDef::LookAtTopAndSelect {
+            player,
+            looker,
+            selection,
+        } => {
             let supported_zone = |zone| {
                 matches!(
                     zone,
@@ -97,6 +101,7 @@ fn shared_decision_effect(effect: EffectDef) -> bool {
                 )
             };
             shared_effect_recipient(player)
+                && shared_effect_recipient(looker)
                 && selection.object.is_none_or(shared_object_predicate)
                 && selection.minimum <= selection.maximum
                 && supported_zone(selection.selected_zone)

@@ -70,6 +70,7 @@ pub(in crate::card::sets) static OPT: CardRecord = CardRecord::new(
         "Scry 1.\nDraw a card.",
         EffectDef::LookAtTopAndSelect {
             player: EffectRecipientDef::Controller,
+            looker: EffectRecipientDef::Controller,
             selection: &OPT_SELECTION,
         },
     )),

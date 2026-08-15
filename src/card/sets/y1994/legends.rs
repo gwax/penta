@@ -10,8 +10,8 @@ use crate::card::{
     EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, ScaledValueDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ResolvedEffectDurationDef, ScaledValueDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -579,8 +579,49 @@ pub(in crate::card::sets) static TUNDRA_WOLVES: CardRecord = CardRecord::new(
         .with_ability(abilities::first_strike()),
 );
 
+/// The shuffle is the caster's call and comes after the look, which is the
+/// point of the card: you decide whether to disturb what you just saw.
+static VISIONS_SHUFFLE: EffectDef = EffectDef::May {
+    player: EffectRecipientDef::Controller,
+    effect: &EffectDef::ShuffleLibrary {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+};
+
+static VISIONS_LOOK: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(5),
+    object: None,
+    minimum: 0,
+    maximum: 0,
+    reveal_selected: false,
+    selected_zone: ZoneKind::Library,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Top,
+    then: Some(&VISIONS_SHUFFLE),
+};
+
+static VISIONS_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
 // LEG 41 — Visions
-// Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “Look at the top five cards of target player's library. You may then have that player shuffle that library”.
+pub(in crate::card::sets) static VISIONS: CardRecord = CardRecord::new(
+    cards::VISIONS,
+    "Visions",
+    CardArt::new("54830c65-b4dd-406a-8dab-dd283424d0d2", "NéNé Thomas"),
+    CardSet::Legends,
+    CardRules::new_sorcery(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Look at the top five cards of target player's library. You may then have that player \
+         shuffle that library.",
+        &VISIONS_TARGET,
+        EffectDef::LookAtTopAndSelect {
+            player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            looker: EffectRecipientDef::Controller,
+            selection: &VISIONS_LOOK,
+        },
+    )),
+);
 
 // LEG 42 — Wall of Caltrops
 // Audit: blocked — Needs band formation: creatures with banding cannot yet attack as a group, and a band is not blocked as one. Blocking with banding is implemented.
@@ -4305,6 +4346,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPIRITUAL_SANCTUARY,
     &THUNDER_SPIRIT,
     &TUNDRA_WOLVES,
+    &VISIONS,
     &WALL_OF_LIGHT,
     &ACID_RAIN,
     &AZURE_DRAKE,

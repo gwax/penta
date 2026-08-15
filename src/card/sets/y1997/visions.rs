@@ -30,6 +30,7 @@ pub(in crate::card::sets) static IMPULSE: CardRecord = CardRecord::new(
         "Look at the top four cards of your library. Put one of them into your hand and the rest on the bottom of your library in any order.",
         EffectDef::LookAtTopAndSelect {
             player: EffectRecipientDef::Controller,
+            looker: EffectRecipientDef::Controller,
             selection: &IMPULSE_SELECTION,
         },
     )),

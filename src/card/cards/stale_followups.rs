@@ -77,3 +77,5 @@ pub const FLORAL_SPUZZEM: CardDefinitionId = CardDefinitionId(1721);
 pub const GIANT_TURTLE: CardDefinitionId = CardDefinitionId(1722);
 pub const GOBLIN_ROCK_SLED: CardDefinitionId = CardDefinitionId(1723);
 pub const TANGLE_KELP: CardDefinitionId = CardDefinitionId(1724);
+pub const ORCISH_SPY: CardDefinitionId = CardDefinitionId(1725);
+pub const VISIONS: CardDefinitionId = CardDefinitionId(1726);

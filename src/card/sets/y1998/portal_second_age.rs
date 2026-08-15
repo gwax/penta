@@ -30,6 +30,7 @@ pub(in crate::card::sets) static SLEIGHT_OF_HAND: CardRecord = CardRecord::new(
         "Look at the top two cards of your library. Put one of them into your hand and the other on the bottom of your library.",
         EffectDef::LookAtTopAndSelect {
             player: EffectRecipientDef::Controller,
+            looker: EffectRecipientDef::Controller,
             selection: &SLEIGHT_SELECTION,
         },
     )),

@@ -115,25 +115,31 @@ fn parse_continuation(
             continuation,
         } => {
             let owner = player(*owner)?;
-            if owner != observation.player {
-                return Err("top-card selection player disagrees with the visible decision".into());
-            }
             let continuation = parse_effect_continuation(continuation, game)?;
             let EffectDef::LookAtTopAndSelect {
                 player: recipient,
+                looker,
                 selection,
             } = continuation.effect.effect
             else {
                 return Err("top-card selection locator is not a top-card selection".into());
             };
-            let players = game.effect_recipients(
-                recipient,
-                &continuation.object,
-                &continuation.context,
-                continuation.effect,
-            );
-            if players.as_slice() != [Target::Player(owner)] {
+            let resolve = |recipient| {
+                game.effect_recipients(
+                    recipient,
+                    &continuation.object,
+                    &continuation.context,
+                    continuation.effect,
+                )
+            };
+            // The library belongs to one player and the decision is shown to
+            // another whenever a spy is looking, so the two are checked
+            // against the two authored recipients rather than each other.
+            if resolve(recipient).as_slice() != [Target::Player(owner)] {
                 return Err("top-card selection player disagrees with its authored effect".into());
+            }
+            if resolve(looker).as_slice() != [Target::Player(observation.player)] {
+                return Err("top-card selection looker disagrees with the visible decision".into());
             }
             let revealed = parse_detached_cards(revealed, game)?;
             validate_top_card_selection_observation(

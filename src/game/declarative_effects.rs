@@ -444,12 +444,24 @@ impl Game {
             }
             EffectDef::LookAtTopAndSelect {
                 player: recipient,
+                looker,
                 selection,
             } => {
+                // The looker is resolved first and once: a spy that has left
+                // the table still finishes looking, but nobody else does it
+                // for them.
+                let Some(Target::Player(looker)) = self
+                    .effect_recipients(looker, object, &context, scoped)
+                    .into_iter()
+                    .next()
+                else {
+                    return;
+                };
                 for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Player(player) = target {
                         self.queue_top_card_selection(
                             player,
+                            looker,
                             selection,
                             object,
                             context.clone(),

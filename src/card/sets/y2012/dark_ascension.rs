@@ -817,6 +817,7 @@ pub(in crate::card::sets) static TOWER_GEIST: CardRecord = CardRecord::new(
             TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)),
             EffectDef::LookAtTopAndSelect {
                 player: EffectRecipientDef::Controller,
+                looker: EffectRecipientDef::Controller,
                 selection: &TopCardSelectionDef {
                     count: ValueDef::Constant(2),
                     object: None,

@@ -19,7 +19,10 @@ pub(super) fn drain_pending(game: &mut Game) {
                 .options
                 .iter()
                 .map(|option| option.id)
-                .take(decision.minimum.max(1))
+                // At least one where anything may be taken, but never more
+                // than the decision allows: a pure look permits nothing at
+                // all, and offers its one option only to show what was seen.
+                .take(decision.minimum.max(1).min(decision.maximum))
                 .collect::<Vec<_>>();
             game.apply(
                 decision.player,

@@ -142,8 +142,13 @@ fn validate_effect_references(
         | EffectDef::LookAtHand { player } => {
             validate_recipient_target_references(player, target_count, scope)
         }
-        EffectDef::LookAtTopAndSelect { player, selection } => {
+        EffectDef::LookAtTopAndSelect {
+            player,
+            looker,
+            selection,
+        } => {
             validate_recipient_target_references(player, target_count, scope)?;
+            validate_recipient_target_references(looker, target_count, scope)?;
             validate_value_target_references(selection.count, target_count, scope)?;
             if let Some(effect) = selection.then {
                 validate_effect_references(*effect, target_count, scope)?;

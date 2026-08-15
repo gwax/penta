@@ -6,8 +6,8 @@ use crate::card::{
     ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
     DiscardSelectionDef, EffectDef, EffectRecipientDef, LikelihoodDef, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRelation, ReplacementEffectDef,
-    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, abilities, cards,
+    ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -1034,8 +1034,44 @@ const fn orcish_captain_pump(power: i32, toughness: i32) -> EffectDef {
     }
 }
 
+/// Nothing is taken and nothing moves: the whole effect is the looking, so
+/// the selection takes zero of the three and puts them back where they were.
+static ORCISH_SPY_LOOK: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(3),
+    object: None,
+    minimum: 0,
+    maximum: 0,
+    reveal_selected: false,
+    selected_zone: ZoneKind::Library,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Top,
+    then: None,
+};
+
+static ORCISH_SPY_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
 // FEM 61a — Orcish Spy
-// Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “{T}: Look at the top three cards of target player's library”.
+pub(in crate::card::sets) static ORCISH_SPY: CardRecord = CardRecord::new(
+    cards::ORCISH_SPY,
+    "Orcish Spy",
+    CardArt::new("a7d0ae40-0dd1-4230-a7aa-2c2f832159b7", "Susan Van Camp"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{R}"), &["Orc", "Rogue"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: Look at the top three cards of target player's library.",
+            &[AbilityCostDef::TapSource],
+            &ORCISH_SPY_TARGET,
+            EffectDef::LookAtTopAndSelect {
+                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                looker: EffectRecipientDef::Controller,
+                selection: &ORCISH_SPY_LOOK,
+            },
+        ),
+    ),
+);
 
 // FEM 62a — Orcish Veteran
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't block white creatures with power 2 or greater”.
@@ -1777,6 +1813,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GOBLIN_CHIRURGEON,
     &GOBLIN_GRENADE,
     &ORCISH_CAPTAIN,
+    &ORCISH_SPY,
     &ORGG,
     &ELVEN_FORTRESS,
     &ELVISH_FARMER,

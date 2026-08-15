@@ -92,8 +92,13 @@ fn validate_effect_target_shapes(
             }
             Ok(())
         }
-        EffectDef::LookAtTopAndSelect { player, selection } => {
+        EffectDef::LookAtTopAndSelect {
+            player,
+            looker,
+            selection,
+        } => {
             validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
+            validate_recipient_shape(looker, targets, RecipientExpectation::Player)?;
             if selection.minimum > selection.maximum
                 || !matches!(
                     selection.selected_zone,
@@ -518,6 +523,7 @@ mod recipient_shape_tests {
                     &[],
                     EffectDef::LookAtTopAndSelect {
                         player: EffectRecipientDef::Controller,
+                        looker: EffectRecipientDef::Controller,
                         selection,
                     },
                 ),

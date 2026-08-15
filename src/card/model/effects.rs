@@ -483,7 +483,12 @@ pub enum EffectDef {
     /// resolving. A predicate restricts what may be selected without hiding
     /// the rest of the inspected group.
     LookAtTopAndSelect {
+        /// Whose library is inspected.
         player: EffectRecipientDef,
+        /// Who looks at the cards and makes the choice. Digging through your
+        /// own library names the same player twice, which is the ordinary
+        /// case; a spy names someone else's library and keeps the looking.
+        looker: EffectRecipientDef,
         selection: &'static TopCardSelectionDef,
     },
     LoseLife {

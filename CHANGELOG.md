@@ -34,6 +34,11 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **Cards put back on top of a library kept their order.** The group arrives
+  top-first and the top is the back of the vector, so putting them back one at
+  a time inverted them. Nothing depended on it before, because every existing
+  effect either took a single card or bottomed the rest in any order.
+
 - **Combat damage could not be divided freely among three or more blockers.**
   The assignment enumerator still enforced the former ordered-blocker rule and
   rejected a legal split such as 1, 1, and 2 damage from a 4-power attacker.
@@ -62,6 +67,12 @@ distinguishes snapshots of the covered source and build inputs.
   step, which no game does, and so passed either way.
 
 ### Added
+
+- **Looking at the top of a library that is not yours.** Digging through your
+  own library names one player twice, so the library and the player being
+  asked were the same thing; a spy separates them. A selection that may take
+  nothing is now presented as what it is -- a look, with the cards shown and
+  nothing to choose between. Orcish Spy and Visions.
 
 - **"If it attacked during your last turn."** History rather than turn state:
   the answer has to outlive the cleanup that clears "attacked this turn", so

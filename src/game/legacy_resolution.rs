@@ -219,10 +219,19 @@ impl Game {
                 }
             }
             ZoneKind::Library => {
-                for card in cards {
-                    match placement {
-                        ZonePlacement::Top => self.players[player.index()].library.push(card),
-                        ZonePlacement::Bottom => {
+                match placement {
+                    // These arrive top-first, and the back of the vector is
+                    // the top, so they go back on in reverse -- otherwise a
+                    // group put back on top comes back inverted, which is
+                    // wrong for anything that says "in the same order" and
+                    // for a look that moved nothing at all.
+                    ZonePlacement::Top => {
+                        for card in cards.into_iter().rev() {
+                            self.players[player.index()].library.push(card);
+                        }
+                    }
+                    ZonePlacement::Bottom => {
+                        for card in cards {
                             self.players[player.index()].library.insert(0, card);
                         }
                     }

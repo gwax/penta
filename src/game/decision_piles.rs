@@ -11,6 +11,7 @@ impl Game {
     pub(super) fn queue_top_card_selection(
         &mut self,
         player: PlayerId,
+        looker: PlayerId,
         selection: &'static TopCardSelectionDef,
         object: &StackObject,
         context: EffectResolutionContext,
@@ -47,11 +48,20 @@ impl Game {
         for option in &mut options {
             option.members.clone_from(&inspected);
         }
-        let no_selection = options.is_empty();
+        // A selection that may take nothing is a look and nothing more, so it
+        // is presented the same way as one with no eligible card: the cards
+        // ride along as members and the only option acknowledges them.
+        let looking_only = selection.maximum == 0;
+        let no_selection = options.is_empty() || looking_only;
         if no_selection {
+            options.clear();
             options.push(DecisionOption {
                 id: 0,
-                label: "No inspected card is eligible".into(),
+                label: if looking_only {
+                    "Put them back".into()
+                } else {
+                    "No inspected card is eligible".into()
+                },
                 card: None,
                 members: inspected,
                 ability_text: None,
@@ -66,7 +76,7 @@ impl Game {
             DecisionPreference::LowerCardValue
         };
         self.queue_decision(
-            player,
+            looker,
             "Choose cards from the top of the library",
             DecisionVisibility::Private,
             preference,

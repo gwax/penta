@@ -570,6 +570,7 @@ pub(in crate::card::sets) static GLIMPSE_THE_FUTURE: CardRecord = CardRecord::ne
         "Look at the top three cards of your library. Put one of them into your hand and the rest into your graveyard.",
         EffectDef::LookAtTopAndSelect {
             player: EffectRecipientDef::Controller,
+            looker: EffectRecipientDef::Controller,
             selection: &TopCardSelectionDef {
                 count: ValueDef::Constant(3),
                 object: None,

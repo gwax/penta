@@ -2310,6 +2310,7 @@ static DOMRI_ABILITIES: [AbilityDef; 3] = [
         &[AbilityCostDef::Loyalty(1)],
         EffectDef::LookAtTopAndSelect {
             player: EffectRecipientDef::Controller,
+            looker: EffectRecipientDef::Controller,
             selection: &TopCardSelectionDef {
                 count: ValueDef::Constant(1),
                 object: Some(ObjectPredicateDef::HasType(CardType::Creature)),

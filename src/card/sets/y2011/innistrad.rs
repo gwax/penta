@@ -1051,6 +1051,7 @@ pub(in crate::card::sets) static FORBIDDEN_ALCHEMY: CardRecord = CardRecord::new
             "Look at the top four cards of your library. Put one of them into your hand and the rest into your graveyard.",
             EffectDef::LookAtTopAndSelect {
                 player: EffectRecipientDef::Controller,
+                looker: EffectRecipientDef::Controller,
                 selection: &FORBIDDEN_ALCHEMY_SELECTION,
             },
         ),
