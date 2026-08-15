@@ -75,3 +75,5 @@ pub const PREDATORY_RAMPAGE: CardDefinitionId = CardDefinitionId(1874);
 pub const FARBOG_EXPLORER: CardDefinitionId = CardDefinitionId(1875);
 pub const GOLDNIGHT_REDEEMER: CardDefinitionId = CardDefinitionId(1876);
 pub const FETTERGEIST: CardDefinitionId = CardDefinitionId(1877);
+pub const ARCHANGELS_LIGHT: CardDefinitionId = CardDefinitionId(1878);
+pub const THALIA_GUARDIAN_OF_THRABEN: CardDefinitionId = CardDefinitionId(1879);

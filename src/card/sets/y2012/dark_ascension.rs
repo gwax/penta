@@ -8,14 +8,59 @@ use crate::card::{
     ComparisonDef, ConditionalValueDef, CounterKind, DiscardSelectionDef, DoubleFacedKind,
     EffectDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
     PlayOptionDef, PlayerRelation, QuantifierDef, ReplacementEffectDef, ResolvedEffectDurationDef,
-    SpellAdditionalCostDef, SpellForm, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ScaledValueDef, SpellAdditionalCostDef, SpellForm, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetIndex};
 use crate::mana_cost;
 
+static ARCHANGELS_LIGHT_GRAVEYARD: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::Any,
+    &[ZoneKind::Graveyard],
+    PlayerRelation::You,
+);
+
+/// One life-gain event of twice the count, not two events of the count: a
+/// card watching for life gain should see this happen once.
+static ARCHANGELS_LIGHT_AMOUNT: ScaledValueDef = ScaledValueDef::new(
+    ValueDef::CountMatchingObjects(&ARCHANGELS_LIGHT_GRAVEYARD),
+    2,
+);
+
+/// The gain is counted before the shuffle empties the graveyard, which is
+/// the only order that gains anything at all.
+static ARCHANGELS_LIGHT_EFFECTS: [EffectDef; 3] = [
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Scaled(&ARCHANGELS_LIGHT_AMOUNT),
+    },
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::Any,
+            &[ZoneKind::Graveyard],
+            PlayerRelation::You,
+        ),
+        zone: ZoneKind::Library,
+        controller: None,
+        placement: ZonePlacement::Top,
+    },
+    EffectDef::ShuffleLibrary {
+        player: EffectRecipientDef::Controller,
+    },
+];
+
 // DKA 1 — Archangel's Light
-// Audit: blocked — Needs a single life-gain amount equal to twice a graveyard-card count; sequencing two gains would incorrectly create two life-gain events.
+pub(in crate::card::sets) static ARCHANGELS_LIGHT: CardRecord = CardRecord::new(
+    cards::ARCHANGELS_LIGHT,
+    "Archangel's Light",
+    CardArt::new("f99837b3-b487-43bb-846b-7a0e8afb6eef", "Volkan Baǵa"),
+    CardSet::DarkAscension,
+    CardRules::new_sorcery(mana_cost!("{7}{W}")).with_ability(AbilityDef::spell(
+        "You gain 2 life for each card in your graveyard, then shuffle your graveyard into \
+         your library.",
+        EffectDef::Sequence(&ARCHANGELS_LIGHT_EFFECTS),
+    )),
+);
 
 // DKA 2 — Bar the Door
 pub(in crate::card::sets) static BAR_THE_DOOR: CardRecord = CardRecord::new(
@@ -319,7 +364,32 @@ pub(in crate::card::sets) static SKILLFUL_LUNGE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs one delayed trigger to return an arbitrary mass-exiled group at the next end step after the spell source has left the stack.
 
 // DKA 24 — Thalia, Guardian of Thraben
-// Audit: blocked — Needs a continuous generic-cost increase for noncreature spells.
+pub(in crate::card::sets) static THALIA_GUARDIAN_OF_THRABEN: CardRecord = CardRecord::new(
+    cards::THALIA_GUARDIAN_OF_THRABEN,
+    "Thalia, Guardian of Thraben",
+    CardArt::new(
+        "824423ff-6441-4be6-b754-810adf9ca6a2",
+        "Jana Schirmer & Johannes Voss",
+    ),
+    CardSet::DarkAscension,
+    // No "you cast" clause, so the tax reaches both seats -- Thalia's own
+    // controller included, which is the cost of playing her.
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Soldier"], 2, 1)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::first_strike(),
+            AbilityDef::static_ability(
+                "Noncreature spells cost {1} more to cast.",
+                EffectDef::IncreaseMatchingSpellCostBy {
+                    spell: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(
+                        CardType::Creature,
+                    )),
+                    caster: PlayerRelation::Any,
+                    amount: mana_cost!("{1}"),
+                },
+            ),
+        ]),
+);
 
 // DKA 25 — Thraben Doomsayer
 // Audit: blocked — Needs a controller-life threshold continuous anthem for its otherwise declarative Human-token ability.
@@ -2565,6 +2635,7 @@ pub(in crate::card::sets) static VAULT_OF_THE_ARCHANGEL: CardRecord = CardRecord
     ]),
 );
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &ARCHANGELS_LIGHT,
     &BAR_THE_DOOR,
     &BURDEN_OF_GUILT,
     &ELGAUD_INQUISITOR,
@@ -2577,6 +2648,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SANCTUARY_CAT,
     &SILVERCLAW_GRIFFIN,
     &SKILLFUL_LUNGE,
+    &THALIA_GUARDIAN_OF_THRABEN,
     &THRABEN_HERETIC,
     &ARTFUL_DODGE,
     &BONE_TO_ASH,

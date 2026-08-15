@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Thalia, Guardian of Thraben** and **Archangel's Light**. Thalia is the
+  spell-cost increase Derelor introduced, with no "you cast" clause, so she
+  taxes her own controller too. The Light gains one doubled amount rather than
+  two separate gains, counted before the shuffle empties what it counted.
+
 - **Farbog Explorer**, **Goldnight Redeemer** and **Fettergeist**, three more
   cards resting on swampwalk, a doubled count and a dynamic generic payment.
   Two of the three say "other creatures you control", and the Fettergeist's

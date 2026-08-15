@@ -570,6 +570,7 @@ mod delayed_triggers;
 mod derelor;
 mod detain;
 mod disharmony;
+mod dka_stale_audits;
 mod energy_tap;
 mod entry_replacements;
 mod equipment;
