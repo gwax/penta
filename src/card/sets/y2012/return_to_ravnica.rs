@@ -7,10 +7,11 @@ use crate::card::{
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardBehavior, CardRules, CardSet,
     CardSupertype, CardType, CardTypeSet, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
     CreatureTypeSetDef, DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
-    InstalledTriggerDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, cards,
+    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities,
+    cards,
 };
 use crate::ids::{CardDefinitionId, TargetIndex};
 use crate::mana_cost;
@@ -2123,8 +2124,51 @@ pub(in crate::card::sets) static SPLATTER_THUG: CardRecord = CardRecord::new(
     ]),
 );
 
+/// "Creature without flying you don't control", shared by both halves: the
+/// overload changes only whether it is one of them or all of them.
+static STREET_SPASM_GROUNDED: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasKeyword(KeywordAbility::Flying)),
+]);
+
 // RTR 106 — Street Spasm
-// Audit: blocked — The mana model cannot represent the overload cost {X}{X}{R}{R}.
+pub(in crate::card::sets) static STREET_SPASM: CardRecord = CardRecord::new(
+    cards::STREET_SPASM,
+    "Street Spasm",
+    CardArt::new("9a19d3b8-80d0-480f-8900-47be527d0e53", "Raymond Swanland"),
+    CardSet::ReturnToRavnica,
+    // The overload cost doubles X, so the same X costs two more mana and
+    // reaches every grounded creature instead of one.
+    CardRules::new_instant(mana_cost!("{X}{R}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Street Spasm deals X damage to target creature without flying you don't control.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: STREET_SPASM_GROUNDED,
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::NotYou),
+                    owner: None,
+                },
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::ChosenX,
+            },
+        ),
+        abilities::overload(
+            mana_cost!("{X}{X}{R}{R}"),
+            "Street Spasm deals X damage to each creature without flying you don't control.",
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::matching_objects(
+                    STREET_SPASM_GROUNDED,
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::NotYou,
+                ),
+                amount: ValueDef::ChosenX,
+            },
+        ),
+    ]),
+);
 
 // RTR 107 — Survey the Wreckage
 pub(in crate::card::sets) static SURVEY_THE_WRECKAGE: CardRecord = CardRecord::new(
@@ -4825,6 +4869,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PYROCONVERGENCE,
     &RACECOURSE_FURY,
     &SPLATTER_THUG,
+    &STREET_SPASM,
     &SURVEY_THE_WRECKAGE,
     &TENEMENT_CRASHER,
     &TRAITOROUS_INSTINCT,

@@ -651,6 +651,7 @@ mod stat_counters;
 mod state_triggers_and_life;
 mod static_animation;
 mod static_keyword_predicates;
+mod street_spasm;
 mod targeted_answers;
 mod targeting_characteristics;
 mod transmogrant;

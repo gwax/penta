@@ -43,3 +43,4 @@ pub const SPORE_CLOUD: CardDefinitionId = CardDefinitionId(1842);
 pub const SENTINEL: CardDefinitionId = CardDefinitionId(1843);
 pub const DERELOR: CardDefinitionId = CardDefinitionId(1844);
 pub const GLOOM: CardDefinitionId = CardDefinitionId(1845);
+pub const STREET_SPASM: CardDefinitionId = CardDefinitionId(1846);
