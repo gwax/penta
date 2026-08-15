@@ -2007,8 +2007,62 @@ pub(in crate::card::sets) static GIANT_STRENGTH: CardRecord = CardRecord::new(
         ]),
 );
 
+/// Three durations in one card, and none of them is the same: the pump ends
+/// with combat, the shield lasts the turn, and the destruction waits for the
+/// next end step -- which is later than either.
+static GLYPH_OF_DESTRUCTION_EFFECT: [EffectDef; 3] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(10),
+            ValueDef::Constant(0),
+        ),
+        duration: ResolvedEffectDurationDef::UntilEndOfCombat,
+    },
+    EffectDef::PreventDamage {
+        prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::to(
+            EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        )),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+        "At the beginning of the next end step, destroy that Wall.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::Any,
+        },
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            can_regenerate: true,
+        },
+    ))),
+];
+
+static BLOCKING_WALL_YOU_CONTROL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::Subtype("Wall"),
+            ObjectPredicateDef::Blocking,
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
 // LEG 150 — Glyph of Destruction
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Target blocking Wall you control gets +10/+0 until end of combat. Prevent all damage that would be dealt to it this turn. Destroy it at the beginning of the next end step”.
+pub(in crate::card::sets) static GLYPH_OF_DESTRUCTION: CardRecord = CardRecord::new(
+    cards::GLYPH_OF_DESTRUCTION,
+    "Glyph of Destruction",
+    CardArt::new("21e5b4d6-6288-4da6-970e-13c56b384a59", "Susan Van Camp"),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Target blocking Wall you control gets +10/+0 until end of combat. Prevent all damage \
+         that would be dealt to it this turn. Destroy it at the beginning of the next end step.",
+        &BLOCKING_WALL_YOU_CONTROL,
+        EffectDef::Sequence(&GLYPH_OF_DESTRUCTION_EFFECT),
+    )),
+);
 
 // LEG 151 — Gravity Sphere
 // Audit: partial — Its flying-removal effect is executable, but the world-rule state-based action is not implemented.
@@ -4457,6 +4511,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ETERNAL_WARRIOR,
     &FROST_GIANT,
     &GIANT_STRENGTH,
+    &GLYPH_OF_DESTRUCTION,
     &GRAVITY_SPHERE,
     &IMMOLATION,
     &KOBOLD_DRILL_SERGEANT,

@@ -74,6 +74,11 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Elvish Scout and Glyph of Destruction**, both of which needed nothing new.
+  Their audit lines had blamed a missing duration-scoped prevention effect,
+  which has since arrived by other routes -- so these are the first two of the
+  stale entries to be cleared rather than implemented.
+
 - **"Players can't untap more than one ... during their untap steps."** Winter
   Orb and Smoke each carried their own version of this in the untap procedure,
   one for lands and one for creatures. It is now a player-facing static naming

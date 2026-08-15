@@ -5,9 +5,9 @@ use crate::card::{
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
     ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
     DiscardSelectionDef, EffectDef, EffectRecipientDef, LikelihoodDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRelation, ReplacementEffectDef,
-    ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation,
+    ReplacementEffectDef, ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -1262,8 +1262,58 @@ pub(in crate::card::sets) static ELVISH_HUNTER: CardRecord = CardRecord::new(
     ),
 );
 
+/// The two shields are one printed clause but two rules: prevention names a
+/// source or a recipient, never both at once, so "to and dealt by it" is the
+/// creature on each side in turn.
+static ELVISH_SCOUT_RESCUE: [EffectDef; 3] = [
+    EffectDef::Untap {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::PreventDamage {
+        prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::combat_to(
+            EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        )),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::PreventDamage {
+        prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::combat_from(
+            ObjectRefDef::Target(TargetIndex::PRIMARY),
+        )),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+];
+
+static ELVISH_SCOUT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Attacking,
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
 // FEM 68a — Elvish Scout
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{G}, {T}: Untap target attacking creature you control. Prevent all combat damage that would be dealt to and dealt by it this turn”.
+pub(in crate::card::sets) static ELVISH_SCOUT: CardRecord = CardRecord::new(
+    cards::ELVISH_SCOUT,
+    "Elvish Scout",
+    CardArt::new("5477e674-ea0e-400f-bfe3-38465f6a52cc", "Mark Poole"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{G}"), &["Elf", "Scout"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{G}, {T}: Untap target attacking creature you control. Prevent all combat damage \
+             that would be dealt to and dealt by it this turn.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{G}")),
+                AbilityCostDef::TapSource,
+            ],
+            &ELVISH_SCOUT_TARGET,
+            EffectDef::Sequence(&ELVISH_SCOUT_RESCUE),
+        ),
+    ),
+);
 
 // FEM 69 — Feral Thallid
 pub(in crate::card::sets) static FERAL_THALLID: CardRecord = CardRecord::new(
@@ -1869,6 +1919,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ELVEN_FORTRESS,
     &ELVISH_FARMER,
     &ELVISH_HUNTER,
+    &ELVISH_SCOUT,
     &FERAL_THALLID,
     &FUNGAL_BLOOM,
     &SPORE_FLOWER,
