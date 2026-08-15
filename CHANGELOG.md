@@ -74,6 +74,11 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Fortress Cyclops, Somberwald Vigilante, and Hamlet Captain**, the first
+  cards to use the one-directional blocking triggers added earlier in this
+  release. Hamlet Captain's single printed clause becomes two triggers, since
+  a creature cannot both attack and block and so exactly one of them fires.
+
 - **Pacifism, Crippling Blight, and Tormented Soul.** "Can't attack or block"
   is two prohibitions rather than one combat ban, which is why nothing in the
   vocabulary bars combat wholesale and nothing needs to.

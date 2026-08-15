@@ -105,3 +105,6 @@ pub const DEFANG: CardDefinitionId = CardDefinitionId(1749);
 pub const PACIFISM: CardDefinitionId = CardDefinitionId(1750);
 pub const CRIPPLING_BLIGHT: CardDefinitionId = CardDefinitionId(1751);
 pub const TORMENTED_SOUL: CardDefinitionId = CardDefinitionId(1752);
+pub const SOMBERWALD_VIGILANTE: CardDefinitionId = CardDefinitionId(1753);
+pub const FORTRESS_CYCLOPS: CardDefinitionId = CardDefinitionId(1754);
+pub const HAMLET_CAPTAIN: CardDefinitionId = CardDefinitionId(1755);

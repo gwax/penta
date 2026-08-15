@@ -2445,7 +2445,42 @@ static FIREMANE_AVENGER_BATTALION: [EffectDef; 2] = [
 ];
 
 // GTC 164 — Fortress Cyclops
-// Audit: blocked — Attacks is available, but there is no trigger event for the source blocking.
+pub(in crate::card::sets) static FORTRESS_CYCLOPS: CardRecord = CardRecord::new(
+    cards::FORTRESS_CYCLOPS,
+    "Fortress Cyclops",
+    CardArt::new("bbfa583c-754e-4a63-aa1c-d1c1a5882f40", "Maciej Kuciara"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{3}{R}{W}"), &["Cyclops", "Soldier"], 3, 3).with_abilities(
+        &[
+            AbilityDef::triggered(
+                "Whenever this creature attacks, it gets +3/+0 until end of turn.",
+                TriggerEventDef::attacks(ObjectPredicateDef::Source),
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(3),
+                        ValueDef::Constant(0),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+            AbilityDef::triggered(
+                "Whenever this creature blocks, it gets +0/+3 until end of turn.",
+                TriggerEventDef::Blocks {
+                    blocked: ObjectPredicateDef::HasType(CardType::Creature),
+                },
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(0),
+                        ValueDef::Constant(3),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ],
+    ),
+);
 
 static FOUNDRY_CHAMPION_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
     ObjectPredicateDef::HasType(CardType::Creature),
@@ -3705,6 +3740,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DRAKEWING_KRASIS,
     &ELUSIVE_KRASIS,
     &FIREMANE_AVENGER,
+    &FORTRESS_CYCLOPS,
     &FOUNDRY_CHAMPION,
     &GHOR_CLAN_RAMPAGER,
     &GROUND_ASSAULT,

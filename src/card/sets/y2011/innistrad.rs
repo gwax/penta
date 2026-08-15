@@ -3732,8 +3732,43 @@ pub(in crate::card::sets) static GRIZZLED_OUTCASTS: CardRecord = CardRecord::new
 // ISD 186 — Gutter Grime
 // Audit: blocked — Needs slime counters and a source-linked Ooze token whose P/T tracks the source's counter count.
 
+/// One printed clause, two trigger events: a creature cannot both attack and
+/// block, so exactly one of these fires and the bonus lands once.
+static HAMLET_CAPTAIN_RALLY: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::Subtype("Human"),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+};
+
 // ISD 187 — Hamlet Captain
-// Audit: blocked — Needs a blocks event in addition to the supported attacks event for its temporary Human bonus.
+pub(in crate::card::sets) static HAMLET_CAPTAIN: CardRecord = CardRecord::new(
+    cards::HAMLET_CAPTAIN,
+    "Hamlet Captain",
+    CardArt::new("c8476d90-1212-4783-8d9e-05af32ad5ff1", "Wayne Reynolds"),
+    CardSet::Innistrad,
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Human", "Warrior"], 2, 2).with_abilities(&[
+        AbilityDef::triggered(
+            "Whenever this creature attacks, other Humans you control get +1/+1 until end of \
+             turn.",
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
+            HAMLET_CAPTAIN_RALLY,
+        ),
+        AbilityDef::triggered(
+            "Whenever this creature blocks, other Humans you control get +1/+1 until end of turn.",
+            TriggerEventDef::Blocks {
+                blocked: ObjectPredicateDef::HasType(CardType::Creature),
+            },
+            HAMLET_CAPTAIN_RALLY,
+        ),
+    ]),
+);
 
 // ISD 188 — Hollowhenge Scavenger
 // Audit: blocked — Needs a morbid intervening-if check that suppresses the ETB trigger when no creature died.
@@ -5000,6 +5035,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GARRUK_RELENTLESS,
     &GATSTAF_SHEPHERD,
     &GRIZZLED_OUTCASTS,
+    &HAMLET_CAPTAIN,
     &KINDERCATCH,
     &LUMBERKNOT,
     &MAYOR_OF_AVABRUCK,

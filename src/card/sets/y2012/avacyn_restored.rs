@@ -2223,7 +2223,25 @@ pub(in crate::card::sets) static SCALDING_DEVIL: CardRecord = CardRecord::new(
 );
 
 // AVR 156 — Somberwald Vigilante
-// Audit: blocked — Needs a becomes-blocked event carrying the individual blocking creature.
+pub(in crate::card::sets) static SOMBERWALD_VIGILANTE: CardRecord = CardRecord::new(
+    cards::SOMBERWALD_VIGILANTE,
+    "Somberwald Vigilante",
+    CardArt::new("0479b796-a4f8-4001-ad16-705cabcdcef8", "John Stanko"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{R}"), &["Human", "Warrior"], 1, 1).with_ability(
+        AbilityDef::triggered(
+            "Whenever this creature becomes blocked by a creature, this creature deals 1 damage \
+             to that creature.",
+            TriggerEventDef::BecomesBlockedBy {
+                blocker: ObjectPredicateDef::HasType(CardType::Creature),
+            },
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::TriggeringObject,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ),
+);
 
 // AVR 157 — Stonewright
 // Audit: blocked — Needs soulbond pairing state, paired-object identity, and an activated pump ability granted to both paired creatures.
@@ -3379,6 +3397,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RIOT_RINGLEADER,
     &RUSH_OF_BLOOD,
     &SCALDING_DEVIL,
+    &SOMBERWALD_VIGILANTE,
     &THUNDERBOLT,
     &THUNDEROUS_WRATH,
     &UNCANNY_SPEED,

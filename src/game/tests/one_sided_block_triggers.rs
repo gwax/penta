@@ -97,10 +97,51 @@ fn venom_kills_from_either_side() {
     }
 }
 
+/// The blocking half on its own: the Cyclops grows when it blocks and not
+/// when it is blocked.
+#[test]
+fn the_cyclops_grows_on_the_side_it_is_on() {
+    let (mut game, [_, cyclops]) = blocked_by(cards::SEDGE_TROLL, cards::FORTRESS_CYCLOPS);
+    game.finish_declaring_blockers();
+    drain_pending(&mut game);
+
+    let blocking = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == cyclops)
+        .expect("the Cyclops is there");
+    // Its other trigger uses the long-standing attacks event; this one is
+    // the half that had no event until the halves were split.
+    assert_eq!(game.power(blocking), Some(3), "blocking is not attacking");
+    assert_eq!(game.toughness(blocking), Some(6));
+}
+
+/// The Vigilante names each blocker rather than the fact of being blocked,
+/// so the damage goes to the creature that stopped it.
+#[test]
+fn the_vigilante_burns_the_creature_that_blocked_it() {
+    let (mut game, [_, blocker]) = blocked_by(cards::SOMBERWALD_VIGILANTE, cards::SEDGE_TROLL);
+    game.finish_declaring_blockers();
+    drain_pending(&mut game);
+
+    let damaged = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == blocker)
+        .expect("the blocker is there");
+    assert_eq!(damaged.damage, 1);
+}
+
 #[test]
 fn every_one_sided_block_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::INFERNAL_MEDUSA, cards::VENOM] {
+    for definition in [
+        cards::FORTRESS_CYCLOPS,
+        cards::SOMBERWALD_VIGILANTE,
+        cards::HAMLET_CAPTAIN,
+        cards::INFERNAL_MEDUSA,
+        cards::VENOM,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),
