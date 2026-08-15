@@ -38,9 +38,9 @@ fn cast(game: &mut Game, spell: CardDefinitionId) {
     let spell_id = card_in_hand.id;
     game.players[PlayerId::One.index()].hand.push(card_in_hand);
     let pool = &mut game.players[PlayerId::One.index()].mana_pool;
-    pool.black = 1;
-    pool.green = 1;
-    pool.colorless = 2;
+    pool.black = 2;
+    pool.green = 2;
+    pool.colorless = 3;
 
     let action = game
         .legal_actions(PlayerId::One)
@@ -110,9 +110,72 @@ fn ulvenwald_bear_asks_for_no_target_on_a_quiet_turn() {
 }
 
 #[test]
+fn morkrut_banshee_shrinks_a_creature_when_something_died() {
+    let (mut game, bystander) = board(true);
+    cast(&mut game, cards::MORKRUT_BANSHEE);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bystander),
+        "-4/-4 killed the 2/2 it pointed at",
+    );
+}
+
+/// The same suppression as the Bear, on a card whose effect would otherwise
+/// be lethal to whatever it was forced to choose.
+#[test]
+fn morkrut_banshee_asks_for_no_target_on_a_quiet_turn() {
+    let (mut game, bystander) = board(false);
+    cast(&mut game, cards::MORKRUT_BANSHEE);
+
+    let stats = |id: GameObjectId| {
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .expect("still there");
+        (game.power(permanent), game.toughness(permanent))
+    };
+    assert_eq!(stats(bystander), (Some(2), Some(2)), "untouched");
+    let banshee = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::MORKRUT_BANSHEE)
+        .expect("the Banshee resolved")
+        .card
+        .id;
+    assert_eq!(stats(banshee), (Some(4), Some(4)), "and so is the Banshee");
+}
+
+#[test]
+fn hollowhenge_scavenger_gains_five_only_when_something_died() {
+    let (mut game, _bystander) = board(true);
+    cast(&mut game, cards::HOLLOWHENGE_SCAVENGER);
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        i16::from(rules::STARTING_LIFE) + 5,
+    );
+
+    let (mut game, _bystander) = board(false);
+    cast(&mut game, cards::HOLLOWHENGE_SCAVENGER);
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        i16::from(rules::STARTING_LIFE),
+        "a quiet turn gains nothing",
+    );
+}
+
+#[test]
 fn both_cards_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::WAKEDANCER, cards::ULVENWALD_BEAR] {
+    for definition in [
+        cards::WAKEDANCER,
+        cards::ULVENWALD_BEAR,
+        cards::MORKRUT_BANSHEE,
+        cards::HOLLOWHENGE_SCAVENGER,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),

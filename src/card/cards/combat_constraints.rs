@@ -50,3 +50,5 @@ pub const CRIPPLING_CHILL: CardDefinitionId = CardDefinitionId(1849);
 pub const FROST_BREATH: CardDefinitionId = CardDefinitionId(1850);
 pub const WAKEDANCER: CardDefinitionId = CardDefinitionId(1851);
 pub const ULVENWALD_BEAR: CardDefinitionId = CardDefinitionId(1852);
+pub const MORKRUT_BANSHEE: CardDefinitionId = CardDefinitionId(1853);
+pub const HOLLOWHENGE_SCAVENGER: CardDefinitionId = CardDefinitionId(1854);

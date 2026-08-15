@@ -1985,8 +1985,40 @@ pub(in crate::card::sets) static MOAN_OF_THE_UNHALLOWED: CardRecord = CardRecord
     ]),
 );
 
+static ISD_MORBID_A_CREATURE_DIED: TriggerConditionDef = TriggerConditionDef::CreatureDiedThisTurn;
+
 // ISD 110 — Morkrut Banshee
-// Audit: blocked — Needs an intervening morbid condition that suppresses both the ETB trigger and its target when no creature died.
+pub(in crate::card::sets) static MORKRUT_BANSHEE: CardRecord = CardRecord::new(
+    cards::MORKRUT_BANSHEE,
+    "Morkrut Banshee",
+    CardArt::new("fff9989f-77a3-4f73-ade6-c04306c98501", "Svetlin Velinov"),
+    CardSet::Innistrad,
+    // The condition suppresses the trigger rather than its effect, so on a
+    // turn with nothing dead there is no target to choose either.
+    CardRules::new_creature(mana_cost!("{3}{B}{B}"), &["Spirit"], 4, 4).with_ability(
+        AbilityDef::triggered_if_with_targets(
+            "Morbid — When this creature enters, if a creature died this turn, target creature \
+             gets -4/-4 until end of turn.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &ISD_MORBID_A_CREATURE_DIED,
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(-4),
+                    ValueDef::Constant(-4),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
 
 // ISD 111 — Night Terrors
 // Audit: blocked — Needs revealing another player's hand, choosing a nonland card from it, and exiling that choice.
@@ -3805,7 +3837,27 @@ pub(in crate::card::sets) static HAMLET_CAPTAIN: CardRecord = CardRecord::new(
 );
 
 // ISD 188 — Hollowhenge Scavenger
-// Audit: blocked — Needs a morbid intervening-if check that suppresses the ETB trigger when no creature died.
+pub(in crate::card::sets) static HOLLOWHENGE_SCAVENGER: CardRecord = CardRecord::new(
+    cards::HOLLOWHENGE_SCAVENGER,
+    "Hollowhenge Scavenger",
+    CardArt::new("6c9ff632-0e27-4521-9e9d-5725e618f5dd", "Slawomir Maniak"),
+    CardSet::Innistrad,
+    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Elemental"], 4, 5).with_ability(
+        AbilityDef::triggered_if(
+            "Morbid — When this creature enters, if a creature died this turn, you gain 5 life.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &ISD_MORBID_A_CREATURE_DIED,
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(5),
+            },
+        ),
+    ),
+);
 
 // ISD 189 — Kessig Cagebreakers
 // Audit: blocked — Needs a dynamic number of Wolf tokens entering tapped and attacking.
@@ -5016,6 +5068,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MARKOV_PATRICIAN,
     &MAW_OF_THE_MIRE,
     &MOAN_OF_THE_UNHALLOWED,
+    &MORKRUT_BANSHEE,
     &ROTTING_FENSNAKE,
     &SCREECHING_BAT,
     &SEVER_THE_BLOODLINE,
@@ -5071,6 +5124,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GATSTAF_SHEPHERD,
     &GRIZZLED_OUTCASTS,
     &HAMLET_CAPTAIN,
+    &HOLLOWHENGE_SCAVENGER,
     &KINDERCATCH,
     &LUMBERKNOT,
     &MAYOR_OF_AVABRUCK,

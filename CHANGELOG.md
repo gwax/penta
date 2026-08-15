@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Morkrut Banshee** and **Hollowhenge Scavenger**, the Innistrad half of the
+  same morbid pattern. The Banshee is the sharpest case for suppressing the
+  trigger rather than its effect: -4/-4 forced onto whatever it had to choose
+  would kill it.
+
 - **Wakedancer** and **Ulvenwald Bear**, two morbid entry triggers. Morbid is
   an intervening if, so with nothing dead the trigger is never created rather
   than created and doing nothing -- which on the Bear means no target is ever
