@@ -2744,13 +2744,17 @@ pub(in crate::card::sets) static IRONCLAW_ORCS: CardRecord = CardRecord::new(
     "Ironclaw Orcs",
     CardArt::new("d56421a8-34ae-4033-943f-c59a7bf2b6f9", "Anson Maddocks"),
     CardSet::Alpha,
-    CardRules::new_creature(mana_cost!("{1}{R}"), &["Orc"], 2, 2).with_abilities(&[
-        AbilityDef::custom_full(
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Orc"], 2, 2).with_ability(
+        AbilityDef::static_ability(
             "This creature can't block creatures with power 2 or greater.",
-            CardBehavior::IronclawOrcs,
-            "The blocking restriction is implemented by the combat action generator.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CanBlockOnly(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::PowerAtLeast(2)),
+                )),
+            },
         ),
-    ]),
+    ),
 );
 
 // LEA 160 — Keldon Warlord

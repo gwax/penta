@@ -901,7 +901,23 @@ pub(in crate::card::sets) static THRULL_RETAINER: CardRecord = CardRecord::new(
 // Audit: blocked — Needs the clause's conditional recipient set or dynamic modifier value for “Tap enchanted land: Attacking creatures you control get +2/-1 until end of turn. Activate only if enchanted land is untapped”.
 
 // FEM 49a — Brassclaw Orcs
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't block creatures with power 2 or greater”.
+pub(in crate::card::sets) static BRASSCLAW_ORCS: CardRecord = CardRecord::new(
+    cards::BRASSCLAW_ORCS,
+    "Brassclaw Orcs",
+    CardArt::new("146a0b1b-c92a-4d0d-a9c7-22037dc8bd21", "Rob Alexander"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Orc"], 3, 2).with_ability(
+        AbilityDef::static_ability(
+            "This creature can't block creatures with power 2 or greater.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CanBlockOnly(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::PowerAtLeast(2)),
+                )),
+            },
+        ),
+    ),
+);
 
 // FEM 50 — Dwarven Armorer
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “{R}, {T}, Discard a card: Put a +0/+1 counter or a +1/+0 counter on target creature”.
@@ -1073,8 +1089,41 @@ pub(in crate::card::sets) static ORCISH_SPY: CardRecord = CardRecord::new(
     ),
 );
 
+/// The restriction is authored as the permission it leaves behind: anything
+/// that is not both white and big enough.
+static NOT_A_BIG_WHITE_CREATURE: ObjectPredicateDef =
+    ObjectPredicateDef::Not(&ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Color(ManaColor::White),
+        ObjectPredicateDef::PowerAtLeast(2),
+    ]));
+
 // FEM 62a — Orcish Veteran
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't block white creatures with power 2 or greater”.
+pub(in crate::card::sets) static ORCISH_VETERAN: CardRecord = CardRecord::new(
+    cards::ORCISH_VETERAN,
+    "Orcish Veteran",
+    CardArt::new("af5d1e3e-2efa-4804-9c89-5c71e7b8f0cc", "Douglas Shuler"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Orc"], 2, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't block white creatures with power 2 or greater.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CanBlockOnly(
+                    NOT_A_BIG_WHITE_CREATURE,
+                )),
+            },
+        ),
+        AbilityDef::activated(
+            "{R}: This creature gains first strike until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{R}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 /// "Defending player controls an untapped creature with power 3 or greater."
 static ORGG_DETERRENT: ObjectQueryDef = ObjectQueryDef::matching(
@@ -1809,11 +1858,13 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ORDER_OF_THE_EBON_HAND,
     &THRULL_CHAMPION,
     &THRULL_RETAINER,
+    &BRASSCLAW_ORCS,
     &DWARVEN_LIEUTENANT,
     &GOBLIN_CHIRURGEON,
     &GOBLIN_GRENADE,
     &ORCISH_CAPTAIN,
     &ORCISH_SPY,
+    &ORCISH_VETERAN,
     &ORGG,
     &ELVEN_FORTRESS,
     &ELVISH_FARMER,

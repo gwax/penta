@@ -81,3 +81,5 @@ pub const ORCISH_SPY: CardDefinitionId = CardDefinitionId(1725);
 pub const VISIONS: CardDefinitionId = CardDefinitionId(1726);
 pub const AMNESIA: CardDefinitionId = CardDefinitionId(1727);
 pub const INQUISITION: CardDefinitionId = CardDefinitionId(1728);
+pub const BRASSCLAW_ORCS: CardDefinitionId = CardDefinitionId(1729);
+pub const ORCISH_VETERAN: CardDefinitionId = CardDefinitionId(1730);

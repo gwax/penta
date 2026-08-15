@@ -342,7 +342,6 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::Smoke => &y1993::alpha::SMOKE.rules,
         CardBehavior::WinterOrb => &y1993::alpha::WINTER_ORB.rules,
         CardBehavior::GoblinGrenade => &y1994::fallen_empires::GOBLIN_GRENADE.rules,
-        CardBehavior::IronclawOrcs => &y1993::alpha::IRONCLAW_ORCS.rules,
         CardBehavior::FellwarStone => &y1994::the_dark::FELLWAR_STONE.rules,
         CardBehavior::Balance => &y1993::alpha::BALANCE.rules,
         CardBehavior::Channel => &y1993::alpha::CHANNEL.rules,

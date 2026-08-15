@@ -173,7 +173,7 @@ impl HandcraftedPolicy {
                 x,
             } => self.score_ability(observation, *source, *ability, targets, *cost_object, *x),
             Action::DeclareAttacker { attacker, defender } => {
-                self.score_attack(observation, *attacker)
+                Self::score_attack(observation, *attacker)
                     + Self::defender_preference(observation, *attacker, *defender)
             }
             Action::DeclareBlocker { blocker, attacker } => {

@@ -11,7 +11,6 @@ pub enum CardBehavior {
     Fork,
     GoblinGrenade,
     GrislySalvage,
-    IronclawOrcs,
     KirdApe,
     LibraryOfAlexandria,
     Moat,

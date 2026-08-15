@@ -568,6 +568,7 @@ mod old_school_upkeep;
 mod poison;
 mod populate;
 mod power_blocking;
+mod power_blocking_restrictions;
 mod premodern_cards;
 mod premodern_lands;
 mod premodern_library_selection;

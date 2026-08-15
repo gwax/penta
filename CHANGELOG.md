@@ -68,6 +68,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Can't block creatures with power 2 or greater."** Ironclaw Orcs carried
+  this as a hardcoded behavior in the combat action generator; it is now an
+  ordinary static ability, authored as the permission the restriction leaves
+  behind. Blocking restrictions also read the attacker's real current power,
+  so a creature a Crusade has pumped is one the Orcs will no longer block.
+  Brassclaw Orcs and Orcish Veteran join it, and the `IronclawOrcs` behavior
+  is gone.
+
 - **"Target player reveals their hand."** A public reveal, where looking at a
   hand told only one player. It is its own step, so a hand with nothing to
   discard and nothing to count is still shown, and what follows reads the hand

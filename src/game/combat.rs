@@ -1,7 +1,7 @@
 use super::{
-    Action, AppliedRuleDef, AttackDefender, CardBehavior, CardType, CombatDamageAssignment,
-    CombatDamageStage, CommittedTriggerEvent, ControlFlow, CounterKind, DeclarativeAbilityDef,
-    EffectDef, Game, GameEvent, GameObjectId, KeywordAbility, Permanent, PlayerId, Target,
+    Action, AppliedRuleDef, AttackDefender, CardType, CombatDamageAssignment, CombatDamageStage,
+    CommittedTriggerEvent, ControlFlow, CounterKind, DeclarativeAbilityDef, EffectDef, Game,
+    GameEvent, GameObjectId, KeywordAbility, Permanent, PlayerId, Target,
 };
 
 mod damage_delivery;
@@ -43,7 +43,7 @@ impl Game {
 
     #[cfg(test)]
     pub(super) fn can_attack(&self, permanent: &Permanent) -> bool {
-        let moat_active = self.count_behavior(CardBehavior::Moat) > 0;
+        let moat_active = self.count_behavior(super::CardBehavior::Moat) > 0;
         self.can_attack_with_moat(permanent, moat_active)
     }
 
@@ -192,7 +192,10 @@ impl Game {
     /// this attacker is outside that. The other direction -- an attacker
     /// forbidding a blocker -- is `blocking_is_prevented`.
     pub(super) fn blocker_may_only_block(&self, blocker: &Permanent, attacker: &Permanent) -> bool {
-        let characteristics = self.trigger_event_object(attacker);
+        // Asked while blockers are declared, which is outside static
+        // resolution, so this reads the real current numbers: "power 2 or
+        // greater" has to see a creature a Crusade has pumped.
+        let characteristics = self.targeting_event_object(attacker);
         let mut restricted = false;
         let _ = self.visit_applied_rules(blocker, |applied| {
             if let AppliedRuleDef::CanBlockOnly(predicate) = applied.rule
@@ -346,7 +349,6 @@ impl Game {
                     permanent.card.id,
                     self.has_flying(permanent),
                     self.landwalk_beats(permanent, permanent.controller.opponent()),
-                    self.power(permanent).unwrap_or(0),
                 )
             })
             .collect();
@@ -361,11 +363,9 @@ impl Game {
                 let blocker_can_block_flying = self.has_flying(blocker_permanent)
                     || self
                         .permanent_has_executable_keyword(blocker_permanent, KeywordAbility::Reach);
-                let ironclaw =
-                    self.effective_behavior(blocker_permanent) == Some(CardBehavior::IronclawOrcs);
                 attackers
                     .iter()
-                    .filter_map(move |(attacker, flying, unblockable, power)| {
+                    .filter_map(move |(attacker, flying, unblockable)| {
                         let attacker_permanent = self
                             .battlefield
                             .iter()
@@ -388,7 +388,6 @@ impl Game {
                             || intimidate
                                 && !self.is_artifact_permanent(blocker_permanent)
                                 && !shares_color
-                            || ironclaw && *power >= 2
                             || self.combat_is_protected(blocker_permanent, attacker_permanent));
                         can_block.then_some(Action::DeclareBlocker {
                             blocker,
