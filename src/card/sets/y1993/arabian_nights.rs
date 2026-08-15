@@ -97,7 +97,7 @@ pub(in crate::card::sets) static ARMY_OF_ALLAH: CardRecord = CardRecord::new(
 );
 
 // ARN 3 — Camel
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “As long as this creature is attacking, prevent all damage Deserts would deal to this creature and to creatures banded with this creature”.
+// Audit: blocked — Needs a prevention that lives on the permanent and reads its combat state, for “As long as this creature is attacking, prevent all damage Deserts would deal to this creature and to creatures banded with this creature”. Deserts and band membership are both readable now.
 
 // ARN 4 — Eye for an Eye
 // Audit: blocked — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “The next time a source of your choice would deal damage to you this turn, instead that source deals that much damage to you and Eye for an Eye deals that much damage to that source's…”.
@@ -670,7 +670,7 @@ pub(in crate::card::sets) static BIRD_MAIDEN: CardRecord = CardRecord::new(
 );
 
 // ARN 38 — Desert Nomads
-// Audit: blocked — Desertwalk names a land type no cataloged card carries, so the keyword could never read a Desert to fire on.
+// Audit: blocked — Needs a landwalk naming a land subtype, and a prevention that lives on the permanent rather than being created by a resolving effect, for “Prevent all damage that would be dealt to this creature by Deserts”. Desert itself is now cataloged, so the land type the walk reads exists.
 
 // ARN 39 — Hurr Jackal
 pub(in crate::card::sets) static HURR_JACKAL: CardRecord = CardRecord::new(
