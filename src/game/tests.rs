@@ -601,6 +601,7 @@ mod old_school_upkeep;
 mod one_sided_block_triggers;
 mod open_activation;
 mod osai_vultures;
+mod part_water;
 mod poison;
 mod populate;
 mod power_blocking;

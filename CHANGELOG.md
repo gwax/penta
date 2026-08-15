@@ -106,7 +106,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
-- **Mishra'''s War Machine**, with discarding as an unless-payment. Unlike a
+- **Part Water**, whose X-counted target slot needed no new engine work: the
+  count sentinel added for Candelabra of Tawnos already covers a spell. Its
+  {X}{X}{U} cost doubles X, so seven mana reaches three creatures rather than
+  six, and the targeting and the payment agree about that.
+
+- **Mishra's War Machine**, with discarding as an unless-payment. Unlike a
   mill, an empty hand cannot pay at all, so the damage becomes the only
   branch; which card goes is settled after the branch is, because the branch
   does not depend on it.

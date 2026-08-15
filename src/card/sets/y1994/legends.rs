@@ -1020,8 +1020,35 @@ pub(in crate::card::sets) static MANA_DRAIN: CardRecord = CardRecord::new(
         )]),
 );
 
+static PART_WATER_ISLANDWALK: AbilityDef = abilities::landwalk(BasicLandType::Island);
+
+/// "X target creatures": the count is the X that was paid, and X is doubled
+/// in the cost, so each creature reached costs two mana rather than one.
+static PART_WATER_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_chosen_x(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
 // LEG 66 — Part Water
-// Audit: blocked — Needs a target slot whose count is the X paid for the spell; granting islandwalk itself is available.
+pub(in crate::card::sets) static PART_WATER: CardRecord = CardRecord::new(
+    cards::PART_WATER,
+    "Part Water",
+    CardArt::new("4b659475-c8b7-493d-af63-04f34d8cc3b1", "NéNé Thomas"),
+    CardSet::Legends,
+    CardRules::new_sorcery(mana_cost!("{X}{X}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "X target creatures gain islandwalk until end of turn.",
+        &PART_WATER_TARGETS,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::add_ability(&PART_WATER_ISLANDWALK),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // LEG 67 — Psionic Entity
 pub(in crate::card::sets) static PSIONIC_ENTITY: CardRecord = CardRecord::new(
@@ -5267,6 +5294,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FORCE_SPIKE,
     &GASEOUS_FORM,
     &MANA_DRAIN,
+    &PART_WATER,
     &PSIONIC_ENTITY,
     &RECALL,
     &REMOVE_SOUL,
