@@ -3,15 +3,15 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
-    ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef, CounterKind, DamageEventMatcherDef,
-    DamagePreventionDef, DamagePreventionFollowUpDef, DamageRecipientMatcherDef,
-    DamageSourceGroupDef, DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectPaymentDef,
-    EffectRecipientDef, InstalledTriggerDef, KeywordAbility, LikelihoodDef, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef,
-    ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
+    DamageEventMatcherDef, DamagePreventionDef, DamagePreventionFollowUpDef,
+    DamageRecipientMatcherDef, DamageSourceGroupDef, DiscardSelectionDef, EffectDef,
+    EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility,
+    LikelihoodDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementAbilityDef, ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
+    TurnKindDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -1006,7 +1006,34 @@ pub(in crate::card::sets) static CLONE: CardRecord = CardRecord::new(
 );
 
 // LEA 52 — Control Magic
-// Audit: blocked — Needs an attachment-scoped control-changing continuous effect for “You control enchanted creature”.
+pub(in crate::card::sets) static CONTROL_MAGIC: CardRecord = CardRecord::new(
+    cards::CONTROL_MAGIC,
+    "Control Magic",
+    CardArt::new("7b52f459-c703-4a0b-9114-ff69eec61287", "Dameon Willich"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{2}{U}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::triggered(
+                "You control enchanted creature.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                // The printed clause is a static, and the Aura leaving is
+                // what ends it either way: an Aura with nothing under it is
+                // put into its owner's graveyard.
+                EffectDef::GainControl {
+                    object: EffectRecipientDef::AttachedPermanent,
+                    duration: ControlDurationDef::WhileSourceRemains {
+                        while_tapped: false,
+                    },
+                },
+            ),
+        ]),
+);
 
 // LEA 53 — Copy Artifact
 pub(in crate::card::sets) static COPY_ARTIFACT: CardRecord = CardRecord::new(
@@ -1482,7 +1509,31 @@ pub(in crate::card::sets) static STASIS: CardRecord = CardRecord::new(
 );
 
 // LEA 81 — Steal Artifact
-// Audit: blocked — Needs an attachment-scoped control-changing continuous effect for “You control enchanted artifact”.
+pub(in crate::card::sets) static STEAL_ARTIFACT: CardRecord = CardRecord::new(
+    cards::STEAL_ARTIFACT,
+    "Steal Artifact",
+    CardArt::new("83316930-d6ad-46ce-9b40-48eea856d95b", "Amy Weber"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{2}{U}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant artifact", &abilities::ENCHANT_ARTIFACT_TARGET),
+            AbilityDef::triggered(
+                "You control enchanted artifact.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                EffectDef::GainControl {
+                    object: EffectRecipientDef::AttachedPermanent,
+                    duration: ControlDurationDef::WhileSourceRemains {
+                        while_tapped: false,
+                    },
+                },
+            ),
+        ]),
+);
 
 // LEA 82 — Thoughtlace
 pub(in crate::card::sets) static THOUGHTLACE: CardRecord = CardRecord::new(
@@ -5030,6 +5081,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLUE_ELEMENTAL_BLAST,
     &BRAINGEYSER,
     &CLONE,
+    &CONTROL_MAGIC,
     &COPY_ARTIFACT,
     &COUNTERSPELL,
     &FEEDBACK,
@@ -5051,6 +5103,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SEA_SERPENT,
     &SPELL_BLAST,
     &STASIS,
+    &STEAL_ARTIFACT,
     &THOUGHTLACE,
     &TIME_WALK,
     &TIMETWISTER,

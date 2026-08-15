@@ -514,6 +514,7 @@ mod attack_deterrents;
 mod attack_restrictions;
 mod attacked_last_turn;
 mod attacking_walls;
+mod aura_control;
 mod aura_death;
 mod aura_tap_triggers;
 mod aura_upkeep;

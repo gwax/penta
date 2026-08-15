@@ -99,6 +99,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Control Magic and Steal Artifact.** Both audit lines wanted an
+  attachment-scoped control change. The control the engine already has is
+  scoped to its source remaining on the battlefield, and for an Aura those are
+  the same thing: an Aura with nothing under it goes to its owner's graveyard,
+  so destroying it hands the permanent back.
+
 - **Goblin War Drums.** Its audit line wanted menace as an executable
   constraint and a way to grant a keyword from outside. Both have existed since
   the menace pass; the card is a static grant over a whole side.
