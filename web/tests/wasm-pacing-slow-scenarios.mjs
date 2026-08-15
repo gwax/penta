@@ -30,7 +30,7 @@ export async function passButtonLabelMatchesDestination() {
     // the click carries the attack all the way past the block step.
     "No blocks": (before, after) =>
       before.battlefield.some((card) => card.attacking) &&
-      !after.battlefield.some((card) => card.blocking != null) &&
+      !after.battlefield.some((card) => (card.blocking ?? []).length > 0) &&
       (after.gameTurn > before.gameTurn ||
         ["Combat Damage", "End Of Combat", "Postcombat Main", "End", "Cleanup"].includes(after.step)),
     "Go to end of combat": sameTurnAt(["End Of Combat"]),
@@ -216,7 +216,9 @@ export async function creaturelessSecondMainsWaitForUsableActions() {
         state.active === "You" &&
         state.step === "Declare Blockers" &&
         state.battlefield.some((card) => card.owner === "human" && card.attacking) &&
-        state.battlefield.some((card) => card.owner === "opponent" && card.blocking != null) &&
+        state.battlefield.some(
+          (card) => card.owner === "opponent" && (card.blocking ?? []).length > 0,
+        ) &&
         state.passLabel
       ) {
         blockedBeforeDamage += 1;
