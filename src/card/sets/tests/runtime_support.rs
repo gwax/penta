@@ -576,6 +576,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ReduceGenericCostBy(_)
                     | EffectDef::LandwalkCanBeBlocked(_)
                     | EffectDef::CannotAttackUnless(_)
+                    | EffectDef::CannotAttackIf(_)
                     | EffectDef::MoveToZone { .. }
                     | EffectDef::StaticApply { .. }
                     | EffectDef::Apply { .. }

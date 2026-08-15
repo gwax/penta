@@ -731,6 +731,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
+        | EffectDef::CannotAttackIf(_)
         | EffectDef::MoveToZone { .. }
         | EffectDef::Special(_) => {}
     }
@@ -881,6 +882,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
+        | EffectDef::CannotAttackIf(_)
         | EffectDef::MoveToZone { .. }
         | EffectDef::Special(_) => 0,
     }

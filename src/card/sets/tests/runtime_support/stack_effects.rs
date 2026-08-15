@@ -327,6 +327,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
+        | EffectDef::CannotAttackIf(_)
         | EffectDef::Special(_) => false,
     }
 }

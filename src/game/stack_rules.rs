@@ -121,6 +121,7 @@ impl Game {
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
+            | EffectDef::CannotAttackIf(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::CreateAttachedToken { .. }

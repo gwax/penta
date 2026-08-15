@@ -378,6 +378,7 @@ impl HandcraftedPolicy {
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
+            | EffectDef::CannotAttackIf(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
             | EffectDef::Reconfigure { .. }

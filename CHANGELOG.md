@@ -63,6 +63,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Can't attack if ..." as the mirror of "can't attack unless ...".** The
+  negation is over the existential rather than the object -- stopped when
+  anything matches, rather than when nothing does -- which a negated object
+  predicate cannot express. Read as attackers are declared, so tapping the
+  deterrent frees the attacker. Orgg.
+
 - **The other side of the blocking relationship.** A Wall printing "creatures
   it's blocking" reads the relationship outwards from itself; The Wretched
   reads it inwards, from the creatures that blocked it. Both are needed

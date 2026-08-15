@@ -194,7 +194,9 @@ fn validate_effect_target_shapes(
                 trigger_event,
             )
         }
-        EffectDef::CannotAttackUnless(query) => validate_query_shape(*query, targets),
+        EffectDef::CannotAttackUnless(query) | EffectDef::CannotAttackIf(query) => {
+            validate_query_shape(*query, targets)
+        }
         EffectDef::StaticApply { recipient, effect } => {
             validate_applied_effect_shapes(recipient, effect, targets, true)
         }

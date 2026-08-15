@@ -604,6 +604,11 @@ pub enum EffectDef {
     /// relation, so "unless defending player controls an Island" is an
     /// opponent-relative battlefield query rather than a special case.
     CannotAttackUnless(&'static ObjectQueryDef),
+    /// The mirror of [`Self::CannotAttackUnless`]: the source cannot attack
+    /// while anything matches. The negation is over the existential rather
+    /// than the object, which is why it is its own clause rather than a
+    /// negated query.
+    CannotAttackIf(&'static ObjectQueryDef),
     /// A static prohibition: no spell or ability an opponent controls can
     /// make this ability's controller sacrifice a permanent.
     CannotBeForcedToSacrifice,

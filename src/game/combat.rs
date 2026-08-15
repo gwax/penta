@@ -86,13 +86,20 @@ impl Game {
                     effective.ability.definition,
                     DeclarativeAbilityDef::Static(_)
                 )
-                && let Some(EffectDef::CannotAttackUnless(query)) =
-                    effective.ability.declarative_effect()
-                && !self.any_battlefield_object_matches(
-                    query,
-                    permanent.card.id,
-                    permanent.controller,
-                )
+                && let Some(effect) = effective.ability.declarative_effect()
+                && match effect {
+                    EffectDef::CannotAttackUnless(query) => !self.any_battlefield_object_matches(
+                        query,
+                        permanent.card.id,
+                        permanent.controller,
+                    ),
+                    EffectDef::CannotAttackIf(query) => self.any_battlefield_object_matches(
+                        query,
+                        permanent.card.id,
+                        permanent.controller,
+                    ),
+                    _ => false,
+                }
             {
                 allowed = false;
                 return ControlFlow::Break(());

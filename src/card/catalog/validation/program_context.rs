@@ -122,7 +122,7 @@ fn validate_static_effect(
         {
             Ok(())
         }
-        EffectDef::CannotAttackUnless(query)
+        EffectDef::CannotAttackUnless(query) | EffectDef::CannotAttackIf(query)
             if position == StaticPosition::Root
                 && source_zones == [ZoneKind::Battlefield]
                 && query.zones == [ZoneKind::Battlefield]
@@ -363,6 +363,7 @@ fn validate_resolving_effect(
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::CannotAttackUnless(_)
+        | EffectDef::CannotAttackIf(_)
         | EffectDef::LandwalkCanBeBlocked(_) => Err(effect_operation_name(effect)),
         EffectDef::None
         | EffectDef::PreventDamage { .. }
@@ -715,6 +716,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::CannotBeForcedToSacrifice => "CannotBeForcedToSacrifice",
         EffectDef::ReduceGenericCostBy(_) => "ReduceGenericCostBy",
         EffectDef::CannotAttackUnless(_) => "CannotAttackUnless",
+        EffectDef::CannotAttackIf(_) => "CannotAttackIf",
         EffectDef::LandwalkCanBeBlocked(_) => "LandwalkCanBeBlocked",
         EffectDef::ScheduleTurnPhases(_) => "ScheduleTurnPhases",
         EffectDef::TakeExtraTurn { .. } => "TakeExtraTurn",

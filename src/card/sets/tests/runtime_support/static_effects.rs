@@ -19,7 +19,7 @@ pub(in super::super) fn shared_static_non_apply_effect(
         }
         // Read while attackers are declared, over the battlefield, so only
         // the object predicate is left to check.
-        EffectDef::CannotAttackUnless(query) => {
+        EffectDef::CannotAttackUnless(query) | EffectDef::CannotAttackIf(query) => {
             battlefield_only(source_zones)
                 && query.zones == [ZoneKind::Battlefield]
                 && shared_object_predicate(query.object)
@@ -51,6 +51,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
+        | EffectDef::CannotAttackIf(_)
         | EffectDef::Sequence(_) => shared_static_non_apply_effect(source_zones, effect),
         EffectDef::StaticApply { recipient, effect } => {
             let battlefield_recipient_is_supported = match recipient.0 {

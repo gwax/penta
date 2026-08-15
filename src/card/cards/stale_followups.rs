@@ -65,3 +65,4 @@ pub const RING_OF_XATHRID: CardDefinitionId = CardDefinitionId(1690);
 pub const SHIMIAN_NIGHT_STALKER: CardDefinitionId = CardDefinitionId(1691);
 pub const MURK_DWELLERS: CardDefinitionId = CardDefinitionId(1711);
 pub const THE_WRETCHED: CardDefinitionId = CardDefinitionId(1712);
+pub const ORGG: CardDefinitionId = CardDefinitionId(1713);

@@ -214,6 +214,7 @@ fn validate_effect_references(
         // A prohibition names a card shape, never a target.
         EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
+        | EffectDef::CannotAttackIf(_)
         | EffectDef::None
         | EffectDef::AddMana(_)
         | EffectDef::AddManaEqualTo { .. }

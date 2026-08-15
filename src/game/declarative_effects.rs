@@ -908,6 +908,7 @@ impl Game {
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
+            | EffectDef::CannotAttackIf(_)
             | EffectDef::StaticApply { .. }
             | EffectDef::Special(_) => {
                 // Choice-bearing mana and the remaining declarative effect

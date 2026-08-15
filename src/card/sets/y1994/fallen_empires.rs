@@ -1000,8 +1000,41 @@ const fn orcish_captain_pump(power: i32, toughness: i32) -> EffectDef {
 // FEM 62a — Orcish Veteran
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't block white creatures with power 2 or greater”.
 
+/// "Defending player controls an untapped creature with power 3 or greater."
+static ORGG_DETERRENT: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::PowerAtLeast(3),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Opponent,
+);
+
 // FEM 63 — Orgg
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't attack if defending player controls an untapped creature with power 3 or greater”.
+pub(in crate::card::sets) static ORGG: CardRecord = CardRecord::new(
+    cards::ORGG,
+    "Orgg",
+    CardArt::new("5af19ab0-4bd0-4d5f-8d2e-507e4fe87c18", "Daniel Gelon"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{3}{R}{R}"), &["Orgg"], 6, 6).with_abilities(&[
+        abilities::trample(),
+        AbilityDef::static_ability(
+            "This creature can't attack if defending player controls an untapped creature with \
+             power 3 or greater.",
+            EffectDef::CannotAttackIf(&ORGG_DETERRENT),
+        ),
+        AbilityDef::static_ability(
+            "This creature can't block creatures with power 3 or greater.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CanBlockOnly(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::PowerAtLeast(3)),
+                )),
+            },
+        ),
+    ]),
+);
 
 // FEM 64 — Raiding Party
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “Sacrifice an Orc: Each player may tap any number of untapped white creatures they control. For each creature tapped this way, that player chooses up to two Plains. Then destroy all…”.
@@ -1703,6 +1736,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GOBLIN_CHIRURGEON,
     &GOBLIN_GRENADE,
     &ORCISH_CAPTAIN,
+    &ORGG,
     &ELVEN_FORTRESS,
     &ELVISH_FARMER,
     &ELVISH_HUNTER,
