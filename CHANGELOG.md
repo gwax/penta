@@ -63,6 +63,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **The other side of the blocking relationship.** A Wall printing "creatures
+  it's blocking" reads the relationship outwards from itself; The Wretched
+  reads it inwards, from the creatures that blocked it. Both are needed
+  because only the blocker records what it blocked, and together in an
+  `AnyOf` they are the printed "blocking or blocked by this creature".
+
 - **An until-end-of-combat duration.** The shortest lifetime the engine has:
   it expires as the end-of-combat step finishes rather than waiting for
   cleanup, so a creature pumped for one combat is back to its printed size in

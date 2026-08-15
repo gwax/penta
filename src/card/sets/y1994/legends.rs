@@ -1562,7 +1562,32 @@ pub(in crate::card::sets) static THE_ABYSS: CardRecord = CardRecord::new(
 );
 
 // LEG 121 — The Wretched
-// Audit: blocked — Needs duration-aware control-changing continuous effects for “At end of combat, gain control of all creatures blocking this creature for as long as you control this creature”.
+pub(in crate::card::sets) static THE_WRETCHED: CardRecord = CardRecord::new(
+    cards::THE_WRETCHED,
+    "The Wretched",
+    CardArt::new("14c45416-a826-42e9-9967-8838158cf16d", "Christopher Rush"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{3}{B}{B}"), &["Demon"], 2, 5).with_ability(
+        AbilityDef::triggered(
+            "At end of combat, gain control of all creatures blocking this creature for as long \
+             as you control this creature.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::EndOfCombat,
+                player: PlayerRelation::Any,
+            },
+            EffectDef::GainControl {
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::BlockingSource,
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+                duration: ControlDurationDef::WhileSourceRemains {
+                    while_tapped: false,
+                },
+            },
+        ),
+    ),
+);
 
 // LEG 122 — Touch of Darkness
 // Audit: blocked — Needs a duration-aware color-setting characteristic-layer effect for “One or more target creatures become black until end of turn”.
@@ -3953,7 +3978,7 @@ pub(in crate::card::sets) static RELIC_BARRIER: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a spell-on-stack target predicate that expresses the printed instant/Aura restriction for “{3}, {T}: Counter target instant or Aura spell that targets a permanent you control”.
 
 // LEG 294 — Sentinel
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{0}: Change this creature's base toughness to 1 plus the power of target creature blocking or blocked by this creature”.
+// Audit: blocked — Needs a summed value and a toughness-only base set; the blocking-or-blocked-by target predicate is available.
 
 // LEG 295 — Serpent Generator
 pub(in crate::card::sets) static SERPENT_GENERATOR: CardRecord = CardRecord::new(
@@ -4185,6 +4210,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SHIMIAN_NIGHT_STALKER,
     &SPIRIT_SHACKLE,
     &THE_ABYSS,
+    &THE_WRETCHED,
     &VAMPIRE_BATS,
     &WALKING_DEAD,
     &WALL_OF_PUTRID_FLESH,

@@ -510,6 +510,7 @@ mod aura_tap_triggers;
 mod aura_upkeep;
 mod banding;
 mod blocking_prevention;
+mod blocking_relation;
 mod blocking_relationship;
 mod cannot_attack;
 mod cannot_block;

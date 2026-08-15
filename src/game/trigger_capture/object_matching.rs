@@ -56,6 +56,14 @@ impl Game {
                 .find(|permanent| permanent.card.id == source)
                 .and_then(|permanent| permanent.blocking)
                 .is_some_and(|attacker| attacker == object.id),
+            // The other direction, read from the candidate: a blocker records
+            // what it blocked, so this one needs no lookup on the source.
+            ObjectPredicateDef::BlockingSource => self
+                .battlefield
+                .iter()
+                .find(|candidate| candidate.card.id == object.id)
+                .and_then(|candidate| candidate.blocking)
+                .is_some_and(|attacker| attacker == source),
             ObjectPredicateDef::Enchanted => self.battlefield.iter().any(|candidate| {
                 candidate.attached_to == Some(object.id) && self.is_aura_permanent(candidate)
             }),
@@ -194,6 +202,7 @@ impl Game {
             }
             ObjectPredicateDef::HasNonManaActivatedAbility
             | ObjectPredicateDef::BlockedBySource
+            | ObjectPredicateDef::BlockingSource
             | ObjectPredicateDef::Enchanted
             | ObjectPredicateDef::AttachedTo(_) => {
                 self.battlefield_relationship_matches(predicate, object, source, controller)

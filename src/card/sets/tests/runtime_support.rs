@@ -56,6 +56,7 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::BlockedBySource
+        | ObjectPredicateDef::BlockingSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn => true,
     }

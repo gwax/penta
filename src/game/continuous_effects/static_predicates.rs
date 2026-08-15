@@ -128,6 +128,7 @@ impl Game {
             | ObjectPredicateDef::AttachedToSource
             | ObjectPredicateDef::Blocking
             | ObjectPredicateDef::BlockedBySource
+            | ObjectPredicateDef::BlockingSource
             | ObjectPredicateDef::Enchanted
             | ObjectPredicateDef::AttachedTo(_)
             | ObjectPredicateDef::AttackedThisTurn

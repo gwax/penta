@@ -102,6 +102,10 @@ pub enum ObjectPredicateDef {
     /// the relationship is read from the source, which is what a Wall printing
     /// "creatures it's blocking" asks about.
     BlockedBySource,
+    /// A creature blocking the ability's source. This is the other half of
+    /// [`Self::BlockedBySource`]: together in an `AnyOf` they are the printed
+    /// "blocking or blocked by this creature".
+    BlockingSource,
     /// A permanent with an Aura attached to it. Nothing is said about whose
     /// Aura it is: "enchanted creatures" covers both players' Auras.
     Enchanted,

@@ -547,6 +547,7 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
+        | ObjectPredicateDef::BlockingSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn => true,
     }
