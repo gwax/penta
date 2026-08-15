@@ -362,6 +362,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::ChooseCards { .. }
         | EffectDef::Counter { .. }
         | EffectDef::AddCounters { .. }
+        | EffectDef::RemoveCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::CannotBeForcedToSacrifice

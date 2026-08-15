@@ -571,6 +571,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::IfFormat { .. }
                     | EffectDef::Counter { .. }
                     | EffectDef::AddCounters { .. }
+                    | EffectDef::RemoveCounters { .. }
                     | EffectDef::ChangeTextBasicLandType { .. }
                     | EffectDef::BecomeCopyOf { .. }
                     | EffectDef::CannotBeForcedToSacrifice

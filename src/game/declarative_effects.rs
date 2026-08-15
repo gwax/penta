@@ -847,6 +847,27 @@ impl Game {
                     }
                 }
             }
+            EffectDef::RemoveCounters {
+                object: recipient,
+                kind,
+                amount,
+            } => {
+                let amount = self
+                    .effect_value(amount, object, &context, scoped)
+                    .max(0)
+                    .try_into()
+                    .unwrap_or(u16::MAX);
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Permanent(permanent) = target
+                        && let Some(permanent) = self
+                            .battlefield
+                            .iter_mut()
+                            .find(|candidate| candidate.card.id == permanent)
+                    {
+                        permanent.remove_counters(kind, amount);
+                    }
+                }
+            }
             EffectDef::ChangeTextBasicLandType { object: recipient } => {
                 if let Some(target) = self
                     .effect_recipients(recipient, object, &context, scoped)

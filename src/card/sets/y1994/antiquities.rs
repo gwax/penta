@@ -721,7 +721,52 @@ pub(in crate::card::sets) static AMULET_OF_KROOG: CardRecord = CardRecord::new(
 );
 
 // ATQ 37 — Armageddon Clock
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “At the beginning of your draw step, this artifact deals damage equal to the number of doom counters on it to each player”.
+pub(in crate::card::sets) static ARMAGEDDON_CLOCK: CardRecord = CardRecord::new(
+    cards::ARMAGEDDON_CLOCK,
+    "Armageddon Clock",
+    CardArt::new("44a31889-6a8d-450c-a73d-381a7ff28bf9", "Amy Weber"),
+    CardSet::Antiquities,
+    CardRules::new_artifact(mana_cost!("{6}")).with_abilities(&[
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, put a doom counter on this artifact.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Doom,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::triggered(
+            "At the beginning of your draw step, this artifact deals damage equal to the \
+             number of doom counters on it to each player.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Draw,
+                player: PlayerRelation::You,
+            },
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::EachPlayer,
+                amount: ValueDef::CountersOnSource(CounterKind::Doom),
+            },
+        ),
+        // Everyone can wind it back, and only in an upkeep -- which is after
+        // the counter goes on and before the draw step it pays for.
+        AbilityDef::activated(
+            "{4}: Remove a doom counter from this artifact. Any player may activate this \
+             ability but only during any upkeep step.",
+            &[AbilityCostDef::Mana(mana_cost!("{4}"))],
+            EffectDef::RemoveCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Doom,
+                amount: ValueDef::Constant(1),
+            },
+        )
+        .with_activation_timing(ActivationTimingDef::AnyUpkeep)
+        .open_to_any_player(),
+    ]),
+);
 
 // ATQ 38 — Ashnod's Altar
 // Audit: blocked — Needs mana-ability activation to select and sacrifice a different creature; the mana runtime can currently sacrifice only the source.
@@ -1668,6 +1713,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CRUMBLE,
     &GAEAS_AVENGER,
     &AMULET_OF_KROOG,
+    &ARMAGEDDON_CLOCK,
     &ASHNODS_BATTLE_GEAR,
     &ASHNODS_TRANSMOGRANT,
     &BATTERING_RAM,

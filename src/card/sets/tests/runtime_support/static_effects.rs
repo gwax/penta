@@ -179,6 +179,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::IfFormat { .. }
         | EffectDef::Counter { .. }
         | EffectDef::AddCounters { .. }
+        | EffectDef::RemoveCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::MoveToZone { .. }

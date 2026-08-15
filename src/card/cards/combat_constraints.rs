@@ -14,3 +14,4 @@ pub const ERG_RAIDERS: CardDefinitionId = CardDefinitionId(1813);
 pub const PRIMORDIAL_OOZE: CardDefinitionId = CardDefinitionId(1814);
 pub const XENIC_POLTERGEIST: CardDefinitionId = CardDefinitionId(1815);
 pub const IFH_BIFF_EFREET: CardDefinitionId = CardDefinitionId(1816);
+pub const ARMAGEDDON_CLOCK: CardDefinitionId = CardDefinitionId(1817);

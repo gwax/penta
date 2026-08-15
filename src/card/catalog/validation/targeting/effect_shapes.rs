@@ -158,7 +158,8 @@ fn validate_effect_target_shapes(
         | EffectDef::CreateTokenCopyOf { object } => {
             validate_recipient_shape(object, targets, RecipientExpectation::Object)
         }
-        EffectDef::AddCounters { object, amount, .. } => {
+        EffectDef::AddCounters { object, amount, .. }
+        | EffectDef::RemoveCounters { object, amount, .. } => {
             validate_recipient_shape(object, targets, RecipientExpectation::Object)?;
             validate_value_shape(amount, targets)
         }

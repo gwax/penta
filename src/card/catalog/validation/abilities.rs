@@ -717,6 +717,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::ChooseCards { .. }
         | EffectDef::Counter { .. }
         | EffectDef::AddCounters { .. }
+        | EffectDef::RemoveCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::CannotBeForcedToSacrifice
@@ -870,6 +871,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::ChooseCards { .. }
         | EffectDef::Counter { .. }
         | EffectDef::AddCounters { .. }
+        | EffectDef::RemoveCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::CannotBeForcedToSacrifice

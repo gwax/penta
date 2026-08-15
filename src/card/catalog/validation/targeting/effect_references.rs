@@ -167,7 +167,8 @@ fn validate_effect_references(
             validate_recipient_target_references(player, target_count, scope)?;
             validate_value_target_references(amount, target_count, scope)
         }
-        EffectDef::AddCounters { object, amount, .. } => {
+        EffectDef::AddCounters { object, amount, .. }
+        | EffectDef::RemoveCounters { object, amount, .. } => {
             validate_recipient_target_references(object, target_count, scope)?;
             validate_value_target_references(amount, target_count, scope)
         }

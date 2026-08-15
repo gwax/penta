@@ -593,6 +593,14 @@ pub enum EffectDef {
         object: EffectRecipientDef,
         kind: CounterKind,
     },
+    /// Removes that many counters of one kind, or as many as are there. The
+    /// mirror of [`Self::AddCounters`], for the clauses that take some back
+    /// rather than all of them.
+    RemoveCounters {
+        object: EffectRecipientDef,
+        kind: CounterKind,
+        amount: ValueDef,
+    },
     /// Replace the named player's next draw this turn with another effect.
     /// The replacement is frozen with the resolving object and consumed even
     /// when its instructions cannot move a card.

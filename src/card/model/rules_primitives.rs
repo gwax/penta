@@ -25,10 +25,13 @@ pub enum CounterKind {
     /// Suspend's counter, which can sit on a card in exile rather than a
     /// permanent on the battlefield.
     Time,
+    /// Armageddon Clock's counter, which measures how much it is about to
+    /// deal to everybody.
+    Doom,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 12;
+    pub const COUNT: usize = 13;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -43,6 +46,7 @@ impl CounterKind {
         Self::Tide,
         Self::MinusZeroMinusTwo,
         Self::Time,
+        Self::Doom,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -62,7 +66,8 @@ impl CounterKind {
             | Self::Spore
             | Self::Credit
             | Self::Tide
-            | Self::Time => (0, 0),
+            | Self::Time
+            | Self::Doom => (0, 0),
         }
     }
 
@@ -81,6 +86,7 @@ impl CounterKind {
             Self::Tide => 9,
             Self::MinusZeroMinusTwo => 10,
             Self::Time => 11,
+            Self::Doom => 12,
         }
     }
 
@@ -99,6 +105,7 @@ impl CounterKind {
             Self::Tide => "tide",
             Self::MinusZeroMinusTwo => "-0/-2",
             Self::Time => "time",
+            Self::Doom => "doom",
         }
     }
 }

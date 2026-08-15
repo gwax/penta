@@ -438,6 +438,7 @@ fn validate_resolving_effect(
         | EffectDef::DrainLife { .. }
         | EffectDef::AddManaEqualTo { .. }
         | EffectDef::AddCounters { .. }
+        | EffectDef::RemoveCounters { .. }
         | EffectDef::RemoveAllCounters { .. }
         | EffectDef::SkipNextUntapSteps { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
@@ -750,6 +751,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::DrainLife { .. } => "DrainLife",
         EffectDef::AddManaEqualTo { .. } => "AddManaEqualTo",
         EffectDef::AddCounters { .. } => "AddCounters",
+        EffectDef::RemoveCounters { .. } => "RemoveCounters",
         EffectDef::RemoveAllCounters { .. } => "RemoveAllCounters",
         EffectDef::SkipNextUntapSteps { .. } => "SkipNextUntapSteps",
         EffectDef::ChangeTextBasicLandType { .. } => "ChangeTextBasicLandType",

@@ -336,6 +336,7 @@ impl Game {
             | EffectDef::IfFormat { .. }
             | EffectDef::Counter { .. }
             | EffectDef::AddCounters { .. }
+            | EffectDef::RemoveCounters { .. }
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::May { .. }

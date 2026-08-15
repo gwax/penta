@@ -470,6 +470,7 @@ impl Game {
                 | EffectDef::Transform { .. }
                 | EffectDef::Counter { .. }
                 | EffectDef::AddCounters { .. }
+                | EffectDef::RemoveCounters { .. }
                 | EffectDef::ChangeTextBasicLandType { .. }
                 | EffectDef::BecomeCopyOf { .. }
                 | EffectDef::May { .. }

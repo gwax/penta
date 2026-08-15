@@ -99,6 +99,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Armageddon Clock**, with a doom counter and a way to take counters off.
+  The counter vocabulary could add counters and clear a kind entirely, but not
+  remove a few; removing some is the mirror of adding some.
+
 - **Abilities any player may activate.** A printed "any player may activate
   this ability" now puts somebody else's permanent in your action list, for
   that ability alone. The permanent stays the source, so what it does is still

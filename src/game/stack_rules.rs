@@ -104,6 +104,7 @@ impl Game {
             | EffectDef::ReplaceNextDrawThisTurn { .. }
             | EffectDef::Counter { .. }
             | EffectDef::AddCounters { .. }
+            | EffectDef::RemoveCounters { .. }
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::May { .. }

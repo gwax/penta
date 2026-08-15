@@ -362,6 +362,7 @@ impl HandcraftedPolicy {
             | EffectDef::ReplaceNextDrawThisTurn { .. }
             | EffectDef::IfFormat { .. }
             | EffectDef::AddCounters { .. }
+            | EffectDef::RemoveCounters { .. }
             | EffectDef::ChangeTextBasicLandType { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::CannotBeForcedToSacrifice
