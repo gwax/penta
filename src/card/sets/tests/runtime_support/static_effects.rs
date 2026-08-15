@@ -150,6 +150,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Mill { .. }
         | EffectDef::LookAtTopAndSelect { .. }
         | EffectDef::LookAtHand { .. }
+        | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }
         | EffectDef::ChooseCards { .. }
         | EffectDef::ReplaceNextDrawThisTurn { .. }

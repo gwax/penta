@@ -357,6 +357,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::SacrificeOfChoice { .. }
         | EffectDef::Mill { .. }
         | EffectDef::LookAtHand { .. }
+        | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }
         | EffectDef::ChooseCards { .. }
         | EffectDef::Counter { .. }

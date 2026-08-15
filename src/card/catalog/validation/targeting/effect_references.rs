@@ -139,7 +139,8 @@ fn validate_effect_references(
         EffectDef::SearchZone { player, .. }
         | EffectDef::ChooseCards { player, .. }
         | EffectDef::TakeExtraTurn { player }
-        | EffectDef::LookAtHand { player } => {
+        | EffectDef::LookAtHand { player }
+        | EffectDef::RevealHand { player } => {
             validate_recipient_target_references(player, target_count, scope)
         }
         EffectDef::LookAtTopAndSelect {

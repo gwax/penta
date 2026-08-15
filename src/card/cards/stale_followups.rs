@@ -79,3 +79,5 @@ pub const GOBLIN_ROCK_SLED: CardDefinitionId = CardDefinitionId(1723);
 pub const TANGLE_KELP: CardDefinitionId = CardDefinitionId(1724);
 pub const ORCISH_SPY: CardDefinitionId = CardDefinitionId(1725);
 pub const VISIONS: CardDefinitionId = CardDefinitionId(1726);
+pub const AMNESIA: CardDefinitionId = CardDefinitionId(1727);
+pub const INQUISITION: CardDefinitionId = CardDefinitionId(1728);

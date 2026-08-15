@@ -554,6 +554,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Mill { .. }
                     | EffectDef::LookAtTopAndSelect { .. }
                     | EffectDef::LookAtHand { .. }
+                    | EffectDef::RevealHand { .. }
                     | EffectDef::SearchZone { .. }
                     | EffectDef::ChooseCards { .. }
                     | EffectDef::ReplaceNextDrawThisTurn { .. }

@@ -582,6 +582,7 @@ mod regeneration;
 mod removal_and_keywords;
 mod replacements_and_presentation;
 mod resolution_destinations;
+mod revealed_hands;
 mod ring_of_maruf;
 mod rings;
 mod scavenge;

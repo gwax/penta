@@ -68,6 +68,11 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Target player reveals their hand."** A public reveal, where looking at a
+  hand told only one player. It is its own step, so a hand with nothing to
+  discard and nothing to count is still shown, and what follows reads the hand
+  afresh rather than the reveal's result. Amnesia and Inquisition.
+
 - **Looking at the top of a library that is not yours.** Digging through your
   own library names one player twice, so the library and the player being
   asked were the same thing; a spy separates them. A selection that may take

@@ -98,6 +98,7 @@ impl Game {
             | EffectDef::Mill { .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
+            | EffectDef::RevealHand { .. }
             | EffectDef::SearchZone { .. }
             | EffectDef::ChooseCards { .. }
             | EffectDef::ReplaceNextDrawThisTurn { .. }

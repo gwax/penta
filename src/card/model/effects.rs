@@ -524,6 +524,15 @@ pub enum EffectDef {
         /// relation instead.
         controller: Option<PlayerRelation>,
     },
+    /// Every card in the named player's hand is revealed to everyone.
+    ///
+    /// Nothing moves; what changes is what the table knows. It is a separate
+    /// step from whatever reads the hand afterwards, because the reveal
+    /// happens even when the clause that follows finds nothing to do -- and
+    /// unlike [`Self::LookAtHand`], one player learning is not enough.
+    RevealHand {
+        player: EffectRecipientDef,
+    },
     /// CR 506.4: the permanent stops attacking or blocking, and anything
     /// blocking it stops. An attacker removed this way was still blocked, so
     /// it deals no damage rather than getting through.

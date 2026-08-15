@@ -76,7 +76,8 @@ fn validate_effect_target_shapes(
         | EffectDef::SearchZone { player, .. }
         | EffectDef::ChooseCards { player, .. }
         | EffectDef::TakeExtraTurn { player }
-        | EffectDef::LookAtHand { player } => {
+        | EffectDef::LookAtHand { player }
+        | EffectDef::RevealHand { player } => {
             validate_recipient_shape(player, targets, RecipientExpectation::Player)
         }
         EffectDef::SacrificeOfChoice {

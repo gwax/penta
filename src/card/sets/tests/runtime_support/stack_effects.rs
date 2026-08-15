@@ -188,7 +188,8 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             player: recipient, ..
         }
         | EffectDef::LoseTheGame { player: recipient }
-        | EffectDef::LookAtHand { player: recipient } => shared_effect_recipient(recipient),
+        | EffectDef::LookAtHand { player: recipient }
+        | EffectDef::RevealHand { player: recipient } => shared_effect_recipient(recipient),
         EffectDef::SacrificeOfChoice { .. } => shared_sacrifice_of_choice(effect),
         EffectDef::LookAtTopAndSelect { .. } => {
             deferred_decision_allowed && shared_decision_effect(effect)

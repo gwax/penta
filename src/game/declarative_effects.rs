@@ -442,6 +442,27 @@ impl Game {
                     }
                 }
             }
+            EffectDef::RevealHand { player: recipient } => {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Player(revealer) = target {
+                        let hand = &self.players[revealer.index()].hand;
+                        let events = hand
+                            .iter()
+                            .map(|card| super::GameEvent::CardRevealed {
+                                player: revealer,
+                                card: card.id,
+                                definition: card.definition,
+                            })
+                            .collect::<Vec<_>>();
+                        let seen = public_cards(hand);
+                        self.events.extend(events);
+                        // Everyone saw it, so everyone remembers it.
+                        for viewer in &mut self.last_seen_hands {
+                            *viewer = Some((revealer, seen.clone()));
+                        }
+                    }
+                }
+            }
             EffectDef::LookAtTopAndSelect {
                 player: recipient,
                 looker,

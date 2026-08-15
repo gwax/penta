@@ -5,9 +5,9 @@ use crate::card::{
     CardArt, CardBehavior, CardRules, CardSet, CardType, ComparisonDef, DamageCoverageDef,
     DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceGroupDef,
     EffectDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation,
-    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -235,8 +235,40 @@ pub(in crate::card::sets) static WITCH_HUNTER: CardRecord = CardRecord::new(
     ]),
 );
 
+static AMNESIA_STRIKE: [EffectDef; 2] = [
+    EffectDef::RevealHand {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    // "All nonland cards" is not a count, so the hand is queried rather than
+    // a number of discards being asked for. The reveal above is what makes
+    // the selection public knowledge.
+    EffectDef::DiscardCards {
+        object: EffectRecipientDef::objects(ObjectSetDef::Query(ObjectQueryDef::owned_by(
+            ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+            &[ZoneKind::Hand],
+            PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+        ))),
+    },
+];
+
+static TARGET_PLAYER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
 // DRK 20 — Amnesia
-// Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “Target player reveals their hand and discards all nonland cards”.
+pub(in crate::card::sets) static AMNESIA: CardRecord = CardRecord::new(
+    cards::AMNESIA,
+    "Amnesia",
+    CardArt::new("5b650e75-28ae-4f9e-9a04-7e28a246693f", "Mark Poole"),
+    CardSet::TheDark,
+    CardRules::new_sorcery(mana_cost!("{3}{U}{U}{U}")).with_ability(
+        AbilityDef::spell_with_targets(
+            "Target player reveals their hand and discards all nonland cards.",
+            &TARGET_PLAYER,
+            EffectDef::Sequence(&AMNESIA_STRIKE),
+        ),
+    ),
+);
 
 // DRK 21 — Apprentice Wizard
 pub(in crate::card::sets) static APPRENTICE_WIZARD: CardRecord = CardRecord::new(
@@ -651,8 +683,37 @@ pub(in crate::card::sets) static GRAVE_ROBBERS: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Counted after the reveal, from the hand itself: the damage is whatever is
+/// there when the spell resolves, not what the caster saw earlier.
+static WHITE_CARDS_IN_TARGETS_HAND: ObjectQueryDef = ObjectQueryDef::owned_by(
+    ObjectPredicateDef::Color(ManaColor::White),
+    &[ZoneKind::Hand],
+    PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+);
+
+static INQUISITION_STRIKE: [EffectDef; 2] = [
+    EffectDef::RevealHand {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::CountMatchingObjects(&WHITE_CARDS_IN_TARGETS_HAND),
+    },
+];
+
 // DRK 47 — Inquisition
-// Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “Target player reveals their hand. Inquisition deals damage to that player equal to the number of white cards in their hand”.
+pub(in crate::card::sets) static INQUISITION: CardRecord = CardRecord::new(
+    cards::INQUISITION,
+    "Inquisition",
+    CardArt::new("be36c273-8584-4a8d-b253-b45449300b63", "Anson Maddocks"),
+    CardSet::TheDark,
+    CardRules::new_sorcery(mana_cost!("{2}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player reveals their hand. Inquisition deals damage to that player equal to the \
+         number of white cards in their hand.",
+        &TARGET_PLAYER,
+        EffectDef::Sequence(&INQUISITION_STRIKE),
+    )),
+);
 
 // DRK 48 — Marsh Gas
 pub(in crate::card::sets) static MARSH_GAS: CardRecord = CardRecord::new(
@@ -1842,6 +1903,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SQUIRE,
     &TIVADARS_CRUSADE,
     &WITCH_HUNTER,
+    &AMNESIA,
     &APPRENTICE_WIZARD,
     &DROWNED,
     &ELECTRIC_EEL,
@@ -1856,6 +1918,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BOG_IMP,
     &BOG_RATS,
     &GRAVE_ROBBERS,
+    &INQUISITION,
     &MARSH_GAS,
     &MURK_DWELLERS,
     &UNCLE_ISTVAN,
