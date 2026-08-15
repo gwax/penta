@@ -106,6 +106,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Spore Cloud**, also needing no new engine work: per-permanent untap skips
+  already existed, and its audit line asked for them as though they did not.
+  Counting the skip per permanent rather than expressing it as a duration is
+  what makes it right for a card reaching both sides of a combat, since the
+  two players do not arrive at their untap steps together.
+
 - **Paralyze**, which needed no new engine work: the upkeep trigger keyed to
   the enchanted permanent's controller already existed, and its audit line had
   gone stale. Everything about the card points at the host's controller rather

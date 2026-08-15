@@ -1579,8 +1579,47 @@ pub(in crate::card::sets) static FUNGAL_BLOOM: CardRecord = CardRecord::new(
 // FEM 71a — Night Soil
 // Audit: blocked — Needs a zone-object query and identity-preserving continuation for “{1}, Exile two creature cards from a single graveyard: Create a 1/1 green Saproling creature token”.
 
+/// Three clauses in printed order. The tap comes first so it reaches the
+/// blockers while they are still blocking; the skip is separate from it,
+/// because a creature already tapped still owes the untap step it misses.
+static SPORE_CLOUD_EFFECT: [EffectDef; 3] = [
+    EffectDef::Tap {
+        object: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::Blocking,
+            &[ZoneKind::Battlefield],
+            PlayerRelation::Any,
+        ),
+    },
+    EffectDef::PreventDamage {
+        prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::COMBAT),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    // Counted per permanent rather than expressed as a duration: each
+    // creature sits out its own controller's next untap step, and the two
+    // sides do not reach that step at the same time.
+    EffectDef::SkipNextUntapSteps {
+        object: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::AttackingOrBlocking,
+            &[ZoneKind::Battlefield],
+            PlayerRelation::Any,
+        ),
+        count: 1,
+    },
+];
+
 // FEM 72a — Spore Cloud
-// Audit: blocked — Needs a next-untap-step restriction applied to every creature in combat; tapping the blockers and preventing the turn's combat damage are both expressible.
+pub(in crate::card::sets) static SPORE_CLOUD: CardRecord = CardRecord::new(
+    cards::SPORE_CLOUD,
+    "Spore Cloud",
+    CardArt::new("1691a9f4-4ea7-440f-9bdc-4214ab3c90f0", "Susan Van Camp"),
+    CardSet::FallenEmpires,
+    CardRules::new_instant(mana_cost!("{1}{G}{G}")).with_ability(AbilityDef::spell(
+        "Tap all blocking creatures. Prevent all combat damage that would be dealt this turn. \
+         Each attacking creature and each blocking creature doesn't untap during its \
+         controller's next untap step.",
+        EffectDef::Sequence(&SPORE_CLOUD_EFFECT),
+    )),
+);
 
 // FEM 73 — Spore Flower
 pub(in crate::card::sets) static SPORE_FLOWER: CardRecord = CardRecord::new(
@@ -2163,6 +2202,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ELVISH_SCOUT,
     &FERAL_THALLID,
     &FUNGAL_BLOOM,
+    &SPORE_CLOUD,
     &SPORE_FLOWER,
     &THALLID,
     &THALLID_DEVOURER,

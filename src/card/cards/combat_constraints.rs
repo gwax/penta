@@ -39,3 +39,4 @@ pub const KHABAL_GHOUL: CardDefinitionId = CardDefinitionId(1838);
 pub const SCAVENGING_GHOUL: CardDefinitionId = CardDefinitionId(1839);
 pub const CYCLONE: CardDefinitionId = CardDefinitionId(1840);
 pub const PARALYZE: CardDefinitionId = CardDefinitionId(1841);
+pub const SPORE_CLOUD: CardDefinitionId = CardDefinitionId(1842);
