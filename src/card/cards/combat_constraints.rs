@@ -42,3 +42,4 @@ pub const PARALYZE: CardDefinitionId = CardDefinitionId(1841);
 pub const SPORE_CLOUD: CardDefinitionId = CardDefinitionId(1842);
 pub const SENTINEL: CardDefinitionId = CardDefinitionId(1843);
 pub const DERELOR: CardDefinitionId = CardDefinitionId(1844);
+pub const GLOOM: CardDefinitionId = CardDefinitionId(1845);

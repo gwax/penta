@@ -5,8 +5,9 @@ use super::{
     AppliedEffectDef, CardBehavior, CardDefinitionId, CardInstance, CardType,
     CharacteristicContext, CharacteristicOperationDef, CostConfiguration, DeclarativeAbilityDef,
     EffectDef, EffectRecipientDef, FlexibleManaSource, Game, GameObjectId, HybridPair, ManaColor,
-    ManaCost, ManaPaymentPurpose, ManaPool, PlannedManaActivation, PlayActionKind, PlayOptionDef,
-    PlayerId, SetOperationDef, TriggerContext, ValueDef, ZoneKind, extra_target_cost,
+    ManaCost, ManaPaymentPurpose, ManaPool, Permanent, PlannedManaActivation, PlayActionKind,
+    PlayOptionDef, PlayerId, SetOperationDef, TriggerContext, ValueDef, ZoneKind,
+    extra_target_cost,
 };
 
 impl Game {

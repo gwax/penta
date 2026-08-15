@@ -115,6 +115,39 @@ impl Game {
         increase
     }
 
+    /// What this permanent's activated abilities actually cost in mana,
+    /// with every increase on the battlefield folded in. Abilities have no
+    /// discount vocabulary, so unlike a spell this only ever goes up.
+    pub(super) fn ability_mana_cost(&self, permanent: &Permanent, cost: ManaCost) -> ManaCost {
+        let mut total = cost;
+        for other in &self.battlefield {
+            let Some(rules) = self.effective_rules(other) else {
+                continue;
+            };
+            for ability in rules.ability_clauses() {
+                if !ability.is_executable() {
+                    continue;
+                }
+                let Some(EffectDef::IncreaseMatchingAbilityCostBy {
+                    permanent: matcher,
+                    amount,
+                }) = ability.declarative_effect()
+                else {
+                    continue;
+                };
+                if self.trigger_object_matches(
+                    matcher,
+                    &self.trigger_event_object(permanent),
+                    other.card.id,
+                    false,
+                ) {
+                    total = add_mana_cost(total, amount);
+                }
+            }
+        }
+        total
+    }
+
     /// The values a cost reduction can read. There is no resolving object
     /// while a cost is being worked out, but static zone queries can still
     /// use the card being cast as their source.

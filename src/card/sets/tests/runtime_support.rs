@@ -590,6 +590,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::InstallTrigger(_)
                     | EffectDef::IfCondition { .. }
                     | EffectDef::ReduceGenericCostBy(_)
+                    | EffectDef::IncreaseMatchingAbilityCostBy { .. }
                     | EffectDef::IncreaseMatchingSpellCostBy { .. }
                     | EffectDef::ReduceMatchingSpellCostBy { .. }
                     | EffectDef::LandwalkCanBeBlocked(_)

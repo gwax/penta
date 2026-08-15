@@ -177,9 +177,12 @@ impl Game {
                         definition.costs.as_slice(),
                     )
                     || definition.costs.iter().any(|cost| match cost {
-                        AbilityCostDef::Mana(cost) => {
-                            !self.can_pay_cost_for(player, *cost, 0, &payment_purpose)
-                        }
+                        AbilityCostDef::Mana(cost) => !self.can_pay_cost_for(
+                            player,
+                            self.ability_mana_cost(permanent, *cost),
+                            0,
+                            &payment_purpose,
+                        ),
                         AbilityCostDef::PayLife(amount) => {
                             self.players[player.index()].life
                                 < i16::try_from(*amount).unwrap_or(i16::MAX)
@@ -309,9 +312,11 @@ impl Game {
                     .costs
                     .iter()
                     .find_map(|cost| match cost {
-                        AbilityCostDef::Mana(cost) if cost.variable_x => {
-                            Some(self.maximum_x_for(player, *cost, &payment_purpose))
-                        }
+                        AbilityCostDef::Mana(cost) if cost.variable_x => Some(self.maximum_x_for(
+                            player,
+                            self.ability_mana_cost(permanent, *cost),
+                            &payment_purpose,
+                        )),
                         _ => None,
                     })
                     .unwrap_or(0);

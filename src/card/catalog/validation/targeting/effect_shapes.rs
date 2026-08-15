@@ -232,7 +232,8 @@ fn validate_effect_target_shapes(
             }
             Ok(())
         }
-        EffectDef::IncreaseMatchingSpellCostBy { .. }
+        EffectDef::IncreaseMatchingAbilityCostBy { .. }
+        | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::None
         | EffectDef::AddMana(_)
         | EffectDef::GrantFlashToNextSorcery

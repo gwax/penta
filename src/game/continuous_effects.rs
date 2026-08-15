@@ -485,6 +485,7 @@ impl Game {
                 | EffectDef::InstallTrigger(_)
                 | EffectDef::CannotBeForcedToSacrifice
                 | EffectDef::ReduceGenericCostBy(_)
+                | EffectDef::IncreaseMatchingAbilityCostBy { .. }
                 | EffectDef::IncreaseMatchingSpellCostBy { .. }
                 | EffectDef::ReduceMatchingSpellCostBy { .. }
                 | EffectDef::LandwalkCanBeBlocked(_)

@@ -106,6 +106,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Gloom**, which taxes both casting and activating. The spell half reuses
+  the increase Derelor introduced; the activation half is new, and applies at
+  the offer, at the X ceiling, and at payment, so what is charged is what the
+  ability was priced at. It names white *enchantments*, so a white creature's
+  ability is untouched.
+
 - **Derelor**, with a coloured spell-cost increase. An increase is not a
   discount with the sign flipped: a discount may only touch generic mana
   (CR 601.2f), while this adds a black pip that only black mana pays. It

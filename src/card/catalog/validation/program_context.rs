@@ -142,6 +142,14 @@ fn validate_static_effect(
         // The increase carries a whole mana cost rather than a value, so
         // there is nothing here to check beyond the predicate and the player
         // relation the discount beside it also checks.
+        EffectDef::IncreaseMatchingAbilityCostBy {
+            permanent: matcher, ..
+        } if position == StaticPosition::Root
+            && source_zones == [ZoneKind::Battlefield]
+            && static_object_predicate_supported(matcher) =>
+        {
+            Ok(())
+        }
         EffectDef::IncreaseMatchingSpellCostBy { spell, caster, .. }
             if position == StaticPosition::Root
                 && source_zones == [ZoneKind::Battlefield]
@@ -411,6 +419,7 @@ fn validate_resolving_effect(
         EffectDef::StaticApply { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::ReduceGenericCostBy(_)
+        | EffectDef::IncreaseMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::ReduceMatchingSpellCostBy { .. }
         | EffectDef::CannotAttackUnless(_)
@@ -795,6 +804,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::InstallTrigger(_) => "InstallTrigger",
         EffectDef::CannotBeForcedToSacrifice => "CannotBeForcedToSacrifice",
         EffectDef::ReduceGenericCostBy(_) => "ReduceGenericCostBy",
+        EffectDef::IncreaseMatchingAbilityCostBy { .. } => "IncreaseMatchingAbilityCostBy",
         EffectDef::IncreaseMatchingSpellCostBy { .. } => "IncreaseMatchingSpellCostBy",
         EffectDef::ReduceMatchingSpellCostBy { .. } => "ReduceMatchingSpellCostBy",
         EffectDef::CannotAttackUnless(_) => "CannotAttackUnless",

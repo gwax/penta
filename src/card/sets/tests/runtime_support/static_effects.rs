@@ -25,8 +25,11 @@ pub(in super::super) fn shared_static_non_apply_effect(
                 && shared_object_predicate(query.object)
                 && shared_static_query(*query)
         }
-        // The increase carries a printed mana cost rather than a value, so
-        // only the predicate and the relation need checking.
+        // Neither increase carries a value, so only the predicate -- and,
+        // for the spell one, the caster relation -- needs checking.
+        EffectDef::IncreaseMatchingAbilityCostBy { permanent, .. } => {
+            battlefield_only(source_zones) && shared_object_predicate(permanent)
+        }
         EffectDef::IncreaseMatchingSpellCostBy { spell, caster, .. } => {
             battlefield_only(source_zones)
                 && shared_object_predicate(spell)
@@ -82,6 +85,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
     match effect {
         EffectDef::CannotBeForcedToSacrifice
         | EffectDef::ReduceGenericCostBy(_)
+        | EffectDef::IncreaseMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::ReduceMatchingSpellCostBy { .. }
         | EffectDef::LandwalkCanBeBlocked(_)

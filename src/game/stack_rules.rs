@@ -121,6 +121,7 @@ impl Game {
             | EffectDef::IfCondition { .. }
             | EffectDef::InstallTrigger(_)
             | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::IncreaseMatchingAbilityCostBy { .. }
             | EffectDef::IncreaseMatchingSpellCostBy { .. }
             | EffectDef::ReduceMatchingSpellCostBy { .. }
             | EffectDef::LandwalkCanBeBlocked(_)

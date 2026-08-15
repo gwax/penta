@@ -332,9 +332,16 @@ impl Game {
             for cost in definition.costs.as_slice() {
                 match cost {
                     AbilityCostDef::Mana(cost) => {
+                        // Read through any increase on the battlefield, so
+                        // what is paid is what the offer was priced at.
+                        let cost = self
+                            .battlefield
+                            .iter()
+                            .find(|permanent| permanent.card.id == source)
+                            .map_or(*cost, |permanent| self.ability_mana_cost(permanent, *cost));
                         self.activate_mana_for_cost_avoiding_for(
                             player,
-                            *cost,
+                            cost,
                             x,
                             // Tapping the source to pay would hand back a
                             // tapped creature, so auto-payment leaves it
@@ -346,7 +353,7 @@ impl Game {
                                 leaves_source,
                             },
                         );
-                        let _ = self.pay_player_cost(player, *cost, x);
+                        let _ = self.pay_player_cost(player, cost, x);
                     }
                     AbilityCostDef::TapSource => {
                         let _ = self.tap_permanent(source);

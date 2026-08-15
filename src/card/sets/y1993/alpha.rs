@@ -2032,8 +2032,39 @@ pub(in crate::card::sets) static FROZEN_SHADE: CardRecord = CardRecord::new(
     ]),
 );
 
+/// The second clause names white enchantments specifically, not every white
+/// permanent: a Circle of Protection is the target, a White Knight is not.
+static GLOOM_WHITE_ENCHANTMENT: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Color(ManaColor::White),
+    ObjectPredicateDef::HasType(CardType::Enchantment),
+]);
+
 // LEA 110 — Gloom
-// Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Activated abilities of white enchantments cost {3} more to activate”.
+pub(in crate::card::sets) static GLOOM: CardRecord = CardRecord::new(
+    cards::GLOOM,
+    "Gloom",
+    CardArt::new("a8d10bc7-daeb-4c0d-9e4a-8eae8d11699f", "Dan Frazier"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{2}{B}")).with_abilities(&[
+        // "White spells", with no "you cast": it taxes both seats, including
+        // the Gloom player's own.
+        AbilityDef::static_ability(
+            "White spells cost {3} more to cast.",
+            EffectDef::IncreaseMatchingSpellCostBy {
+                spell: ObjectPredicateDef::Color(ManaColor::White),
+                caster: PlayerRelation::Any,
+                amount: mana_cost!("{3}"),
+            },
+        ),
+        AbilityDef::static_ability(
+            "Activated abilities of white enchantments cost {3} more to activate.",
+            EffectDef::IncreaseMatchingAbilityCostBy {
+                permanent: GLOOM_WHITE_ENCHANTMENT,
+                amount: mana_cost!("{3}"),
+            },
+        ),
+    ]),
+);
 
 // LEA 111 — Howl from Beyond
 pub(in crate::card::sets) static HOWL_FROM_BEYOND: CardRecord = CardRecord::new(
@@ -5449,6 +5480,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &EVIL_PRESENCE,
     &FEAR,
     &FROZEN_SHADE,
+    &GLOOM,
     &HOWL_FROM_BEYOND,
     &HYPNOTIC_SPECTER,
     &MIND_TWIST,

@@ -378,6 +378,7 @@ impl HandcraftedPolicy {
             | EffectDef::InstallTrigger(_)
             | EffectDef::IfCondition { .. }
             | EffectDef::ReduceGenericCostBy(_)
+            | EffectDef::IncreaseMatchingAbilityCostBy { .. }
             | EffectDef::IncreaseMatchingSpellCostBy { .. }
             | EffectDef::ReduceMatchingSpellCostBy { .. }
             | EffectDef::LandwalkCanBeBlocked(_)
