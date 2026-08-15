@@ -1202,8 +1202,34 @@ pub(in crate::card::sets) static VENGEFUL_VAMPIRE: CardRecord = CardRecord::new(
         .with_abilities(&[abilities::flying(), abilities::undying()]),
 );
 
+static MORBID_A_CREATURE_DIED: TriggerConditionDef = TriggerConditionDef::CreatureDiedThisTurn;
+
 // DKA 79 — Wakedancer
-// Audit: blocked — Needs an intervening morbid condition so no trigger is created when a creature has not died this turn.
+pub(in crate::card::sets) static WAKEDANCER: CardRecord = CardRecord::new(
+    cards::WAKEDANCER,
+    "Wakedancer",
+    CardArt::new("f533fbfa-42ae-4e27-92a4-9936bcd2a5f4", "Austin Hsu"),
+    CardSet::DarkAscension,
+    // Morbid is an intervening if: with nothing dead the trigger is never
+    // created at all, rather than created and then doing nothing.
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Human", "Shaman"], 2, 2).with_ability(
+        AbilityDef::triggered_if(
+            "Morbid — When this creature enters, if a creature died this turn, create a 2/2 \
+             black Zombie creature token.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &MORBID_A_CREATURE_DIED,
+            EffectDef::CreateToken {
+                token: cards::ZOMBIE_TOKEN_2_2_BLACK,
+                count: ValueDef::Constant(1),
+                tapped: false,
+            },
+        ),
+    ),
+);
 
 // DKA 80 — Zombie Apocalypse
 // Audit: blocked — Needs a mass graveyard return that makes the returned Zombie cards enter the battlefield tapped before destroying all Humans.
@@ -1965,7 +1991,35 @@ pub(in crate::card::sets) static STRANGLEROOT_GEIST: CardRecord = CardRecord::ne
 // Audit: blocked — The top-card selection primitive cannot restrict the chosen card to a creature while moving all unchosen cards to the graveyard.
 
 // DKA 129 — Ulvenwald Bear
-// Audit: blocked — Needs an intervening morbid condition so the targeted trigger is not created when no creature died this turn.
+pub(in crate::card::sets) static ULVENWALD_BEAR: CardRecord = CardRecord::new(
+    cards::ULVENWALD_BEAR,
+    "Ulvenwald Bear",
+    CardArt::new("9e3837a7-854a-440d-93d7-d36f50149346", "Jason A. Engle"),
+    CardSet::DarkAscension,
+    // The same intervening if, and it matters more here: an uncreated
+    // trigger asks for no target, so nothing is put on the stack pointing at
+    // a creature.
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Bear"], 2, 2).with_ability(
+        AbilityDef::triggered_if_with_targets(
+            "Morbid — When this creature enters, if a creature died this turn, put two +1/+1 \
+             counters on target creature.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &MORBID_A_CREATURE_DIED,
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(2),
+            },
+        ),
+    ),
+);
 
 // DKA 130 — Village Survivors
 // Audit: blocked — Needs a controller-life threshold continuous condition for granting vigilance to other creatures.
@@ -2556,6 +2610,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TRAGIC_SLIP,
     &UNDYING_EVIL,
     &VENGEFUL_VAMPIRE,
+    &WAKEDANCER,
     &BLOOD_FEUD,
     &BURNING_OIL,
     &ERDWAL_RIPPER,
@@ -2584,6 +2639,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PREDATOR_OOZE,
     &SOMBERWALD_DRYAD,
     &STRANGLEROOT_GEIST,
+    &ULVENWALD_BEAR,
     &VORAPEDE,
     &WILD_HUNGER,
     &YOUNG_WOLF,

@@ -48,3 +48,5 @@ pub const FRILLED_OCULUS: CardDefinitionId = CardDefinitionId(1847);
 pub const GRIDLOCK: CardDefinitionId = CardDefinitionId(1848);
 pub const CRIPPLING_CHILL: CardDefinitionId = CardDefinitionId(1849);
 pub const FROST_BREATH: CardDefinitionId = CardDefinitionId(1850);
+pub const WAKEDANCER: CardDefinitionId = CardDefinitionId(1851);
+pub const ULVENWALD_BEAR: CardDefinitionId = CardDefinitionId(1852);

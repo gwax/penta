@@ -603,6 +603,7 @@ mod menace;
 mod mishras_war_machine;
 mod modal_effects;
 mod morbid;
+mod morbid_entry;
 mod multi_block;
 mod must_block;
 mod old_school_interactions;

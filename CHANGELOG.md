@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Wakedancer** and **Ulvenwald Bear**, two morbid entry triggers. Morbid is
+  an intervening if, so with nothing dead the trigger is never created rather
+  than created and doing nothing -- which on the Bear means no target is ever
+  chosen.
+
 - **Crippling Chill** and **Frost Breath**, whose audit lines both asked for a
   duration tied to the affected creature's controller's untap step. A duration
   is the wrong shape for a spell that can reach both sides at once; the
