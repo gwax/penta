@@ -121,6 +121,12 @@ pub enum AppliedRuleDef {
     CanBlockOnly(ObjectPredicateDef),
     /// The affected creature cannot be declared as an attacker.
     CannotAttack,
+    /// Defender does not stop the affected creature from attacking.
+    ///
+    /// A permission rather than an ability removal: the creature keeps the
+    /// keyword, so anything reading "a creature with defender" still finds
+    /// one. Every other reason it cannot attack still applies.
+    MayAttackDespiteDefender,
     /// Nothing can block the affected creature.
     CannotBeBlocked,
     /// Every creature matching this predicate that is able to block the

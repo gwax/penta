@@ -68,6 +68,11 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Can attack as though it didn't have defender."** A permission rather than
+  an ability removal, so the Wall keeps the keyword and anything reading "a
+  creature with defender" still finds one. Every other reason it cannot attack
+  is untouched. Animate Wall and Wall of Wonder.
+
 - **"Can't block creatures with power 2 or greater."** Ironclaw Orcs carried
   this as a hardcoded behavior in the combat action generator; it is now an
   ordinary static ability, authored as the permission the restriction leaves

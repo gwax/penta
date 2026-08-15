@@ -61,7 +61,9 @@ impl Game {
         moat_active: bool,
         flying: bool,
     ) -> bool {
-        if self.permanent_has_executable_keyword(permanent, KeywordAbility::Defender) {
+        if self.permanent_has_executable_keyword(permanent, KeywordAbility::Defender)
+            && !self.has_applied_rule(permanent, AppliedRuleDef::MayAttackDespiteDefender)
+        {
             return false;
         }
         if moat_active && !flying {

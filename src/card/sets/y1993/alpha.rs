@@ -54,8 +54,31 @@ static TAPPED_CREATURE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactl
     ]),
 )];
 
+/// The Aura goes on a Wall specifically, which is narrower than the ordinary
+/// "enchant creature" and is what makes the permission below worth anything.
+static ENCHANT_WALL_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::Subtype("Wall"),
+)];
+
 // LEA 1 — Animate Wall
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Enchanted Wall can attack as though it didn't have defender”.
+pub(in crate::card::sets) static ANIMATE_WALL: CardRecord = CardRecord::new(
+    cards::ANIMATE_WALL,
+    "Animate Wall",
+    CardArt::new("6757e04d-7bfc-4bdc-9dcb-02059a2d4e60", "Dan Frazier"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant Wall", &ENCHANT_WALL_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted Wall can attack as though it didn't have defender.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::MayAttackDespiteDefender),
+                },
+            ),
+        ]),
+);
 
 // LEA 2 — Armageddon
 pub(in crate::card::sets) static ARMAGEDDON: CardRecord = CardRecord::new(
@@ -4832,6 +4855,7 @@ pub(in crate::card::sets) static FOREST: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &ANIMATE_WALL,
     &ARMAGEDDON,
     &BALANCE,
     &BLACK_WARD,

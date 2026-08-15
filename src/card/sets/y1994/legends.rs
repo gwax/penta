@@ -1053,8 +1053,33 @@ pub(in crate::card::sets) static WALL_OF_VAPOR: CardRecord = CardRecord::new(
     ]),
 );
 
+/// One activation, two things applied to the same creature for the same
+/// duration, so they ride together rather than as two effects in sequence.
+static WALL_OF_WONDER_CHARGE: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(4), ValueDef::Constant(-4)),
+    AppliedEffectDef::Rule(AppliedRuleDef::MayAttackDespiteDefender),
+];
+
 // LEG 85 — Wall of Wonder
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{2}{U}{U}: This creature gets +4/-4 until end of turn and can attack this turn as though it didn't have defender”.
+pub(in crate::card::sets) static WALL_OF_WONDER: CardRecord = CardRecord::new(
+    cards::WALL_OF_WONDER,
+    "Wall of Wonder",
+    CardArt::new("cff59416-f4a0-4199-a199-ae3a0e5216df", "Richard Thomas"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{U}{U}"), &["Wall"], 1, 5).with_abilities(&[
+        abilities::defender(),
+        AbilityDef::activated(
+            "{2}{U}{U}: This creature gets +4/-4 until end of turn and can attack this turn as \
+             though it didn't have defender.",
+            &[AbilityCostDef::Mana(mana_cost!("{2}{U}{U}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&WALL_OF_WONDER_CHARGE),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // LEG 86 — Zephyr Falcon
 pub(in crate::card::sets) static ZEPHYR_FALCON: CardRecord = CardRecord::new(
@@ -4365,6 +4390,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TELEKINESIS,
     &UNDERTOW,
     &WALL_OF_VAPOR,
+    &WALL_OF_WONDER,
     &ZEPHYR_FALCON,
     &ABOMINATION,
     &BLIGHT,
