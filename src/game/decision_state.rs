@@ -38,6 +38,7 @@ pub(super) enum ResolvedEffectPayment {
     Mana(ManaCost),
     Life(u16),
     Mill(u16),
+    Discard(u16),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

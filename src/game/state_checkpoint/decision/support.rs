@@ -680,6 +680,7 @@ pub(super) fn resolved_effect_payment_snapshot(
         }
         ResolvedEffectPayment::Life(amount) => ResolvedEffectPaymentSnapshot::Life(amount),
         ResolvedEffectPayment::Mill(amount) => ResolvedEffectPaymentSnapshot::Mill(amount),
+        ResolvedEffectPayment::Discard(amount) => ResolvedEffectPaymentSnapshot::Discard(amount),
     }
 }
 
@@ -692,6 +693,7 @@ pub(super) fn parse_resolved_effect_payment(
         }
         ResolvedEffectPaymentSnapshot::Life(amount) => ResolvedEffectPayment::Life(*amount),
         ResolvedEffectPaymentSnapshot::Mill(amount) => ResolvedEffectPayment::Mill(*amount),
+        ResolvedEffectPaymentSnapshot::Discard(amount) => ResolvedEffectPayment::Discard(*amount),
     })
 }
 

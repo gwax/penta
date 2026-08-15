@@ -167,6 +167,11 @@ pub enum EffectPaymentCostDef {
     /// amount mills what it has (CR 701.13b), so this branch of an "unless"
     /// is always open and the choice is a real one even at one card left.
     Mill(u16),
+    /// Discard this many cards, chosen by the payer. Unlike a mill, a hand
+    /// too small cannot pay at all: there is nothing to choose. Which cards
+    /// go is a separate decision queued behind the payment, because by then
+    /// the branch has already been settled.
+    Discard(u16),
 }
 
 /// A payment offered while an effect or replacement procedure resolves.
@@ -211,6 +216,14 @@ impl EffectPaymentDef {
         Self {
             payer,
             cost: EffectPaymentCostDef::Mill(amount),
+        }
+    }
+
+    #[must_use]
+    pub const fn discard(payer: PlayerSetDef, amount: u16) -> Self {
+        Self {
+            payer,
+            cost: EffectPaymentCostDef::Discard(amount),
         }
     }
 }

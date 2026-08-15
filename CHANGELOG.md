@@ -106,6 +106,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Mishra'''s War Machine**, with discarding as an unless-payment. Unlike a
+  mill, an empty hand cannot pay at all, so the damage becomes the only
+  branch; which card goes is settled after the branch is, because the branch
+  does not depend on it.
+
 - **Deep Spawn**, with milling as an unless-payment. A library shorter than
   the amount mills what it has rather than failing to pay, so the choice is a
   real one down to the last card.

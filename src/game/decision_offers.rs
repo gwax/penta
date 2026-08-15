@@ -3,7 +3,7 @@ use super::{
     DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
     EffectResolutionContext, FORK_COPY_COLOR, Game, ManaCost, PendingDecision, PlayerId,
     ResolvedEffectPayment, ScopedEffect, StackObject, Target, TargetSelection, TargetSlotId,
-    TriggerContext, flatten_target_selections, target_combinations,
+    TriggerContext, ZoneMoveCause, flatten_target_selections, target_combinations,
 };
 use crate::card::ChoiceVisibilityDef;
 
@@ -130,6 +130,12 @@ impl Game {
             // affordable. Running out of cards is answered by the draw that
             // finds none, not by refusing the payment.
             ResolvedEffectPayment::Mill(_) => true,
+            // A discard needs cards to choose from, so an empty hand cannot
+            // pay at all. That is the difference from a mill, where a short
+            // library still pays with what it has.
+            ResolvedEffectPayment::Discard(amount) => {
+                self.players[player.index()].hand.len() >= usize::from(amount)
+            }
         }
     }
 
@@ -151,6 +157,14 @@ impl Game {
                 let milled = self.take_top_of_library(player, usize::from(amount));
                 self.bury_cards(player, milled);
             }
+            // Queued rather than resolved here: the payer has already chosen
+            // to pay, and which cards go is a separate choice that the branch
+            // taken above does not depend on.
+            ResolvedEffectPayment::Discard(amount) => self.queue_effect_discards(
+                vec![player],
+                i32::from(amount),
+                ZoneMoveCause::Effect { controller: player },
+            ),
         }
         true
     }
@@ -160,6 +174,7 @@ impl Game {
             ResolvedEffectPayment::Mana(_) => "Pay the cost".to_string(),
             ResolvedEffectPayment::Life(amount) => format!("Pay {amount} life"),
             ResolvedEffectPayment::Mill(amount) => format!("Mill {amount} cards"),
+            ResolvedEffectPayment::Discard(amount) => format!("Discard {amount} cards"),
         }
     }
 

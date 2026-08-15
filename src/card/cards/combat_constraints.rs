@@ -32,3 +32,4 @@ pub const URZA_S_POWER_PLANT: CardDefinitionId = CardDefinitionId(1831);
 pub const URZA_S_TOWER: CardDefinitionId = CardDefinitionId(1832);
 pub const WORD_OF_BINDING: CardDefinitionId = CardDefinitionId(1833);
 pub const DEEP_SPAWN: CardDefinitionId = CardDefinitionId(1834);
+pub const MISHRA_S_WAR_MACHINE: CardDefinitionId = CardDefinitionId(1835);

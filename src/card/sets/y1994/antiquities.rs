@@ -3,12 +3,13 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
-    CardTypeSet, ConditionDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef,
-    DamagePreventionDef, DamageSourceGroupDef, DiscardSelectionDef, EffectDef, EffectExecutionDef,
-    EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
-    ManaRestrictionDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation,
-    PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardTypeSet, ChoiceVisibilityDef, ConditionDef, CounterKind, CreatureTypeSetDef,
+    DamageEventMatcherDef, DamagePreventionDef, DamageSourceGroupDef, DiscardSelectionDef,
+    EffectDef, EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
+    KeywordAbility, ManaColor, ManaRestrictionDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, PayOrDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -1191,8 +1192,46 @@ pub(in crate::card::sets) static MILLSTONE: CardRecord = CardRecord::new(
     ]),
 );
 
+/// The declined branch, which is one clause rather than two: "if it deals
+/// damage to you this way" is only ever true here, so the tap belongs to the
+/// same branch as the damage instead of watching for it.
+static MISHRAS_WAR_MACHINE_UNPAID: [EffectDef; 2] = [
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::Tap {
+        object: EffectRecipientDef::Source,
+    },
+];
+
+static MISHRAS_WAR_MACHINE_UNPAID_SEQUENCE: EffectDef =
+    EffectDef::Sequence(&MISHRAS_WAR_MACHINE_UNPAID);
+
 // ATQ 57 — Mishra's War Machine
-// Audit: blocked — Needs a discard as an unless-payment, and a follow-up that reads whether it was declined, for “deals 3 damage to you unless you discard a card. If it deals damage to you this way, tap it”. Unless-payments currently take mana only. Banding is implemented.
+pub(in crate::card::sets) static MISHRA_S_WAR_MACHINE: CardRecord = CardRecord::new(
+    cards::MISHRA_S_WAR_MACHINE,
+    "Mishra's War Machine",
+    CardArt::new("8f6b4652-a1d4-418f-a89b-6a977a920a9e", "Amy Weber"),
+    CardSet::Antiquities,
+    CardRules::new_artifact_creature(mana_cost!("{7}"), &["Juggernaut"], 5, 5).with_abilities(&[
+        abilities::banding(),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, this creature deals 3 damage to you unless you \
+             discard a card. If it deals damage to you this way, tap it.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::PayOr(PayOrDef {
+                payment: EffectPaymentDef::discard(PlayerSetDef::Related(PlayerRelation::You), 1),
+                if_paid: None,
+                otherwise: Some(&MISHRAS_WAR_MACHINE_UNPAID_SEQUENCE),
+                visibility: ChoiceVisibilityDef::Public,
+            }),
+        ),
+    ]),
+);
 
 // ATQ 58 — Obelisk of Undoing
 pub(in crate::card::sets) static OBELISK_OF_UNDOING: CardRecord = CardRecord::new(
@@ -1826,6 +1865,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &JALUM_TOME,
     &MIGHTSTONE,
     &MILLSTONE,
+    &MISHRA_S_WAR_MACHINE,
     &OBELISK_OF_UNDOING,
     &ONULET,
     &ORNITHOPTER,

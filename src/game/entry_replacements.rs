@@ -381,6 +381,7 @@ impl Game {
             }
             EffectPaymentCostDef::Life(amount) => ResolvedEffectPayment::Life(amount),
             EffectPaymentCostDef::Mill(amount) => ResolvedEffectPayment::Mill(amount),
+            EffectPaymentCostDef::Discard(amount) => ResolvedEffectPayment::Discard(amount),
         };
         Some((*player, resolved))
     }

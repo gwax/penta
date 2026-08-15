@@ -21,6 +21,9 @@ fn resolved_effect_payment(
         }
         EffectPaymentCostDef::Life(amount) => super::super::ResolvedEffectPayment::Life(amount),
         EffectPaymentCostDef::Mill(amount) => super::super::ResolvedEffectPayment::Mill(amount),
+        EffectPaymentCostDef::Discard(amount) => {
+            super::super::ResolvedEffectPayment::Discard(amount)
+        }
     };
     Some((*player, payment))
 }
