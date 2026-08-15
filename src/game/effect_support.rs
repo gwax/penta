@@ -384,6 +384,11 @@ impl Game {
                             toughness: freeze(toughness),
                         }
                     }
+                    PowerToughnessOperationDef::SetBasePower(power) => {
+                        ResolvedPowerToughnessOperation::SetBasePower {
+                            power: freeze(power),
+                        }
+                    }
                     PowerToughnessOperationDef::Modify { power, toughness } => {
                         ResolvedPowerToughnessOperation::Modify {
                             power: freeze(power),

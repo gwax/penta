@@ -295,6 +295,7 @@ pub(super) enum ResolvedContinuousOperationSnapshot {
     CreatureTypes { operation: SetOperationSnapshot },
     ModifyPowerToughness { power: i16, toughness: i16 },
     Rule,
+    SetBasePower { power: i16 },
     SetBasePowerToughness { power: i16, toughness: i16 },
 }
 

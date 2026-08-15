@@ -726,6 +726,14 @@ fn parse_resolved_operation(
         )),
         (
             AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                PowerToughnessOperationDef::SetBasePower(_),
+            )),
+            ResolvedContinuousOperationSnapshot::SetBasePower { power },
+        ) => Ok(ResolvedContinuousEffectKind::PowerToughness(
+            ResolvedPowerToughnessOperation::SetBasePower { power: *power },
+        )),
+        (
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
                 PowerToughnessOperationDef::Modify { .. },
             )),
             ResolvedContinuousOperationSnapshot::ModifyPowerToughness { power, toughness },

@@ -44,7 +44,15 @@ impl Game {
             .filter_map(|effect| match effect.kind {
                 ResolvedContinuousEffectKind::PowerToughness(
                     ResolvedPowerToughnessOperation::SetBase { power, toughness },
-                ) => Some((effect.timestamp, effect.component_order, power, toughness)),
+                ) => Some((
+                    effect.timestamp,
+                    effect.component_order,
+                    Some(power),
+                    Some(toughness),
+                )),
+                ResolvedContinuousEffectKind::PowerToughness(
+                    ResolvedPowerToughnessOperation::SetBasePower { power },
+                ) => Some((effect.timestamp, effect.component_order, Some(power), None)),
                 _ => None,
             })
             .collect::<Vec<_>>();
@@ -59,23 +67,54 @@ impl Game {
                     setters.push((
                         applied.timestamp,
                         applied.component_order,
-                        self.static_power_toughness_value(permanent, applied.source, power),
-                        self.static_power_toughness_value(permanent, applied.source, toughness),
+                        Some(self.static_power_toughness_value(permanent, applied.source, power)),
+                        Some(self.static_power_toughness_value(
+                            permanent,
+                            applied.source,
+                            toughness,
+                        )),
+                    ));
+                }
+                if let AppliedEffectDef::Characteristic(
+                    CharacteristicOperationDef::PowerToughness(
+                        PowerToughnessOperationDef::SetBasePower(power),
+                    ),
+                ) = applied.effect
+                {
+                    setters.push((
+                        applied.timestamp,
+                        applied.component_order,
+                        Some(self.static_power_toughness_value(permanent, applied.source, power)),
+                        None,
                     ));
                 }
                 ControlFlow::Continue(())
             });
             debug_assert!(result.is_continue());
         }
-        if let Some((_, _, power, toughness)) = setters
-            .into_iter()
-            .max_by_key(|(timestamp, order, _, _)| (*timestamp, *order))
-        {
-            Some(crate::CreatureStats { power, toughness })
-        } else {
-            self.effective_rules(permanent)
-                .and_then(CardRules::creature_stats)
+        if setters.is_empty() {
+            return self
+                .effective_rules(permanent)
+                .and_then(CardRules::creature_stats);
         }
+        // Applied in order rather than by taking the latest outright: a setter
+        // that names only power leaves the toughness under it standing, which
+        // the printed stats supply when nothing else has.
+        setters.sort_by_key(|(timestamp, order, _, _)| (*timestamp, *order));
+        let mut stats = self
+            .effective_rules(permanent)
+            .and_then(CardRules::creature_stats)
+            .unwrap_or(crate::CreatureStats {
+                power: 0,
+                toughness: 0,
+            });
+        for (_, _, power, toughness) in setters {
+            stats = crate::CreatureStats {
+                power: power.unwrap_or(stats.power),
+                toughness: toughness.unwrap_or(stats.toughness),
+            };
+        }
+        Some(stats)
     }
 
     pub(super) fn controls_land_type(&self, player: PlayerId, land_type: BasicLandType) -> bool {

@@ -109,13 +109,78 @@ fn the_battering_ram_leaves_a_non_wall_blocker_alone() {
     assert!(!blocker.destroy_at_end_of_combat);
 }
 
+/// "Has base power 0" is half of a base-setting effect: the toughness under
+/// it is untouched, which is the whole reason it is its own operation.
 #[test]
-fn the_three_identities_report_complete_coverage() {
+fn the_singing_tree_zeroes_power_and_leaves_toughness_alone() {
+    let mut game = ready_game();
+    game.turns_started[PlayerId::One.index()] = 5;
+    game.turns_started[PlayerId::Two.index()] = 5;
+    game.active_player = PlayerId::One;
+    let mut attacker = creature(10_000, cards::SERRA_ANGEL, PlayerId::One);
+    attacker.attacking = true;
+    attacker.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    let tree = creature(10_001, cards::SINGING_TREE, PlayerId::Two);
+    let tree_id = tree.card.id;
+    game.battlefield.push(tree);
+    // Past the declaration, so priority offers ordinary abilities rather
+    // than only blocks.
+    game.step = Step::DeclareBlockers;
+    game.attackers_declared = true;
+    game.blockers_declared = true;
+    game.priority = PlayerId::Two;
+
+    let action = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == tree_id),
+        )
+        .expect("the Tree can point at an attacker");
+    game.apply(PlayerId::Two, action)
+        .expect("the ability activates");
+    drain_pending(&mut game);
+
+    let angel = permanent(&game, attacker_id).expect("still there");
+    assert_eq!(game.power(angel), Some(0), "a 4/4 Angel with no power");
+    assert_eq!(
+        game.toughness(angel),
+        Some(4),
+        "and the toughness the setter never named"
+    );
+}
+
+/// The control: an attacking creature is what the ability can point at, so a
+/// creature sitting at home is not offered.
+#[test]
+fn the_singing_tree_only_points_at_attackers() {
+    let mut game = ready_game();
+    game.turns_started[PlayerId::Two.index()] = 5;
+    let idle = creature(10_000, cards::SERRA_ANGEL, PlayerId::One);
+    game.battlefield.push(idle);
+    let tree = creature(10_001, cards::SINGING_TREE, PlayerId::Two);
+    let tree_id = tree.card.id;
+    game.battlefield.push(tree);
+    game.priority = PlayerId::Two;
+
+    assert!(
+        !game.legal_actions(PlayerId::Two).iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == tree_id)
+        }),
+        "nothing is attacking, so there is nothing to sing at"
+    );
+}
+
+#[test]
+fn the_authored_identities_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
     for definition in [
         cards::ELDER_LAND_WURM,
         cards::DWARVEN_SOLDIER,
         cards::BATTERING_RAM,
+        cards::SINGING_TREE,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Setting base power alone.** "Has base power 0" says half of what a base
+  power-and-toughness effect says, and the layer kept only its latest setter,
+  so there was no way to name one half without inventing the other. Base
+  setters now apply in timestamp order over the printed stats. Singing Tree.
+
 - **Three combat triggers whose audit lines blamed a missing constraint.**
   None of them needed one. Elder Land Wurm drops defender the first time it
   blocks and keeps it dropped, Dwarven Soldier grows against Orcs on either

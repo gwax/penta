@@ -281,6 +281,9 @@ fn static_object_applied_effect_supported(
             static_power_toughness_value_supported(power)
                 && static_power_toughness_value_supported(toughness)
         }
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::SetBasePower(power),
+        )) => static_power_toughness_value_supported(power),
         // Static animation is deliberately narrower than resolving
         // characteristic changes: it may add the creature card type, may
         // repaint color, and must use a query that cannot read anything those

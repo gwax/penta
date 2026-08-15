@@ -250,6 +250,11 @@ pub(super) fn attach_constant_resolved_characteristics(
                             toughness: constant(toughness),
                         }
                     }
+                    PowerToughnessOperationDef::SetBasePower(power) => {
+                        ResolvedPowerToughnessOperation::SetBasePower {
+                            power: constant(power),
+                        }
+                    }
                     PowerToughnessOperationDef::Modify { power, toughness } => {
                         ResolvedPowerToughnessOperation::Modify {
                             power: constant(power),

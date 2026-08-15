@@ -187,6 +187,14 @@ fn resolved_operation_snapshot(
             power: *power,
             toughness: *toughness,
         }),
+        (
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                PowerToughnessOperationDef::SetBasePower(_),
+            )),
+            ResolvedContinuousEffectKind::PowerToughness(
+                ResolvedPowerToughnessOperation::SetBasePower { power },
+            ),
+        ) => Some(ResolvedContinuousOperationSnapshot::SetBasePower { power: *power }),
         (AppliedEffectDef::Rule(expected), ResolvedContinuousEffectKind::Rule(actual))
             if expected == *actual =>
         {

@@ -862,7 +862,29 @@ pub(in crate::card::sets) static SANDSTORM: CardRecord = CardRecord::new(
 );
 
 // ARN 54 — Singing Tree
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “{T}: Target attacking creature has base power 0 until end of turn”.
+pub(in crate::card::sets) static SINGING_TREE: CardRecord = CardRecord::new(
+    cards::SINGING_TREE,
+    "Singing Tree",
+    CardArt::new("3003bf1e-8085-45d8-882b-c449109e7631", "Rob Alexander"),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Plant"], 0, 3).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: Target attacking creature has base power 0 until end of turn.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Attacking,
+                ]),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::set_base_power(ValueDef::Constant(0)),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
 
 // ARN 55 — Wyluli Wolf
 pub(in crate::card::sets) static WYLULI_WOLF: CardRecord = CardRecord::new(
@@ -1375,6 +1397,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DESERT_TWISTER,
     &ERHNAM_DJINN,
     &SANDSTORM,
+    &SINGING_TREE,
     &WYLULI_WOLF,
     &ALADDINS_RING,
     &BOTTLE_OF_SULEIMAN,

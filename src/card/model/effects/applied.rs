@@ -50,6 +50,10 @@ pub enum PowerToughnessOperationDef {
         power: ValueDef,
         toughness: ValueDef,
     },
+    /// Set base power alone in layer 7b, leaving base toughness whatever it
+    /// already was. "Has base power 0" says only half of what [`Self::SetBase`]
+    /// says, and setting the other half to anything would be inventing it.
+    SetBasePower(ValueDef),
     /// Modify power and toughness in layer 7c.
     Modify {
         power: ValueDef,
@@ -298,6 +302,13 @@ impl AppliedEffectDef {
     pub const fn set_base_power_toughness(power: ValueDef, toughness: ValueDef) -> Self {
         Self::Characteristic(CharacteristicOperationDef::PowerToughness(
             PowerToughnessOperationDef::SetBase { power, toughness },
+        ))
+    }
+
+    #[must_use]
+    pub const fn set_base_power(power: ValueDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::SetBasePower(power),
         ))
     }
 

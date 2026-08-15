@@ -64,6 +64,7 @@ pub(super) enum ResolvedAbilityOperation {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum ResolvedPowerToughnessOperation {
     SetBase { power: i16, toughness: i16 },
+    SetBasePower { power: i16 },
     Modify { power: i16, toughness: i16 },
 }
 
