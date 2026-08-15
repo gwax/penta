@@ -38,7 +38,7 @@ pub use model::{
     CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef,
     ConditionDef, ConditionalValueDef, ControlDurationDef, CostDef, CountConditionDef, CounterKind,
     CreatureStats, CreatureTypeSetDef, DamageCoverageDef, DamageEventMatcherDef, DamageKindDef,
-    DamagePreventionCapacityDef, DamagePreventionDef, DamagePreventionFollowUpDef,
+    DamageLimitDef, DamagePreventionCapacityDef, DamagePreventionDef, DamagePreventionFollowUpDef,
     DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef, DeclarativeAbilityDef,
     DiscardSelectionDef, DividedTotal, DoubleFacedKind, EffectDef, EffectExecutionDef,
     EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, EffectRecipientSetDef, HybridPair,

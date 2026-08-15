@@ -4,13 +4,14 @@ use crate::card::{
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef,
     AppliedRuleDef, BasicLandType, BattlefieldEntryModificationDef, CardArt, CardBehavior,
     CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef,
-    ColorSet, ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
-    DamagePreventionDef, DamageSourceGroupDef, DiscardSelectionDef, DividedTotal, EffectDef,
-    EffectExecutionDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ColorSet, ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef,
+    DamageLimitDef, DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceGroupDef,
+    DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectExecutionDef,
+    EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, ScaledValueDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -3844,8 +3845,50 @@ pub(in crate::card::sets) static ARENA_OF_THE_ANCIENTS: CardRecord = CardRecord:
 // LEG 276 — Bronze Horse
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “As long as you control another creature, prevent all damage that would be dealt to this creature by spells that target it”.
 
+static FORETHOUGHT_AMULET_SPELL_DAMAGE: DamageEventMatcherDef = DamageEventMatcherDef {
+    kind: DamageKindDef::Any,
+    source: DamageSourceMatcherDef::Matching(ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::HasType(CardType::Instant),
+        ObjectPredicateDef::HasType(CardType::Sorcery),
+    ])),
+    recipient: DamageRecipientMatcherDef::Any,
+};
+
 // LEG 277 — Forethought Amulet
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “If an instant or sorcery source would deal 3 or more damage to you, it deals 2 damage to you instead”.
+pub(in crate::card::sets) static FORETHOUGHT_AMULET: CardRecord = CardRecord::new(
+    cards::FORETHOUGHT_AMULET,
+    "Forethought Amulet",
+    CardArt::new("700f53d3-0a84-4c55-8495-786f0f0783db", "Melissa A. Benson"),
+    CardSet::Legends,
+    CardRules::new_artifact(mana_cost!("{5}")).with_abilities(&[
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, sacrifice this artifact unless you pay {3}.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::PayOr(PayOrDef::unless_mana(
+                mana_cost!("{3}"),
+                &EffectDef::Sacrifice {
+                    object: EffectRecipientDef::Source,
+                },
+            )),
+        ),
+        AbilityDef::static_ability(
+            "If an instant or sorcery source would deal 3 or more damage to you, it deals 2 \
+             damage to you instead.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Controller,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::LimitDamage {
+                    matcher: FORETHOUGHT_AMULET_SPELL_DAMAGE,
+                    // Capping at two is the whole clause: an event already at
+                    // two or less is untouched either way.
+                    limit: DamageLimitDef::CapAt(2),
+                }),
+            },
+        ),
+    ]),
+);
 
 // LEG 278 — Gauntlets of Chaos
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “{5}, Sacrifice this artifact: Exchange control of target artifact, creature, or land you control and target permanent an opponent controls that shares one of those types with it. If…”.
@@ -4309,6 +4352,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &XIRA_ARIEN,
     &AL_ABARAS_CARPET,
     &ARENA_OF_THE_ANCIENTS,
+    &FORETHOUGHT_AMULET,
     &HORN_OF_DEAFENING,
     &KRY_SHIELD,
     &RELIC_BARRIER,

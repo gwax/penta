@@ -209,6 +209,12 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
         AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(restriction)) => {
             static_object_predicate_supported(restriction.object)
         }
+        // A damage limit protecting a player is read by its own walk over the
+        // battlefield, since nothing about the damage event points back at
+        // the permanent carrying the rule.
+        AppliedEffectDef::Rule(AppliedRuleDef::LimitDamage { matcher, .. }) => {
+            static_damage_matcher_supported(matcher)
+        }
         AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
     }
 }
@@ -280,9 +286,9 @@ fn static_object_applied_effect_supported(
         AppliedEffectDef::Rule(
             AppliedRuleDef::CannotBeBlockedBy(predicate) | AppliedRuleDef::CanBlockOnly(predicate),
         ) => static_object_predicate_supported(predicate),
-        AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(matcher)) => {
-            static_damage_matcher_supported(matcher)
-        }
+        AppliedEffectDef::Rule(
+            AppliedRuleDef::PreventDamage(matcher) | AppliedRuleDef::LimitDamage { matcher, .. },
+        ) => static_damage_matcher_supported(matcher),
         AppliedEffectDef::Rule(AppliedRuleDef::RedirectPlayerDamageToThis(_)) => {
             matches!(
                 recipient.object_reference(),

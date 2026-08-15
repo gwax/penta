@@ -4,7 +4,8 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
     CardChoiceSourceDef, CardRules, CardSet, CardType, ComparisonDef, ControlDurationDef,
-    CounterKind, DamageEventMatcherDef, DamagePreventionDef, DiscardSelectionDef, EffectDef,
+    CounterKind, DamageEventMatcherDef, DamageKindDef, DamageLimitDef, DamagePreventionDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, EffectDef,
     EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, LikelihoodDef,
     ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayActionMatcherDef,
     PlayRestrictionDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
@@ -589,8 +590,32 @@ pub(in crate::card::sets) static ALI_BABA: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Every source and every kind: the printed text names no exception.
+static ALI_FROM_CAIRO_ANY_DAMAGE: DamageEventMatcherDef = DamageEventMatcherDef {
+    kind: DamageKindDef::Any,
+    source: DamageSourceMatcherDef::Any,
+    recipient: DamageRecipientMatcherDef::Any,
+};
+
 // ARN 36 — Ali from Cairo
-// Audit: blocked — Needs a duration-scoped replacement/prevention effect for “Damage that would reduce your life total to less than 1 reduces it to 1 instead”.
+pub(in crate::card::sets) static ALI_FROM_CAIRO: CardRecord = CardRecord::new(
+    cards::ALI_FROM_CAIRO,
+    "Ali from Cairo",
+    CardArt::new("42027613-d261-4ce2-8ba1-7a2480c660f8", "Mark Poole"),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Human"], 0, 1).with_ability(
+        AbilityDef::static_ability(
+            "Damage that would reduce your life total to less than 1 reduces it to 1 instead.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Controller,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::LimitDamage {
+                    matcher: ALI_FROM_CAIRO_ANY_DAMAGE,
+                    limit: DamageLimitDef::LeaveAtLeastLife(1),
+                }),
+            },
+        ),
+    ),
+);
 
 // ARN 37 — Bird Maiden
 pub(in crate::card::sets) static BIRD_MAIDEN: CardRecord = CardRecord::new(
@@ -1274,6 +1299,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STONE_THROWING_DEVILS,
     &ALADDIN,
     &ALI_BABA,
+    &ALI_FROM_CAIRO,
     &BIRD_MAIDEN,
     &HURR_JACKAL,
     &KIRD_APE,

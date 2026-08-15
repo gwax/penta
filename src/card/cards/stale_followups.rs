@@ -68,3 +68,5 @@ pub const THE_WRETCHED: CardDefinitionId = CardDefinitionId(1712);
 pub const ORGG: CardDefinitionId = CardDefinitionId(1713);
 pub const SIMULACRUM: CardDefinitionId = CardDefinitionId(1714);
 pub const REVERSE_POLARITY: CardDefinitionId = CardDefinitionId(1715);
+pub const ALI_FROM_CAIRO: CardDefinitionId = CardDefinitionId(1716);
+pub const FORETHOUGHT_AMULET: CardDefinitionId = CardDefinitionId(1717);

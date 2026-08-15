@@ -63,6 +63,16 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Damage that is capped rather than prevented.** A limit has no capacity to
+  spend and no follow-up: it applies to every matching event for as long as
+  its source is there, which is what separates it from a prevention shield.
+  The two printed shapes differ in what the cap depends on -- a flat number,
+  or the recipient's life when the damage would be dealt -- so the
+  life-relative one cannot be folded into the flat one. A limit protecting a
+  player is found by its own walk over the battlefield, since nothing about
+  the damage event points back at the permanent carrying the rule. Ali from
+  Cairo and Forethought Amulet.
+
 - **"Damage dealt to you this turn."** A running total per player,
   accumulated as the damage lands rather than derived from life totals, so
   gaining life in between does not erase it. Damage is also recorded under

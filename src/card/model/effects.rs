@@ -161,6 +161,13 @@ pub enum AppliedRuleDef {
     /// [`Self::DoesNotUntapDuringUntapStep`] this is a choice rather than a
     /// prohibition, so declining is what the printed cards are paying for.
     MayChooseNotToUntap,
+    /// Caps matching damage while this rule applies. Unlike
+    /// [`Self::PreventDamage`] nothing is spent: every matching event is
+    /// limited for as long as the rule is there.
+    LimitDamage {
+        matcher: DamageEventMatcherDef,
+        limit: DamageLimitDef,
+    },
     /// An unlimited prevention rule derived live while this static applied
     /// effect exists. Two-sided prevention is an
     /// [`AppliedEffectDef::Composite`] of source and recipient matchers.

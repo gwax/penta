@@ -1,6 +1,6 @@
 use crate::card::{
-    DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef, DamageSourceGroupDef,
-    DamageSourceMatcherDef, ObjectRefDef,
+    DamageEventMatcherDef, DamageKindDef, DamageLimitDef, DamageRecipientMatcherDef,
+    DamageSourceGroupDef, DamageSourceMatcherDef, ObjectRefDef,
 };
 
 use super::prevention_state::{
@@ -515,6 +515,48 @@ impl Game {
         true
     }
 
+    /// Caps a prospective damage event by every limiting rule that applies to
+    /// its recipient. Limits compose by taking the smallest survivor, which
+    /// is what two independent "instead" replacements do.
+    fn apply_damage_limits(&self, event: ProspectiveDamage<'_>, amount: u16) -> u16 {
+        let Some(Target::Player(player)) = event.target else {
+            return amount;
+        };
+        let life = self.players[player.index()].life;
+        let mut limited = amount;
+        let _ = self.visit_player_damage_limits(player, |source, matcher, limit| {
+            if self.static_damage_matcher_matches(matcher, source, source, event) {
+                limited = limited.min(Self::damage_under_limit(limit, amount, life));
+            }
+            ControlFlow::Continue(())
+        });
+        limited
+    }
+
+    /// How much of `amount` a single limit lets through.
+    const fn damage_under_limit(limit: DamageLimitDef, amount: u16, life: i16) -> u16 {
+        match limit {
+            DamageLimitDef::CapAt(cap) => {
+                if amount > cap {
+                    cap
+                } else {
+                    amount
+                }
+            }
+            DamageLimitDef::LeaveAtLeastLife(floor) => {
+                // How much can land before the floor is reached. A recipient
+                // already at or below it takes nothing at all.
+                let headroom = life.saturating_sub(floor);
+                if headroom <= 0 {
+                    0
+                } else {
+                    let headroom = headroom.cast_unsigned();
+                    if headroom < amount { headroom } else { amount }
+                }
+            }
+        }
+    }
+
     pub(super) fn damage_target_from_kind(
         &mut self,
         source: Option<GameObjectId>,
@@ -550,6 +592,7 @@ impl Game {
             combat,
         };
         let amount = self.apply_resolved_damage_prevention(event, amount);
+        let amount = self.apply_damage_limits(event, amount);
         if amount == 0 {
             return 0;
         }

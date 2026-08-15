@@ -531,6 +531,12 @@ fn validate_applied_effect_shapes(
             validate_recipient_shape(recipient, targets, RecipientExpectation::Object)?;
             validate_damage_matcher_shape(matcher, targets)
         }
+        // A limit protects a player, so unlike prevention its recipient is
+        // the player whose damage is capped.
+        AppliedEffectDef::Rule(AppliedRuleDef::LimitDamage { matcher, .. }) => {
+            validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
+            validate_damage_matcher_shape(matcher, targets)
+        }
         AppliedEffectDef::Rule(AppliedRuleDef::RedirectDamageFromTo {
             source,
             destination,

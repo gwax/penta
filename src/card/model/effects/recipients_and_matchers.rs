@@ -341,6 +341,22 @@ pub enum DamageRecipientMatcherDef {
     PlayerAndCreaturesControlledBy(PlayerRefDef),
 }
 
+/// How much damage a limiting rule lets through.
+///
+/// A limit is not a prevention: it has no capacity to spend and no follow-up,
+/// it simply caps every matching event for as long as its source applies.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DamageLimitDef {
+    /// "It deals N damage instead." Events already at or under the cap are
+    /// untouched, which is why a printed "N or more" threshold needs no
+    /// separate condition.
+    CapAt(u16),
+    /// "Damage that would reduce your life total to less than N reduces it to
+    /// N instead." The cap depends on the recipient's life when the damage
+    /// would be dealt, so it cannot be folded into [`Self::CapAt`].
+    LeaveAtLeastLife(i16),
+}
+
 /// A conjunctive matcher over a prospective damage event.
 ///
 /// Preventing damage both to and by one object is represented by two rules in
