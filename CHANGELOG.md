@@ -119,6 +119,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Rootwalla** and **Stab Wound**, two more cards blocked on machinery that
+  already existed. The Rootwalla's once-a-turn quota belongs to the permanent,
+  so a second one still has its own, and Stab Wound's upkeep drain follows the
+  enchanted creature's controller rather than the player who cast the Aura.
+
 - **Spitting Slug** and **Arcades Sabboth**, two old cards whose audit lines
   blamed missing combat constraints. The Slug needed an optional payment with
   a branch either way -- declining hands the first strike to the other side of

@@ -8,11 +8,11 @@ use crate::card::{
     CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ColorSet, ComparisonDef,
     ControlDurationDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef,
     DamagePreventionDef, DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
-    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities,
-    cards,
+    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementChoiceDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardDefinitionId, TargetIndex};
 use crate::mana_cost;
@@ -1589,7 +1589,39 @@ pub(in crate::card::sets) static SLUM_REAPER: CardRecord = CardRecord::new(
 );
 
 // RTR 78 — Stab Wound
-// Audit: blocked — Needs an upkeep event tied to the enchanted creature's current controller.
+pub(in crate::card::sets) static STAB_WOUND: CardRecord = CardRecord::new(
+    cards::STAB_WOUND,
+    "Stab Wound",
+    CardArt::new("7b562269-e6ec-4f8d-844e-26b272248d9d", "Scott Chou"),
+    CardSet::ReturnToRavnica,
+    // The drain follows the creature: gaining control of it means taking the
+    // two a turn as well.
+    CardRules::new_enchantment(mana_cost!("{2}{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature gets -2/-2.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(-2),
+                        ValueDef::Constant(-2),
+                    ),
+                },
+            ),
+            abilities::enchanted_controller_upkeep(
+                "At the beginning of the upkeep of enchanted creature's controller, that player \
+                 loses 2 life.",
+                EffectDef::LoseLife {
+                    recipient: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
+                        ObjectRefDef::AttachedToSource,
+                    )),
+                    amount: ValueDef::Constant(2),
+                },
+            ),
+        ]),
+);
 
 // RTR 79 — Tavern Swindler
 // Audit: blocked — Coin flips and their replay-visible random outcomes are unavailable.
@@ -5061,6 +5093,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SEWER_SHAMBLER,
     &SHRIEKING_AFFLICTION,
     &SLUM_REAPER,
+    &STAB_WOUND,
     &TERRUS_WURM,
     &THRILL_KILL_ASSASSIN,
     &ULTIMATE_PRICE,

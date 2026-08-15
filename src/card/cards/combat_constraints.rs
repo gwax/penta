@@ -99,3 +99,5 @@ pub const EMMARA_TANDRIS: CardDefinitionId = CardDefinitionId(1898);
 pub const TITHE_DRINKER: CardDefinitionId = CardDefinitionId(1899);
 pub const SPITTING_SLUG: CardDefinitionId = CardDefinitionId(1900);
 pub const ARCADES_SABBOTH: CardDefinitionId = CardDefinitionId(1901);
+pub const ROOTWALLA: CardDefinitionId = CardDefinitionId(1902);
+pub const STAB_WOUND: CardDefinitionId = CardDefinitionId(1903);

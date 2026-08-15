@@ -490,7 +490,8 @@ pub(in crate::card::sets) static STONEHORN_CHANTER: CardRecord = CardRecord::new
                 ]),
                 duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
-        ),
+        )
+        .once_each_turn(),
     ),
 );
 
@@ -2465,7 +2466,29 @@ pub(in crate::card::sets) static PRIMEVAL_BOUNTY: CardRecord = CardRecord::new(
 );
 
 // M14 192 — Rootwalla
-// Audit: blocked — Activated abilities have no once-per-turn activation limit.
+pub(in crate::card::sets) static ROOTWALLA: CardRecord = CardRecord::new(
+    cards::ROOTWALLA,
+    "Rootwalla",
+    CardArt::new("2b84b6dc-d78d-4d6a-9e9a-2b40854a102b", "Roger Raupp"),
+    CardSet::Magic2014,
+    // The quota is per turn and per permanent, so a second Rootwalla still
+    // has its own.
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Lizard"], 2, 2).with_ability(
+        AbilityDef::activated(
+            "{1}{G}: This creature gets +2/+2 until end of turn. Activate only once each turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}{G}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        )
+        .once_each_turn(),
+    ),
+);
 
 // M14 193 — Rumbling Baloth
 pub(in crate::card::sets) static RUMBLING_BALOTH: CardRecord = CardRecord::new(
@@ -3124,6 +3147,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &OATH_OF_THE_ANCIENT_WOOD,
     &PREDATORY_SLIVER,
     &PRIMEVAL_BOUNTY,
+    &ROOTWALLA,
     &RUMBLING_BALOTH,
     &SCAVENGING_OOZE,
     &SPOREMOUND,
