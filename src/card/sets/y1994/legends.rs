@@ -220,7 +220,34 @@ pub(in crate::card::sets) static DIVINE_TRANSFORMATION: CardRecord = CardRecord:
 );
 
 // LEG 11 — Elder Land Wurm
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “When this creature blocks, it loses defender”.
+pub(in crate::card::sets) static ELDER_LAND_WURM: CardRecord = CardRecord::new(
+    cards::ELDER_LAND_WURM,
+    "Elder Land Wurm",
+    CardArt::new("ef3651d4-969c-464d-a444-40a640d0c6ba", "Quinton Hoover"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{4}{W}{W}{W}"), &["Dragon", "Wurm"], 5, 5).with_abilities(
+        &[
+            abilities::defender(),
+            abilities::trample(),
+            AbilityDef::triggered(
+                "When this creature blocks, it loses defender.",
+                TriggerEventDef::Blocks {
+                    blocked: ObjectPredicateDef::Any,
+                },
+                // The printed clause names no duration, so the removal
+                // outlives the combat that paid for it: once it has blocked,
+                // it can attack from then on.
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::remove_abilities(AbilityPredicateDef::Keyword(
+                        KeywordAbility::Defender,
+                    )),
+                    duration: ResolvedEffectDurationDef::Permanent,
+                },
+            ),
+        ],
+    ),
+);
 
 // LEG 12 — Enchanted Being
 pub(in crate::card::sets) static ENCHANTED_BEING: CardRecord = CardRecord::new(
@@ -4784,6 +4811,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DAVENANT_ARCHER,
     &DIVINE_OFFERING,
     &DIVINE_TRANSFORMATION,
+    &ELDER_LAND_WURM,
     &ENCHANTED_BEING,
     &FORTIFIED_AREA,
     &GREAT_DEFENDER,

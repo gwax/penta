@@ -529,6 +529,7 @@ mod chaos_orb;
 mod coin_flips;
 mod combat;
 mod combat_and_life;
+mod combat_constraints;
 mod combat_keywords;
 mod combat_rescues;
 mod continuous_and_zones;

@@ -99,6 +99,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Three combat triggers whose audit lines blamed a missing constraint.**
+  None of them needed one. Elder Land Wurm drops defender the first time it
+  blocks and keeps it dropped, Dwarven Soldier grows against Orcs on either
+  side of the block, and Battering Ram bands into combat and marks the Wall
+  that stopped it.
+
 - **Mana added off another player's tap.** A mana trigger can now name the
   controller of whatever was tapped rather than its own controller, which is
   what "its controller adds an additional {G}" asks for when the watcher and

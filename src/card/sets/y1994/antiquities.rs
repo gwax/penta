@@ -6,7 +6,7 @@ use crate::card::{
     CardTypeSet, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef,
     DamageSourceGroupDef, DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectPaymentDef,
     EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor, ManaRestrictionDef,
-    ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayerRelation, PlayerSetDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation, PlayerSetDef,
     ReplacementEffectDef, ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef, TurnStepDef,
     ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
@@ -729,8 +729,40 @@ pub(in crate::card::sets) static ASHNODS_BATTLE_GEAR: CardRecord = CardRecord::n
 // ATQ 40 — Ashnod's Transmogrant
 // Audit: blocked — Needs card-specific counter state and counter-consuming effects for “{T}, Sacrifice this artifact: Put a +1/+1 counter on target nonartifact creature. That creature becomes an artifact in addition to its other types”.
 
+static BATTERING_RAM_BANDING: AbilityDef = abilities::banding();
+
 // ATQ 41 — Battering Ram
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature becomes blocked by a Wall, destroy that Wall at end of combat”.
+pub(in crate::card::sets) static BATTERING_RAM: CardRecord = CardRecord::new(
+    cards::BATTERING_RAM,
+    "Battering Ram",
+    CardArt::new("f7a69e35-d209-41c0-aa3c-c78414617075", "Jeff A. Menges"),
+    CardSet::Antiquities,
+    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Construct"], 1, 1).with_abilities(&[
+        AbilityDef::triggered(
+            "At the beginning of combat on your turn, this creature gains banding until end \
+             of combat.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::BeginningOfCombat,
+                player: PlayerRelation::You,
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::add_ability(&BATTERING_RAM_BANDING),
+                duration: ResolvedEffectDurationDef::UntilEndOfCombat,
+            },
+        ),
+        AbilityDef::triggered(
+            "Whenever this creature becomes blocked by a Wall, destroy that Wall at end of \
+             combat.",
+            TriggerEventDef::BecomesBlockedBy {
+                blocker: ObjectPredicateDef::Subtype("Wall"),
+            },
+            EffectDef::DestroyAtEndOfCombat {
+                object: EffectRecipientDef::object(ObjectRefDef::TriggeringObject),
+            },
+        ),
+    ]),
+);
 
 // ATQ 42 — Bronze Tablet
 // Audit: blocked — Needs permanent card-ownership changes plus the opponent's life-payment choice after the linked cards are exiled.
@@ -1542,6 +1574,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GAEAS_AVENGER,
     &AMULET_OF_KROOG,
     &ASHNODS_BATTLE_GEAR,
+    &BATTERING_RAM,
     &CLAY_STATUE,
     &COLOSSUS_OF_SARDIA,
     &DRAGON_ENGINE,

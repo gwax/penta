@@ -1012,7 +1012,29 @@ pub(in crate::card::sets) static DWARVEN_LIEUTENANT: CardRecord = CardRecord::ne
 );
 
 // FEM 53a — Dwarven Soldier
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature blocks or becomes blocked by one or more Orcs, this creature gets +0/+2 until end of turn”.
+pub(in crate::card::sets) static DWARVEN_SOLDIER: CardRecord = CardRecord::new(
+    cards::DWARVEN_SOLDIER,
+    "Dwarven Soldier",
+    CardArt::new("6fe77608-0b33-43f5-83fb-ae993ca1bf7c", "Rob Alexander"),
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Dwarf", "Soldier"], 2, 1).with_ability(
+        AbilityDef::triggered(
+            "Whenever this creature blocks or becomes blocked by one or more Orcs, this \
+             creature gets +0/+2 until end of turn.",
+            TriggerEventDef::BlocksOrBecomesBlockedBy {
+                object: ObjectPredicateDef::Subtype("Orc"),
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::Constant(2),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
 
 // FEM 54a — Goblin Chirurgeon
 pub(in crate::card::sets) static GOBLIN_CHIRURGEON: CardRecord = CardRecord::new(
@@ -1971,6 +1993,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &THRULL_RETAINER,
     &BRASSCLAW_ORCS,
     &DWARVEN_LIEUTENANT,
+    &DWARVEN_SOLDIER,
     &GOBLIN_CHIRURGEON,
     &GOBLIN_GRENADE,
     &ORCISH_CAPTAIN,
