@@ -3944,7 +3944,27 @@ pub(in crate::card::sets) static WEB: CardRecord = CardRecord::new(
 );
 
 // LEA 229 — Wild Growth
-// Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Whenever enchanted land is tapped for mana, its controller adds an additional {G}”.
+pub(in crate::card::sets) static WILD_GROWTH: CardRecord = CardRecord::new(
+    cards::WILD_GROWTH,
+    "Wild Growth",
+    CardArt::new("fd896dfa-66c0-4327-8e5b-489bbe350c95", "Mark Poole"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{G}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant land", &abilities::ENCHANT_LAND_TARGET),
+            AbilityDef::triggered_mana(
+                "Whenever enchanted land is tapped for mana, its controller adds an \
+                 additional {G}.",
+                TriggerEventDef::tapped_for_mana(ObjectPredicateDef::AttachedToSource),
+                // The land's controller, not the Aura's: this may be sitting
+                // on something an opponent controls.
+                EffectDef::AddMana(
+                    AddManaEffectDef::one(ManaColor::Green).to_triggering_objects_controller(),
+                ),
+            ),
+        ]),
+);
 
 // LEA 230 — Ankh of Mishra
 pub(in crate::card::sets) static ANKH_OF_MISHRA: CardRecord = CardRecord::new(
@@ -4221,7 +4241,42 @@ pub(in crate::card::sets) static DISRUPTING_SCEPTER: CardRecord = CardRecord::ne
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “{1}: The next time an unblocked creature of your choice would deal combat damage to you this turn, prevent all but 1 of that damage”.
 
 // LEA 244 — Gauntlet of Might
-// Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Whenever a Mountain is tapped for mana, its controller adds an additional {R}”.
+pub(in crate::card::sets) static GAUNTLET_OF_MIGHT: CardRecord = CardRecord::new(
+    cards::GAUNTLET_OF_MIGHT,
+    "Gauntlet of Might",
+    CardArt::new("da248001-ed75-4b68-9532-37d3cd5afc4c", "Christopher Rush"),
+    CardSet::Alpha,
+    CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[
+        AbilityDef::static_ability(
+            "Red creatures get +1/+1.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Color(ManaColor::Red),
+                    ]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+            },
+        ),
+        AbilityDef::triggered_mana(
+            "Whenever a Mountain is tapped for mana, its controller adds an additional {R}.",
+            TriggerEventDef::tapped_for_mana(ObjectPredicateDef::HasAnyBasicLandType(&[
+                BasicLandType::Mountain,
+            ])),
+            // Every Mountain, so the mana follows whoever tapped one rather
+            // than whoever owns the Gauntlet.
+            EffectDef::AddMana(
+                AddManaEffectDef::one(ManaColor::Red).to_triggering_objects_controller(),
+            ),
+        ),
+    ]),
+);
 
 // LEA 245 — Glasses of Urza
 pub(in crate::card::sets) static GLASSES_OF_URZA: CardRecord = CardRecord::new(
@@ -5111,6 +5166,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WANDERLUST,
     &WAR_MAMMOTH,
     &WEB,
+    &WILD_GROWTH,
     &ANKH_OF_MISHRA,
     &BASALT_MONOLITH,
     &BLACK_LOTUS,
@@ -5122,6 +5178,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CRYSTAL_ROD,
     &DINGUS_EGG,
     &DISRUPTING_SCEPTER,
+    &GAUNTLET_OF_MIGHT,
     &GLASSES_OF_URZA,
     &HELM_OF_CHATZUK,
     &ICY_MANIPULATOR,

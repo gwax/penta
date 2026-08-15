@@ -1,5 +1,6 @@
 use super::{
-    AppliedEffectDef, CounterKind, ManaColor, ManaCost, ObjectPredicateDef, PlayerRelation,
+    AppliedEffectDef, CounterKind, ManaColor, ManaCost, ObjectPredicateDef, ObjectRefDef,
+    PlayerRefDef, PlayerRelation,
 };
 
 /// One atomic cost. The surrounding rules procedure determines who pays it
@@ -230,6 +231,10 @@ pub struct AddManaEffectDef {
     /// resolves. This is damage rather than a life-payment cost, so ordinary
     /// damage prevention and source attribution still apply.
     pub damage_to_controller: u16,
+    /// Who the mana goes to. Almost always the ability's own controller, but
+    /// a trigger watching everyone's lands says "its controller", meaning the
+    /// player whose land was tapped rather than the watcher.
+    pub recipient: PlayerRefDef,
 }
 
 impl AddManaEffectDef {
@@ -241,6 +246,7 @@ impl AddManaEffectDef {
             restrictions: &[],
             spend_effects: &[],
             damage_to_controller: 0,
+            recipient: PlayerRefDef::EffectController,
         }
     }
 
@@ -252,6 +258,7 @@ impl AddManaEffectDef {
             restrictions: &[],
             spend_effects: &[],
             damage_to_controller: 0,
+            recipient: PlayerRefDef::EffectController,
         }
     }
 
@@ -284,6 +291,15 @@ impl AddManaEffectDef {
     #[must_use]
     pub const fn with_damage_to_controller(mut self, amount: u16) -> Self {
         self.damage_to_controller = amount;
+        self
+    }
+
+    /// Sends the mana to the controller of the object that triggered the
+    /// ability, which is what "its controller adds" asks for when the trigger
+    /// watches lands nobody in particular controls.
+    #[must_use]
+    pub const fn to_triggering_objects_controller(mut self) -> Self {
+        self.recipient = PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject);
         self
     }
 }

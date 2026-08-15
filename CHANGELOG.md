@@ -99,6 +99,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Mana added off another player's tap.** A mana trigger can now name the
+  controller of whatever was tapped rather than its own controller, which is
+  what "its controller adds an additional {G}" asks for when the watcher and
+  the land belong to different players. Wild Growth and Gauntlet of Might.
+
 - **"Bands with other."** CR 702.21j's banding variant, narrowed to a quality:
   every member of the band must have it and at least one must carry the
   ability, and the damage rule wants two qualifying creatures rather than one.

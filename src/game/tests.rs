@@ -563,6 +563,7 @@ mod landwalk;
 mod looking_at_another_library;
 mod mana_ability_costs;
 mod mana_and_costs;
+mod mana_triggers;
 mod mana_vault;
 mod meekstone;
 mod menace;

@@ -92,6 +92,9 @@ impl Game {
                 restrictions,
                 spend_effects,
                 damage_to_controller,
+                // Resolving from the stack, the ability's own controller is
+                // the only recipient any current card names.
+                recipient: _,
             }) => {
                 let color = kind;
                 let source = object

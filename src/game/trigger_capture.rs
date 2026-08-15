@@ -4,12 +4,13 @@ use super::{
     AbilityDef, AbilityId, AbilityOrigin, AbilityProcedureDef, AbilitySourceRef, AddManaEffectDef,
     BattlefieldTriggerListener, CardDefinitionId, CardPartId, CardType, CommittedTriggerEvent,
     DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
-    DeclarativeAbilityDef, EffectDef, EffectRecipientSetDef, EffectiveAbility,
-    FrozenActivatedAbility, Game, GameEvent, GameObjectId, InstalledTriggerLifetime,
-    KeywordAbility, Mana, ManaSelectionDef, ManaSource, ObjectPredicateDef, ObjectRefDef,
-    ObjectSetDef, PendingTrigger, Permanent, PlayerId, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    RetiredObject, ScopedEffect, StackAbilityResolver, TapPurposeDef, Target, TriggerCapture,
-    TriggerContext, TriggerEventDef, TriggerEventObject, ZoneKind,
+    DeclarativeAbilityDef, EffectDef, EffectRecipientSetDef, EffectResolutionContext,
+    EffectiveAbility, FrozenActivatedAbility, Game, GameEvent, GameObjectId,
+    InstalledTriggerLifetime, KeywordAbility, Mana, ManaSelectionDef, ManaSource,
+    ObjectPredicateDef, ObjectRefDef, ObjectSetDef, PendingTrigger, Permanent, PlayerId,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, RetiredObject, ScopedEffect, StackAbilityResolver,
+    TapPurposeDef, Target, TriggerCapture, TriggerContext, TriggerEventDef, TriggerEventObject,
+    ZoneKind,
 };
 
 impl Game {
@@ -214,6 +215,7 @@ impl Game {
                     capture.source,
                     capture.controller,
                     capture.effect,
+                    &capture.context,
                 );
             },
         );
@@ -285,15 +287,16 @@ impl Game {
         source: AbilitySourceRef,
         controller: PlayerId,
         effect: EffectDef,
+        context: &EffectResolutionContext,
     ) {
         match effect {
             EffectDef::Sequence(effects) => {
                 for effect in effects {
-                    self.resolve_triggered_mana_effect(source, controller, *effect);
+                    self.resolve_triggered_mana_effect(source, controller, *effect, context);
                 }
             }
             EffectDef::AddMana(effect) => {
-                self.resolve_triggered_add_mana_effect(source, controller, effect);
+                self.resolve_triggered_add_mana_effect(source, controller, effect, context);
             }
             EffectDef::None
             | EffectDef::Randomized { .. }
@@ -373,6 +376,7 @@ impl Game {
         source: AbilitySourceRef,
         controller: PlayerId,
         effect: AddManaEffectDef,
+        context: &EffectResolutionContext,
     ) {
         let AddManaEffectDef {
             mana: ManaSelectionDef::One(kind),
@@ -380,9 +384,23 @@ impl Game {
             restrictions,
             spend_effects,
             damage_to_controller,
+            recipient,
         } = effect
         else {
             return;
+        };
+        // A mana trigger resolves without ever going on the stack, so it has
+        // no resolving object to read a general player reference from. The
+        // two a printed clause asks for are the ability's own controller and
+        // the controller of whatever was tapped.
+        let controller = match recipient {
+            PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject) => context
+                .trigger
+                .object
+                .and_then(|triggering| self.current_or_last_known_controller(triggering))
+                .or(context.trigger.object_controller)
+                .unwrap_or(controller),
+            _ => controller,
         };
         let mana = Mana::from_ability(
             kind,
