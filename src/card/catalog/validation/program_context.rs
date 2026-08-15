@@ -713,7 +713,8 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::SourceIsTapped
-        | TriggerConditionDef::SourceIsUntapped => true,
+        | TriggerConditionDef::SourceIsUntapped
+        | TriggerConditionDef::ControllerLifeAtMost(_) => true,
     }
 }
 

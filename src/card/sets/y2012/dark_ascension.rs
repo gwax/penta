@@ -85,8 +85,51 @@ pub(in crate::card::sets) static BAR_THE_DOOR: CardRecord = CardRecord::new(
     )),
 );
 
+static FATEFUL_HOUR: TriggerConditionDef = TriggerConditionDef::ControllerLifeAtMost(5);
+
+static BREAK_OF_DAY_INDESTRUCTIBLE: AbilityDef = abilities::indestructible();
+
+static BREAK_OF_DAY_CREATURES: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static BREAK_OF_DAY_GRANT: EffectDef = EffectDef::Apply {
+    recipient: BREAK_OF_DAY_CREATURES,
+    effect: AppliedEffectDef::add_ability(&BREAK_OF_DAY_INDESTRUCTIBLE),
+    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+};
+
+/// The pump happens either way; the fateful-hour clause only adds to it, and
+/// the life total is read once as the spell resolves.
+static BREAK_OF_DAY_EFFECTS: [EffectDef; 2] = [
+    EffectDef::Apply {
+        recipient: BREAK_OF_DAY_CREATURES,
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(1),
+            ValueDef::Constant(1),
+        ),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::IfCondition {
+        condition: &FATEFUL_HOUR,
+        then: &BREAK_OF_DAY_GRANT,
+    },
+];
+
 // DKA 3 — Break of Day
-// Audit: blocked — Needs a controller-life threshold condition to grant indestructible only during fateful hour.
+pub(in crate::card::sets) static BREAK_OF_DAY: CardRecord = CardRecord::new(
+    cards::BREAK_OF_DAY,
+    "Break of Day",
+    CardArt::new("9e39da2a-814a-46bb-a1ca-fc5532ece842", "Karl Kopinski"),
+    CardSet::DarkAscension,
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell(
+        "Creatures you control get +1/+1 until end of turn. Fateful hour — If you have 5 or \
+         less life, those creatures gain indestructible until end of turn.",
+        EffectDef::Sequence(&BREAK_OF_DAY_EFFECTS),
+    )),
+);
 
 static BURDEN_OF_GUILT_TAP: AbilityDef = AbilityDef::activated(
     "{1}: Tap enchanted creature.",
@@ -151,8 +194,37 @@ pub(in crate::card::sets) static ELGAUD_INQUISITOR: CardRecord = CardRecord::new
 // DKA 8 — Gather the Townsfolk
 // Audit: blocked — Needs a controller-life threshold to choose two versus five Human tokens.
 
+static GAVONY_IRONWRIGHT_ANTHEM: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(4)),
+};
+
 // DKA 9 — Gavony Ironwright
-// Audit: blocked — Needs a controller-life threshold continuous condition for the fateful-hour anthem.
+pub(in crate::card::sets) static GAVONY_IRONWRIGHT: CardRecord = CardRecord::new(
+    cards::GAVONY_IRONWRIGHT,
+    "Gavony Ironwright",
+    CardArt::new("05d8de75-b169-4426-94a4-b19cdfdffd89", "Karl Kopinski"),
+    CardSet::DarkAscension,
+    // "As long as", so the condition is continuous rather than checked once:
+    // gaining life back above five turns the anthem off again.
+    CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Soldier"], 1, 4).with_ability(
+        AbilityDef::static_ability(
+            "Fateful hour — As long as you have 5 or less life, other creatures you control get \
+             +1/+4.",
+            EffectDef::IfCondition {
+                condition: &FATEFUL_HOUR,
+                then: &GAVONY_IRONWRIGHT_ANTHEM,
+            },
+        ),
+    ),
+);
 
 // DKA 10 — Hollowhenge Spirit
 // Audit: blocked — Needs an effect that removes a chosen attacking or blocking creature from combat.
@@ -2637,8 +2709,10 @@ pub(in crate::card::sets) static VAULT_OF_THE_ARCHANGEL: CardRecord = CardRecord
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARCHANGELS_LIGHT,
     &BAR_THE_DOOR,
+    &BREAK_OF_DAY,
     &BURDEN_OF_GUILT,
     &ELGAUD_INQUISITOR,
+    &GAVONY_IRONWRIGHT,
     &LINGERING_SOULS,
     &MIDNIGHT_GUARD,
     &NIBLIS_OF_THE_MIST,

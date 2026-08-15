@@ -77,3 +77,5 @@ pub const GOLDNIGHT_REDEEMER: CardDefinitionId = CardDefinitionId(1876);
 pub const FETTERGEIST: CardDefinitionId = CardDefinitionId(1877);
 pub const ARCHANGELS_LIGHT: CardDefinitionId = CardDefinitionId(1878);
 pub const THALIA_GUARDIAN_OF_THRABEN: CardDefinitionId = CardDefinitionId(1879);
+pub const BREAK_OF_DAY: CardDefinitionId = CardDefinitionId(1880);
+pub const GAVONY_IRONWRIGHT: CardDefinitionId = CardDefinitionId(1881);

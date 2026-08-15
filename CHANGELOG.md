@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Break of Day** and **Gavony Ironwright**, with a controller-life threshold
+  condition for fateful hour. The two read it differently: Break of Day checks
+  once as it resolves, while the Ironwright's "as long as" is continuous, so
+  its anthem switches off again when life climbs back above five.
+
 - **Thalia, Guardian of Thraben** and **Archangel's Light**. Thalia is the
   spell-cost increase Derelor introduced, with no "you cast" clause, so she
   taxes her own controller too. The Light gains one doubled amount rather than

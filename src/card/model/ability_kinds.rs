@@ -402,6 +402,11 @@ pub enum TriggerConditionDef {
     /// [`Self::SourceIsTapped`] for an object that was never on the
     /// battlefield, which is neither.
     SourceIsUntapped,
+    /// Whether the ability's controller is at or below this life total, for
+    /// the fateful-hour clauses. Read live, so a static ability guarded by it
+    /// switches on and off as life moves rather than being fixed when the
+    /// permanent arrived.
+    ControllerLifeAtMost(u16),
     /// Whether this ability's controller controls a creature whose power is
     /// at least every other creature's, which is what "the greatest power or
     /// tied for the greatest power" asks. False when no creature is on the

@@ -369,6 +369,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::SourceIsTapped
         | TriggerConditionDef::SourceIsUntapped
+        | TriggerConditionDef::ControllerLifeAtMost(_)
         | TriggerConditionDef::SpellsCastLastTurn { .. } => true,
     }
 }
@@ -388,6 +389,9 @@ fn shared_static_trigger_condition(condition: TriggerConditionDef) -> bool {
             // Reachable from the source by following its attachment, which
             // is exactly the input a static clause has.
             | TriggerConditionDef::AttachedPermanentMatches { .. }
+            // The controller's life is read from the same input, and a
+            // fateful-hour clause switches off again when life goes back up.
+            | TriggerConditionDef::ControllerLifeAtMost(_)
     )
 }
 
