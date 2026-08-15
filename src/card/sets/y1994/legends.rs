@@ -246,8 +246,36 @@ pub(in crate::card::sets) static ENCHANTED_BEING: CardRecord = CardRecord::new(
 // LEG 13 — Equinox
 // Audit: blocked — Needs a granted ability that can target a spell by prospectively determining whether that spell would destroy one of its controller's lands.
 
+/// Both halves of one clause: the bonus and the keyword arrive together, so
+/// they are one applied effect rather than two abilities.
+static FORTIFIED_AREA_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)),
+    AppliedEffectDef::add_ability(&FORTIFIED_AREA_BANDING),
+];
+
+static FORTIFIED_AREA_BANDING: AbilityDef = abilities::banding();
+
 // LEG 14 — Fortified Area
-// Audit: blocked — Needs the clause's conditional recipient set or dynamic modifier value for “Wall creatures you control get +1/+0 and have banding”.
+pub(in crate::card::sets) static FORTIFIED_AREA: CardRecord = CardRecord::new(
+    cards::FORTIFIED_AREA,
+    "Fortified Area",
+    CardArt::new(
+        "dc64f19c-5b2b-4697-b4dc-2be9c3790794",
+        "Randy Asplund-Faith",
+    ),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{1}{W}{W}")).with_ability(AbilityDef::static_ability(
+        "Wall creatures you control get +1/+0 and have banding.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Subtype("Wall"),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::Composite(&FORTIFIED_AREA_BONUS),
+        },
+    )),
+);
 
 // LEG 15 — Glyph of Life
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Choose target Wall creature. Whenever that creature is dealt damage by an attacking creature this turn, you gain that much life”.
@@ -4757,6 +4785,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DIVINE_OFFERING,
     &DIVINE_TRANSFORMATION,
     &ENCHANTED_BEING,
+    &FORTIFIED_AREA,
     &GREAT_DEFENDER,
     &GREAT_WALL,
     &GREATER_REALM_OF_PRESERVATION,

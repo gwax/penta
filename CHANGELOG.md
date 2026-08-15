@@ -96,8 +96,8 @@ distinguishes snapshots of the covered source and build inputs.
   one per creature -- and a creature with banding on either side of a block
   hands its controller the other creature's damage division. Benalish Hero,
   Mesa Pegasus, Timber Wolves, Helm of Chatzuk, War Elephant, Icatian Infantry,
-  Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, and Nalathni
-  Dragon.
+  Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
+  Dragon, and Fortified Area.
 
 - **"Bands with other."** CR 702.21j's banding variant, narrowed to a quality:
   every member of the band must have it and at least one must carry the

@@ -228,6 +228,7 @@ fn the_banding_identities_report_complete_coverage() {
         cards::MOUNTAIN_STRONGHOLD,
         cards::SEAFARERS_QUAY,
         cards::UNHOLY_CITADEL,
+        cards::FORTIFIED_AREA,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
