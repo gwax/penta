@@ -81,3 +81,5 @@ pub const BREAK_OF_DAY: CardDefinitionId = CardDefinitionId(1880);
 pub const GAVONY_IRONWRIGHT: CardDefinitionId = CardDefinitionId(1881);
 pub const GATHER_THE_TOWNSFOLK: CardDefinitionId = CardDefinitionId(1882);
 pub const THRABEN_DOOMSAYER: CardDefinitionId = CardDefinitionId(1883);
+pub const CLINGING_MISTS: CardDefinitionId = CardDefinitionId(1884);
+pub const VILLAGE_SURVIVORS: CardDefinitionId = CardDefinitionId(1885);

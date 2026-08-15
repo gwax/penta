@@ -5,12 +5,12 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardComposition,
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    ComparisonDef, ConditionalValueDef, CounterKind, DiscardSelectionDef, DoubleFacedKind,
-    EffectDef, EffectRecipientDef, KeywordAbility, LifeConditionDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayOptionDef, PlayerRelation, QuantifierDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, ScaledValueDef, SpellAdditionalCostDef, SpellForm,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    ComparisonDef, ConditionalValueDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
+    DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectRecipientDef, KeywordAbility,
+    LifeConditionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation,
+    QuantifierDef, ReplacementEffectDef, ResolvedEffectDurationDef, ScaledValueDef,
+    SpellAdditionalCostDef, SpellForm, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetIndex};
 use crate::mana_cost;
@@ -1908,8 +1908,51 @@ pub(in crate::card::sets) static BRIARPACK_ALPHA: CardRecord = CardRecord::new(
     ]),
 );
 
+static CLINGING_MISTS_ATTACKERS: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::Attacking,
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Any,
+);
+
+/// The tap and the skip land on the same set, and the skip is counted per
+/// permanent so each creature misses its own controller's step.
+static CLINGING_MISTS_HOLD: [EffectDef; 2] = [
+    EffectDef::Tap {
+        object: CLINGING_MISTS_ATTACKERS,
+    },
+    EffectDef::SkipNextUntapSteps {
+        object: CLINGING_MISTS_ATTACKERS,
+        count: 1,
+    },
+];
+
+static CLINGING_MISTS_HOLD_SEQUENCE: EffectDef = EffectDef::Sequence(&CLINGING_MISTS_HOLD);
+
+/// The Fog happens either way; only the tap is behind the threshold.
+static CLINGING_MISTS_EFFECTS: [EffectDef; 2] = [
+    EffectDef::PreventDamage {
+        prevention: DamagePreventionDef::unlimited(DamageEventMatcherDef::COMBAT),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::IfCondition {
+        condition: &FATEFUL_HOUR,
+        then: &CLINGING_MISTS_HOLD_SEQUENCE,
+    },
+];
+
 // DKA 109 — Clinging Mists
-// Audit: blocked — Needs a controller-life threshold branch and a delayed next-untap restriction scoped to the attacking creatures tapped by that branch.
+pub(in crate::card::sets) static CLINGING_MISTS: CardRecord = CardRecord::new(
+    cards::CLINGING_MISTS,
+    "Clinging Mists",
+    CardArt::new("e0152975-790a-40e4-993e-a970676a2d32", "Anthony Francisco"),
+    CardSet::DarkAscension,
+    CardRules::new_instant(mana_cost!("{2}{G}")).with_ability(AbilityDef::spell(
+        "Prevent all combat damage that would be dealt this turn. Fateful hour — If you have 5 \
+         or less life, tap all attacking creatures. Those creatures don't untap during their \
+         controller's next untap step.",
+        EffectDef::Sequence(&CLINGING_MISTS_EFFECTS),
+    )),
+);
 
 static CRUSHING_VINES_MODES: [AbilityDef; 2] = [
     AbilityDef::spell_with_targets(
@@ -2221,8 +2264,40 @@ pub(in crate::card::sets) static ULVENWALD_BEAR: CardRecord = CardRecord::new(
     ),
 );
 
+static VILLAGE_SURVIVORS_VIGILANCE: AbilityDef = abilities::vigilance();
+
+static VILLAGE_SURVIVORS_GRANT: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    effect: AppliedEffectDef::add_ability(&VILLAGE_SURVIVORS_VIGILANCE),
+};
+
 // DKA 130 — Village Survivors
-// Audit: blocked — Needs a controller-life threshold continuous condition for granting vigilance to other creatures.
+pub(in crate::card::sets) static VILLAGE_SURVIVORS: CardRecord = CardRecord::new(
+    cards::VILLAGE_SURVIVORS,
+    "Village Survivors",
+    CardArt::new("13c0e852-9966-4145-b7c3-ac957f729376", "David Rapoza"),
+    CardSet::DarkAscension,
+    // It has vigilance outright; the fateful-hour clause hands that out to
+    // everything else, so the printed keyword is not what the branch reads.
+    CardRules::new_creature(mana_cost!("{4}{G}"), &["Human"], 4, 5).with_abilities(&[
+        abilities::vigilance(),
+        AbilityDef::static_ability(
+            "Fateful hour — As long as you have 5 or less life, other creatures you control \
+             have vigilance.",
+            EffectDef::IfCondition {
+                condition: &FATEFUL_HOUR,
+                then: &VILLAGE_SURVIVORS_GRANT,
+            },
+        ),
+    ]),
+);
 
 // DKA 131 — Vorapede
 pub(in crate::card::sets) static VORAPEDE: CardRecord = CardRecord::new(
@@ -2834,6 +2909,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TALONS_OF_FALKENRATH,
     &TORCH_FIEND,
     &BRIARPACK_ALPHA,
+    &CLINGING_MISTS,
     &CRUSHING_VINES,
     &DAWNTREADER_ELK,
     &DERANGED_OUTCAST,
@@ -2846,6 +2922,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SOMBERWALD_DRYAD,
     &STRANGLEROOT_GEIST,
     &ULVENWALD_BEAR,
+    &VILLAGE_SURVIVORS,
     &VORAPEDE,
     &WILD_HUNGER,
     &YOUNG_WOLF,

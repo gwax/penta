@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Clinging Mists** and **Village Survivors**, two more fateful-hour cards
+  built from the threshold plus machinery that already existed. The Survivors
+  has vigilance printed as well as granted, so losing the branch takes it from
+  everything else and leaves its own alone.
+
 - **Gather the Townsfolk** and **Thraben Doomsayer**, finishing the fateful-hour
   cards that need only the life threshold. The Townsfolk's "instead" is one
   token creation of a chosen size rather than two creations one of which is

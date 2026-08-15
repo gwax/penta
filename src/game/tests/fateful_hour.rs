@@ -185,6 +185,126 @@ fn the_doomsayer_pumps_the_tokens_it_makes() {
     );
 }
 
+/// Village Survivors has vigilance outright; the fateful-hour clause hands it
+/// to everything else, and takes it back when life climbs.
+#[test]
+fn the_survivors_share_vigilance_only_below_the_threshold() {
+    let mut game = ready(5);
+    let survivors = creature(10_000, cards::VILLAGE_SURVIVORS, PlayerId::One);
+    let survivors_id = survivors.card.id;
+    game.battlefield.push(survivors);
+    let bear = creature(10_100, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bear_id = bear.card.id;
+    game.battlefield.push(bear);
+
+    let vigilant = |game: &Game, id: GameObjectId| {
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .expect("still there");
+        game.permanent_has_executable_keyword(permanent, KeywordAbility::Vigilance)
+    };
+
+    assert!(vigilant(&game, bear_id), "shared at five life");
+    assert!(vigilant(&game, survivors_id), "and printed on itself");
+
+    game.players[PlayerId::One.index()].life = 20;
+    assert!(!vigilant(&game, bear_id), "taken back above the threshold");
+    assert!(
+        vigilant(&game, survivors_id),
+        "but the printed keyword is not what the branch reads",
+    );
+}
+
+/// Clinging Mists fogs either way and only holds the attackers down at five
+/// life or less.
+#[test]
+fn clinging_mists_holds_attackers_only_below_the_threshold() {
+    let cast_at = |life: i16| {
+        let mut game = ready(life);
+        game.active_player = PlayerId::Two;
+        let mut attacker = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::Two);
+        attacker.attacking = true;
+        let attacker_id = attacker.card.id;
+        game.battlefield.push(attacker);
+
+        let spell = card(20_000, cards::CLINGING_MISTS, PlayerId::One);
+        let spell_id = spell.id;
+        game.players[PlayerId::One.index()].hand.push(spell);
+        game.players[PlayerId::One.index()].mana_pool.green = 1;
+        game.players[PlayerId::One.index()].mana_pool.colorless = 2;
+        game.step = Step::DeclareBlockers;
+        game.attackers_declared = true;
+        game.blockers_declared = true;
+        game.priority = PlayerId::One;
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == spell_id))
+            .expect("three mana covers it");
+        game.apply(PlayerId::One, action)
+            .expect("the cast is legal");
+        drain_pending(&mut game);
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == attacker_id)
+            .expect("still there")
+            .tapped
+    };
+
+    assert!(!cast_at(6), "above the threshold it is only a Fog");
+    assert!(cast_at(5), "at it the attackers go down too");
+}
+
+/// And the attackers it taps miss their controller's next untap step, which
+/// is the half of the clause the tap alone does not show.
+#[test]
+fn clinging_mists_holds_them_through_the_next_untap_step() {
+    let mut game = ready(5);
+    game.active_player = PlayerId::Two;
+    let mut attacker = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::Two);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+
+    let spell = card(20_000, cards::CLINGING_MISTS, PlayerId::One);
+    let spell_id = spell.id;
+    game.players[PlayerId::One.index()].hand.push(spell);
+    game.players[PlayerId::One.index()].mana_pool.green = 1;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 2;
+    game.step = Step::DeclareBlockers;
+    game.attackers_declared = true;
+    game.blockers_declared = true;
+    game.priority = PlayerId::One;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == spell_id))
+        .expect("three mana covers it");
+    game.apply(PlayerId::One, action)
+        .expect("the cast is legal");
+    drain_pending(&mut game);
+
+    let tapped = |game: &Game| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == attacker_id)
+            .expect("still there")
+            .tapped
+    };
+    game.commit_next_turn(PlayerId::Two, Vec::new());
+    drain_pending(&mut game);
+    assert!(tapped(&game), "it skipped their untap step");
+
+    game.commit_next_turn(PlayerId::One, Vec::new());
+    game.commit_next_turn(PlayerId::Two, Vec::new());
+    drain_pending(&mut game);
+    assert!(!tapped(&game), "and came back a cycle later");
+}
+
 #[test]
 fn both_cards_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -193,6 +313,8 @@ fn both_cards_report_complete_coverage() {
         cards::GAVONY_IRONWRIGHT,
         cards::GATHER_THE_TOWNSFOLK,
         cards::THRABEN_DOOMSAYER,
+        cards::CLINGING_MISTS,
+        cards::VILLAGE_SURVIVORS,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
