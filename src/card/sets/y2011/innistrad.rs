@@ -7,10 +7,10 @@ use crate::card::{
     AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardAbilityBinding, CardArt, CardBehavior, CardComposition,
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    ComparisonDef, ConditionalValueDef, ControlDurationDef, CounterKind, DiscardSelectionDef,
-    DoubleFacedKind, EffectDef, EffectExecutionDef, EffectPaymentDef, EffectRecipientDef,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayOptionDef, PlayerRelation,
-    PlayerSetDef, QuantifierDef, ReplacementConditionDef, ReplacementEffectDef,
+    ComparisonDef, ConditionalValueDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
+    DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectExecutionDef, EffectPaymentDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef, PlayOptionDef,
+    PlayerRelation, PlayerSetDef, QuantifierDef, ReplacementConditionDef, ReplacementEffectDef,
     ResolvedEffectDurationDef, SpellAdditionalCostDef, SpellForm, TargetConditionDef,
     TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
     abilities, cards,
@@ -389,8 +389,39 @@ pub(in crate::card::sets) static GEIST_HONORED_MONK: CardRecord = CardRecord::ne
         ]),
 );
 
+/// The same two-sided shield Gaseous Form wears, with flying alongside it.
+/// Prevention names a source or a recipient and never both, so "to and dealt
+/// by" is two rules sharing one Apply.
+static GHOSTLY_POSSESSION_EFFECT: [AppliedEffectDef; 3] = [
+    AppliedEffectDef::add_ability(&abilities::flying()),
+    AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(
+        DamageEventMatcherDef::COMBAT_FROM_AFFECTED,
+    )),
+    AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(
+        DamageEventMatcherDef::COMBAT_TO_AFFECTED,
+    )),
+];
+
 // ISD 18 — Ghostly Possession
-// Audit: blocked — Needs a persistent Aura effect preventing all combat damage dealt to and dealt by the enchanted creature.
+pub(in crate::card::sets) static GHOSTLY_POSSESSION: CardRecord = CardRecord::new(
+    cards::GHOSTLY_POSSESSION,
+    "Ghostly Possession",
+    CardArt::new("a66a41c5-c707-4d6e-a1c6-ee7122413c4c", "Howard Lyon"),
+    CardSet::Innistrad,
+    CardRules::new_enchantment(mana_cost!("{2}{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature has flying. Prevent all combat damage that would be dealt to \
+                 and dealt by enchanted creature.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&GHOSTLY_POSSESSION_EFFECT),
+                },
+            ),
+        ]),
+);
 
 // ISD 19 — Intangible Virtue
 // Audit: blocked — Needs a reusable predicate selecting only creature tokens for the static +1/+1 and vigilance grant.
@@ -4927,6 +4958,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FIEND_HUNTER,
     &GALLOWS_WARDEN,
     &GEIST_HONORED_MONK,
+    &GHOSTLY_POSSESSION,
     &MAUSOLEUM_GUARD,
     &MIDNIGHT_HAUNTING,
     &MOMENT_OF_HEROISM,

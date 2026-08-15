@@ -250,6 +250,22 @@ fn defang_silences_its_host_entirely() {
     assert_eq!(damage_on(&game, victim_id), 2, "and then it does not");
 }
 
+/// The two-sided Aura shield, which is two rules in one Apply: the host
+/// neither deals combat damage nor takes it.
+#[test]
+fn ghostly_possession_shields_both_directions() {
+    let (mut game, attacker, blocker) =
+        blocked_by_attacker(cards::SEDGE_TROLL, cards::GRIZZLY_BEARS);
+    let mut aura = creature(10_002, cards::GHOSTLY_POSSESSION, PlayerId::Two);
+    aura.attached_to = Some(attacker);
+    game.battlefield.push(aura);
+
+    game.deal_combat_damage();
+
+    assert_eq!(damage_on(&game, blocker), 0, "it dealt nothing");
+    assert_eq!(damage_on(&game, attacker), 0, "and took nothing");
+}
+
 #[test]
 fn every_wall_identity_reports_its_audited_coverage() {
     let catalog = poc::catalog().expect("catalog builds");

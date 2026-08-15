@@ -74,6 +74,9 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Ghostly Possession**, which wears the same two-sided shield Gaseous Form
+  has worn since Legends.
+
 - **Fortress Cyclops, Somberwald Vigilante, and Hamlet Captain**, the first
   cards to use the one-directional blocking triggers added earlier in this
   release. Hamlet Captain's single printed clause becomes two triggers, since
