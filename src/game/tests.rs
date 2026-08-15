@@ -557,6 +557,7 @@ mod decisions_and_effects;
 mod delayed_triggers;
 mod detain;
 mod disharmony;
+mod energy_tap;
 mod entry_replacements;
 mod equipment;
 mod erg_raiders;

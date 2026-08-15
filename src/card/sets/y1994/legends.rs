@@ -838,8 +838,43 @@ pub(in crate::card::sets) static DEVOURING_DEEP: CardRecord = CardRecord::new(
 // LEG 53 — Enchantment Alteration
 // Audit: blocked — Needs Aura reattachment targeting, enchant-legality validation, and attachment movement for “Attach target Aura attached to a creature or land to another permanent of that type”.
 
+/// "Untapped creature you control", so the tap always lands and the mana
+/// always follows: an already-tapped creature is not a legal target.
+static ENERGY_TAP_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
+static ENERGY_TAP_EFFECT: [EffectDef; 2] = [
+    EffectDef::Tap {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::AddManaEqualTo {
+        color: ManaColor::Colorless,
+        amount: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
+    },
+];
+
 // LEG 54 — Energy Tap
-// Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Tap target untapped creature you control. If you do, add an amount of {C} equal to that creature's mana value”.
+pub(in crate::card::sets) static ENERGY_TAP: CardRecord = CardRecord::new(
+    cards::ENERGY_TAP,
+    "Energy Tap",
+    CardArt::new("37e69940-bdc8-48ff-a296-540343910adf", "Daniel Gelon"),
+    CardSet::Legends,
+    CardRules::new_sorcery(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Tap target untapped creature you control. If you do, add an amount of {C} equal to \
+         that creature's mana value.",
+        &ENERGY_TAP_TARGET,
+        EffectDef::Sequence(&ENERGY_TAP_EFFECT),
+    )),
+);
 
 // LEG 55 — Field of Dreams
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “Players play with the top card of their libraries revealed”.
@@ -5179,6 +5214,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AZURE_DRAKE,
     &BOOMERANG,
     &DEVOURING_DEEP,
+    &ENERGY_TAP,
     &FLASH_COUNTER,
     &FLASH_FLOOD,
     &FORCE_SPIKE,

@@ -99,6 +99,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Energy Tap.** Its audit line asked for mana provenance; the mana it makes
+  is an ordinary amount that happens to be read off the creature it tapped
+  rather than printed, which the effect model already supported.
+
 - **A permanent remembers the X it was cast for.** An enters trigger is a new
   object, so it could not ask the spell that made the permanent what X was and
   read it as zero. Permanents now carry it, and a value reads it back. Venarian
