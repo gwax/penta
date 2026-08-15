@@ -363,6 +363,24 @@ impl Game {
             })
     }
 
+    /// What a permanent was blocking, using last-known information once it
+    /// has left the battlefield. A creature that died in combat still knows
+    /// what it had blocked, which is what a death trigger reading "creatures
+    /// blocked by it" has to see.
+    pub(super) fn current_or_last_known_blocking(
+        &self,
+        object: GameObjectId,
+    ) -> Option<GameObjectId> {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == object)
+            .and_then(|permanent| permanent.blocking)
+            .or_else(|| match self.retired_objects.get(&object) {
+                Some(RetiredObject::Permanent { permanent, .. }) => permanent.blocking,
+                Some(RetiredObject::Card(_) | RetiredObject::Stack(_)) | None => None,
+            })
+    }
+
     /// How many counters of one kind an object has, using last-known
     /// information once it has left the battlefield. An ability whose cost
     /// sacrificed its own source still reads the counters it had.

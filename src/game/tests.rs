@@ -513,6 +513,7 @@ mod aura_death;
 mod aura_tap_triggers;
 mod aura_upkeep;
 mod banding;
+mod blocking_after_death;
 mod blocking_prevention;
 mod blocking_relation;
 mod blocking_relationship;

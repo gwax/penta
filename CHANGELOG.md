@@ -34,6 +34,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **"Blocked by this creature" went blank once the creature left.** The
+  relationship is recorded on the blocker, so a blocker that died in combat
+  took the answer with it and its own death trigger found nothing. It is now
+  read from last-known information, like the attachment relationship beside
+  it. Abu Ja'far is the card that noticed.
+
 - **Cards put back on top of a library kept their order.** The group arrives
   top-first and the top is the back of the vector, so putting them back one at
   a time inverted them. Nothing depended on it before, because every existing

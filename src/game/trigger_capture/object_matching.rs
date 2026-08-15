@@ -50,11 +50,10 @@ impl Game {
                 .is_some_and(|host| host == object.id),
             // Read from the source: the Wall knows what it blocked, and the
             // attacker's own record does not name its blockers.
+            // Last-known, because a creature that died in combat still knows
+            // what it had blocked and its death trigger has to read it.
             ObjectPredicateDef::BlockedBySource => self
-                .battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == source)
-                .and_then(|permanent| permanent.blocking)
+                .current_or_last_known_blocking(source)
                 .is_some_and(|attacker| attacker == object.id),
             // The other direction, read from the candidate: a blocker records
             // what it blocked, so this one needs no lookup on the source.

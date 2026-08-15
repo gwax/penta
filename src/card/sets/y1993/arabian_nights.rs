@@ -35,8 +35,43 @@ static ELEPHANT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_p
     ObjectPredicateDef::Subtype("Elephant"),
 )];
 
+/// Both sides of whatever block it was in. One direction is read off the
+/// candidate and the other off Abu Ja'far, whose own record is last-known by
+/// the time the trigger resolves -- it is dead, which is what set this off.
+static ABU_JAFARS_COMPANIONS: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::BlockedBySource,
+            ObjectPredicateDef::BlockingSource,
+        ]),
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Any,
+);
+
 // ARN 1 — Abu Ja'far
-// Audit: blocked — Needs a duration-scoped prohibition on creating or applying regeneration shields for “When this creature dies, destroy all creatures blocking or blocked by it. They can't be regenerated”.
+pub(in crate::card::sets) static ABU_JAFAR: CardRecord = CardRecord::new(
+    cards::ABU_JAFAR,
+    "Abu Ja'far",
+    CardArt::new("949634bd-2f5a-4be7-ad24-d7039a57b6d6", "Ken Meyer, Jr."),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{W}"), &["Human"], 0, 1).with_ability(
+        AbilityDef::triggered(
+            "When this creature dies, destroy all creatures blocking or blocked by it. They \
+             can't be regenerated.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            ),
+            EffectDef::Destroy {
+                object: ABU_JAFARS_COMPANIONS,
+                can_regenerate: false,
+            },
+        ),
+    ),
+);
 
 // ARN 2 — Army of Allah
 pub(in crate::card::sets) static ARMY_OF_ALLAH: CardRecord = CardRecord::new(
@@ -1277,6 +1312,7 @@ pub(in crate::card::sets) static OASIS: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &ABU_JAFAR,
     &ARMY_OF_ALLAH,
     &KING_SULEIMAN,
     &MOORISH_CAVALRY,
