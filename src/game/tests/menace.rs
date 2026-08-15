@@ -125,6 +125,28 @@ fn an_aura_can_hand_menace_out() {
     );
 }
 
+/// Handed out to a whole side rather than to one creature, and to the
+/// enchantment's controller's creatures alone.
+#[test]
+fn the_war_drums_menace_your_creatures_and_not_theirs() {
+    let (mut game, blockers) = menacing_attack(cards::SEDGE_TROLL, 2);
+    game.battlefield
+        .push(creature(10_200, cards::GOBLIN_WAR_DRUMS, PlayerId::One));
+
+    block(&mut game, blockers[0]);
+    assert!(!may_finish(&game), "the Drums brought the constraint");
+
+    let blocker = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == blockers[1])
+        .expect("still there");
+    assert!(
+        !game.permanent_has_executable_keyword(blocker, KeywordAbility::Menace),
+        "the other side's creatures are not the Drums' creatures"
+    );
+}
+
 #[test]
 fn every_menace_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -132,6 +154,7 @@ fn every_menace_identity_reports_complete_coverage() {
         cards::RIPSCALE_PREDATOR,
         cards::MADCAP_SKILLS,
         cards::GRUUL_WAR_CHANT,
+        cards::GOBLIN_WAR_DRUMS,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

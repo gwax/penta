@@ -1138,8 +1138,26 @@ pub(in crate::card::sets) static GOBLIN_KITES: CardRecord = CardRecord::new(
     ),
 );
 
+static GOBLIN_WAR_DRUMS_MENACE: AbilityDef = abilities::menace();
+
 // FEM 58a — Goblin War Drums
-// Audit: blocked — Needs menace as an executable minimum-blocker constraint and external keyword grant for “Creatures you control have menace”.
+pub(in crate::card::sets) static GOBLIN_WAR_DRUMS: CardRecord = CardRecord::new(
+    cards::GOBLIN_WAR_DRUMS,
+    "Goblin War Drums",
+    CardArt::new("2a2c4e4b-e9a7-4180-927b-589514c21876", "Dan Frazier"),
+    CardSet::FallenEmpires,
+    CardRules::new_enchantment(mana_cost!("{2}{R}")).with_ability(AbilityDef::static_ability(
+        "Creatures you control have menace.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::add_ability(&GOBLIN_WAR_DRUMS_MENACE),
+        },
+    )),
+);
 
 // FEM 59 — Goblin Warrens
 // Audit: blocked — Needs an activated cost that selects and sacrifices two Goblins; only one chosen permanent can currently be sacrificed as a cost.
@@ -2055,6 +2073,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GOBLIN_CHIRURGEON,
     &GOBLIN_GRENADE,
     &GOBLIN_KITES,
+    &GOBLIN_WAR_DRUMS,
     &ORCISH_CAPTAIN,
     &ORCISH_SPY,
     &ORCISH_VETERAN,

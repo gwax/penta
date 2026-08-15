@@ -99,6 +99,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Goblin War Drums.** Its audit line wanted menace as an executable
+  constraint and a way to grant a keyword from outside. Both have existed since
+  the menace pass; the card is a static grant over a whole side.
+
 - **Goblin Kites.** Berserk's shape with a coin in it: a pump now, and a
   delayed trigger that remembers the same creature and may take it away. Both
   halves were already there.
