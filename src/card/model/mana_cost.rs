@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fmt;
 use std::str::FromStr;
 
-use super::HybridPair;
+use super::{HybridPair, ManaColor};
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 pub struct ManaCost {
@@ -291,6 +291,20 @@ impl ManaCost {
             hybrid: [0; HybridPair::COUNT],
             variable_x: false,
             x_multiplier: 0,
+        }
+    }
+
+    /// `amount` mana of one colour and nothing else, for a payment whose
+    /// size is counted at resolution rather than printed.
+    #[must_use]
+    pub const fn of_color(color: ManaColor, amount: u16) -> Self {
+        match color {
+            ManaColor::White => Self::colored(0, amount, 0, 0, 0, 0),
+            ManaColor::Blue => Self::colored(0, 0, amount, 0, 0, 0),
+            ManaColor::Black => Self::colored(0, 0, 0, amount, 0, 0),
+            ManaColor::Red => Self::colored(0, 0, 0, 0, amount, 0),
+            ManaColor::Green => Self::colored(0, 0, 0, 0, 0, amount),
+            ManaColor::Colorless => Self::colored(amount, 0, 0, 0, 0, 0),
         }
     }
 

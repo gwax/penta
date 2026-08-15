@@ -68,6 +68,14 @@ impl Game {
                             .unwrap_or(u16::MAX);
                         ResolvedEffectPayment::Mana(crate::ManaCost::new(amount, 0))
                     }
+                    EffectPaymentCostDef::ColoredMana { color, amount } => {
+                        let amount = self
+                            .effect_value(amount, object, &context, scoped)
+                            .max(0)
+                            .try_into()
+                            .unwrap_or(u16::MAX);
+                        ResolvedEffectPayment::Mana(crate::ManaCost::of_color(color, amount))
+                    }
                     EffectPaymentCostDef::Life(amount) => ResolvedEffectPayment::Life(amount),
                     EffectPaymentCostDef::Mill(amount) => ResolvedEffectPayment::Mill(amount),
                     EffectPaymentCostDef::Discard(amount) => ResolvedEffectPayment::Discard(amount),

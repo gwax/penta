@@ -19,6 +19,14 @@ fn resolved_effect_payment(
                 .unwrap_or(u16::MAX);
             super::super::ResolvedEffectPayment::Mana(ManaCost::new(amount, 0))
         }
+        EffectPaymentCostDef::ColoredMana { color, amount } => {
+            let amount = game
+                .effect_value(amount, object, context, scoped)
+                .max(0)
+                .try_into()
+                .unwrap_or(u16::MAX);
+            super::super::ResolvedEffectPayment::Mana(ManaCost::of_color(color, amount))
+        }
         EffectPaymentCostDef::Life(amount) => super::super::ResolvedEffectPayment::Life(amount),
         EffectPaymentCostDef::Mill(amount) => super::super::ResolvedEffectPayment::Mill(amount),
         EffectPaymentCostDef::Discard(amount) => {

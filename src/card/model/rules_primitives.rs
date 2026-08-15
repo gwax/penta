@@ -40,10 +40,13 @@ pub enum CounterKind {
     /// Scavenging Ghoul's counter, banked from deaths and spent to
     /// regenerate.
     Corpse,
+    /// Cyclone's counter. It only ever grows, so what it counts is how many
+    /// upkeeps the enchantment has survived.
+    Wind,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 18;
+    pub const COUNT: usize = 19;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -64,6 +67,7 @@ impl CounterKind {
         Self::Sleep,
         Self::Vitality,
         Self::Corpse,
+        Self::Wind,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -89,7 +93,8 @@ impl CounterKind {
             | Self::Pupa
             | Self::Sleep
             | Self::Vitality
-            | Self::Corpse => (0, 0),
+            | Self::Corpse
+            | Self::Wind => (0, 0),
         }
     }
 
@@ -114,6 +119,7 @@ impl CounterKind {
             Self::Sleep => 15,
             Self::Vitality => 16,
             Self::Corpse => 17,
+            Self::Wind => 18,
         }
     }
 
@@ -138,6 +144,7 @@ impl CounterKind {
             Self::Sleep => "sleep",
             Self::Vitality => "vitality",
             Self::Corpse => "corpse",
+            Self::Wind => "wind",
         }
     }
 }

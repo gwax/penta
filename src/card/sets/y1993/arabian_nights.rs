@@ -3,14 +3,15 @@ use crate::Format;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
-    CardArt, CardBehavior, CardChoiceSourceDef, CardRules, CardSet, CardType, ComparisonDef,
-    ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef, DamageLimitDef,
-    DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef,
-    EffectDef, EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
-    KeywordAbility, LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, PlayerSetDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardArt, CardBehavior, CardChoiceSourceDef, CardRules, CardSet, CardType, ChoiceVisibilityDef,
+    ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef,
+    DamageLimitDef, DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
+    DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectPaymentCostDef, EffectPaymentDef,
+    EffectRecipientDef, InstalledTriggerDef, KeywordAbility, LikelihoodDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
+    SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -826,8 +827,69 @@ pub(in crate::card::sets) static RUKH_EGG: CardRecord = CardRecord::new(
 // ARN 44 — Ydwen Efreet
 // Audit: blocked — Needs attackers this creature had blocked alone to become unblocked, which reverses the ordinary rule that removing a blocker leaves them blocked. The flip and the combat removal are available.
 
+/// The damage is one number dealt twice over: every creature and every
+/// player, including its own controller and their own board.
+static CYCLONE_SWEEP: [EffectDef; 2] = [
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::Any,
+        ),
+        amount: ValueDef::CountersOnSource(CounterKind::Wind),
+    },
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::EachPlayer,
+        amount: ValueDef::CountersOnSource(CounterKind::Wind),
+    },
+];
+
+static CYCLONE_SWEEP_SEQUENCE: EffectDef = EffectDef::Sequence(&CYCLONE_SWEEP);
+
+static CYCLONE_SACRIFICE: EffectDef = EffectDef::Sacrifice {
+    object: EffectRecipientDef::Source,
+};
+
+/// The counter goes on first, so the upkeep it lands on is already paying for
+/// it: the first upkeep costs {G} rather than nothing.
+static CYCLONE_UPKEEP: [EffectDef; 2] = [
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::Wind,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::PayOr(PayOrDef {
+        payment: EffectPaymentDef {
+            payer: PlayerSetDef::Related(PlayerRelation::You),
+            cost: EffectPaymentCostDef::ColoredMana {
+                color: ManaColor::Green,
+                amount: ValueDef::CountersOnSource(CounterKind::Wind),
+            },
+        },
+        if_paid: Some(&CYCLONE_SWEEP_SEQUENCE),
+        otherwise: Some(&CYCLONE_SACRIFICE),
+        visibility: ChoiceVisibilityDef::Public,
+    }),
+];
+
 // ARN 45 — Cyclone
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “At the beginning of your upkeep, put a wind counter on this enchantment, then sacrifice this enchantment unless you pay {G} for each wind counter on it. If you pay, this enchantment…”.
+pub(in crate::card::sets) static CYCLONE: CardRecord = CardRecord::new(
+    cards::CYCLONE,
+    "Cyclone",
+    CardArt::new("f11684d6-5b74-47a7-a2d0-256c9e437aa6", "Mark Tedin"),
+    CardSet::ArabianNights,
+    CardRules::new_enchantment(mana_cost!("{2}{G}{G}")).with_ability(AbilityDef::triggered(
+        "At the beginning of your upkeep, put a wind counter on this enchantment, then \
+         sacrifice this enchantment unless you pay {G} for each wind counter on it. If you \
+         pay, this enchantment deals damage equal to the number of wind counters on it to \
+         each creature and each player.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::You,
+        },
+        EffectDef::Sequence(&CYCLONE_UPKEEP),
+    )),
+);
 
 // ARN 46 — Desert Twister
 pub(in crate::card::sets) static DESERT_TWISTER: CardRecord = CardRecord::new(
@@ -1540,6 +1602,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KIRD_APE,
     &MIJAE_DJINN,
     &RUKH_EGG,
+    &CYCLONE,
     &DESERT_TWISTER,
     &ERHNAM_DJINN,
     &IFH_BIFF_EFREET,

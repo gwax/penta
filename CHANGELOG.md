@@ -106,6 +106,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Cyclone**, with a single-colour mana payment whose size is counted at
+  resolution. The counter goes on before the bill arrives, so the first upkeep
+  already costs {G} rather than nothing, and what paying buys is symmetric:
+  the damage reaches every creature and every player, its controller included.
+
 - **Khabál Ghoul** and **Scavenging Ghoul**, with a running count of the
   turn's creature deaths and a corpse counter. The count is tallied as
   creatures die rather than read off a graveyard, because a graveyard is not a

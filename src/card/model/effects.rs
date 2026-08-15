@@ -162,6 +162,13 @@ pub enum EffectPaymentCostDef {
     Mana(ManaCost),
     /// A generic mana payment whose amount is evaluated at resolution.
     GenericMana(ValueDef),
+    /// The same, in one colour: "pay {G} for each wind counter on it". The
+    /// colour is fixed and the count is not, which is why this is an amount
+    /// rather than a printed cost.
+    ColoredMana {
+        color: ManaColor,
+        amount: ValueDef,
+    },
     Life(u16),
     /// Mill this many cards. Never impossible: a library shorter than the
     /// amount mills what it has (CR 701.13b), so this branch of an "unless"
