@@ -1,7 +1,7 @@
 use super::{
     BalanceAction, BalancePhase, BalanceTask, CardBehavior, CardInstance, CardType,
-    DecisionContinuation, DecisionPreference, DecisionVisibility, DecisionZone, Game, PlayerId,
-    StackObject, Target, ZoneKind, ZoneMoveCause, ZonePlacement,
+    DecisionContinuation, DecisionPreference, DecisionVisibility, DecisionZone, Game, GameObjectId,
+    ObjectPredicateDef, PlayerId, StackObject, Target, ZoneKind, ZoneMoveCause, ZonePlacement,
 };
 
 impl Game {
@@ -256,6 +256,31 @@ impl Game {
             let (card, _zone_change) = self.zone_change_card(card);
             self.put_card_into_graveyard(player, card);
         }
+    }
+
+    /// Discards at random from the cards in hand that match, leaving the
+    /// rest alone. A hand with nothing matching discards nothing, which is
+    /// what "discards a creature card at random" does to a hand of lands.
+    pub(super) fn discard_random_matching(
+        &mut self,
+        player: PlayerId,
+        count: u16,
+        predicate: ObjectPredicateDef,
+        source: GameObjectId,
+        cause: ZoneMoveCause,
+    ) {
+        let mut matching: Vec<_> = self.players[player.index()]
+            .hand
+            .iter()
+            .filter(|card| self.card_object_matches(predicate, card, ZoneKind::Hand, source))
+            .map(|card| card.id)
+            .collect();
+        let mut discarded = Vec::new();
+        for _ in 0..usize::from(count).min(matching.len()) {
+            let index = self.rng.index_below(matching.len());
+            discarded.push(matching.swap_remove(index));
+        }
+        self.discard_cards_with_cause(player, &discarded, cause);
     }
 
     pub(super) fn discard_random(&mut self, player: PlayerId, count: u16, cause: ZoneMoveCause) {

@@ -664,7 +664,7 @@ pub(in crate::card::sets) static VODALIAN_SOLDIERS: CardRecord = CardRecord::new
 );
 
 // FEM 32 — Vodalian War Machine
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Tap an untapped Merfolk you control: This creature can attack this turn as though it didn't have defender”.
+// Audit: blocked — Needs the permanents tapped to pay this card's own costs recorded for the turn, for “When this creature dies, destroy all Merfolk tapped this turn to pay for its abilities”. Tapping another creature as a cost and attacking despite defender are both available.
 
 // FEM 33a — Armor Thrull
 pub(in crate::card::sets) static ARMOR_THRULL: CardRecord = CardRecord::new(

@@ -92,6 +92,10 @@ pub enum DiscardSelectionDef {
     RecipientChooses,
     /// The engine selects cards using the recorded random seed.
     Random,
+    /// The same, but only from the cards in hand that match. "Discards a
+    /// creature card at random" leaves everything else where it is, and
+    /// discards nothing when the hand holds none.
+    RandomMatching(&'static ObjectPredicateDef),
 }
 
 /// A private look at the top of a library followed by one bounded card

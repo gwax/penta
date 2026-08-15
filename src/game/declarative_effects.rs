@@ -276,6 +276,31 @@ impl Game {
                     }
                 }
             }
+            EffectDef::Discard {
+                recipient,
+                amount,
+                selection: DiscardSelectionDef::RandomMatching(predicate),
+            } => {
+                let amount = self
+                    .effect_value(amount, object, &context, scoped)
+                    .max(0)
+                    .try_into()
+                    .unwrap_or(u16::MAX);
+                let cause = ZoneMoveCause::Effect {
+                    controller: object.controller,
+                };
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.discard_random_matching(
+                            player,
+                            amount,
+                            *predicate,
+                            object.source.unwrap_or(object.id),
+                            cause,
+                        );
+                    }
+                }
+            }
             EffectDef::DiscardCards { object: recipient } => {
                 let recipients = self.effect_recipients(recipient, object, &context, scoped);
                 let cause = ZoneMoveCause::Effect {

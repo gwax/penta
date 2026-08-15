@@ -1,14 +1,14 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
-    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
-    CardArt, CardBehavior, CardRules, CardSet, CardType, ComparisonDef, DamageCoverageDef,
-    DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceGroupDef,
-    EffectDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef,
+    AppliedRuleDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet, CardType,
+    ComparisonDef, DamageCoverageDef, DamageEventMatcherDef, DamagePreventionDef,
+    DamageRecipientMatcherDef, DamageSourceGroupDef, DiscardSelectionDef, EffectDef,
+    EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ResolvedEffectDurationDef, SacrificedAmountDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -782,8 +782,43 @@ pub(in crate::card::sets) static MURK_DWELLERS: CardRecord = CardRecord::new(
 // DRK 50 — Nameless Race
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Nameless Race's power and toughness are each equal to the life paid as it entered”.
 
+static RAG_MAN_CREATURE_CARD: ObjectPredicateDef = ObjectPredicateDef::HasType(CardType::Creature);
+
+/// The reveal is what makes the discard public: without it the opponent would
+/// learn a card left the hand and nothing about what was there to leave.
+static RAG_MAN_STRIKE: [EffectDef; 2] = [
+    EffectDef::RevealHand {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(1),
+        selection: DiscardSelectionDef::RandomMatching(&RAG_MAN_CREATURE_CARD),
+    },
+];
+
 // DRK 51 — Rag Man
-// Audit: blocked — Needs seeded random selection with replay-visible provenance for “{B}{B}{B}, {T}: Target opponent reveals their hand and discards a creature card at random. Activate only during your turn”.
+pub(in crate::card::sets) static RAG_MAN: CardRecord = CardRecord::new(
+    cards::RAG_MAN,
+    "Rag Man",
+    CardArt::new("f4c133b8-8383-433f-be96-c47a937287b7", "Daniel Gelon"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{2}{B}{B}"), &["Human", "Minion"], 2, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{B}{B}{B}, {T}: Target opponent reveals their hand and discards a creature card \
+             at random. Activate only during your turn.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{B}{B}{B}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+            )],
+            EffectDef::Sequence(&RAG_MAN_STRIKE),
+        )
+        .with_activation_timing(ActivationTimingDef::YourTurn),
+    ),
+);
 
 // DRK 52 — Season of the Witch
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “At the beginning of the end step, destroy all untapped creatures that didn't attack this turn, except for creatures that couldn't attack”.
@@ -1973,6 +2008,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &INQUISITION,
     &MARSH_GAS,
     &MURK_DWELLERS,
+    &RAG_MAN,
     &UNCLE_ISTVAN,
     &BALL_LIGHTNING,
     &BLOOD_MOON,

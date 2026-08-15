@@ -131,10 +131,57 @@ fn the_cylix_regenerates_and_pays_the_same_way() {
     assert!(troll.regeneration_shields > 0, "a shield is waiting on it");
 }
 
+/// Rag Man takes a creature card and nothing else, which is what the filtered
+/// selection is for: a hand of lands loses nothing at all.
+#[test]
+fn the_rag_man_reaches_past_the_lands_for_a_creature() {
+    let discard_from = |seed: u64, creatures: u32, lands: u32| {
+        let mut game = ready_game_with_seed(seed);
+        game.turns_started[PlayerId::One.index()] = 5;
+        game.active_player = PlayerId::One;
+        let rag_man = creature(10_000, cards::RAG_MAN, PlayerId::One);
+        let rag_man_id = rag_man.card.id;
+        game.battlefield.push(rag_man);
+        game.players[PlayerId::One.index()].mana_pool.black = 3;
+        game.players[PlayerId::Two.index()].hand.clear();
+        for index in 0..creatures {
+            game.players[PlayerId::Two.index()].hand.push(card(
+                20_000 + index,
+                cards::SAVANNAH_LIONS,
+                PlayerId::Two,
+            ));
+        }
+        for index in 0..lands {
+            game.players[PlayerId::Two.index()].hand.push(card(
+                21_000 + index,
+                cards::MOUNTAIN,
+                PlayerId::Two,
+            ));
+        }
+
+        let action = activation(&game, rag_man_id).expect("an opponent to point at");
+        game.apply(PlayerId::One, action)
+            .expect("the ability activates");
+        drain_pending(&mut game);
+        game.players[PlayerId::Two.index()]
+            .hand
+            .iter()
+            .filter(|card| card.definition == cards::SAVANNAH_LIONS)
+            .count()
+    };
+
+    assert_eq!(discard_from(5, 2, 3), 1, "one of the two creatures went");
+    assert_eq!(
+        discard_from(5, 0, 3),
+        0,
+        "a hand with no creature card in it loses nothing"
+    );
+}
+
 #[test]
 fn both_identities_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::CORAL_HELM, cards::DRACONIAN_CYLIX] {
+    for definition in [cards::CORAL_HELM, cards::DRACONIAN_CYLIX, cards::RAG_MAN] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),
