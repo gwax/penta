@@ -4013,8 +4013,40 @@ pub(in crate::card::sets) static VRASKA_THE_UNSEEN: CardRecord = CardRecord::new
         .with_abilities(&VRASKA_ABILITIES),
 );
 
+static WAYFARING_TEMPLE_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+/// Counted live and including itself, so a lone Temple is a 1/1.
+static WAYFARING_TEMPLE_SIZE: AppliedEffectDef = AppliedEffectDef::set_base_power_toughness(
+    ValueDef::CountMatchingObjects(&WAYFARING_TEMPLE_CREATURES),
+    ValueDef::CountMatchingObjects(&WAYFARING_TEMPLE_CREATURES),
+);
+
 // RTR 209 — Wayfaring Temple
-// Audit: blocked — Its dynamic power and toughness are expressible, but populate's chosen token-copy procedure is not.
+pub(in crate::card::sets) static WAYFARING_TEMPLE: CardRecord = CardRecord::new(
+    cards::WAYFARING_TEMPLE,
+    "Wayfaring Temple",
+    CardArt::new("2125e6aa-f916-4dfa-a9fe-82bb546012af", "Peter Mohrbacher"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{1}{G}{W}"), &["Elemental"], 0, 0).with_abilities(&[
+        AbilityDef::static_ability(
+            "Wayfaring Temple's power and toughness are each equal to the number of creatures \
+             you control.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: WAYFARING_TEMPLE_SIZE,
+            },
+        ),
+        AbilityDef::triggered(
+            "Whenever this creature deals combat damage to a player, populate.",
+            TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
+            abilities::populate(),
+        ),
+    ]),
+);
 
 // RTR 210 — Azor's Elocutors
 // Audit: blocked — Needs filibuster counters, a five-counter win condition, and damage-to-player triggers that remove that custom counter kind.
@@ -4237,8 +4269,36 @@ pub(in crate::card::sets) static SLITHERHEAD: CardRecord = CardRecord::new(
     ]),
 );
 
+/// "Artifact or enchantment", which is one target slot rather than two.
+static SUNDERING_GROWTH_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::HasType(CardType::Artifact),
+        ObjectPredicateDef::HasType(CardType::Enchantment),
+    ]),
+)];
+
+/// The destruction comes first, so a token the destroyed permanent was
+/// keeping alive is already gone when the copy is chosen.
+static SUNDERING_GROWTH_EFFECTS: [EffectDef; 2] = [
+    EffectDef::Destroy {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        can_regenerate: true,
+    },
+    abilities::populate(),
+];
+
 // RTR 223 — Sundering Growth
-// Audit: blocked — Destroying the target is expressible, but populate's chosen token-copy procedure is not.
+pub(in crate::card::sets) static SUNDERING_GROWTH: CardRecord = CardRecord::new(
+    cards::SUNDERING_GROWTH,
+    "Sundering Growth",
+    CardArt::new("14d5048e-cb76-48c4-8a95-70dcc14775f6", "David Palumbo"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_instant(mana_cost!("{G/W}{G/W}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target artifact or enchantment, then populate.",
+        &SUNDERING_GROWTH_TARGET,
+        EffectDef::Sequence(&SUNDERING_GROWTH_EFFECTS),
+    )),
+);
 
 // RTR 224 — Vassal Soul
 pub(in crate::card::sets) static VASSAL_SOUL: CardRecord = keyword_creature(
@@ -4940,6 +5000,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TREASURED_FIND,
     &TRESTLE_TROLL,
     &VRASKA_THE_UNSEEN,
+    &WAYFARING_TEMPLE,
     &BLISTERCOIL_WEIRD,
     &DEATHRITE_SHAMAN,
     &FROSTBURN_WEIRD,
@@ -4949,6 +5010,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RAKDOS_CACKLER,
     &RAKDOS_SHRED_FREAK,
     &SLITHERHEAD,
+    &SUNDERING_GROWTH,
     &VASSAL_SOUL,
     &AZORIUS_KEYRUNE,
     &CHROMATIC_LANTERN,

@@ -114,6 +114,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Wayfaring Temple** and **Sundering Growth**, two of the five cards whose
+  audit lines said populate was unavailable. It has its own procedure and its
+  own tests; what was missing was the authoring.
+
 - **Morkrut Banshee** and **Hollowhenge Scavenger**, the Innistrad half of the
   same morbid pattern. The Banshee is the sharpest case for suppressing the
   trigger rather than its effect: -4/-4 forced onto whatever it had to choose

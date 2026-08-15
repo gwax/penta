@@ -617,6 +617,7 @@ mod paralyze;
 mod part_water;
 mod poison;
 mod populate;
+mod populate_cards;
 mod power_blocking;
 mod power_blocking_restrictions;
 mod premodern_cards;
