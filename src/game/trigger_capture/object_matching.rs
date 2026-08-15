@@ -183,23 +183,13 @@ impl Game {
                     TriggerContext::empty(),
                 )
             }),
-            ObjectPredicateDef::Attacking => {
-                object.types.contains(CardType::Creature) && object.attacking
-            }
-            // Still attacking is not the question: this asks whether the
-            // creature attacked at any point this turn, which is what an
-            // end-step check has to read once combat is over.
-            ObjectPredicateDef::AttackedThisTurn => {
-                object.types.contains(CardType::Creature) && object.attacked_this_turn
-            }
+            ObjectPredicateDef::Attacking
+            | ObjectPredicateDef::AttackedThisTurn
+            | ObjectPredicateDef::AttackedDuringControllersLastTurn
+            | ObjectPredicateDef::Blocking => combat_state_matches(predicate, object),
             ObjectPredicateDef::AttachedToSource => self
                 .current_or_last_known_attached_host(source)
                 .is_some_and(|host| host == object.id),
-            ObjectPredicateDef::Blocking => {
-                object.types.contains(CardType::Creature)
-                    && object.attacking_or_blocking
-                    && !object.attacking
-            }
             ObjectPredicateDef::HasNonManaActivatedAbility
             | ObjectPredicateDef::BlockedBySource
             | ObjectPredicateDef::BlockingSource
@@ -261,4 +251,25 @@ impl Game {
             .find(|permanent| permanent.card.id == source)
             .and_then(|permanent| permanent.chosen_player)
     }
+}
+
+/// Combat facts about a creature, all read straight off the snapshot.
+///
+/// They are grouped because they answer four versions of one question and
+/// each is worthless for anything that is not a creature: an artifact is
+/// never "attacking", whatever else is true of it.
+fn combat_state_matches(predicate: ObjectPredicateDef, object: &TriggerEventObject) -> bool {
+    object.types.contains(CardType::Creature)
+        && match predicate {
+            ObjectPredicateDef::Attacking => object.attacking,
+            // Still attacking is not the question: this asks whether the
+            // creature attacked at any point this turn, which is what an
+            // end-step check has to read once combat is over.
+            ObjectPredicateDef::AttackedThisTurn => object.attacked_this_turn,
+            ObjectPredicateDef::AttackedDuringControllersLastTurn => {
+                object.attacked_during_controllers_last_turn
+            }
+            ObjectPredicateDef::Blocking => object.attacking_or_blocking && !object.attacking,
+            _ => false,
+        }
 }

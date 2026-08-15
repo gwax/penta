@@ -74,3 +74,6 @@ pub const LURE: CardDefinitionId = CardDefinitionId(1718);
 pub const MARBLE_PRIEST: CardDefinitionId = CardDefinitionId(1719);
 pub const FARRELS_ZEALOT: CardDefinitionId = CardDefinitionId(1720);
 pub const FLORAL_SPUZZEM: CardDefinitionId = CardDefinitionId(1721);
+pub const GIANT_TURTLE: CardDefinitionId = CardDefinitionId(1722);
+pub const GOBLIN_ROCK_SLED: CardDefinitionId = CardDefinitionId(1723);
+pub const TANGLE_KELP: CardDefinitionId = CardDefinitionId(1724);

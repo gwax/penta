@@ -231,6 +231,11 @@ pub(super) struct PermanentSnapshot {
     pub(super) regeneration_shields: u8,
     pub(super) attacked_this_turn: bool,
     pub(super) attacks_this_turn: u8,
+    /// The seat that controlled this permanent the last time it attacked, and
+    /// their turn count then. Absent means it has never attacked, which is
+    /// what a checkpoint written before this was recorded also means.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) last_attacked_turn: Option<(usize, u32)>,
     pub(super) damage_sources: Vec<u32>,
     pub(super) dealt_damage_to_opponent_this_turn: bool,
     pub(super) deathtouch_damage: bool,

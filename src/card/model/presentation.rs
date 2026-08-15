@@ -85,6 +85,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::AttachedTo(_)
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -131,6 +132,7 @@ fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor> {
         | ObjectPredicateDef::AttachedTo(_)
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -179,6 +181,7 @@ fn predicate_color_count(predicate: ObjectPredicateDef) -> Option<u8> {
         | ObjectPredicateDef::AttachedTo(_)
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -227,6 +230,7 @@ fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'static str> {
         | ObjectPredicateDef::AttachedTo(_)
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -279,6 +283,7 @@ fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option<&'static s
         | ObjectPredicateDef::AttachedTo(_)
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -336,6 +341,7 @@ fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<i16> {
         | ObjectPredicateDef::AttachedTo(_)
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -379,6 +385,7 @@ fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Option<u8> {
         | ObjectPredicateDef::AttachedTo(_)
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -427,6 +434,7 @@ fn predicate_controller(predicate: ObjectPredicateDef) -> Option<PlayerRelation>
         | ObjectPredicateDef::AttachedTo(_)
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell
@@ -478,6 +486,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::AttachedTo(_)
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
         | ObjectPredicateDef::NoncreatureSpell

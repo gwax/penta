@@ -303,7 +303,8 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
         | ObjectPredicateDef::Enchanted
-        | ObjectPredicateDef::AttackedThisTurn => Ok(()),
+        | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::AttackedDuringControllersLastTurn => Ok(()),
     }
 }
 
@@ -352,6 +353,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::BlockingSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::Special(_) => false,
     }
 }

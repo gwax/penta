@@ -308,6 +308,14 @@ struct Permanent {
     /// triggers are captured, so a "first time each turn" trigger needs the
     /// count rather than the flag.
     attacks_this_turn: u8,
+    /// Who controlled this permanent the last time it was declared as an
+    /// attacker, and how many turns that player had started by then.
+    ///
+    /// History rather than turn state: it survives the cleanup that clears
+    /// `attacked_this_turn`, which is the whole point of "attacked during
+    /// your last turn". The controller is recorded alongside because the
+    /// turn count is that player's own.
+    last_attacked_turn: Option<(PlayerId, u32)>,
     /// Keywords granted until a named player's next upkeep, which outlive
     /// the cleanup that clears `temporary_keywords`. Erhnam Djinn's
     /// forestwalk is one.
@@ -380,6 +388,7 @@ impl Permanent {
             regeneration_shields: 0,
             attacked_this_turn: false,
             attacks_this_turn: 0,
+            last_attacked_turn: None,
             keywords_until_upkeep_of: Vec::new(),
             damage_sources: Vec::new(),
             dealt_damage_to_opponent_this_turn: false,

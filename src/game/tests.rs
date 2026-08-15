@@ -507,6 +507,7 @@ mod assigns_no_combat_damage;
 mod attachment_targets;
 mod attack_deterrents;
 mod attack_restrictions;
+mod attacked_last_turn;
 mod aura_death;
 mod aura_tap_triggers;
 mod aura_upkeep;

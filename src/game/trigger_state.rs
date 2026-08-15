@@ -144,6 +144,10 @@ pub(super) struct TriggerEventObject {
     /// Whether this creature attacked at any point this turn, which outlives
     /// combat and so is not the same question as `attacking`.
     pub(super) attacked_this_turn: bool,
+    /// Whether it attacked during its controller's previous turn. Answered
+    /// where the snapshot is built, because the turn count it is measured
+    /// against belongs to the game rather than to the permanent.
+    pub(super) attacked_during_controllers_last_turn: bool,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

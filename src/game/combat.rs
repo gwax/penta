@@ -117,6 +117,7 @@ impl Game {
             .is_some_and(|permanent| {
                 self.permanent_has_executable_keyword(permanent, KeywordAbility::Vigilance)
             });
+        let turns_started = self.turns_started;
         if let Some(permanent) = self
             .battlefield
             .iter_mut()
@@ -126,6 +127,10 @@ impl Game {
             permanent.attack_defender = Some(defender);
             permanent.attacked_this_turn = true;
             permanent.attacks_this_turn = permanent.attacks_this_turn.saturating_add(1);
+            permanent.last_attacked_turn = Some((
+                permanent.controller,
+                turns_started[permanent.controller.index()],
+            ));
             if !vigilance {
                 // Tapping is part of the single CR 508.1 declaration. Commit
                 // the state now for later attacker legality, but defer its

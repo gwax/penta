@@ -127,6 +127,7 @@ impl Game {
             attacking: false,
             // A card outside the battlefield is not a tapped permanent.
             tapped: false,
+            attacked_during_controllers_last_turn: false,
             attacked_this_turn: false,
         })
     }

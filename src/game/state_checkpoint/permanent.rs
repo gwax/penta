@@ -70,6 +70,9 @@ pub(super) fn permanent_snapshot(
             .collect(),
         regeneration_shields: permanent.regeneration_shields,
         attacked_this_turn: permanent.attacked_this_turn,
+        last_attacked_turn: permanent
+            .last_attacked_turn
+            .map(|(player, turns)| (player.index(), turns)),
         attacks_this_turn: permanent.attacks_this_turn,
         damage_sources: permanent.damage_sources.iter().map(|id| id.0).collect(),
         dealt_damage_to_opponent_this_turn: permanent.dealt_damage_to_opponent_this_turn,

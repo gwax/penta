@@ -99,6 +99,8 @@ impl Game {
             attacking: permanent.attacking,
             tapped: permanent.tapped,
             attacked_this_turn: permanent.attacked_this_turn,
+            attacked_during_controllers_last_turn: self
+                .attacked_during_controllers_last_turn(permanent),
         }
     }
 
@@ -155,7 +157,21 @@ impl Game {
             attacking: permanent.attacking,
             tapped: permanent.tapped,
             attacked_this_turn: permanent.attacked_this_turn,
+            attacked_during_controllers_last_turn: self
+                .attacked_during_controllers_last_turn(permanent),
         }
+    }
+
+    /// Whether this permanent attacked during its controller's previous turn.
+    ///
+    /// The recorded turn count belongs to whoever controlled it at the time,
+    /// so a permanent that has changed hands since is not answering about the
+    /// turn its current controller just took.
+    fn attacked_during_controllers_last_turn(&self, permanent: &Permanent) -> bool {
+        permanent.last_attacked_turn.is_some_and(|(player, turn)| {
+            player == permanent.controller
+                && turn + 1 == self.turns_started[permanent.controller.index()]
+        })
     }
 
     pub(super) fn battlefield_exit_snapshot(

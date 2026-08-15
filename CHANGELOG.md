@@ -63,6 +63,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"If it attacked during your last turn."** History rather than turn state:
+  the answer has to outlive the cleanup that clears "attacked this turn", so
+  the turn a creature last swung on is recorded alongside who controlled it
+  then. The condition sits on each static's recipient, so the prohibition is
+  read live -- nothing is installed when the creature attacks and nothing has
+  to expire when it stops being true. Giant Turtle, Goblin Rock Sled, and
+  Tangle Kelp.
+
 - **"This creature assigns no combat damage this turn."** A constraint on the
   assignment rather than a shield over the result: a creature under it is not
   asked how to divide its damage at all, so trample has nothing to spill and

@@ -116,6 +116,11 @@ pub enum ObjectPredicateDef {
     /// A creature that was declared as an attacker at any point this turn,
     /// whether or not it is still attacking or even still in combat.
     AttackedThisTurn,
+    /// A creature that was declared as an attacker during its controller's
+    /// previous turn. History rather than turn state, and the counterpart of
+    /// [`Self::AttackedThisTurn`] one turn back: a creature that has changed
+    /// hands since does not answer about its new controller's last turn.
+    AttackedDuringControllersLastTurn,
     All(&'static [ObjectPredicateDef]),
     AnyOf(&'static [ObjectPredicateDef]),
     Not(&'static ObjectPredicateDef),

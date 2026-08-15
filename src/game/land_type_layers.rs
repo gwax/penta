@@ -494,6 +494,7 @@ impl Game {
             | ObjectPredicateDef::AttachedTo(_)
             | ObjectPredicateDef::AttachedToSource
             | ObjectPredicateDef::AttackedThisTurn
+            | ObjectPredicateDef::AttackedDuringControllersLastTurn
             | ObjectPredicateDef::HasNonManaActivatedAbility
             | ObjectPredicateDef::Special(_) => false,
         }

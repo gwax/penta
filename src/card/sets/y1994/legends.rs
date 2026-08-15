@@ -2445,8 +2445,34 @@ pub(in crate::card::sets) static FLORAL_SPUZZEM: CardRecord = CardRecord::new(
     ),
 );
 
+/// The condition lives on the recipient, so the prohibition is read live: it
+/// applies on the turn after the Turtle swung and lifts on the one after
+/// that, without anything being installed or expired.
+static GIANT_TURTLE_RESTING: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Source,
+        ObjectPredicateDef::AttackedDuringControllersLastTurn,
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Any,
+);
+
 // LEG 188 — Giant Turtle
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature can't attack if it attacked during your last turn”.
+pub(in crate::card::sets) static GIANT_TURTLE: CardRecord = CardRecord::new(
+    cards::GIANT_TURTLE,
+    "Giant Turtle",
+    CardArt::new("534aae13-58cb-4ffb-aa47-7420435282c9", "Jeff A. Menges"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Turtle"], 2, 4).with_ability(
+        AbilityDef::static_ability(
+            "This creature can't attack if it attacked during your last turn.",
+            EffectDef::StaticApply {
+                recipient: GIANT_TURTLE_RESTING,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotAttack),
+            },
+        ),
+    ),
+);
 
 // LEG 189 — Glyph of Reincarnation
 // Audit: blocked — Needs a duration-scoped prohibition on creating or applying regeneration shields for “Destroy all creatures that were blocked by target Wall this turn. They can't be regenerated. For each creature that died this way, put a creature card from the graveyard of the player…”.
@@ -4359,6 +4385,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &EMERALD_DRAGONFLY,
     &FIRE_SPRITES,
     &FLORAL_SPUZZEM,
+    &GIANT_TURTLE,
     &HORNET_COBRA,
     &KILLER_BEES,
     &LIVING_PLANE,

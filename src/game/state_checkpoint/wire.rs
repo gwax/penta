@@ -592,6 +592,10 @@ fn parse_permanent(
     permanent.exile_instead_of_dying = state.exile_instead_of_dying;
     permanent.regeneration_shields = state.regeneration_shields;
     permanent.attacked_this_turn = state.attacked_this_turn;
+    permanent.last_attacked_turn = state
+        .last_attacked_turn
+        .map(|(player, turns)| player_from_index(player).map(|player| (player, turns)))
+        .transpose()?;
     permanent.attacks_this_turn = state.attacks_this_turn;
     permanent.damage_sources = ids(&state.damage_sources);
     permanent.dealt_damage_to_opponent_this_turn = state.dealt_damage_to_opponent_this_turn;

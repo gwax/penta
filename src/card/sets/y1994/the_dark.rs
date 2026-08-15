@@ -470,8 +470,49 @@ static WATER_WURM_OPPONENT_ISLAND: ObjectQueryDef = ObjectQueryDef::matching(
     PlayerRelation::Opponent,
 );
 
+/// The condition sits on the recipient rather than on the Aura, so the Kelp
+/// holds a creature down only on the untap step after it swung. A creature
+/// that stayed home unties itself.
+static TANGLE_KELP_HOST_THAT_ATTACKED: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::AttachedToSource,
+        ObjectPredicateDef::AttackedDuringControllersLastTurn,
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Any,
+);
+
 // DRK 37 — Tangle Kelp
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Enchanted creature doesn't untap during its controller's untap step if it attacked during its controller's last turn”.
+pub(in crate::card::sets) static TANGLE_KELP: CardRecord = CardRecord::new(
+    cards::TANGLE_KELP,
+    "Tangle Kelp",
+    CardArt::new("8ba55fc4-62bb-4515-a209-e914d8cbb303", "Rob Alexander"),
+    CardSet::TheDark,
+    CardRules::new_enchantment(mana_cost!("{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::triggered(
+                "When this Aura enters, tap enchanted creature.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                EffectDef::Tap {
+                    object: EffectRecipientDef::AttachedPermanent,
+                },
+            ),
+            AbilityDef::static_ability(
+                "Enchanted creature doesn't untap during its controller's untap step if it \
+                 attacked during its controller's last turn.",
+                EffectDef::StaticApply {
+                    recipient: TANGLE_KELP_HOST_THAT_ATTACKED,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+                },
+            ),
+        ]),
+);
 
 // DRK 38 — Water Wurm
 pub(in crate::card::sets) static WATER_WURM: CardRecord = CardRecord::new(
@@ -896,8 +937,43 @@ static GOBLINS_OF_THE_FLARG_DWARF_CONDITION: TriggerConditionDef =
         amount: 1,
     };
 
+static ROCK_SLED_THAT_ATTACKED: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Source,
+        ObjectPredicateDef::AttackedDuringControllersLastTurn,
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Any,
+);
+
+static DEFENDER_CONTROLS_A_MOUNTAIN: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Opponent,
+);
+
 // DRK 67 — Goblin Rock Sled
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “This creature doesn't untap during your untap step if it attacked during your last turn”.
+pub(in crate::card::sets) static GOBLIN_ROCK_SLED: CardRecord = CardRecord::new(
+    cards::GOBLIN_ROCK_SLED,
+    "Goblin Rock Sled",
+    CardArt::new("0f0b49dc-da11-4397-8b12-e85b75fc8e63", "Dennis Detwiller"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin"], 3, 1).with_abilities(&[
+        abilities::trample(),
+        AbilityDef::static_ability(
+            "This creature doesn't untap during your untap step if it attacked during your last \
+             turn.",
+            EffectDef::StaticApply {
+                recipient: ROCK_SLED_THAT_ATTACKED,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+            },
+        ),
+        AbilityDef::static_ability(
+            "This creature can't attack unless defending player controls a Mountain.",
+            EffectDef::CannotAttackUnless(&DEFENDER_CONTROLS_A_MOUNTAIN),
+        ),
+    ]),
+);
 
 // DRK 68 — Goblin Shrine
 // Audit: blocked — Needs a static condition that reads the enchanted land's current basic type before applying the subtype-wide modifier for “As long as enchanted land is a basic Mountain, Goblin creatures get +1/+0”.
@@ -1774,6 +1850,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MERFOLK_ASSASSIN,
     &RIPTIDE,
     &SUNKEN_CITY,
+    &TANGLE_KELP,
     &WATER_WURM,
     &ASHES_TO_ASHES,
     &BOG_IMP,
@@ -1790,6 +1867,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FISSURE,
     &GOBLIN_DIGGING_TEAM,
     &GOBLIN_HERO,
+    &GOBLIN_ROCK_SLED,
     &GOBLINS_OF_THE_FLARG,
     &INFERNO,
     &ORC_GENERAL,
