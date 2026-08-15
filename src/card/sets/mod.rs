@@ -339,8 +339,6 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::ChainLightning => &y1994::legends::CHAIN_LIGHTNING.rules,
         CardBehavior::Fireball => &y1993::alpha::FIREBALL.rules,
         CardBehavior::Fork => &y1993::alpha::FORK.rules,
-        CardBehavior::Smoke => &y1993::alpha::SMOKE.rules,
-        CardBehavior::WinterOrb => &y1993::alpha::WINTER_ORB.rules,
         CardBehavior::GoblinGrenade => &y1994::fallen_empires::GOBLIN_GRENADE.rules,
         CardBehavior::FellwarStone => &y1994::the_dark::FELLWAR_STONE.rules,
         CardBehavior::Balance => &y1993::alpha::BALANCE.rules,

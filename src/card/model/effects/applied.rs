@@ -151,6 +151,14 @@ pub enum AppliedRuleDef {
         source: ObjectRefDef,
         destination: ObjectRefDef,
     },
+    /// The affected player may untap at most one matching permanent during
+    /// their untap step.
+    ///
+    /// A cap on the turn-based action, not a prohibition on untapping: the
+    /// player still chooses which one, and anything that untaps a permanent
+    /// outside the untap step is untouched. Several of these compose, each
+    /// capping its own group.
+    UntapAtMostOne(ObjectPredicateDef),
     /// The affected player cannot take matching cast or land-play actions.
     /// The recipient and lifetime live on `StaticApply` or `Apply`, just as
     /// they do for object-facing applied rules.

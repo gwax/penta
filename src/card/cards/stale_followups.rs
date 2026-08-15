@@ -87,3 +87,4 @@ pub const ANIMATE_WALL: CardDefinitionId = CardDefinitionId(1731);
 pub const WALL_OF_WONDER: CardDefinitionId = CardDefinitionId(1732);
 pub const INFERNAL_MEDUSA: CardDefinitionId = CardDefinitionId(1733);
 pub const VENOM: CardDefinitionId = CardDefinitionId(1734);
+pub const DAMPING_FIELD: CardDefinitionId = CardDefinitionId(1735);

@@ -103,7 +103,21 @@ pub(in crate::card::sets) static CIRCLE_OF_PROTECTION_ARTIFACTS: CardRecord = Ca
 );
 
 // ATQ 5 — Damping Field
-// Audit: blocked — Needs a persistent tap/untap restriction or event relation for “Players can't untap more than one artifact during their untap steps”.
+pub(in crate::card::sets) static DAMPING_FIELD: CardRecord = CardRecord::new(
+    cards::DAMPING_FIELD,
+    "Damping Field",
+    CardArt::new("229b1109-4a8d-49d1-9c28-04799aa719a7", "Justin Hampton"),
+    CardSet::Antiquities,
+    CardRules::new_enchantment(mana_cost!("{2}{W}")).with_ability(AbilityDef::static_ability(
+        "Players can't untap more than one artifact during their untap steps.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::players(PlayerSetDef::All),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::UntapAtMostOne(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+            )),
+        },
+    )),
+);
 
 /// "As long as this creature is untapped": the condition rides on the
 /// recipient, so tapping it turns the redirection off and untapping turns it
@@ -1506,6 +1520,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARGIVIAN_ARCHAEOLOGIST,
     &ARGIVIAN_BLACKSMITH,
     &CIRCLE_OF_PROTECTION_ARTIFACTS,
+    &DAMPING_FIELD,
     &MARTYRS_OF_KORLIS,
     &REVERSE_POLARITY,
     &ENERGY_FLUX,

@@ -215,6 +215,11 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
         AppliedEffectDef::Rule(AppliedRuleDef::LimitDamage { matcher, .. }) => {
             static_damage_matcher_supported(matcher)
         }
+        // Read by the untap procedure, which walks the battlefield for the
+        // same reason: the cap names a player, not a permanent.
+        AppliedEffectDef::Rule(AppliedRuleDef::UntapAtMostOne(predicate)) => {
+            static_object_predicate_supported(predicate)
+        }
         AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
     }
 }
@@ -283,6 +288,7 @@ fn static_object_applied_effect_supported(
         | AppliedEffectDef::Rule(
             AppliedRuleDef::CannotBeCountered
             | AppliedRuleDef::CannotPlay(_)
+            | AppliedRuleDef::UntapAtMostOne(_)
             | AppliedRuleDef::RedirectDamageFromTo { .. },
         ) => false,
         AppliedEffectDef::Rule(

@@ -1,5 +1,5 @@
 use super::{
-    Action, AlternativeCastKindDef, CardBehavior, CardDefinitionId, CardType, CombatDamageStage,
+    Action, AlternativeCastKindDef, CardBehavior, CardDefinitionId, CombatDamageStage,
     CommittedTriggerEvent, ContinuousEffectExpiration, DecisionContinuation, DecisionOption,
     DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
     DeferredBeginTurnEffect, EffectResolutionContext, Game, GameEvent, GameObjectId, GameResult,
@@ -11,7 +11,7 @@ use super::{
 mod begin_turn;
 
 impl Game {
-    fn skips_turn_based_untap(&self, permanent: &super::Permanent) -> bool {
+    pub(in crate::game) fn skips_turn_based_untap(&self, permanent: &super::Permanent) -> bool {
         permanent.skipped_untap_steps > 0 || self.does_not_untap_during_untap_step(permanent)
     }
 
@@ -28,40 +28,36 @@ impl Game {
     }
 
     pub(super) fn untap_actions(&self, player: PlayerId) -> Vec<Action> {
-        let lands: Vec<_> = self
+        let untappable: Vec<GameObjectId> = self
             .battlefield
             .iter()
             .filter(|permanent| {
                 permanent.controller == player
                     && permanent.tapped
                     && !self.skips_turn_based_untap(permanent)
-                    && self
-                        .permanent_types(permanent)
-                        .is_some_and(|types| types.contains(CardType::Land))
             })
             .map(|permanent| permanent.card.id)
             .collect();
-        let creatures: Vec<_> = self
-            .battlefield
-            .iter()
-            .filter(|permanent| {
-                permanent.controller == player
-                    && permanent.tapped
-                    && !self.skips_turn_based_untap(permanent)
-                    && self.power(permanent).is_some()
-            })
-            .map(|permanent| permanent.card.id)
+        // Each cap narrows its own group to one survivor, so a permanent
+        // covered by two caps cannot let a second one through either.
+        let groups: Vec<Vec<GameObjectId>> = self
+            .untap_limits(player)
+            .into_iter()
+            .map(|limit| self.permanents_under_untap_limit(player, limit))
             .collect();
-        let land_choices = if self.winter_orb_active() {
-            one_or_none(&lands)
-        } else {
-            vec![lands]
-        };
-        let creature_choices = if self.count_behavior(CardBehavior::Smoke) > 0 {
-            one_or_none(&creatures)
-        } else {
-            vec![creatures]
-        };
+        let mut choices: Vec<Vec<GameObjectId>> = vec![untappable];
+        for group in &groups {
+            choices = choices
+                .iter()
+                .flat_map(|chosen| {
+                    one_or_none(group).into_iter().map(move |kept| {
+                        let mut next = chosen.clone();
+                        next.retain(|id| !group.contains(id) || kept.contains(id));
+                        next
+                    })
+                })
+                .collect();
+        }
         // A permanent that may choose not to untap turns its own untap into
         // an independent yes/no, so each combination of those choices is a
         // separate declaration.
@@ -76,20 +72,14 @@ impl Game {
             .map(|permanent| permanent.card.id)
             .collect::<Vec<_>>();
         let mut actions = Vec::new();
-        for land in &land_choices {
-            for creature in &creature_choices {
-                let mut permanents = land.clone();
-                permanents.extend(creature);
-                permanents.sort_unstable();
-                permanents.dedup();
-                for skipped in Self::subsets_of(&optional) {
-                    let mut choice = permanents.clone();
-                    choice.retain(|id| !skipped.contains(id));
-                    if !actions.contains(&Action::ChooseUntap {
-                        permanents: choice.clone(),
-                    }) {
-                        actions.push(Action::ChooseUntap { permanents: choice });
-                    }
+        for permanents in &choices {
+            for skipped in Self::subsets_of(&optional) {
+                let mut choice = permanents.clone();
+                choice.retain(|id| !skipped.contains(id));
+                if !actions.contains(&Action::ChooseUntap {
+                    permanents: choice.clone(),
+                }) {
+                    actions.push(Action::ChooseUntap { permanents: choice });
                 }
             }
         }
@@ -457,22 +447,12 @@ impl Game {
         // combat did.
         self.damage_taken_this_turn = [0; 2];
         self.damage_taken_by_group_this_turn = [[0; crate::card::DamageSourceGroupDef::COUNT]; 2];
-        let winter_orb = self.winter_orb_active();
-        let smoke = self.count_behavior(CardBehavior::Smoke) > 0;
-        let restricted_lands: Vec<_> = self
-            .battlefield
-            .iter()
-            .filter(|permanent| {
-                self.permanent_types(permanent)
-                    .is_some_and(|types| types.contains(CardType::Land))
-            })
-            .map(|permanent| permanent.card.id)
-            .collect();
-        let restricted_creatures: Vec<_> = self
-            .battlefield
-            .iter()
-            .filter(|permanent| self.power(permanent).is_some())
-            .map(|permanent| permanent.card.id)
+        // Everything a cap covers waits for the player to choose; everything
+        // else untaps now.
+        let capped: Vec<GameObjectId> = self
+            .untap_limits(self.active_player)
+            .into_iter()
+            .flat_map(|limit| self.permanents_under_untap_limit(self.active_player, limit))
             .collect();
         let untap_restricted: Vec<_> = self
             .battlefield
@@ -483,9 +463,9 @@ impl Game {
         self.untap_pending = false;
         for permanent in &mut self.battlefield {
             if permanent.controller == self.active_player {
-                let restricted = (winter_orb && restricted_lands.contains(&permanent.card.id))
-                    || (smoke && restricted_creatures.contains(&permanent.card.id));
-                if restricted && permanent.tapped && !untap_restricted.contains(&permanent.card.id)
+                if capped.contains(&permanent.card.id)
+                    && permanent.tapped
+                    && !untap_restricted.contains(&permanent.card.id)
                 {
                     self.untap_pending = true;
                 } else if !untap_restricted.contains(&permanent.card.id) {
@@ -639,12 +619,6 @@ impl Game {
         self.pending_combat_attackers.clear();
         self.combat_damage_stage = CombatDamageStage::NotStarted;
         self.combat_blocked_attackers.clear();
-    }
-
-    pub(super) fn winter_orb_active(&self) -> bool {
-        self.battlefield.iter().any(|permanent| {
-            !permanent.tapped && self.effective_behavior(permanent) == Some(CardBehavior::WinterOrb)
-        })
     }
 
     pub(super) fn draw_card(&mut self, player: PlayerId) -> Option<GameObjectId> {

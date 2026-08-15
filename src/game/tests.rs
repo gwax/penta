@@ -607,6 +607,7 @@ mod turn_and_loyalty;
 mod tutors_and_fetch_lands;
 mod unblocked_attackers;
 mod unleash;
+mod untap_caps;
 mod untap_skips;
 mod until_end_of_combat;
 mod wards;

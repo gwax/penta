@@ -529,6 +529,12 @@ fn validate_applied_effect_shapes(
             }
             Ok(())
         }
+        // The cap names the players it applies to; the predicate picks out
+        // which of their permanents it covers.
+        AppliedEffectDef::Rule(AppliedRuleDef::UntapAtMostOne(predicate)) => {
+            validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
+            validate_object_predicate_shape(predicate, targets)
+        }
         AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(matcher)) => {
             validate_recipient_shape(recipient, targets, RecipientExpectation::Object)?;
             validate_damage_matcher_shape(matcher, targets)

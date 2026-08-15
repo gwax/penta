@@ -250,7 +250,7 @@ impl Game {
         }
     }
 
-    fn static_player_recipient_matches(
+    pub(in crate::game) fn static_player_recipient_matches(
         &self,
         recipient: EffectRecipientDef,
         source: &Permanent,

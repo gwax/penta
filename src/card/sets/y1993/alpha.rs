@@ -3029,11 +3029,15 @@ pub(in crate::card::sets) static SMOKE: CardRecord = CardRecord::new(
     "Smoke",
     CardArt::new("7c67788e-d713-47c3-ab9f-b8a6212ae24f", "Jesper Myrfors"),
     CardSet::Alpha,
-    CardRules::new_enchantment(mana_cost!("{R}{R}")).with_abilities(&[AbilityDef::custom_full(
+    CardRules::new_enchantment(mana_cost!("{R}{R}")).with_ability(AbilityDef::static_ability(
         "Players can't untap more than one creature during their untap steps.",
-        CardBehavior::Smoke,
-        "The untap restriction is implemented by the shared untap procedure.",
-    )]),
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::players(PlayerSetDef::All),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::UntapAtMostOne(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )),
+        },
+    )),
 );
 
 /// The Giant throws a creature small enough to lift, and it does not survive
@@ -4691,19 +4695,30 @@ pub(in crate::card::sets) static TIME_VAULT: CardRecord = CardRecord::new(
     ]),
 );
 
+/// The cap names every player, and the Orb's own condition sits outside it:
+/// tapping the Orb turns the whole clause off without touching anyone's
+/// lands.
+static WINTER_ORB_LIMIT: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::players(PlayerSetDef::All),
+    effect: AppliedEffectDef::Rule(AppliedRuleDef::UntapAtMostOne(ObjectPredicateDef::HasType(
+        CardType::Land,
+    ))),
+};
+
 // LEA 275 — Winter Orb
 pub(in crate::card::sets) static WINTER_ORB: CardRecord = CardRecord::new(
     cards::WINTER_ORB,
     "Winter Orb",
     CardArt::new("9359f60c-9a27-4e53-b35b-964a121a6fba", "Mark Tedin"),
     CardSet::Alpha,
-    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
-        AbilityDef::custom_full(
-            "As long as this artifact is untapped, players can't untap more than one land during their untap steps.",
-            CardBehavior::WinterOrb,
-            "The conditional untap restriction is implemented by the shared untap procedure.",
-        ),
-    ]),
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::static_ability(
+        "As long as this artifact is untapped, players can't untap more than one land during \
+         their untap steps.",
+        EffectDef::IfCondition {
+            condition: &TriggerConditionDef::SourceUntapped,
+            then: &WINTER_ORB_LIMIT,
+        },
+    )),
 );
 
 // LEA 276 — Wooden Sphere

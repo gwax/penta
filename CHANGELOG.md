@@ -68,6 +68,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Players can't untap more than one ... during their untap steps."** Winter
+  Orb and Smoke each carried their own version of this in the untap procedure,
+  one for lands and one for creatures. It is now a player-facing static naming
+  the group it caps, so several compose and each narrows only its own. Damping
+  Field joins them, and the `WinterOrb` and `Smoke` behaviors are gone.
+
 - **The halves of "blocks or becomes blocked by."** The union was already
   expressible; these are the two directions on their own, for the cards that
   print only one. Both read the same ordered pair of events and tell the sides
