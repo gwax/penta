@@ -32,6 +32,7 @@ impl Game {
             | ObjectPredicateDef::Color(_)
             | ObjectPredicateDef::ColorCount(_)
             | ObjectPredicateDef::Subtype(_)
+            | ObjectPredicateDef::Named(_)
             | ObjectPredicateDef::ManaValueAtMost(_)
             | ObjectPredicateDef::ManaValueEqualTo(_)
             | ObjectPredicateDef::ManaValueAtMostValue(_)

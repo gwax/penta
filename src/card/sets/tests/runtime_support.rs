@@ -33,6 +33,7 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::Color(_)
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
+        | ObjectPredicateDef::Named(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
@@ -134,6 +135,7 @@ pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
             | KeywordAbility::LegendaryLandwalk
             | KeywordAbility::AttacksEachCombatIfAble
             | KeywordAbility::Banding
+            | KeywordAbility::BandsWithOther(_)
             | KeywordAbility::Unleash
             | KeywordAbility::ProtectionFrom(_)
     )

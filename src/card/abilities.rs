@@ -6,13 +6,14 @@
 use super::model::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef,
-    AppliedRuleDef, BasicLandType, BattlefieldEntryModificationDef, CardType, ChoiceVisibilityDef,
-    ChooseDef, ConditionDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
-    DamageRecipientMatcherDef, EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility,
-    ManaColor, ManaCost, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetDef, PartitionItemsDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    ScaledValueDef, SplitIntoPilesDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    AppliedRuleDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef, CardType,
+    ChoiceVisibilityDef, ChooseDef, ConditionDef, CounterKind, DamageEventMatcherDef,
+    DamagePreventionDef, DamageRecipientMatcherDef, EffectDef, EffectPaymentDef,
+    EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef, SplitIntoPilesDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -114,6 +115,17 @@ pub const fn double_strike() -> AbilityDef {
 #[must_use]
 pub const fn banding() -> AbilityDef {
     keyword("Banding", KeywordAbility::Banding)
+}
+
+/// "Bands with other X", the banding variant CR 702.21j narrows to a quality.
+/// The text names the quality, because it is what the printed clause says.
+#[must_use]
+pub const fn bands_with_other(quality: BandingQuality) -> AbilityDef {
+    let text = match quality {
+        BandingQuality::LegendaryCreatures => "Bands with other legendary creatures",
+        BandingQuality::WolvesOfTheHunt => "Bands with other creatures named Wolves of the Hunt",
+    };
+    keyword(text, KeywordAbility::BandsWithOther(quality))
 }
 
 #[must_use]

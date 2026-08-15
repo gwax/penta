@@ -37,6 +37,9 @@ pub enum SacrificedAmountDef {
 pub enum AbilityPredicateDef {
     Any,
     Keyword(KeywordAbility),
+    /// Every "bands with other" ability, whatever quality it names. Two cards
+    /// strip them all at once, and neither says which qualities it means.
+    AnyBandsWithOther,
 }
 /// An event that a replacement ability can modify before it is committed.
 ///

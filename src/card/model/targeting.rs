@@ -75,6 +75,10 @@ pub enum ObjectPredicateDef {
     /// Has the same printed name as the ability's source. Negate it for
     /// "not named <this card>".
     SharesNameWithSource,
+    /// Bears exactly this name. Printed name matching is rare enough that the
+    /// name is written out; "bands with other creatures named X" is the one
+    /// place the rules ask for it without a source to compare against.
+    Named(&'static str),
     /// Currently attacking or blocking. Only a battlefield object can be, so
     /// this never matches a card or a spell.
     AttackingOrBlocking,

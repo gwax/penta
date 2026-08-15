@@ -99,6 +99,15 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, and Nalathni
   Dragon.
 
+- **"Bands with other."** CR 702.21j's banding variant, narrowed to a quality:
+  every member of the band must have it and at least one must carry the
+  ability, and the damage rule wants two qualifying creatures rather than one.
+  The five Legends band lands grant it to legendary creatures of their own
+  color, Master of the Hunt's Wolves print it against their own name, and
+  Tolaria and Shelkin Brownie take it away. Adventurers' Guildhouse, Cathedral
+  of Serra, Mountain Stronghold, Seafarer's Quay, Unholy Citadel, Tolaria,
+  Master of the Hunt, and Shelkin Brownie.
+
 - **Blocking an additional creature.** A creature blocks one attacker unless a
   card says otherwise. Two-Headed Giant of Foriys.
 

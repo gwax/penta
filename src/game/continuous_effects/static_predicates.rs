@@ -121,6 +121,7 @@ impl Game {
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::DebutSet(_)
             | ObjectPredicateDef::SharesNameWithSource
+            | ObjectPredicateDef::Named(_)
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::HasKeyword(_)
             | ObjectPredicateDef::HasNonManaActivatedAbility

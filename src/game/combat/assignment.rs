@@ -7,7 +7,8 @@
 //! banding, which is the only reason the two directions share a queue.
 
 use super::super::{
-    Action, CombatDamageAssignment, Game, GameObjectId, KeywordAbility, PlayerId, Target,
+    Action, BandingQuality, CombatDamageAssignment, Game, GameObjectId, KeywordAbility, PlayerId,
+    Target,
 };
 use super::damage_distributions;
 
@@ -28,19 +29,49 @@ impl Game {
         else {
             return self.active_player;
         };
-        let banded = if permanent.attacking {
-            self.battlefield.iter().find(|other| {
-                other.is_blocking(source)
-                    && self.permanent_has_executable_keyword(other, KeywordAbility::Banding)
+        let opposition: Vec<_> = self
+            .combat_damage_recipients(source)
+            .into_iter()
+            .filter_map(|target| match target {
+                Target::Permanent(id) => Some(id),
+                Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
             })
-        } else {
-            self.battlefield.iter().find(|other| {
-                permanent.is_blocking(other.card.id)
-                    && other.attacking
-                    && self.permanent_has_executable_keyword(other, KeywordAbility::Banding)
-            })
-        };
-        banded.map_or(permanent.controller, |creature| creature.controller)
+            .collect();
+
+        // Plain banding: one creature with it on the other side is enough.
+        let banded = opposition.iter().find_map(|id| {
+            let other = self.battlefield.iter().find(|other| other.card.id == *id)?;
+            self.permanent_has_executable_keyword(other, KeywordAbility::Banding)
+                .then_some(other.controller)
+        });
+        if let Some(controller) = banded {
+            return controller;
+        }
+
+        // "Bands with other" asks for two: the printed rule is at least two
+        // creatures of the quality, one of which carries the ability. One
+        // legendary creature alone does not take the choice.
+        for quality in BandingQuality::ALL {
+            let qualifying: Vec<_> = opposition
+                .iter()
+                .copied()
+                .filter(|id| self.matches_banding_quality(*id, quality))
+                .collect();
+            if qualifying.len() >= 2
+                && qualifying
+                    .iter()
+                    .any(|id| self.has_bands_with_other(*id, quality))
+                && let Some(controller) = qualifying.first().and_then(|id| {
+                    self.battlefield
+                        .iter()
+                        .find(|other| other.card.id == *id)
+                        .map(|other| other.controller)
+                })
+            {
+                return controller;
+            }
+        }
+        permanent.controller
     }
 
     /// The creatures this one deals its combat damage to, in object order: an

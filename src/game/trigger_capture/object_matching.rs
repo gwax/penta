@@ -170,6 +170,9 @@ impl Game {
                 let name = self.object_card_name(object.id);
                 name.is_some() && name == self.object_card_name(source)
             }
+            ObjectPredicateDef::Named(name) => self
+                .object_card_name(object.id)
+                .is_some_and(|actual| actual == name),
             ObjectPredicateDef::HasKeyword(keyword) => keyword
                 .simple_index()
                 .is_some_and(|index| object.keywords & (1 << index) != 0),

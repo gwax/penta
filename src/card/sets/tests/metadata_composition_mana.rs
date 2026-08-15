@@ -218,7 +218,14 @@ fn every_builtin_land_without_mana_is_named_explicitly() {
             // Sacrifices creatures for life and taps for nothing.
             "Diamond Valley",
             "Oasis",
+            // The five Legends band lands do nothing but hand out "bands with
+            // other legendary creatures", one color each.
+            "Adventurers' Guildhouse",
+            "Cathedral of Serra",
+            "Mountain Stronghold",
+            "Seafarer's Quay",
             "The Tabernacle at Pendrell Vale",
+            "Unholy Citadel",
             "Maze of Ith",
             "Safe Haven",
             "Bloodstained Mire",

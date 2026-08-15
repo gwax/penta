@@ -11,7 +11,7 @@
 //! works; merging two groups at a time reaches the same set of bands through
 //! actions the legal-action list can hold.
 
-use super::{Action, GameObjectId, KeywordAbility, Permanent, PlayerId};
+use super::{Action, BandingQuality, GameObjectId, KeywordAbility, Permanent, PlayerId};
 
 impl super::Game {
     /// Every creature banded with this one, itself included. An attacker with
@@ -54,9 +54,61 @@ impl super::Game {
         })
     }
 
-    /// Whether these two groups may be declared as one band: the printed
-    /// limit is at most one member without banding, which also guarantees at
-    /// least one with it, since a merged group always has two members.
+    /// Whether this creature carries "bands with other" naming this quality.
+    /// The two are separate questions: a creature can have one quality's
+    /// ability and not another's, and neither implies plain banding.
+    pub(super) fn has_bands_with_other(
+        &self,
+        creature: GameObjectId,
+        quality: BandingQuality,
+    ) -> bool {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == creature)
+            .is_some_and(|permanent| {
+                self.permanent_has_executable_keyword(
+                    permanent,
+                    KeywordAbility::BandsWithOther(quality),
+                )
+            })
+    }
+
+    /// Whether this creature is the kind of thing a band on this quality is
+    /// made of. The ability names a quality every member must have, which is
+    /// what replaces plain banding's single free passenger.
+    pub(super) fn matches_banding_quality(
+        &self,
+        creature: GameObjectId,
+        quality: BandingQuality,
+    ) -> bool {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == creature)
+            .is_some_and(|permanent| {
+                let characteristics = self.targeting_event_object(permanent);
+                self.trigger_object_matches(*quality.predicate(), &characteristics, creature, false)
+            })
+    }
+
+    /// Whether these creatures could be a band on some quality: CR 702.21j
+    /// wants every member to have it and at least one to carry the ability.
+    fn qualify_as_a_band(&self, members: &[GameObjectId]) -> bool {
+        BandingQuality::ALL.iter().any(|quality| {
+            members
+                .iter()
+                .any(|member| self.has_bands_with_other(*member, *quality))
+                && members
+                    .iter()
+                    .all(|member| self.matches_banding_quality(*member, *quality))
+        })
+    }
+
+    /// Whether these two groups may be declared as one band.
+    ///
+    /// Plain banding allows at most one member without it, which also
+    /// guarantees at least one with it, since a merged group always has two
+    /// members. "Bands with other" is the other way round: no free passenger,
+    /// but every member sharing the named quality.
     fn groups_may_band(&self, first: GameObjectId, second: GameObjectId) -> bool {
         let (Some(one), Some(other)) = (
             self.attacking_permanent(first),
@@ -64,8 +116,6 @@ impl super::Game {
         ) else {
             return false;
         };
-        // A band attacks one defender as a unit, so creatures pointed at
-        // different players or planeswalkers cannot be in one.
         // A band attacks one defender as a unit, so creatures pointed at
         // different players or planeswalkers cannot be in one.
         if one.attack_defender != other.attack_defender || one.controller != other.controller {
@@ -79,11 +129,12 @@ impl super::Game {
             .into_iter()
             .chain(self.band_group(second))
             .collect();
-        members
+        let plain = members
             .iter()
             .filter(|member| !self.has_banding(**member))
             .count()
-            <= 1
+            <= 1;
+        plain || self.qualify_as_a_band(&members)
     }
 
     /// The bands this player may still form. Each pair is offered once, in

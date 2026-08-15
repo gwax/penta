@@ -203,8 +203,8 @@ fn the_skirmishers_arm_their_band_and_not_the_rest_of_the_attack() {
     );
 }
 
-/// Every identity that prints banding, or hands it out, and whose other
-/// clauses the engine already covers.
+/// Every identity that prints banding or "bands with other", or hands either
+/// out, and whose other clauses the engine already covers.
 #[test]
 fn the_banding_identities_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -220,6 +220,14 @@ fn the_banding_identities_report_complete_coverage() {
         cards::PIKEMEN,
         cards::NALATHNI_DRAGON,
         cards::ICATIAN_SKIRMISHERS,
+        cards::MASTER_OF_THE_HUNT,
+        cards::SHELKIN_BROWNIE,
+        cards::TOLARIA,
+        cards::ADVENTURERS_GUILDHOUSE,
+        cards::CATHEDRAL_OF_SERRA,
+        cards::MOUNTAIN_STRONGHOLD,
+        cards::SEAFARERS_QUAY,
+        cards::UNHOLY_CITADEL,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

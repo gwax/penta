@@ -22,6 +22,7 @@ impl Game {
             ActivationTimingDef::YourUpkeep => {
                 self.active_player == player && self.step == Step::Upkeep
             }
+            ActivationTimingDef::AnyUpkeep => self.step == Step::Upkeep,
             ActivationTimingDef::SorcerySpeed => {
                 self.active_player == player && self.step.is_main() && self.stack.is_empty()
             }

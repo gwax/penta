@@ -11,10 +11,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
-    CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
-    cards,
+    AbilityCoverageDef, AbilityDef, AppliedEffectDef, AppliedRuleDef, BandingQuality, CardArt,
+    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
 
 pub(in crate::card::sets) static GERM_TOKEN_0_0_BLACK: CardRecord = CardRecord::new(
@@ -105,6 +105,19 @@ pub(in crate::card::sets) static WOLF_TOKEN_2_2_GREEN: CardRecord = CardRecord::
     CardArt::new("", ""),
     CardSet::Token,
     CardRules::new_creature_without_mana_cost(&["Wolf"], 2, 2).printed_colors(&[ManaColor::Green]),
+);
+
+/// Master of the Hunt's pack. The name is the whole point: its "bands with
+/// other" names the same name, so the tokens band with each other and with
+/// nothing else.
+pub(in crate::card::sets) static WOLVES_OF_THE_HUNT_TOKEN_1_1_GREEN: CardRecord = CardRecord::new(
+    cards::WOLVES_OF_THE_HUNT_TOKEN_1_1_GREEN,
+    "Wolves of the Hunt",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Wolf"], 1, 1)
+        .printed_colors(&[ManaColor::Green])
+        .with_abilities(&[abilities::bands_with_other(BandingQuality::WolvesOfTheHunt)]),
 );
 
 pub(in crate::card::sets) static WOLF_TOKEN_1_1_BLACK: CardRecord = CardRecord::new(
@@ -479,6 +492,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ELEMENTAL_TOKEN_GREEN_WHITE,
     &SPIRIT_TOKEN_1_1_WHITE,
     &WOLF_TOKEN_2_2_GREEN,
+    &WOLVES_OF_THE_HUNT_TOKEN_1_1_GREEN,
     &WOLF_TOKEN_1_1_BLACK,
     &DOMRI_RADE_EMBLEM,
     &DJINN_TOKEN_5_5_COLORLESS,

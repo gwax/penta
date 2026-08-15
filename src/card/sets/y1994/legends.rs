@@ -2,17 +2,17 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef,
-    AppliedRuleDef, BasicLandType, BattlefieldEntryModificationDef, CardArt, CardBehavior,
-    CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef,
-    ColorSet, ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef,
-    DamageLimitDef, DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceGroupDef,
-    DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectExecutionDef,
-    EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    AppliedRuleDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef, CardArt,
+    CardBehavior, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef,
+    ChooseDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
+    DamageKindDef, DamageLimitDef, DamagePreventionDef, DamageRecipientMatcherDef,
+    DamageSourceGroupDef, DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal, EffectDef,
+    EffectExecutionDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -2759,7 +2759,24 @@ pub(in crate::card::sets) static LIVING_PLANE: CardRecord = CardRecord::new(
 );
 
 // LEG 194 — Master of the Hunt
-// Audit: blocked — Needs the “bands with other” keyword: a banding variant restricted to a quality, whose members must all share it and need no free passenger. Plain banding is implemented. The quality here is a card name, and the token has to print it.
+pub(in crate::card::sets) static MASTER_OF_THE_HUNT: CardRecord = CardRecord::new(
+    cards::MASTER_OF_THE_HUNT,
+    "Master of the Hunt",
+    CardArt::new("4e6bf56e-2d74-4e4d-a667-885853979377", "Jeff A. Menges"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Human"], 2, 2).with_ability(
+        AbilityDef::activated(
+            "{2}{G}{G}: Create a 1/1 green Wolf creature token named Wolves of the Hunt. It \
+             has \"bands with other creatures named Wolves of the Hunt.\"",
+            &[AbilityCostDef::Mana(mana_cost!("{2}{G}{G}"))],
+            EffectDef::CreateToken {
+                token: cards::WOLVES_OF_THE_HUNT_TOKEN_1_1_GREEN,
+                count: ValueDef::Constant(1),
+                tapped: false,
+            },
+        ),
+    ),
+);
 
 // LEG 195 — Moss Monster
 pub(in crate::card::sets) static MOSS_MONSTER: CardRecord = CardRecord::new(
@@ -2893,7 +2910,26 @@ pub(in crate::card::sets) static RADJAN_SPIRIT: CardRecord = CardRecord::new(
 // Audit: blocked — Needs stack targeting and countering of ability objects for “Counter target activated ability from an artifact source”.
 
 // LEG 204 — Shelkin Brownie
-// Audit: blocked — Needs the “bands with other” keyword: a banding variant restricted to a quality, whose members must all share it and need no free passenger. Plain banding is implemented. Removing an ability by keyword is available once there is one to name.
+pub(in crate::card::sets) static SHELKIN_BROWNIE: CardRecord = CardRecord::new(
+    cards::SHELKIN_BROWNIE,
+    "Shelkin Brownie",
+    CardArt::new("fddcc557-871d-425b-b4ee-bc0c9bc717aa", "Douglas Shuler"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Ouphe"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: Target creature loses all \"bands with other\" abilities until end of turn.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::remove_abilities(AbilityPredicateDef::AnyBandsWithOther),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
 
 // LEG 205 — Storm Seeker
 // Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “Storm Seeker deals damage to target player equal to the number of cards in that player's hand”.
@@ -4440,11 +4476,58 @@ pub(in crate::card::sets) static SERPENT_GENERATOR: CardRecord = CardRecord::new
 // LEG 299 — White Mana Battery
 // Audit: blocked — Needs the mana-ability runtime to pay this ability's mana activation cost for “{T}, Remove any number of charge counters from this artifact: Add {W}, then add an additional {W} for each charge counter removed this way”.
 
+/// The clause the five Legends band lands grant. One static rather than five,
+/// because the lands differ only in which color of legend they reach.
+static BANDS_WITH_OTHER_LEGENDS: AbilityDef =
+    abilities::bands_with_other(BandingQuality::LegendaryCreatures);
+
 // LEG 300 — Adventurers' Guildhouse
-// Audit: blocked — Needs the “bands with other” keyword: a banding variant restricted to a quality, whose members must all share it and need no free passenger. Plain banding is implemented.
+pub(in crate::card::sets) static ADVENTURERS_GUILDHOUSE: CardRecord = CardRecord::new(
+    cards::ADVENTURERS_GUILDHOUSE,
+    "Adventurers' Guildhouse",
+    CardArt::new("32865e68-5842-4f17-b2ea-4ffa743b511f", "Tom Wänerstrand"),
+    CardSet::Legends,
+    CardRules::new_land(&[]).with_abilities(&[AbilityDef::static_ability(
+        "Green legendary creatures you control have \"bands with other legendary \
+         creatures.\"",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Supertype(CardSupertype::Legendary),
+                    ObjectPredicateDef::Color(ManaColor::Green),
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::add_ability(&BANDS_WITH_OTHER_LEGENDS),
+        },
+    )]),
+);
 
 // LEG 301 — Cathedral of Serra
-// Audit: blocked — Needs the “bands with other” keyword: a banding variant restricted to a quality, whose members must all share it and need no free passenger. Plain banding is implemented.
+pub(in crate::card::sets) static CATHEDRAL_OF_SERRA: CardRecord = CardRecord::new(
+    cards::CATHEDRAL_OF_SERRA,
+    "Cathedral of Serra",
+    CardArt::new("e65356e6-0ead-49fd-b069-be1ea9b1c105", "Mark Poole"),
+    CardSet::Legends,
+    CardRules::new_land(&[]).with_abilities(&[AbilityDef::static_ability(
+        "White legendary creatures you control have \"bands with other legendary \
+         creatures.\"",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Supertype(CardSupertype::Legendary),
+                    ObjectPredicateDef::Color(ManaColor::White),
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::add_ability(&BANDS_WITH_OTHER_LEGENDS),
+        },
+    )]),
+);
 
 // LEG 302 — Hammerheim
 // Audit: blocked — Needs removing every ability of a class from a target for a duration; the vocabulary grants named abilities but does not take them away.
@@ -4495,7 +4578,28 @@ static PENDELHAVEN_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_on
 )];
 
 // LEG 304 — Mountain Stronghold
-// Audit: blocked — Needs the “bands with other” keyword: a banding variant restricted to a quality, whose members must all share it and need no free passenger. Plain banding is implemented.
+pub(in crate::card::sets) static MOUNTAIN_STRONGHOLD: CardRecord = CardRecord::new(
+    cards::MOUNTAIN_STRONGHOLD,
+    "Mountain Stronghold",
+    CardArt::new("314fd1d7-4bd8-4d95-b7c2-1aa6660ab88a", "Tom Wänerstrand"),
+    CardSet::Legends,
+    CardRules::new_land(&[]).with_abilities(&[AbilityDef::static_ability(
+        "Red legendary creatures you control have \"bands with other legendary \
+         creatures.\"",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Supertype(CardSupertype::Legendary),
+                    ObjectPredicateDef::Color(ManaColor::Red),
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::add_ability(&BANDS_WITH_OTHER_LEGENDS),
+        },
+    )]),
+);
 
 // LEG 305 — Pendelhaven
 // Audit: partial — The target's power and toughness omit modifiers from static continuous effects.
@@ -4543,7 +4647,28 @@ static TABERNACLE_UPKEEP_ABILITY: AbilityDef = AbilityDef::triggered(
 );
 
 // LEG 306 — Seafarer's Quay
-// Audit: blocked — Needs the “bands with other” keyword: a banding variant restricted to a quality, whose members must all share it and need no free passenger. Plain banding is implemented.
+pub(in crate::card::sets) static SEAFARERS_QUAY: CardRecord = CardRecord::new(
+    cards::SEAFARERS_QUAY,
+    "Seafarer's Quay",
+    CardArt::new("66641d88-b3f0-4bcd-8d2d-29aa2de69e30", "Tom Wänerstrand"),
+    CardSet::Legends,
+    CardRules::new_land(&[]).with_abilities(&[AbilityDef::static_ability(
+        "Blue legendary creatures you control have \"bands with other legendary \
+         creatures.\"",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Supertype(CardSupertype::Legendary),
+                    ObjectPredicateDef::Color(ManaColor::Blue),
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::add_ability(&BANDS_WITH_OTHER_LEGENDS),
+        },
+    )]),
+);
 
 // LEG 307 — The Tabernacle at Pendrell Vale
 pub(in crate::card::sets) static THE_TABERNACLE_AT_PENDRELL_VALE: CardRecord = CardRecord::new(
@@ -4562,11 +4687,63 @@ pub(in crate::card::sets) static THE_TABERNACLE_AT_PENDRELL_VALE: CardRecord = C
         )),
 );
 
+/// Two removals in one clause: the printed text takes plain banding and the
+/// variant together, and neither implies the other.
+static TOLARIA_REMOVALS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::remove_abilities(AbilityPredicateDef::Keyword(KeywordAbility::Banding)),
+    AppliedEffectDef::remove_abilities(AbilityPredicateDef::AnyBandsWithOther),
+];
+
 // LEG 308 — Tolaria
-// Audit: blocked — Needs the “bands with other” keyword: a banding variant restricted to a quality, whose members must all share it and need no free passenger. Plain banding is implemented. Removing banding itself is available; removing the variant is what is missing.
+pub(in crate::card::sets) static TOLARIA: CardRecord = CardRecord::new(
+    cards::TOLARIA,
+    "Tolaria",
+    CardArt::new("d43c01b7-443d-4061-a934-6863d230c9b8", "Nicola Leonard"),
+    CardSet::Legends,
+    CardRules::new_land(&[])
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::tap_for(ManaColor::Blue),
+            AbilityDef::activated_with_targets(
+                "{T}: Target creature loses banding and all \"bands with other\" abilities \
+                 until end of turn. Activate only during any upkeep step.",
+                &[AbilityCostDef::TapSource],
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                )],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::Composite(&TOLARIA_REMOVALS),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            )
+            .with_activation_timing(ActivationTimingDef::AnyUpkeep),
+        ]),
+);
 
 // LEG 309 — Unholy Citadel
-// Audit: blocked — Needs the “bands with other” keyword: a banding variant restricted to a quality, whose members must all share it and need no free passenger. Plain banding is implemented.
+pub(in crate::card::sets) static UNHOLY_CITADEL: CardRecord = CardRecord::new(
+    cards::UNHOLY_CITADEL,
+    "Unholy Citadel",
+    CardArt::new("9de534ff-fb48-4692-bd0f-dd237ca28502", "Mark Poole"),
+    CardSet::Legends,
+    CardRules::new_land(&[]).with_abilities(&[AbilityDef::static_ability(
+        "Black legendary creatures you control have \"bands with other legendary \
+         creatures.\"",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Supertype(CardSupertype::Legendary),
+                    ObjectPredicateDef::Color(ManaColor::Black),
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::add_ability(&BANDS_WITH_OTHER_LEGENDS),
+        },
+    )]),
+);
 
 // LEG 310 — Urborg
 // Audit: blocked — Needs a modal choice between two named abilities and the removal of the chosen one; the vocabulary grants named abilities but does not take them away.
@@ -4689,11 +4866,13 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HORNET_COBRA,
     &KILLER_BEES,
     &LIVING_PLANE,
+    &MASTER_OF_THE_HUNT,
     &MOSS_MONSTER,
     &PIXIE_QUEEN,
     &PRADESH_GYPSIES,
     &RABID_WOMBAT,
     &RADJAN_SPIRIT,
+    &SHELKIN_BROWNIE,
     &SUBDUE,
     &SYLVAN_LIBRARY,
     &SYLVAN_PARADISE,
@@ -4756,9 +4935,15 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PLANAR_GATE,
     &RELIC_BARRIER,
     &SERPENT_GENERATOR,
+    &ADVENTURERS_GUILDHOUSE,
+    &CATHEDRAL_OF_SERRA,
     &KARAKAS,
+    &MOUNTAIN_STRONGHOLD,
     &PENDELHAVEN,
+    &SEAFARERS_QUAY,
     &THE_TABERNACLE_AT_PENDRELL_VALE,
+    &TOLARIA,
+    &UNHOLY_CITADEL,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

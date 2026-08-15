@@ -2,6 +2,8 @@ use super::model::{
     AbilityLocator, AppliedEffectLocator, ManaPayloadLocator, ReplacementEffectLocator,
     ScopedEffectSnapshot,
 };
+use crate::card::BandingQuality;
+
 use super::model_keyword::KeywordSnapshot;
 use super::model_prevention::DamagePreventionLocator;
 use super::{AbilityOrigin, AbilitySourceRef, Mana, ScopedEffect};
@@ -698,6 +700,12 @@ pub(super) const fn keyword_snapshot(keyword: KeywordAbility) -> KeywordSnapshot
         KeywordAbility::FirstStrike => KeywordSnapshot::FirstStrike,
         KeywordAbility::DoubleStrike => KeywordSnapshot::DoubleStrike,
         KeywordAbility::Banding => KeywordSnapshot::Banding,
+        KeywordAbility::BandsWithOther(BandingQuality::LegendaryCreatures) => {
+            KeywordSnapshot::BandsWithOtherLegendaryCreatures
+        }
+        KeywordAbility::BandsWithOther(BandingQuality::WolvesOfTheHunt) => {
+            KeywordSnapshot::BandsWithOtherWolvesOfTheHunt
+        }
         KeywordAbility::Vigilance => KeywordSnapshot::Vigilance,
         KeywordAbility::Defender => KeywordSnapshot::Defender,
         KeywordAbility::Deathtouch => KeywordSnapshot::Deathtouch,
@@ -737,6 +745,12 @@ pub(super) const fn parse_keyword(value: KeywordSnapshot) -> KeywordAbility {
         KeywordSnapshot::FirstStrike => KeywordAbility::FirstStrike,
         KeywordSnapshot::DoubleStrike => KeywordAbility::DoubleStrike,
         KeywordSnapshot::Banding => KeywordAbility::Banding,
+        KeywordSnapshot::BandsWithOtherLegendaryCreatures => {
+            KeywordAbility::BandsWithOther(BandingQuality::LegendaryCreatures)
+        }
+        KeywordSnapshot::BandsWithOtherWolvesOfTheHunt => {
+            KeywordAbility::BandsWithOther(BandingQuality::WolvesOfTheHunt)
+        }
         KeywordSnapshot::Vigilance => KeywordAbility::Vigilance,
         KeywordSnapshot::Defender => KeywordAbility::Defender,
         KeywordSnapshot::Deathtouch => KeywordAbility::Deathtouch,

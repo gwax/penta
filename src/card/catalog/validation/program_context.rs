@@ -567,6 +567,7 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::Color(_)
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
+        | ObjectPredicateDef::Named(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::PowerExactly(_)

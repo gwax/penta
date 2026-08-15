@@ -335,6 +335,10 @@ impl Game {
                 ability.ability.definition,
                 DeclarativeAbilityDef::Keyword(actual) if actual == expected
             ),
+            AbilityPredicateDef::AnyBandsWithOther => matches!(
+                ability.ability.definition,
+                DeclarativeAbilityDef::Keyword(KeywordAbility::BandsWithOther(_))
+            ),
         }
     }
 

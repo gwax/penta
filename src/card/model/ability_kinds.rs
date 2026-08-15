@@ -2,9 +2,9 @@ use crate::ids::{AbilityId, AlternativeCostId, ModeId, TargetIndex};
 
 use super::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AlternativeCostDef,
-    BasicLandType, CardBehavior, CounterKind, EffectDef, ImplementationStatus, ManaColor, ManaCost,
-    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementConditionDef,
-    ReplacementEffectDef, ReplacementEventDef, TriggerEventDef, ZoneKind,
+    BasicLandType, CardBehavior, CardSupertype, CardType, CounterKind, EffectDef,
+    ImplementationStatus, ManaColor, ManaCost, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, TriggerEventDef, ZoneKind,
 };
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -238,6 +238,9 @@ pub enum ActivationTimingDef {
     YourTurn,
     /// Only during the upkeep step of a turn its controller is taking.
     YourUpkeep,
+    /// Only during an upkeep step, whoever is taking the turn. Tolaria opens
+    /// on both, which is what makes it an answer to an attack.
+    AnyUpkeep,
     /// Only when its controller could cast a sorcery: their own main phase,
     /// with the stack empty. Unlike the windows above, this one does depend
     /// on the stack, because that is what "as a sorcery" means.
@@ -653,6 +656,45 @@ impl Default for StaticAbilityDef {
     }
 }
 
+/// The quality a "bands with other" ability names.
+///
+/// Each printed quality is its own variant rather than a free-form predicate,
+/// the way protection is one keyword per color: the checkpoint wire names them
+/// individually, and only two have ever been printed.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum BandingQuality {
+    /// "bands with other legendary creatures", which the five Legends lands
+    /// grant to legendary creatures of their own color.
+    LegendaryCreatures,
+    /// "bands with other creatures named Wolves of the Hunt", printed on the
+    /// tokens Master of the Hunt makes.
+    WolvesOfTheHunt,
+}
+
+impl BandingQuality {
+    /// Every printed quality, for the rules that have to try each one.
+    pub const ALL: [Self; 2] = [Self::LegendaryCreatures, Self::WolvesOfTheHunt];
+
+    /// What a creature must be to join a band formed on this quality.
+    #[must_use]
+    pub const fn predicate(self) -> &'static ObjectPredicateDef {
+        match self {
+            Self::LegendaryCreatures => &LEGENDARY_CREATURE,
+            Self::WolvesOfTheHunt => &WOLF_OF_THE_HUNT,
+        }
+    }
+}
+
+static LEGENDARY_CREATURE: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Supertype(CardSupertype::Legendary),
+]);
+
+static WOLF_OF_THE_HUNT: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Named("Wolves of the Hunt"),
+]);
+
 /// A keyword ability carried as an ordinary, ordered rules clause.
 ///
 /// The clause's [`AbilityCoverageDef`] says whether the engine currently
@@ -667,6 +709,11 @@ pub enum KeywordAbility {
     FirstStrike,
     DoubleStrike,
     Banding,
+    /// CR 702.21j. Banding narrowed to a quality: the band's members must all
+    /// have that quality, and at least one of them must have this ability.
+    /// Unlike plain banding there is no free passenger, and the damage rule
+    /// wants two qualifying creatures rather than one.
+    BandsWithOther(BandingQuality),
     Vigilance,
     Defender,
     Deathtouch,
@@ -734,7 +781,7 @@ impl KeywordAbility {
             Self::Landwalk(BasicLandType::Mountain) => 23,
             Self::Landwalk(BasicLandType::Forest) => 24,
             Self::LegendaryLandwalk => 25,
-            Self::ProtectionFrom(_) => return None,
+            Self::ProtectionFrom(_) | Self::BandsWithOther(_) => return None,
         })
     }
 }

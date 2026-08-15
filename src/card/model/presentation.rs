@@ -93,6 +93,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::Color(_)
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
+        | ObjectPredicateDef::Named(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
@@ -140,6 +141,7 @@ fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor> {
         | ObjectPredicateDef::NoncreatureSpell
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
+        | ObjectPredicateDef::Named(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
@@ -190,6 +192,7 @@ fn predicate_color_count(predicate: ObjectPredicateDef) -> Option<u8> {
         | ObjectPredicateDef::NoncreatureSpell
         | ObjectPredicateDef::Color(_)
         | ObjectPredicateDef::Subtype(_)
+        | ObjectPredicateDef::Named(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
@@ -221,7 +224,8 @@ fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'static str> {
         ObjectPredicateDef::All(predicates) => {
             predicates.iter().copied().find_map(predicate_subtype)
         }
-        ObjectPredicateDef::Any
+        ObjectPredicateDef::Named(_)
+        | ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Token
         | ObjectPredicateDef::Tapped
@@ -295,6 +299,7 @@ fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option<&'static s
         | ObjectPredicateDef::Color(_)
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
+        | ObjectPredicateDef::Named(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
@@ -354,6 +359,7 @@ fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<i16> {
         | ObjectPredicateDef::Color(_)
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
+        | ObjectPredicateDef::Named(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
@@ -399,6 +405,7 @@ fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Option<u8> {
         | ObjectPredicateDef::Color(_)
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
+        | ObjectPredicateDef::Named(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
         | ObjectPredicateDef::PowerAtLeast(_)
@@ -449,6 +456,7 @@ fn predicate_controller(predicate: ObjectPredicateDef) -> Option<PlayerRelation>
         | ObjectPredicateDef::Color(_)
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
+        | ObjectPredicateDef::Named(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
@@ -502,6 +510,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::Color(_)
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
+        | ObjectPredicateDef::Named(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)

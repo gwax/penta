@@ -15,6 +15,8 @@ pub(super) enum KeywordSnapshot {
     FirstStrike,
     DoubleStrike,
     Banding,
+    BandsWithOtherLegendaryCreatures,
+    BandsWithOtherWolvesOfTheHunt,
     Vigilance,
     Defender,
     Deathtouch,
