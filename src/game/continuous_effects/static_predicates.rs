@@ -134,6 +134,7 @@ impl Game {
             | ObjectPredicateDef::Enchanted
             | ObjectPredicateDef::AttachedTo(_)
             | ObjectPredicateDef::AttackedThisTurn
+            | ObjectPredicateDef::CameUnderControlThisTurn
             | ObjectPredicateDef::AttackedDuringControllersLastTurn
             | ObjectPredicateDef::Special(_) => None,
         }

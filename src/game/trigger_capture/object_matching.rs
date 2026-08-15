@@ -27,6 +27,19 @@ impl Game {
             })
     }
 
+    /// The same fact summoning sickness reads: the permanent has not been
+    /// under its controller since their turn began. Read from the battlefield
+    /// rather than the event object, because it is about how long the
+    /// permanent has been sitting there.
+    fn came_under_control_this_turn(&self, object: GameObjectId) -> bool {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == object)
+            .is_some_and(|permanent| {
+                self.turns_started[permanent.controller.index()] <= permanent.entered_controller_turn
+            })
+    }
+
     /// The predicates answered by looking at the battlefield rather than at
     /// the object's own recorded characteristics.
     fn battlefield_relationship_matches(
@@ -194,6 +207,9 @@ impl Game {
             | ObjectPredicateDef::AttackedThisTurn
             | ObjectPredicateDef::AttackedDuringControllersLastTurn
             | ObjectPredicateDef::Blocking => combat_state_matches(predicate, object),
+            ObjectPredicateDef::CameUnderControlThisTurn => {
+                self.came_under_control_this_turn(object.id)
+            }
             ObjectPredicateDef::AttachedToSource => self
                 .current_or_last_known_attached_host(source)
                 .is_some_and(|host| host == object.id),

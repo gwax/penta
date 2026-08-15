@@ -99,6 +99,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Erg Raiders**, and two ways for an intervening-if to read its own source.
+  A condition can now ask whether the ability's source matches a predicate,
+  the way it could already ask about the permanent an Aura is attached to; and
+  a permanent can be asked whether it came under its controller's control this
+  turn, which is the fact summoning sickness already reads.
+
 - **Blaze of Glory**, and the blocking requirement it needs. A creature can be
   made to block every attacker it legally can, which is the mirror of the
   requirement an attacker could already carry. The card is that plus the

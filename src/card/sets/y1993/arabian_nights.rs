@@ -433,8 +433,41 @@ pub(in crate::card::sets) static EL_HAJJAJ: CardRecord = CardRecord::new(
     ),
 );
 
+/// Two facts about the permanent itself, read at the end step: whether it went
+/// to war, and whether it has been here long enough to be asked. The turn it
+/// arrives is free, which is what stops it punishing a player who could not
+/// have attacked with it.
+static ERG_RAIDERS_IDLED: TriggerConditionDef = TriggerConditionDef::SourceMatches {
+    object: ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Not(&ObjectPredicateDef::AttackedThisTurn),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::CameUnderControlThisTurn),
+    ]),
+};
+
+static ERG_RAIDERS_TOLL: EffectDef = EffectDef::DealDamage {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::Constant(2),
+};
+
 // ARN 25 — Erg Raiders
-// Audit: blocked — Needs duration-aware control-changing continuous effects for “At the beginning of your end step, if this creature didn't attack this turn, it deals 2 damage to you unless it came under your control this turn”.
+pub(in crate::card::sets) static ERG_RAIDERS: CardRecord = CardRecord::new(
+    cards::ERG_RAIDERS,
+    "Erg Raiders",
+    CardArt::new("35c73a97-531d-4dd5-8236-39b89c183c38", "Dameon Willich"),
+    CardSet::ArabianNights,
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Human", "Warrior"], 2, 3).with_ability(
+        AbilityDef::triggered_if(
+            "At the beginning of your end step, if this creature didn't attack this turn, it \
+             deals 2 damage to you unless it came under your control this turn.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::End,
+                player: PlayerRelation::You,
+            },
+            &ERG_RAIDERS_IDLED,
+            ERG_RAIDERS_TOLL,
+        ),
+    ),
+);
 
 static GUARDIAN_BEAST_ARTIFACTS: ObjectPredicateDef = ObjectPredicateDef::All(&[
     ObjectPredicateDef::HasType(CardType::Artifact),
@@ -1433,6 +1466,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SERENDIB_EFREET,
     &UNSTABLE_MUTATION,
     &EL_HAJJAJ,
+    &ERG_RAIDERS,
     &GUARDIAN_BEAST,
     &HASRAN_OGRESS,
     &JUNUN_EFREET,

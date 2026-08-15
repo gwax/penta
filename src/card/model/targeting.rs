@@ -95,6 +95,10 @@ pub enum ObjectPredicateDef {
     HasNonManaActivatedAbility,
     /// A creature currently declared as an attacker in combat.
     Attacking,
+    /// Came under its current controller's control during the turn they are
+    /// taking now. This is the same fact summoning sickness reads, asked as a
+    /// characteristic: "unless it came under your control this turn".
+    CameUnderControlThisTurn,
     /// The permanent the ability's source is attached to, for an Aura whose
     /// trigger watches its own host rather than itself.
     AttachedToSource,

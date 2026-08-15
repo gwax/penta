@@ -57,6 +57,7 @@ impl Game {
             | ObjectPredicateDef::Enchanted
             | ObjectPredicateDef::AttachedToSource
             | ObjectPredicateDef::AttackedThisTurn
+            | ObjectPredicateDef::CameUnderControlThisTurn
             | ObjectPredicateDef::AttackedDuringControllersLastTurn
             | ObjectPredicateDef::HasKeyword(_)
             | ObjectPredicateDef::HasCounter(_)

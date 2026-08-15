@@ -306,6 +306,7 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::BandedWithSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::CameUnderControlThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn => Ok(()),
     }
 }
@@ -357,6 +358,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::BandedWithSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::CameUnderControlThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::Special(_) => false,
     }
@@ -610,6 +612,7 @@ fn validate_trigger_condition(
         | TriggerConditionDef::ActivePlayer(_)
         | TriggerConditionDef::SpellsCastLastTurn { .. }
         | TriggerConditionDef::ControlsGreatestPowerCreature
+        | TriggerConditionDef::SourceMatches { .. }
         | TriggerConditionDef::AttachedPermanentMatches { .. }
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::SourceLoyalty { .. }

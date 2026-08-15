@@ -591,6 +591,7 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::BandedWithSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::CameUnderControlThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn => true,
     }
 }
@@ -663,7 +664,8 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         TriggerConditionDef::SourceActivationsThisTurn { .. }
         | TriggerConditionDef::TargetMatches { .. }
         | TriggerConditionDef::ControlsGreatestPowerCreature => false,
-        TriggerConditionDef::AttachedPermanentMatches { object } => {
+        TriggerConditionDef::SourceMatches { object }
+        | TriggerConditionDef::AttachedPermanentMatches { object } => {
             static_object_predicate_supported(object)
         }
         TriggerConditionDef::SourceOnBattlefield

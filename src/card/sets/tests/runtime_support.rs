@@ -61,6 +61,7 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::BandedWithSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
+        | ObjectPredicateDef::CameUnderControlThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn => true,
     }
 }
@@ -344,6 +345,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
     match condition {
         TriggerConditionDef::ObjectCount { query, .. } => shared_object_predicate(query.object),
         TriggerConditionDef::TargetMatches { object, .. }
+        | TriggerConditionDef::SourceMatches { object }
         | TriggerConditionDef::AttachedPermanentMatches { object } => {
             shared_object_predicate(object)
         }

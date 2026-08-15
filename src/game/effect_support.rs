@@ -778,6 +778,18 @@ impl Game {
                 }
                 // Follows the attachment rather than being frozen when the
                 // Equipment moved, so the answer is about where it is now.
+                TriggerConditionDef::SourceMatches { object: predicate } => self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == source)
+                    .is_some_and(|permanent| {
+                        self.trigger_object_matches(
+                            *predicate,
+                            &self.trigger_event_object(permanent),
+                            source,
+                            false,
+                        )
+                    }),
                 TriggerConditionDef::AttachedPermanentMatches { object: predicate } => self
                     .current_or_last_known_attached_host(source)
                     .and_then(|host| {

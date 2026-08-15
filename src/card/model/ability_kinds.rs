@@ -385,6 +385,10 @@ pub enum TriggerConditionDef {
     /// tied for the greatest power" asks. False when no creature is on the
     /// battlefield at all.
     ControlsGreatestPowerCreature,
+    /// Whether the ability's own source matches. The mirror of
+    /// [`Self::AttachedPermanentMatches`] pointed at the source itself, for
+    /// the intervening-ifs that ask what the permanent has been doing.
+    SourceMatches { object: ObjectPredicateDef },
     /// Whether what the ability's source is attached to matches. This is what
     /// "as long as equipped creature is a Human" asks, and it is read live so
     /// the answer follows the Equipment as it moves.

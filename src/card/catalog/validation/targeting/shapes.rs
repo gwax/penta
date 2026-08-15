@@ -337,7 +337,8 @@ fn validate_trigger_condition_shape(
 ) -> Result<(), GrantedAbilityValidationError> {
     match condition {
         TriggerConditionDef::ObjectCount { query, .. } => validate_query_shape(query, targets),
-        TriggerConditionDef::AttachedPermanentMatches { object } => {
+        TriggerConditionDef::SourceMatches { object }
+        | TriggerConditionDef::AttachedPermanentMatches { object } => {
             validate_object_predicate_shape(object, targets)
         }
         TriggerConditionDef::TargetMatches { slot, object } => {
