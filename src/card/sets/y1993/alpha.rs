@@ -2257,7 +2257,39 @@ pub(in crate::card::sets) static SCATHE_ZOMBIES: CardRecord = CardRecord::new(
 );
 
 // LEA 126 — Scavenging Ghoul
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “At the beginning of each end step, put a corpse counter on this creature for each creature that died this turn”.
+pub(in crate::card::sets) static SCAVENGING_GHOUL: CardRecord = CardRecord::new(
+    cards::SCAVENGING_GHOUL,
+    "Scavenging Ghoul",
+    CardArt::new("426984e0-88e1-4a2d-9a1c-798b95864df3", "Jeff A. Menges"),
+    CardSet::Alpha,
+    // The same bank as Khabál Ghoul, spent rather than kept: the counters are
+    // regenerations rather than size, so they leave one at a time.
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Zombie"], 2, 2).with_abilities(&[
+        AbilityDef::triggered(
+            "At the beginning of each end step, put a corpse counter on this creature for each \
+             creature that died this turn.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::End,
+                player: PlayerRelation::Any,
+            },
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Corpse,
+                amount: ValueDef::CreaturesDiedThisTurn,
+            },
+        ),
+        AbilityDef::activated(
+            "Remove a corpse counter from this creature: Regenerate this creature.",
+            &[AbilityCostDef::RemoveCountersFromSource {
+                kind: CounterKind::Corpse,
+                amount: 1,
+            }],
+            EffectDef::Regenerate {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+    ]),
+);
 
 // LEA 127 — Sengir Vampire
 pub(in crate::card::sets) static SENGIR_VAMPIRE: CardRecord = CardRecord::new(
@@ -5379,6 +5411,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RAISE_DEAD,
     &ROYAL_ASSASSIN,
     &SCATHE_ZOMBIES,
+    &SCAVENGING_GHOUL,
     &SENGIR_VAMPIRE,
     &SIMULACRUM,
     &SINKHOLE,

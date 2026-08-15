@@ -571,7 +571,30 @@ pub(in crate::card::sets) static JUZAM_DJINN: CardRecord = CardRecord::new(
 );
 
 // ARN 30 — Khabál Ghoul
-// Audit: blocked — Needs card-specific counter state and counter-consuming effects for “At the beginning of each end step, put a +1/+1 counter on this creature for each creature that died this turn”.
+pub(in crate::card::sets) static KHABAL_GHOUL: CardRecord = CardRecord::new(
+    cards::KHABAL_GHOUL,
+    "Khabál Ghoul",
+    CardArt::new("18607bf6-ce11-41cb-b001-0c9538406ba0", "Douglas Shuler"),
+    CardSet::ArabianNights,
+    // Each end step, not just yours, so a creature that dies on either turn
+    // feeds it. The count is of deaths this turn rather than of bodies in a
+    // graveyard, which is why it is tallied as they happen.
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Zombie"], 1, 1).with_ability(
+        AbilityDef::triggered(
+            "At the beginning of each end step, put a +1/+1 counter on this creature for each \
+             creature that died this turn.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::End,
+                player: PlayerRelation::Any,
+            },
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::CreaturesDiedThisTurn,
+            },
+        ),
+    ),
+);
 
 // ARN 31 — Oubliette
 // Audit: blocked — Needs a persistent tap/untap restriction or event relation for “When this enchantment enters, target creature phases out until this enchantment leaves the battlefield. Tap that creature as it phases in this way”.
@@ -1506,6 +1529,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HASRAN_OGRESS,
     &JUNUN_EFREET,
     &JUZAM_DJINN,
+    &KHABAL_GHOUL,
     &SORCERESS_QUEEN,
     &STONE_THROWING_DEVILS,
     &ALADDIN,

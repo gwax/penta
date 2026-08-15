@@ -106,6 +106,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Khabál Ghoul** and **Scavenging Ghoul**, with a running count of the
+  turn's creature deaths and a corpse counter. The count is tallied as
+  creatures die rather than read off a graveyard, because a graveyard is not a
+  record of this turn: bodies already there when the turn began feed neither
+  Ghoul.
+
 - **Aspect of Wolf**, with halving as a value form. The rounding direction
   belongs to the division rather than sitting over it, which is what lets one
   count of Forests be read twice and land on two different numbers: five

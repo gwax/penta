@@ -149,6 +149,10 @@ pub enum ValueDef {
     Halved(&'static HalvedValueDef),
     /// How many counters of one kind sit on the ability's own source.
     CountersOnSource(CounterKind),
+    /// How many creatures have died this turn, for "for each creature that
+    /// died this turn". Counted as they die rather than read off a zone,
+    /// because a graveyard is not a record of this turn.
+    CreaturesDiedThisTurn,
     /// The morbid condition. Held by reference so that `ValueDef` stays one
     /// word wide; a second inline value would grow everything embedding it.
     IfCreatureDiedThisTurn(&'static ConditionalValueDef),

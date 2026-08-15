@@ -400,6 +400,7 @@ impl Game {
             });
         }
         self.creature_died_this_turn = false;
+        self.creatures_died_this_turn = 0;
         self.sorcery_flash_grants = [0; 2];
         self.turn_phase_queue.clear();
         self.turn_phase_resume = None;

@@ -778,6 +778,10 @@ pub struct Game {
     /// turn begins rather than in cleanup, so a morbid spell cast during the
     /// end step still sees the creature that died in combat.
     creature_died_this_turn: bool,
+    /// How many creatures have died this turn. The flag above answers "did
+    /// one die"; a card that scales with the count needs the number, and one
+    /// death has to move both together.
+    creatures_died_this_turn: u16,
     /// Cards exiled by an object that promises to bring them back, paired
     /// with whatever exiled them. Oblivion Ring is the shape.
     linked_exiles: Vec<(GameObjectId, GameObjectId)>,

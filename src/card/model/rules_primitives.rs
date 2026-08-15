@@ -37,10 +37,13 @@ pub enum CounterKind {
     Sleep,
     /// Living Artifact's counter, banked from damage and spent for life.
     Vitality,
+    /// Scavenging Ghoul's counter, banked from deaths and spent to
+    /// regenerate.
+    Corpse,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 17;
+    pub const COUNT: usize = 18;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -60,6 +63,7 @@ impl CounterKind {
         Self::Pupa,
         Self::Sleep,
         Self::Vitality,
+        Self::Corpse,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -84,7 +88,8 @@ impl CounterKind {
             | Self::Carrion
             | Self::Pupa
             | Self::Sleep
-            | Self::Vitality => (0, 0),
+            | Self::Vitality
+            | Self::Corpse => (0, 0),
         }
     }
 
@@ -108,6 +113,7 @@ impl CounterKind {
             Self::Pupa => 14,
             Self::Sleep => 15,
             Self::Vitality => 16,
+            Self::Corpse => 17,
         }
     }
 
@@ -131,6 +137,7 @@ impl CounterKind {
             Self::Pupa => "pupa",
             Self::Sleep => "sleep",
             Self::Vitality => "vitality",
+            Self::Corpse => "corpse",
         }
     }
 }

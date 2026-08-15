@@ -50,6 +50,10 @@ pub(super) struct GameSnapshot {
     pub(super) tried_to_draw_from_empty_library: [bool; 2],
     pub(super) mana: [Vec<ManaSnapshot>; 2],
     pub(super) creature_died_this_turn: bool,
+    /// Additive: a checkpoint written before the count existed restores as
+    /// zero, which is what a turn with no recorded deaths means anyway.
+    #[serde(default, skip_serializing_if = "is_zero_u16")]
+    pub(super) creatures_died_this_turn: u16,
     pub(super) linked_exiles: Vec<[u32; 2]>,
     pub(super) sorcery_flash_grants: [u8; 2],
     pub(super) turn_phase_queue: Vec<TurnPhaseSnapshot>,

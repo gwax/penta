@@ -592,9 +592,16 @@ impl Game {
             })
             .collect::<Vec<_>>();
 
-        self.creature_died_this_turn |= exits.iter().any(|(_, snapshot, _, destination, _, _)| {
-            *destination == ZoneKind::Graveyard && snapshot.object.types.is_creature()
-        });
+        let died = exits
+            .iter()
+            .filter(|(_, snapshot, _, destination, _, _)| {
+                *destination == ZoneKind::Graveyard && snapshot.object.types.is_creature()
+            })
+            .count();
+        self.creature_died_this_turn |= died > 0;
+        self.creatures_died_this_turn = self
+            .creatures_died_this_turn
+            .saturating_add(u16::try_from(died).unwrap_or(u16::MAX));
         let mut removed = Vec::new();
         for (id, snapshot, damage_sources, destination, undying, presented) in exits {
             let index = self

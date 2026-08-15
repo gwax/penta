@@ -14,6 +14,7 @@ impl Game {
     ) -> i32 {
         match value {
             ValueDef::Constant(value) => value,
+            ValueDef::CreaturesDiedThisTurn => i32::from(self.creatures_died_this_turn),
             ValueDef::ChosenX => i32::from(object.x()),
             ValueDef::SourcePower => object
                 .source

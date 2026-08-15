@@ -426,6 +426,7 @@ impl Game {
             ],
             mana,
             creature_died_this_turn: self.creature_died_this_turn,
+            creatures_died_this_turn: self.creatures_died_this_turn,
             linked_exiles: self
                 .linked_exiles
                 .iter()
@@ -736,6 +737,7 @@ impl Game {
             step: parse_step(str_field(observation, "step")?)?,
             attackers_declared: checkpoint.attackers_declared,
             creature_died_this_turn: checkpoint.creature_died_this_turn,
+            creatures_died_this_turn: checkpoint.creatures_died_this_turn,
             linked_exiles: checkpoint
                 .linked_exiles
                 .iter()

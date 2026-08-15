@@ -173,6 +173,7 @@ impl Game {
             step: Step::Upkeep,
             attackers_declared: false,
             creature_died_this_turn: false,
+            creatures_died_this_turn: 0,
             linked_exiles: Vec::new(),
             sorcery_flash_grants: [0; 2],
             turn_phase_queue: VecDeque::new(),

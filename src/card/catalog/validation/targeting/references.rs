@@ -259,7 +259,8 @@ fn validate_trigger_object_predicate(
             validate_value_target_references(value, target_count, scope)?;
             if matches!(
                 value,
-                ValueDef::Constant(_)
+                ValueDef::CreaturesDiedThisTurn
+        | ValueDef::Constant(_)
                     | ValueDef::ChosenX
                     | ValueDef::SourceCastX
                     | ValueDef::SourcePower
@@ -702,6 +703,7 @@ fn validate_value_target_references(
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
+        | ValueDef::CreaturesDiedThisTurn
         // This reads the share assigned to the target currently being
         // affected; the surrounding recipient carries the slot reference.
         | ValueDef::DividedAmongTargets => Ok(()),

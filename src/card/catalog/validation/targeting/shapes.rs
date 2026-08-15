@@ -259,7 +259,8 @@ fn validate_value_shape(
         ValueDef::TargetPower(target) | ValueDef::TargetManaValue(target) => {
             validate_target_shape(target, targets, RecipientExpectation::Object, true)
         }
-        ValueDef::Constant(_)
+        ValueDef::CreaturesDiedThisTurn
+        | ValueDef::Constant(_)
         | ValueDef::ChosenX
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
