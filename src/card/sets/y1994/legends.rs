@@ -845,6 +845,7 @@ static ENERGY_TAP_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one
         object: ObjectPredicateDef::All(&[
             ObjectPredicateDef::HasType(CardType::Creature),
             ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Attacking),
         ]),
         zones: &[ZoneKind::Battlefield],
         controller: Some(PlayerRelation::You),
@@ -3669,8 +3670,70 @@ pub(in crate::card::sets) static ANGUS_MACKENZIE: CardRecord = CardRecord::new(
         ),
 );
 
+/// Untapped and not attacking, both read continuously -- so a creature that
+/// taps for mana or is declared as an attacker loses the toughness at once.
+static ARCADES_SABBOTH_DEFENDERS: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Attacking),
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(0), ValueDef::Constant(2)),
+};
+
 // LEG 218 — Arcades Sabboth
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Each untapped creature you control gets +0/+2 as long as it's not attacking”.
+pub(in crate::card::sets) static ARCADES_SABBOTH: CardRecord = CardRecord::new(
+    cards::ARCADES_SABBOTH,
+    "Arcades Sabboth",
+    CardArt::new(
+        "2c1dbc62-ceb5-4540-ae38-901e5deafc75",
+        "Edward P. Beard, Jr.",
+    ),
+    CardSet::Legends,
+    CardRules::new_creature(
+        mana_cost!("{2}{G}{G}{W}{W}{U}{U}"),
+        &["Elder", "Dragon"],
+        7,
+        7,
+    )
+    .with_supertype(CardSupertype::Legendary)
+    .with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, sacrifice Arcades Sabboth unless you pay {G}{W}{U}.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::PayOr(PayOrDef::unless_mana(
+                mana_cost!("{G}{W}{U}"),
+                &EffectDef::Sacrifice {
+                    object: EffectRecipientDef::Source,
+                },
+            )),
+        ),
+        AbilityDef::static_ability(
+            "Each untapped creature you control gets +0/+2 as long as it's not attacking.",
+            ARCADES_SABBOTH_DEFENDERS,
+        ),
+        AbilityDef::activated(
+            "{W}: Arcades Sabboth gets +0/+1 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{W}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::Constant(1),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // LEG 219 — Axelrod Gunnarson
 pub(in crate::card::sets) static AXELROD_GUNNARSON: CardRecord = CardRecord::new(
@@ -5438,6 +5501,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WOLVERINE_PACK,
     &ADUN_OAKENSHIELD,
     &ANGUS_MACKENZIE,
+    &ARCADES_SABBOTH,
     &AXELROD_GUNNARSON,
     &BARKTOOTH_WARBEARD,
     &BORIS_DEVILBOON,

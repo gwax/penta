@@ -97,3 +97,5 @@ pub const PONTIFF_OF_BLIGHT: CardDefinitionId = CardDefinitionId(1896);
 pub const BATTERING_KRASIS: CardDefinitionId = CardDefinitionId(1897);
 pub const EMMARA_TANDRIS: CardDefinitionId = CardDefinitionId(1898);
 pub const TITHE_DRINKER: CardDefinitionId = CardDefinitionId(1899);
+pub const SPITTING_SLUG: CardDefinitionId = CardDefinitionId(1900);
+pub const ARCADES_SABBOTH: CardDefinitionId = CardDefinitionId(1901);

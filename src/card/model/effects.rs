@@ -256,6 +256,23 @@ impl PayOrDef {
         }
     }
 
+    /// Offer an optional payment with a branch either way. Both halves are
+    /// one printed clause, so the player choosing not to pay is not the same
+    /// as nothing happening.
+    #[must_use]
+    pub const fn optional_or(
+        payment: EffectPaymentDef,
+        if_paid: &'static EffectDef,
+        otherwise: &'static EffectDef,
+    ) -> Self {
+        Self {
+            payment,
+            if_paid: Some(if_paid),
+            otherwise: Some(otherwise),
+            visibility: ChoiceVisibilityDef::Private,
+        }
+    }
+
     /// Continue unless the resolving effect's controller pays a fixed mana
     /// cost.
     #[must_use]

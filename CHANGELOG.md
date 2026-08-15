@@ -119,6 +119,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Spitting Slug** and **Arcades Sabboth**, two old cards whose audit lines
+  blamed missing combat constraints. The Slug needed an optional payment with
+  a branch either way -- declining hands the first strike to the other side of
+  the block, which is not the same as nothing happening -- and Arcades needed
+  only a recipient narrowed by what each creature is doing right now.
+
 - **Pontiff of Blight**, **Battering Krasis**, **Emmara Tandris** and **Tithe
   Drinker**. Extort moved into the shared ability helpers so the Pontiff can
   grant it, each granted instance offering its own payment, and Emmara's

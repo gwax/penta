@@ -551,6 +551,7 @@ mod combat;
 mod combat_and_life;
 mod combat_constraints;
 mod combat_keywords;
+mod combat_relation_cards;
 mod combat_rescues;
 mod continuous_and_zones;
 mod control_duration;

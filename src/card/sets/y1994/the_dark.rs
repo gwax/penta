@@ -5,10 +5,11 @@ use crate::card::{
     AppliedRuleDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet, CardType,
     ComparisonDef, DamageCoverageDef, DamageEventMatcherDef, DamagePreventionDef,
     DamageRecipientMatcherDef, DamageSourceGroupDef, DiscardSelectionDef, EffectDef,
-    EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ResolvedEffectDurationDef, SacrificedAmountDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -1483,8 +1484,55 @@ pub(in crate::card::sets) static SCAVENGER_FOLK: CardRecord = CardRecord::new(
     ]),
 );
 
+static SPITTING_SLUG_FIRST_STRIKE: AbilityDef = abilities::first_strike();
+
+static SPITTING_SLUG_KEEPS_IT: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::add_ability(&SPITTING_SLUG_FIRST_STRIKE),
+    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+};
+
+/// The other side of the same block, whichever way round it happened.
+static SPITTING_SLUG_OPPONENTS: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::BlockedBySource,
+            ObjectPredicateDef::BlockingSource,
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::Any,
+    ),
+    effect: AppliedEffectDef::add_ability(&SPITTING_SLUG_FIRST_STRIKE),
+    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+};
+
 // DRK 88 — Spitting Slug
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever this creature blocks or becomes blocked, you may pay {1}{G}. If you do, this creature gains first strike until end of turn. Otherwise, each creature blocking or blocked by this…”.
+pub(in crate::card::sets) static SPITTING_SLUG: CardRecord = CardRecord::new(
+    cards::SPITTING_SLUG,
+    "Spitting Slug",
+    CardArt::new("7011356e-7516-4ca0-ac54-d30af7ce03a2", "Anson Maddocks"),
+    CardSet::TheDark,
+    // Declining is not nothing: the first strike goes to the other side of
+    // the block instead, which is what makes the {1}{G} worth paying.
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Slug"], 2, 4).with_ability(
+        AbilityDef::triggered(
+            "Whenever this creature blocks or becomes blocked, you may pay {1}{G}. If you do, \
+             this creature gains first strike until end of turn. Otherwise, each creature \
+             blocking or blocked by this creature gains first strike until end of turn.",
+            TriggerEventDef::BlocksOrBecomesBlockedBy {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+            },
+            EffectDef::PayOr(PayOrDef::optional_or(
+                EffectPaymentDef::mana(
+                    PlayerSetDef::Related(PlayerRelation::You),
+                    mana_cost!("{1}{G}"),
+                ),
+                &SPITTING_SLUG_KEEPS_IT,
+                &SPITTING_SLUG_OPPONENTS,
+            )),
+        ),
+    ),
+);
 
 // DRK 89 — Tracker
 pub(in crate::card::sets) static TRACKER: CardRecord = CardRecord::new(
@@ -2087,6 +2135,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SAVAEN_ELVES,
     &SCARWOOD_HAG,
     &SCAVENGER_FOLK,
+    &SPITTING_SLUG,
     &TRACKER,
     &VENOM,
     &WORMWOOD_TREEFOLK,
