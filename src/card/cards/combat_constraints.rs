@@ -54,3 +54,5 @@ pub const MORKRUT_BANSHEE: CardDefinitionId = CardDefinitionId(1853);
 pub const HOLLOWHENGE_SCAVENGER: CardDefinitionId = CardDefinitionId(1854);
 pub const WAYFARING_TEMPLE: CardDefinitionId = CardDefinitionId(1855);
 pub const SUNDERING_GROWTH: CardDefinitionId = CardDefinitionId(1856);
+pub const TROSTANI_SELESNYAS_VOICE: CardDefinitionId = CardDefinitionId(1857);
+pub const VITU_GHAZI_GUILDMAGE: CardDefinitionId = CardDefinitionId(1858);

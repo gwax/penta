@@ -114,6 +114,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Trostani, Selesnya's Voice** and **Vitu-Ghazi Guildmage**, closing all but
+  one of the populate cluster. Trostani reads the entering creature's
+  toughness rather than her own, and does not feed on her own arrival.
+
 - **Wayfaring Temple** and **Sundering Growth**, two of the five cards whose
   audit lines said populate was unavailable. It has its own procedure and its
   own tests; what was missing was the authoring.

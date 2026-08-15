@@ -146,10 +146,106 @@ fn sundering_growth_still_destroys_with_no_token_to_copy() {
     assert_eq!(tokens(&game, cards::ZOMBIE_TOKEN_2_2_BLACK), 0);
 }
 
+/// Trostani reads the entering creature's toughness, not her own and not a
+/// constant.
+#[test]
+fn trostani_gains_the_entering_creatures_toughness() {
+    let mut game = ready();
+    game.battlefield.push(creature(
+        10_000,
+        cards::TROSTANI_SELESNYAS_VOICE,
+        PlayerId::One,
+    ));
+    let before = game.players[PlayerId::One.index()].life;
+
+    // Air Elemental is a 4/4, so a toughness read gains four.
+    let spell = card(20_000, cards::AIR_ELEMENTAL, PlayerId::One);
+    let spell_id = spell.id;
+    game.players[PlayerId::One.index()].hand.push(spell);
+    game.players[PlayerId::One.index()].mana_pool.blue = 2;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 4;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == spell_id))
+        .expect("six mana covers it");
+    game.apply(PlayerId::One, action)
+        .expect("the cast is legal");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[PlayerId::One.index()].life, before + 4);
+}
+
+/// "Another" creature: Trostani arriving does not feed herself.
+#[test]
+fn trostani_does_not_trigger_on_herself() {
+    let mut game = ready();
+    let before = game.players[PlayerId::One.index()].life;
+    let spell = card(20_000, cards::TROSTANI_SELESNYAS_VOICE, PlayerId::One);
+    let spell_id = spell.id;
+    game.players[PlayerId::One.index()].hand.push(spell);
+    game.players[PlayerId::One.index()].mana_pool.green = 2;
+    game.players[PlayerId::One.index()].mana_pool.white = 2;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == spell_id))
+        .expect("four mana covers her");
+    game.apply(PlayerId::One, action)
+        .expect("the cast is legal");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[PlayerId::One.index()].life, before);
+}
+
+/// The Guildmage's two abilities are separate, each with its own price.
+#[test]
+fn the_guildmage_offers_both_abilities_at_their_own_costs() {
+    let mut game = ready();
+    let mage = creature(10_000, cards::VITU_GHAZI_GUILDMAGE, PlayerId::One);
+    let mage_id = mage.card.id;
+    game.battlefield.push(mage);
+    game.battlefield.push(creature(
+        10_100,
+        cards::ZOMBIE_TOKEN_2_2_BLACK,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::One.index()].mana_pool.green = 1;
+    game.players[PlayerId::One.index()].mana_pool.white = 1;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 2;
+
+    // Four mana reaches the populate ability but not the Centaur.
+    let offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == mage_id),
+        )
+        .count();
+    assert_eq!(offered, 1, "only the cheaper of the two is affordable");
+
+    game.players[PlayerId::One.index()].mana_pool.colorless = 4;
+    let offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == mage_id),
+        )
+        .count();
+    assert_eq!(offered, 2, "six mana reaches both");
+}
+
 #[test]
 fn both_cards_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::WAYFARING_TEMPLE, cards::SUNDERING_GROWTH] {
+    for definition in [
+        cards::WAYFARING_TEMPLE,
+        cards::SUNDERING_GROWTH,
+        cards::TROSTANI_SELESNYAS_VOICE,
+        cards::VITU_GHAZI_GUILDMAGE,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),

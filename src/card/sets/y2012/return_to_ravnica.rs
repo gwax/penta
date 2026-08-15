@@ -3946,11 +3946,74 @@ pub(in crate::card::sets) static TRESTLE_TROLL: CardRecord = CardRecord::new(
     ]),
 );
 
+/// "Another creature you control", which is three conditions rather than one:
+/// a creature, yours, and not Trostani herself.
+static TROSTANI_ANOTHER_CREATURE: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+]);
+
 // RTR 206 — Trostani, Selesnya's Voice
-// Audit: blocked — Needs the entering creature's toughness as trigger-event data and populate's chosen token-copy procedure.
+pub(in crate::card::sets) static TROSTANI_SELESNYAS_VOICE: CardRecord = CardRecord::new(
+    cards::TROSTANI_SELESNYAS_VOICE,
+    "Trostani, Selesnya's Voice",
+    CardArt::new("9d1d9d86-5666-4e59-9766-137657b4e040", "Chippy"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{G}{G}{W}{W}"), &["Dryad"], 2, 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            // The toughness read is the entering creature's, so a token
+            // copied by the ability below feeds this one on the way in.
+            AbilityDef::triggered(
+                "Whenever another creature you control enters, you gain life equal to that \
+                 creature's toughness.",
+                TriggerEventDef::zone_changed(
+                    TROSTANI_ANOTHER_CREATURE,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::TriggeringObjectToughness,
+                },
+            ),
+            AbilityDef::activated(
+                "{1}{G}{W}, {T}: Populate.",
+                &[
+                    AbilityCostDef::Mana(mana_cost!("{1}{G}{W}")),
+                    AbilityCostDef::TapSource,
+                ],
+                abilities::populate(),
+            ),
+        ]),
+);
 
 // RTR 207 — Vitu-Ghazi Guildmage
-// Audit: blocked — Its fixed Centaur ability is expressible, but populate's chosen token-copy procedure is not.
+pub(in crate::card::sets) static VITU_GHAZI_GUILDMAGE: CardRecord = CardRecord::new(
+    cards::VITU_GHAZI_GUILDMAGE,
+    "Vitu-Ghazi Guildmage",
+    CardArt::new("e54f8e61-550f-4493-b8ba-65f81b2457d3", "Jason Chan"),
+    CardSet::ReturnToRavnica,
+    // Two abilities rather than one modal ability: each has its own cost, so
+    // there is nothing to choose between at activation time.
+    CardRules::new_creature(mana_cost!("{G}{W}"), &["Dryad", "Shaman"], 2, 2).with_abilities(&[
+        AbilityDef::activated(
+            "{4}{G}{W}: Create a 3/3 green Centaur creature token.",
+            &[AbilityCostDef::Mana(mana_cost!("{4}{G}{W}"))],
+            EffectDef::CreateToken {
+                token: cards::CENTAUR_TOKEN_3_3_GREEN,
+                count: ValueDef::Constant(1),
+                tapped: false,
+            },
+        ),
+        AbilityDef::activated(
+            "{2}{G}{W}: Populate.",
+            &[AbilityCostDef::Mana(mana_cost!("{2}{G}{W}"))],
+            abilities::populate(),
+        ),
+    ]),
+);
 
 /// The delayed trigger Vraska's +1 hangs on herself. It reads damage arriving
 /// at the planeswalker, which only became reachable once a creature could
@@ -4999,6 +5062,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &THOUGHTFLARE,
     &TREASURED_FIND,
     &TRESTLE_TROLL,
+    &TROSTANI_SELESNYAS_VOICE,
+    &VITU_GHAZI_GUILDMAGE,
     &VRASKA_THE_UNSEEN,
     &WAYFARING_TEMPLE,
     &BLISTERCOIL_WEIRD,
