@@ -70,3 +70,5 @@ pub const THRASHING_MOSSDOG: CardDefinitionId = CardDefinitionId(1869);
 pub const DUTY_BOUND_DEAD: CardDefinitionId = CardDefinitionId(1870);
 pub const HAMLETBACK_GOLIATH: CardDefinitionId = CardDefinitionId(1871);
 pub const ELVISH_ARCHDRUID: CardDefinitionId = CardDefinitionId(1872);
+pub const GOBLIN_BATTLE_JESTER: CardDefinitionId = CardDefinitionId(1873);
+pub const PREDATORY_RAMPAGE: CardDefinitionId = CardDefinitionId(1874);

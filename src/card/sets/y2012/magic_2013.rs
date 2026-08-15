@@ -2273,8 +2273,34 @@ pub(in crate::card::sets) static GOBLIN_ARSONIST: CardRecord = CardRecord::new(
     ),
 );
 
+static GOBLIN_BATTLE_JESTER_RED_SPELL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Color(ManaColor::Red),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
 // M13 135 — Goblin Battle Jester
-// Audit: blocked — No turn-long effect can make a target creature unable to block.
+pub(in crate::card::sets) static GOBLIN_BATTLE_JESTER: CardRecord = CardRecord::new(
+    cards::GOBLIN_BATTLE_JESTER,
+    "Goblin Battle Jester",
+    CardArt::new("c13e56b0-becc-4bc2-9ba3-23b3ca8bfe58", "Steve Prescott"),
+    CardSet::Magic2013,
+    // The Jester itself is a red spell, but the trigger watches casts rather
+    // than arrivals, so casting it does not fire its own ability.
+    CardRules::new_creature(mana_cost!("{3}{R}"), &["Goblin"], 2, 2).with_ability(
+        AbilityDef::triggered_with_targets(
+            "Whenever you cast a red spell, target creature can't block this turn.",
+            TriggerEventDef::SpellCast(GOBLIN_BATTLE_JESTER_RED_SPELL),
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
 
 static HAMLETBACK_GOLIATH_COUNTERS: EffectDef = EffectDef::AddCounters {
     object: EffectRecipientDef::Source,
@@ -3060,8 +3086,44 @@ pub(in crate::card::sets) static PLUMMET: CardRecord = CardRecord::new(
     )),
 );
 
+/// The two clauses point at opposite boards, which is the whole card: yours
+/// get bigger and theirs are forced in front of them.
+static PREDATORY_RAMPAGE_EFFECTS: [EffectDef; 2] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::You,
+        ),
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(3),
+            ValueDef::Constant(3),
+        ),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::Opponent,
+        ),
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::MustBlockEachAttackerIfAble),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+];
+
 // M13 180 — Predatory Rampage
-// Audit: blocked — No turn-long effect requires creatures to block if able.
+pub(in crate::card::sets) static PREDATORY_RAMPAGE: CardRecord = CardRecord::new(
+    cards::PREDATORY_RAMPAGE,
+    "Predatory Rampage",
+    CardArt::new("3e054ea5-3657-4198-9715-6acc0e362da3", "Wayne England"),
+    CardSet::Magic2013,
+    CardRules::new_sorcery(mana_cost!("{3}{G}{G}")).with_ability(AbilityDef::spell(
+        "Creatures you control get +3/+3 until end of turn. Each creature your opponents \
+         control blocks this turn if able.",
+        EffectDef::Sequence(&PREDATORY_RAMPAGE_EFFECTS),
+    )),
+);
 
 // M13 182 — Primal Huntbeast
 pub(in crate::card::sets) static PRIMAL_HUNTBEAST: CardRecord = CardRecord::new(
@@ -3971,6 +4033,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FLAMES_OF_THE_FIREBRAND,
     &FURNACE_WHELP,
     &GOBLIN_ARSONIST,
+    &GOBLIN_BATTLE_JESTER,
     &HAMLETBACK_GOLIATH,
     &KINDLED_FURY,
     &KRENKO_MOB_BOSS,
@@ -4001,6 +4064,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GARRUK_PRIMAL_HUNTER,
     &MWONVULI_BEAST_TRACKER,
     &PLUMMET,
+    &PREDATORY_RAMPAGE,
     &PRIMAL_HUNTBEAST,
     &RANGERS_PATH,
     &REVIVE,

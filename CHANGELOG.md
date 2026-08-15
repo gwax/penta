@@ -114,6 +114,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Goblin Battle Jester** and **Predatory Rampage**, two turn-long block
+  clauses pointing opposite ways. Both audit lines said no turn-long effect
+  could express them; both rules existed.
+
 - **Duty-Bound Dead**, **Hamletback Goliath** and **Elvish Archdruid**. The
   Archdruid extends the mana-ability amount from a counter count to a
   battlefield count: either is knowable before the ability is activated, which
