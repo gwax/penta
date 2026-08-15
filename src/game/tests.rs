@@ -653,6 +653,7 @@ mod urza_lands;
 mod venarian_gold;
 mod wards;
 mod while_source_tapped;
+mod word_of_binding;
 mod xenic_poltergeist;
 mod zone_effects;
 mod zone_move_replacements;

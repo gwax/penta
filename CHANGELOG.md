@@ -99,6 +99,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Word of Binding**, the X-linked target count reached through the casting
+  path rather than an activation. Cast-time revalidation read the count
+  sentinel literally, so a spell that enumerated correctly was then rejected
+  as it paid; it now resolves the sentinel against the chosen X the same way
+  the enumerator does.
+
 - **Urza's Mine**, **Urza's Power Plant**, and **Urza's Tower**, with a mana
   amount conditioned on other permanents you control and a conjunction of
   conditions to express it. The amount is resolved as the activation is

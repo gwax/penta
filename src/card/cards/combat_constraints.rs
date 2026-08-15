@@ -30,3 +30,4 @@ pub const CANDELABRA_OF_TAWNOS: CardDefinitionId = CardDefinitionId(1829);
 pub const URZA_S_MINE: CardDefinitionId = CardDefinitionId(1830);
 pub const URZA_S_POWER_PLANT: CardDefinitionId = CardDefinitionId(1831);
 pub const URZA_S_TOWER: CardDefinitionId = CardDefinitionId(1832);
+pub const WORD_OF_BINDING: CardDefinitionId = CardDefinitionId(1833);

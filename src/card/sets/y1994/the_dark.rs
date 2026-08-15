@@ -873,8 +873,32 @@ pub(in crate::card::sets) static UNCLE_ISTVAN: CardRecord = CardRecord::new(
     ]),
 );
 
+/// "X target creatures": the count is the X that was paid, so an X larger
+/// than the number of creatures on the battlefield has no legal declaration
+/// rather than tapping fewer than were paid for.
+static WORD_OF_BINDING_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_chosen_x(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
 // DRK 55 — Word of Binding
-// Audit: blocked — Needs a persistent tap/untap restriction or event relation for “Tap X target creatures”.
+pub(in crate::card::sets) static WORD_OF_BINDING: CardRecord = CardRecord::new(
+    cards::WORD_OF_BINDING,
+    "Word of Binding",
+    CardArt::new("ee30efdb-f1f1-497f-80a6-ec961db67c1d", "Ron Spencer"),
+    CardSet::TheDark,
+    CardRules::new_sorcery(mana_cost!("{X}{B}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Tap X target creatures.",
+        &WORD_OF_BINDING_TARGETS,
+        EffectDef::Tap {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    )),
+);
 
 // DRK 56 — Worms of the Earth
 // Audit: blocked — Needs an any-player upkeep choice between sacrificing two lands and taking damage, followed by conditional self-destruction.
@@ -2039,6 +2063,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MURK_DWELLERS,
     &RAG_MAN,
     &UNCLE_ISTVAN,
+    &WORD_OF_BINDING,
     &BALL_LIGHTNING,
     &BLOOD_MOON,
     &BROTHERS_OF_FIRE,

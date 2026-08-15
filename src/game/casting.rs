@@ -338,9 +338,13 @@ impl Game {
                         card_id,
                         TriggerContext::empty(),
                     );
+                    // Read through the same sentinel the enumerator used, so
+                    // a slot counted by X is checked against the X this cast
+                    // actually chose rather than against the sentinel.
+                    let (minimum, maximum) = slot.count_bounds(choices.x());
                     TargetSlotId::from_index(index) == Some(selection.slot())
-                        && count >= usize::from(slot.minimum)
-                        && count <= usize::from(slot.maximum)
+                        && count >= usize::from(minimum)
+                        && count <= usize::from(maximum)
                         && selection
                             .targets()
                             .iter()
