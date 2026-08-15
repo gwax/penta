@@ -834,9 +834,14 @@ impl Game {
                 selections = combined;
                 continue;
             }
-            for count in slot.minimum..=slot.maximum {
+            // Clamped to what is actually on the board, the way the divided
+            // branch above already does. A slot with no printed limit says so
+            // with a sentinel, and every count past the candidate list would
+            // enumerate nothing anyway.
+            let maximum = usize::from(slot.maximum).min(candidates.len());
+            for count in usize::from(slot.minimum)..=maximum {
                 choices.extend(
-                    target_combinations(&candidates, usize::from(count))
+                    target_combinations(&candidates, count)
                         .into_iter()
                         .map(|targets| TargetSelection::new(slot.id, targets)),
                 );

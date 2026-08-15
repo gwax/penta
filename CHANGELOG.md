@@ -74,6 +74,11 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Targets with no printed limit.** "One or more target creatures" is
+  bounded by the board rather than by a number, which the declaration model
+  could not previously say. Heaven's Gate, Sea Kings' Blessing, Touch of
+  Darkness, Dwarven Song, and Sylvan Paradise.
+
 - **Reading the toughness of what was sacrificed.** A sacrifice follow-up
   could only ever read the sacrificed permanent's power. Both are last-known
   by the time it runs, so neither was harder to reach -- the card simply had

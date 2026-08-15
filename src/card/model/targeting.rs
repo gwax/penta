@@ -176,12 +176,32 @@ pub enum DividedTotal {
 }
 
 impl AbilityTargetDef {
+    /// A maximum standing for "as many as there are". Spelled as a sentinel
+    /// rather than an `Option` so that every existing bounded declaration
+    /// keeps its plain number.
+    pub const UNLIMITED: u8 = u8::MAX;
+
     #[must_use]
     pub const fn exactly_one(predicate: AbilityTargetPredicate) -> Self {
         Self {
             predicate,
             minimum: 1,
             maximum: 1,
+            divided_total: None,
+        }
+    }
+
+    /// One or more targets with no printed limit.
+    ///
+    /// [`Self::UNLIMITED`] is not a cap of 255: the declaration enumerator
+    /// clamps the count to how many legal targets there actually are, so the
+    /// ceiling is the board rather than the number.
+    #[must_use]
+    pub const fn one_or_more(predicate: AbilityTargetPredicate) -> Self {
+        Self {
+            predicate,
+            minimum: 1,
+            maximum: Self::UNLIMITED,
             divided_total: None,
         }
     }

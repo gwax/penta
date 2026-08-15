@@ -304,8 +304,33 @@ pub(in crate::card::sets) static GREATER_REALM_OF_PRESERVATION: CardRecord = Car
     ),
 );
 
+/// "One or more target creatures": the count has no printed ceiling, so the
+/// declaration is bounded by how many creatures are actually there.
+static ONE_OR_MORE_CREATURES: [AbilityTargetDef; 1] = [AbilityTargetDef::one_or_more(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
 // LEG 19 — Heaven's Gate
-// Audit: blocked — Setting a color for a duration works; the spell targets one or more creatures with no upper limit, and target declarations are enumerated as complete combinations, which has no bounded form.
+pub(in crate::card::sets) static HEAVENS_GATE: CardRecord = CardRecord::new(
+    cards::HEAVENS_GATE,
+    "Heaven's Gate",
+    CardArt::new("6c18b729-41cc-450c-8ee1-cd38a4c07a1c", "Douglas Shuler"),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
+        "One or more target creatures become white until end of turn.",
+        &ONE_OR_MORE_CREATURES,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::target_objects(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::White])),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // LEG 20 — Holy Day
 pub(in crate::card::sets) static HOLY_DAY: CardRecord = CardRecord::new(
@@ -935,7 +960,24 @@ pub(in crate::card::sets) static REMOVE_SOUL: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a duration-scoped replacement/prevention effect for “All damage that would be dealt this turn by target sorcery spell is dealt to that spell's controller instead”.
 
 // LEG 75 — Sea Kings' Blessing
-// Audit: blocked — Setting a color for a duration works; the spell targets one or more creatures with no upper limit, and target declarations are enumerated as complete combinations, which has no bounded form.
+pub(in crate::card::sets) static SEA_KINGS_BLESSING: CardRecord = CardRecord::new(
+    cards::SEA_KINGS_BLESSING,
+    "Sea Kings' Blessing",
+    CardArt::new(
+        "975d26dd-d915-42c0-94b3-083fb2a2ce3f",
+        "Randy Asplund-Faith",
+    ),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
+        "One or more target creatures become blue until end of turn.",
+        &ONE_OR_MORE_CREATURES,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::target_objects(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::Blue])),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // LEG 76 — Segovian Leviathan
 pub(in crate::card::sets) static SEGOVIAN_LEVIATHAN: CardRecord = CardRecord::new(
@@ -1686,7 +1728,21 @@ pub(in crate::card::sets) static THE_WRETCHED: CardRecord = CardRecord::new(
 );
 
 // LEG 122 — Touch of Darkness
-// Audit: blocked — Setting a color for a duration works; the spell targets one or more creatures with no upper limit, and target declarations are enumerated as complete combinations, which has no bounded form.
+pub(in crate::card::sets) static TOUCH_OF_DARKNESS: CardRecord = CardRecord::new(
+    cards::TOUCH_OF_DARKNESS,
+    "Touch of Darkness",
+    CardArt::new("e14f0c39-770b-4ed5-a3ca-0cc31698e2bc", "Pete Venters"),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
+        "One or more target creatures become black until end of turn.",
+        &ONE_OR_MORE_CREATURES,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::target_objects(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::Black])),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // LEG 123 — Transmutation
 // Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Switch target creature's power and toughness until end of turn”.
@@ -1927,7 +1983,21 @@ pub(in crate::card::sets) static CROOKSHANK_KOBOLDS: CardRecord = CardRecord::ne
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “Untap target attacking creature and remove it from combat. Gain control of that creature until end of turn”.
 
 // LEG 143 — Dwarven Song
-// Audit: blocked — Setting a color for a duration works; the spell targets one or more creatures with no upper limit, and target declarations are enumerated as complete combinations, which has no bounded form.
+pub(in crate::card::sets) static DWARVEN_SONG: CardRecord = CardRecord::new(
+    cards::DWARVEN_SONG,
+    "Dwarven Song",
+    CardArt::new("9e2ce8c8-c1c2-4297-aa72-f4cad0cb73d1", "Dan Frazier"),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
+        "One or more target creatures become red until end of turn.",
+        &ONE_OR_MORE_CREATURES,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::target_objects(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::Red])),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // LEG 144 — Eternal Warrior
 pub(in crate::card::sets) static ETERNAL_WARRIOR: CardRecord = CardRecord::new(
@@ -2889,7 +2959,24 @@ static TYPHOON_OPPONENT_ISLANDS: ObjectQueryDef = ObjectQueryDef::matching(
 );
 
 // LEG 208 — Sylvan Paradise
-// Audit: blocked — Setting a color for a duration works; the spell targets one or more creatures with no upper limit, and target declarations are enumerated as complete combinations, which has no bounded form.
+pub(in crate::card::sets) static SYLVAN_PARADISE: CardRecord = CardRecord::new(
+    cards::SYLVAN_PARADISE,
+    "Sylvan Paradise",
+    CardArt::new(
+        "c9157874-70e5-40c1-88d8-1e9afe4d8221",
+        "Randy Asplund-Faith",
+    ),
+    CardSet::Legends,
+    CardRules::new_instant(mana_cost!("{G}")).with_ability(AbilityDef::spell_with_targets(
+        "One or more target creatures become green until end of turn.",
+        &ONE_OR_MORE_CREATURES,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::target_objects(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::Green])),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // LEG 209 — Typhoon
 pub(in crate::card::sets) static TYPHOON: CardRecord = CardRecord::new(
@@ -4496,6 +4583,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GREAT_DEFENDER,
     &GREAT_WALL,
     &GREATER_REALM_OF_PRESERVATION,
+    &HEAVENS_GATE,
     &HOLY_DAY,
     &INDESTRUCTIBLE_AURA,
     &KEEPERS_OF_THE_FAITH,
@@ -4524,6 +4612,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PSIONIC_ENTITY,
     &RECALL,
     &REMOVE_SOUL,
+    &SEA_KINGS_BLESSING,
     &SEGOVIAN_LEVIATHAN,
     &SPECTRAL_CLOAK,
     &TELEKINESIS,
@@ -4554,6 +4643,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPIRIT_SHACKLE,
     &THE_ABYSS,
     &THE_WRETCHED,
+    &TOUCH_OF_DARKNESS,
     &VAMPIRE_BATS,
     &WALKING_DEAD,
     &WALL_OF_PUTRID_FLESH,
@@ -4565,6 +4655,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CRIMSON_KOBOLDS,
     &CRIMSON_MANTICORE,
     &CROOKSHANK_KOBOLDS,
+    &DWARVEN_SONG,
     &ETERNAL_WARRIOR,
     &FROST_GIANT,
     &GIANT_STRENGTH,
@@ -4605,6 +4696,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RADJAN_SPIRIT,
     &SUBDUE,
     &SYLVAN_LIBRARY,
+    &SYLVAN_PARADISE,
     &TYPHOON,
     &UNTAMED_WILDS,
     &WHIRLING_DERVISH,
