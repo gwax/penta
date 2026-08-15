@@ -605,10 +605,55 @@ pub(in crate::card::sets) static CLOUDFIN_RAPTOR: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a dynamic library-sized draw, a non-target hand choice to put on top, and a temporary no-maximum-hand-size rule.
 
 // GTC 35 — Frilled Oculus
-// Audit: blocked — Activated abilities have no once-per-turn activation restriction independent of a trigger condition.
+pub(in crate::card::sets) static FRILLED_OCULUS: CardRecord = CardRecord::new(
+    cards::FRILLED_OCULUS,
+    "Frilled Oculus",
+    CardArt::new("d9f3a08f-403e-4d6c-87c7-add8170bde8b", "Marco Nelor"),
+    CardSet::Gatecrash,
+    // The ration is the whole cost of the card: without it, a mana-hungry
+    // pump would be limited only by how much green is available.
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Homunculus"], 1, 3).with_ability(
+        AbilityDef::activated(
+            "{1}{G}: This creature gets +2/+2 until end of turn. Activate only once each turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}{G}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        )
+        .once_each_turn(),
+    ),
+);
+
+/// "X target nonland permanents": the count is the X that was paid, so an X
+/// larger than the board offers no declaration rather than tapping fewer.
+static GRIDLOCK_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_chosen_x(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
 
 // GTC 36 — Gridlock
-// Audit: blocked — Target declarations cannot require exactly X targets from the spell's chosen X value.
+pub(in crate::card::sets) static GRIDLOCK: CardRecord = CardRecord::new(
+    cards::GRIDLOCK,
+    "Gridlock",
+    CardArt::new("b4f5c126-3df9-4771-9e74-4ca33161ac08", "Yeong-Hao Han"),
+    CardSet::Gatecrash,
+    CardRules::new_instant(mana_cost!("{X}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Tap X target nonland permanents.",
+        &GRIDLOCK_TARGETS,
+        EffectDef::Tap {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    )),
+);
 
 // GTC 37 — Hands of Binding
 // Audit: blocked — Needs the next-untap-step skip effect and the cipher encoding and free-copy-casting procedure.
@@ -3707,6 +3752,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AGORAPHOBIA,
     &CLINGING_ANEMONES,
     &CLOUDFIN_RAPTOR,
+    &FRILLED_OCULUS,
+    &GRIDLOCK,
     &METROPOLIS_SPRITE,
     &MINDEYE_DRAKE,
     &SAGES_ROW_DENIZEN,

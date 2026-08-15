@@ -114,6 +114,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Frilled Oculus** and **Gridlock**, two more cards whose audit lines had
+  gone stale. The once-per-turn activation ration and the X-counted target
+  slot they asked for were both built for other cards, so neither needed
+  engine work.
+
 - **Street Spasm**, whose audit line said the mana model could not represent
   its {X}{X}{R}{R} overload cost. It can: repeated symbols accumulate, so the
   doubled X was already handled and the card needed no engine work.

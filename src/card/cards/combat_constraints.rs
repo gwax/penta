@@ -44,3 +44,5 @@ pub const SENTINEL: CardDefinitionId = CardDefinitionId(1843);
 pub const DERELOR: CardDefinitionId = CardDefinitionId(1844);
 pub const GLOOM: CardDefinitionId = CardDefinitionId(1845);
 pub const STREET_SPASM: CardDefinitionId = CardDefinitionId(1846);
+pub const FRILLED_OCULUS: CardDefinitionId = CardDefinitionId(1847);
+pub const GRIDLOCK: CardDefinitionId = CardDefinitionId(1848);

@@ -578,6 +578,7 @@ mod exile_source_costs;
 mod extra_turns;
 mod fetch_tapped;
 mod filtered_player_prevention;
+mod gatecrash_stale_audits;
 mod ghouls;
 mod gloom;
 mod guardian_beast;
