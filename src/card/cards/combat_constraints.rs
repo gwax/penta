@@ -38,3 +38,4 @@ pub const ASPECT_OF_WOLF: CardDefinitionId = CardDefinitionId(1837);
 pub const KHABAL_GHOUL: CardDefinitionId = CardDefinitionId(1838);
 pub const SCAVENGING_GHOUL: CardDefinitionId = CardDefinitionId(1839);
 pub const CYCLONE: CardDefinitionId = CardDefinitionId(1840);
+pub const PARALYZE: CardDefinitionId = CardDefinitionId(1841);

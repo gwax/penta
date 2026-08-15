@@ -106,6 +106,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Paralyze**, which needed no new engine work: the upkeep trigger keyed to
+  the enchanted permanent's controller already existed, and its audit line had
+  gone stale. Everything about the card points at the host's controller rather
+  than the Aura's -- their upkeep, their mana, their creature.
+
 - **Cyclone**, with a single-colour mana payment whose size is counted at
   resolution. The counter goes on before the bill arrives, so the first upkeep
   already costs {G} rather than nothing, and what paying buys is symmetric:

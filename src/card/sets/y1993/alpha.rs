@@ -2127,8 +2127,54 @@ static PESTILENCE_NO_CREATURES: TriggerConditionDef = TriggerConditionDef::Objec
 // LEA 118 — Nightmare
 // Audit: blocked — Dynamic power/toughness effects are battlefield-only and cannot implement a characteristic-defining ability in every zone.
 
+static PARALYZE_UNTAP: EffectDef = EffectDef::Untap {
+    object: EffectRecipientDef::AttachedPermanent,
+};
+
 // LEA 119 — Paralyze
-// Audit: blocked — Needs an upkeep trigger whose event player is derived from the attached permanent's current controller, for the optional {4} untap. The untap prohibition itself is available.
+pub(in crate::card::sets) static PARALYZE: CardRecord = CardRecord::new(
+    cards::PARALYZE,
+    "Paralyze",
+    CardArt::new("be33a155-de26-43d1-88f1-c926f1b7cb7c", "Anson Maddocks"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::triggered(
+                "When this Aura enters, tap enchanted creature.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                EffectDef::Tap {
+                    object: EffectRecipientDef::AttachedPermanent,
+                },
+            ),
+            AbilityDef::static_ability(
+                "Enchanted creature doesn't untap during its controller's untap step.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+                },
+            ),
+            // The host's controller pays, not the Aura's: this is on an
+            // opponent's creature every time it is played, so the payer is
+            // the player whose upkeep the trigger fired in.
+            abilities::enchanted_controller_upkeep(
+                "At the beginning of the upkeep of enchanted creature's controller, that player \
+                 may pay {4}. If the player does, untap the creature.",
+                EffectDef::PayOr(PayOrDef::optional(
+                    EffectPaymentDef::mana(
+                        PlayerSetDef::One(PlayerRefDef::EventPlayer),
+                        mana_cost!("{4}"),
+                    ),
+                    &PARALYZE_UNTAP,
+                )),
+            ),
+        ]),
+);
 
 // LEA 120 — Pestilence
 pub(in crate::card::sets) static PESTILENCE: CardRecord = CardRecord::new(
@@ -5406,6 +5452,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HOWL_FROM_BEYOND,
     &HYPNOTIC_SPECTER,
     &MIND_TWIST,
+    &PARALYZE,
     &PESTILENCE,
     &PLAGUE_RATS,
     &RAISE_DEAD,
