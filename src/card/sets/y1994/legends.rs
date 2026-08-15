@@ -3975,7 +3975,32 @@ pub(in crate::card::sets) static KRY_SHIELD: CardRecord = CardRecord::new(
 // Audit: blocked — Needs cost/mana provenance or dynamic payment support for “Instant and enchantment spells you cast cost {2} less to cast”.
 
 // LEG 286 — Marble Priest
-// Audit: blocked — Needs a must-block requirement for “All Walls able to block this creature do so”; preventing the damage those Walls deal is already expressible.
+pub(in crate::card::sets) static MARBLE_PRIEST: CardRecord = CardRecord::new(
+    cards::MARBLE_PRIEST,
+    "Marble Priest",
+    CardArt::new("3a4f462c-594b-47df-bbe9-18cccb5092c6", "Melissa A. Benson"),
+    CardSet::Legends,
+    CardRules::new_artifact_creature(mana_cost!("{5}"), &["Cleric"], 3, 3).with_abilities(&[
+        AbilityDef::static_ability(
+            "All Walls able to block this creature do so.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MustBeBlockedBy(
+                    ObjectPredicateDef::Subtype("Wall"),
+                )),
+            },
+        ),
+        AbilityDef::static_ability(
+            "Prevent all combat damage that would be dealt to this creature by Walls.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::prevent_combat_damage_from(ObjectPredicateDef::Subtype(
+                    "Wall",
+                )),
+            },
+        ),
+    ]),
+);
 
 // LEG 287 — Mirror Universe
 // Audit: blocked — Needs linked sacrifice/destruction accounting for “{T}, Sacrifice this artifact: Exchange life totals with target opponent. Activate only during your upkeep”.
@@ -4355,6 +4380,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FORETHOUGHT_AMULET,
     &HORN_OF_DEAFENING,
     &KRY_SHIELD,
+    &MARBLE_PRIEST,
     &RELIC_BARRIER,
     &SERPENT_GENERATOR,
     &KARAKAS,

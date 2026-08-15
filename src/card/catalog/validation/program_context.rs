@@ -284,7 +284,9 @@ fn static_object_applied_effect_supported(
             | AppliedRuleDef::RedirectDamageFromTo { .. },
         ) => false,
         AppliedEffectDef::Rule(
-            AppliedRuleDef::CannotBeBlockedBy(predicate) | AppliedRuleDef::CanBlockOnly(predicate),
+            AppliedRuleDef::CannotBeBlockedBy(predicate)
+            | AppliedRuleDef::CanBlockOnly(predicate)
+            | AppliedRuleDef::MustBeBlockedBy(predicate),
         ) => static_object_predicate_supported(predicate),
         AppliedEffectDef::Rule(
             AppliedRuleDef::PreventDamage(matcher) | AppliedRuleDef::LimitDamage { matcher, .. },

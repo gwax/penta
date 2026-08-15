@@ -557,6 +557,7 @@ mod mana_vault;
 mod meekstone;
 mod modal_effects;
 mod morbid;
+mod must_block;
 mod old_school_interactions;
 mod old_school_permanents;
 mod old_school_spells;

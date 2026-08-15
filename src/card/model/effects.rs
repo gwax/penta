@@ -133,6 +133,16 @@ pub enum AppliedRuleDef {
     CannotAttack,
     /// Nothing can block the affected creature.
     CannotBeBlocked,
+    /// Every creature matching this predicate that is able to block the
+    /// affected creature must do so.
+    ///
+    /// A requirement never beats a restriction (CR 509.1c): "able" is read
+    /// from the same legality that offers a block in the first place, so a
+    /// tapped creature, one that cannot block at all, or one that cannot
+    /// block *this* attacker is simply not required. What the requirement
+    /// does is take away the alternatives -- a creature that could block the
+    /// affected one may not be declared against anything else.
+    MustBeBlockedBy(ObjectPredicateDef),
     /// Damage a matching source would deal to the affected permanent's
     /// controller is dealt to that permanent instead. The redirection is read
     /// live, so a condition on the recipient -- "as long as this creature is

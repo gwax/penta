@@ -63,6 +63,16 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Combat requirements: "all creatures able to block this do so."** The
+  vocabulary had only blocking prohibitions, so a requirement had no shape at
+  all. A requirement never beats a restriction, so "able" is read from the
+  same legality that offers a block in the first place -- a tapped creature,
+  or one that cannot block that particular attacker, is simply not required.
+  What the requirement does is take the alternatives away: a creature that
+  could block the lured attacker is offered no other seat, and the defending
+  player cannot finish declaring blockers while one of them is still free.
+  Lure and Marble Priest.
+
 - **Damage that is capped rather than prevented.** A limit has no capacity to
   spend and no follow-up: it applies to every matching event for as long as
   its source is there, which is what separates it from a prevention shield.

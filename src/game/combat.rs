@@ -219,6 +219,25 @@ impl Game {
         prevented
     }
 
+    /// Whether a static or resolved rule on `attacker` requires `blocker` to
+    /// block it, as Lure requires every creature that can. Read from the
+    /// attacker for the same reason the prohibition above is: the printed
+    /// text sits on the creature being blocked, not on the ones doing it.
+    fn must_be_blocked_by(&self, attacker: &Permanent, blocker: &Permanent) -> bool {
+        let characteristics = self.trigger_event_object(blocker);
+        let mut required = false;
+        let _ = self.visit_applied_rules(attacker, |applied| {
+            if let AppliedRuleDef::MustBeBlockedBy(predicate) = applied.rule
+                && self.trigger_object_matches(predicate, &characteristics, applied.source, false)
+            {
+                required = true;
+                return ControlFlow::Break(());
+            }
+            ControlFlow::Continue(())
+        });
+        required
+    }
+
     /// Whether a continuous effect currently stops anything blocking this
     /// permanent. Asked afresh, so a resolved rule stops when its duration
     /// expires and a static one when its source leaves.
@@ -248,7 +267,59 @@ impl Game {
         self.has_applied_rule(permanent, AppliedRuleDef::CannotBlock)
     }
 
+    /// The blocks this player may declare, after combat requirements have
+    /// taken the alternatives away.
+    ///
+    /// CR 509.1c asks for the maximum possible number of requirements to be
+    /// obeyed without violating a restriction. A creature that is able to
+    /// block a must-be-blocked attacker therefore has no other legal
+    /// assignment: every block it makes elsewhere obeys one requirement
+    /// fewer. Two such attackers leave it a choice between them, because it
+    /// can only block one either way.
     pub(super) fn blocker_actions(&self, player: PlayerId) -> Vec<Action> {
+        let available = self.available_blocker_actions(player);
+        let required: Vec<GameObjectId> = available
+            .iter()
+            .filter_map(|action| self.required_block(action).map(|(blocker, _)| blocker))
+            .collect();
+        if required.is_empty() {
+            return available;
+        }
+        available
+            .into_iter()
+            .filter(|action| match action {
+                Action::DeclareBlocker { blocker, .. } => {
+                    !required.contains(blocker) || self.required_block(action).is_some()
+                }
+                _ => true,
+            })
+            .collect()
+    }
+
+    /// The blocker and attacker of a declaration a requirement compels.
+    fn required_block(&self, action: &Action) -> Option<(GameObjectId, GameObjectId)> {
+        let Action::DeclareBlocker { blocker, attacker } = action else {
+            return None;
+        };
+        let find = |id: GameObjectId| {
+            self.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == id)
+        };
+        let (blocker_permanent, attacker_permanent) = (find(*blocker)?, find(*attacker)?);
+        self.must_be_blocked_by(attacker_permanent, blocker_permanent)
+            .then_some((*blocker, *attacker))
+    }
+
+    /// Whether a requirement is still unmet, which is what stops the
+    /// defending player from finishing the declaration.
+    pub(super) fn block_requirement_outstanding(&self, available: &[Action]) -> bool {
+        available
+            .iter()
+            .any(|action| self.required_block(action).is_some())
+    }
+
+    fn available_blocker_actions(&self, player: PlayerId) -> Vec<Action> {
         let blockers: Vec<_> = self
             .battlefield
             .iter()

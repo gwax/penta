@@ -226,8 +226,11 @@ impl Game {
         }
         if self.step == Step::DeclareBlockers && !self.blockers_declared {
             if player == self.active_player.opponent() {
-                actions.push(Action::FinishDeclaringBlockers);
-                actions.extend(self.blocker_actions(player));
+                let blocks = self.blocker_actions(player);
+                if !self.block_requirement_outstanding(&blocks) {
+                    actions.push(Action::FinishDeclaringBlockers);
+                }
+                actions.extend(blocks);
             }
             return actions;
         }

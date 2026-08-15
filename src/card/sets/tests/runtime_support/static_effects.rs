@@ -232,7 +232,12 @@ pub(in super::super) fn shared_static_applied_effect(
             ) || recipient.object_query().is_some())
                 && shared_object_predicate(predicate)
         }
-        AppliedEffectDef::Rule(AppliedRuleDef::CanBlockOnly(predicate)) => {
+        // A requirement is read off the attacker on the same walk as the
+        // prohibition above, but no card applies one to a group, so the
+        // recipient list stays as narrow as the restriction's.
+        AppliedEffectDef::Rule(
+            AppliedRuleDef::CanBlockOnly(predicate) | AppliedRuleDef::MustBeBlockedBy(predicate),
+        ) => {
             matches!(
                 recipient.object_reference(),
                 Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)

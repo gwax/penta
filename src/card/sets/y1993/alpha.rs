@@ -3596,7 +3596,26 @@ static REGROWTH_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
 )];
 
 // LEA 211 — Lure
-// Audit: blocked — Needs a combat declaration or damage-assignment constraint for “All creatures able to block enchanted creature do so”.
+pub(in crate::card::sets) static LURE: CardRecord = CardRecord::new(
+    cards::LURE,
+    "Lure",
+    CardArt::new("a0865e0d-5699-4545-b3ed-27071c481e41", "Anson Maddocks"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{1}{G}{G}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant creature", &ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "All creatures able to block enchanted creature do so.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::MustBeBlockedBy(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                    )),
+                },
+            ),
+        ]),
+);
 
 // LEA 212 — Natural Selection
 // Audit: blocked — Needs ordered-library inspection, selection, and visibility handling for “Look at the top three cards of target player's library, then put them back in any order. You may have that player shuffle”.
@@ -4969,6 +4988,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LIFELACE,
     &LIVING_LANDS,
     &LLANOWAR_ELVES,
+    &LURE,
     &REGENERATION,
     &REGROWTH,
     &SCRYB_SPRITES,
