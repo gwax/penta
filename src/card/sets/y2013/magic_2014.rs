@@ -2046,8 +2046,35 @@ pub(in crate::card::sets) static ELVISH_MYSTIC: CardRecord = CardRecord::new(
         .with_abilities(&[abilities::tap_for(ManaColor::Green)]),
 );
 
+/// Trample and the requirement work together: something has to block it, and
+/// blocking barely slows seven extra power down.
+static ENLARGE_GROWTH: [AppliedEffectDef; 3] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(7), ValueDef::Constant(7)),
+    AppliedEffectDef::add_ability(&abilities::trample()),
+    AppliedEffectDef::Rule(AppliedRuleDef::MustBeBlockedBy(
+        ObjectPredicateDef::HasType(CardType::Creature),
+    )),
+];
+
 // M14 170 — Enlarge
-// Audit: blocked — No applied combat requirement makes a target creature be blocked this turn if able.
+pub(in crate::card::sets) static ENLARGE: CardRecord = CardRecord::new(
+    cards::ENLARGE,
+    "Enlarge",
+    CardArt::new("ec40df78-b1ca-4300-8a47-4d5b0ae3499e", "Michael Komarck"),
+    CardSet::Magic2014,
+    CardRules::new_sorcery(mana_cost!("{3}{G}{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Target creature gets +7/+7 and gains trample until end of turn. It must be blocked this \
+         turn if able.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::Composite(&ENLARGE_GROWTH),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // M14 172 — Garruk, Caller of Beasts
 // Audit: blocked — The planeswalker modes need filtered multi-card top selection, a hand-to-battlefield choice, and an emblem carrying an optional creature tutor trigger.
@@ -2957,6 +2984,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ADVOCATE_OF_THE_BEAST,
     &BRINDLE_BOAR,
     &ELVISH_MYSTIC,
+    &ENLARGE,
     &GLADECOVER_SCOUT,
     &GROUNDSHAKER_SLIVER,
     &HOWL_OF_THE_NIGHT_PACK,

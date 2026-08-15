@@ -91,3 +91,5 @@ pub const DAMPING_FIELD: CardDefinitionId = CardDefinitionId(1735);
 pub const ABU_JAFAR: CardDefinitionId = CardDefinitionId(1736);
 pub const ELVISH_SCOUT: CardDefinitionId = CardDefinitionId(1737);
 pub const GLYPH_OF_DESTRUCTION: CardDefinitionId = CardDefinitionId(1738);
+pub const DEADLY_ALLURE: CardDefinitionId = CardDefinitionId(1739);
+pub const ENLARGE: CardDefinitionId = CardDefinitionId(1740);

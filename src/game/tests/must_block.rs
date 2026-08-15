@@ -174,7 +174,12 @@ fn a_restriction_beats_the_requirement() {
 #[test]
 fn every_must_block_identity_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::LURE, cards::MARBLE_PRIEST] {
+    for definition in [
+        cards::LURE,
+        cards::MARBLE_PRIEST,
+        cards::DEADLY_ALLURE,
+        cards::ENLARGE,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),
@@ -183,4 +188,61 @@ fn every_must_block_identity_reports_complete_coverage() {
             card.name,
         );
     }
+}
+
+/// A spell hands the same requirement out for the turn, which is the shape
+/// the rule had to reach beyond its two printed statics. Driven through a
+/// real cast, because a resolved rule is what is being checked.
+#[test]
+fn a_spell_can_hand_out_the_requirement_for_the_turn() {
+    let mut game = ready_game();
+    game.turns_started[PlayerId::One.index()] = 5;
+    let bear = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bear_id = bear.card.id;
+    game.battlefield.push(bear);
+    let troll = creature(10_001, cards::SEDGE_TROLL, PlayerId::One);
+    let troll_id = troll.card.id;
+    game.battlefield.push(troll);
+    let lion = creature(10_002, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let lion_id = lion.card.id;
+    game.battlefield.push(lion);
+
+    let spell = card(10_003, cards::ENLARGE, PlayerId::One);
+    let spell_id = spell.id;
+    game.players[PlayerId::One.index()].hand.push(spell);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.green = 2;
+    pool.colorless = 3;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == spell_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(bear_id))
+            }
+            _ => false,
+        })
+        .expect("Enlarge can be aimed at the Bears");
+    game.apply(PlayerId::One, action).expect("Enlarge is cast");
+    drain_pending(&mut game);
+
+    game.step = Step::DeclareBlockers;
+    game.attackers_declared = true;
+    for permanent in &mut game.battlefield {
+        if permanent.card.id == bear_id || permanent.card.id == troll_id {
+            permanent.attacking = true;
+            permanent.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+        }
+    }
+
+    assert_eq!(
+        seats(&game, lion_id),
+        vec![bear_id],
+        "the enlarged attacker takes the Lions' other seat away"
+    );
+    assert!(!may_finish(&game));
 }

@@ -870,8 +870,37 @@ pub(in crate::card::sets) static BLACK_CAT: CardRecord = CardRecord::new(
 // DKA 57 — Curse of Thirst
 // Audit: blocked — Needs player-attached Auras and a count of Curses attached to the enchanted player.
 
+/// Deathtouch and the requirement are the point of each other: anything
+/// forced to block it dies for having done so.
+static DEADLY_ALLURE_LURE: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::add_ability(&abilities::deathtouch()),
+    AppliedEffectDef::Rule(AppliedRuleDef::MustBeBlockedBy(
+        ObjectPredicateDef::HasType(CardType::Creature),
+    )),
+];
+
 // DKA 58 — Deadly Allure
-// Audit: blocked — Needs a temporary combat requirement that makes the target creature be blocked this turn if able.
+pub(in crate::card::sets) static DEADLY_ALLURE: CardRecord = CardRecord::new(
+    cards::DEADLY_ALLURE,
+    "Deadly Allure",
+    CardArt::new("268e4582-7674-4565-8ef4-00be1a90f410", "Steve Argyle"),
+    CardSet::DarkAscension,
+    CardRules::new_sorcery(mana_cost!("{B}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Target creature gains deathtouch until end of turn and must be blocked this turn if \
+             able.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Composite(&DEADLY_ALLURE_LURE),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        abilities::flashback(mana_cost!("{G}")),
+    ]),
+);
 
 // DKA 59 — Death's Caress
 // Audit: blocked — Needs the destroyed target's last-known toughness as a value, gated on that target having been a Human.
@@ -2515,6 +2544,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &THOUGHT_SCOUR,
     &TOWER_GEIST,
     &BLACK_CAT,
+    &DEADLY_ALLURE,
     &FARBOG_BONEFLINGER,
     &GERALFS_MESSENGER,
     &HARROWING_JOURNEY,

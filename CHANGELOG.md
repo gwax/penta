@@ -74,6 +74,10 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Deadly Allure and Enlarge**, which hand out the must-be-blocked
+  requirement for a turn rather than printing it as a static. The rule already
+  reached both ways; only the two printed statics had been authored.
+
 - **Elvish Scout and Glyph of Destruction**, both of which needed nothing new.
   Their audit lines had blamed a missing duration-scoped prevention effect,
   which has since arrived by other routes -- so these are the first two of the
