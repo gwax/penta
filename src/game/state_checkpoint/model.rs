@@ -380,7 +380,10 @@ pub(super) struct DetachedPermanentSnapshot {
     pub(super) attacking: bool,
     pub(super) attack_defender: Option<AttackDefenderSnapshot>,
     pub(super) blocked: bool,
-    pub(super) blocking: Option<u32>,
+    /// Every attacker this creature is blocking. A list because a band is
+    /// blocked as a group and one creature may be allowed several blocks.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) blocking: Vec<u32>,
     pub(super) activated_loyalty_this_turn: bool,
     pub(super) chosen_creature_type: Option<String>,
     pub(super) chosen_card_name: Option<String>,

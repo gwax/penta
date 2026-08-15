@@ -2968,7 +2968,7 @@ function groupCardsIntoPiles(cards: Card[]) {
       card.kind,
       card.tapped ? "tapped" : "ready",
       card.attacking ? "attacking" : "idle",
-      card.blocking ?? "",
+      (card.blocking ?? []).join(","),
       card.damage ?? 0,
       card.enteredThisTurn ? "entered" : "old",
     ].join(":");

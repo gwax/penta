@@ -613,7 +613,7 @@ impl Game {
         for permanent in &mut self.battlefield {
             permanent.attacking = false;
             permanent.blocked = false;
-            permanent.blocking = None;
+            permanent.blocking.clear();
             permanent.combat_damage_assignment.clear();
         }
         self.pending_combat_attackers.clear();

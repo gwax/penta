@@ -101,7 +101,7 @@ impl HandcraftedPolicy {
         let existing_power: i16 = observation
             .battlefield
             .iter()
-            .filter(|permanent| permanent.blocking == Some(attacker.id))
+            .filter(|permanent| permanent.blocking.contains(&attacker.id))
             .filter_map(|permanent| permanent.power)
             .fold(0, i16::saturating_add);
         if existing_power >= attacker_toughness {

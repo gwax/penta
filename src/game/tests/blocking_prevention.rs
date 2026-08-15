@@ -25,7 +25,7 @@ fn blocked_by_attacker(
     game.battlefield.push(attacker);
 
     let mut blocker = creature(10_001, wall, PlayerId::Two);
-    blocker.blocking = Some(attacker_id);
+    blocker.blocking = vec![attacker_id];
     let blocker_id = blocker.card.id;
     game.battlefield.push(blocker);
     (game, attacker_id, blocker_id)
@@ -147,7 +147,7 @@ fn demonic_torment_stops_only_what_its_host_deals() {
     torment.attached_to = Some(attacker_id);
     game.battlefield.push(torment);
     let mut blocker = creature(10_002, cards::SERRA_ANGEL, PlayerId::Two);
-    blocker.blocking = Some(attacker_id);
+    blocker.blocking = vec![attacker_id];
     let blocker_id = blocker.card.id;
     game.battlefield.push(blocker);
     game.check_state_based_actions();

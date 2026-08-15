@@ -63,7 +63,7 @@ fn a_tapped_bodyguard_guards_nothing() {
 fn a_blocked_attacker_is_not_redirected() {
     let (mut game, guard, attacker) = guarded_by(cards::VETERAN_BODYGUARD);
     let mut blocker = creature(10_002, cards::SEDGE_TROLL, PlayerId::One);
-    blocker.blocking = Some(attacker);
+    blocker.blocking = vec![attacker];
     game.battlefield.push(blocker);
 
     game.deal_combat_damage();

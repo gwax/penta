@@ -254,7 +254,7 @@ fn a_blocked_assassin_never_triggers() {
     let mut assassin = creature(10_000, cards::ASSASSIN_TOKEN_1_1_BLACK, PlayerId::One);
     assassin.attacking = true;
     let mut wall = creature(10_001, cards::WALL_OF_STONE, PlayerId::Two);
-    wall.blocking = Some(GameObjectId(10_000));
+    wall.blocking = vec![GameObjectId(10_000)];
     game.battlefield.extend([assassin, wall]);
 
     game.deal_combat_damage();
@@ -895,7 +895,7 @@ fn maze_of_ith_stops_the_damage_without_calling_off_the_attack() {
     game.battlefield.push(angel);
     // A blocker, so there is damage in both directions to prevent.
     let mut lions = creature(10_002, cards::SAVANNAH_LIONS, PlayerId::Two);
-    lions.blocking = Some(GameObjectId(10_001));
+    lions.blocking = vec![GameObjectId(10_001)];
     game.battlefield.push(lions);
 
     let maze = Action::ActivateAbility {

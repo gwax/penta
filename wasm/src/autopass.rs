@@ -31,7 +31,7 @@ impl WebGame {
                 has_blocker: observation
                     .battlefield
                     .iter()
-                    .any(|permanent| permanent.blocking.is_some()),
+                    .any(|permanent| !permanent.blocking.is_empty()),
                 stop_here: self.should_stop(observation.step),
                 autopass_enabled: self.autopass_enabled,
                 only_human_objects_on_stack: !observation.stack.is_empty()
@@ -167,7 +167,7 @@ impl WebGame {
             observation
                 .battlefield
                 .iter()
-                .any(|permanent| permanent.blocking.is_some())
+                .any(|permanent| !permanent.blocking.is_empty())
         };
         matches!(
             before.step,

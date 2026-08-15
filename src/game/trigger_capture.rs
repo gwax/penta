@@ -806,7 +806,7 @@ impl Game {
                             && !self
                                 .battlefield
                                 .iter()
-                                .any(|blocker| blocker.blocking == Some(object.id))
+                                .any(|blocker| blocker.is_blocking(object.id))
                     }
                 }
             }),

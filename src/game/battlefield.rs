@@ -225,11 +225,11 @@ impl Game {
         };
         permanent.attacking = false;
         permanent.blocked = false;
-        permanent.blocking = None;
+        permanent.blocking.clear();
         permanent.combat_damage_assignment.clear();
         for other in &mut self.battlefield {
-            if other.card.id != id && other.blocking == Some(id) {
-                other.blocking = None;
+            if other.card.id != id && other.is_blocking(id) {
+                other.blocking.retain(|attacker| *attacker != id);
             }
         }
     }

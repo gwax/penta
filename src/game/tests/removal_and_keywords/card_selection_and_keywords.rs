@@ -160,7 +160,7 @@ fn deathtouch_kills_whatever_it_touches_and_lifelink_pays_its_controller() {
     let mut hawk = creature(10_001, cards::VAMPIRE_NIGHTHAWK, PlayerId::One);
     hawk.attacking = true;
     let mut wall = creature(10_002, cards::SERRA_ANGEL, PlayerId::Two); // 4/4
-    wall.blocking = Some(CardInstanceId(10_001));
+    wall.blocking = vec![CardInstanceId(10_001)];
     game.battlefield.extend([hawk, wall]);
     let before_life = game.players[0].life;
 
@@ -202,7 +202,7 @@ fn an_ordinary_creature_does_not_gain_life_or_kill_through_toughness() {
     let mut lions = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One); // 2/1 vanilla
     lions.attacking = true;
     let mut wall = creature(10_002, cards::SERRA_ANGEL, PlayerId::Two); // 4/4
-    wall.blocking = Some(CardInstanceId(10_001));
+    wall.blocking = vec![CardInstanceId(10_001)];
     game.battlefield.extend([lions, wall]);
     let before = game.players[0].life;
 

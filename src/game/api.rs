@@ -506,7 +506,7 @@ impl Game {
                         attack_defender: permanent.attack_defender,
                         attacking: permanent.attacking,
                         blocked_this_combat: permanent.blocked,
-                        blocking: permanent.blocking,
+                        blocking: permanent.blocking.clone(),
                         flying,
                         can_attack: stats.is_some()
                             && self.can_attack_creature(permanent, moat_active, flying),

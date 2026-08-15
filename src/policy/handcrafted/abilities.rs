@@ -30,7 +30,7 @@ impl HandcraftedPolicy {
                                 && observation.regular_combat_damage_pending);
                         if permanent.controller == observation.viewer
                             && useful_combat_window
-                            && (permanent.attacking || permanent.blocking.is_some())
+                            && (permanent.attacking || !permanent.blocking.is_empty())
                         {
                             1_500
                         } else {

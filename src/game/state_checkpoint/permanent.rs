@@ -244,7 +244,7 @@ pub(super) fn detached_permanent_snapshot(
             },
         }),
         blocked: permanent.blocked,
-        blocking: permanent.blocking.map(|id| id.0),
+        blocking: permanent.blocking.iter().map(|id| id.0).collect(),
         activated_loyalty_this_turn: permanent.activated_loyalty_this_turn,
         chosen_creature_type: permanent.chosen_creature_type.clone(),
         chosen_card_name: permanent.chosen_card_name.clone(),

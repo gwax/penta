@@ -21,7 +21,7 @@ fn combat(attacker: CardDefinitionId, blocker: CardDefinitionId) -> (Game, [Game
     let attacker_id = attacking.card.id;
     game.battlefield.push(attacking);
     let mut defending = creature(10_001, blocker, PlayerId::Two);
-    defending.blocking = Some(attacker_id);
+    defending.blocking = vec![attacker_id];
     let blocker_id = defending.card.id;
     game.battlefield.push(defending);
     // Blockers have to be committed before anyone holds priority again,

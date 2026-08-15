@@ -145,7 +145,7 @@ fn handcrafted_does_not_add_a_redundant_lethal_blocker() {
         Some(1),
         Some(1),
     );
-    first_blocker.blocking = Some(CardInstanceId(1));
+    first_blocker.blocking = vec![CardInstanceId(1)];
     let second_blocker = permanent(
         3,
         poc::cards::GOBLIN_BALLOON_BRIGADE,

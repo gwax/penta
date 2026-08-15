@@ -9,7 +9,7 @@ fn a_first_striker_kills_a_smaller_blocker_before_it_can_answer() {
     attacker.attacking = true;
     let attacker_id = attacker.card.id;
     let mut blocker = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two);
-    blocker.blocking = Some(attacker_id);
+    blocker.blocking = vec![attacker_id];
     let blocker_id = blocker.card.id;
     game.battlefield = vec![attacker, blocker];
 
@@ -576,7 +576,7 @@ fn an_order_can_buy_first_strike_and_win_a_trade_it_would_have_lost() {
     game.battlefield.push(order);
     // Another 2/1: without first strike the two would kill each other.
     let mut blocker = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two);
-    blocker.blocking = Some(order_id);
+    blocker.blocking = vec![order_id];
     game.battlefield.push(blocker);
     game.players[0].mana_pool.black = 1;
     let first_strike = activated_ability_for(&game, order_id, 0);

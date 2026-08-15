@@ -374,9 +374,11 @@ impl Game {
         self.battlefield
             .iter()
             .find(|permanent| permanent.card.id == object)
-            .and_then(|permanent| permanent.blocking)
+            .and_then(|permanent| permanent.blocking.first().copied())
             .or_else(|| match self.retired_objects.get(&object) {
-                Some(RetiredObject::Permanent { permanent, .. }) => permanent.blocking,
+                Some(RetiredObject::Permanent { permanent, .. }) => {
+                    permanent.blocking.first().copied()
+                }
                 Some(RetiredObject::Card(_) | RetiredObject::Stack(_)) | None => None,
             })
     }

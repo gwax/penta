@@ -17,7 +17,7 @@ pub(super) fn pending_event_referenced_object_ids(pending: &PendingEvent) -> Vec
     let ReplaceableEvent::BattlefieldEntry(entry) = &pending.event;
     ids.extend(entry.permanent.created_by);
     ids.extend(entry.permanent.attached_to);
-    ids.extend(entry.permanent.blocking);
+    ids.extend(entry.permanent.blocking.iter().copied());
     ids.extend(entry.permanent.damage_sources.iter().copied());
     ids.extend(
         entry

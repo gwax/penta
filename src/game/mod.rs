@@ -260,7 +260,12 @@ struct Permanent {
     /// even if every blocker leaves, so this cannot be recomputed from the
     /// blockers still on the battlefield.
     blocked: bool,
-    blocking: Option<GameObjectId>,
+    /// Every attacker this creature is blocking, in declaration order.
+    ///
+    /// A list rather than one attacker because a creature may be allowed to
+    /// block several, and because a band is blocked as a group: one
+    /// declaration against a band puts every member in here.
+    blocking: Vec<GameObjectId>,
     chosen_player: Option<PlayerId>,
     chosen_creature_type: Option<String>,
     /// The card name a permanent named as it entered, for Pithing Needle.
@@ -340,6 +345,16 @@ struct Permanent {
 }
 
 impl Permanent {
+    /// Whether this creature is blocking that attacker.
+    fn is_blocking(&self, attacker: GameObjectId) -> bool {
+        self.blocking.contains(&attacker)
+    }
+
+    /// Whether it is blocking anything at all.
+    fn is_blocking_anything(&self) -> bool {
+        !self.blocking.is_empty()
+    }
+
     /// A permanent as it arrives on the battlefield, before any card-specific
     /// adjustments. Three call sites used to spell out every field, which made
     /// adding one a three-place edit and gave a new entry path nothing to
@@ -369,7 +384,7 @@ impl Permanent {
             control_source: None,
             control_requires_source_tapped: false,
             blocked: false,
-            blocking: None,
+            blocking: Vec::new(),
             chosen_player: None,
             chosen_creature_type: None,
             chosen_card_name: None,

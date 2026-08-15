@@ -346,8 +346,7 @@ impl Game {
                 self.battlefield
                     .iter()
                     .filter(|candidate| {
-                        candidate.controller == player
-                            && candidate.blocking == Some(menacing.card.id)
+                        candidate.controller == player && candidate.is_blocking(menacing.card.id)
                     })
                     .count()
                     == 1
@@ -361,7 +360,7 @@ impl Game {
             .filter(|permanent| {
                 permanent.controller == player
                     && !permanent.tapped
-                    && permanent.blocking.is_none()
+                    && !permanent.is_blocking_anything()
                     && self.power(permanent).is_some()
                     && !self.cannot_block(permanent)
             })
@@ -430,8 +429,9 @@ impl Game {
             .battlefield
             .iter_mut()
             .find(|permanent| permanent.card.id == blocker)
+            && !permanent.blocking.contains(&attacker)
         {
-            permanent.blocking = Some(attacker);
+            permanent.blocking.push(attacker);
         }
         if !self.combat_blocked_attackers.contains(&attacker) {
             self.combat_blocked_attackers.push(attacker);
@@ -445,7 +445,7 @@ impl Game {
         let blocked = self
             .battlefield
             .iter()
-            .filter_map(|permanent| permanent.blocking)
+            .flat_map(|permanent| permanent.blocking.iter().copied())
             .collect::<Vec<_>>();
         for permanent in &mut self.battlefield {
             permanent.blocked = blocked.contains(&permanent.card.id);
@@ -453,10 +453,11 @@ impl Game {
         let assignments = self
             .battlefield
             .iter()
-            .filter_map(|permanent| {
+            .flat_map(|permanent| {
                 permanent
                     .blocking
-                    .map(|attacker| (permanent.card.id, attacker))
+                    .iter()
+                    .map(|attacker| (permanent.card.id, *attacker))
             })
             .collect::<Vec<_>>();
         if !assignments.is_empty() {
@@ -497,10 +498,11 @@ impl Game {
         let pairs = self
             .battlefield
             .iter()
-            .filter_map(|permanent| {
+            .flat_map(|permanent| {
                 permanent
                     .blocking
-                    .map(|attacker| (permanent.card.id, attacker))
+                    .iter()
+                    .map(|attacker| (permanent.card.id, *attacker))
             })
             .collect::<Vec<_>>();
         let mut events = Vec::with_capacity(pairs.len().saturating_mul(2));
@@ -560,7 +562,7 @@ impl Game {
         let newly_blocked = self
             .battlefield
             .iter()
-            .filter_map(|permanent| permanent.blocking)
+            .flat_map(|permanent| permanent.blocking.iter().copied())
             .collect::<Vec<_>>();
         for attacker in newly_blocked {
             if !self.combat_blocked_attackers.contains(&attacker) {
@@ -571,7 +573,7 @@ impl Game {
         let strike_wave_combatants = self
             .battlefield
             .iter()
-            .filter(|permanent| permanent.attacking || permanent.blocking.is_some())
+            .filter(|permanent| permanent.attacking || permanent.is_blocking_anything())
             .filter(|permanent| {
                 self.permanent_has_executable_keyword(permanent, KeywordAbility::FirstStrike)
                     || self
@@ -651,7 +653,7 @@ impl Game {
         self.battlefield
             .iter()
             .find(|permanent| {
-                permanent.blocking == Some(attacker)
+                permanent.is_blocking(attacker)
                     && self.permanent_has_executable_keyword(permanent, KeywordAbility::Banding)
             })
             .map_or(self.active_player, |blocker| blocker.controller)
@@ -670,7 +672,7 @@ impl Game {
         let mut recipients: Vec<_> = self
             .battlefield
             .iter()
-            .filter(|permanent| permanent.blocking == Some(attacker_id))
+            .filter(|permanent| permanent.is_blocking(attacker_id))
             .map(|permanent| Target::Permanent(permanent.card.id))
             .collect();
         recipients.sort_unstable();
@@ -829,7 +831,7 @@ impl Game {
             let blockers: Vec<_> = self
                 .battlefield
                 .iter()
-                .filter(|permanent| permanent.blocking == Some(attacker_id))
+                .filter(|permanent| permanent.is_blocking(attacker_id))
                 .map(|permanent| permanent.card.id)
                 .collect();
             if attacker_deals_damage && blockers.is_empty() {

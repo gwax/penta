@@ -340,6 +340,22 @@ pub(super) fn parse_miracle_window(
         .map(|card| Some(card.id))
         .ok_or_else(|| format!("hidden miracle hand index {index} is out of range"))
 }
+/// Object ids from a JSON array, ignoring anything that is not one. An
+/// absent or non-array value is no ids rather than an error, which is what a
+/// permanent blocking nothing looks like on the wire.
+pub(super) fn object_id_list(value: Option<&Value>) -> Vec<GameObjectId> {
+    value
+        .and_then(Value::as_array)
+        .map(|ids| {
+            ids.iter()
+                .filter_map(Value::as_u64)
+                .filter_map(|id| u32::try_from(id).ok())
+                .map(GameObjectId)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 pub(super) fn optional_id(value: Option<&Value>) -> Option<GameObjectId> {
     value
         .and_then(Value::as_u64)
@@ -445,7 +461,7 @@ pub(super) fn parse_battlefield(
                         .map(parse_attack_defender)
                         .transpose()?,
                     blocked: bool_field(shown, "blockedThisCombat")?,
-                    blocking: optional_id(shown.get("blocking")),
+                    blocking: object_id_list(shown.get("blocking")),
                     activated_loyalty_this_turn: bool_field(shown, "loyaltyAbilityUsedThisTurn")?,
                     chosen_creature_type: shown
                         .get("chosenCreatureType")
@@ -472,7 +488,7 @@ struct PermanentPresentation {
     attacking: bool,
     attack_defender: Option<AttackDefender>,
     blocked: bool,
-    blocking: Option<GameObjectId>,
+    blocking: Vec<GameObjectId>,
     activated_loyalty_this_turn: bool,
     chosen_creature_type: Option<String>,
     chosen_card_name: Option<String>,
@@ -515,7 +531,7 @@ fn parse_permanent(
     permanent.attacking = shown.attacking;
     permanent.attack_defender = shown.attack_defender;
     permanent.blocked = shown.blocked;
-    permanent.blocking = shown.blocking;
+    permanent.blocking.clone_from(&shown.blocking);
     permanent.activated_loyalty_this_turn = shown.activated_loyalty_this_turn;
     permanent.detained_until_turn_of = state
         .detained_until_turn_of
@@ -914,7 +930,12 @@ pub(super) fn parse_detached_permanent(
             attacking: snapshot.attacking,
             attack_defender,
             blocked: snapshot.blocked,
-            blocking: snapshot.blocking.map(GameObjectId),
+            blocking: snapshot
+                .blocking
+                .iter()
+                .copied()
+                .map(GameObjectId)
+                .collect(),
             activated_loyalty_this_turn: snapshot.activated_loyalty_this_turn,
             chosen_creature_type: snapshot.chosen_creature_type.clone(),
             chosen_card_name: snapshot.chosen_card_name.clone(),

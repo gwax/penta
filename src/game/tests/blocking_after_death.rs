@@ -22,11 +22,11 @@ fn combat(attacking: bool, other: CardDefinitionId) -> (Game, GameObjectId, Game
     if attacking {
         abu.attacking = true;
         abu.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
-        opponent.blocking = Some(abu.card.id);
+        opponent.blocking = vec![abu.card.id];
     } else {
         opponent.attacking = true;
         opponent.attack_defender = Some(AttackDefender::Player(PlayerId::One));
-        abu.blocking = Some(opponent.card.id);
+        abu.blocking = vec![opponent.card.id];
     }
     let (abu_id, other_id) = (abu.card.id, opponent.card.id);
     game.battlefield.push(abu);

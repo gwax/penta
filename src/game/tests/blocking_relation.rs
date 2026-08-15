@@ -25,7 +25,7 @@ fn wretched_blocked_by(count: usize) -> (Game, GameObjectId, Vec<GameObjectId>) 
             cards::SEDGE_TROLL,
             PlayerId::Two,
         );
-        blocker.blocking = Some(wretched_id);
+        blocker.blocking = vec![wretched_id];
         blockers.push(blocker.card.id);
         game.battlefield.push(blocker);
     }
@@ -95,7 +95,7 @@ fn a_creature_blocking_something_else_stays_put() {
     let other_attacker_id = other_attacker.card.id;
     game.battlefield.push(other_attacker);
     let mut elsewhere = creature(10_011, cards::SEDGE_TROLL, PlayerId::Two);
-    elsewhere.blocking = Some(other_attacker_id);
+    elsewhere.blocking = vec![other_attacker_id];
     let elsewhere_id = elsewhere.card.id;
     game.battlefield.push(elsewhere);
 

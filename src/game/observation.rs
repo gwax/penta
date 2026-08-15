@@ -80,7 +80,9 @@ pub struct PermanentObservation {
     pub attacking: bool,
     /// Whether this attacker has been blocked at any point this combat.
     pub blocked_this_combat: bool,
-    pub blocking: Option<GameObjectId>,
+    /// Every attacker this creature is blocking. Several, when it blocks a
+    /// band or is allowed more than one block.
+    pub blocking: Vec<GameObjectId>,
     pub flying: bool,
     pub can_attack: bool,
     pub entered_this_turn: bool,

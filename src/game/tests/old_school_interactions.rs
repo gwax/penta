@@ -160,7 +160,7 @@ fn argothian_pixies_ignore_artifact_creatures_entirely() {
     game.battlefield.push(pixies);
     // Su-Chi is a 4/4 artifact creature: lethal to a 2/1 if the damage lands.
     let mut su_chi = creature(10_001, cards::SU_CHI, PlayerId::Two);
-    su_chi.blocking = Some(GameObjectId(10_000));
+    su_chi.blocking = vec![GameObjectId(10_000)];
     game.battlefield.push(su_chi);
 
     game.deal_combat_damage();
@@ -191,7 +191,7 @@ fn argothian_pixies_still_take_damage_from_an_ordinary_creature() {
     pixies.attacking = true;
     game.battlefield.push(pixies);
     let mut lions = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two);
-    lions.blocking = Some(GameObjectId(10_000));
+    lions.blocking = vec![GameObjectId(10_000)];
     game.battlefield.push(lions);
 
     game.deal_combat_damage();

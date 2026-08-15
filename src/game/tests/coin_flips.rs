@@ -163,7 +163,7 @@ fn removing_a_blocker_from_combat_clears_the_blocking_relationship() {
     let attacker_id = attacker.card.id;
     game.battlefield.push(attacker);
     let mut blocker = creature(10_001, cards::SEDGE_TROLL, PlayerId::Two);
-    blocker.blocking = Some(attacker_id);
+    blocker.blocking = vec![attacker_id];
     let blocker_id = blocker.card.id;
     game.battlefield.push(blocker);
 
@@ -174,7 +174,7 @@ fn removing_a_blocker_from_combat_clears_the_blocking_relationship() {
         .iter()
         .find(|permanent| permanent.card.id == blocker_id)
         .expect("still there");
-    assert_eq!(blocker.blocking, None);
+    assert!(blocker.blocking.is_empty());
 
     game.deal_combat_damage();
     let blocker = game

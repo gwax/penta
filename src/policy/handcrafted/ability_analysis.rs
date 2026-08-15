@@ -221,7 +221,7 @@ impl HandcraftedPolicy {
             || observation
                 .battlefield
                 .iter()
-                .any(|permanent| permanent.blocking == Some(source))
+                .any(|permanent| permanent.blocking.contains(&source))
         {
             return false;
         }

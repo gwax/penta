@@ -82,7 +82,7 @@ impl Game {
                 .permanent_types(permanent)
                 .expect("a battlefield object has effective types"),
             controller: permanent.controller,
-            attacking_or_blocking: permanent.attacking || permanent.blocking.is_some(),
+            attacking_or_blocking: permanent.attacking || permanent.is_blocking_anything(),
             colors: self.effective_colors(permanent, rules),
             subtypes: self.effective_subtypes(permanent),
             mana_value: self.permanent_mana_value(permanent),
@@ -140,7 +140,7 @@ impl Game {
                 .permanent_types(permanent)
                 .expect("a battlefield object has effective types"),
             controller: permanent.controller,
-            attacking_or_blocking: permanent.attacking || permanent.blocking.is_some(),
+            attacking_or_blocking: permanent.attacking || permanent.is_blocking_anything(),
             colors: self.effective_colors(permanent, rules),
             subtypes: self.effective_subtypes_with_prospective(permanent, prospective),
             mana_value: self.permanent_mana_value(permanent),

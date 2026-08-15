@@ -330,7 +330,7 @@ impl Game {
                     && !self
                         .battlefield
                         .iter()
-                        .any(|blocker| blocker.blocking == Some(source))
+                        .any(|blocker| blocker.is_blocking(source))
             }
             // Not a creature question at all, so it is asked before the one
             // above rather than through it.

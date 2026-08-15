@@ -177,7 +177,7 @@ impl WebGame {
                         .attack_defender
                         .map(|defender| attack_defender_value(defender, self.human)),
                     "blockedThisCombat": permanent.blocked_this_combat,
-                    "blocking": permanent.blocking.map(|id| id.0),
+                    "blocking": permanent.blocking.iter().map(|id| id.0).collect::<Vec<_>>(),
                     "flying": permanent.flying,
                     "canAttack": permanent.can_attack,
                     "enteredThisTurn": permanent.entered_this_turn,

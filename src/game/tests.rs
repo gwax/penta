@@ -399,7 +399,7 @@ fn take_default_combat_assignment(game: &mut Game) {
         let blockers: Vec<_> = game
             .battlefield
             .iter()
-            .filter(|permanent| permanent.blocking == Some(*attacker))
+            .filter(|permanent| permanent.blocking == vec![*attacker])
             .map(|permanent| permanent.card.id)
             .collect();
         let split = game.default_damage_split(*attacker, &blockers);

@@ -60,7 +60,7 @@ fn fogged_combat(cast_fog: bool) -> Game {
     attacker.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
     game.battlefield.push(attacker);
     let mut blocker = creature(10_001, cards::SAVANNAH_LIONS, PlayerId::Two);
-    blocker.blocking = Some(GameObjectId(10_000));
+    blocker.blocking = vec![GameObjectId(10_000)];
     game.battlefield.push(blocker);
     if cast_fog {
         install_fog(&mut game);
@@ -714,7 +714,7 @@ mod gaseous_form {
         let (mut game, attacker_id, _aura_id) = form_game();
         let mut blocker = creature(10_002, cards::SAVANNAH_LIONS, PlayerId::Two);
         let blocker_id = blocker.card.id;
-        blocker.blocking = Some(attacker_id);
+        blocker.blocking = vec![attacker_id];
         game.battlefield.push(blocker);
 
         resolve_combat_damage(&mut game);

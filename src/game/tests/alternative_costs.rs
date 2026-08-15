@@ -743,7 +743,7 @@ fn bloodrush_uses_real_mana_sources_and_tramples_over_a_blocker() {
     attacker.attacking = true;
     let attacker_id = attacker.card.id;
     let mut blocker = creature(20_001, cards::SAVANNAH_LIONS, PlayerId::Two);
-    blocker.blocking = Some(attacker_id);
+    blocker.blocking = vec![attacker_id];
     let blocker_id = blocker.card.id;
     let mountain = creature(20_002, cards::MOUNTAIN, PlayerId::One);
     let mountain_id = mountain.card.id;

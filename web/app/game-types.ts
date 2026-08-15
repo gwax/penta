@@ -100,7 +100,9 @@ export type Card = {
   attacking?: boolean;
   attackDefender?: AttackDefenderMetadata | null;
   blockedThisCombat?: boolean;
-  blocking?: number | null;
+  /** Every attacker this creature is blocking, since a band is blocked as
+   * a group and one creature may be allowed several blocks. */
+  blocking?: number[];
   flying?: boolean;
   canAttack?: boolean;
   enteredThisTurn?: boolean;

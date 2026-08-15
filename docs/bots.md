@@ -5,7 +5,7 @@ ships Eternal Central Old School 93/94 and the final pre-Theros ISD–DGM
 Standard format. This guide is for writing a program that plays it: from
 Python, C, C++, or Rust, against the included bots or against itself.
 
-This guide describes the current development wire contract, **protocol 23**,
+This guide describes the current development wire contract, **protocol 24**,
 which retains protocol 22's open-world model. Ignore JSON object members your bot does not use;
 the epoch changes only when an existing field or tag is removed, renamed,
 retyped, or reinterpreted. Additive fields and different legal actions expressed
@@ -353,7 +353,7 @@ world it can search.
 
 | field | meaning |
 | --- | --- |
-| `protocolVersion` | the breaking bot-wire epoch; protocol 23 objects are open-world, but an epoch mismatch requires migration |
+| `protocolVersion` | the breaking bot-wire epoch; protocol 24 objects are open-world, but an epoch mismatch requires migration |
 | `protocolCapabilities` | optional named facilities emitted by this engine; currently includes `reconstruction.checkpoint.v3`; ignore unknown entries |
 | `simulationFingerprint` | a conservative identity of simulation source and build requirements; pin it for training and require it for reconstruction |
 | `engineVersion` | package-release provenance; it is not an exact simulation identity |
@@ -932,7 +932,7 @@ SERVER = "http://localhost:3000"
 # This bot consumes the protocol-23 indexed-action vocabulary and no optional
 # facilities. Do not echo capabilities from the server unless you implement them.
 COMPATIBILITY = {
-    "protocolVersion": 23,
+    "protocolVersion": 24,
     "capabilities": [],
     "requiredCapabilities": [],
     # Trained bots may require the exact server artifact they target:

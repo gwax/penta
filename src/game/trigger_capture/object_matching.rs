@@ -61,8 +61,7 @@ impl Game {
                 .battlefield
                 .iter()
                 .find(|candidate| candidate.card.id == object.id)
-                .and_then(|candidate| candidate.blocking)
-                .is_some_and(|attacker| attacker == source),
+                .is_some_and(|candidate| candidate.is_blocking(source)),
             ObjectPredicateDef::Enchanted => self.battlefield.iter().any(|candidate| {
                 candidate.attached_to == Some(object.id) && self.is_aura_permanent(candidate)
             }),

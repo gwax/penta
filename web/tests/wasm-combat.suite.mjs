@@ -172,7 +172,9 @@ test("combat damage is only asked about when it is a real choice", async () => {
     const asks = state.actions.filter((action) => action.combatDamageAttacker != null);
     if (!asks.length) return null;
     const attacker = state.battlefield.find((card) => card.id === asks[0].combatDamageAttacker);
-    const blockers = state.battlefield.filter((card) => card.blocking === attacker?.id);
+    const blockers = state.battlefield.filter((card) =>
+      (card.blocking ?? []).includes(attacker?.id),
+    );
     return blockers.length > 1
       ? null
       : {
@@ -203,7 +205,8 @@ test("combat damage is only asked about when it is a real choice", async () => {
   );
   assert.ok(attacker, "the browser can name the attacker being assigned");
   assert.ok(
-    ask.state.battlefield.filter((card) => card.blocking === attacker.id).length > 1,
+    ask.state.battlefield.filter((card) => (card.blocking ?? []).includes(attacker.id))
+      .length > 1,
     "it is only asked when several blockers share the damage",
   );
   for (const action of ask.asks) {

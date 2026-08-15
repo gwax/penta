@@ -20,7 +20,7 @@ fn banded_block(blocker_has_banding: bool) -> (Game, GameObjectId) {
     game.battlefield.push(attacker);
     for index in 0..2 {
         let mut blocker = creature(10_001 + index, cards::SAVANNAH_LIONS, PlayerId::Two);
-        blocker.blocking = Some(attacker_id);
+        blocker.blocking = vec![attacker_id];
         if blocker_has_banding && index == 0 {
             blocker.temporary_keywords.push(KeywordAbility::Banding);
         }
