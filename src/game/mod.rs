@@ -790,6 +790,12 @@ pub struct Game {
     /// the card had in the zone it came from. Consumed immediately by that
     /// move; never observed anywhere else.
     arrived: Option<GameObjectId>,
+    /// The X a cast is being considered at, while its targets are being
+    /// enumerated or checked. A spell is not on the stack yet at that point,
+    /// so its chosen X is not readable from the object -- but which
+    /// creatures are legal targets can depend on it, and the enumerator
+    /// already walks one X at a time.
+    prospective_x: std::cell::Cell<Option<u16>>,
     /// What each retired object became when it changed zones. A trigger
     /// captured on the battlefield names the object that was there, and
     /// "return it to its owner's hand" has to reach the card that object is

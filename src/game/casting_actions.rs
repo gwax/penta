@@ -947,7 +947,7 @@ impl Game {
                 continue;
             }
             let candidates =
-                self.ability_targets_matching(slot.predicate, controller, source, context);
+                self.ability_targets_matching_at(slot.predicate, controller, source, context, x);
             let mut choices = Vec::new();
             if let Some(total) = slot.divided_total {
                 let total = match total {

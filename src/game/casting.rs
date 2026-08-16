@@ -340,11 +340,12 @@ impl Game {
             && target_defs.iter().enumerate().zip(choices.targets()).all(
                 |((index, slot), selection)| {
                     let count = selection.targets().len();
-                    let legal = self.ability_targets_matching(
+                    let legal = self.ability_targets_matching_at(
                         slot.predicate,
                         player,
                         card_id,
                         TriggerContext::empty(),
+                        choices.x(),
                     );
                     // Read through the same sentinel the enumerator used, so
                     // a slot counted by X is checked against the X this cast

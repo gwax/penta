@@ -617,6 +617,7 @@ mod isd_dgm_deck_cards;
 mod isd_token_cards;
 mod jade_statue;
 mod keymaster_rogue;
+mod killing_glare;
 mod laces;
 mod land_and_ability_layers;
 mod land_characteristics;

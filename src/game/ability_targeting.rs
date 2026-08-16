@@ -10,6 +10,24 @@ use super::{
 };
 
 impl Game {
+    /// The same, considered at a particular X. A spell being cast has no
+    /// stack object yet, so a predicate that reads its chosen X -- "target
+    /// creature with power X or less" -- has nothing to read it from; the
+    /// enumerator already walks one X at a time, so it says which.
+    pub(super) fn ability_targets_matching_at(
+        &self,
+        predicate: AbilityTargetPredicate,
+        controller: PlayerId,
+        source: GameObjectId,
+        context: TriggerContext,
+        x: u16,
+    ) -> Vec<Target> {
+        let previous = self.prospective_x.replace(Some(x));
+        let targets = self.ability_targets_matching(predicate, controller, source, context);
+        self.prospective_x.set(previous);
+        targets
+    }
+
     pub(super) fn ability_targets_matching(
         &self,
         predicate: AbilityTargetPredicate,

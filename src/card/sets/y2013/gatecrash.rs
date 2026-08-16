@@ -1392,8 +1392,35 @@ pub(in crate::card::sets) static ILLNESS_IN_THE_RANKS: CardRecord = CardRecord::
     )),
 );
 
+/// "Power X or less" said with the strict comparison the predicates offer:
+/// power is an integer, so at most X and below X plus one are the same set.
+static KILLING_GLARE_LIMIT: SumValueDef = SumValueDef {
+    left: ValueDef::ChosenX,
+    right: ValueDef::Constant(1),
+};
+
 // GTC 70 — Killing Glare
-// Audit: blocked — Target predicates cannot compare a creature's power with the spell's chosen X value.
+pub(in crate::card::sets) static KILLING_GLARE: CardRecord = CardRecord::new(
+    cards::KILLING_GLARE,
+    "Killing Glare",
+    CardArt::new("f7a4d87d-b844-4f20-8b14-4fd32c53dea5", "Peter Mohrbacher"),
+    CardSet::Gatecrash,
+    // Scales to whatever it has to answer, and at X of zero it still kills
+    // something: a 0/1 blocker is a legal target.
+    CardRules::new_instant(mana_cost!("{X}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target creature with power X or less.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::PowerLessThan(ValueDef::Sum(&KILLING_GLARE_LIMIT)),
+            ]),
+        )],
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            can_regenerate: true,
+        },
+    )),
+);
 
 // GTC 71 — Lord of the Void
 // Audit: blocked — Needs combat-damage-player subject capture, top-seven exile, and a non-target creature-card choice from the exiled group.
@@ -4637,6 +4664,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GUTTER_SKULK,
     &HORROR_OF_THE_DIM,
     &ILLNESS_IN_THE_RANKS,
+    &KILLING_GLARE,
     &OGRE_SLUMLORD,
     &SEPULCHRAL_PRIMORDIAL,
     &SHADOW_ALLEY_DENIZEN,

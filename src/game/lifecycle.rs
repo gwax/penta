@@ -153,6 +153,7 @@ impl Game {
         Ok(Self {
             format,
             arrived: None,
+            prospective_x: std::cell::Cell::new(None),
             successors: std::collections::HashMap::new(),
             seed,
             rng,
@@ -443,7 +444,11 @@ impl Game {
                 .or_else(|| match self.retired_objects.get(&source) {
                     Some(RetiredObject::Stack(object)) => Some(i32::from(object.x())),
                     Some(RetiredObject::Card(_) | RetiredObject::Permanent { .. }) | None => None,
-                }),
+                })
+                // A spell being cast has no stack object yet, and "target
+                // creature with power X or less" has to be answered before
+                // it gets one.
+                .or_else(|| self.prospective_x.get().map(i32::from)),
             // Pumping the source widens the predicate while it is live. If
             // source and triggering object leave simultaneously, use the
             // same last-known power frozen for the rest of the trigger.
@@ -451,6 +456,12 @@ impl Game {
             ValueDef::SourceToughness => {
                 self.current_or_last_known_toughness(source).map(i32::from)
             }
+            // "Power X or less" is said as "below X plus one", so a sum has
+            // to be reachable from here as well as its parts.
+            ValueDef::Sum(sum) => self
+                .value_from_source(sum.left, source)
+                .zip(self.value_from_source(sum.right, source))
+                .map(|(left, right)| left.saturating_add(right)),
             _ => None,
         }
     }

@@ -133,6 +133,14 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Killing Glare**. A target predicate may now read the X a cast is being
+  considered at. A spell has no stack object while its targets are being
+  enumerated, so its chosen X was unreadable there; the enumerator already
+  walks one X at a time, so it now says which one it means, and the same
+  answer is used when a chosen cast is validated. "Power X or less" is the
+  strict comparison against X plus one, so a sum became reachable from a
+  predicate too.
+
 - **Mentor of the Meek**. Nothing new: an arrival trigger, a power predicate,
   and an optional mana payment all existed, and "power 2 or less" is the
   strict comparison the predicates offer against three -- power is an integer,
