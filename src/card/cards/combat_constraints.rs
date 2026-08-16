@@ -172,3 +172,6 @@ pub const FEED_THE_PACK: CardDefinitionId = CardDefinitionId(1971);
 pub const PREDATORS_RAPPORT: CardDefinitionId = CardDefinitionId(1972);
 pub const SHELTERING_WORD: CardDefinitionId = CardDefinitionId(1973);
 pub const TRIBUTE_TO_HUNGER: CardDefinitionId = CardDefinitionId(1974);
+pub const DEATHS_CARESS: CardDefinitionId = CardDefinitionId(1975);
+pub const DISCIPLE_OF_GRISELBRAND: CardDefinitionId = CardDefinitionId(1976);
+pub const KOROZDA_GUILDMAGE: CardDefinitionId = CardDefinitionId(1977);

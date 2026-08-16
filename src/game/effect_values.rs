@@ -1,6 +1,6 @@
 use super::{
-    EffectRecipientDef, EffectResolutionContext, Game, PlayerId, ScopedEffect, StackObject, Target,
-    ValueDef,
+    EffectResolutionContext, Game, GameObjectId, ObjectPredicateDef, PlayerId, RetiredObject,
+    ScopedEffect, StackObject, Target, ValueDef,
 };
 
 impl Game {
@@ -137,6 +137,39 @@ impl Game {
         }
     }
 
+    /// Whether the permanent a target slot points at matches, reading it as
+    /// it last existed when it is no longer on the battlefield.
+    ///
+    /// "If that creature was a Human" is asked after the destruction that
+    /// removed it, and a permanent that leaves gets a fresh object identity
+    /// in its new zone -- so the corpse in the retired table is the only
+    /// thing the old target still names.
+    fn permanent_condition_matches(
+        &self,
+        predicate: ObjectPredicateDef,
+        id: GameObjectId,
+        source: GameObjectId,
+    ) -> bool {
+        if let Some(permanent) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .or_else(|| match self.retired_objects.get(&id) {
+                Some(RetiredObject::Permanent { permanent, .. }) => Some(permanent.as_ref()),
+                _ => None,
+            })
+        {
+            return self.trigger_object_matches(
+                predicate,
+                &self.trigger_event_object(permanent),
+                source,
+                false,
+            );
+        }
+        self.card_in_nonbattlefield_zone(id)
+            .is_some_and(|(zone, card)| self.card_object_matches(predicate, card, zone, source))
+    }
+
     /// Resolve values that select between two branches separately from the
     /// direct value forms above.
     fn conditional_effect_value(
@@ -149,35 +182,23 @@ impl Game {
         match value {
             ValueDef::IfTargetMatches(condition) => {
                 let source = object.source.unwrap_or(object.id);
-                let matched = self
-                    .effect_recipients(
-                        EffectRecipientDef::Target(condition.slot),
-                        object,
-                        context,
-                        scoped,
-                    )
-                    .into_iter()
-                    .any(|target| match target {
+                // The chosen target rather than the still-legal one: "if that
+                // creature was a Human" is asked after the destruction that
+                // made it illegal, which is the only time it is interesting.
+                let matched = Self::chosen_targets(object, scoped.target_slot(condition.slot)).any(
+                    |target| match target {
                         Target::Card(id) => {
                             self.card_in_nonbattlefield_zone(id)
                                 .is_some_and(|(zone, card)| {
                                     self.card_object_matches(condition.object, card, zone, source)
                                 })
                         }
-                        Target::Permanent(id) => self
-                            .battlefield
-                            .iter()
-                            .find(|permanent| permanent.card.id == id)
-                            .is_some_and(|permanent| {
-                                self.trigger_object_matches(
-                                    condition.object,
-                                    &self.trigger_event_object(permanent),
-                                    source,
-                                    false,
-                                )
-                            }),
+                        Target::Permanent(id) => {
+                            self.permanent_condition_matches(condition.object, id, source)
+                        }
                         Target::Player(_) | Target::Spell(_) => false,
-                    });
+                    },
+                );
                 let chosen = if matched {
                     condition.then
                 } else {

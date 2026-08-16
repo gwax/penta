@@ -9,8 +9,9 @@ use crate::card::{
     DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectRecipientDef, KeywordAbility,
     LifeConditionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation,
     QuantifierDef, ReplacementEffectDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    ScaledValueDef, SpellAdditionalCostDef, SpellForm, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ScaledValueDef, SpellAdditionalCostDef, SpellForm, TargetConditionDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetIndex};
 use crate::mana_cost;
@@ -1102,8 +1103,41 @@ pub(in crate::card::sets) static DEADLY_ALLURE: CardRecord = CardRecord::new(
     ]),
 );
 
+/// "If that creature was a Human" is read after the destruction, so both the
+/// subtype and the toughness are last-known -- which is exactly what the
+/// target slot still remembers.
+static DEATHS_CARESS_LIFE: TargetConditionDef = TargetConditionDef {
+    slot: TargetIndex::PRIMARY,
+    object: ObjectPredicateDef::Subtype("Human"),
+    then: ValueDef::TargetToughness(TargetIndex::PRIMARY),
+    otherwise: ValueDef::Constant(0),
+};
+
+static DEATHS_CARESS_PROGRAM: [EffectDef; 2] = [
+    EffectDef::Destroy {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        can_regenerate: true,
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::IfTargetMatches(&DEATHS_CARESS_LIFE),
+    },
+];
+
 // DKA 59 — Death's Caress
-// Audit: blocked — Needs the destroyed target's last-known toughness as a value, gated on that target having been a Human.
+pub(in crate::card::sets) static DEATHS_CARESS: CardRecord = CardRecord::new(
+    cards::DEATHS_CARESS,
+    "Death's Caress",
+    CardArt::new("0643fb9a-8284-4dfc-836a-c2c69ef09f32", "James Ryman"),
+    CardSet::DarkAscension,
+    CardRules::new_sorcery(mana_cost!("{3}{B}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target creature. If that creature was a Human, you gain life equal to its toughness.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Sequence(&DEATHS_CARESS_PROGRAM),
+    )),
+);
 
 // DKA 60 — Falkenrath Torturer
 // Audit: blocked — Needs an activated sacrifice cost to expose whether the chosen creature was Human so the conditional counter can follow the flying grant.
@@ -3038,6 +3072,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TOWER_GEIST,
     &BLACK_CAT,
     &DEADLY_ALLURE,
+    &DEATHS_CARESS,
     &FARBOG_BONEFLINGER,
     &GERALFS_MESSENGER,
     &HARROWING_JOURNEY,

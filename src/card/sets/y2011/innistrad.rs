@@ -1833,8 +1833,35 @@ pub(in crate::card::sets) static DIREGRAF_GHOUL: CardRecord = CardRecord::new(
         .with_ability(abilities::enters_tapped("This creature enters tapped.")),
 );
 
+/// The same shape Diamond Valley uses: the sacrifice is the ability's own
+/// decision rather than a cost paid before it, because what is sacrificed
+/// has to be readable by what follows.
+static DISCIPLE_OF_GRISELBRAND_PAYOFF: EffectDef = EffectDef::GainLife {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::TriggerEventAmount,
+};
+
 // ISD 98 — Disciple of Griselbrand
-// Audit: blocked — Needs the last known toughness of a creature selected and sacrificed as an activation cost.
+pub(in crate::card::sets) static DISCIPLE_OF_GRISELBRAND: CardRecord = CardRecord::new(
+    cards::DISCIPLE_OF_GRISELBRAND,
+    "Disciple of Griselbrand",
+    CardArt::new("0c4acaa1-7d99-41ce-81ce-f6aef3e4dc1d", "Clint Cearley"),
+    CardSet::Innistrad,
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Human", "Cleric"], 1, 1).with_ability(
+        AbilityDef::activated(
+            "{1}, Sacrifice a creature: You gain life equal to the sacrificed creature's toughness.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            EffectDef::SacrificeOfChoice {
+                player: EffectRecipientDef::Controller,
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                then: Some(&DISCIPLE_OF_GRISELBRAND_PAYOFF),
+                amount: SacrificedAmountDef::Toughness,
+                otherwise: None,
+                optional: false,
+            },
+        ),
+    ),
+);
 
 static ENDLESS_RANKS_ZOMBIES: ObjectQueryDef = ObjectQueryDef::matching(
     ObjectPredicateDef::Subtype("Zombie"),
@@ -5381,6 +5408,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BUMP_IN_THE_NIGHT,
     &DEAD_WEIGHT,
     &DIREGRAF_GHOUL,
+    &DISCIPLE_OF_GRISELBRAND,
     &ENDLESS_RANKS_OF_THE_DEAD,
     &FALKENRATH_NOBLE,
     &GHOULCALLERS_CHANT,

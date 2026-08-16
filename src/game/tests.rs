@@ -688,6 +688,7 @@ mod target_toughness;
 mod targeted_answers;
 mod targeting_characteristics;
 mod token_status_cards;
+mod toughness_payouts;
 mod transmogrant;
 mod trigger_event_matchers;
 mod triggers_and_stack;

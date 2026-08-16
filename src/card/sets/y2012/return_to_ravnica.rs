@@ -3671,8 +3671,57 @@ pub(in crate::card::sets) static IZZET_STATICASTER: CardRecord = CardRecord::new
 // RTR 175 — Jarad's Orders
 // Audit: blocked — Needs a two-card hidden search followed by assigning one selected creature to hand and the other to graveyard.
 
+/// One Saproling per point of toughness the sacrifice had.
+static KOROZDA_GUILDMAGE_PAYOFF: EffectDef = EffectDef::CreateToken {
+    token: cards::SAPROLING_TOKEN_1_1_GREEN,
+    count: ValueDef::TriggerEventAmount,
+    tapped: false,
+};
+
 // RTR 176 — Korozda Guildmage
-// Audit: blocked — Its second ability needs a nontoken sacrifice cost linked to the sacrificed creature's toughness as the token count.
+pub(in crate::card::sets) static KOROZDA_GUILDMAGE: CardRecord = CardRecord::new(
+    cards::KOROZDA_GUILDMAGE,
+    "Korozda Guildmage",
+    CardArt::new("761c16aa-d4a7-492d-9275-98d0e07de45a", "Ryan Pancoast"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{B}{G}"), &["Elf", "Shaman"], 2, 2).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{1}{B}{G}: Target creature gets +1/+1 and gains intimidate until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}{B}{G}"))],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(1),
+                    ),
+                    AppliedEffectDef::add_ability(&abilities::intimidate()),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        AbilityDef::activated(
+            "{2}{B}{G}, Sacrifice a nontoken creature: Create X 1/1 green Saproling creature tokens, where X is the sacrificed creature's toughness.",
+            &[AbilityCostDef::Mana(mana_cost!("{2}{B}{G}"))],
+            EffectDef::SacrificeOfChoice {
+                player: EffectRecipientDef::Controller,
+                // Nontoken, so the Saprolings it makes cannot be fed back in.
+                // Nontoken, so the Saprolings it makes cannot be fed back in.
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+                ]),
+                then: Some(&KOROZDA_GUILDMAGE_PAYOFF),
+                amount: SacrificedAmountDef::Toughness,
+                otherwise: None,
+                optional: false,
+            },
+        ),
+    ]),
+);
 
 // RTR 177 — Lotleth Troll
 // Audit: blocked — Its discard-for-counter ability is expressible, but regeneration shields are not available for the whole card.
@@ -5339,6 +5388,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ISPERIA_SUPREME_JUDGE,
     &IZZET_CHARM,
     &IZZET_STATICASTER,
+    &KOROZDA_GUILDMAGE,
     &LOXODON_SMITER,
     &LYEV_SKYKNIGHT,
     &NEW_PRAHV_GUILDMAGE,

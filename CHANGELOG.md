@@ -119,6 +119,15 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Death's Caress**, **Disciple of Griselbrand**, and **Korozda Guildmage**.
+  A target condition now reads its object as it last existed rather than only
+  where it currently is: "if that creature was a Human" is asked after the
+  destruction that removed it, and a permanent that leaves the battlefield
+  gets a fresh object identity in its new zone, so the corpse in the retired
+  table is the only thing the old target still names. The other two take the
+  sacrifice as the ability's own decision, the shape Diamond Valley
+  established, because what was sacrificed has to be readable by what follows.
+
 - **Predator's Rapport**, **Sheltering Word**, and **Tribute to Hunger**. A
   target slot's power was readable and its toughness was not, which is the
   only thing all three were waiting on; the sum of the two was already
