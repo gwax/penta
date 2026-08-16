@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "wasm", "bindings/penta-ffi"]
+members = [".", "wasm", "bindings/penta-ffi", "tools/source-file-sizes"]
 # penta-py links against a Python toolchain, so it builds on its own rather
 # than dragging that requirement into every `cargo test`.
 exclude = ["bindings/penta-py"]

@@ -1,0 +1,37 @@
+name: Nightly sweep
+
+# The deferred simulation sweeps: five tests that play whole games and take
+# minutes, against roughly two thousand normal tests that share about four
+# seconds. Running them per-push meant every branch waited on them and the
+# suite sat right at its time budget, so a busy runner alone could mark a
+# change broken. They live here instead, where taking a while costs nothing.
+#
+# The tradeoff is that a failure here is disconnected from whatever caused
+# it, so `make nightly-sweep` ends by naming the exact failing tests and the
+# one command that reruns each locally.
+on:
+  schedule:
+    # 08:00 UTC, or early morning in the Americas.
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  slow-sweep:
+    name: deferred simulation sweeps
+    runs-on: ubuntu-24.04
+    # Generous on purpose. Nothing waits on this, so a sweep that grows is a
+    # reason to let it run, not a reason to trim its coverage.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install the pinned Rust toolchain
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+      - name: Run the deferred sweeps
+        run: make nightly-sweep

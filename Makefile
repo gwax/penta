@@ -57,7 +57,7 @@ endef
 
 .PHONY: help doctor fmt fmt-rust fmt-python-binding \
 	lint lint-rust lint-web lint-infra lint-infra-available lint-python-binding \
-	test test-rust test-rust-full test-rust-slow \
+	test test-rust test-rust-full test-rust-slow nightly-sweep \
 	test-engine test-engine-unit test-engine-integration test-policy test-wasm-rust \
 	test-profile-attribution test-magic-references test-rust-budget test-source-file-sizes \
 	catalog-report \
@@ -136,24 +136,36 @@ test-rust: ## Run normal Rust tests; simulation sweeps stay deferred.
 test-rust-slow: ## Run only ignored Rust simulation sweeps.
 	$(call run_rust_tests,--workspace --all-targets,-- --ignored)
 
+nightly-sweep: ## Run the deferred sweeps, naming a narrow repro for any failure.
+	./scripts/slow-sweep.sh
+
 test-rust-full: ## Run every normal and slow Rust test in one pass.
 	cargo test --locked --profile quick-test --workspace --all-targets -- --include-ignored
 
+# Its own dependency-free crate, so this stays a filesystem walk and finishes
+# in about a second even in a cold worktree. Keep it that way: as an
+# integration test of `penta` it linked the engine, and a check nobody can
+# afford to run before pushing is a check that fails in CI instead.
 test-source-file-sizes: ## Enforce the repository-wide Rust source-file size limit.
-	cargo test --locked --profile quick-test --test source_file_sizes
+	cargo test --locked -p source-file-sizes
 
 catalog-report: ## Print catalog and inline-audit coverage derived from source.
 	cargo test --locked --profile quick-test -p penta --lib \
 		card::sets::tests::catalog_report::print_catalog_report -- --exact --nocapture
 
-# Seconds the Rust suite may spend *running*. Compilation is excluded: it is
-# bounded by the job timeout and says nothing about whether a test got slow.
-RUST_TEST_BUDGET_SECONDS ?= 120
+# Seconds the *normal* Rust tier may spend running. Compilation is excluded:
+# it is bounded by the job timeout and says nothing about whether a test got
+# slow. The deferred sweeps are excluded too -- they are the nightly lane's
+# job, and folding them in here is what made this budget meaningless. Roughly
+# two thousand tests share about 1.5s locally and 4s on a public runner, so
+# this leaves most of an order of magnitude of headroom: far outside runner
+# variance, and still tight enough that one accidentally slow test shows up.
+RUST_TEST_BUDGET_SECONDS ?= 30
 
-test-rust-budget: ## Fail when the Rust suite runs longer than its time budget.
+test-rust-budget: ## Fail when the normal Rust tier runs longer than its budget.
 	cargo test --locked --profile quick-test --workspace --all-targets --no-run
 	@start=$$(date +%s); \
-	cargo test --locked --profile quick-test --workspace --all-targets -- --include-ignored; \
+	cargo test --locked --profile quick-test --workspace --all-targets; \
 	status=$$?; \
 	elapsed=$$(($$(date +%s) - start)); \
 	echo "Rust tests ran in $${elapsed}s (budget $(RUST_TEST_BUDGET_SECONDS)s)"; \
@@ -161,6 +173,8 @@ test-rust-budget: ## Fail when the Rust suite runs longer than its time budget.
 	if [ $$elapsed -gt $(RUST_TEST_BUDGET_SECONDS) ]; then \
 		echo "Rust tests exceeded their $(RUST_TEST_BUDGET_SECONDS)s budget." >&2; \
 		echo "Profile the slow test rather than raising the budget by reflex." >&2; \
+		echo "A sweep that genuinely needs minutes belongs in the nightly lane:" >&2; \
+		echo "mark it #[ignore] and it runs in .github/workflows/nightly.yml." >&2; \
 		exit 1; \
 	fi
 

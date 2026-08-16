@@ -146,11 +146,13 @@ available suites.
   path map below never exempts them: run `make fmt` and
   `make test-source-file-sizes` before every handoff or push, whatever the
   change touched. Neither is an aggregate, and both finish in about a second
-  once the workspace is warm; only the first size check in a fresh worktree
-  pays for the `quick-test` profile. The size limit is the one a narrow test
-  cannot reach: ten lines added to a file someone else left at 995 breaks a
-  gate that no card-behavior filter runs, and it stays broken for everyone
-  afterwards.
+  even in a cold worktree -- the size check is a dependency-free crate that
+  reads the working tree and never builds the engine, so there is no state in
+  which skipping it saves meaningful time. The size limit is the one a narrow
+  test cannot reach: ten lines added to a file someone else left at 995 breaks
+  a gate that no card-behavior filter runs, and it stays broken for everyone
+  afterwards. It was for a long time the single largest source of red CI, and
+  every one of those failures was a check that would have taken a second.
 - Native card definitions, game rules, decks, and policies do not require web
   or WASM tests merely because the engine is compiled for the browser. Run
   browser-facing tests locally only when the change affects the WASM adapter,
@@ -168,6 +170,16 @@ available suites.
   `FILTER` or `PATTERN` when available. Native simulation, policy, auto-pass,
   or combat work may justify native slow tests; it does not by itself justify
   slow browser pacing or combat suites.
+- The deferred `#[ignore]` sweeps are not in the per-push gate. They play whole
+  games -- five of them outweigh the other two thousand tests by roughly thirty
+  to one -- and they run nightly through `.github/workflows/nightly.yml`, which
+  has no time budget. Run `make test-rust-slow` locally when you change
+  simulation, policy, or checkpoint behavior that they cover; do not add one to
+  `check-rust`. A new test that genuinely needs minutes belongs in that tier:
+  mark it `#[ignore]` and the nightly lane picks it up with no further wiring.
+  When the nightly does fail, its log ends with the exact failing test names and
+  a `make test-rust-slow FILTER=<name>` line for each -- start from those rather
+  than rerunning the whole sweep.
 - Aggregate targets are not routine PR prerequisites. This includes
   `make check-fast`, `make check`, `make check-rust`, `make check-web`,
   `make check-tooling`, `make check-bindings`, and `make ci`. Use one when the
@@ -177,7 +189,8 @@ available suites.
   target, not the containing aggregate. For validation-graph changes, exercise
   the smallest changed orchestration target or dry-run its dependency graph;
   do not widen to a parent aggregate merely because it contains that target.
-  PR CI owns the complete Rust, web, tooling, and binding gates.
+  PR CI owns the complete Rust, web, tooling, and binding gates, and the
+  nightly workflow owns the deferred simulation sweeps.
 - Treat a rebase request as one bounded operation: fetch the target branch once
   at the start, record the fetched commit, and rebase onto that snapshot. After
   resolving conflicts, rerun only checks invalidated by the resolutions or by
@@ -222,7 +235,10 @@ Map changed paths to the narrowest useful target before broadening:
   to every WASM suite.
 - `bindings/penta-ffi/**` or `bindings/penta-py/**`: use the corresponding
   `make check-bindings-*` target. Run both only when shared binding behavior
-  changes.
+  changes. The one requirement an engine change could break from a distance --
+  pyo3 demanding `Send + Sync` of the `Game` it wraps -- is asserted in
+  `src/game/tests/thread_safety.rs`, so a field that costs `Sync` fails in the
+  native lane instead of only in the bindings job.
 - `.agents/skills/profile-engine-performance/**`: run
   `make test-profile-attribution`.
 - `.agents/skills/query-magic-references/**` or

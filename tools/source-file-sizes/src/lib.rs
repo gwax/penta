@@ -1,3 +1,11 @@
+//! The repository-wide Rust source-file size limit.
+//!
+//! This crate is a check, not a library: nothing links it, and it depends on
+//! nothing, so `cargo test -p source-file-sizes` is a filesystem walk that
+//! finishes in about a second from cold. The whole body is test-only, which
+//! is why the crate compiles to an empty lib outside `cargo test`.
+#![cfg(test)]
+
 use std::collections::BTreeSet;
 use std::ffi::OsStr;
 use std::fs;
@@ -22,9 +30,27 @@ const EXCLUDED_REPOSITORY_DIRECTORY_PATHS: [&str; 12] = [
     "web/work",
 ];
 
+/// This crate lives at `tools/source-file-sizes`, so the repository root is
+/// two levels up. Checked rather than assumed: a silently wrong root would
+/// scan nothing and report success.
+fn repository_root() -> PathBuf {
+    let manifest_directory = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let root = manifest_directory
+        .ancestors()
+        .nth(2)
+        .expect("tools/source-file-sizes must sit two levels below the repository root")
+        .to_path_buf();
+    assert!(
+        root.join("Cargo.toml").is_file() && root.join("src/card/sets").is_dir(),
+        "resolved repository root does not look like this repository: {}",
+        root.display()
+    );
+    root
+}
+
 #[test]
 fn rust_source_files_stay_within_size_limit() {
-    let repository_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let repository_root = repository_root();
     let cargo_roots = discover_cargo_roots(&repository_root)
         .unwrap_or_else(|error| panic!("failed to discover Cargo roots: {error}"));
     assert!(
