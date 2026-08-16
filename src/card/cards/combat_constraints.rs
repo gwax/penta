@@ -152,3 +152,4 @@ pub const MUGGING: CardDefinitionId = CardDefinitionId(1951);
 pub const ARREST: CardDefinitionId = CardDefinitionId(1952);
 pub const ENCRUST: CardDefinitionId = CardDefinitionId(1953);
 pub const SKYGAMES: CardDefinitionId = CardDefinitionId(1954);
+pub const ONE_THOUSAND_LASHES: CardDefinitionId = CardDefinitionId(1955);

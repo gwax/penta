@@ -8,10 +8,10 @@ use crate::card::{
     ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef,
     DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef,
     DividedTotal, EffectDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PlayActionMatcherDef, PlayRestrictionDef,
+    PlayerRefDef, PlayerRelation, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -3063,8 +3063,44 @@ pub(in crate::card::sets) static OBZEDAT_GHOST_COUNCIL: CardRecord = CardRecord:
     ]),
 );
 
+static ONE_THOUSAND_LASHES_PROHIBITIONS: [AppliedEffectDef; 3] = [
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotAttack),
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotActivateAbilities),
+];
+
 // GTC 183 — One Thousand Lashes
-// Audit: blocked — Needs attack, block, and activated-ability prohibitions plus an upkeep trigger keyed to the attached creature's controller.
+pub(in crate::card::sets) static ONE_THOUSAND_LASHES: CardRecord = CardRecord::new(
+    cards::ONE_THOUSAND_LASHES,
+    "One Thousand Lashes",
+    CardArt::new("eef2d548-477b-4be1-b946-6df6aac2ee6e", "Daarken"),
+    CardSet::Gatecrash,
+    // The drain follows the creature rather than the Aura, so stealing the
+    // creature takes the life loss with it.
+    CardRules::new_enchantment(mana_cost!("{2}{W}{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature can't attack or block, and its activated abilities can't be \
+                 activated.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&ONE_THOUSAND_LASHES_PROHIBITIONS),
+                },
+            ),
+            abilities::enchanted_controller_upkeep(
+                "At the beginning of the upkeep of enchanted creature's controller, that player \
+                 loses 1 life.",
+                EffectDef::LoseLife {
+                    recipient: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
+                        ObjectRefDef::AttachedToSource,
+                    )),
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
 
 // GTC 184 — Ordruun Veteran
 pub(in crate::card::sets) static ORDRUUN_VETERAN: CardRecord = CardRecord::new(
@@ -4078,6 +4114,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MARTIAL_GLORY,
     &MORTUS_STRIDER,
     &OBZEDAT_GHOST_COUNCIL,
+    &ONE_THOUSAND_LASHES,
     &ORDRUUN_VETERAN,
     &PRIMAL_VISITATION,
     &PSYCHIC_STRIKE,

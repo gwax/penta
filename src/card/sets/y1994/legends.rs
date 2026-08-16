@@ -174,7 +174,7 @@ pub(in crate::card::sets) static CLEANSE: CardRecord = CardRecord::new(
 );
 
 // LEG 6 — Clergy of the Holy Nimbus
-// Audit: blocked — Needs a duration-scoped prohibition on creating or applying regeneration shields for “{1}: This creature can't be regenerated this turn. Only your opponents may activate this ability”.
+// Audit: blocked — Needs a would-be-destroyed replacement that regenerates the source, and an activation restricted to opponents. The turn-scoped regeneration prohibition its second clause applies is available.
 
 // LEG 7 — D'Avenant Archer
 pub(in crate::card::sets) static DAVENANT_ARCHER: CardRecord = CardRecord::new(

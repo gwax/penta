@@ -227,8 +227,43 @@ fn skygames_grants_a_sorcery_speed_ability() {
     assert!(!can_activate(&game, land), "and an upkeep is not");
 }
 
+/// One Thousand Lashes carries the same three prohibitions plus a drain that
+/// follows the creature rather than the Aura.
 #[test]
-fn all_four_report_complete_coverage() {
+fn one_thousand_lashes_drains_the_creatures_controller() {
+    let mut game = ready();
+    let victim = creature(10_000, cards::ROYAL_ASSASSIN, PlayerId::Two);
+    let victim_id = victim.card.id;
+    game.battlefield.push(victim);
+    let mut aura = creature(10_001, cards::ONE_THOUSAND_LASHES, PlayerId::One);
+    aura.attached_to = Some(victim_id);
+    game.battlefield.push(aura);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+
+    game.priority = PlayerId::Two;
+    assert!(
+        !game.legal_actions(PlayerId::Two).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == victim_id)
+        ),
+        "the creature's activations are shut off",
+    );
+
+    let before = [game.players[0].life, game.players[1].life];
+    game.active_player = PlayerId::Two;
+    game.step = Step::Upkeep;
+    game.handle_upkeep_triggers();
+    drain_pending(&mut game);
+    assert_eq!(
+        [game.players[0].life, game.players[1].life],
+        [before[0], before[1] - 1],
+        "the creature's controller pays, not the Aura's",
+    );
+}
+
+#[test]
+fn all_five_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
     for definition in [
         cards::ARREST,

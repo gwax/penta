@@ -119,6 +119,9 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **One Thousand Lashes**, which is Arrest's three prohibitions plus a drain
+  that follows the enchanted creature's controller. Nothing new was needed.
+
 - **Encrust** and **Skygames**, two more Auras. Encrust reuses Arrest's new
   activation prohibition and pairs it with the untap one; Skygames grants an
   activated ability that keeps its own sorcery-speed restriction.
