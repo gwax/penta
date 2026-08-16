@@ -67,8 +67,8 @@ use model::{
     PendingEventSnapshot, PendingReplacementEffectSnapshot, PermanentSnapshot, PregameSnapshot,
     ReplacementEffectContextSnapshot, ReplacementEffectLocator, ResolvedContinuousEffectSnapshot,
     ResolvedContinuousOperationSnapshot, RetiredObjectSnapshot, SetOperationSnapshot,
-    StackSnapshot, TemporaryAbilityGrantSnapshot, TurnPhaseResumeSnapshot, TurnPhaseSnapshot,
-    ZoneKindSnapshot,
+    StackSnapshot, SuccessorSnapshot, TemporaryAbilityGrantSnapshot, TurnPhaseResumeSnapshot,
+    TurnPhaseSnapshot, ZoneKindSnapshot,
 };
 use model_keyword::UpkeepKeywordSnapshot;
 use permanent::{detached_permanent_snapshot, permanent_snapshot};
@@ -269,6 +269,17 @@ impl Game {
             })
             .collect::<Vec<_>>();
         let has_unlocated_retired_object = retired_objects.len() != retired_ids.len();
+        // Only for objects something might still name: the map itself grows
+        // for the length of the game and most of it can never be asked for.
+        let successors = retired_ids
+            .iter()
+            .filter_map(|id| {
+                self.successors.get(id).map(|became| SuccessorSnapshot {
+                    retired: id.0,
+                    became: became.0,
+                })
+            })
+            .collect::<Vec<_>>();
         let pending_events = self
             .pending_events
             .iter()
@@ -501,6 +512,7 @@ impl Game {
             emblems: self.emblems.iter().map(emblem_snapshot).collect(),
             stack,
             retired_objects,
+            successors,
             pending_events,
             temporary_ability_grants,
             next_installed_trigger_id: self.next_installed_trigger_id,
@@ -795,6 +807,12 @@ impl Game {
         game.battlefield = parse_battlefield(observation, &checkpoint.battlefield, &game.catalog)?;
         game.emblems = parse_emblems(observation, &checkpoint.emblems, &game)?;
         game.retired_objects = parse_retired_objects(&checkpoint.retired_objects, &game)?;
+        game.successors = checkpoint
+            .successors
+            .iter()
+            .map(|entry| (GameObjectId(entry.retired), GameObjectId(entry.became)))
+            .collect();
+
         game.stack = parse_stack(observation, &checkpoint.stack, &game)?;
         game.pending_events = parse_pending_events(&checkpoint.pending_events, &game.catalog)?;
         game.installed_triggers = checkpoint

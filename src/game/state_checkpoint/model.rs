@@ -84,6 +84,13 @@ pub(super) struct GameSnapshot {
     pub(super) emblems: Vec<EmblemSnapshot>,
     pub(super) stack: Vec<StackSnapshot>,
     pub(super) retired_objects: Vec<RetiredObjectSnapshot>,
+    /// What each retired object became when it changed zones, for the
+    /// objects a pending trigger might still name. Appended, so a checkpoint
+    /// written before it existed still reads -- and reads as a game where no
+    /// dying creature can find the card it became, which is what those
+    /// checkpoints actually recorded.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) successors: Vec<SuccessorSnapshot>,
     pub(super) pending_events: Vec<PendingEventSnapshot>,
     pub(super) temporary_ability_grants: Vec<TemporaryAbilityGrantSnapshot>,
     pub(super) next_installed_trigger_id: u32,
@@ -947,6 +954,14 @@ pub(super) struct EffectContinuationSnapshot {
     /// continuation written before toughness was readable meant.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) reads_toughness: bool,
+}
+
+/// One retired object and the object it became.
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct SuccessorSnapshot {
+    pub(super) retired: u32,
+    pub(super) became: u32,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

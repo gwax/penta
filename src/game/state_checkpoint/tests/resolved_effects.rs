@@ -463,3 +463,35 @@ fn pending_and_retired_permanents_round_trip_resolved_continuous_effects() {
     };
     assert_eq!(permanent.resolved_continuous_effects, vec![effect]);
 }
+
+/// A trigger already on the stack names the object that was on the
+/// battlefield, and "return it" has to reach the card that object became.
+/// Without the link the checkpoint would restore a game where the return
+/// quietly does nothing.
+#[test]
+fn a_dying_creatures_successor_survives_a_checkpoint() {
+    let mut game = crate::game::tests::ready_game();
+    let strider = game
+        .put_onto_battlefield(PlayerId::One, crate::card::cards::MORTUS_STRIDER)
+        .expect("the Strider enters");
+    game.move_permanents_to_graveyard(&[strider]);
+    assert!(
+        !game.pending_triggers.is_empty(),
+        "its own death trigger is waiting",
+    );
+
+    let (wire, rebuilt) = rebuild_current_checkpoint(&game, PlayerId::One, 60_101);
+    assert!(
+        wire["checkpoint"]["successors"].is_array(),
+        "the link is written down",
+    );
+    assert_eq!(
+        rebuilt.live_object_target(strider),
+        game.live_object_target(strider),
+        "and the restored game reaches the same card",
+    );
+    assert!(
+        rebuilt.live_object_target(strider).is_some(),
+        "which is the card it became, not nothing",
+    );
+}

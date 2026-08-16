@@ -143,8 +143,8 @@ distinguishes snapshots of the covered source and build inputs.
   to a graveyard has a different identity, so "return it" resolved to nothing.
   Mortus Strider has shipped with that since it was written and quietly
   returned nothing at all; it now has a regression test. The move is followed
-  through a successor map, which is in-memory only: a checkpoint taken between
-  such a trigger going on the stack and resolving still loses the link.
+  through a successor map, which the checkpoint carries for the objects a
+  pending trigger might still name.
 
 - **Rise from the Grave**. A zone move may now carry a continuous effect the
   permanent arrives with, for the clauses that say what the thing they just
