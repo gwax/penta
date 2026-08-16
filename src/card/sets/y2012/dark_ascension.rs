@@ -2683,14 +2683,80 @@ pub(in crate::card::sets) static STROMKIRK_CAPTAIN: CardRecord = CardRecord::new
 // DKA 147 — Elbrus, the Binding Blade
 // Audit: blocked — Needs equipment attachment/equip actions and a combat-damage trigger on the equipped creature that un attaches and transforms this permanent.
 
+static EXECUTIONERS_HOOD_INTIMIDATE: AbilityDef = abilities::intimidate();
+
 // DKA 148 — Executioner's Hood
-// Audit: blocked — Needs equipment attachment/equip actions before intimidate can be granted to the equipped creature.
+pub(in crate::card::sets) static EXECUTIONERS_HOOD: CardRecord = CardRecord::new(
+    cards::EXECUTIONERS_HOOD,
+    "Executioner's Hood",
+    CardArt::new("7447d115-9b29-4086-8435-40c7c957f242", "Anthony Palumbo"),
+    CardSet::DarkAscension,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature has intimidate.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::add_ability(&EXECUTIONERS_HOOD_INTIMIDATE),
+                },
+            ),
+            abilities::equip(
+                mana_cost!("{2}"),
+                "Equip {2} ({2}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
 
 // DKA 149 — Grafdigger's Cage
 // Audit: blocked — Needs zone-origin-sensitive casting prohibitions and a replacement that stops creature cards in graveyards or libraries entering the battlefield.
 
+static EQUIPPED_CREATURE_IS_HUMAN: TriggerConditionDef =
+    TriggerConditionDef::AttachedPermanentMatches {
+        object: ObjectPredicateDef::Subtype("Human"),
+    };
+
+/// "An additional +1/+1", so this is a second modifier on top of the printed
+/// one rather than a replacement for it.
+static HEAVY_MATTOCK_HUMAN_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::AttachedPermanent,
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+};
+
 // DKA 150 — Heavy Mattock
-// Audit: blocked — Needs equipment attachment/equip actions and a conditional extra +1/+1 while the equipped creature is Human.
+pub(in crate::card::sets) static HEAVY_MATTOCK: CardRecord = CardRecord::new(
+    cards::HEAVY_MATTOCK,
+    "Heavy Mattock",
+    CardArt::new("8b09df01-0b3e-463e-bf00-0a9f1822261a", "Winona Nelson"),
+    CardSet::DarkAscension,
+    CardRules::new_artifact(mana_cost!("{3}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +1/+1.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(1),
+                    ),
+                },
+            ),
+            AbilityDef::static_ability(
+                "As long as equipped creature is a Human, it gets an additional +1/+1.",
+                EffectDef::IfCondition {
+                    condition: &EQUIPPED_CREATURE_IS_HUMAN,
+                    then: &HEAVY_MATTOCK_HUMAN_BONUS,
+                },
+            ),
+            abilities::equip(
+                mana_cost!("{2}"),
+                "Equip {2} ({2}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
 
 // DKA 151 — Helvault
 pub(in crate::card::sets) static HELVAULT: CardRecord = CardRecord::new(
@@ -2931,6 +2997,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DROGSKOL_REAVER,
     &HUNTMASTER_OF_THE_FELLS,
     &STROMKIRK_CAPTAIN,
+    &EXECUTIONERS_HOOD,
+    &HEAVY_MATTOCK,
     &HELVAULT,
     &EVOLVING_WILDS,
     &GRIM_BACKWOODS,

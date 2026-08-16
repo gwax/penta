@@ -3677,7 +3677,31 @@ pub(in crate::card::sets) static RAZORTIP_WHIP: CardRecord = CardRecord::new(
 );
 
 // GTC 236 — Riot Gear
-// Audit: blocked — Equipment attachment and the equip special action are unavailable.
+pub(in crate::card::sets) static RIOT_GEAR: CardRecord = CardRecord::new(
+    cards::RIOT_GEAR,
+    "Riot Gear",
+    CardArt::new("d3be1289-76f9-40b3-9387-b76a8b8d8797", "Jack Wang"),
+    CardSet::Gatecrash,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +1/+2.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(2),
+                    ),
+                },
+            ),
+            abilities::equip(
+                mana_cost!("{2}"),
+                "Equip {2} ({2}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
 
 // GTC 237 — Simic Keyrune
 // Audit: blocked — Needs its colors, creature type, and base power/toughness authored as one end-of-turn characteristic effect.
@@ -4015,6 +4039,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARMORED_TRANSPORT,
     &MILLENNIAL_GARGOYLE,
     &RAZORTIP_WHIP,
+    &RIOT_GEAR,
     &SKYBLINDER_STAFF,
     &BOROS_GUILDGATE,
     &BREEDING_POOL,

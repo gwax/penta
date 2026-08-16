@@ -119,6 +119,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Riot Gear**, **Kitesail**, **Executioner's Hood**, **Heavy Mattock** and
+  **Bladed Bracers**. Two dozen audit lines claim Equipment and the equip
+  procedure are unavailable; they have been available for a while. The Mattock
+  and the Bracers read the equipped creature's type live, so moving them
+  changes what they give.
+
 - **Builder's Blessing** and **Eternal Flame**, two more stale audits. The
   Blessing wanted a recipient narrowed to untapped creatures, which Arcades
   Sabboth already needed; the Flame wanted a halved count rounded up, which

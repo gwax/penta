@@ -3240,8 +3240,56 @@ pub(in crate::card::sets) static SIGARDA_HOST_OF_HERONS: CardRecord = CardRecord
 // AVR 212 — Angelic Armaments
 // Audit: blocked — Needs Equipment attach actions and attachment-scoped color and subtype changes.
 
+static BLADED_BRACERS_VIGILANCE: AbilityDef = abilities::vigilance();
+
+static EQUIPPED_CREATURE_IS_HUMAN_OR_ANGEL: TriggerConditionDef =
+    TriggerConditionDef::AttachedPermanentMatches {
+        object: ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::Subtype("Human"),
+            ObjectPredicateDef::Subtype("Angel"),
+        ]),
+    };
+
+static BLADED_BRACERS_VIGILANCE_GRANT: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::AttachedPermanent,
+    effect: AppliedEffectDef::add_ability(&BLADED_BRACERS_VIGILANCE),
+};
+
 // AVR 213 — Bladed Bracers
-// Audit: blocked — Needs Equipment attach actions and a Human-or-Angel condition for the vigilance grant.
+pub(in crate::card::sets) static BLADED_BRACERS: CardRecord = CardRecord::new(
+    cards::BLADED_BRACERS,
+    "Bladed Bracers",
+    CardArt::new("897a5116-043c-46aa-880e-be8dcb1618bc", "Ryan Yee"),
+    CardSet::AvacynRestored,
+    // The size is unconditional and only the vigilance reads the type, so
+    // moving the Bracers onto a Zombie keeps the +1/+1.
+    CardRules::new_artifact(mana_cost!("{1}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +1/+1.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(1),
+                    ),
+                },
+            ),
+            AbilityDef::static_ability(
+                "As long as equipped creature is a Human or an Angel, it has vigilance.",
+                EffectDef::IfCondition {
+                    condition: &EQUIPPED_CREATURE_IS_HUMAN_OR_ANGEL,
+                    then: &BLADED_BRACERS_VIGILANCE_GRANT,
+                },
+            ),
+            abilities::equip(
+                mana_cost!("{2}"),
+                "Equip {2} ({2}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
 
 // AVR 214 — Conjurer's Closet
 // Audit: blocked — Linked exile returns a stolen target under its owner rather than the ability controller required by the card.
@@ -3667,6 +3715,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WOLFIR_AVENGER,
     &YEW_SPIRIT,
     &SIGARDA_HOST_OF_HERONS,
+    &BLADED_BRACERS,
     &HAUNTED_GUARDIAN,
     &NARSTAD_SCRAPPER,
     &OTHERWORLD_ATLAS,

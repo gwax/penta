@@ -3587,8 +3587,39 @@ pub(in crate::card::sets) static GILDED_LOTUS: CardRecord = CardRecord::new(
     )),
 );
 
+static KITESAIL_FLYING: AbilityDef = abilities::flying();
+
+static KITESAIL_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)),
+    AppliedEffectDef::add_ability(&KITESAIL_FLYING),
+];
+
 // M13 208 — Kitesail
-// Audit: blocked — Equipment attachment and equip costs are not declaratively supported.
+pub(in crate::card::sets) static KITESAIL: CardRecord = CardRecord::new(
+    cards::KITESAIL,
+    "Kitesail",
+    CardArt::new(
+        "2f95cf4c-1845-4260-8571-91c03d582da3",
+        "Cyril Van Der Haegen",
+    ),
+    CardSet::Magic2013,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +1/+0 and has flying.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&KITESAIL_BONUS),
+                },
+            ),
+            abilities::equip(
+                mana_cost!("{2}"),
+                "Equip {2} ({2}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
 
 // M13 209 — Phyrexian Hulk
 pub(in crate::card::sets) static PHYREXIAN_HULK: CardRecord = CardRecord::new(
@@ -4144,6 +4175,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CHRONOMATON,
     &DOOR_TO_NOTHINGNESS,
     &GILDED_LOTUS,
+    &KITESAIL,
     &PHYREXIAN_HULK,
     &RING_OF_EVOS_ISLE,
     &RING_OF_KALONIA,
