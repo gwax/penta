@@ -39,6 +39,7 @@ fn observation_json_carries_interwave_state_and_presented_card_part() {
             attacking: false,
             blocked_this_combat: false,
             blocking: Vec::new(),
+            blocking_this_combat: false,
             attacking_band: None,
             flying: false,
             can_attack: true,

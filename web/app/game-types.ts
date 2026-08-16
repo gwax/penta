@@ -101,8 +101,12 @@ export type Card = {
   attackDefender?: AttackDefenderMetadata | null;
   blockedThisCombat?: boolean;
   /** Every attacker this creature is blocking, since a band is blocked as
-   * a group and one creature may be allowed several blocks. */
+   * a group and one creature may be allowed several blocks. Emptied as those
+   * attackers leave combat, which does not stop this creature blocking. */
   blocking?: number[];
+  /** Whether it has blocked at all this combat. This is the one to read to
+   * ask whether it is a blocking creature. */
+  blockingThisCombat?: boolean;
   flying?: boolean;
   canAttack?: boolean;
   enteredThisTurn?: boolean;

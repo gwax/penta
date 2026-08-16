@@ -506,6 +506,12 @@ the printed limit allows. A permanent's `attackingBand` is the index every
 member of its band shares, absent for an attacker in no band. `AssignCombatDamage` names one `attacker`
 and an ordered `assignments` list of `{recipient, amount}`.
 
+A permanent's `blocking` lists the attackers it is blocking right now, and
+combat damage follows that list. It empties as those attackers leave combat,
+which does not stop the creature being a blocking creature — read
+`blockingThisCombat` for the status, as you read `blockedThisCombat` rather
+than counting an attacker's surviving blockers.
+
 ### Decisions
 
 Every decision has a `kind`:

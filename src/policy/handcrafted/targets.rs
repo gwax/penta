@@ -79,7 +79,7 @@ impl HandcraftedPolicy {
             return false;
         };
         observation.battlefield.iter().any(|permanent| {
-            permanent.id == id && (permanent.attacking || !permanent.blocking.is_empty())
+            permanent.id == id && (permanent.attacking || permanent.blocking_this_combat)
         })
     }
 

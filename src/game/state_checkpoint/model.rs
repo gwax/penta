@@ -426,6 +426,11 @@ pub(super) struct DetachedPermanentSnapshot {
     /// blocked as a group and one creature may be allowed several blocks.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) blocking: Vec<u32>,
+    /// Whether it blocked something that has since left combat, which the
+    /// list above can no longer say. Absent from a payload written before the
+    /// distinction existed, and from the ordinary case where the list answers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) blocking_this_combat: Option<bool>,
     /// The attacking band this creature is in, shared by every member.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) attacking_band: Option<u8>,

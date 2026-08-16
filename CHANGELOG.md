@@ -67,6 +67,20 @@ distinguishes snapshots of the covered source and build inputs.
   of their own, dividing it among what they block, and a division with more
   than one legal split is offered as a choice like an attacker's.
 
+- **A blocker stopped being a blocking creature when its attacker left
+  combat.** Blocker status was read off the list of attackers being blocked,
+  and removing an attacker from combat empties that list on everything that
+  blocked it — so a Sedge Troll that regenerated took its blocker out of
+  combat with it. CR 506.4 lists every way a permanent leaves combat and this
+  is not one of them. Blocker status now outlives those departures the way an
+  attacker's blocked status already outlived its blockers, so "target
+  attacking or blocking creature" still reaches such a blocker, and
+  Righteousness still finds one to pump. Observations gain
+  `blockingThisCombat` beside `blockedThisCombat`; `blocking` continues to
+  name only the attackers still being blocked, which is what combat damage
+  follows. Protocol 24 is unchanged: the member is additive, and a consumer
+  that ignores it reads exactly what it read before.
+
 - **"Blocked by this creature" went blank once the creature left.** The
   relationship is recorded on the blocker, so a blocker that died in combat
   took the answer with it and its own death trigger found nothing. It is now

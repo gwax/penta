@@ -636,6 +636,7 @@ impl Game {
             permanent.attacking_band = None;
             permanent.blocked = false;
             permanent.blocking.clear();
+            permanent.blocking_this_combat = false;
             permanent.combat_damage_assignment.clear();
         }
         self.pending_combat_assignments.clear();

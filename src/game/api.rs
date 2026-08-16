@@ -510,6 +510,7 @@ impl Game {
                         attacking: permanent.attacking,
                         blocked_this_combat: permanent.blocked,
                         blocking: permanent.blocking.clone(),
+                        blocking_this_combat: permanent.is_blocking_this_combat(),
                         attacking_band: permanent.attacking_band,
                         flying,
                         can_attack: stats.is_some()

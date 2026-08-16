@@ -81,8 +81,12 @@ pub struct PermanentObservation {
     /// Whether this attacker has been blocked at any point this combat.
     pub blocked_this_combat: bool,
     /// Every attacker this creature is blocking. Several, when it blocks a
-    /// band or is allowed more than one block.
+    /// band or is allowed more than one block. Emptied as those attackers
+    /// leave combat, which does not stop this creature blocking.
     pub blocking: Vec<GameObjectId>,
+    /// Whether this creature has blocked at any point this combat. Read this,
+    /// not `blocking`, to ask whether it is a blocking creature.
+    pub blocking_this_combat: bool,
     /// Which attacking band this creature is in, as an index shared by every
     /// member of that band. None for an attacker in no band at all.
     pub attacking_band: Option<u8>,

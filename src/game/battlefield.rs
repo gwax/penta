@@ -212,9 +212,15 @@ impl Game {
         let _ = self.tap_permanent(id);
     }
 
-    /// CR 506.4: the permanent stops attacking or blocking, and anything that
-    /// was blocking it stops. Regeneration does this as part of its shield;
-    /// an effect that only removes a creature from combat does the same.
+    /// CR 506.4: the permanent stops attacking or blocking, and nothing is
+    /// blocking it any more. Regeneration does this as part of its shield; an
+    /// effect that only removes a creature from combat does the same.
+    ///
+    /// The blockers themselves stay blocking creatures. CR 506.4 lists every
+    /// way a permanent leaves combat and an attacker's departure is not one of
+    /// them, so only the relationship goes -- which is why
+    /// `blocking_this_combat` is left alone for everyone but the permanent
+    /// actually being removed.
     pub(super) fn remove_permanent_from_combat(&mut self, id: GameObjectId) {
         let Some(permanent) = self
             .battlefield
@@ -227,6 +233,7 @@ impl Game {
         permanent.attacking_band = None;
         permanent.blocked = false;
         permanent.blocking.clear();
+        permanent.blocking_this_combat = false;
         permanent.combat_damage_assignment.clear();
         for other in &mut self.battlefield {
             if other.card.id != id && other.is_blocking(id) {

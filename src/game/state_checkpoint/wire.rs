@@ -462,6 +462,14 @@ pub(super) fn parse_battlefield(
                         .transpose()?,
                     blocked: bool_field(shown, "blockedThisCombat")?,
                     blocking: object_id_list(shown.get("blocking")),
+                    // Absent from an observation written before blocker status
+                    // outlived the relationship. `blocking` is still read
+                    // above, and a live block answers on its own, so such a
+                    // payload loses nothing it was able to record.
+                    blocking_this_combat: shown
+                        .get("blockingThisCombat")
+                        .and_then(Value::as_bool)
+                        .unwrap_or(false),
                     attacking_band: shown
                         .get("attackingBand")
                         .and_then(Value::as_u64)
@@ -493,6 +501,7 @@ struct PermanentPresentation {
     attack_defender: Option<AttackDefender>,
     blocked: bool,
     blocking: Vec<GameObjectId>,
+    blocking_this_combat: bool,
     attacking_band: Option<u8>,
     activated_loyalty_this_turn: bool,
     chosen_creature_type: Option<String>,
@@ -537,6 +546,7 @@ fn parse_permanent(
     permanent.attack_defender = shown.attack_defender;
     permanent.blocked = shown.blocked;
     permanent.blocking.clone_from(&shown.blocking);
+    permanent.blocking_this_combat = shown.blocking_this_combat;
     permanent.attacking_band = shown.attacking_band;
     permanent.activated_loyalty_this_turn = shown.activated_loyalty_this_turn;
     permanent.detained_until_turn_of = state
@@ -962,6 +972,7 @@ pub(super) fn parse_detached_permanent(
                 .copied()
                 .map(GameObjectId)
                 .collect(),
+            blocking_this_combat: snapshot.blocking_this_combat.unwrap_or(false),
             attacking_band: snapshot.attacking_band,
             activated_loyalty_this_turn: snapshot.activated_loyalty_this_turn,
             chosen_creature_type: snapshot.chosen_creature_type.clone(),

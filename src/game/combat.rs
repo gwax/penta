@@ -526,6 +526,10 @@ impl Game {
             .collect::<Vec<_>>();
         for permanent in &mut self.battlefield {
             permanent.blocked = blocked.contains(&permanent.card.id);
+            // The declaration is the moment blocker status is established.
+            // After this, attackers can leave and empty the list above; the
+            // creatures that blocked them are still blocking creatures.
+            permanent.blocking_this_combat |= permanent.is_blocking_anything();
         }
         let assignments = self
             .battlefield
@@ -646,11 +650,15 @@ impl Game {
                 self.combat_blocked_attackers.push(attacker);
             }
         }
+        // Blocker status, from the same directly constructed relationships.
+        for permanent in &mut self.battlefield {
+            permanent.blocking_this_combat |= permanent.is_blocking_anything();
+        }
 
         let strike_wave_combatants = self
             .battlefield
             .iter()
-            .filter(|permanent| permanent.attacking || permanent.is_blocking_anything())
+            .filter(|permanent| permanent.attacking || permanent.is_blocking_this_combat())
             .filter(|permanent| {
                 self.permanent_has_executable_keyword(permanent, KeywordAbility::FirstStrike)
                     || self

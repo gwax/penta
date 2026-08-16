@@ -274,7 +274,17 @@ struct Permanent {
     /// A list rather than one attacker because a creature may be allowed to
     /// block several, and because a band is blocked as a group: one
     /// declaration against a band puts every member in here.
+    ///
+    /// This is the live relationship, and only the live relationship: it is
+    /// what combat damage is exchanged along. Whether the creature is a
+    /// blocking creature at all is `blocking_this_combat`.
     blocking: Vec<GameObjectId>,
+    /// Whether this creature was declared as a blocker this combat. CR 506.4
+    /// lists every way a permanent leaves combat, and an attacker leaving is
+    /// not one of them, so a blocker stays a blocking creature even once
+    /// everything it blocked is gone. That cannot be recomputed from
+    /// `blocking`, which those departures empty.
+    blocking_this_combat: bool,
     chosen_player: Option<PlayerId>,
     chosen_creature_type: Option<String>,
     /// The card name a permanent named as it entered, for Pithing Needle.
@@ -371,9 +381,20 @@ impl Permanent {
         self.blocking.contains(&attacker)
     }
 
-    /// Whether it is blocking anything at all.
+    /// Whether it is blocking anything at all right now. Ask this for combat
+    /// damage, which flows along the live relationship.
     fn is_blocking_anything(&self) -> bool {
         !self.blocking.is_empty()
+    }
+
+    /// Whether it is a blocking creature. Ask this for everything that reads
+    /// the status rather than the relationship -- "attacking or blocking
+    /// creature", first strike waves -- because it outlives the attackers.
+    ///
+    /// Either half answers on its own: a live block is a block, and the flag
+    /// carries the ones whose attackers have since left.
+    fn is_blocking_this_combat(&self) -> bool {
+        self.blocking_this_combat || self.is_blocking_anything()
     }
 
     /// A permanent as it arrives on the battlefield, before any card-specific
@@ -408,6 +429,7 @@ impl Permanent {
             control_requires_source_tapped: false,
             blocked: false,
             blocking: Vec::new(),
+            blocking_this_combat: false,
             chosen_player: None,
             chosen_creature_type: None,
             chosen_card_name: None,
