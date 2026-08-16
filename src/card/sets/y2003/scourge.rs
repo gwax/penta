@@ -2,14 +2,47 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef,
+    ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 static GOBLIN_SPELLS: ObjectPredicateDef = ObjectPredicateDef::Subtype("Goblin");
+
+// SCG 12 — Eternal Dragon
+pub(in crate::card::sets) static ETERNAL_DRAGON: CardRecord = CardRecord::new(
+    cards::ETERNAL_DRAGON,
+    "Eternal Dragon",
+    CardArt::new("0596928c-2b20-4dbb-aa78-3ab6c3ce0d72", "Justin Sweet"),
+    CardSet::Scourge,
+    // Three cards in one: a land early, a threat late, and a threat again
+    // every turn after that. Control decks play it as a one-of because it
+    // never runs out.
+    CardRules::new_creature(mana_cost!("{5}{W}{W}"), &["Dragon", "Spirit"], 5, 5).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::activated(
+            "{3}{W}{W}: Return this card from your graveyard to your hand. Activate only during your upkeep.",
+            &[AbilityCostDef::Mana(mana_cost!("{3}{W}{W}"))],
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Source,
+                zone: ZoneKind::Hand,
+                placement: ZonePlacement::Top,
+                controller: None,
+                arrival_effect: None,
+            },
+        )
+        .with_source_zones(&[ZoneKind::Graveyard])
+        .with_activation_timing(ActivationTimingDef::YourUpkeep),
+        abilities::typecycling(
+            "Plainscycling {2} ({2}, Discard this card: Search your library for a Plains card, reveal it, put it into your hand, then shuffle.)",
+            mana_cost!("{2}"),
+            ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
+        ),
+    ]),
+);
 
 // SCG 97 — Goblin Warchief
 pub(in crate::card::sets) static GOBLIN_WARCHIEF: CardRecord = CardRecord::new(
@@ -92,6 +125,7 @@ pub(in crate::card::sets) static SIEGE_GANG_COMMANDER: CardRecord = CardRecord::
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&GOBLIN_WARCHIEF, &SIEGE_GANG_COMMANDER];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&ETERNAL_DRAGON, &GOBLIN_WARCHIEF, &SIEGE_GANG_COMMANDER];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

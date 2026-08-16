@@ -23,7 +23,25 @@ impl Game {
         scoped: ScopedEffect,
     ) -> Option<Target> {
         match reference {
-            ObjectRefDef::Source => object.source.map(Target::Permanent),
+            // An ability activated from the graveyard or from hand has a
+            // card, not a permanent, as its source, and "return this card to
+            // your hand" has to name it as one. A source that is on the
+            // battlefield, or that has left every zone, still answers as a
+            // permanent: that is the last-known information every
+            // "sacrifice this" clause reads after the thing is already gone.
+            ObjectRefDef::Source => object.source.map(|source| {
+                if self
+                    .battlefield
+                    .iter()
+                    .any(|permanent| permanent.card.id == source)
+                {
+                    return Target::Permanent(source);
+                }
+                match self.card_in_nonbattlefield_zone(source) {
+                    Some(_) => Target::Card(source),
+                    None => Target::Permanent(source),
+                }
+            }),
             ObjectRefDef::ResolvingObject => self.live_object_target(object.id),
             ObjectRefDef::Binding(binding) => context.single_object(binding),
             ObjectRefDef::AttachedToSource => object

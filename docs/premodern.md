@@ -38,10 +38,12 @@ up when the first staged list is promoted.
   remain append-only even when a card belongs to an older set.
 - Add accurate characteristics and Oracle clauses for uncataloged cards.
   Unsupported clauses must be metadata-only rather than executable no-ops.
-- Implement reusable mechanics before card-local behavior: cycling and
-  landcycling, flashback, threshold, fading, echo, alternative costs, split
-  cards, graveyard replacement/reanimation, named-card choices, tutors,
-  continuous type/PT changes, and triggered mana/untap restrictions.
+- Implement reusable mechanics before card-local behavior. Cycling and
+  typecycling are done; still outstanding are flashback, threshold, fading,
+  echo, alternative costs, split cards, graveyard replacement/reanimation,
+  named-card choices, tutors, continuous type/PT changes, and triggered
+  mana/untap restrictions. "When you cycle this card" is a trigger the
+  engine does not yet raise.
 - Audit the existing definitions against their Premodern Oracle text and
   interactions.
 - Promote each staged deck into the runtime registry only when every main-deck
@@ -55,6 +57,7 @@ Already cataloged (status annotations record the completed interaction audits;
 older unannotated definitions still require one):
 
 - `Adarkar Wastes` — complete
+- `Akroma's Vengeance` — complete
 - `Ancient Tomb` — complete
 - `Annul` — complete
 - `Armageddon`
@@ -70,6 +73,7 @@ older unannotated definitions still require one):
 - `Dust Bowl` — complete
 - `Earthquake`
 - `Enlightened Tutor` — complete
+- `Eternal Dragon` — complete
 - `Fact or Fiction` — complete
 - `Fire // Ice` — complete
 - `Flooded Strand` — complete
@@ -111,6 +115,7 @@ older unannotated definitions still require one):
 - `Root Maze` — complete
 - `Seal of Cleansing` — complete
 - `Seal of Fire` — complete
+- `Secluded Steppe` — complete
 - `Siege-Gang Commander` — complete
 - `Sleight of Hand` — complete
 - `Stasis` — complete
@@ -135,7 +140,6 @@ older unannotated definitions still require one):
 Not yet cataloged:
 
 - [ ] `Abeyance`
-- [ ] `Akroma's Vengeance`
 - [ ] `Arcane Denial`
 - [ ] `Attunement`
 - [ ] `Aura of Silence`
@@ -154,7 +158,6 @@ Not yet cataloged:
 - [ ] `Defense Grid`
 - [ ] `Dragon Breath`
 - [ ] `Engineered Plague`
-- [ ] `Eternal Dragon`
 - [ ] `Exalted Angel`
 - [ ] `Fireblast`
 - [ ] `Flash of Insight`
@@ -189,7 +192,6 @@ Not yet cataloged:
 - [ ] `Pyrokinesis`
 - [ ] `Reflecting Pool`
 - [ ] `Replenish`
-- [ ] `Secluded Steppe`
 - [ ] `Shallow Grave`
 - [ ] `Skeletal Scrying`
 - [ ] `Skirk Prospector`

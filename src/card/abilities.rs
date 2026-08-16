@@ -14,6 +14,7 @@ use super::model::{
     PlayerRefDef, PlayerRelation, PlayerSetDef, ProtectedCreatureType, ReplacementAbilityDef,
     ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef,
     SplitIntoPilesDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -562,6 +563,57 @@ pub const fn shock_land_enters() -> AbilityDef {
 #[must_use]
 pub const fn enters_tapped(text: &'static str) -> AbilityDef {
     AbilityDef::as_enters(text, ENTER_TAPPED[0])
+}
+
+/// "Cycling {cost} ({cost}, Discard this card: Draw a card.)"
+///
+/// Cycling is an activated ability that exists only while the card is in
+/// hand, which is what keeps it off the battlefield version of the same
+/// permanent. Nothing else about it is special: the discard is a cost, so it
+/// happens on activation rather than on resolution, and the draw is what goes
+/// on the stack. The caller supplies the printed text because the reminder
+/// repeats the cost.
+#[must_use]
+pub const fn cycling(text: &'static str, cost: ManaCost) -> AbilityDef {
+    AbilityDef::activated_with_cost_list_and_targets(
+        text,
+        AbilityCostList::two(AbilityCostDef::Mana(cost), AbilityCostDef::DiscardSource),
+        &[],
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    )
+    .with_source_zones(&[ZoneKind::Hand])
+}
+
+/// "<Type>cycling {cost}" -- the same ability as [`cycling`], except that
+/// what it buys is a search rather than a draw. Failing to find is allowed,
+/// so the minimum is zero: the discard has already been paid either way.
+#[must_use]
+pub const fn typecycling(
+    text: &'static str,
+    cost: ManaCost,
+    object: ObjectPredicateDef,
+) -> AbilityDef {
+    AbilityDef::activated_with_cost_list_and_targets(
+        text,
+        AbilityCostList::two(AbilityCostDef::Mana(cost), AbilityCostDef::DiscardSource),
+        &[],
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object,
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: true,
+            destination: ZoneKind::Hand,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+        },
+    )
+    .with_source_zones(&[ZoneKind::Hand])
 }
 
 /// "{cost}: Regenerate this creature." -- by far the most common printed

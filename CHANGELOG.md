@@ -40,6 +40,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **An ability activated from the graveyard could not name its own card.** A
+  source reference always resolved to a permanent, so a graveyard-source
+  clause that said "return this card to your hand" found nothing on the
+  battlefield and silently did nothing. A source now answers as whatever kind
+  of object it actually is; one that has left every zone still answers as the
+  permanent it was, which is the last-known information a "sacrifice this"
+  clause reads after the fact.
+
 - **Evolve never compared toughness.** A predicate reading the source's
   toughness resolved to nothing at all, so only the power half of "greater
   power or toughness" could fire. A 2/2 arriving beside a 2/1 evolve creature
@@ -120,6 +128,14 @@ distinguishes snapshots of the covered source and build inputs.
   step, which no game does, and so passed either way.
 
 ### Added
+
+- **Cycling and typecycling.** Cycling is an activated ability that exists
+  only while its card is in hand: the discard is a cost, so the card is
+  already in the graveyard when the draw resolves. Typecycling buys a library
+  search for the named type instead of a draw, and failing to find is allowed.
+  Akroma's Vengeance, Secluded Steppe, and Eternal Dragon. "When you cycle
+  this card" is a trigger the engine does not raise yet, so the cards that
+  print one are still uncataloged.
 
 - **Banding.** `BandAttackers` names two declared attackers and puts them,
   with everything already banded with either, into one band; the engine offers

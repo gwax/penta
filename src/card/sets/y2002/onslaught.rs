@@ -2,13 +2,47 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType,
+    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
     ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
     abilities, cards,
 };
 use crate::{TargetIndex, TurnStepDef, mana_cost};
+
+// ONS 2 — Akroma's Vengeance
+pub(in crate::card::sets) static AKROMAS_VENGEANCE: CardRecord = CardRecord::new(
+    cards::AKROMAS_VENGEANCE,
+    "Akroma's Vengeance",
+    CardArt::new(
+        "5e33aaf7-7490-4b64-a966-82fbf7ca8686",
+        "Greg Hildebrandt & Tim Hildebrandt",
+    ),
+    CardSet::Onslaught,
+    // Six mana is a lot for a sweeper, and the cycling is what makes it
+    // maindeckable anyway: the card is never dead.
+    CardRules::new_sorcery(mana_cost!("{4}{W}{W}")).with_abilities(&[
+        AbilityDef::spell(
+            "Destroy all artifacts, creatures, and enchantments.",
+            EffectDef::Destroy {
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasType(CardType::Artifact),
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::HasType(CardType::Enchantment),
+                    ]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+                can_regenerate: true,
+            },
+        ),
+        abilities::cycling(
+            "Cycling {3} ({3}, Discard this card: Draw a card.)",
+            mana_cost!("{3}"),
+        ),
+    ]),
+);
 
 /// "Each other attacking Goblin", so the Piledriver never counts itself and
 /// a lone one gets nothing.
@@ -217,6 +251,28 @@ pub(in crate::card::sets) static POLLUTED_DELTA: CardRecord = CardRecord::new(
     ),
 );
 
+// ONS 324 — Secluded Steppe
+pub(in crate::card::sets) static SECLUDED_STEPPE: CardRecord = CardRecord::new(
+    cards::SECLUDED_STEPPE,
+    "Secluded Steppe",
+    CardArt::new("ea454280-f7f4-4315-bb46-b56050c02c97", "Heather Hudson"),
+    CardSet::Onslaught,
+    // The tapped land you play on a turn you had nothing to do, or the card
+    // you cycle away on a turn you did.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped("This land enters tapped."),
+        AbilityDef::activated_mana(
+            "{T}: Add {W}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::White)),
+        ),
+        abilities::cycling(
+            "Cycling {W} ({W}, Discard this card: Draw a card.)",
+            mana_cost!("{W}"),
+        ),
+    ]),
+);
+
 // ONS 328 — Windswept Heath
 pub(in crate::card::sets) static WINDSWEPT_HEATH: CardRecord = CardRecord::new(
     cards::WINDSWEPT_HEATH,
@@ -242,6 +298,7 @@ pub(in crate::card::sets) static WOODED_FOOTHILLS: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &AKROMAS_VENGEANCE,
     &GOBLIN_PILEDRIVER,
     &GOBLIN_PYROMANCER,
     &GOBLIN_SHARPSHOOTER,
@@ -249,6 +306,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLOODSTAINED_MIRE,
     &FLOODED_STRAND,
     &POLLUTED_DELTA,
+    &SECLUDED_STEPPE,
     &WINDSWEPT_HEATH,
     &WOODED_FOOTHILLS,
 ];
