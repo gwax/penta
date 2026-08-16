@@ -3143,8 +3143,42 @@ pub(in crate::card::sets) static DRUIDS_REPOSITORY: CardRecord = CardRecord::new
 // AVR 177 — Eaten by Spiders
 // Audit: blocked — Needs an attachment relation that finds and destroys every Equipment attached to the targeted creature.
 
+/// Only a creature with soulbond can start a pairing, so every pair contains
+/// one -- which makes "paired at all" and "paired with a soulbond creature"
+/// the same question for a Treefolk that has no soulbond of its own.
+static FLOWERING_LUMBERKNOT_UNPAIRED: TriggerConditionDef = TriggerConditionDef::SourceMatches {
+    object: ObjectPredicateDef::Unpaired,
+};
+
+static FLOWERING_LUMBERKNOT_SIDELINED: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotAttack),
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+];
+
+static FLOWERING_LUMBERKNOT_RESTRICTION: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::Composite(&FLOWERING_LUMBERKNOT_SIDELINED),
+};
+
 // AVR 178 — Flowering Lumberknot
-// Audit: blocked — Needs soulbond pairing state plus attack and block legality tied to being paired with a soulbond creature.
+pub(in crate::card::sets) static FLOWERING_LUMBERKNOT: CardRecord = CardRecord::new(
+    cards::FLOWERING_LUMBERKNOT,
+    "Flowering Lumberknot",
+    CardArt::new("78fa2ddc-142b-4562-8812-ecb72e3bae57", "Nic Klein"),
+    CardSet::AvacynRestored,
+    // A 5/5 for four that does nothing on its own, so the restriction is the
+    // card rather than a footnote on it.
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Treefolk"], 5, 5).with_ability(
+        AbilityDef::static_ability(
+            "This creature can't attack or block unless it's paired with a creature with \
+             soulbond.",
+            EffectDef::IfCondition {
+                condition: &FLOWERING_LUMBERKNOT_UNPAIRED,
+                then: &FLOWERING_LUMBERKNOT_RESTRICTION,
+            },
+        ),
+    ),
+);
 
 static GEIST_TRAPPERS_GRANTED: AbilityDef = abilities::reach();
 
@@ -4248,6 +4282,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DIREGRAF_ESCORT,
     &DRUIDS_FAMILIAR,
     &DRUIDS_REPOSITORY,
+    &FLOWERING_LUMBERKNOT,
     &GEIST_TRAPPERS,
     &GLOOMWIDOW,
     &GROUNDED,

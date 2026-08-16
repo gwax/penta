@@ -374,6 +374,77 @@ fn the_escort_shields_both_creatures_from_zombies() {
     }
 }
 
+/// The Lumberknot sits out until something pairs with it, and sits down
+/// again when the pair breaks.
+#[test]
+fn the_lumberknot_needs_a_partner_to_do_anything() {
+    let mut game = ready();
+    let knot = creature(10_000, cards::FLOWERING_LUMBERKNOT, PlayerId::One);
+    let knot_id = knot.card.id;
+    game.battlefield.push(knot);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+
+    let can_attack = |game: &Game| {
+        game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::DeclareAttacker { attacker, .. } if *attacker == knot_id),
+        )
+    };
+    game.step = Step::DeclareAttackers;
+    assert!(!can_attack(&game), "unpaired, so it stays home");
+
+    game.step = Step::PrecombatMain;
+    let mage_id = arrive(&mut game, 10_100, cards::TRUSTED_FORCEMAGE, PlayerId::One);
+    assert_eq!(
+        partner(&game, knot_id),
+        Some(mage_id),
+        "the Forcemage took it"
+    );
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.step = Step::DeclareAttackers;
+    game.priority = PlayerId::One;
+    assert!(can_attack(&game), "paired, so it may attack");
+
+    game.battlefield
+        .retain(|permanent| permanent.card.id != mage_id);
+    game.check_state_based_actions();
+    assert!(
+        !can_attack(&game),
+        "and sits down again when the pair breaks"
+    );
+}
+
+/// The same clause covers blocking.
+#[test]
+fn the_lumberknot_cannot_block_unpaired_either() {
+    let mut game = ready();
+    let knot = creature(10_000, cards::FLOWERING_LUMBERKNOT, PlayerId::One);
+    let knot_id = knot.card.id;
+    game.battlefield.push(knot);
+    let mut attacker = creature(10_100, cards::GRIZZLY_BEARS, PlayerId::Two);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+
+    game.active_player = PlayerId::Two;
+    game.step = Step::DeclareBlockers;
+    game.attackers_declared = true;
+    game.priority = PlayerId::One;
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .contains(&Action::DeclareBlocker {
+                blocker: knot_id,
+                attacker: attacker_id,
+            }),
+        "unpaired, so it cannot block either",
+    );
+}
+
 #[test]
 fn every_soulbond_card_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -396,6 +467,7 @@ fn every_soulbond_card_reports_complete_coverage() {
         cards::TANDEM_LOOKOUT,
         cards::STONEWRIGHT,
         cards::DIREGRAF_ESCORT,
+        cards::FLOWERING_LUMBERKNOT,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

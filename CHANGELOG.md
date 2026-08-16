@@ -119,6 +119,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Flowering Lumberknot**, which can neither attack nor block unpaired. A
+  static "as long as" clause may now read a predicate off its own source, the
+  same way it already could off an attached permanent.
+
 - **Six more soulbond cards**: Nearheath Pilgrim, Galvanic Alchemist, Stern
   Mentor, Tandem Lookout, Stonewright and Diregraf Escort. The four with a
   quoted ability grant it to each creature separately, so the pair holds two

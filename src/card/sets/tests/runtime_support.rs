@@ -386,6 +386,11 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
 /// resolving ability, or stack-target scope. Keep their condition boundary to
 /// the source-state predicates that can be evaluated from exactly that input.
 fn shared_static_trigger_condition(condition: TriggerConditionDef) -> bool {
+    // Read live off the battlefield, exactly like the attached-permanent form
+    // below, so a static clause tracks the source as it changes.
+    if let TriggerConditionDef::SourceMatches { object } = condition {
+        return shared_object_predicate(object);
+    }
     // A battlefield count is re-read on every walk, so it tracks the board the
     // way "as long as" asks. The predicate still has to be one that does not
     // read back into the layer being computed.
