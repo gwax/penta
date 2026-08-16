@@ -133,6 +133,14 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Rise from the Grave**. A zone move may now carry a continuous effect the
+  permanent arrives with, for the clauses that say what the thing they just
+  reanimated now is. It belongs on the move rather than in a following effect
+  because a permanent that enters is a new object with a new identity: by the
+  time the next effect ran, nothing would name it. Dread Slaver stays blocked
+  -- it also needs "dealt damage by this creature this turn", which is a
+  separate gap.
+
 - **Nephalia Smuggler** and **Conjurer's Closet**. A linked return may now
   name who the permanent arrives under rather than always handing it to its
   owner. "Under your control" and "under its owner's control" differ exactly

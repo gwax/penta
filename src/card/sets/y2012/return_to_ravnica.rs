@@ -512,6 +512,7 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(
                 zone: ZoneKind::Exile,
                 controller: None,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
             },
         ),
         AbilityDef::replacement_for(
@@ -657,6 +658,7 @@ static TROSTANIS_JUDGMENT_EFFECTS: [EffectDef; 2] = [
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         zone: ZoneKind::Exile,
         placement: ZonePlacement::Top,
+        arrival_effect: None,
         controller: None,
     },
     abilities::populate(),
@@ -801,6 +803,7 @@ pub(in crate::card::sets) static CYCLONIC_RIFT: CardRecord = CardRecord::new(
                 zone: ZoneKind::Hand,
                 controller: None,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
             },
         ),
         abilities::overload(
@@ -815,6 +818,7 @@ pub(in crate::card::sets) static CYCLONIC_RIFT: CardRecord = CardRecord::new(
                 zone: ZoneKind::Hand,
                 controller: None,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
             },
         ),
     ]),
@@ -1048,12 +1052,14 @@ static JACE_ARCHITECT_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
         object: abilities::CHOSEN_PILE,
         zone: ZoneKind::Hand,
         placement: ZonePlacement::Top,
+        arrival_effect: None,
         controller: None,
     },
     EffectDef::MoveToZone {
         object: abilities::UNCHOSEN_PILE,
         zone: ZoneKind::Library,
         placement: ZonePlacement::Bottom,
+        arrival_effect: None,
         controller: None,
     },
 ]);
@@ -1278,6 +1284,7 @@ static VOIDWIELDER_RETURN: EffectDef = EffectDef::MoveToZone {
     zone: ZoneKind::Hand,
     controller: None,
     placement: ZonePlacement::Top,
+    arrival_effect: None,
 };
 
 // RTR 56 — Voidwielder
@@ -1369,6 +1376,7 @@ pub(in crate::card::sets) static CREMATE: CardRecord = CardRecord::new(
                 zone: ZoneKind::Exile,
                 controller: None,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
             },
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,
@@ -3072,6 +3080,7 @@ pub(in crate::card::sets) static AZORIUS_CHARM: CardRecord = CardRecord::new(
                     zone: ZoneKind::Library,
                     controller: None,
                     placement: ZonePlacement::Top,
+                    arrival_effect: None,
                 }),
         ],
     )),
@@ -3346,6 +3355,7 @@ pub(in crate::card::sets) static DRAMATIC_RESCUE: CardRecord = CardRecord::new(
                 zone: ZoneKind::Hand,
                 controller: None,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
             },
             EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
@@ -4012,6 +4022,7 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
                     zone: ZoneKind::Exile,
                     controller: None,
                     placement: ZonePlacement::Top,
+                    arrival_effect: None,
                 }).with_coverage(AbilityCoverageDef::partial(
                     "PowerAtLeast reads resolved power changes but not power changes supplied by static continuous effects.",
                 )),
@@ -4054,6 +4065,7 @@ static SKYMARK_ROC_RETURN: EffectDef = EffectDef::MoveToZone {
     zone: ZoneKind::Hand,
     controller: None,
     placement: ZonePlacement::Top,
+    arrival_effect: None,
 };
 
 // RTR 196 — Skymark Roc
@@ -4253,12 +4265,14 @@ pub(in crate::card::sets) static TREASURED_FIND: CardRecord = CardRecord::new(
                 zone: ZoneKind::Hand,
                 controller: None,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
             },
             EffectDef::MoveToZone {
                 object: EffectRecipientDef::Source,
                 zone: ZoneKind::Exile,
                 controller: None,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
             },
         ]),
     )
@@ -4519,6 +4533,7 @@ pub(in crate::card::sets) static DEATHRITE_SHAMAN: CardRecord = CardRecord::new(
                     zone: ZoneKind::Exile,
                     controller: None,
                     placement: ZonePlacement::Top,
+                    arrival_effect: None,
                 },
                 EffectDef::LoseLife {
                     recipient: EffectRecipientDef::Opponent,
@@ -4546,6 +4561,7 @@ pub(in crate::card::sets) static DEATHRITE_SHAMAN: CardRecord = CardRecord::new(
                     zone: ZoneKind::Exile,
                     controller: None,
                     placement: ZonePlacement::Top,
+                    arrival_effect: None,
                 },
                 EffectDef::GainLife {
                     recipient: EffectRecipientDef::Controller,
@@ -4844,6 +4860,7 @@ pub(in crate::card::sets) static CODEX_SHREDDER: CardRecord = CardRecord::new(
                 zone: ZoneKind::Hand,
                 controller: None,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
             },
         ),
     ]),

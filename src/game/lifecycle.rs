@@ -152,6 +152,7 @@ impl Game {
 
         Ok(Self {
             format,
+            arrived: None,
             seed,
             rng,
             catalog,

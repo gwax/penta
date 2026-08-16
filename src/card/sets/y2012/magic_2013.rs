@@ -7,14 +7,15 @@ use crate::card::sets::{
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
-    CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef,
-    ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef, DamagePreventionDef,
-    DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal,
-    EffectDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, SpellAdditionalCostDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ColorSet,
+    ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef,
+    DamageKindDef, DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
+    DiscardSelectionDef, DividedTotal, EffectDef, EffectExecutionDef, EffectRecipientDef,
+    KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, SpellAdditionalCostDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -282,6 +283,7 @@ pub(in crate::card::sets) static ERASE: CardRecord = CardRecord::new(
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Exile,
             placement: ZonePlacement::Top,
+            arrival_effect: None,
             controller: None,
         },
     )),
@@ -726,6 +728,7 @@ pub(in crate::card::sets) static ARCHAEOMANCER: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
                 controller: None,
             },
         ),
@@ -1213,12 +1216,14 @@ static SPHINX_OF_UTHUUN_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
         object: abilities::CHOSEN_PILE,
         zone: ZoneKind::Hand,
         placement: ZonePlacement::Top,
+        arrival_effect: None,
         controller: None,
     },
     EffectDef::MoveToZone {
         object: abilities::UNCHOSEN_PILE,
         zone: ZoneKind::Graveyard,
         placement: ZonePlacement::Top,
+        arrival_effect: None,
         controller: None,
     },
 ]);
@@ -1651,6 +1656,7 @@ pub(in crate::card::sets) static DISENTOMB: CardRecord = CardRecord::new(
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
+            arrival_effect: None,
             controller: None,
         },
     )),
@@ -1981,8 +1987,39 @@ pub(in crate::card::sets) static RAVENOUS_RATS: CardRecord = CardRecord::new(
     ),
 );
 
+/// "In addition to its other colors and types", so both leaves add rather
+/// than set.
+static A_BLACK_ZOMBIE_AS_WELL: AppliedEffectDef = AppliedEffectDef::Composite(&[
+    AppliedEffectDef::add_colors(ColorSet::from_colors(&[ManaColor::Black])),
+    AppliedEffectDef::add_creature_types(CreatureTypeSetDef::named(&["Zombie"])),
+]);
+
 // M13 107 — Rise from the Grave
-// Audit: blocked — Reanimation and permanent color/subtype changes exist, but the continuation cannot bind the newly created battlefield object to receive them.
+pub(in crate::card::sets) static RISE_FROM_THE_GRAVE: CardRecord = CardRecord::new(
+    cards::RISE_FROM_THE_GRAVE,
+    "Rise from the Grave",
+    CardArt::new("5d2b187e-c489-4652-a638-390fc9ecef0e", "Vance Kovacs"),
+    CardSet::Magic2013,
+    // Any graveyard, so it steals as readily as it recurs.
+    CardRules::new_sorcery(mana_cost!("{4}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Put target creature card from a graveyard onto the battlefield under your control. That creature is a black Zombie in addition to its other colors and types.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: None,
+            },
+        )],
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            zone: ZoneKind::Battlefield,
+            controller: Some(PlayerRelation::You),
+            placement: ZonePlacement::Top,
+            arrival_effect: Some(&A_BLACK_ZOMBIE_AS_WELL),
+        },
+    )),
+);
 
 // M13 108 — Servant of Nefarox
 pub(in crate::card::sets) static SERVANT_OF_NEFAROX: CardRecord = CardRecord::new(
@@ -2087,6 +2124,7 @@ pub(in crate::card::sets) static VILE_REBIRTH: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Exile,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
                 controller: None,
             },
             EffectDef::CreateToken {
@@ -3356,6 +3394,7 @@ pub(in crate::card::sets) static REVIVE: CardRecord = CardRecord::new(
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
+            arrival_effect: None,
             controller: None,
         },
     )),
@@ -4243,6 +4282,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MURDER,
     &MUTILATE,
     &RAVENOUS_RATS,
+    &RISE_FROM_THE_GRAVE,
     &SERVANT_OF_NEFAROX,
     &SIGN_IN_BLOOD,
     &TORMENTED_SOUL,

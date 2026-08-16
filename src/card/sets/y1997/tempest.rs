@@ -48,6 +48,7 @@ pub(in crate::card::sets) static REANIMATE: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Battlefield,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
                 controller: Some(PlayerRelation::You),
             },
             EffectDef::LoseLife {

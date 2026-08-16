@@ -199,3 +199,4 @@ pub const BALUSTRADE_SPY: CardDefinitionId = CardDefinitionId(1998);
 pub const UNDERCITY_INFORMER: CardDefinitionId = CardDefinitionId(1999);
 pub const NEPHALIA_SMUGGLER: CardDefinitionId = CardDefinitionId(2000);
 pub const CONJURERS_CLOSET: CardDefinitionId = CardDefinitionId(2001);
+pub const RISE_FROM_THE_GRAVE: CardDefinitionId = CardDefinitionId(2002);

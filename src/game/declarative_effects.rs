@@ -737,6 +737,7 @@ impl Game {
                 zone,
                 controller,
                 placement,
+                arrival_effect,
             } => {
                 let arriving_controller = controller.map(|relation| {
                     if self.player_relation_matches(
@@ -751,7 +752,7 @@ impl Game {
                     }
                 });
                 for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    self.move_target_to_zone(
+                    let arrived = self.move_target_to_zone(
                         target,
                         zone,
                         ZoneMoveCause::Effect {
@@ -760,6 +761,13 @@ impl Game {
                         arriving_controller.map(BattlefieldArrival::under),
                         placement,
                     );
+                    // Applied as the move happens: the identity a permanent
+                    // gets on arrival is not the one the card had in the
+                    // graveyard it came from, so a later effect would have
+                    // nothing to name.
+                    if let (Some(effect), Some(arrived)) = (arrival_effect, arrived) {
+                        self.apply_arrival_effect(arrived, *effect, object, &context, scoped);
+                    }
                 }
             }
             // An Aura attaches as its spell becomes a permanent, so its own

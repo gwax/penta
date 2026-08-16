@@ -631,6 +631,13 @@ pub enum EffectDef {
         /// under its owner's control; reanimation that steals names a
         /// relation instead.
         controller: Option<PlayerRelation>,
+        /// A continuous effect the permanent arrives carrying, for the
+        /// clauses that say what the thing they just reanimated now is. It
+        /// belongs here rather than in a following effect because a
+        /// permanent that enters is a new object with a new identity: by the
+        /// time the next effect ran, nothing would name it. Lasts as long as
+        /// the permanent does.
+        arrival_effect: Option<&'static AppliedEffectDef>,
     },
     /// Every card in the named player's hand is revealed to everyone.
     ///

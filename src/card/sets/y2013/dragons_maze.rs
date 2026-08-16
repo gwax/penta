@@ -1119,6 +1119,7 @@ pub(in crate::card::sets) static DEPUTY_OF_ACQUITTALS: CardRecord = CardRecord::
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
+                    arrival_effect: None,
                     controller: None,
                 },
             },
@@ -1471,6 +1472,7 @@ pub(in crate::card::sets) static MORGUE_BURST: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
                 controller: None,
             },
         )
@@ -1546,6 +1548,7 @@ pub(in crate::card::sets) static OBZEDATS_AID: CardRecord = CardRecord::new(
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Battlefield,
             placement: ZonePlacement::Top,
+            arrival_effect: None,
             controller: None,
         },
     )),
@@ -1731,6 +1734,7 @@ static SIN_COLLECTOR_EXILE: EffectDef = EffectDef::MoveToZone {
     object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
     zone: ZoneKind::Exile,
     placement: ZonePlacement::Top,
+    arrival_effect: None,
     controller: None,
 };
 
@@ -2135,6 +2139,7 @@ fn down_dirty_composition() -> CardComposition {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
                 controller: None,
             },
         ));
@@ -2159,6 +2164,7 @@ const fn far_rules() -> CardRules {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
+            arrival_effect: None,
             controller: None,
         },
     ))

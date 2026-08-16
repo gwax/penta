@@ -671,6 +671,7 @@ mod resolution_destinations;
 mod revealed_hands;
 mod ring_of_maruf;
 mod rings;
+mod rise_from_the_grave;
 mod sacrifice_costs;
 mod sacrificed_toughness;
 mod scavenge;

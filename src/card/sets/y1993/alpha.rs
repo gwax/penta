@@ -730,6 +730,7 @@ pub(in crate::card::sets) static RESURRECTION: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Battlefield,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
                 controller: None,
             },
         ),
@@ -848,6 +849,7 @@ pub(in crate::card::sets) static SWORDS_TO_PLOWSHARES: CardRecord = CardRecord::
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Exile,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
                 controller: None,
             },
             EffectDef::GainLife {
@@ -1641,6 +1643,7 @@ pub(in crate::card::sets) static TIMETWISTER: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::matching_objects(ObjectPredicateDef::Any, &[ZoneKind::Hand, ZoneKind::Graveyard], PlayerRelation::Any),
                 zone: ZoneKind::Library,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
                 controller: None,
             },
             EffectDef::ShuffleLibrary {
@@ -1709,6 +1712,7 @@ pub(in crate::card::sets) static UNSUMMON: CardRecord = CardRecord::new(
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
+            arrival_effect: None,
             controller: None,
         },
     )]),
@@ -2297,6 +2301,7 @@ pub(in crate::card::sets) static RAISE_DEAD: CardRecord = CardRecord::new(
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
+            arrival_effect: None,
             controller: None,
         },
     )]),
@@ -4068,6 +4073,7 @@ pub(in crate::card::sets) static REGROWTH: CardRecord = CardRecord::new(
             zone: ZoneKind::Hand,
             controller: None,
             placement: ZonePlacement::Top,
+            arrival_effect: None,
         },
     )]),
 );

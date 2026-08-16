@@ -9,6 +9,9 @@ use super::{
 impl Game {
     /// Moves one object to a zone. Only the moves a supported card actually
     /// makes are handled; the rest stay seams rather than guesses.
+    /// Returns the battlefield object the card became, when it arrived on
+    /// the battlefield. A permanent that enters is a new object with a new
+    /// identity, so this is the only handle a later effect has on it.
     pub(super) fn move_target_to_zone(
         &mut self,
         target: Target,
@@ -16,7 +19,7 @@ impl Game {
         cause: ZoneMoveCause,
         arriving_controller: Option<BattlefieldArrival>,
         placement: ZonePlacement,
-    ) {
+    ) -> Option<GameObjectId> {
         if let Target::Permanent(id) = target {
             // Leaving the battlefield has its own procedure: last-known
             // information, exit events, and the triggers watching for them.
@@ -27,38 +30,27 @@ impl Game {
                 ZoneKind::Library => self.return_permanent_to_library(id, placement),
                 ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {}
             }
-            return;
+            return None;
         }
         let Target::Card(id) = target else {
-            return;
+            return None;
         };
-        let Some(from) = self
+        let from = self
             .card_in_nonbattlefield_zone(id)
-            .map(|(from, _card)| from)
-        else {
-            return;
-        };
+            .map(|(from, _card)| from)?;
         if from == ZoneKind::Library && zone == ZoneKind::Library {
-            let Some(owner) = self
+            let owner = self
                 .card_in_nonbattlefield_zone(id)
-                .map(|(_, card)| card.owner)
-            else {
-                return;
-            };
-            let Some(card) = remove_card(&mut self.players[owner.index()].library, id) else {
-                return;
-            };
+                .map(|(_, card)| card.owner)?;
+            let card = remove_card(&mut self.players[owner.index()].library, id)?;
             match placement {
                 ZonePlacement::Top => self.players[owner.index()].library.push(card),
                 ZonePlacement::Bottom => self.players[owner.index()].library.insert(0, card),
             }
-            return;
+            return None;
         }
-        let Some((moved, actual_destination)) =
-            self.move_card_from_nonbattlefield_zone(id, from, zone, cause, arriving_controller)
-        else {
-            return;
-        };
+        let (moved, actual_destination) =
+            self.move_card_from_nonbattlefield_zone(id, from, zone, cause, arriving_controller)?;
         if actual_destination == ZoneKind::Library
             && placement == ZonePlacement::Bottom
             && let Some(card) =
@@ -66,6 +58,9 @@ impl Game {
         {
             self.players[moved.owner.index()].library.insert(0, card);
         }
+        (actual_destination == ZoneKind::Battlefield)
+            .then_some(())
+            .and(self.arrived.take())
     }
 
     /// One card in a hand or library, as a simulation sees it.
@@ -398,11 +393,20 @@ impl Game {
         if let Some(keyword) = grant {
             permanent.temporary_keywords.push(keyword);
         }
+        let expected = permanent.card.definition;
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from,
             completion: EntryCompletion::None,
         });
+        // The entry is committed here unless a replacement needs an answer
+        // first, and committing mints a fresh identity -- the card that left
+        // the graveyard and the permanent now standing there are two objects.
+        self.arrived = self
+            .battlefield
+            .last()
+            .filter(|permanent| permanent.card.definition == expected)
+            .map(|permanent| permanent.card.id);
         entered_card
     }
 

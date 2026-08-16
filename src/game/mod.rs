@@ -785,6 +785,11 @@ struct PlayerState {
 #[derive(Clone, Debug)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Game {
+    /// The battlefield object the most recent entry committed, so a move can
+    /// hand back the identity the permanent actually got rather than the one
+    /// the card had in the zone it came from. Consumed immediately by that
+    /// move; never observed anywhere else.
+    arrived: Option<GameObjectId>,
     format: Format,
     seed: u64,
     rng: ReplayRng,

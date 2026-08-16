@@ -23,6 +23,7 @@ pub(in crate::card::sets) static UPHEAVAL: CardRecord = CardRecord::new(
             ),
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
+            arrival_effect: None,
             controller: None,
         },
     )),

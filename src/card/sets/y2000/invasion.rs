@@ -14,12 +14,14 @@ static FACT_OR_FICTION_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
         object: abilities::CHOSEN_PILE,
         zone: ZoneKind::Hand,
         placement: ZonePlacement::Top,
+        arrival_effect: None,
         controller: None,
     },
     EffectDef::MoveToZone {
         object: abilities::UNCHOSEN_PILE,
         zone: ZoneKind::Graveyard,
         placement: ZonePlacement::Top,
+        arrival_effect: None,
         controller: None,
     },
 ]);

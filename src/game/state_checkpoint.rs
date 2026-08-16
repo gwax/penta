@@ -700,6 +700,7 @@ impl Game {
             .collect::<Result<Vec<_>, _>>()?;
         let mut game = Self {
             format,
+            arrived: None,
             damage_taken_this_turn: checkpoint.damage_taken_this_turn,
             damage_taken_by_group_this_turn: {
                 let mut groups = [[0; DamageSourceGroupDef::COUNT]; 2];

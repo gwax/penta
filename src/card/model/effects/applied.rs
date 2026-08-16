@@ -320,6 +320,14 @@ impl AppliedEffectDef {
         ))
     }
 
+    /// "In addition to its other colors", which adds rather than replaces.
+    #[must_use]
+    pub const fn add_colors(colors: ColorSet) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::Colors(SetOperationDef::Add(
+            colors,
+        )))
+    }
+
     #[must_use]
     pub const fn set_colors(colors: ColorSet) -> Self {
         Self::Characteristic(CharacteristicOperationDef::Colors(SetOperationDef::Set(

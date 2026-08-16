@@ -83,6 +83,7 @@ pub(in crate::card::sets) static AURAMANCER: CardRecord = CardRecord::new(
                     zone: ZoneKind::Hand,
                     controller: None,
                     placement: ZonePlacement::Top,
+                    arrival_effect: None,
                 },
             },
         ),
@@ -593,6 +594,7 @@ pub(in crate::card::sets) static DISPERSE: CardRecord = CardRecord::new(
             zone: ZoneKind::Hand,
             controller: None,
             placement: ZonePlacement::Top,
+            arrival_effect: None,
         },
     )),
 );
@@ -809,6 +811,7 @@ pub(in crate::card::sets) static TIME_EBB: CardRecord = CardRecord::new(
             zone: ZoneKind::Library,
             controller: None,
             placement: ZonePlacement::Top,
+            arrival_effect: None,
         },
     )),
 );
@@ -1073,6 +1076,7 @@ pub(in crate::card::sets) static CORPSE_HAULER: CardRecord = CardRecord::new(
                 zone: ZoneKind::Hand,
                 controller: None,
                 placement: ZonePlacement::Top,
+                arrival_effect: None,
             },
         ),
     ),
@@ -1202,6 +1206,7 @@ static LIFEBANE_EXILE: EffectDef = EffectDef::MoveToZone {
     object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
     zone: ZoneKind::Exile,
     placement: ZonePlacement::Top,
+    arrival_effect: None,
     controller: None,
 };
 
@@ -2573,6 +2578,7 @@ pub(in crate::card::sets) static SCAVENGING_OOZE: CardRecord = CardRecord::new(
                     zone: ZoneKind::Exile,
                     controller: None,
                     placement: ZonePlacement::Top,
+                    arrival_effect: None,
                 },
             ])),
     ),
