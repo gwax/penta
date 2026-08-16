@@ -57,7 +57,7 @@ endef
 
 .PHONY: help doctor fmt fmt-rust fmt-python-binding \
 	lint lint-rust lint-web lint-infra lint-infra-available lint-python-binding \
-	test test-rust test-rust-full test-rust-slow nightly-sweep \
+	test test-rust test-rust-full test-rust-slow nightly-sweep nightly-sweep-web \
 	test-engine test-engine-unit test-engine-integration test-policy test-wasm-rust \
 	test-profile-attribution test-magic-references test-rust-budget test-source-file-sizes \
 	catalog-report \
@@ -136,8 +136,11 @@ test-rust: ## Run normal Rust tests; simulation sweeps stay deferred.
 test-rust-slow: ## Run only ignored Rust simulation sweeps.
 	$(call run_rust_tests,--workspace --all-targets,-- --ignored)
 
-nightly-sweep: ## Run the deferred sweeps, naming a narrow repro for any failure.
-	./scripts/slow-sweep.sh
+nightly-sweep: ## Run the deferred Rust sweeps, naming a narrow repro for any failure.
+	./scripts/slow-sweep.sh rust
+
+nightly-sweep-web: build-wasm ## Run the deferred browser sweeps, naming a narrow repro for any failure.
+	./scripts/slow-sweep.sh web $(WEB_WASM_SLOW_SUITES)
 
 test-rust-full: ## Run every normal and slow Rust test in one pass.
 	cargo test --locked --profile quick-test --workspace --all-targets -- --include-ignored
@@ -265,7 +268,12 @@ check-fast: fmt-rust lint test-rust test-profile-attribution test-magic-referenc
 
 check-rust: fmt-rust lint-rust test-rust-budget ## Run the complete root Rust workspace gate.
 
-check-web: lint-web typecheck-web test-web-full ## Run the complete web gate.
+# `test-web` rather than `test-web-full`: the difference is
+# WEB_WASM_SLOW_SUITES, which play whole games through the WASM/JSON boundary
+# and are roughly ten times everything else in this gate put together. They
+# run in .github/workflows/nightly.yml. Adding them back here would restore a
+# five-minute web job to catch what a nightly catches the same day.
+check-web: lint-web typecheck-web test-web ## Run the complete web gate.
 
 check-tooling: lint-infra test-profile-attribution test-magic-references ## Run the strict infrastructure and repository-tooling gate.
 

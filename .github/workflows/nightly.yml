@@ -1,14 +1,16 @@
 name: Nightly sweep
 
-# The deferred simulation sweeps: five tests that play whole games and take
-# minutes, against roughly two thousand normal tests that share about four
-# seconds. Running them per-push meant every branch waited on them and the
-# suite sat right at its time budget, so a busy runner alone could mark a
-# change broken. They live here instead, where taking a while costs nothing.
+# The deferred sweeps, native and browser. Both are the same shape: play a
+# great many whole games and see whether anything comes loose. That is worth
+# doing and a bad fit for a per-push gate -- five Rust sweeps outweighed two
+# thousand normal tests by about thirty to one, and four browser sweeps were
+# roughly ten times the rest of the web gate combined. Running them on every
+# push meant every branch waited on them, and the Rust suite sat so close to
+# its time budget that a busy runner alone could mark a change broken.
 #
-# The tradeoff is that a failure here is disconnected from whatever caused
-# it, so `make nightly-sweep` ends by naming the exact failing tests and the
-# one command that reruns each locally.
+# Here, taking a while costs nothing. The tradeoff is that a failure is
+# disconnected from whatever caused it, so both targets end by naming the
+# failing test and the one command that reruns just it locally.
 on:
   schedule:
     # 08:00 UTC, or early morning in the Americas.
@@ -35,3 +37,43 @@ jobs:
 
       - name: Run the deferred sweeps
         run: make nightly-sweep
+
+  web-sweep:
+    name: deferred browser sweeps
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install the pinned Rust toolchain
+        run: rustup show active-toolchain || rustup toolchain install
+
+      # The CLI and crate must match exactly. The shared helper reads the crate
+      # version from the lockfile instead of maintaining a second version pin.
+      - name: Read wasm-bindgen version from Cargo.lock
+        id: wasm-bindgen
+        run: echo "version=$(./scripts/wasm-bindgen-version.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Install wasm-bindgen CLI
+        uses: taiki-e/install-action@6c6fd71fe4fb72c3697d269963d0e15df8adedad # v2.85.10
+        with:
+          tool: wasm-bindgen-cli@${{ steps.wasm-bindgen.outputs.version }}
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          package_json_file: web/package.json
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install web dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: web
+
+      - name: Run the deferred browser sweeps
+        run: make nightly-sweep-web

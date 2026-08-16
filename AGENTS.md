@@ -170,16 +170,19 @@ available suites.
   `FILTER` or `PATTERN` when available. Native simulation, policy, auto-pass,
   or combat work may justify native slow tests; it does not by itself justify
   slow browser pacing or combat suites.
-- The deferred `#[ignore]` sweeps are not in the per-push gate. They play whole
-  games -- five of them outweigh the other two thousand tests by roughly thirty
-  to one -- and they run nightly through `.github/workflows/nightly.yml`, which
-  has no time budget. Run `make test-rust-slow` locally when you change
-  simulation, policy, or checkpoint behavior that they cover; do not add one to
-  `check-rust`. A new test that genuinely needs minutes belongs in that tier:
-  mark it `#[ignore]` and the nightly lane picks it up with no further wiring.
-  When the nightly does fail, its log ends with the exact failing test names and
-  a `make test-rust-slow FILTER=<name>` line for each -- start from those rather
-  than rerunning the whole sweep.
+- The deferred sweeps are not in any per-push gate, native or browser. A sweep
+  is a test that plays a great many whole games to see whether anything comes
+  loose; it belongs nightly, not in front of a push. Both tiers were dominating
+  the gates that ran them -- five `#[ignore]` Rust sweeps outweighed the other
+  two thousand tests by roughly thirty to one, and the four
+  `WEB_WASM_SLOW_SUITES` were about ten times the rest of the web gate put
+  together. They run through `.github/workflows/nightly.yml`, which has no time
+  budget. Run `make test-rust-slow` or `make test-web-wasm-slow` locally when
+  you change behavior they cover; do not add either back to `check-rust` or
+  `check-web`. A new sweep needs no wiring: mark a Rust test `#[ignore]`, or add
+  a browser suite to `WEB_WASM_SLOW_SUITES`, and the nightly lane picks it up.
+  When a nightly fails, its log ends with the one command that reruns each
+  failing sweep -- start from those rather than rerunning the whole thing.
 - Aggregate targets are not routine PR prerequisites. This includes
   `make check-fast`, `make check`, `make check-rust`, `make check-web`,
   `make check-tooling`, `make check-bindings`, and `make ci`. Use one when the
