@@ -709,6 +709,7 @@ mod switched_stats;
 mod target_toughness;
 mod targeted_answers;
 mod targeting_characteristics;
+mod thread_safety;
 mod token_status_cards;
 mod toughness_payouts;
 mod transmogrant;

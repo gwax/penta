@@ -153,7 +153,7 @@ impl Game {
         Ok(Self {
             format,
             arrived: None,
-            prospective_x: std::cell::Cell::new(None),
+            prospective_x: super::prospective_x::ProspectiveX::default(),
             successors: std::collections::HashMap::new(),
             seed,
             rng,

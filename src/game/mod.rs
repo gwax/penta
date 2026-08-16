@@ -85,6 +85,7 @@ mod mana_state;
 mod observation;
 mod prevention_state;
 mod procedure_state;
+mod prospective_x;
 mod replacement_state;
 mod stack_resolution;
 mod stack_rules;
@@ -795,7 +796,7 @@ pub struct Game {
     /// so its chosen X is not readable from the object -- but which
     /// creatures are legal targets can depend on it, and the enumerator
     /// already walks one X at a time.
-    prospective_x: std::cell::Cell<Option<u16>>,
+    prospective_x: prospective_x::ProspectiveX,
     /// What each retired object became when it changed zones. A trigger
     /// captured on the battlefield names the object that was there, and
     /// "return it to its owner's hand" has to reach the card that object is
