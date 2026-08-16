@@ -119,6 +119,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Protection from creatures**, and with it **Holy Mantle**. The third
+  protection quality, and the only one with no parameter at all: it reads the
+  source's card type. The Aura granting it is an enchantment, so it does not
+  throw itself off the creature it protects.
+
 - **Protection from a creature type**, and with it **Elite Inquisitor**,
   **Grave Bramble** and **Midnight Duelist**. Protection is one keyword per
   quality and every quality used to be a color; a type is now equally a

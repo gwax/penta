@@ -270,8 +270,34 @@ pub(in crate::card::sets) static HOLD_THE_GATES: CardRecord = CardRecord::new(
     )),
 );
 
+static HOLY_MANTLE_PROTECTION: AbilityDef = abilities::protection_from_creatures();
+
+static HOLY_MANTLE_GRANT: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+    AppliedEffectDef::add_ability(&HOLY_MANTLE_PROTECTION),
+];
+
 // GTC 17 — Holy Mantle
-// Audit: blocked — Protection from creatures is not expressible by the color-specific protection keyword primitive.
+pub(in crate::card::sets) static HOLY_MANTLE: CardRecord = CardRecord::new(
+    cards::HOLY_MANTLE,
+    "Holy Mantle",
+    CardArt::new("95567596-c5b1-426f-bc2c-43306f7221b0", "Maciej Kuciara"),
+    CardSet::Gatecrash,
+    // The Aura is an enchantment, so the protection it grants does not make
+    // its own attachment illegal.
+    CardRules::new_enchantment(mana_cost!("{2}{W}{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +2/+2 and has protection from creatures.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&HOLY_MANTLE_GRANT),
+                },
+            ),
+        ]),
+);
 
 // GTC 18 — Knight of Obligation
 pub(in crate::card::sets) static KNIGHT_OF_OBLIGATION: CardRecord = CardRecord::new(
@@ -3847,6 +3873,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DEBTORS_PULPIT,
     &DUTIFUL_THRULL,
     &HOLD_THE_GATES,
+    &HOLY_MANTLE,
     &KNIGHT_OF_OBLIGATION,
     &KNIGHT_WATCH,
     &LUMINATE_PRIMORDIAL,

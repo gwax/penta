@@ -203,6 +203,10 @@ impl Game {
                                     || self.is_protected_from_creature_types(
                                         permanent,
                                         behavior.rules().subtypes(),
+                                    )
+                                    || self.is_protected_from_creature(
+                                        permanent,
+                                        behavior.rules().types().contains(CardType::Creature),
                                     ))
                         }),
                     Target::Player(_) | Target::Card(_) | Target::Spell(_) => true,

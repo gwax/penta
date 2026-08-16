@@ -145,13 +145,74 @@ fn the_inquisitor_carries_all_three_instances() {
     assert_eq!(permanent(&game, inquisitor_id).damage, 0);
 }
 
+/// The parameterless quality: nothing that is a creature gets through, of
+/// any color or type, and a noncreature source still does.
 #[test]
-fn all_three_report_complete_coverage() {
+fn holy_mantle_stops_every_creature_and_nothing_else() {
+    let mut game = ready();
+    let bear = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bear_id = bear.card.id;
+    game.battlefield.push(bear);
+    let mut mantle = creature(10_001, cards::HOLY_MANTLE, PlayerId::One);
+    mantle.attached_to = Some(bear_id);
+    let mantle_id = mantle.card.id;
+    game.battlefield.push(mantle);
+
+    assert_eq!(
+        (
+            game.power(permanent(&game, bear_id)),
+            game.toughness(permanent(&game, bear_id)),
+        ),
+        (Some(4), Some(4)),
+        "a 2/2 with +2/+2",
+    );
+
+    let attacker = creature(10_100, cards::AIR_ELEMENTAL, PlayerId::Two);
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    game.damage_target_from(Some(attacker_id), Some(Target::Permanent(bear_id)), 4);
+    assert_eq!(
+        permanent(&game, bear_id).damage,
+        0,
+        "a blue creature is still a creature",
+    );
+
+    // The Aura itself is an enchantment, so it is not thrown off by the
+    // protection it grants.
+    assert_eq!(
+        permanent(&game, mantle_id).attached_to,
+        Some(bear_id),
+        "the Mantle stays on",
+    );
+
+    let artifact = creature(10_101, cards::ORNITHOPTER, PlayerId::Two);
+    let artifact_id = artifact.card.id;
+    game.battlefield.push(artifact);
+    game.damage_target_from(Some(artifact_id), Some(Target::Permanent(bear_id)), 1);
+    assert_eq!(
+        permanent(&game, bear_id).damage,
+        0,
+        "an Ornithopter is a creature too",
+    );
+
+    // And nothing else: an enchantment source is not a creature, so its
+    // damage lands.
+    game.damage_target_from(Some(mantle_id), Some(Target::Permanent(bear_id)), 1);
+    assert_eq!(
+        permanent(&game, bear_id).damage,
+        1,
+        "the quality is the card type, not the controller",
+    );
+}
+
+#[test]
+fn all_four_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
     for definition in [
         cards::ELITE_INQUISITOR,
         cards::GRAVE_BRAMBLE,
         cards::MIDNIGHT_DUELIST,
+        cards::HOLY_MANTLE,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

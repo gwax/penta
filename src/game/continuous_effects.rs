@@ -694,6 +694,11 @@ impl Game {
                                 || self.is_protected_from_creature_types(
                                     host,
                                     &self.effective_subtypes(aura),
+                                )
+                                || self.is_protected_from_creature(
+                                    host,
+                                    self.permanent_types(aura)
+                                        .is_some_and(|types| types.contains(CardType::Creature)),
                                 )))
             }
             AbilityTargetPredicate::AnyTarget

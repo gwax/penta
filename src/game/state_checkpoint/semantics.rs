@@ -744,6 +744,7 @@ pub(super) const fn keyword_snapshot(keyword: KeywordAbility) -> KeywordSnapshot
         KeywordAbility::ProtectionFromCreatureType(ProtectedCreatureType::Werewolf) => {
             KeywordSnapshot::ProtectionFromWerewolves
         }
+        KeywordAbility::ProtectionFromCreatures => KeywordSnapshot::ProtectionFromCreatures,
     }
 }
 
@@ -786,6 +787,7 @@ pub(super) const fn parse_keyword(value: KeywordSnapshot) -> KeywordAbility {
         KeywordSnapshot::ProtectionFromBlack => KeywordAbility::ProtectionFrom(ManaColor::Black),
         KeywordSnapshot::ProtectionFromRed => KeywordAbility::ProtectionFrom(ManaColor::Red),
         KeywordSnapshot::ProtectionFromGreen => KeywordAbility::ProtectionFrom(ManaColor::Green),
+        KeywordSnapshot::ProtectionFromCreatures => KeywordAbility::ProtectionFromCreatures,
         KeywordSnapshot::ProtectionFromZombies => {
             KeywordAbility::ProtectionFromCreatureType(ProtectedCreatureType::Zombie)
         }

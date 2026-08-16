@@ -142,6 +142,7 @@ pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
             | KeywordAbility::Unleash
             | KeywordAbility::ProtectionFrom(_)
             | KeywordAbility::ProtectionFromCreatureType(_)
+            | KeywordAbility::ProtectionFromCreatures
     )
 }
 

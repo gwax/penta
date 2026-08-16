@@ -787,6 +787,9 @@ pub enum KeywordAbility {
     /// need not be a color: "protection from Zombies" names a creature type
     /// and behaves identically otherwise.
     ProtectionFromCreatureType(ProtectedCreatureType),
+    /// Protection from the card type, which is one quality rather than a
+    /// family of them and so carries no parameter at all.
+    ProtectionFromCreatures,
 }
 
 /// The creature types a printed protection clause names. A closed set for the
@@ -836,6 +839,7 @@ impl KeywordAbility {
             Self::Undying => 14,
             Self::Menace => 15,
             Self::AttacksEachCombatIfAble => 16,
+            Self::ProtectionFromCreatures => 17,
             Self::Indestructible => 18,
             Self::Shroud => 19,
             Self::Unleash => 26,

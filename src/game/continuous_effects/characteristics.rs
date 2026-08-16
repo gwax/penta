@@ -216,6 +216,15 @@ impl Game {
         })
     }
 
+    /// The one quality with no parameter: the source is a creature.
+    pub(super) fn is_protected_from_creature(&self, permanent: &Permanent, is_creature: bool) -> bool {
+        is_creature
+            && self.permanent_has_executable_keyword(
+                permanent,
+                KeywordAbility::ProtectionFromCreatures,
+            )
+    }
+
     /// Every quality at once, for the sources that are whole objects rather
     /// than a bare color set.
     pub(super) fn is_protected_from_object(
@@ -225,6 +234,38 @@ impl Game {
     ) -> bool {
         self.is_protected_from_colors(permanent, self.object_colors(source))
             || self.is_protected_from_creature_types(permanent, &self.object_subtypes(source))
+            || self.is_protected_from_creature(permanent, self.object_is_creature(source))
+    }
+
+    /// Whether any object is a creature, wherever it is. Read the same way as
+    /// [`Self::object_subtypes`].
+    pub(super) fn object_is_creature(&self, object: GameObjectId) -> bool {
+        if let Some(permanent) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == object)
+        {
+            return self
+                .permanent_types(permanent)
+                .is_some_and(|types| types.contains(CardType::Creature));
+        }
+        if let Some(stack) = self.stack.iter().find(|stack| stack.id == object) {
+            return self
+                .stack_trigger_event_object(stack)
+                .is_some_and(|event| event.types.contains(CardType::Creature));
+        }
+        match self.retired_objects.get(&object) {
+            Some(RetiredObject::Permanent { permanent, .. }) => self
+                .permanent_types(permanent)
+                .is_some_and(|types| types.contains(CardType::Creature)),
+            Some(RetiredObject::Stack(stack)) => self
+                .stack_trigger_event_object(stack)
+                .is_some_and(|event| event.types.contains(CardType::Creature)),
+            Some(RetiredObject::Card(_)) | None => self
+                .object_definition(object)
+                .and_then(|definition| self.catalog.get(definition))
+                .is_some_and(|definition| definition.rules.types().contains(CardType::Creature)),
+        }
     }
 
     /// The subtypes of any object, wherever it is. The companion of
@@ -384,5 +425,8 @@ impl Game {
     pub(super) fn combat_is_protected(&self, blocker: &Permanent, attacker: &Permanent) -> bool {
         self.is_protected_from_colors(attacker, self.permanent_colors(blocker))
             || self.is_protected_from_creature_types(attacker, &self.effective_subtypes(blocker))
+            // A blocker is always a creature, so the parameterless quality
+            // needs no lookup here.
+            || self.is_protected_from_creature(attacker, true)
     }
 }

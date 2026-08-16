@@ -295,6 +295,16 @@ pub const fn protection_from_creature_type(
     )
 }
 
+/// "Protection from creatures". Unlike the color and creature-type forms this
+/// quality has no parameter, so it reads the source's card type directly.
+#[must_use]
+pub const fn protection_from_creatures() -> AbilityDef {
+    keyword(
+        "Protection from creatures",
+        KeywordAbility::ProtectionFromCreatures,
+    )
+}
+
 /// The granted protection and the self-retention exception for each printed
 /// Ward. `EffectDef::Sequence` holds its clauses by reference, and a sequence
 /// built from a parameter cannot be promoted to `'static`, so the five are
