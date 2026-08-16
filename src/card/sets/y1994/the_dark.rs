@@ -739,8 +739,43 @@ pub(in crate::card::sets) static BOG_RATS: CardRecord = CardRecord::new(
     ]),
 );
 
+/// The declined branch. "That player" is the artifact's controller, so
+/// stealing the artifact moves both the choice and the damage with it.
+static CURSE_ARTIFACT_TOLL: EffectDef = EffectDef::DealDamage {
+    recipient: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
+        ObjectRefDef::AttachedToSource,
+    )),
+    amount: ValueDef::Constant(2),
+};
+
 // DRK 43 — Curse Artifact
-// Audit: blocked — Needs an upkeep trigger whose event player is derived from the attached permanent's current controller for “At the beginning of the upkeep of enchanted artifact's controller, this Aura deals 2 damage to that player unless they sacrifice that artifact”.
+pub(in crate::card::sets) static CURSE_ARTIFACT: CardRecord = CardRecord::new(
+    cards::CURSE_ARTIFACT,
+    "Curse Artifact",
+    CardArt::new("9fc0d070-8a42-4d5e-8f2b-ceb59147de6f", "Mark Tedin"),
+    CardSet::TheDark,
+    // "That artifact" is the one this Aura is on, so the offer names exactly
+    // one permanent rather than any the player controls.
+    CardRules::new_enchantment(mana_cost!("{2}{B}{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant artifact", &abilities::ENCHANT_ARTIFACT_TARGET),
+            abilities::enchanted_controller_upkeep(
+                "At the beginning of the upkeep of enchanted artifact's controller, this Aura \
+                 deals 2 damage to that player unless they sacrifice that artifact.",
+                EffectDef::SacrificeOfChoice {
+                    player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
+                        ObjectRefDef::AttachedToSource,
+                    )),
+                    object: ObjectPredicateDef::AttachedToSource,
+                    then: None,
+                    otherwise: Some(&CURSE_ARTIFACT_TOLL),
+                    amount: SacrificedAmountDef::Power,
+                    optional: true,
+                },
+            ),
+        ]),
+);
 
 // DRK 44 — Eater of the Dead
 // Audit: blocked — Needs a zone-object query and identity-preserving continuation for “{0}: If this creature is tapped, exile target creature card from a graveyard and untap this creature”.
@@ -2282,6 +2317,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ASHES_TO_ASHES,
     &BOG_IMP,
     &BOG_RATS,
+    &CURSE_ARTIFACT,
     &GRAVE_ROBBERS,
     &INQUISITION,
     &MARSH_GAS,

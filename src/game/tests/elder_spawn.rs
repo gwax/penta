@@ -1,8 +1,10 @@
-//! Elder Spawn, and the declined branch of an optional sacrifice.
+//! Two cards built on the declined branch of an optional sacrifice.
 //!
-//! "Unless you sacrifice an Island" is one offer with two branches rather
-//! than a payment and a separate check, so the toll falls both when the
-//! controller says no and when there is no Island to say yes with.
+//! "Unless you sacrifice ..." is one offer with two branches rather than a
+//! payment and a separate check, so the toll falls both when the player says
+//! no and when there is nothing to say yes with. Elder Spawn names a land
+//! type; Curse Artifact names exactly the permanent it is attached to, and
+//! asks the permanent's controller rather than its own.
 
 use super::*;
 use crate::ImplementationStatus;
@@ -154,14 +156,93 @@ fn red_creatures_cannot_block_the_spawn() {
     assert!(offered(&game, blue_id), "blue can");
 }
 
+/// Curse Artifact offers the same choice to the artifact's controller, not
+/// the Aura's, and names exactly the enchanted artifact.
+fn cursed_upkeep() -> (Game, GameObjectId) {
+    let mut game = ready();
+    let artifact = creature(10_000, cards::ORNITHOPTER, PlayerId::Two);
+    let artifact_id = artifact.card.id;
+    game.battlefield.push(artifact);
+    let mut aura = creature(10_001, cards::CURSE_ARTIFACT, PlayerId::One);
+    aura.attached_to = Some(artifact_id);
+    game.battlefield.push(aura);
+    // A second artifact the same player controls, which the offer must not
+    // reach: the clause names "that artifact".
+    game.battlefield
+        .push(creature(10_002, cards::ORNITHOPTER, PlayerId::Two));
+
+    game.active_player = PlayerId::Two;
+    game.handle_upkeep_triggers();
+    (game, artifact_id)
+}
+
 #[test]
-fn the_spawn_reports_complete_coverage() {
-    let catalog = poc::catalog().expect("catalog builds");
-    let card = catalog
-        .get(cards::ELDER_SPAWN)
-        .expect("the card is cataloged");
+fn the_curse_offers_only_the_artifact_it_is_on() {
+    let (mut game, artifact) = cursed_upkeep();
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the offer was made");
+    assert_eq!(decision.player, PlayerId::Two, "the artifact's controller");
     assert_eq!(
-        card.rules.implementation_status(),
-        ImplementationStatus::Complete,
+        decision.options.len(),
+        1,
+        "one artifact named, not every artifact they control",
     );
+    assert_eq!(
+        decision.options[0].card.map(|(card, _)| card),
+        Some(artifact),
+    );
+}
+
+/// Declining takes two damage; sacrificing takes the artifact instead.
+#[test]
+fn the_curse_charges_two_unless_the_artifact_goes() {
+    let (mut game, artifact) = cursed_upkeep();
+    answer(&mut game, false);
+    assert_eq!(game.players[1].life, 18, "declined, so two damage");
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == artifact),
+        "and the artifact stayed",
+    );
+
+    let (mut game, artifact) = cursed_upkeep();
+    answer(&mut game, true);
+    assert_eq!(game.players[1].life, 20, "paid, so no damage");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == artifact),
+        "and the artifact went",
+    );
+}
+
+#[test]
+fn both_cards_report_complete_coverage() {
+    let catalog = poc::catalog().expect("catalog builds");
+    for definition in [cards::ELDER_SPAWN, cards::CURSE_ARTIFACT] {
+        let card = catalog.get(definition).expect("the card is cataloged");
+        assert_eq!(
+            card.rules.implementation_status(),
+            ImplementationStatus::Complete,
+            "{} should be fully executable",
+            card.name,
+        );
+    }
 }

@@ -119,6 +119,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Curse Artifact**, the second card on the declined branch. It names exactly
+  the permanent it is attached to rather than any the player controls, and
+  asks that permanent's controller rather than the Aura's.
+
 - **Elder Spawn**, and with it a declined branch on an optional sacrifice.
   "Unless you sacrifice an Island" is one offer with two branches rather than
   a payment and a separate check, so the toll falls both when the controller
