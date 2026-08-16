@@ -5,17 +5,17 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CardTypeSet, ColorChoiceOperationDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
-    CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef, DamagePreventionDef,
-    DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal,
-    EffectDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PlayActionMatcherDef, PlayRestrictionDef,
-    PlayerRefDef, PlayerRelation, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, SumValueDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    CardTypeSet, ChoiceVisibilityDef, ChooseDef, ColorChoiceOperationDef, ColorSet, ComparisonDef,
+    ControlDurationDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef,
+    DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef,
+    DividedTotal, EffectDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, SumValueDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
-use crate::ids::TargetIndex;
+use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
 
 // GTC 1 — Aerial Maneuver
@@ -688,8 +688,59 @@ pub(in crate::card::sets) static GRIDLOCK: CardRecord = CardRecord::new(
 // GTC 38 — Incursion Specialist
 // Audit: blocked — Needs a second-spell-this-turn trigger event and a temporary unblockable clause on the source.
 
+/// Mandatory and unaimed: a minimum of one with no target slot, so the
+/// bounce cannot be answered with nothing and cannot be responded to by
+/// protecting the creature it will name.
+static KEYMASTER_ROGUE_BOUNCE: EffectDef = EffectDef::MoveToZone {
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    zone: ZoneKind::Hand,
+    controller: None,
+    placement: ZonePlacement::Top,
+    arrival_effect: None,
+};
+
+static KEYMASTER_ROGUE_CHOICE: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
+        ObjectPredicateDef::HasType(CardType::Creature),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    )),
+    exclude: None,
+    minimum: 1,
+    maximum: 1,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &KEYMASTER_ROGUE_BOUNCE,
+});
+
 // GTC 39 — Keymaster Rogue
-// Audit: blocked — Its entry trigger needs a mandatory non-target choice of a creature you control to return.
+pub(in crate::card::sets) static KEYMASTER_ROGUE: CardRecord = CardRecord::new(
+    cards::KEYMASTER_ROGUE,
+    "Keymaster Rogue",
+    CardArt::new("970ee9a3-a862-46a7-9aa5-7b6fc4ffa1ab", "Winona Nelson"),
+    CardSet::Gatecrash,
+    // The bounce is a cost of admission rather than a bonus: with nothing
+    // else out, the Rogue returns itself.
+    CardRules::new_creature(mana_cost!("{3}{U}"), &["Human", "Rogue"], 3, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't be blocked.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlocked),
+            },
+        ),
+        AbilityDef::triggered(
+            "When this creature enters, return a creature you control to its owner's hand.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            KEYMASTER_ROGUE_CHOICE,
+        ),
+    ]),
+);
 
 // GTC 40 — Last Thoughts
 // Audit: blocked — Cipher encoding and casting encoded spell copies without paying their mana costs are unavailable.
@@ -4528,6 +4579,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CLOUDFIN_RAPTOR,
     &FRILLED_OCULUS,
     &GRIDLOCK,
+    &KEYMASTER_ROGUE,
     &METROPOLIS_SPRITE,
     &MINDEYE_DRAKE,
     &SAGES_ROW_DENIZEN,

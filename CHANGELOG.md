@@ -133,6 +133,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Keymaster Rogue**. Its bounce is a non-targeted choice made as the
+  trigger resolves, which the object-choice effect has always supported; a
+  minimum of one is what makes it mandatory, so with nothing else out the
+  Rogue returns itself.
+
 - **Spell Rupture** and **Giant Adephage**, neither of which needed anything
   new. The greatest-power value landed a few commits ago and the
   counter-unless-paid helper predates it; a token that copies the permanent

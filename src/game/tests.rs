@@ -616,6 +616,7 @@ mod into_the_wilds;
 mod isd_dgm_deck_cards;
 mod isd_token_cards;
 mod jade_statue;
+mod keymaster_rogue;
 mod laces;
 mod land_and_ability_layers;
 mod land_characteristics;
