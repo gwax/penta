@@ -486,6 +486,7 @@ impl HandcraftedPolicy {
             | ValueDef::TargetPower(_)
             | ValueDef::TargetToughness(_)
             | ValueDef::TargetLibrarySize(_)
+            | ValueDef::LifeTotal(_)
             | ValueDef::TargetManaValue(_)
             | ValueDef::IfCreatureDiedThisTurn(_)
             | ValueDef::IfControllerLifeAtMost(_)

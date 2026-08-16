@@ -59,6 +59,17 @@ impl Game {
                     })
                     .map_or(0, i32::from)
             }
+            ValueDef::LifeTotal(relation) => [PlayerId::One, PlayerId::Two]
+                .into_iter()
+                .find(|candidate| {
+                    self.player_relation_matches(
+                        *candidate,
+                        relation,
+                        object.controller,
+                        context.trigger,
+                    )
+                })
+                .map_or(0, |player| i32::from(self.players[player.index()].life)),
             ValueDef::TargetLibrarySize(target) => {
                 Self::chosen_targets(object, scoped.target_slot(target))
                     .find_map(|target| match target {

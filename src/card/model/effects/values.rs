@@ -214,6 +214,10 @@ pub enum ValueDef {
     /// points at. Read live, so an effect that mills as it goes sees
     /// the library it started with only if it asks first.
     TargetLibrarySize(TargetIndex),
+    /// A player's life total, read live. Distinct from the fateful-hour
+    /// conditions, which compare it: this is the number itself, for the
+    /// clauses that spend it as an amount.
+    LifeTotal(PlayerRelation),
     /// The mana value of what a target slot points at, read from last-known
     /// information after a permanent or spell has left its zone.
     TargetManaValue(TargetIndex),

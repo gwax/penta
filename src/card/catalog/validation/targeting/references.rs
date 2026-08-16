@@ -264,7 +264,8 @@ fn validate_trigger_object_predicate(
                     | ValueDef::ChosenX
                     | ValueDef::SourceCastX
                     | ValueDef::SourcePower
-                    | ValueDef::SourceToughness
+                    | ValueDef::LifeTotal(_)
+        | ValueDef::SourceToughness
                     | ValueDef::CountersOnSource(_)
             ) {
                 Ok(())
@@ -720,6 +721,7 @@ fn validate_value_target_references(
         | ValueDef::SourcePower
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness
+        | ValueDef::LifeTotal(_)
         | ValueDef::SourceToughness
         | ValueDef::TriggerEventAmount
         | ValueDef::CardsInHandAbove { .. }

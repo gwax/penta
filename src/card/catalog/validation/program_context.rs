@@ -675,6 +675,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::TargetPower(_)
         | ValueDef::TargetToughness(_)
         | ValueDef::TargetLibrarySize(_)
+        | ValueDef::LifeTotal(_)
         | ValueDef::TargetManaValue(_)
         | ValueDef::DividedAmongTargets => false,
     }
@@ -711,6 +712,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::TargetPower(_)
         | ValueDef::TargetToughness(_)
         | ValueDef::TargetLibrarySize(_)
+        | ValueDef::LifeTotal(_)
         | ValueDef::TargetManaValue(_)
         | ValueDef::DividedAmongTargets => false,
     }

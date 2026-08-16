@@ -21,7 +21,61 @@ use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
 
 // M13 1 — Ajani, Caller of the Pride
-// Audit: blocked — The token count needs the controller's current life total, which no token-count value exposes.
+pub(in crate::card::sets) static AJANI_CALLER_OF_THE_PRIDE: CardRecord = CardRecord::new(
+    cards::AJANI_CALLER_OF_THE_PRIDE,
+    "Ajani, Caller of the Pride",
+    CardArt::new(
+        "5e7f410a-7934-48ae-a90b-ffd096aed43d",
+        "D. Alexander Gregory",
+    ),
+    CardSet::Magic2013,
+    CardRules::new_planeswalker(mana_cost!("{1}{W}{W}"), &["Ajani"], 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::activated_with_targets(
+                "+1: Put a +1/+1 counter on up to one target creature.",
+                &[AbilityCostDef::Loyalty(1)],
+                &[AbilityTargetDef::up_to(
+                    AbilityTargetPredicate::Object {
+                        object: ObjectPredicateDef::HasType(CardType::Creature),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: None,
+                        owner: None,
+                    },
+                    1,
+                )],
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            AbilityDef::activated_with_targets(
+                "−3: Target creature gains flying and double strike until end of turn.",
+                &[AbilityCostDef::Loyalty(-3)],
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                )],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::add_ability(&abilities::flying()),
+                        AppliedEffectDef::add_ability(&abilities::double_strike()),
+                    ]),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+            AbilityDef::activated(
+                "−8: Create X 2/2 white Cat creature tokens, where X is your life total.",
+                &[AbilityCostDef::Loyalty(-8)],
+                EffectDef::CreateToken {
+                    token: cards::CAT_TOKEN_2_2_WHITE,
+                    count: ValueDef::LifeTotal(PlayerRelation::You),
+                    tapped: false,
+                },
+            ),
+        ]),
+);
 
 // M13 2 — Ajani's Sunstriker
 pub(in crate::card::sets) static AJANIS_SUNSTRIKER: CardRecord = CardRecord::new(
@@ -4204,6 +4258,7 @@ pub(in crate::card::sets) static SUNPETAL_GROVE: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &AJANI_CALLER_OF_THE_PRIDE,
     &AJANIS_SUNSTRIKER,
     &ANGELIC_BENEDICTION,
     &ATTENDED_KNIGHT,

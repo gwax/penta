@@ -133,6 +133,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Death's Presence** and **Ajani, Caller of the Pride**. The first needed
+  nothing: the power of a creature that has already died has been readable
+  since Sengir Vampire's own trigger. The second needed a life total as an
+  amount, which is distinct from the fateful-hour conditions that compare one.
+
 - **Traumatize**. A value may now read the size of the library belonging to
   the player a target slot points at, which composes with the halving that
   was already there.

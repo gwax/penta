@@ -11,8 +11,8 @@ use crate::card::{
     InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
     ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementChoiceDef,
     ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
-    ZonePlacement, abilities, cards,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneChangeEventMatcherDef,
+    ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardDefinitionId, TargetIndex};
 use crate::mana_cost;
@@ -2655,7 +2655,42 @@ pub(in crate::card::sets) static DEADBRIDGE_GOLIATH: CardRecord = CardRecord::ne
 );
 
 // RTR 121 — Death's Presence
-// Audit: blocked — The death event does not preserve the dead creature's power for use as a later counter amount.
+pub(in crate::card::sets) static DEATHS_PRESENCE: CardRecord = CardRecord::new(
+    cards::DEATHS_PRESENCE,
+    "Death's Presence",
+    CardArt::new("fa82c57d-4bb9-407c-b973-7abc793b6f47", "Ryan Barger"),
+    CardSet::ReturnToRavnica,
+    // Nothing you lose is wasted: the body moves its power onto whatever is
+    // left standing.
+    CardRules::new_enchantment(mana_cost!("{5}{G}")).with_ability(
+        AbilityDef::triggered_with_targets(
+            "Whenever a creature you control dies, put X +1/+1 counters on target creature you control, where X is the power of the creature that died.",
+            TriggerEventDef::ZoneChanged(ZoneChangeEventMatcherDef::new(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                ]),
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            )),
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::You),
+                    owner: None,
+                },
+            )],
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                kind: CounterKind::PlusOnePlusOne,
+                // Last known: the creature is in a graveyard by now, which is
+                // the only time the reading is interesting.
+                amount: ValueDef::TriggeringObjectPower,
+            },
+        ),
+    ),
+);
 
 // RTR 122 — Drudge Beetle
 pub(in crate::card::sets) static DRUDGE_BEETLE: CardRecord = CardRecord::new(
@@ -5367,6 +5402,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CENTAURS_HERALD,
     &CHORUS_OF_MIGHT,
     &DEADBRIDGE_GOLIATH,
+    &DEATHS_PRESENCE,
     &DRUDGE_BEETLE,
     &DRUIDS_DELIVERANCE,
     &GATECREEPER_VINE,
