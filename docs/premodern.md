@@ -82,6 +82,7 @@ older unannotated definitions still require one):
 - `Goblin Matron` — complete
 - `Goblin Piledriver` — complete
 - `Goblin Pyromancer` — complete
+- `Goblin Ringleader` — complete
 - `Goblin Sharpshooter` — complete
 - `Goblin Tinkerer` — complete
 - `Goblin Warchief` — complete
@@ -167,7 +168,6 @@ Not yet cataloged:
 - [ ] `Gerrard's Verdict`
 - [ ] `Gilded Drake`
 - [ ] `Goblin Patrol`
-- [ ] `Goblin Ringleader`
 - [ ] `Goblin Vandal`
 - [ ] `Grim Lavamancer`
 - [ ] `Gush`

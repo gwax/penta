@@ -224,3 +224,4 @@ pub const AKROMAS_VENGEANCE: CardDefinitionId = CardDefinitionId(2023);
 pub const SECLUDED_STEPPE: CardDefinitionId = CardDefinitionId(2024);
 pub const ETERNAL_DRAGON: CardDefinitionId = CardDefinitionId(2025);
 pub const GEMPALM_INCINERATOR: CardDefinitionId = CardDefinitionId(2026);
+pub const GOBLIN_RINGLEADER: CardDefinitionId = CardDefinitionId(2027);

@@ -114,6 +114,14 @@ pub struct TopCardSelectionDef {
     pub object: Option<ObjectPredicateDef>,
     pub minimum: u8,
     pub maximum: u8,
+    /// Take every inspected card the predicate matches, asking nothing.
+    ///
+    /// "Put all Goblin cards revealed this way into your hand" is mandatory
+    /// and has no printed bound: a minimum and maximum could only approximate
+    /// it, and any maximum small enough to be safe would let a player decline
+    /// cards the card does not let them decline. The bounds above are ignored
+    /// when this is set.
+    pub select_all_matching: bool,
     /// Reveal selected cards before moving them, for effects that instruct
     /// the player to reveal what they took.
     pub reveal_selected: bool,

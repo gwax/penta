@@ -310,6 +310,67 @@ fn a_two_mana_artifact_kills_the_tinkerer() {
     );
 }
 
+/// The Ringleader takes every Goblin in the top four and leaves the rest,
+/// asking nothing: the clause is mandatory, so a bounded choice would be the
+/// wrong shape for it.
+#[test]
+fn the_ringleader_takes_every_goblin_from_the_top_four() {
+    let mut game = ready();
+    game.players[PlayerId::One.index()].library.clear();
+    // Bottom to top: the last four pushed are the ones revealed. Two Goblins
+    // and two not, plus a fifth Goblin sitting below the dig so that "all
+    // Goblins" cannot quietly mean "all Goblins in the library".
+    game.players[PlayerId::One.index()].library.push(card(
+        30_000,
+        cards::GOBLIN_MATRON,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::One.index()].library.push(card(
+        30_001,
+        cards::GRIZZLY_BEARS,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::One.index()].library.push(card(
+        30_002,
+        cards::MOGG_FANATIC,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::One.index()].library.push(card(
+        30_003,
+        cards::SAVANNAH_LIONS,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::One.index()].library.push(card(
+        30_004,
+        cards::GOBLIN_SHARPSHOOTER,
+        PlayerId::One,
+    ));
+
+    game.put_onto_battlefield(PlayerId::One, cards::GOBLIN_RINGLEADER)
+        .expect("cataloged");
+    settle(&mut game);
+
+    // The order cards arrive in hand is not something the card specifies.
+    let mut hand: Vec<_> = game.players[PlayerId::One.index()]
+        .hand
+        .iter()
+        .map(|card| card.definition)
+        .collect();
+    hand.sort_unstable();
+    let mut expected = vec![cards::MOGG_FANATIC, cards::GOBLIN_SHARPSHOOTER];
+    expected.sort_unstable();
+    assert_eq!(hand, expected, "both revealed Goblins, and nothing else");
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        3,
+        "the two non-Goblins went to the bottom, and the fifth card never moved",
+    );
+    assert!(
+        game.pending_decisions.is_empty(),
+        "nothing was asked -- the clause does not offer a choice",
+    );
+}
+
 #[test]
 fn every_goblin_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -320,6 +381,7 @@ fn every_goblin_reports_complete_coverage() {
         cards::GOBLIN_WARCHIEF,
         cards::SIEGE_GANG_COMMANDER,
         cards::GOBLIN_TINKERER,
+        cards::GOBLIN_RINGLEADER,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

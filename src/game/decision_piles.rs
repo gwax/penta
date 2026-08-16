@@ -2,8 +2,8 @@ use super::{
     BalancePhase, BalanceTask, BattlefieldExitCompletion, CardInstance, CardRuntime,
     CommittedTriggerEvent, CounterKind, DecisionContinuation, DecisionOption, DecisionPreference,
     DecisionVisibility, DecisionZone, DeclarativeAbilityDef, EffectDef, EffectResolutionContext,
-    Game, GameObjectId, ObjectPredicateDef, Permanent, PileChoice, PileChosen, PileSplit,
-    PilesSeparated, PlayerId, SacrificeDeclined, SacrificeFollowup, SacrificedAmountDef,
+    Game, GameEvent, GameObjectId, ObjectPredicateDef, Permanent, PileChoice, PileChosen,
+    PileSplit, PilesSeparated, PlayerId, SacrificeDeclined, SacrificeFollowup, SacrificedAmountDef,
     ScopedEffect, StackObject, Step, TopCardSelectionDef, ZoneKind, ZoneMoveCause,
 };
 
@@ -40,6 +40,20 @@ impl Game {
             })
             .cloned()
             .collect::<Vec<_>>();
+        // "Put all Goblin cards revealed this way into your hand" asks
+        // nothing, so there is no decision to queue: the predicate has
+        // already partitioned the cards and both halves go where they go.
+        if selection.select_all_matching {
+            let selected = eligible.iter().map(|card| card.id).collect::<Vec<_>>();
+            let (chosen, rest): (Vec<_>, Vec<_>) = revealed
+                .into_iter()
+                .partition(|card| selected.contains(&card.id));
+            self.finish_top_card_selection(player, chosen, rest, selection);
+            if let Some(then) = selection.then {
+                self.resolve_effect_def(scoped.with_effect(*then), object, context);
+            }
+            return;
+        }
         let inspected = revealed
             .iter()
             .map(|card| (card.id, card.definition))
@@ -96,6 +110,33 @@ impl Game {
                 effect: scoped,
             },
         );
+    }
+
+    /// Where the two halves of an inspected group go once they are settled.
+    /// Shared by the decision's continuation and by the selection that asks
+    /// nothing, so both place cards and reveal them the same way.
+    pub(super) fn finish_top_card_selection(
+        &mut self,
+        player: PlayerId,
+        chosen: Vec<CardInstance>,
+        rest: Vec<CardInstance>,
+        selection: &'static TopCardSelectionDef,
+    ) {
+        if selection.reveal_selected {
+            self.events
+                .extend(chosen.iter().map(|card| GameEvent::CardRevealed {
+                    player,
+                    card: card.id,
+                    definition: card.definition,
+                }));
+        }
+        self.place_revealed_remainder(
+            player,
+            chosen,
+            selection.selected_zone,
+            selection.selected_placement,
+        );
+        self.place_revealed_remainder(player, rest, selection.rest_zone, selection.rest_placement);
     }
 
     pub(super) fn card_decision_options(

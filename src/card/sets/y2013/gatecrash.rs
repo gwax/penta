@@ -2951,6 +2951,7 @@ static DOMRI_ABILITIES: [AbilityDef; 3] = [
                 object: Some(ObjectPredicateDef::HasType(CardType::Creature)),
                 minimum: 0,
                 maximum: 1,
+                select_all_matching: false,
                 reveal_selected: true,
                 selected_zone: ZoneKind::Hand,
                 selected_placement: ZonePlacement::Top,

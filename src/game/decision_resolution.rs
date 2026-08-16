@@ -144,26 +144,7 @@ impl Game {
                 let (chosen, rest): (Vec<_>, Vec<_>) = revealed
                     .into_iter()
                     .partition(|card| selected.contains(&card.id));
-                if selection.reveal_selected {
-                    self.events
-                        .extend(chosen.iter().map(|card| GameEvent::CardRevealed {
-                            player,
-                            card: card.id,
-                            definition: card.definition,
-                        }));
-                }
-                self.place_revealed_remainder(
-                    player,
-                    chosen,
-                    selection.selected_zone,
-                    selection.selected_placement,
-                );
-                self.place_revealed_remainder(
-                    player,
-                    rest,
-                    selection.rest_zone,
-                    selection.rest_placement,
-                );
+                self.finish_top_card_selection(player, chosen, rest, selection);
                 if let Some(then) = selection.then {
                     self.resolve_nested_effect_before_later(
                         effect.with_effect(*then),

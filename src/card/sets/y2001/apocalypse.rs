@@ -5,7 +5,8 @@ use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardComposition,
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, DividedTotal, EffectDef,
     EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm,
-    TriggerEventDef, TurnStepDef, ValueDef, abilities, cards,
+    TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::{CardPartId, PlayOptionId, TargetIndex, mana_cost};
 
@@ -32,6 +33,49 @@ pub(in crate::card::sets) static PHYREXIAN_ARENA: CardRecord = CardRecord::new(
             },
         ]),
     )),
+);
+
+/// Four cards deep, every Goblin among them taken, and no question asked:
+/// the clause is mandatory and unbounded, so the selection takes all matches
+/// rather than offering a bounded choice.
+static RINGLEADER_DIG: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(4),
+    object: Some(ObjectPredicateDef::Subtype("Goblin")),
+    minimum: 0,
+    maximum: 4,
+    select_all_matching: true,
+    reveal_selected: true,
+    selected_zone: ZoneKind::Hand,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Bottom,
+    then: None,
+};
+
+// APC 62 — Goblin Ringleader
+pub(in crate::card::sets) static GOBLIN_RINGLEADER: CardRecord = CardRecord::new(
+    cards::GOBLIN_RINGLEADER,
+    "Goblin Ringleader",
+    CardArt::new("b6b2cd77-9552-48b1-80cb-26966323c1ea", "Mark Romanoski"),
+    CardSet::Apocalypse,
+    // Haste plus a refill is what keeps the deck from running out: each
+    // Ringleader tends to find the next one.
+    CardRules::new_creature(mana_cost!("{3}{R}"), &["Goblin"], 2, 2).with_abilities(&[
+        abilities::haste(),
+        AbilityDef::triggered(
+            "When this creature enters, reveal the top four cards of your library. Put all Goblin cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::LookAtTopAndSelect {
+                player: EffectRecipientDef::Controller,
+                looker: EffectRecipientDef::Controller,
+                selection: &RINGLEADER_DIG,
+            },
+        ),
+    ]),
 );
 
 // APC 126 — Vindicate
@@ -170,6 +214,7 @@ pub(in crate::card::sets) static YAVIMAYA_COAST: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PHYREXIAN_ARENA,
+    &GOBLIN_RINGLEADER,
     &VINDICATE,
     &FIRE_ICE,
     &CAVES_OF_KOILOS,

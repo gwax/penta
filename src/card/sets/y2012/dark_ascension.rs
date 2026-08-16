@@ -1029,6 +1029,7 @@ pub(in crate::card::sets) static TOWER_GEIST: CardRecord = CardRecord::new(
                     object: None,
                     minimum: 1,
                     maximum: 1,
+                    select_all_matching: false,
                     reveal_selected: false,
                     selected_zone: ZoneKind::Hand,
                     selected_placement: ZonePlacement::Top,

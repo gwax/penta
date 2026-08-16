@@ -139,6 +139,13 @@ distinguishes snapshots of the covered source and build inputs.
   Akroma's Vengeance, Secluded Steppe, Eternal Dragon, and Gempalm
   Incinerator.
 
+- **Goblin Ringleader.** A look at the top of a library can now take every
+  card matching its predicate without asking. "Put all Goblin cards revealed
+  this way into your hand" is mandatory and has no printed bound, so a
+  minimum and maximum could only approximate it -- any maximum small enough
+  to be safe would let a player decline cards the card does not let them
+  decline.
+
 - **Banding.** `BandAttackers` names two declared attackers and puts them,
   with everything already banded with either, into one band; the engine offers
   only the pairs CR 702.21b allows, which is one or more creatures with banding

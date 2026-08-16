@@ -1181,6 +1181,7 @@ static FORBIDDEN_ALCHEMY_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     object: None,
     minimum: 1,
     maximum: 1,
+    select_all_matching: false,
     reveal_selected: false,
     selected_zone: ZoneKind::Hand,
     selected_placement: ZonePlacement::Top,

@@ -1287,6 +1287,7 @@ static ORCISH_SPY_LOOK: TopCardSelectionDef = TopCardSelectionDef {
     object: None,
     minimum: 0,
     maximum: 0,
+    select_all_matching: false,
     reveal_selected: false,
     selected_zone: ZoneKind::Library,
     selected_placement: ZonePlacement::Top,
