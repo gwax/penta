@@ -111,7 +111,31 @@ pub(in crate::card::sets) static BANISHING_STROKE: CardRecord = CardRecord::new(
 );
 
 // AVR 8 — Builder's Blessing
-// Audit: blocked — Needs a continuous-effect recipient predicate for creatures that are currently untapped.
+pub(in crate::card::sets) static BUILDERS_BLESSING: CardRecord = CardRecord::new(
+    cards::BUILDERS_BLESSING,
+    "Builder's Blessing",
+    CardArt::new("2ad27af1-b482-40d5-9dbb-11201ffa0410", "John Stanko"),
+    CardSet::AvacynRestored,
+    // Read continuously, so a creature loses the toughness the moment it taps
+    // -- including as it is declared as an attacker.
+    CardRules::new_enchantment(mana_cost!("{3}{W}")).with_ability(AbilityDef::static_ability(
+        "Untapped creatures you control get +0/+2.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(0),
+                ValueDef::Constant(2),
+            ),
+        },
+    )),
+);
 
 // AVR 9 — Call to Serve
 // Audit: blocked — Needs an attachment-scoped effect that adds the Angel subtype without replacing the creature's existing types.
@@ -3530,6 +3554,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARCHANGEL,
     &AVACYN_ANGEL_OF_HOPE,
     &BANISHING_STROKE,
+    &BUILDERS_BLESSING,
     &CATHARS_CRUSADE,
     &CATHEDRAL_SANCTIFIER,
     &COMMANDERS_AUTHORITY,

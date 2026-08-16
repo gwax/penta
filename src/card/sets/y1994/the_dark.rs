@@ -5,11 +5,11 @@ use crate::card::{
     AppliedRuleDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
     CardType, ComparisonDef, DamageCoverageDef, DamageEventMatcherDef, DamagePreventionDef,
     DamageRecipientMatcherDef, DamageSourceGroupDef, DiscardSelectionDef, EffectDef,
-    EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, HalvedValueDef, KeywordAbility,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, RoundingDef,
+    SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -1070,8 +1070,45 @@ pub(in crate::card::sets) static CAVE_PEOPLE: CardRecord = CardRecord::new(
     ]),
 );
 
+static ETERNAL_FLAME_MOUNTAINS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+/// Rounded up, so an odd Mountain count costs the extra point rather than
+/// saving it -- one Mountain is one damage each way.
+static ETERNAL_FLAME_RECOIL: HalvedValueDef = HalvedValueDef::new(
+    ValueDef::CountMatchingObjects(&ETERNAL_FLAME_MOUNTAINS),
+    RoundingDef::Up,
+);
+
+static ETERNAL_FLAME_EFFECTS: [EffectDef; 2] = [
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::CountMatchingObjects(&ETERNAL_FLAME_MOUNTAINS),
+    },
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Halved(&ETERNAL_FLAME_RECOIL),
+    },
+];
+
 // DRK 61 — Eternal Flame
-// Audit: blocked — Needs halving a computed value, rounded up; counting the Mountains that set X is available.
+pub(in crate::card::sets) static ETERNAL_FLAME: CardRecord = CardRecord::new(
+    cards::ETERNAL_FLAME,
+    "Eternal Flame",
+    CardArt::new("d646feea-3c20-4737-8d20-ffad42258ced", "Mark Poole"),
+    CardSet::TheDark,
+    CardRules::new_sorcery(mana_cost!("{2}{R}{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Eternal Flame deals X damage to target opponent or planeswalker and half X damage, \
+             rounded up, to you, where X is the number of Mountains you control.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Opponent),
+        )],
+        EffectDef::Sequence(&ETERNAL_FLAME_EFFECTS),
+    )),
+);
 
 // DRK 62 — Fire Drake
 pub(in crate::card::sets) static FIRE_DRAKE: CardRecord = CardRecord::new(
@@ -2255,6 +2292,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLOOD_MOON,
     &BROTHERS_OF_FIRE,
     &CAVE_PEOPLE,
+    &ETERNAL_FLAME,
     &FIRE_DRAKE,
     &FISSURE,
     &GOBLIN_CAVES,

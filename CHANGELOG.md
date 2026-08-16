@@ -119,6 +119,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Builder's Blessing** and **Eternal Flame**, two more stale audits. The
+  Blessing wanted a recipient narrowed to untapped creatures, which Arcades
+  Sabboth already needed; the Flame wanted a halved count rounded up, which
+  Aspect of Wolf already needed. Neither needed engine work.
+
 - **Ivory Guardians** and **Woodborn Behemoth**, two more board-conditioned
   statics. The Guardians pump by name rather than by control, so a copy on
   either side of the table is covered -- but each copy's own "an opponent" is

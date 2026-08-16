@@ -117,3 +117,5 @@ pub const GOBLIN_CAVES: CardDefinitionId = CardDefinitionId(1916);
 pub const GOBLIN_SHRINE: CardDefinitionId = CardDefinitionId(1917);
 pub const IVORY_GUARDIANS: CardDefinitionId = CardDefinitionId(1918);
 pub const WOODBORN_BEHEMOTH: CardDefinitionId = CardDefinitionId(1919);
+pub const BUILDERS_BLESSING: CardDefinitionId = CardDefinitionId(1920);
+pub const ETERNAL_FLAME: CardDefinitionId = CardDefinitionId(1921);
