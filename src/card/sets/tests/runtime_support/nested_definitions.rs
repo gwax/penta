@@ -368,6 +368,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { .. }
         | EffectDef::Mill { .. }
+        | EffectDef::MillUntil { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }

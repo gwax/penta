@@ -192,6 +192,11 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::Mill {
             player: recipient, ..
         }
+        // The predicate is read against library cards, which the shared
+        // walk already reads for a search.
+        | EffectDef::MillUntil {
+            player: recipient, ..
+        }
         | EffectDef::LoseTheGame { player: recipient }
         | EffectDef::LookAtHand { player: recipient }
         | EffectDef::RevealHand { player: recipient } => shared_effect_recipient(recipient),

@@ -251,6 +251,26 @@ impl Game {
         }
     }
 
+    /// Take from the top until one matches, and bury the whole group. The
+    /// match is included: "until they reveal a land card, then puts those
+    /// cards into their graveyard" buries the land too.
+    pub(super) fn mill_until_matching(
+        &mut self,
+        player: PlayerId,
+        predicate: ObjectPredicateDef,
+        source: GameObjectId,
+    ) {
+        let mut revealed = Vec::new();
+        while let Some(card) = self.players[player.index()].library.pop() {
+            let matched = self.card_object_matches(predicate, &card, ZoneKind::Library, source);
+            revealed.push(card);
+            if matched {
+                break;
+            }
+        }
+        self.bury_cards(player, revealed);
+    }
+
     pub(super) fn bury_cards(&mut self, player: PlayerId, cards: Vec<CardInstance>) {
         for card in cards {
             let (card, _zone_change) = self.zone_change_card(card);

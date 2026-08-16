@@ -463,6 +463,7 @@ fn validate_resolving_effect(
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
         | EffectDef::Mill { .. }
+        | EffectDef::MillUntil { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }
@@ -803,6 +804,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::Sacrifice { .. } => "Sacrifice",
         EffectDef::SacrificeOfChoice { .. } => "SacrificeOfChoice",
         EffectDef::Mill { .. } => "Mill",
+        EffectDef::MillUntil { .. } => "MillUntil",
         EffectDef::LookAtHand { .. } => "LookAtHand",
         EffectDef::RevealHand { .. } => "RevealHand",
         EffectDef::LookAtTopAndSelect { .. } => "LookAtTopAndSelect",

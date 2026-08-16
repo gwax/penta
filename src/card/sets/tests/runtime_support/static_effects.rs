@@ -188,6 +188,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { .. }
         | EffectDef::Mill { .. }
+        | EffectDef::MillUntil { .. }
         | EffectDef::LookAtTopAndSelect { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }

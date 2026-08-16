@@ -229,6 +229,7 @@ impl Game {
             | EffectDef::Discard { .. }
             | EffectDef::DiscardCards { .. }
             | EffectDef::Mill { .. }
+            | EffectDef::MillUntil { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::RevealHand { .. }
             | EffectDef::LookAtTopAndSelect { .. }

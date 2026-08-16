@@ -610,6 +610,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Sacrifice { .. }
                     | EffectDef::SacrificeOfChoice { .. }
                     | EffectDef::Mill { .. }
+                    | EffectDef::MillUntil { .. }
                     | EffectDef::LookAtTopAndSelect { .. }
                     | EffectDef::LookAtHand { .. }
                     | EffectDef::RevealHand { .. }

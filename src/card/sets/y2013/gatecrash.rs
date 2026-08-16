@@ -955,8 +955,35 @@ pub(in crate::card::sets) static WAY_OF_THE_THIEF: CardRecord = CardRecord::new(
         ]),
 );
 
+/// A library with no land left in it empties, which is the whole reason
+/// these two are a combo piece rather than a mill spell.
+static MILL_TO_THE_FIRST_LAND: EffectDef = EffectDef::MillUntil {
+    player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    object: ObjectPredicateDef::HasType(CardType::Land),
+};
+
 // GTC 57 — Balustrade Spy
-// Audit: blocked — Needs revealing cards until a land is found and moving the whole revealed group to a graveyard.
+pub(in crate::card::sets) static BALUSTRADE_SPY: CardRecord = CardRecord::new(
+    cards::BALUSTRADE_SPY,
+    "Balustrade Spy",
+    CardArt::new("df8a3f05-864d-401d-a2f1-5f58358fe089", "Jaime Jones"),
+    CardSet::Gatecrash,
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Vampire", "Rogue"], 2, 3).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, target player reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(
+                PlayerRelation::Any,
+            ))],
+            MILL_TO_THE_FIRST_LAND,
+        ),
+    ]),
+);
 
 // GTC 58 — Basilica Screecher
 pub(in crate::card::sets) static BASILICA_SCREECHER: CardRecord = CardRecord::new(
@@ -1415,7 +1442,30 @@ pub(in crate::card::sets) static SYNDICATE_ENFORCER: CardRecord = CardRecord::ne
 // Audit: blocked — Counter-removal costs and effects require a fixed CounterKind, not choosing any counter on the target.
 
 // GTC 82 — Undercity Informer
-// Audit: blocked — Needs revealing cards until a land is found and moving the whole revealed group to a graveyard.
+pub(in crate::card::sets) static UNDERCITY_INFORMER: CardRecord = CardRecord::new(
+    cards::UNDERCITY_INFORMER,
+    "Undercity Informer",
+    CardArt::new("822d0f73-cfb0-41d9-b4eb-09c605112a13", "Raymond Swanland"),
+    CardSet::Gatecrash,
+    // The same effect on a repeatable body, which is what makes it the
+    // dangerous half of the pair.
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Human", "Rogue"], 2, 3).with_ability(
+        AbilityDef::activated_with_targets(
+            "{1}, Sacrifice a creature: Target player reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}")),
+                AbilityCostDef::SacrificePermanent {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    controller: PlayerRelation::You,
+                },
+            ],
+            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(
+                PlayerRelation::Any,
+            ))],
+            MILL_TO_THE_FIRST_LAND,
+        ),
+    ),
+);
 
 // GTC 83 — Undercity Plague
 // Audit: blocked — Needs cipher plus a discard decision that resumes into a permanent-sacrifice choice before later effects resolve.
@@ -4429,6 +4479,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SKYGAMES,
     &TOTALLY_LOST,
     &WAY_OF_THE_THIEF,
+    &BALUSTRADE_SPY,
     &BASILICA_SCREECHER,
     &CONTAMINATED_GROUND,
     &CORPSE_BLOCKADE,
@@ -4445,6 +4496,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SHADOW_ALLEY_DENIZEN,
     &SMOG_ELEMENTAL,
     &SYNDICATE_ENFORCER,
+    &UNDERCITY_INFORMER,
     &WIGHT_OF_PRECINCT_SIX,
     &ACT_OF_TREASON,
     &BOMBER_CORPS,

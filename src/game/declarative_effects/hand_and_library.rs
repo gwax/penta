@@ -137,6 +137,17 @@ impl Game {
                     self.discard_cards_with_cause(player, &cards, cause);
                 }
             }
+            EffectDef::MillUntil {
+                player: recipient,
+                object: predicate,
+            } => {
+                let source = object.source.unwrap_or(object.id);
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.mill_until_matching(player, predicate, source);
+                    }
+                }
+            }
             EffectDef::Mill {
                 player: recipient,
                 amount,

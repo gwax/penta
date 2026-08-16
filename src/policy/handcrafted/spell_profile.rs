@@ -421,6 +421,7 @@ impl HandcraftedPolicy {
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::DiscardCards { .. }
             | EffectDef::Mill { .. }
+            | EffectDef::MillUntil { .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::RevealHand { .. }

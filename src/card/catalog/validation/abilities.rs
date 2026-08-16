@@ -712,6 +712,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
         | EffectDef::Mill { .. }
+        | EffectDef::MillUntil { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }
@@ -870,6 +871,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
         | EffectDef::Mill { .. }
+        | EffectDef::MillUntil { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }

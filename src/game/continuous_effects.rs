@@ -475,6 +475,7 @@ impl Game {
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
                 | EffectDef::Mill { .. }
+                | EffectDef::MillUntil { .. }
                 | EffectDef::LookAtTopAndSelect { .. }
                 | EffectDef::LookAtHand { .. }
                 | EffectDef::RevealHand { .. }

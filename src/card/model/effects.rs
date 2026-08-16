@@ -606,6 +606,16 @@ pub enum EffectDef {
     },
     /// Put that many cards from the top of a library into its owner's
     /// graveyard.
+    /// Reveal from the top of a library until a matching card turns up, then
+    /// put everything revealed -- the match included -- into the graveyard.
+    ///
+    /// Distinct from [`Self::Mill`], whose count is known before it starts:
+    /// how deep this goes is whatever the library says, and a library with
+    /// nothing matching empties.
+    MillUntil {
+        player: EffectRecipientDef,
+        object: ObjectPredicateDef,
+    },
     Mill {
         player: EffectRecipientDef,
         amount: ValueDef,

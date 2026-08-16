@@ -133,6 +133,13 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Balustrade Spy** and **Undercity Informer**. A library may now be milled
+  until a matching card turns up, with the match buried alongside everything
+  above it. Distinct from an ordinary mill, whose count is known before it
+  starts: how deep this goes is whatever the library says, and a library with
+  nothing matching empties -- which is what makes these two a combo piece
+  rather than a mill spell.
+
 - **Cartel Aristocrat**, **Midvast Protector**, **Brave the Elements**, and
   **Alchor's Tomb**. An effect may now ask for a colour as it resolves and
   apply the answer, which no card could say before: the colour depends on

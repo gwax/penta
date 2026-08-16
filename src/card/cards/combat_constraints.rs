@@ -195,3 +195,5 @@ pub const CARTEL_ARISTOCRAT: CardDefinitionId = CardDefinitionId(1994);
 pub const MIDVAST_PROTECTOR: CardDefinitionId = CardDefinitionId(1995);
 pub const BRAVE_THE_ELEMENTS: CardDefinitionId = CardDefinitionId(1996);
 pub const ALCHORS_TOMB: CardDefinitionId = CardDefinitionId(1997);
+pub const BALUSTRADE_SPY: CardDefinitionId = CardDefinitionId(1998);
+pub const UNDERCITY_INFORMER: CardDefinitionId = CardDefinitionId(1999);

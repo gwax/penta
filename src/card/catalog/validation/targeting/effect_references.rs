@@ -140,7 +140,8 @@ fn validate_effect_references(
             }
             Ok(())
         }
-        EffectDef::SearchZone { player, .. }
+        EffectDef::MillUntil { player, .. }
+        |         EffectDef::SearchZone { player, .. }
         | EffectDef::ChooseCards { player, .. }
         | EffectDef::TakeExtraTurn { player }
         | EffectDef::LookAtHand { player }
