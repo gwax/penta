@@ -339,6 +339,9 @@ fn static_stat_value(value: crate::card::ValueDef) -> bool {
     match value {
         crate::card::ValueDef::Constant(_)
         | crate::card::ValueDef::AnyMatchingObject(_)
+        // Read live from the static effect's own controller, the same way a
+        // battlefield count is.
+        | crate::card::ValueDef::CardsInHandAbove { .. }
         | crate::card::ValueDef::CountMatchingObjects(_) => true,
         crate::card::ValueDef::Scaled(scaled) => static_stat_value(scaled.value),
         crate::card::ValueDef::Halved(halved) => static_stat_value(halved.value),

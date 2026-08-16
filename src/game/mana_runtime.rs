@@ -120,6 +120,12 @@ impl Game {
         permanent: &Permanent,
     ) -> Vec<ManaAbilityActivation> {
         let mut activations = Vec::new();
+        // "Activated abilities can't be activated" covers mana abilities too,
+        // and they are enumerated here rather than with the rest, so the
+        // prohibition has to be read in both places.
+        if self.activated_abilities_are_prohibited(permanent) {
+            return activations;
+        }
         self.for_each_effective_ability(permanent, |effective| {
             let ability = effective.ability;
             if !ability.is_executable() {

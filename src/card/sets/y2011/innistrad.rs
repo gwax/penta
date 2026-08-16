@@ -761,7 +761,26 @@ pub(in crate::card::sets) static SPECTRAL_RIDER: CardRecord = CardRecord::new(
 );
 
 // ISD 36 — Stony Silence
-// Audit: blocked — Needs a battlefield-wide prohibition on activating nonmana abilities of artifacts.
+pub(in crate::card::sets) static STONY_SILENCE: CardRecord = CardRecord::new(
+    cards::STONY_SILENCE,
+    "Stony Silence",
+    CardArt::new("f56a5a73-5f10-4f97-989f-7cea0a8d95e3", "Wayne England"),
+    CardSet::Innistrad,
+    // Every artifact, whoever controls it, and mana abilities included --
+    // which is what makes this an answer to a mana engine rather than to one
+    // permanent.
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(AbilityDef::static_ability(
+        "Activated abilities of artifacts can't be activated.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotActivateAbilities),
+        },
+    )),
+);
 
 // ISD 37 — Thraben Purebloods
 pub(in crate::card::sets) static THRABEN_PUREBLOODS: CardRecord = CardRecord::new(
@@ -1595,8 +1614,43 @@ pub(in crate::card::sets) static STITCHERS_APPRENTICE: CardRecord = CardRecord::
     ),
 );
 
+/// A threshold of zero is the exact count, which is what a characteristic
+/// defined by the hand needs.
+static CARDS_IN_YOUR_HAND: ValueDef = ValueDef::CardsInHandAbove {
+    player: PlayerRelation::You,
+    threshold: 0,
+};
+
 // ISD 82 — Sturmgeist
-// Audit: blocked — Needs the exact number of cards in your hand as a continuously evaluated P/T value.
+pub(in crate::card::sets) static STURMGEIST: CardRecord = CardRecord::new(
+    cards::STURMGEIST,
+    "Sturmgeist",
+    CardArt::new("c409d1d0-fc45-40bf-adac-83b680209a38", "Terese Nielsen"),
+    CardSet::Innistrad,
+    // Its own trigger feeds it: connecting draws a card, which is one more
+    // power the next time it swings.
+    CardRules::new_creature(mana_cost!("{3}{U}{U}"), &["Spirit"], 0, 0).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::static_ability(
+            "Sturmgeist's power and toughness are each equal to the number of cards in your hand.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::set_base_power_toughness(
+                    CARDS_IN_YOUR_HAND,
+                    CARDS_IN_YOUR_HAND,
+                ),
+            },
+        ),
+        AbilityDef::triggered(
+            "Whenever this creature deals combat damage to a player, draw a card.",
+            TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
 
 // ISD 83 — Think Twice
 pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new(
@@ -5262,6 +5316,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SLAYER_OF_THE_WICKED,
     &SMITE_THE_MONSTROUS,
     &SPECTRAL_RIDER,
+    &STONY_SILENCE,
     &THRABEN_PUREBLOODS,
     &THRABEN_SENTRY,
     &UNRULY_MOB,
@@ -5292,6 +5347,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPECTRAL_FLIGHT,
     &STITCHED_DRAKE,
     &STITCHERS_APPRENTICE,
+    &STURMGEIST,
     &THINK_TWICE,
     &ALTARS_REAP,
     &ARMY_OF_THE_DAMNED,

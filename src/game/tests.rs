@@ -670,6 +670,7 @@ mod scavenge;
 mod search_and_reveal;
 mod sentinel;
 mod shroud_grants;
+mod silence_and_sturmgeist;
 mod silenced_sources;
 mod soulbond;
 mod spell_colors;

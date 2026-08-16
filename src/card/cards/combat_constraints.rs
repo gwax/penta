@@ -164,3 +164,5 @@ pub const INFERNAL_PLUNGE: CardDefinitionId = CardDefinitionId(1963);
 pub const SKAAB_GOLIATH: CardDefinitionId = CardDefinitionId(1964);
 pub const ELDER_SPAWN: CardDefinitionId = CardDefinitionId(1965);
 pub const CURSE_ARTIFACT: CardDefinitionId = CardDefinitionId(1966);
+pub const STONY_SILENCE: CardDefinitionId = CardDefinitionId(1967);
+pub const STURMGEIST: CardDefinitionId = CardDefinitionId(1968);

@@ -638,7 +638,9 @@ fn static_source_value_supported(value: ValueDef) -> bool {
 
 fn static_power_toughness_value_supported(value: ValueDef) -> bool {
     match value {
-        ValueDef::Constant(_) => true,
+        // Both are read live from the static effect's own controller: a
+        // battlefield count, or the size of that player's hand.
+        ValueDef::Constant(_) | ValueDef::CardsInHandAbove { .. } => true,
         ValueDef::CountMatchingObjects(query) | ValueDef::AnyMatchingObject(query) => {
             static_query_supported(*query)
         }
@@ -656,7 +658,6 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness
         | ValueDef::TriggerEventAmount
-        | ValueDef::CardsInHandAbove { .. }
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::Negate(_)
         | ValueDef::IfCreatureDiedThisTurn(_)

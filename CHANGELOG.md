@@ -119,6 +119,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Stony Silence** and **Sturmgeist**. The activation prohibition now reaches
+  mana abilities, which are enumerated on their own path and so needed the
+  rule read in a second place; and a static power/toughness may be defined by
+  its controller's hand size, read live.
+
 - **Curse Artifact**, the second card on the declined branch. It names exactly
   the permanent it is attached to rather than any the player controls, and
   asks that permanent's controller rather than the Aura's.

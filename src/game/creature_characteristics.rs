@@ -207,6 +207,29 @@ impl Game {
             ValueDef::Sum(sum) => self
                 .static_stat_value(sum.left, source, controller)
                 .saturating_add(self.static_stat_value(sum.right, source, controller)),
+            // "Your hand" is the static effect's own controller's, measured
+            // live, so a creature defined by it changes size as cards come
+            // and go. A threshold of zero is the plain count.
+            ValueDef::CardsInHandAbove { player, threshold } => {
+                let counted = [PlayerId::One, PlayerId::Two]
+                    .into_iter()
+                    .find(|candidate| {
+                        self.player_relation_matches(
+                            *candidate,
+                            player,
+                            controller,
+                            TriggerContext::empty(),
+                        )
+                    })
+                    .unwrap_or(controller);
+                i32::try_from(
+                    self.players[counted.index()]
+                        .hand
+                        .len()
+                        .saturating_sub(usize::from(threshold)),
+                )
+                .unwrap_or(i32::MAX)
+            }
             _ => 0,
         }
     }
