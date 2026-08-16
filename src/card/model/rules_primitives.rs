@@ -43,10 +43,13 @@ pub enum CounterKind {
     /// Cyclone's counter. It only ever grows, so what it counts is how many
     /// upkeeps the enchantment has survived.
     Wind,
+    /// The storage lands' counter, banked one per upkeep and spent all at
+    /// once for that much mana.
+    Storage,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 19;
+    pub const COUNT: usize = 20;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -68,6 +71,7 @@ impl CounterKind {
         Self::Vitality,
         Self::Corpse,
         Self::Wind,
+        Self::Storage,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -94,7 +98,8 @@ impl CounterKind {
             | Self::Sleep
             | Self::Vitality
             | Self::Corpse
-            | Self::Wind => (0, 0),
+            | Self::Wind
+            | Self::Storage => (0, 0),
         }
     }
 
@@ -120,6 +125,7 @@ impl CounterKind {
             Self::Vitality => 16,
             Self::Corpse => 17,
             Self::Wind => 18,
+            Self::Storage => 19,
         }
     }
 
@@ -145,6 +151,7 @@ impl CounterKind {
             Self::Vitality => "vitality",
             Self::Corpse => "corpse",
             Self::Wind => "wind",
+            Self::Storage => "storage",
         }
     }
 }

@@ -657,6 +657,7 @@ fn unspent_restricted_mana_reconstructs() {
             source: workshop_id,
             ability,
             color: ManaColor::Colorless,
+            counters_removed: None,
         },
     )
     .expect("the Workshop taps for mana");

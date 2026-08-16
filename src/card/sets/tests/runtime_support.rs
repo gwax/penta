@@ -349,6 +349,10 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
             AbilityCostDef::TapSource
             | AbilityCostDef::SacrificeSource
             | AbilityCostDef::RemoveCountersFromSource { .. }
+            // Open-ended only in the declaration: one activation per size is
+            // built by the mana path, which is why the caller also requires
+            // the effect to be an AddMana.
+            | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
             | AbilityCostDef::PayLife(_)
             | AbilityCostDef::Loyalty(_)
             // Nobody chooses which cards go, so a random discard needs no
@@ -533,6 +537,10 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                             | AbilityCostDef::SacrificeSource
                             | AbilityCostDef::ExileSource
                             | AbilityCostDef::RemoveCountersFromSource { .. }
+                            // The mana path is the one place that enumerates
+                            // an open-ended removal into one activation per
+                            // size, so this is where it belongs.
+                            | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                             | AbilityCostDef::PayLife(_)
                     ) || matches!(
                         cost,
@@ -657,6 +665,15 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     [ZoneKind::Battlefield | ZoneKind::Hand | ZoneKind::Graveyard]
                 ) && definition.procedure == AbilityProcedureDef::Shared
                     && shared_activated_costs(definition.source_zones, definition.costs.as_slice())
+                    // Only the mana path enumerates one activation per
+                    // removable count, so an open-ended removal outside it
+                    // would leave the size unanswered.
+                    && (!definition.costs.iter().any(|cost| {
+                        matches!(
+                            cost,
+                            AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
+                        )
+                    }) || matches!(effect, EffectDef::AddMana(_)))
                     // Conservative rather than forced: activations now
                     // enumerate their targets per affordable X, so a divided
                     // slot would have somewhere to live. Nothing prints one

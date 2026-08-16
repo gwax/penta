@@ -8,6 +8,7 @@ use super::{
     pay_cost_with_orders,
 };
 use crate::AbilityProgramDef;
+use crate::card::AbilityCostList;
 
 impl Game {
     pub(super) fn mana_ability_is_usable(
@@ -41,6 +42,7 @@ impl Game {
                         >= i16::try_from(*amount).unwrap_or(i16::MAX)
                 }
                 AbilityCostDef::RemoveCountersFromSource { .. }
+                | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                 | AbilityCostDef::TapSource
                 | AbilityCostDef::UntapSource
                 | AbilityCostDef::SacrificeSource
@@ -56,6 +58,16 @@ impl Game {
                 | AbilityCostDef::Special(_) => true,
             })
             && Self::source_counter_costs_are_payable(permanent, definition.costs.as_slice())
+    }
+
+    /// The counter kind an ability lets the payer remove any number of, if
+    /// it has such a cost. At most one: two open-ended sizes in one cost
+    /// would be two questions with one answer.
+    fn variable_counter_removal(definition: ActivatedAbilityDef) -> Option<CounterKind> {
+        definition.costs.iter().find_map(|cost| match cost {
+            AbilityCostDef::RemoveAnyNumberOfCountersFromSource(kind) => Some(*kind),
+            _ => None,
+        })
     }
 
     /// Whether the runtime can pay this cost as part of a mana ability.
@@ -74,6 +86,7 @@ impl Game {
             | AbilityCostDef::SacrificeSource
             | AbilityCostDef::ExileSource
             | AbilityCostDef::RemoveCountersFromSource { .. }
+            | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
             | AbilityCostDef::PayLife(_) => true,
             AbilityCostDef::Mana(mana) => {
                 !mana.variable_x
@@ -238,20 +251,44 @@ impl Game {
                 effect.amount = self.mana_ability_value(value, permanent);
             }
             effect.amount = self.mana_amount_for(effect, permanent.controller, permanent.card.id);
-            let mut add_activation = |color| {
+            // "Remove any number of storage counters" is a choice of size, so
+            // it becomes one activation per size rather than one activation
+            // carrying an unanswered question. Each carries a sized removal,
+            // and the amount it produces is the same number.
+            let sizes = match Self::variable_counter_removal(definition) {
+                Some(kind) => (1..=permanent.counters(kind))
+                    .map(|removed| {
+                        let costs = AbilityCostList::two(
+                            AbilityCostDef::TapSource,
+                            AbilityCostDef::RemoveCountersFromSource {
+                                kind,
+                                amount: removed,
+                            },
+                        );
+                        (costs, removed, Some(removed))
+                    })
+                    .collect::<Vec<_>>(),
+                None => vec![(definition.costs, effect.amount, None)],
+            };
+            let mut add_activation = |color, costs, amount, counters_removed| {
                 activations.push(ManaAbilityActivation {
                     source: permanent.card.id,
                     ability: origin,
                     color,
-                    costs: definition.costs,
-                    effect,
+                    costs,
+                    effect: AddManaEffectDef { amount, ..effect },
+                    counters_removed,
                 });
             };
-            match effect.mana {
-                ManaSelectionDef::One(color) => add_activation(color),
-                ManaSelectionDef::Choice(colors) => {
-                    for color in colors {
-                        add_activation(*color);
+            for (costs, amount, counters_removed) in sizes {
+                match effect.mana {
+                    ManaSelectionDef::One(color) => {
+                        add_activation(color, costs, amount, counters_removed);
+                    }
+                    ManaSelectionDef::Choice(colors) => {
+                        for color in colors {
+                            add_activation(*color, costs, amount, counters_removed);
+                        }
                     }
                 }
             }
@@ -280,6 +317,7 @@ impl Game {
                 color,
                 costs,
                 effect: AddManaEffectDef::one(color),
+                counters_removed: None,
             })
             .collect()
     }
@@ -347,10 +385,18 @@ impl Game {
         permanent: &Permanent,
         ability: AbilityOrigin,
         color: ManaColor,
+        counters_removed: Option<u16>,
     ) -> Option<ManaAbilityActivation> {
         self.mana_ability_activations(permanent)
             .into_iter()
-            .find(|activation| activation.ability == ability && activation.color == color)
+            .find(|activation| {
+                activation.ability == ability
+                    && activation.color == color
+                    // Source, ability, and colour name one storage land's
+                    // ability three times over; the size is what tells them
+                    // apart.
+                    && activation.counters_removed == counters_removed
+            })
     }
 
     pub(super) fn mana_production(activation: ManaAbilityActivation) -> ManaPool {
@@ -731,6 +777,7 @@ impl Game {
                     source: activation.source,
                     ability: activation.ability,
                     color: activation.color,
+                    counters_removed: activation.counters_removed,
                 },
             ));
         }

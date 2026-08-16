@@ -9,6 +9,7 @@ use crate::{Action, PlayerObservation};
 /// Serializes one legal action. The `type` tag names the engine's action
 /// variant; the remaining fields identify what it operates on.
 #[must_use]
+#[allow(clippy::too_many_lines)]
 pub fn action_json(action: &Action) -> Value {
     match action {
         Action::KeepHand => json!({ "type": "KeepHand" }),
@@ -38,12 +39,22 @@ pub fn action_json(action: &Action) -> Value {
             source,
             ability,
             color,
-        } => json!({
-            "type": "ActivateManaAbility",
-            "source": source.0,
-            "ability": ability_origin_json(*ability),
-            "color": super::json_common::mana_color_name(*color),
-        }),
+            counters_removed,
+        } => {
+            let mut action = json!({
+                "type": "ActivateManaAbility",
+                "source": source.0,
+                "ability": ability_origin_json(*ability),
+                "color": super::json_common::mana_color_name(*color),
+            });
+            // Optional, and present only for the abilities that offer more
+            // than one size: every other mana ability's wire shape is
+            // unchanged.
+            if let Some(removed) = counters_removed {
+                action["countersRemoved"] = json!(removed);
+            }
+            action
+        }
         Action::PayLifeForMana => json!({ "type": "PayLifeForMana" }),
         Action::CastSpell {
             card,

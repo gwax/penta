@@ -107,6 +107,7 @@ impl Game {
                 | AbilityCostDef::UntapSource
                 | AbilityCostDef::SacrificeSource
                 | AbilityCostDef::RemoveCountersFromSource { .. }
+                | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                 | AbilityCostDef::PayLife(_)
                 | AbilityCostDef::DiscardSource
                 | AbilityCostDef::DiscardCards(_)
@@ -218,6 +219,7 @@ impl Game {
                     | AbilityCostDef::UntapSource
                     | AbilityCostDef::SacrificeSource
                     | AbilityCostDef::RemoveCountersFromSource { .. }
+                    | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                     | AbilityCostDef::PayLife(_)
                     | AbilityCostDef::DiscardCards(_)
                     | AbilityCostDef::DiscardCardMatching(_)
@@ -360,7 +362,10 @@ impl Game {
                     AbilityCostDef::TapSource => {
                         let _ = self.tap_permanent(source);
                     }
-                    AbilityCostDef::TapPermanent { .. }
+                    // The open-ended removal never reaches payment: mana
+                    // enumeration replaced it with a sized one.
+                    AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
+                    | AbilityCostDef::TapPermanent { .. }
                     | AbilityCostDef::SacrificeSource
                     | AbilityCostDef::ExileSource
                     | AbilityCostDef::SacrificePermanent { .. } => {

@@ -204,12 +204,15 @@ impl Game {
         source: GameObjectId,
         ability: AbilityOrigin,
         color: ManaColor,
+        counters_removed: Option<u16>,
     ) {
         let activation = self
             .battlefield
             .iter()
             .find(|permanent| permanent.card.id == source)
-            .and_then(|permanent| self.mana_ability_activation(permanent, ability, color))
+            .and_then(|permanent| {
+                self.mana_ability_activation(permanent, ability, color, counters_removed)
+            })
             .expect("legal mana action references a mana source");
         let produced_mana = Self::mana_for_activation(activation);
         for cost in activation.costs.as_slice() {
@@ -219,7 +222,11 @@ impl Game {
                     // tap triggers and mana-tap triggers scan one event.
                     let _ = self.tap_permanent_for_mana(source);
                 }
-                AbilityCostDef::SacrificeSource | AbilityCostDef::ExileSource => {}
+                // The open-ended removal never arrives: enumeration sized it
+                // before the activation was built.
+                AbilityCostDef::SacrificeSource
+                | AbilityCostDef::ExileSource
+                | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_) => {}
                 AbilityCostDef::RemoveCountersFromSource { kind, amount } => {
                     self.battlefield
                         .iter_mut()

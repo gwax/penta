@@ -146,6 +146,7 @@ fn handcrafted_does_not_float_unneeded_mana_in_its_main_phase() {
                 source: CardInstanceId(1),
                 ability: AbilityOrigin::IntrinsicBasicLand(BasicLandType::Mountain),
                 color: penta::ManaColor::Red,
+                counters_removed: None,
             },
         ],
     );

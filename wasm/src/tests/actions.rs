@@ -439,6 +439,7 @@ fn ability_actions_expose_their_stable_origins() {
         source: CardInstanceId(9),
         ability: penta::AbilityOrigin::IntrinsicBasicLand(penta::BasicLandType::Mountain),
         color: penta::ManaColor::Red,
+        counters_removed: None,
     };
     assert_eq!(
         action_ability_origin(&mana_action),

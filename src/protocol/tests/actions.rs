@@ -6,6 +6,7 @@ fn activated_actions_serialize_their_exact_ability_origin() {
         source: GameObjectId(9),
         ability: AbilityOrigin::IntrinsicBasicLand(BasicLandType::Mountain),
         color: ManaColor::Red,
+        counters_removed: None,
     });
     assert_eq!(mana["ability"]["kind"], "intrinsicBasicLand");
     assert_eq!(mana["ability"]["landType"], "mountain");

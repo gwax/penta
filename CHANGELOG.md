@@ -119,6 +119,16 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- The five **storage lands** -- Bottomless Vault, Dwarven Hold, Hollow Trees,
+  Icatian Store, and Sand Silos. A cost may now remove an open-ended number of
+  counters, with the size chosen as the ability is activated: the mana path
+  turns it into one activation per removable count, so nothing downstream ever
+  carries an unanswered question. `ActivateManaAbility` gained an optional
+  `countersRemoved`, present only for such an ability, because source, origin,
+  and colour name one storage land's ability once per size. Adding an optional
+  member is not a breaking epoch change, and every other mana ability's wire
+  shape is unchanged.
+
 - **Boundless Realms**, **Diabolic Revelation**, and **Frenzied Tilling**. A
   library search's ceiling is now a value rather than a constant, so "up to X"
   can be sized by the chosen X or by the board the spell is cast into. The

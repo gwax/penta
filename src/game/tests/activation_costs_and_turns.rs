@@ -101,6 +101,7 @@ fn a_counter_only_mana_ability_is_offered_and_pays_its_counter_cost() {
         source: source_id,
         ability: mana_ability_for(&game, source_id, ManaColor::Colorless),
         color: ManaColor::Colorless,
+        counters_removed: None,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));
 

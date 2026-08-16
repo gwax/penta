@@ -457,7 +457,11 @@ object chosen to pay an object-naming cost, such as sacrificing a permanent or
 exiling a card from a graveyard. Targets and that object are chosen before the
 activated ability becomes an independent stack object. `ActivateManaAbility`
 uses the same source and origin vocabulary, adds the selected `color`, and
-resolves immediately because mana abilities never use the stack. The engine
+resolves immediately because mana abilities never use the stack. It also
+carries an optional `countersRemoved` when, and only when, the ability's cost
+removes an open-ended number of counters: source, origin, and colour name the
+storage lands' ability once per size it could be paid at, so that number is
+what tells the offers apart. Every other mana ability omits the key. The engine
 does not infer that classification merely because an effect happens to produce
 mana.
 

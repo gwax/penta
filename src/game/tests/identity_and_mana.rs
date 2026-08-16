@@ -317,6 +317,7 @@ fn declarative_mana_production_drives_generic_mana_sources() {
         CardInstanceId(10_000),
         ability,
         ManaColor::Blue,
+        None,
     );
     assert_eq!(game.players[0].mana_pool.blue, 1);
     assert!(game.battlefield[0].tapped);

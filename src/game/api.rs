@@ -325,8 +325,9 @@ impl Game {
                 source,
                 ability,
                 color,
+                counters_removed,
             } => {
-                self.activate_mana_source(player, source, ability, color);
+                self.activate_mana_source(player, source, ability, color, counters_removed);
             }
             Action::PayLifeForMana => {
                 self.players[player.index()].life -= 1;

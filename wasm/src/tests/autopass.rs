@@ -8,6 +8,7 @@ fn human_main_one_stops_even_when_only_mana_actions_are_available() {
             source: CardInstanceId(7),
             ability: penta::AbilityOrigin::IntrinsicBasicLand(penta::BasicLandType::Mountain),
             color: penta::ManaColor::Red,
+            counters_removed: None,
         },
         Action::PassPriority,
     ];
@@ -122,6 +123,7 @@ fn second_main_waits_for_spells_lands_and_non_mana_abilities() {
             source: CardInstanceId(10),
             ability: penta::AbilityOrigin::IntrinsicBasicLand(penta::BasicLandType::Mountain),
             color: penta::ManaColor::Red,
+            counters_removed: None,
         },
         Action::PassPriority,
     ];

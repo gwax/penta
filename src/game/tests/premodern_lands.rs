@@ -23,6 +23,7 @@ fn painlands_offer_safe_colorless_or_colored_mana_with_immediate_damage() {
                 source,
                 ability: mana_ability_for(&game, source, ManaColor::Colorless),
                 color: ManaColor::Colorless,
+                counters_removed: None,
             },
         )
         .unwrap();
@@ -40,6 +41,7 @@ fn painlands_offer_safe_colorless_or_colored_mana_with_immediate_damage() {
                     source,
                     ability: mana_ability_for(&game, source, color),
                     color,
+                    counters_removed: None,
                 },
             )
             .unwrap();
@@ -66,6 +68,7 @@ fn ancient_tomb_adds_two_colorless_and_deals_two_damage_immediately() {
             source,
             ability: mana_ability_for(&game, source, ManaColor::Colorless),
             color: ManaColor::Colorless,
+            counters_removed: None,
         },
     )
     .unwrap();

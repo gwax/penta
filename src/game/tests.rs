@@ -684,6 +684,7 @@ mod stat_counters;
 mod state_triggers_and_life;
 mod static_animation;
 mod static_keyword_predicates;
+mod storage_lands;
 mod street_spasm;
 mod subtype_protection;
 mod target_toughness;

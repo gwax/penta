@@ -2035,10 +2035,82 @@ pub(in crate::card::sets) static ZELYON_SWORD: CardRecord = CardRecord::new(
 );
 
 // FEM 92 — Bottomless Vault
-// Audit: blocked — Needs storage counters plus an arbitrary remove-any-number counter cost whose chosen count determines the mana produced.
+pub(in crate::card::sets) static BOTTOMLESS_VAULT: CardRecord = CardRecord::new(
+    cards::BOTTOMLESS_VAULT,
+    "Bottomless Vault",
+    CardArt::new("639ae988-d1d1-4ead-b0f8-47fc39eb64a0", "Pat Lewis"),
+    CardSet::FallenEmpires,
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped("This land enters tapped."),
+        AbilityDef::static_ability(
+            "You may choose not to untap this land during your untap step.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
+            },
+        ),
+        AbilityDef::triggered_if(
+            "At the beginning of your upkeep, if this land is tapped, put a storage counter on it.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            &TriggerConditionDef::SourceIsTapped,
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Storage,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}, Remove any number of storage counters from this land: Add {B} for each storage counter removed this way.",
+            &[
+                AbilityCostDef::TapSource,
+                AbilityCostDef::RemoveAnyNumberOfCountersFromSource(CounterKind::Storage),
+            ],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Black)),
+        ),
+    ]),
+);
 
 // FEM 93 — Dwarven Hold
-// Audit: blocked — Needs storage counters plus an arbitrary remove-any-number counter cost whose chosen count determines the mana produced.
+pub(in crate::card::sets) static DWARVEN_HOLD: CardRecord = CardRecord::new(
+    cards::DWARVEN_HOLD,
+    "Dwarven Hold",
+    CardArt::new("a3142ded-ff62-4817-aa54-75a7ea4498a6", "Pat Lewis"),
+    CardSet::FallenEmpires,
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped("This land enters tapped."),
+        AbilityDef::static_ability(
+            "You may choose not to untap this land during your untap step.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
+            },
+        ),
+        AbilityDef::triggered_if(
+            "At the beginning of your upkeep, if this land is tapped, put a storage counter on it.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            &TriggerConditionDef::SourceIsTapped,
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Storage,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}, Remove any number of storage counters from this land: Add {R} for each storage counter removed this way.",
+            &[
+                AbilityCostDef::TapSource,
+                AbilityCostDef::RemoveAnyNumberOfCountersFromSource(CounterKind::Storage),
+            ],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red)),
+        ),
+    ]),
+);
 
 // FEM 94 — Dwarven Ruins
 pub(in crate::card::sets) static DWARVEN_RUINS: CardRecord = CardRecord::new(
@@ -2113,10 +2185,82 @@ pub(in crate::card::sets) static HAVENWOOD_BATTLEGROUND: CardRecord = CardRecord
 );
 
 // FEM 97 — Hollow Trees
-// Audit: blocked — Needs storage counters plus an arbitrary remove-any-number counter cost whose chosen count determines the mana produced.
+pub(in crate::card::sets) static HOLLOW_TREES: CardRecord = CardRecord::new(
+    cards::HOLLOW_TREES,
+    "Hollow Trees",
+    CardArt::new("90845410-e09a-4753-ad4c-bf2b2f3c95ac", "Pat Lewis"),
+    CardSet::FallenEmpires,
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped("This land enters tapped."),
+        AbilityDef::static_ability(
+            "You may choose not to untap this land during your untap step.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
+            },
+        ),
+        AbilityDef::triggered_if(
+            "At the beginning of your upkeep, if this land is tapped, put a storage counter on it.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            &TriggerConditionDef::SourceIsTapped,
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Storage,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}, Remove any number of storage counters from this land: Add {G} for each storage counter removed this way.",
+            &[
+                AbilityCostDef::TapSource,
+                AbilityCostDef::RemoveAnyNumberOfCountersFromSource(CounterKind::Storage),
+            ],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green)),
+        ),
+    ]),
+);
 
 // FEM 98 — Icatian Store
-// Audit: blocked — Needs storage counters plus an arbitrary remove-any-number counter cost whose chosen count determines the mana produced.
+pub(in crate::card::sets) static ICATIAN_STORE: CardRecord = CardRecord::new(
+    cards::ICATIAN_STORE,
+    "Icatian Store",
+    CardArt::new("d7cd8d8c-52c7-402f-92e1-5e5866f2555a", "Pat Lewis"),
+    CardSet::FallenEmpires,
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped("This land enters tapped."),
+        AbilityDef::static_ability(
+            "You may choose not to untap this land during your untap step.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
+            },
+        ),
+        AbilityDef::triggered_if(
+            "At the beginning of your upkeep, if this land is tapped, put a storage counter on it.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            &TriggerConditionDef::SourceIsTapped,
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Storage,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}, Remove any number of storage counters from this land: Add {W} for each storage counter removed this way.",
+            &[
+                AbilityCostDef::TapSource,
+                AbilityCostDef::RemoveAnyNumberOfCountersFromSource(CounterKind::Storage),
+            ],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::White)),
+        ),
+    ]),
+);
 
 // FEM 99 — Rainbow Vale
 // Audit: blocked — Needs duration-aware control-changing continuous effects for “{T}: Add one mana of any color. An opponent gains control of this land at the beginning of the next end step”.
@@ -2146,7 +2290,43 @@ pub(in crate::card::sets) static RUINS_OF_TROKAIR: CardRecord = CardRecord::new(
 );
 
 // FEM 101 — Sand Silos
-// Audit: blocked — Needs storage counters plus an arbitrary remove-any-number counter cost whose chosen count determines the mana produced.
+pub(in crate::card::sets) static SAND_SILOS: CardRecord = CardRecord::new(
+    cards::SAND_SILOS,
+    "Sand Silos",
+    CardArt::new("3f6f1fcb-d903-4a31-abab-40488569eef6", "Pat Lewis"),
+    CardSet::FallenEmpires,
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped("This land enters tapped."),
+        AbilityDef::static_ability(
+            "You may choose not to untap this land during your untap step.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayChooseNotToUntap),
+            },
+        ),
+        AbilityDef::triggered_if(
+            "At the beginning of your upkeep, if this land is tapped, put a storage counter on it.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            &TriggerConditionDef::SourceIsTapped,
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Storage,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}, Remove any number of storage counters from this land: Add {U} for each storage counter removed this way.",
+            &[
+                AbilityCostDef::TapSource,
+                AbilityCostDef::RemoveAnyNumberOfCountersFromSource(CounterKind::Storage),
+            ],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Blue)),
+        ),
+    ]),
+);
 
 // FEM 102 — Svyelunite Temple
 pub(in crate::card::sets) static SVYELUNITE_TEMPLE: CardRecord = CardRecord::new(
@@ -2234,10 +2414,15 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RING_OF_RENEWAL,
     &SPIRIT_SHIELD,
     &ZELYON_SWORD,
+    &BOTTOMLESS_VAULT,
+    &DWARVEN_HOLD,
     &DWARVEN_RUINS,
     &EBON_STRONGHOLD,
     &HAVENWOOD_BATTLEGROUND,
+    &HOLLOW_TREES,
+    &ICATIAN_STORE,
     &RUINS_OF_TROKAIR,
+    &SAND_SILOS,
     &SVYELUNITE_TEMPLE,
 ];
 

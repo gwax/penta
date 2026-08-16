@@ -43,6 +43,11 @@ pub(super) struct ManaAbilityActivation {
     pub(super) color: ManaColor,
     pub(super) costs: AbilityCostList,
     pub(super) effect: AddManaEffectDef,
+    /// How many counters this activation takes, for the abilities whose
+    /// removal cost is open-ended and therefore offered once per size.
+    /// `None` whenever the cost has only one size, which is every other
+    /// mana ability.
+    pub(super) counters_removed: Option<u16>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -54,11 +59,17 @@ pub(super) struct PlannedManaActivation {
     pub(super) benefits_payment: bool,
     pub(super) flexibility: usize,
     pub(super) order: usize,
+    /// Which sized activation this plan means, for a source that offers
+    /// several. `None` for every ability with only one size.
+    pub(super) counters_removed: Option<u16>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct FlexibleManaSource {
     pub(super) source: GameObjectId,
-    pub(super) outputs: Vec<(AbilityOrigin, ManaColor, ManaPool, bool)>,
+    /// Ability, colour, what it makes, whether it benefits the payment,
+    /// and how many counters its sized removal takes when the ability
+    /// offers more than one size.
+    pub(super) outputs: Vec<(AbilityOrigin, ManaColor, ManaPool, bool, Option<u16>)>,
     pub(super) order: usize,
 }

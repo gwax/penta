@@ -95,6 +95,12 @@ pub enum Action {
         source: GameObjectId,
         ability: AbilityOrigin,
         color: ManaColor,
+        /// How many counters an open-ended removal cost takes, when the
+        /// ability has one. Source, ability, and colour do not distinguish
+        /// "remove one storage counter" from "remove three", so the size is
+        /// part of the action rather than something chosen afterwards.
+        /// `None` for every ability whose cost has only one size.
+        counters_removed: Option<u16>,
     },
     PayLifeForMana,
     CastSpell {

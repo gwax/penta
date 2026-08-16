@@ -18,6 +18,14 @@ pub enum CostDef {
         kind: CounterKind,
         amount: u16,
     },
+    /// Remove as many counters as the payer likes, with the number chosen
+    /// as the ability is activated. The storage lands' "remove any number of
+    /// storage counters" is the whole reason it exists: how many come off is
+    /// how much mana comes out, so the choice cannot be made after the fact.
+    ///
+    /// Enumeration replaces it with a [`Self::RemoveCountersFromSource`] of
+    /// the chosen size, so nothing downstream ever pays this form directly.
+    RemoveAnyNumberOfCountersFromSource(CounterKind),
     /// Discard the card that carries this ability from its owner's hand.
     DiscardSource,
     PayLife(u16),

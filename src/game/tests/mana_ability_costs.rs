@@ -23,6 +23,7 @@ fn mana_actions(
                 source: from,
                 ability,
                 color,
+                ..
             } if from == source => Some((ability, color)),
             _ => None,
         })
@@ -39,6 +40,7 @@ fn activate(game: &mut Game, player: PlayerId, source: GameObjectId) {
             source,
             ability,
             color,
+            counters_removed: None,
         },
     )
     .expect("the mana ability activates");
@@ -145,6 +147,7 @@ fn implements_of_sacrifice_offers_each_color_twice_over() {
             source: implements_id,
             ability: offered[0].0,
             color: ManaColor::Black,
+            counters_removed: None,
         },
     )
     .expect("the mana ability activates");
@@ -207,6 +210,7 @@ fn standing_stones_spends_mana_a_tap_and_a_life() {
             source: stones_id,
             ability: offered[0].0,
             color: ManaColor::Blue,
+            counters_removed: None,
         },
     )
     .expect("the mana ability activates");

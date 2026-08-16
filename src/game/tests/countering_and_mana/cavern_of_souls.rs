@@ -179,6 +179,7 @@ fn cavern_colored_mana_cannot_pay_for_a_nonmatching_creature() {
             source: cavern,
             ability,
             color: ManaColor::White,
+            counters_removed: None,
         },
     )
     .unwrap();
@@ -213,6 +214,7 @@ fn cavern_mana_spent_on_a_matching_creature_makes_it_uncounterable() {
             source: cavern,
             ability,
             color: ManaColor::White,
+            counters_removed: None,
         },
     )
     .unwrap();
@@ -253,6 +255,7 @@ fn generic_payment_prefers_eligible_cavern_mana_with_a_spell_rider() {
             source: cavern,
             ability,
             color: ManaColor::Blue,
+            counters_removed: None,
         },
     )
     .unwrap();
@@ -287,6 +290,7 @@ fn cavern_mana_keeps_its_chosen_type_and_rider_after_cavern_leaves() {
             source: cavern,
             ability,
             color: ManaColor::White,
+            counters_removed: None,
         },
     )
     .unwrap();
@@ -395,6 +399,7 @@ fn caverns_colorless_mana_is_unrestricted_and_has_no_countering_rider() {
             source: cavern,
             ability,
             color: ManaColor::Colorless,
+            counters_removed: None,
         },
     )
     .unwrap();

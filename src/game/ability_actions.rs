@@ -199,7 +199,10 @@ impl Game {
                         AbilityCostDef::Loyalty(change) => {
                             !self.can_activate_loyalty(permanent, player, *change)
                         }
-                        AbilityCostDef::RemoveCountersFromSource { .. }
+                        // Never reaches payability: enumeration has
+                        // already replaced it with a sized removal.
+                        AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
+                        | AbilityCostDef::RemoveCountersFromSource { .. }
                         | AbilityCostDef::TapSource
                         | AbilityCostDef::SacrificeSource
                         | AbilityCostDef::ExileSource
@@ -506,6 +509,7 @@ impl Game {
                         | AbilityCostDef::UntapSource
                         | AbilityCostDef::SacrificeSource
                         | AbilityCostDef::RemoveCountersFromSource { .. }
+                        | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                         | AbilityCostDef::PayLife(_)
                         | AbilityCostDef::DiscardCards(_)
                         | AbilityCostDef::DiscardCardMatching(_)
@@ -592,6 +596,7 @@ impl Game {
                             | AbilityCostDef::UntapSource
                             | AbilityCostDef::SacrificeSource
                             | AbilityCostDef::RemoveCountersFromSource { .. }
+                            | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                             | AbilityCostDef::PayLife(_)
                             | AbilityCostDef::DiscardSource
                             | AbilityCostDef::DiscardCards(_)

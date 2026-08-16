@@ -386,12 +386,13 @@ impl Game {
                         activation.color,
                         Self::mana_production(activation),
                         benefits_payment,
+                        activation.counters_removed,
                     )
                 })
                 .collect::<Vec<_>>();
             match outputs.as_slice() {
                 [] => {}
-                [(ability, color, production, benefits_payment)] => {
+                [(ability, color, production, benefits_payment, counters_removed)] => {
                     pool.add(*production);
                     assigned.push(PlannedManaActivation {
                         source: permanent.card.id,
@@ -401,6 +402,7 @@ impl Game {
                         benefits_payment: *benefits_payment,
                         flexibility: 1,
                         order,
+                        counters_removed: *counters_removed,
                     });
                 }
                 _ => flexible.push(FlexibleManaSource {
@@ -622,6 +624,7 @@ impl Game {
                 activation.source,
                 activation.ability,
                 activation.color,
+                activation.counters_removed,
             );
         }
     }
@@ -714,7 +717,7 @@ pub(super) fn assign_flexible_mana_outputs(
             source
                 .outputs
                 .iter()
-                .map(|(_, _, output, _)| output.total())
+                .map(|(_, _, output, _, _)| output.total())
                 .max()
         })
         .fold(pool.total(), u16::saturating_add);
@@ -728,7 +731,7 @@ pub(super) fn assign_flexible_mana_outputs(
     let Some(source) = sources.get(index) else {
         return can_pay(pool, cost, x);
     };
-    for (ability, color, output, benefits_payment) in &source.outputs {
+    for (ability, color, output, benefits_payment, counters_removed) in &source.outputs {
         let mut next = pool;
         next.add(*output);
         assignment.push(PlannedManaActivation {
@@ -739,6 +742,7 @@ pub(super) fn assign_flexible_mana_outputs(
             benefits_payment: *benefits_payment,
             flexibility: source.outputs.len(),
             order: source.order,
+            counters_removed: *counters_removed,
         });
         if assign_flexible_mana_outputs(sources, index + 1, next, cost, x, assignment) {
             return true;
