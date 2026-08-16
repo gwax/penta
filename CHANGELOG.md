@@ -133,6 +133,19 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Abattoir Ghoul** and **Dread Slaver**. Neither needed the trigger their
+  audit lines named -- "whenever a creature dealt damage by this creature this
+  turn dies" has shipped since Sengir Vampire -- and the toughness and
+  reanimation halves landed in the two commits before this one.
+
+  Authoring them did expose a real bug. A trigger captured on the battlefield
+  names the object that was standing there, and the card it becomes on the way
+  to a graveyard has a different identity, so "return it" resolved to nothing.
+  Mortus Strider has shipped with that since it was written and quietly
+  returned nothing at all; it now has a regression test. The move is followed
+  through a successor map, which is in-memory only: a checkpoint taken between
+  such a trigger going on the stack and resolving still loses the link.
+
 - **Rise from the Grave**. A zone move may now carry a continuous effect the
   permanent arrives with, for the clauses that say what the thing they just
   reanimated now is. It belongs on the move rather than in a following effect

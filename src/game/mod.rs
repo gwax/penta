@@ -790,6 +790,11 @@ pub struct Game {
     /// the card had in the zone it came from. Consumed immediately by that
     /// move; never observed anywhere else.
     arrived: Option<GameObjectId>,
+    /// What each retired object became when it changed zones. A trigger
+    /// captured on the battlefield names the object that was there, and
+    /// "return it to its owner's hand" has to reach the card that object is
+    /// now -- which is a different identity, allocated as it moved.
+    successors: std::collections::HashMap<GameObjectId, GameObjectId>,
     format: Format,
     seed: u64,
     rng: ReplayRng,

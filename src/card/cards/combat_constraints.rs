@@ -200,3 +200,5 @@ pub const UNDERCITY_INFORMER: CardDefinitionId = CardDefinitionId(1999);
 pub const NEPHALIA_SMUGGLER: CardDefinitionId = CardDefinitionId(2000);
 pub const CONJURERS_CLOSET: CardDefinitionId = CardDefinitionId(2001);
 pub const RISE_FROM_THE_GRAVE: CardDefinitionId = CardDefinitionId(2002);
+pub const ABATTOIR_GHOUL: CardDefinitionId = CardDefinitionId(2003);
+pub const DREAD_SLAVER: CardDefinitionId = CardDefinitionId(2004);

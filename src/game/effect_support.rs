@@ -511,9 +511,17 @@ impl Game {
         if self.stack.iter().any(|candidate| candidate.id == object) {
             return Some(Target::Spell(object));
         }
-        self.card_in_nonbattlefield_zone(object)
+        if self.card_in_nonbattlefield_zone(object).is_some() {
+            return Some(Target::Card(object));
+        }
+        // A trigger captured on the battlefield names the object that was
+        // standing there, and the card it became on the way out has a
+        // different identity. "Return it to its owner's hand" means that
+        // card, so follow the move rather than finding nothing.
+        let successor = self.successors.get(&object).copied()?;
+        self.card_in_nonbattlefield_zone(successor)
             .is_some()
-            .then_some(Target::Card(object))
+            .then_some(Target::Card(successor))
     }
 
     /// How many times this ability has been activated from this permanent so

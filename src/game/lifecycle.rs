@@ -153,6 +153,7 @@ impl Game {
         Ok(Self {
             format,
             arrived: None,
+            successors: std::collections::HashMap::new(),
             seed,
             rng,
             catalog,
@@ -297,6 +298,7 @@ impl Game {
             .or_insert_with(|| RetiredObject::Card(card.clone()));
         card.id = self.allocate_object_id();
         card.counters = [0; CounterKind::COUNT];
+        self.successors.insert(previous, card.id);
         let created = vec![card.id];
         (card, ZoneChangeOutcome { previous, created })
     }

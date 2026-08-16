@@ -701,6 +701,7 @@ impl Game {
         let mut game = Self {
             format,
             arrived: None,
+            successors: std::collections::HashMap::new(),
             damage_taken_this_turn: checkpoint.damage_taken_this_turn,
             damage_taken_by_group_this_turn: {
                 let mut groups = [[0; DamageSourceGroupDef::COUNT]; 2];

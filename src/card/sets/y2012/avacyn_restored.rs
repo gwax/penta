@@ -6,14 +6,15 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
     CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ColorChoiceOperationDef,
-    ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef,
-    DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef,
-    DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor,
-    ManaRestrictionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    PayOrDef, PlayerRelation, PlayerSetDef, ProtectedCreatureType, ReplacementChoiceDef,
-    ReplacementEffectDef, ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef,
-    SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    ColorSet, ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef,
+    DamageEventMatcherDef, DamageKindDef, DamagePreventionDef, DamageRecipientMatcherDef,
+    DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef,
+    EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef, ManaSpendEffectDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation, PlayerSetDef,
+    ProtectedCreatureType, ReplacementChoiceDef, ReplacementEffectDef, ResolvedEffectDurationDef,
+    SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -1818,8 +1819,42 @@ pub(in crate::card::sets) static DEMONIC_TASKMASTER: CardRecord = CardRecord::ne
 // AVR 97 — Descent into Madness
 // Audit: blocked — Needs each player to choose a counter-derived number of permanents and/or hand cards to exile in one resolving choice.
 
+/// "In addition to its other colors and types", so both leaves add rather
+/// than set. It travels with the move because the permanent that arrives is
+/// a new object: nothing following the move would still name it.
+static A_BLACK_ZOMBIE_AS_WELL: AppliedEffectDef = AppliedEffectDef::Composite(&[
+    AppliedEffectDef::add_colors(ColorSet::from_colors(&[ManaColor::Black])),
+    AppliedEffectDef::add_creature_types(CreatureTypeSetDef::named(&["Zombie"])),
+]);
+
 // AVR 98 — Dread Slaver
-// Audit: blocked — Reanimation and permanent color/subtype changes exist, but the continuation cannot bind the newly created battlefield object to receive them.
+pub(in crate::card::sets) static DREAD_SLAVER: CardRecord = CardRecord::new(
+    cards::DREAD_SLAVER,
+    "Dread Slaver",
+    CardArt::new("3d8a3abd-a4a2-48e6-b709-1c0240a76c5e", "Dave Kendall"),
+    CardSet::AvacynRestored,
+    // It keeps whatever it kills, so blocking it is worse than taking five.
+    CardRules::new_creature(mana_cost!("{3}{B}{B}"), &["Zombie", "Horror"], 3, 5).with_ability(
+        AbilityDef::triggered(
+            "Whenever a creature dealt damage by this creature this turn dies, return it to the battlefield under your control. That creature is a black Zombie in addition to its other colors and types.",
+            TriggerEventDef::ZoneChanged(
+                ZoneChangeEventMatcherDef::new(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    Some(ZoneKind::Battlefield),
+                    Some(ZoneKind::Graveyard),
+                )
+                .previously_damaged_by(ObjectRefDef::Source),
+            ),
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::TriggeringObject,
+                zone: ZoneKind::Battlefield,
+                controller: Some(PlayerRelation::You),
+                placement: ZonePlacement::Top,
+                arrival_effect: Some(&A_BLACK_ZOMBIE_AS_WELL),
+            },
+        ),
+    ),
+);
 
 // AVR 99 — Driver of the Dead
 pub(in crate::card::sets) static DRIVER_OF_THE_DEAD: CardRecord = CardRecord::new(
@@ -4451,6 +4486,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DEATH_WIND,
     &DEMONIC_RISING,
     &DEMONIC_TASKMASTER,
+    &DREAD_SLAVER,
     &DRIVER_OF_THE_DEAD,
     &ESSENCE_HARVEST,
     &EVERNIGHT_SHADE,

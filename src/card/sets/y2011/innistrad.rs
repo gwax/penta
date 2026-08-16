@@ -9,12 +9,12 @@ use crate::card::{
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
     ComparisonDef, ConditionalValueDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
     DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectExecutionDef, EffectPaymentDef,
-    EffectRecipientDef, HalvedValueDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
-    PlayOptionDef, PlayerRelation, PlayerSetDef, ProtectedCreatureType, QuantifierDef,
-    ReplacementConditionDef, ReplacementEffectDef, ResolvedEffectDurationDef, RoundingDef,
-    SacrificedAmountDef, SpellAdditionalCostDef, SpellForm, TargetConditionDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    EffectRecipientDef, HalvedValueDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, PayOrDef, PlayOptionDef, PlayerRelation, PlayerSetDef, ProtectedCreatureType,
+    QuantifierDef, ReplacementConditionDef, ReplacementEffectDef, ResolvedEffectDurationDef,
+    RoundingDef, SacrificedAmountDef, SpellAdditionalCostDef, SpellForm, TargetConditionDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::game::{
     CardAbilityResolver, CardRuntime, PileChoice, PileChosen, PileSplit, PilesSeparated,
@@ -1682,7 +1682,34 @@ pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new(
 // Audit: blocked — Needs a combat-damage replacement that mills instead, plus a linked library-to-graveyard creature-card trigger.
 
 // ISD 85 — Abattoir Ghoul
-// Audit: blocked — Needs the last known toughness of the creature that died after being damaged by this creature.
+pub(in crate::card::sets) static ABATTOIR_GHOUL: CardRecord = CardRecord::new(
+    cards::ABATTOIR_GHOUL,
+    "Abattoir Ghoul",
+    CardArt::new("59cf0906-04fa-4b30-a7a6-3d117931154f", "Volkan Baǵa"),
+    CardSet::Innistrad,
+    // First strike is what feeds it: the creature it kills in combat dies
+    // before it can deal damage back.
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Zombie"], 3, 2).with_abilities(&[
+        abilities::first_strike(),
+        AbilityDef::triggered(
+            "Whenever a creature dealt damage by this creature this turn dies, you gain life equal to that creature's toughness.",
+            TriggerEventDef::ZoneChanged(
+                ZoneChangeEventMatcherDef::new(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    Some(ZoneKind::Battlefield),
+                    Some(ZoneKind::Graveyard),
+                )
+                .previously_damaged_by(ObjectRefDef::Source),
+            ),
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                // Last known: the creature is already in a graveyard by the
+                // time this runs, which is the only time it is interesting.
+                amount: ValueDef::TriggeringObjectToughness,
+            },
+        ),
+    ]),
+);
 
 static SACRIFICE_A_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -5414,6 +5441,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STITCHERS_APPRENTICE,
     &STURMGEIST,
     &THINK_TWICE,
+    &ABATTOIR_GHOUL,
     &ALTARS_REAP,
     &ARMY_OF_THE_DAMNED,
     &BLOODGIFT_DEMON,
