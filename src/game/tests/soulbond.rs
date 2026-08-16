@@ -211,14 +211,113 @@ fn a_paired_forcemage_offers_nothing_on_a_later_arrival() {
     );
 }
 
+/// Every keyword grant reaches both halves of the pair and lapses together.
 #[test]
-fn the_forcemage_reports_complete_coverage() {
+fn each_keyword_grant_reaches_both_creatures() {
+    for (definition, keyword) in [
+        (cards::SILVERBLADE_PALADIN, KeywordAbility::DoubleStrike),
+        (cards::SPECTRAL_GATEGUARDS, KeywordAbility::Vigilance),
+        (cards::ELGAUD_SHIELDMATE, KeywordAbility::Hexproof),
+        (cards::WINGCRAFTER, KeywordAbility::Flying),
+        (cards::HANWEIR_LANCER, KeywordAbility::FirstStrike),
+        (cards::LIGHTNING_MAULER, KeywordAbility::Haste),
+        (cards::GEIST_TRAPPERS, KeywordAbility::Reach),
+        (cards::NIGHTSHADE_PEDDLER, KeywordAbility::Deathtouch),
+        (cards::PATHBREAKER_WURM, KeywordAbility::Trample),
+    ] {
+        let mut game = ready();
+        let bear = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::One);
+        let bear_id = bear.card.id;
+        game.battlefield.push(bear);
+        let bystander = creature(10_001, cards::GRIZZLY_BEARS, PlayerId::Two);
+        let bystander_id = bystander.card.id;
+        game.battlefield.push(bystander);
+
+        let source_id = arrive(&mut game, 10_100, definition, PlayerId::One);
+        assert_eq!(partner(&game, source_id), Some(bear_id));
+
+        let has = |game: &Game, id: GameObjectId| {
+            game.permanent_has_executable_keyword(
+                game.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == id)
+                    .expect("still there"),
+                keyword,
+            )
+        };
+        assert!(has(&game, source_id), "{keyword:?} on the source");
+        assert!(has(&game, bear_id), "{keyword:?} on the partner");
+        assert!(!has(&game, bystander_id), "{keyword:?} reaches nobody else");
+
+        game.battlefield
+            .retain(|permanent| permanent.card.id != bear_id);
+        game.check_state_based_actions();
+        assert!(
+            !has(&game, source_id),
+            "{keyword:?} lapses when the pair breaks",
+        );
+    }
+}
+
+/// The two size grants differ only in the number, and both halves take it.
+#[test]
+fn each_size_grant_reaches_both_creatures() {
+    for (definition, bonus, printed) in [
+        (cards::DRUIDS_FAMILIAR, 2, (2, 2)),
+        (cards::WOLFIR_SILVERHEART, 4, (4, 4)),
+    ] {
+        let mut game = ready();
+        let bear = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::One);
+        let bear_id = bear.card.id;
+        game.battlefield.push(bear);
+
+        let source_id = arrive(&mut game, 10_100, definition, PlayerId::One);
+        assert_eq!(partner(&game, source_id), Some(bear_id));
+        assert_eq!(
+            stats(&game, bear_id),
+            (Some(2 + bonus), Some(2 + bonus)),
+            "the partner grew",
+        );
+        assert_eq!(
+            stats(&game, source_id),
+            (Some(printed.0 + bonus), Some(printed.1 + bonus)),
+            "and so did the source",
+        );
+
+        game.battlefield
+            .retain(|permanent| permanent.card.id != bear_id);
+        game.check_state_based_actions();
+        assert_eq!(
+            stats(&game, source_id),
+            (Some(printed.0), Some(printed.1)),
+            "back to printed size once unpaired",
+        );
+    }
+}
+
+#[test]
+fn every_soulbond_card_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    let card = catalog
-        .get(cards::TRUSTED_FORCEMAGE)
-        .expect("the card is cataloged");
-    assert_eq!(
-        card.rules.implementation_status(),
-        ImplementationStatus::Complete,
-    );
+    for definition in [
+        cards::TRUSTED_FORCEMAGE,
+        cards::SILVERBLADE_PALADIN,
+        cards::SPECTRAL_GATEGUARDS,
+        cards::ELGAUD_SHIELDMATE,
+        cards::WINGCRAFTER,
+        cards::HANWEIR_LANCER,
+        cards::LIGHTNING_MAULER,
+        cards::DRUIDS_FAMILIAR,
+        cards::GEIST_TRAPPERS,
+        cards::NIGHTSHADE_PEDDLER,
+        cards::PATHBREAKER_WURM,
+        cards::WOLFIR_SILVERHEART,
+    ] {
+        let card = catalog.get(definition).expect("the card is cataloged");
+        assert_eq!(
+            card.rules.implementation_status(),
+            ImplementationStatus::Complete,
+            "{} should be fully executable",
+            card.name,
+        );
+    }
 }

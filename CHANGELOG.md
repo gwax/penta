@@ -119,6 +119,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Eleven more soulbond cards**: Silverblade Paladin, Spectral Gateguards,
+  Elgaud Shieldmate, Wingcrafter, Hanweir Lancer, Lightning Mauler, Druid's
+  Familiar, Geist Trappers, Nightshade Peddler, Pathbreaker Wurm and Wolfir
+  Silverheart. Every one is the same clause with a different grant, and each
+  grant reaches both halves of the pair and lapses when the pair breaks.
+
 - **Soulbond**, and with it **Trusted Forcemage**. Pairing is state on the
   permanent rather than a one-shot effect: CR 702.94 is two triggered
   abilities, the relation is symmetric, and the pair breaks with the other

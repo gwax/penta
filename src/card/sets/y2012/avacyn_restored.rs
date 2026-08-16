@@ -620,11 +620,59 @@ pub(in crate::card::sets) static SERAPH_OF_DAWN: CardRecord = CardRecord::new(
         .with_abilities(&[abilities::flying(), abilities::lifelink()]),
 );
 
+static SILVERBLADE_PALADIN_GRANTED: AbilityDef = abilities::double_strike();
+
+static SILVERBLADE_PALADIN_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&SILVERBLADE_PALADIN_GRANTED),
+};
+
 // AVR 36 — Silverblade Paladin
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional double-strike grant to both paired creatures.
+pub(in crate::card::sets) static SILVERBLADE_PALADIN: CardRecord = CardRecord::new(
+    cards::SILVERBLADE_PALADIN,
+    "Silverblade Paladin",
+    CardArt::new("16298ca0-80d4-4299-a550-500b7ef6ac67", "Jason Chan"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Human", "Knight"], 2, 2).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, both creatures have \\
+             double strike.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &SILVERBLADE_PALADIN_BONUS,
+            },
+        ),
+    ]),
+);
+
+static SPECTRAL_GATEGUARDS_GRANTED: AbilityDef = abilities::vigilance();
+
+static SPECTRAL_GATEGUARDS_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&SPECTRAL_GATEGUARDS_GRANTED),
+};
 
 // AVR 37 — Spectral Gateguards
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional vigilance grant to both paired creatures.
+pub(in crate::card::sets) static SPECTRAL_GATEGUARDS: CardRecord = CardRecord::new(
+    cards::SPECTRAL_GATEGUARDS,
+    "Spectral Gateguards",
+    CardArt::new("f774e0eb-5c05-4a9e-8ab7-9ee4c7741591", "Wayne England"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{4}{W}"), &["Spirit", "Soldier"], 2, 5).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, both creatures have \\
+             vigilance.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &SPECTRAL_GATEGUARDS_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 38 — Terminus
 // Audit: partial — Permanents move to library one at a time, and the engine does not offer each owner the required ordering choice for multiple cards put on the bottom.
@@ -818,8 +866,32 @@ pub(in crate::card::sets) static DREADWATERS: CardRecord = CardRecord::new(
     )),
 );
 
+static ELGAUD_SHIELDMATE_GRANTED: AbilityDef = abilities::hexproof();
+
+static ELGAUD_SHIELDMATE_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&ELGAUD_SHIELDMATE_GRANTED),
+};
+
 // AVR 50 — Elgaud Shieldmate
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional hexproof grant to both paired creatures.
+pub(in crate::card::sets) static ELGAUD_SHIELDMATE: CardRecord = CardRecord::new(
+    cards::ELGAUD_SHIELDMATE,
+    "Elgaud Shieldmate",
+    CardArt::new("e7d376ef-c900-4abb-9a0b-5eb9369f5739", "Anthony Palumbo"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{3}{U}"), &["Human", "Soldier"], 2, 3).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, both creatures have \\
+             hexproof.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &ELGAUD_SHIELDMATE_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 51 — Favorable Winds
 pub(in crate::card::sets) static FAVORABLE_WINDS: CardRecord = CardRecord::new(
@@ -1294,8 +1366,32 @@ pub(in crate::card::sets) static VANISHMENT: CardRecord = CardRecord::new(
     ]),
 );
 
+static WINGCRAFTER_GRANTED: AbilityDef = abilities::flying();
+
+static WINGCRAFTER_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&WINGCRAFTER_GRANTED),
+};
+
 // AVR 83 — Wingcrafter
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional flying grant to both paired creatures.
+pub(in crate::card::sets) static WINGCRAFTER: CardRecord = CardRecord::new(
+    cards::WINGCRAFTER,
+    "Wingcrafter",
+    CardArt::new("04a3059f-92f2-4163-b79a-154118a4e36d", "Matt Stewart"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{U}"), &["Human", "Wizard"], 1, 1).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, both creatures have \\
+             flying.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &WINGCRAFTER_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 84 — Appetite for Brains
 // Audit: blocked — Needs a hidden-hand card choice constrained by mana value, followed by exile of the chosen card.
@@ -2120,8 +2216,32 @@ pub(in crate::card::sets) static GUISE_OF_FIRE: CardRecord = CardRecord::new(
         ]),
 );
 
+static HANWEIR_LANCER_GRANTED: AbilityDef = abilities::first_strike();
+
+static HANWEIR_LANCER_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&HANWEIR_LANCER_GRANTED),
+};
+
 // AVR 138 — Hanweir Lancer
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional first-strike grant to both paired creatures.
+pub(in crate::card::sets) static HANWEIR_LANCER: CardRecord = CardRecord::new(
+    cards::HANWEIR_LANCER,
+    "Hanweir Lancer",
+    CardArt::new("73884fd1-5be9-4ad5-8c72-c0fbe27ad4c1", "Steve Prescott"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Human", "Knight"], 2, 2).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, both creatures have \\
+             first strike.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &HANWEIR_LANCER_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 139 — Havengul Vampire
 pub(in crate::card::sets) static HAVENGUL_VAMPIRE: CardRecord = CardRecord::new(
@@ -2241,8 +2361,32 @@ pub(in crate::card::sets) static KRUIN_STRIKER: CardRecord = CardRecord::new(
     ),
 );
 
+static LIGHTNING_MAULER_GRANTED: AbilityDef = abilities::haste();
+
+static LIGHTNING_MAULER_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&LIGHTNING_MAULER_GRANTED),
+};
+
 // AVR 144 — Lightning Mauler
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional haste grant to both paired creatures.
+pub(in crate::card::sets) static LIGHTNING_MAULER: CardRecord = CardRecord::new(
+    cards::LIGHTNING_MAULER,
+    "Lightning Mauler",
+    CardArt::new("241cc968-b93e-4fe3-a66d-7776d29aa023", "Dave Kendall"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Berserker"], 2, 1).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, both creatures have \\
+             haste.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &LIGHTNING_MAULER_BONUS,
+            },
+        ),
+    ]),
+);
 
 static LIGHTNING_PROWESS_PING: AbilityDef = AbilityDef::activated_with_targets(
     "{T}: This creature deals 1 damage to any target.",
@@ -2756,8 +2900,30 @@ pub(in crate::card::sets) static CRATERHOOF_BEHEMOTH: CardRecord = CardRecord::n
 // AVR 174 — Diregraf Escort
 // Audit: blocked — Needs soulbond pairing state, paired-object identity, and protection from Zombies granted to both paired creatures.
 
+static DRUIDS_FAMILIAR_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+};
+
 // AVR 175 — Druid's Familiar
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional +2/+2 bonus to both paired creatures.
+pub(in crate::card::sets) static DRUIDS_FAMILIAR: CardRecord = CardRecord::new(
+    cards::DRUIDS_FAMILIAR,
+    "Druid's Familiar",
+    CardArt::new("1d8c794a-7964-41f0-bc9c-27af7cf87aaa", "Adam Paquette"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Bear"], 2, 2).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, each of those creatures \\
+             gets +2/+2.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &DRUIDS_FAMILIAR_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 176 — Druids' Repository
 pub(in crate::card::sets) static DRUIDS_REPOSITORY: CardRecord = CardRecord::new(
@@ -2795,8 +2961,32 @@ pub(in crate::card::sets) static DRUIDS_REPOSITORY: CardRecord = CardRecord::new
 // AVR 178 — Flowering Lumberknot
 // Audit: blocked — Needs soulbond pairing state plus attack and block legality tied to being paired with a soulbond creature.
 
+static GEIST_TRAPPERS_GRANTED: AbilityDef = abilities::reach();
+
+static GEIST_TRAPPERS_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&GEIST_TRAPPERS_GRANTED),
+};
+
 // AVR 179 — Geist Trappers
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional reach grant to both paired creatures.
+pub(in crate::card::sets) static GEIST_TRAPPERS: CardRecord = CardRecord::new(
+    cards::GEIST_TRAPPERS,
+    "Geist Trappers",
+    CardArt::new("26f00a18-0ff7-42e4-be16-aa34fe27093b", "Anthony Palumbo"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{4}{G}"), &["Human", "Warrior"], 3, 5).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, both creatures have \\
+             reach.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &GEIST_TRAPPERS_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 180 — Gloomwidow
 pub(in crate::card::sets) static GLOOMWIDOW: CardRecord = CardRecord::new(
@@ -2914,11 +3104,59 @@ pub(in crate::card::sets) static NETTLE_SWINE: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{3}{G}"), &["Boar"], 4, 3),
 );
 
+static NIGHTSHADE_PEDDLER_GRANTED: AbilityDef = abilities::deathtouch();
+
+static NIGHTSHADE_PEDDLER_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&NIGHTSHADE_PEDDLER_GRANTED),
+};
+
 // AVR 187 — Nightshade Peddler
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional deathtouch grant to both paired creatures.
+pub(in crate::card::sets) static NIGHTSHADE_PEDDLER: CardRecord = CardRecord::new(
+    cards::NIGHTSHADE_PEDDLER,
+    "Nightshade Peddler",
+    CardArt::new("4d3de66c-2283-458f-9d0d-943027520aa2", "John Stanko"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Human", "Druid"], 1, 1).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, both creatures have \\
+             deathtouch.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &NIGHTSHADE_PEDDLER_BONUS,
+            },
+        ),
+    ]),
+);
+
+static PATHBREAKER_WURM_GRANTED: AbilityDef = abilities::trample();
+
+static PATHBREAKER_WURM_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&PATHBREAKER_WURM_GRANTED),
+};
 
 // AVR 188 — Pathbreaker Wurm
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional trample grant to both paired creatures.
+pub(in crate::card::sets) static PATHBREAKER_WURM: CardRecord = CardRecord::new(
+    cards::PATHBREAKER_WURM,
+    "Pathbreaker Wurm",
+    CardArt::new("fe65eded-37ef-4cf0-b55c-390d34aab7b8", "Nils Hamm"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{4}{G}{G}"), &["Wurm"], 6, 4).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, both creatures have \\
+             trample.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &PATHBREAKER_WURM_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 189 — Primal Surge
 // Audit: blocked — Needs a repeatable top-card exile procedure with a permanent-card branch and a new optional decision on every iteration.
@@ -3127,9 +3365,9 @@ pub(in crate::card::sets) static TRIUMPH_OF_FEROCITY: CardRecord = CardRecord::n
 
 static SOULBOND_ABILITIES: [AbilityDef; 2] = abilities::soulbond();
 
-/// "Each of those creatures", so the bonus reaches the Forcemage and its
-/// partner and nothing else.
-static TRUSTED_FORCEMAGE_PAIR: EffectRecipientDef = EffectRecipientDef::matching_objects(
+/// "Both creatures" and "each of those creatures" name the same pair: the
+/// soulbond creature and whatever it is bonded to.
+static SOULBOND_PAIR_RECIPIENT: EffectRecipientDef = EffectRecipientDef::matching_objects(
     ObjectPredicateDef::AnyOf(&[
         ObjectPredicateDef::Source,
         ObjectPredicateDef::PairedWithSource,
@@ -3139,7 +3377,7 @@ static TRUSTED_FORCEMAGE_PAIR: EffectRecipientDef = EffectRecipientDef::matching
 );
 
 static TRUSTED_FORCEMAGE_BONUS: EffectDef = EffectDef::StaticApply {
-    recipient: TRUSTED_FORCEMAGE_PAIR,
+    recipient: SOULBOND_PAIR_RECIPIENT,
     effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
 };
 
@@ -3215,8 +3453,30 @@ pub(in crate::card::sets) static WOLFIR_AVENGER: CardRecord = CardRecord::new(
     ]),
 );
 
+static WOLFIR_SILVERHEART_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(4), ValueDef::Constant(4)),
+};
+
 // AVR 206 — Wolfir Silverheart
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional +4/+4 bonus to both paired creatures.
+pub(in crate::card::sets) static WOLFIR_SILVERHEART: CardRecord = CardRecord::new(
+    cards::WOLFIR_SILVERHEART,
+    "Wolfir Silverheart",
+    CardArt::new("8629c598-11c8-4911-acfb-0643e5feffa8", "Raymond Swanland"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Wolf", "Warrior"], 4, 4).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, each of those creatures \\
+             gets +4/+4.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &WOLFIR_SILVERHEART_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 207 — Yew Spirit
 pub(in crate::card::sets) static YEW_SPIRIT: CardRecord = CardRecord::new(
@@ -3712,6 +3972,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RESTORATION_ANGEL,
     &RIGHTEOUS_BLOW,
     &SERAPH_OF_DAWN,
+    &SILVERBLADE_PALADIN,
+    &SPECTRAL_GATEGUARDS,
     &TERMINUS,
     &THRABEN_VALIANT,
     &VOICE_OF_THE_PROVINCES,
@@ -3720,6 +3982,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARCANE_MELEE,
     &CRIPPLING_CHILL,
     &DREADWATERS,
+    &ELGAUD_SHIELDMATE,
     &FAVORABLE_WINDS,
     &FETTERGEIST,
     &FLEETING_DISTRACTION,
@@ -3736,6 +3999,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCRAPSKIN_DRAKE,
     &TEMPORAL_MASTERY,
     &VANISHMENT,
+    &WINGCRAFTER,
     &BLOOD_ARTIST,
     &BLOODFLOW_CONNOISSEUR,
     &BUTCHER_GHOUL,
@@ -3767,11 +4031,13 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FERVENT_CATHAR,
     &GANG_OF_DEVILS,
     &GUISE_OF_FIRE,
+    &HANWEIR_LANCER,
     &HAVENGUL_VAMPIRE,
     &HEIRS_OF_STROMKIRK,
     &HOUND_OF_GRISELBRAND,
     &KESSIG_MALCONTENTS,
     &KRUIN_STRIKER,
+    &LIGHTNING_MAULER,
     &LIGHTNING_PROWESS,
     &MALICIOUS_INTENT,
     &PILLAR_OF_FLAME,
@@ -3789,12 +4055,16 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BORDERLAND_RANGER,
     &BOWER_PASSAGE,
     &CRATERHOOF_BEHEMOTH,
+    &DRUIDS_FAMILIAR,
     &DRUIDS_REPOSITORY,
+    &GEIST_TRAPPERS,
     &GLOOMWIDOW,
     &GROUNDED,
     &HOWLGEIST,
     &NATURAL_END,
     &NETTLE_SWINE,
+    &NIGHTSHADE_PEDDLER,
+    &PATHBREAKER_WURM,
     &RAIN_OF_THORNS,
     &SNARE_THE_SKIES,
     &SOMBERWALD_SAGE,
@@ -3806,6 +4076,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &VORSTCLAW,
     &WANDERING_WOLF,
     &WOLFIR_AVENGER,
+    &WOLFIR_SILVERHEART,
     &YEW_SPIRIT,
     &SIGARDA_HOST_OF_HERONS,
     &BLADED_BRACERS,
