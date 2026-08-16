@@ -73,6 +73,58 @@ impl Game {
         }
     }
 
+    /// Soulbond two creatures. The relation is symmetric and recorded on
+    /// both, and either already being paired makes this a no-op: soulbond
+    /// pairs only unpaired creatures.
+    pub(super) fn pair_creatures(&mut self, one: GameObjectId, other: GameObjectId) -> bool {
+        if one == other {
+            return false;
+        }
+        let both_free = [one, other].into_iter().all(|id| {
+            self.battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == id && permanent.paired_with.is_none())
+        });
+        if !both_free {
+            return false;
+        }
+        for permanent in &mut self.battlefield {
+            if permanent.card.id == one {
+                permanent.paired_with = Some(other);
+            } else if permanent.card.id == other {
+                permanent.paired_with = Some(one);
+            }
+        }
+        true
+    }
+
+    /// CR 702.94b: the pair lasts only while one player controls both, and
+    /// only while both are creatures. Checked with the other state-based
+    /// actions, so a partner leaving frees the survivor immediately.
+    pub(super) fn break_illegal_pairings(&mut self) {
+        let broken = self
+            .battlefield
+            .iter()
+            .filter_map(|permanent| {
+                let partner = permanent.paired_with?;
+                let still_legal = self.battlefield.iter().any(|candidate| {
+                    candidate.card.id == partner
+                        && candidate.controller == permanent.controller
+                        && candidate.paired_with == Some(permanent.card.id)
+                        && self
+                            .permanent_types(candidate)
+                            .is_some_and(|types| types.contains(CardType::Creature))
+                });
+                (!still_legal).then_some(permanent.card.id)
+            })
+            .collect::<Vec<_>>();
+        for permanent in &mut self.battlefield {
+            if broken.contains(&permanent.card.id) {
+                permanent.paired_with = None;
+            }
+        }
+    }
+
     /// Attach one existing permanent to an eligible battlefield object.
     /// Reattaching to the same object is a rules no-op. A successful change
     /// receives a new timestamp because attachment-dependent continuous

@@ -180,6 +180,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Untap { .. }
         | EffectDef::Attach { .. }
         | EffectDef::Reconfigure { .. }
+        | EffectDef::PairWithSource { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }

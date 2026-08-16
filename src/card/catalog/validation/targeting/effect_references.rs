@@ -112,6 +112,7 @@ fn validate_effect_references(
         | EffectDef::Untap { object }
         | EffectDef::Attach { object }
         | EffectDef::Reconfigure { object }
+        | EffectDef::PairWithSource { object }
         | EffectDef::Destroy { object, .. }
         | EffectDef::Sacrifice { object }
         | EffectDef::DiscardCards { object }

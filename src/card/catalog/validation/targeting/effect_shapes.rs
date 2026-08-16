@@ -142,6 +142,7 @@ fn validate_effect_target_shapes(
         | EffectDef::Untap { object }
         | EffectDef::Attach { object }
         | EffectDef::Reconfigure { object }
+        | EffectDef::PairWithSource { object }
         | EffectDef::Destroy { object, .. }
         | EffectDef::DestroyAtEndOfCombat { object }
         | EffectDef::Detain { object }

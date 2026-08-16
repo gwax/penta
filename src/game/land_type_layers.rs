@@ -494,6 +494,8 @@ impl Game {
             | ObjectPredicateDef::BlockedBySource
             | ObjectPredicateDef::BlockingSource
             | ObjectPredicateDef::BandedWithSource
+            | ObjectPredicateDef::Unpaired
+            | ObjectPredicateDef::PairedWithSource
             | ObjectPredicateDef::Enchanted
             | ObjectPredicateDef::AttachedTo(_)
             | ObjectPredicateDef::AttachedToSource

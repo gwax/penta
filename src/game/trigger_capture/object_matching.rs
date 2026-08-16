@@ -67,6 +67,17 @@ impl Game {
                 .iter()
                 .find(|permanent| permanent.card.id == object.id)
                 .is_some_and(|permanent| permanent.dealt_damage_this_turn),
+            ObjectPredicateDef::Unpaired => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == object.id)
+                .is_some_and(|permanent| permanent.paired_with.is_none()),
+            // Symmetric, so it reads the same from either side.
+            ObjectPredicateDef::PairedWithSource => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == source)
+                .is_some_and(|permanent| permanent.paired_with == Some(object.id)),
             ObjectPredicateDef::AttachedToSource => self
                 .battlefield
                 .iter()
@@ -255,6 +266,8 @@ impl Game {
             | ObjectPredicateDef::Enchanted
             | ObjectPredicateDef::WasDealtDamageThisTurn
             | ObjectPredicateDef::DealtDamageThisTurn
+            | ObjectPredicateDef::Unpaired
+            | ObjectPredicateDef::PairedWithSource
             | ObjectPredicateDef::AttachedTo(_) => self
                 .battlefield_relationship_matches(predicate, object, source, controller),
             ObjectPredicateDef::Tapped => object.tapped,

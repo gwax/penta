@@ -342,6 +342,10 @@ struct Permanent {
     /// `damage`, which regeneration and cleanup both wipe, and from
     /// `damage_sources`, which records nothing for a sourceless event.
     was_dealt_damage_this_turn: bool,
+    /// The creature this one is soulbonded to. Symmetric: both permanents
+    /// name each other, and the pair breaks the moment one of them stops
+    /// being a creature one player controls.
+    paired_with: Option<GameObjectId>,
     /// The mirror: whether this permanent dealt damage to anything this turn.
     /// Broader than `dealt_damage_to_opponent_this_turn`, which ignores
     /// damage to creatures and to its own controller.
@@ -425,6 +429,7 @@ impl Permanent {
             last_attacked_turn: None,
             keywords_until_upkeep_of: Vec::new(),
             damage_sources: Vec::new(),
+            paired_with: None,
             was_dealt_damage_this_turn: false,
             dealt_damage_this_turn: false,
             dealt_damage_to_opponent_this_turn: false,

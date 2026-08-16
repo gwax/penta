@@ -872,6 +872,11 @@ impl Game {
                     .iter()
                     .find(|permanent| permanent.card.id == source)
                     .is_some_and(|permanent| permanent.dealt_damage_to_opponent_this_turn),
+                TriggerConditionDef::SourceIsPaired => self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == source)
+                    .is_some_and(|permanent| permanent.paired_with.is_some()),
                 TriggerConditionDef::SourceIsTapped => self.current_or_last_known_tapped(source),
                 TriggerConditionDef::SourceIsUntapped => !self.current_or_last_known_tapped(source),
                 TriggerConditionDef::ControllerLifeAtMost(threshold) => {

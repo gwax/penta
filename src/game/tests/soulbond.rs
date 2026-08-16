@@ -1,0 +1,224 @@
+//! Soulbond: a symmetric pairing between two unpaired creatures.
+//!
+//! CR 702.94 is two triggered abilities rather than one, and the pair is
+//! state rather than a one-shot effect: it survives until one of the two
+//! stops being a creature its controller controls, and then both are free
+//! again.
+
+use super::*;
+use crate::ImplementationStatus;
+
+fn ready() -> Game {
+    let mut game = ready_game();
+    game.turn = 5;
+    game.turns_started[PlayerId::One.index()] = 5;
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.battlefield.clear();
+    game
+}
+
+fn stats(game: &Game, id: GameObjectId) -> (Option<i16>, Option<i16>) {
+    let permanent = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == id)
+        .expect("still there");
+    (game.power(permanent), game.toughness(permanent))
+}
+
+fn partner(game: &Game, id: GameObjectId) -> Option<GameObjectId> {
+    game.battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == id)
+        .and_then(|permanent| permanent.paired_with)
+}
+
+/// Answers each waiting decision by taking the last option, which for the
+/// pairing offer is a partner rather than declining.
+fn drain_pairing(game: &mut Game) {
+    for _ in 0..16 {
+        if game.stack.is_empty()
+            && game.pending_triggers.is_empty()
+            && game.pending_decisions.is_empty()
+        {
+            return;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let take = decision.minimum.max(1).min(decision.maximum);
+            let options = decision
+                .options
+                .iter()
+                .rev()
+                .map(|option| option.id)
+                .take(take)
+                .collect::<Vec<_>>();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the decision accepts what it offered");
+            continue;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            return;
+        }
+    }
+}
+
+/// Puts a creature onto the battlefield through the entry path and answers
+/// with the object id the engine assigned it -- which is not the one handed
+/// to the helper.
+fn arrive(
+    game: &mut Game,
+    id: u32,
+    definition: crate::ids::CardDefinitionId,
+    player: PlayerId,
+) -> GameObjectId {
+    let before = game
+        .battlefield
+        .iter()
+        .map(|permanent| permanent.card.id)
+        .collect::<Vec<_>>();
+    game.enqueue_battlefield_entry(PendingBattlefieldEntry {
+        permanent: creature(id, definition, player),
+        from: ZoneKind::Hand,
+        completion: EntryCompletion::None,
+    });
+    drain_pairing(game);
+    game.battlefield
+        .iter()
+        .find(|permanent| {
+            permanent.card.definition == definition && !before.contains(&permanent.card.id)
+        })
+        .expect("it arrived")
+        .card
+        .id
+}
+
+/// The Forcemage arriving beside a creature pairs with it, and both grow.
+#[test]
+fn the_forcemage_pairs_as_it_arrives() {
+    let mut game = ready();
+    let bear = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bear_id = bear.card.id;
+    game.battlefield.push(bear);
+
+    let mage_id = arrive(&mut game, 10_100, cards::TRUSTED_FORCEMAGE, PlayerId::One);
+
+    assert_eq!(partner(&game, mage_id), Some(bear_id), "paired both ways");
+    assert_eq!(partner(&game, bear_id), Some(mage_id));
+    assert_eq!(stats(&game, mage_id), (Some(3), Some(3)));
+    assert_eq!(stats(&game, bear_id), (Some(3), Some(3)));
+}
+
+/// The other half: an unpaired Forcemage already out pairs with a creature
+/// that arrives later, and a third arrival finds it taken.
+#[test]
+fn an_unpaired_forcemage_waits_for_the_next_creature() {
+    let mut game = ready();
+    let mage = creature(10_000, cards::TRUSTED_FORCEMAGE, PlayerId::One);
+    let mage_id = mage.card.id;
+    game.battlefield.push(mage);
+    assert_eq!(partner(&game, mage_id), None, "nothing to pair with yet");
+    assert_eq!(stats(&game, mage_id), (Some(2), Some(2)));
+
+    let first = arrive(&mut game, 10_100, cards::GRIZZLY_BEARS, PlayerId::One);
+    assert_eq!(partner(&game, mage_id), Some(first));
+
+    let second = arrive(&mut game, 10_200, cards::GRIZZLY_BEARS, PlayerId::One);
+    assert_eq!(
+        partner(&game, mage_id),
+        Some(first),
+        "an already-paired creature offers nothing",
+    );
+    assert_eq!(partner(&game, second), None);
+}
+
+/// The pair is state, so losing the partner frees the survivor and takes the
+/// bonus with it.
+#[test]
+fn the_pair_breaks_when_the_partner_leaves() {
+    let mut game = ready();
+    let bear = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bear_id = bear.card.id;
+    game.battlefield.push(bear);
+    let mage_id = arrive(&mut game, 10_100, cards::TRUSTED_FORCEMAGE, PlayerId::One);
+    assert_eq!(stats(&game, mage_id), (Some(3), Some(3)));
+
+    game.battlefield
+        .retain(|permanent| permanent.card.id != bear_id);
+    game.check_state_based_actions();
+
+    assert_eq!(partner(&game, mage_id), None, "freed by the state check");
+    assert_eq!(
+        stats(&game, mage_id),
+        (Some(2), Some(2)),
+        "and the bonus goes with the pair",
+    );
+}
+
+/// "You control both", so a creature the opponent controls is never offered.
+#[test]
+fn soulbond_never_reaches_across_the_table() {
+    let mut game = ready();
+    game.battlefield
+        .push(creature(10_000, cards::GRIZZLY_BEARS, PlayerId::Two));
+
+    let mage_id = arrive(&mut game, 10_100, cards::TRUSTED_FORCEMAGE, PlayerId::One);
+    assert_eq!(partner(&game, mage_id), None, "not yours to pair with");
+    assert_eq!(stats(&game, mage_id), (Some(2), Some(2)));
+}
+
+/// The intervening-if, separately from the pairing rule itself: a paired
+/// Forcemage does not even offer a choice when a third creature arrives.
+#[test]
+fn a_paired_forcemage_offers_nothing_on_a_later_arrival() {
+    let mut game = ready();
+    game.battlefield
+        .push(creature(10_000, cards::TRUSTED_FORCEMAGE, PlayerId::One));
+    arrive(&mut game, 10_100, cards::GRIZZLY_BEARS, PlayerId::One);
+
+    game.enqueue_battlefield_entry(PendingBattlefieldEntry {
+        permanent: creature(10_200, cards::GRIZZLY_BEARS, PlayerId::One),
+        from: ZoneKind::Hand,
+        completion: EntryCompletion::None,
+    });
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert!(
+        game.pending_decisions.is_empty(),
+        "the trigger never went on the stack",
+    );
+}
+
+#[test]
+fn the_forcemage_reports_complete_coverage() {
+    let catalog = poc::catalog().expect("catalog builds");
+    let card = catalog
+        .get(cards::TRUSTED_FORCEMAGE)
+        .expect("the card is cataloged");
+    assert_eq!(
+        card.rules.implementation_status(),
+        ImplementationStatus::Complete,
+    );
+}

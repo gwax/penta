@@ -61,6 +61,8 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
         | ObjectPredicateDef::BandedWithSource
+        | ObjectPredicateDef::Unpaired
+        | ObjectPredicateDef::PairedWithSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
@@ -366,6 +368,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         TriggerConditionDef::CreatureDiedThisTurn
         | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped
+        | TriggerConditionDef::SourceIsPaired
         | TriggerConditionDef::ActivePlayer(_)
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceCounters { .. }
@@ -396,6 +399,7 @@ fn shared_static_trigger_condition(condition: TriggerConditionDef) -> bool {
         TriggerConditionDef::CreatureDiedThisTurn
         | TriggerConditionDef::SourceOnBattlefield
             | TriggerConditionDef::SourceUntapped
+        | TriggerConditionDef::SourceIsPaired
             | TriggerConditionDef::SourceCounters { .. }
             // Reachable from the source by following its attachment, which
             // is exactly the input a static clause has.
@@ -623,6 +627,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::MoveToZone { .. }
                     | EffectDef::StaticApply { .. }
                     | EffectDef::Apply { .. }
+                    | EffectDef::PairWithSource { .. }
                     | EffectDef::Special(_) => false,
                 }
             }

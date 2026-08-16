@@ -13,7 +13,7 @@ use super::model::{
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef,
     PlayerRefDef, PlayerRelation, PlayerSetDef, ProtectedCreatureType, ReplacementAbilityDef,
     ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef,
-    SplitIntoPilesDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    SplitIntoPilesDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -524,6 +524,80 @@ pub const fn equip(mana_cost: ManaCost, text: &'static str) -> AbilityDef {
     )
     .with_activation_timing(ActivationTimingDef::SorcerySpeed)
 }
+
+/// The creature soulbond may pair with: another unpaired creature its
+/// controller controls. Excluding the source is what makes "another" true
+/// even before the pair exists.
+static SOULBOND_PARTNER: ObjectSetDef = ObjectSetDef::Query(ObjectQueryDef::controlled_by(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Unpaired,
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerSetDef::Related(PlayerRelation::You),
+));
+
+static SOULBOND_PAIR: EffectDef = EffectDef::PairWithSource {
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+};
+
+/// The optional pairing choice both halves of soulbond offer. Zero is a legal
+/// number to choose, which is how "you may" is expressed.
+static SOULBOND_CHOICE: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+    chooser: PlayerRefDef::EffectController,
+    candidates: SOULBOND_PARTNER,
+    exclude: Some(ObjectRefDef::Source),
+    minimum: 0,
+    maximum: 1,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &SOULBOND_PAIR,
+});
+
+/// The half that fires when the soulbond creature itself arrives.
+static SOULBOND_ENTERS: TriggerEventDef = TriggerEventDef::zone_changed(
+    ObjectPredicateDef::Source,
+    None,
+    Some(ZoneKind::Battlefield),
+);
+
+/// The other half: another creature arriving beside an unpaired one.
+static SOULBOND_OTHER_ENTERS: TriggerEventDef = TriggerEventDef::zone_changed(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+    ]),
+    None,
+    Some(ZoneKind::Battlefield),
+);
+
+/// Soulbond. CR 702.94 is two triggered abilities rather than one: the
+/// creature offers a pairing as it arrives, and offers one again whenever
+/// another creature arrives while it is still unpaired.
+#[must_use]
+pub const fn soulbond() -> [AbilityDef; 2] {
+    [
+        AbilityDef::triggered(
+            "Soulbond (You may pair this creature with another unpaired creature when either \
+             enters. They remain paired for as long as you control both of them.)",
+            SOULBOND_ENTERS,
+            SOULBOND_CHOICE,
+        ),
+        AbilityDef::triggered_if(
+            "You may pair this creature with another unpaired creature when that creature enters.",
+            SOULBOND_OTHER_ENTERS,
+            &SOURCE_IS_UNPAIRED,
+            SOULBOND_CHOICE,
+        ),
+    ]
+}
+
+/// The intervening-if on soulbond's second half: an already-paired creature
+/// offers nothing when a third creature arrives.
+static SOURCE_IS_UNPAIRED: TriggerConditionDef = TriggerConditionDef::SourceMatches {
+    object: ObjectPredicateDef::Unpaired,
+};
 
 /// Fortify. Like equip, this is a sorcery-speed attachment activation; the
 /// shared attachment relation supplies Fortification's distinct land-host

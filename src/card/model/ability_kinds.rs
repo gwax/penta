@@ -360,6 +360,10 @@ pub enum TriggerConditionDef {
     SourceOnBattlefield,
     /// Whether the source permanent is currently untapped.
     SourceUntapped,
+    /// Whether the source is soulbonded to another creature. The clause every
+    /// soulbond card prints reads "as long as this creature is paired with
+    /// another creature", so it is continuous rather than checked once.
+    SourceIsPaired,
     /// How many objects the query matches, against a printed number.
     ObjectCount {
         query: ObjectQueryDef,

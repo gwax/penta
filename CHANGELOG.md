@@ -119,6 +119,13 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Soulbond**, and with it **Trusted Forcemage**. Pairing is state on the
+  permanent rather than a one-shot effect: CR 702.94 is two triggered
+  abilities, the relation is symmetric, and the pair breaks with the other
+  state-based actions the moment one of the two stops being a creature its
+  controller controls. Twenty more Avacyn Restored cards are blocked on
+  nothing else.
+
 - **Wolfhunter's Quiver**, whose two granted tap abilities share the equipped
   creature's one untap. Only the three-damage one names a Werewolf.
 

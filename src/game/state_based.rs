@@ -77,6 +77,7 @@ impl Game {
                 break;
             }
         }
+        self.break_illegal_pairings();
         self.capture_state_triggers();
     }
 

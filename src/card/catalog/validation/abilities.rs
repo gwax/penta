@@ -704,6 +704,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::PreventDamage { .. }
         | EffectDef::Attach { .. }
         | EffectDef::Reconfigure { .. }
+        | EffectDef::PairWithSource { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }
@@ -860,6 +861,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::PreventDamage { .. }
         | EffectDef::Attach { .. }
         | EffectDef::Reconfigure { .. }
+        | EffectDef::PairWithSource { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }

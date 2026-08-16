@@ -362,6 +362,7 @@ fn validate_trigger_condition_shape(
         TriggerConditionDef::CreatureDiedThisTurn
         | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped
+        | TriggerConditionDef::SourceIsPaired
         | TriggerConditionDef::ActivePlayer(_)
         | TriggerConditionDef::SpellsCastLastTurn { .. }
         | TriggerConditionDef::SourceLoyalty { .. }

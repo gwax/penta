@@ -123,6 +123,13 @@ pub enum ObjectPredicateDef {
     /// [`Self::BlockedBySource`]: together in an `AnyOf` they are the printed
     /// "blocking or blocked by this creature".
     BlockingSource,
+    /// A creature that is not soulbonded to anything. Soulbond pairs only
+    /// unpaired creatures, on both sides.
+    Unpaired,
+    /// The creature the ability's source is soulbonded to. Like
+    /// [`Self::BandedWithSource`] the relation is symmetric, so it reads the
+    /// same from either side.
+    PairedWithSource,
     /// A creature in the same attacking band as the ability's source, the
     /// source itself excluded. "All creatures banded with it" names this and
     /// nothing else: a lone attacker is in no band, so it matches nothing.

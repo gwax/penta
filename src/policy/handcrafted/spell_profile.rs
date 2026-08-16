@@ -454,6 +454,7 @@ impl HandcraftedPolicy {
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
             | EffectDef::Reconfigure { .. }
+            | EffectDef::PairWithSource { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::CreateAttachedToken { .. }
             | EffectDef::CreateTokenCopyOf { .. }

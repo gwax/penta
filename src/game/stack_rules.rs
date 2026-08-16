@@ -92,6 +92,7 @@ impl Game {
             | EffectDef::Untap { .. }
             | EffectDef::Attach { .. }
             | EffectDef::Reconfigure { .. }
+            | EffectDef::PairWithSource { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }

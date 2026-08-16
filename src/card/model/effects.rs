@@ -378,6 +378,12 @@ pub enum EffectDef {
     Attach {
         object: EffectRecipientDef,
     },
+    /// Soulbond's pairing. The chosen creature and the ability's source
+    /// record each other; the pair is symmetric and survives until one of
+    /// them stops being a creature its controller controls.
+    PairWithSource {
+        object: EffectRecipientDef,
+    },
     /// Reconfigure's paired attach/unattach procedure. A selected creature
     /// becomes the new host; selecting none ends this attachment incarnation.
     Reconfigure {

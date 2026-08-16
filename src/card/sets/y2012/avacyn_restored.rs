@@ -3125,8 +3125,43 @@ pub(in crate::card::sets) static TRIUMPH_OF_FEROCITY: CardRecord = CardRecord::n
     )),
 );
 
+static SOULBOND_ABILITIES: [AbilityDef; 2] = abilities::soulbond();
+
+/// "Each of those creatures", so the bonus reaches the Forcemage and its
+/// partner and nothing else.
+static TRUSTED_FORCEMAGE_PAIR: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::Source,
+        ObjectPredicateDef::PairedWithSource,
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static TRUSTED_FORCEMAGE_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: TRUSTED_FORCEMAGE_PAIR,
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+};
+
 // AVR 199 — Trusted Forcemage
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a conditional +1/+1 bonus to both paired creatures.
+pub(in crate::card::sets) static TRUSTED_FORCEMAGE: CardRecord = CardRecord::new(
+    cards::TRUSTED_FORCEMAGE,
+    "Trusted Forcemage",
+    CardArt::new("3ee66ef9-10a7-4aab-88f7-84956811cc6c", "Cynthia Sheppard"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Human", "Shaman"], 2, 2).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, each of those creatures \
+             gets +1/+1.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &TRUSTED_FORCEMAGE_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 200 — Ulvenwald Tracker
 // Audit: blocked — Needs the simultaneous fight damage procedure and its two-creature target relation.
@@ -3767,6 +3802,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TERRIFYING_PRESENCE,
     &TIMBERLAND_GUIDE,
     &TRIUMPH_OF_FEROCITY,
+    &TRUSTED_FORCEMAGE,
     &VORSTCLAW,
     &WANDERING_WOLF,
     &WOLFIR_AVENGER,

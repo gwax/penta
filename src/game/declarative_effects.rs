@@ -734,6 +734,21 @@ impl Game {
                     self.try_attach(source, host);
                 }
             }
+            EffectDef::PairWithSource { object: recipient } => {
+                let Some(source) = object.source else {
+                    return;
+                };
+                let partner = self
+                    .effect_recipients(recipient, object, &context, scoped)
+                    .into_iter()
+                    .find_map(|target| match target {
+                        Target::Permanent(id) => Some(id),
+                        _ => None,
+                    });
+                if let Some(partner) = partner {
+                    self.pair_creatures(source, partner);
+                }
+            }
             EffectDef::Reconfigure { object: recipient } => {
                 let Some(source) = object.source else {
                     return;

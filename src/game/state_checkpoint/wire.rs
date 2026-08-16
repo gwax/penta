@@ -623,6 +623,7 @@ fn parse_permanent(
     permanent.damage_sources = ids(&state.damage_sources);
     permanent.was_dealt_damage_this_turn = state.was_dealt_damage_this_turn;
     permanent.dealt_damage_this_turn = state.dealt_damage_this_turn;
+    permanent.paired_with = state.paired_with.map(GameObjectId);
     permanent.dealt_damage_to_opponent_this_turn = state.dealt_damage_to_opponent_this_turn;
     permanent.deathtouch_damage = state.deathtouch_damage;
     permanent.created_by = state.created_by.map(GameObjectId);

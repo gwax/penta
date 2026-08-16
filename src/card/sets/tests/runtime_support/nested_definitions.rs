@@ -360,6 +360,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::PreventDamage { .. }
         | EffectDef::Attach { .. }
         | EffectDef::Reconfigure { .. }
+        | EffectDef::PairWithSource { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }

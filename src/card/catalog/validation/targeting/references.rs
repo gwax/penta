@@ -308,6 +308,8 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
         | ObjectPredicateDef::BandedWithSource
+        | ObjectPredicateDef::Unpaired
+        | ObjectPredicateDef::PairedWithSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
@@ -362,6 +364,8 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
         | ObjectPredicateDef::BandedWithSource
+        | ObjectPredicateDef::Unpaired
+        | ObjectPredicateDef::PairedWithSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
@@ -619,6 +623,7 @@ fn validate_trigger_condition(
         TriggerConditionDef::CreatureDiedThisTurn
         | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped
+        | TriggerConditionDef::SourceIsPaired
         | TriggerConditionDef::ActivePlayer(_)
         | TriggerConditionDef::SpellsCastLastTurn { .. }
         | TriggerConditionDef::ControlsGreatestPowerCreature

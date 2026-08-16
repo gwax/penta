@@ -50,6 +50,9 @@ impl Game {
                 Some(affected.was_dealt_damage_this_turn)
             }
             ObjectPredicateDef::DealtDamageThisTurn => Some(affected.dealt_damage_this_turn),
+            ObjectPredicateDef::Unpaired => Some(affected.paired_with.is_none()),
+            // Symmetric, so reading it off the source is the same answer.
+            ObjectPredicateDef::PairedWithSource => Some(source.paired_with == Some(affected.card.id)),
             ObjectPredicateDef::HasType(card_type) => self
                 .permanent_types(affected)
                 .map(|types| types.contains(card_type)),

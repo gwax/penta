@@ -446,6 +446,7 @@ fn validate_resolving_effect(
         | EffectDef::CreateTokenCopyOf { .. }
         | EffectDef::Attach { .. }
         | EffectDef::Reconfigure { .. }
+        | EffectDef::PairWithSource { .. }
         | EffectDef::Destroy { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::Detain { .. }
@@ -615,6 +616,8 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
         | ObjectPredicateDef::BandedWithSource
+        | ObjectPredicateDef::Unpaired
+        | ObjectPredicateDef::PairedWithSource
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
@@ -713,6 +716,7 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         TriggerConditionDef::CreatureDiedThisTurn
         | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped
+        | TriggerConditionDef::SourceIsPaired
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
@@ -777,6 +781,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::CreateTokenCopyOf { .. } => "CreateTokenCopyOf",
         EffectDef::Attach { .. } => "Attach",
         EffectDef::Reconfigure { .. } => "Reconfigure",
+        EffectDef::PairWithSource { .. } => "PairWithSource",
         EffectDef::Destroy { .. } => "Destroy",
         EffectDef::DestroyAtEndOfCombat { .. } => "DestroyAtEndOfCombat",
         EffectDef::Detain { .. } => "Detain",

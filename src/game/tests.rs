@@ -665,6 +665,7 @@ mod search_and_reveal;
 mod sentinel;
 mod shroud_grants;
 mod silenced_sources;
+mod soulbond;
 mod spell_colors;
 mod spell_cost_reduction;
 mod spore;
