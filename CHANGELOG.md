@@ -119,6 +119,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Righteous Authority**. A hand-count power/toughness may now be read for the
+  enchanted permanent's controller rather than the source's own, which the
+  general player relation cannot answer because it has no source to follow.
+
 - **Stony Silence** and **Sturmgeist**. The activation prohibition now reaches
   mana abilities, which are enumerated on their own path and so needed the
   rule read in a second place; and a static power/toughness may be defined by

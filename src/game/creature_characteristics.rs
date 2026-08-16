@@ -4,8 +4,8 @@ use super::{
     AppliedEffectDef, BasicLandType, CardBehavior, CardRules, CardSupertype, CardType,
     CharacteristicOperationDef, ControlFlow, CounterKind, DeclarativeAbilityDef, EffectDef, Game,
     GameObjectId, KeywordAbility, ObjectPredicateDef, ObjectQueryDef, Permanent, PlayerId,
-    PowerToughnessOperationDef, ResolvedContinuousEffectKind, ResolvedPowerToughnessOperation,
-    RetiredObject, TriggerContext, ValueDef,
+    PlayerRelation, PowerToughnessOperationDef, ResolvedContinuousEffectKind,
+    ResolvedPowerToughnessOperation, RetiredObject, TriggerContext, ValueDef,
 };
 
 thread_local! {
@@ -211,17 +211,25 @@ impl Game {
             // live, so a creature defined by it changes size as cards come
             // and go. A threshold of zero is the plain count.
             ValueDef::CardsInHandAbove { player, threshold } => {
-                let counted = [PlayerId::One, PlayerId::Two]
-                    .into_iter()
-                    .find(|candidate| {
-                        self.player_relation_matches(
-                            *candidate,
-                            player,
-                            controller,
-                            TriggerContext::empty(),
-                        )
-                    })
-                    .unwrap_or(controller);
+                // "Its controller's hand" on an Aura means the enchanted
+                // permanent's controller, which only the source can answer --
+                // the general relation test has no source to follow.
+                let counted = if player == PlayerRelation::ControllerOfAttachedPermanent {
+                    self.attached_host_controller_of(source)
+                        .unwrap_or(controller)
+                } else {
+                    [PlayerId::One, PlayerId::Two]
+                        .into_iter()
+                        .find(|candidate| {
+                            self.player_relation_matches(
+                                *candidate,
+                                player,
+                                controller,
+                                TriggerContext::empty(),
+                            )
+                        })
+                        .unwrap_or(controller)
+                };
                 i32::try_from(
                     self.players[counted.index()]
                         .hand

@@ -166,3 +166,4 @@ pub const ELDER_SPAWN: CardDefinitionId = CardDefinitionId(1965);
 pub const CURSE_ARTIFACT: CardDefinitionId = CardDefinitionId(1966);
 pub const STONY_SILENCE: CardDefinitionId = CardDefinitionId(1967);
 pub const STURMGEIST: CardDefinitionId = CardDefinitionId(1968);
+pub const RIGHTEOUS_AUTHORITY: CardDefinitionId = CardDefinitionId(1969);

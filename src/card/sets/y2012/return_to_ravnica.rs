@@ -3863,8 +3863,51 @@ pub(in crate::card::sets) static RAKDOS_RINGLEADER: CardRecord = CardRecord::new
 // RTR 188 — Rakdos's Return
 // Audit: blocked — Targeting cannot restrict a player-or-planeswalker union to an opponent while routing the discard to that player or the planeswalker's controller.
 
+/// "Its controller's hand", not the Aura controller's, so gifting the
+/// creature away moves the bonus and the extra draw with it.
+static CARDS_IN_THE_ENCHANTED_CONTROLLERS_HAND: ValueDef = ValueDef::CardsInHandAbove {
+    player: PlayerRelation::ControllerOfAttachedPermanent,
+    threshold: 0,
+};
+
 // RTR 189 — Righteous Authority
-// Audit: blocked — Needs the attached creature controller's hand size as a continuous bonus and a draw-step trigger for that changing controller.
+pub(in crate::card::sets) static RIGHTEOUS_AUTHORITY: CardRecord = CardRecord::new(
+    cards::RIGHTEOUS_AUTHORITY,
+    "Righteous Authority",
+    CardArt::new("6695e5bb-56a9-49ab-8940-72336e845875", "Scott Chou"),
+    CardSet::ReturnToRavnica,
+    // The extra draw feeds the bonus: one more card in hand is one more
+    // power on the creature holding it.
+    CardRules::new_enchantment(mana_cost!("{3}{W}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +1/+1 for each card in its controller's hand.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        CARDS_IN_THE_ENCHANTED_CONTROLLERS_HAND,
+                        CARDS_IN_THE_ENCHANTED_CONTROLLERS_HAND,
+                    ),
+                },
+            ),
+            AbilityDef::triggered(
+                "At the beginning of the draw step of enchanted creature's controller, that \
+                 player draws an additional card.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Draw,
+                    player: PlayerRelation::ControllerOfAttachedPermanent,
+                },
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
+                        ObjectRefDef::AttachedToSource,
+                    )),
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
 
 // RTR 190 — Risen Sanctuary
 pub(in crate::card::sets) static RISEN_SANCTUARY: CardRecord = keyword_creature(
@@ -5302,6 +5345,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &NIV_MIZZET_DRACOGENIUS,
     &RAKDOS_RAGEMUTT,
     &RAKDOS_RINGLEADER,
+    &RIGHTEOUS_AUTHORITY,
     &RISEN_SANCTUARY,
     &SELESNYA_CHARM,
     &SKULL_REND,

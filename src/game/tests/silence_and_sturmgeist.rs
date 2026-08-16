@@ -116,10 +116,96 @@ fn the_sturmgeist_is_as_big_as_your_hand() {
     assert_eq!(stats(&game, geist_id), (Some(2), Some(2)), "and it shrinks");
 }
 
+/// The Authority reads the enchanted creature's controller's hand, not the
+/// Aura controller's -- the two are different players here.
 #[test]
-fn both_cards_report_complete_coverage() {
+fn the_authority_reads_the_creatures_controllers_hand() {
+    let mut game = ready();
+    let bear = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bear_id = bear.card.id;
+    game.battlefield.push(bear);
+    let mut aura = creature(10_001, cards::RIGHTEOUS_AUTHORITY, PlayerId::One);
+    aura.attached_to = Some(bear_id);
+    game.battlefield.push(aura);
+
+    assert_eq!(
+        stats(&game, bear_id),
+        (Some(2), Some(2)),
+        "both hands empty"
+    );
+
+    // The Aura's controller draws: the creature is unmoved.
+    for index in 0..3 {
+        game.players[PlayerId::One.index()].hand.push(card(
+            30_000 + index,
+            cards::GRIZZLY_BEARS,
+            PlayerId::One,
+        ));
+    }
+    assert_eq!(
+        stats(&game, bear_id),
+        (Some(2), Some(2)),
+        "the Aura controller's hand is the wrong one",
+    );
+
+    for index in 0..2 {
+        game.players[PlayerId::Two.index()].hand.push(card(
+            31_000 + index,
+            cards::GRIZZLY_BEARS,
+            PlayerId::Two,
+        ));
+    }
+    assert_eq!(
+        stats(&game, bear_id),
+        (Some(4), Some(4)),
+        "and the creature controller's hand is the right one",
+    );
+}
+
+/// The extra draw follows the same player, on their draw step.
+#[test]
+fn the_authority_draws_for_the_creatures_controller() {
+    let mut game = ready();
+    let bear = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bear_id = bear.card.id;
+    game.battlefield.push(bear);
+    let mut aura = creature(10_001, cards::RIGHTEOUS_AUTHORITY, PlayerId::One);
+    aura.attached_to = Some(bear_id);
+    game.battlefield.push(aura);
+    for index in 0..4 {
+        game.players[PlayerId::Two.index()].library.push(card(
+            31_000 + index,
+            cards::GRIZZLY_BEARS,
+            PlayerId::Two,
+        ));
+    }
+
+    let hands = |game: &Game| [game.players[0].hand.len(), game.players[1].hand.len()];
+    let before = hands(&game);
+
+    game.active_player = PlayerId::Two;
+    game.step = Step::Draw;
+    game.capture_battlefield_triggers(&CommittedTriggerEvent::StepBegins {
+        step: TurnStepDef::Draw,
+        player: PlayerId::Two,
+    });
+    drain_pending(&mut game);
+
+    assert_eq!(
+        hands(&game),
+        [before[0], before[1] + 1],
+        "their draw step, their extra card",
+    );
+}
+
+#[test]
+fn all_three_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::STONY_SILENCE, cards::STURMGEIST] {
+    for definition in [
+        cards::STONY_SILENCE,
+        cards::STURMGEIST,
+        cards::RIGHTEOUS_AUTHORITY,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),
