@@ -119,6 +119,9 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Wolfhunter's Quiver**, whose two granted tap abilities share the equipped
+  creature's one untap. Only the three-damage one names a Werewolf.
+
 - **Runechanter's Pike**, **Tormentor's Trident** and **Vanguard's Shield**,
   three more Equipment. The Pike recounts your graveyard continuously, the
   Trident's attack requirement travels with the Equipment, and the Shield's

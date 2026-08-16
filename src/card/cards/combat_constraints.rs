@@ -127,3 +127,4 @@ pub const BLADED_BRACERS: CardDefinitionId = CardDefinitionId(1926);
 pub const RUNECHANTERS_PIKE: CardDefinitionId = CardDefinitionId(1927);
 pub const TORMENTORS_TRIDENT: CardDefinitionId = CardDefinitionId(1928);
 pub const VANGUARDS_SHIELD: CardDefinitionId = CardDefinitionId(1929);
+pub const WOLFHUNTERS_QUIVER: CardDefinitionId = CardDefinitionId(1930);

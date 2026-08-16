@@ -40,7 +40,7 @@ fn equip_onto(
     let creature_permanent = creature(10_100, host, PlayerId::One);
     let host_id = creature_permanent.card.id;
     game.battlefield.push(creature_permanent);
-    game.players[PlayerId::One.index()].mana_pool.colorless = 4;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 6;
 
     let action = game
         .legal_actions(PlayerId::One)
@@ -284,8 +284,74 @@ fn the_shield_buys_one_extra_block() {
     assert_eq!(offered(&game), 0, "but not a third");
 }
 
+/// The Quiver grants two abilities rather than one with a choice: only one of
+/// them names a Werewolf, and both cost the creature's own tap.
 #[test]
-fn all_eight_report_complete_coverage() {
+fn the_quiver_grants_two_abilities_that_share_one_tap() {
+    let (mut game, _, host) = equip_onto(cards::WOLFHUNTERS_QUIVER, cards::GRIZZLY_BEARS);
+    let werewolf = creature(10_200, cards::GATSTAF_SHEPHERD, PlayerId::Two);
+    let werewolf_id = werewolf.card.id;
+    game.battlefield.push(werewolf);
+    let bystander = creature(10_201, cards::AIR_ELEMENTAL, PlayerId::Two);
+    let bystander_id = bystander.card.id;
+    game.battlefield.push(bystander);
+    // Summoning sickness would stop a tap ability regardless of the grant.
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+
+    let aiming_at = |game: &Game, victim: GameObjectId| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .filter(|action| {
+                matches!(action, Action::ActivateAbility { source, targets, .. }
+                    if *source == host
+                        && targets.iter().flat_map(crate::TargetSelection::targets)
+                            .any(|target| *target == Target::Permanent(victim)))
+            })
+            .count()
+    };
+    assert_eq!(
+        aiming_at(&game, werewolf_id),
+        2,
+        "a Werewolf is a legal target for both",
+    );
+    assert_eq!(
+        aiming_at(&game, bystander_id),
+        1,
+        "and anything else only for the any-target one",
+    );
+
+    let volley = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, targets, .. }
+                if *source == host
+                    && targets.iter().flat_map(crate::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(bystander_id)))
+        })
+        .expect("the any-target ability is offered");
+    game.apply(PlayerId::One, volley).expect("legal");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == bystander_id)
+            .expect("a 4/4 survives one")
+            .damage,
+        1,
+    );
+    assert_eq!(
+        aiming_at(&game, werewolf_id),
+        0,
+        "the tap is spent, so neither ability is offered again",
+    );
+}
+
+#[test]
+fn all_nine_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
     for definition in [
         cards::RIOT_GEAR,
@@ -296,6 +362,7 @@ fn all_eight_report_complete_coverage() {
         cards::RUNECHANTERS_PIKE,
         cards::TORMENTORS_TRIDENT,
         cards::VANGUARDS_SHIELD,
+        cards::WOLFHUNTERS_QUIVER,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

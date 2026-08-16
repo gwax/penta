@@ -2816,8 +2816,67 @@ pub(in crate::card::sets) static HELVAULT: CardRecord = CardRecord::new(
 // DKA 153 — Warden of the Wall
 // Audit: blocked — Needs a continuous animation active only during turns other than its controller's, while preserving the tapped entry and mana ability.
 
+static WOLFHUNTERS_QUIVER_SHOT: AbilityDef = AbilityDef::activated_with_targets(
+    "{T}: This creature deals 1 damage to any target.",
+    &[AbilityCostDef::TapSource],
+    &[AbilityTargetDef::exactly_one(
+        AbilityTargetPredicate::AnyTarget,
+    )],
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(1),
+    },
+);
+
+static WOLFHUNTERS_QUIVER_WEREWOLF_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Subtype("Werewolf"),
+        ]),
+    )];
+
+static WOLFHUNTERS_QUIVER_VOLLEY: AbilityDef = AbilityDef::activated_with_targets(
+    "{T}: This creature deals 3 damage to target Werewolf creature.",
+    &[AbilityCostDef::TapSource],
+    &WOLFHUNTERS_QUIVER_WEREWOLF_TARGET,
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(3),
+    },
+);
+
+/// Two abilities, not one with a choice: each costs the creature's own tap,
+/// so only one of them can be used per untap.
+static WOLFHUNTERS_QUIVER_GRANT: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::add_ability(&WOLFHUNTERS_QUIVER_SHOT),
+    AppliedEffectDef::add_ability(&WOLFHUNTERS_QUIVER_VOLLEY),
+];
+
 // DKA 154 — Wolfhunter's Quiver
-// Audit: blocked — Needs equipment attachment/equip actions and two distinct tap abilities granted to the equipped creature.
+pub(in crate::card::sets) static WOLFHUNTERS_QUIVER: CardRecord = CardRecord::new(
+    cards::WOLFHUNTERS_QUIVER,
+    "Wolfhunter's Quiver",
+    CardArt::new("d84c9b19-9b4d-4a60-984f-636b749c8bcc", "Daniel Ljunggren"),
+    CardSet::DarkAscension,
+    CardRules::new_artifact(mana_cost!("{1}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature has \"{T}: This creature deals 1 damage to any target\" and \
+                 \"{T}: This creature deals 3 damage to target Werewolf creature.\"",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&WOLFHUNTERS_QUIVER_GRANT),
+                },
+            ),
+            abilities::equip(
+                mana_cost!("{5}"),
+                "Equip {5} ({5}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
 
 // DKA 155 — Evolving Wilds
 pub(in crate::card::sets) static EVOLVING_WILDS: CardRecord = CardRecord::new(
@@ -3000,6 +3059,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &EXECUTIONERS_HOOD,
     &HEAVY_MATTOCK,
     &HELVAULT,
+    &WOLFHUNTERS_QUIVER,
     &EVOLVING_WILDS,
     &GRIM_BACKWOODS,
     &VAULT_OF_THE_ARCHANGEL,
