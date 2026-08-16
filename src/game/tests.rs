@@ -658,6 +658,7 @@ mod populate_cards;
 mod power_blocking;
 mod power_blocking_restrictions;
 mod premodern_cards;
+mod premodern_goblins;
 mod premodern_lands;
 mod premodern_library_selection;
 mod premodern_permanents;

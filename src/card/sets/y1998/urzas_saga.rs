@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
-    cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardChoiceSourceDef, CardRules, CardSet,
+    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -45,6 +45,80 @@ pub(in crate::card::sets) static ANNUL: CardRecord = CardRecord::new(
     )),
 );
 
+/// "A Goblin permanent card": Gempalm Incinerator is a Goblin card that is
+/// also a creature, and nothing in the pool is a Goblin instant, but the
+/// clause names permanents rather than creatures and so does this.
+static A_GOBLIN_PERMANENT_IN_HAND: [CardChoiceSourceDef; 1] =
+    [CardChoiceSourceDef::Zone(ZoneKind::Hand)];
+
+/// A minimum of zero is the "you may": the offer may be answered with
+/// nothing, and with no Goblin in hand it is never made at all.
+static GOBLIN_LACKEY_TRIGGER: EffectDef = EffectDef::ChooseCards {
+    player: EffectRecipientDef::Controller,
+    sources: &A_GOBLIN_PERMANENT_IN_HAND,
+    object: ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Subtype("Goblin"),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Instant),
+            ObjectPredicateDef::HasType(CardType::Sorcery),
+        ])),
+    ]),
+    minimum: 0,
+    maximum: 1,
+    reveal: false,
+    destination: ZoneKind::Battlefield,
+    placement: ZonePlacement::Top,
+};
+
+// USG 190 — Goblin Lackey
+pub(in crate::card::sets) static GOBLIN_LACKEY: CardRecord = CardRecord::new(
+    cards::GOBLIN_LACKEY,
+    "Goblin Lackey",
+    CardArt::new("9b848caa-aad8-4060-8f86-304a8556de2d", "Jerry Tiritilli"),
+    CardSet::UrzasSaga,
+    // One connection puts a Siege-Gang Commander down for free, which is the
+    // whole reason a 1/1 for one is a format staple.
+    CardRules::new_creature(mana_cost!("{R}"), &["Goblin"], 1, 1).with_ability(
+        AbilityDef::triggered(
+            "Whenever this creature deals damage to a player, you may put a Goblin permanent card from your hand onto the battlefield.",
+            TriggerEventDef::damage_to_player(ObjectPredicateDef::Source, PlayerRelation::Any),
+            GOBLIN_LACKEY_TRIGGER,
+        ),
+    ),
+);
+
+// USG 191 — Goblin Matron
+pub(in crate::card::sets) static GOBLIN_MATRON: CardRecord = CardRecord::new(
+    cards::GOBLIN_MATRON,
+    "Goblin Matron",
+    CardArt::new("9e9e2e5d-ad06-4378-9afb-ffb174e6a5b4", "DiTerlizzi"),
+    CardSet::UrzasSaga,
+    // Any Goblin card, so it fetches the answer rather than the biggest
+    // body: Tinkerer against artifacts, Ringleader for more cards.
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin"], 1, 1).with_ability(
+        AbilityDef::triggered(
+            "When this creature enters, you may search your library for a Goblin card, reveal that card, put it into your hand, then shuffle.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::SearchZone {
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: ObjectPredicateDef::Subtype("Goblin"),
+                minimum: 0,
+                maximum: ValueDef::Constant(1),
+                reveal: true,
+                destination: ZoneKind::Hand,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: false,
+            },
+        ),
+    ),
+);
+
 // USG 290 — Claws of Gix
 pub(in crate::card::sets) static CLAWS_OF_GIX: CardRecord = CardRecord::new(
     cards::CLAWS_OF_GIX,
@@ -70,6 +144,12 @@ pub(in crate::card::sets) static CLAWS_OF_GIX: CardRecord = CardRecord::new(
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&MONK_REALIST, &ANNUL, &CLAWS_OF_GIX];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &MONK_REALIST,
+    &ANNUL,
+    &GOBLIN_LACKEY,
+    &GOBLIN_MATRON,
+    &CLAWS_OF_GIX,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

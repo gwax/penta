@@ -74,8 +74,13 @@ older unannotated definitions still require one):
 - `Fire // Ice` — complete
 - `Flooded Strand` — complete
 - `Forest`
+- `Goblin Lackey` — complete
+- `Goblin Matron` — complete
+- `Goblin Piledriver` — complete
 - `Goblin Pyromancer` — complete
 - `Goblin Sharpshooter` — complete
+- `Goblin Tinkerer` — complete
+- `Goblin Warchief` — complete
 - `Hydroblast` — complete
 - `Impulse` — complete
 - `Incinerate` — damage complete; no-regeneration rider is partial
@@ -106,6 +111,7 @@ older unannotated definitions still require one):
 - `Root Maze` — complete
 - `Seal of Cleansing` — complete
 - `Seal of Fire` — complete
+- `Siege-Gang Commander` — complete
 - `Sleight of Hand` — complete
 - `Stasis` — complete
 - `Swamp`
@@ -158,14 +164,9 @@ Not yet cataloged:
 - [ ] `Gemstone Mine`
 - [ ] `Gerrard's Verdict`
 - [ ] `Gilded Drake`
-- [ ] `Goblin Lackey`
-- [ ] `Goblin Matron`
 - [ ] `Goblin Patrol`
-- [ ] `Goblin Piledriver`
 - [ ] `Goblin Ringleader`
-- [ ] `Goblin Tinkerer`
 - [ ] `Goblin Vandal`
-- [ ] `Goblin Warchief`
 - [ ] `Grim Lavamancer`
 - [ ] `Gush`
 - [ ] `Haunting Echoes`
@@ -190,7 +191,6 @@ Not yet cataloged:
 - [ ] `Replenish`
 - [ ] `Secluded Steppe`
 - [ ] `Shallow Grave`
-- [ ] `Siege-Gang Commander`
 - [ ] `Skeletal Scrying`
 - [ ] `Skirk Prospector`
 - [ ] `Skycloud Expanse`

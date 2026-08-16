@@ -16,6 +16,7 @@ mod y1999;
 mod y2000;
 mod y2001;
 mod y2002;
+mod y2003;
 mod y2004;
 mod y2007;
 mod y2011;
@@ -193,6 +194,11 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::Onslaught,
         y2002::onslaught::CARDS,
         y2002::onslaught::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Scourge,
+        y2003::scourge::CARDS,
+        y2003::scourge::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::Darksteel,

@@ -133,6 +133,13 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- Six Premodern **Goblins**: Goblin Lackey, Goblin Matron, Goblin Piledriver,
+  Goblin Tinkerer, Goblin Warchief, and Siege-Gang Commander. None needed new
+  engine work -- the put-a-card-from-hand-onto-the-battlefield choice, tribal
+  counting, matching-spell cost reduction, and last-known mana value were all
+  already there. Scourge is a new set module. RG Goblins is now the staged
+  Premodern deck closest to playable, three main-deck cards short.
+
 - **Premodern** is now a supported format: the twenty-nine-set window from
   Fourth Edition through Scourge, its own thirty-three-card ban list, nothing
   restricted, and contemporary mana rules. `CardSet` gained the fifteen sets

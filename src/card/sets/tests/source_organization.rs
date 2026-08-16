@@ -202,6 +202,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("odyssey.rs") => source(CardSet::Odyssey, "ODY"),
         Some("judgment.rs") => source(CardSet::Judgment, "JUD"),
         Some("onslaught.rs") => source(CardSet::Onslaught, "ONS"),
+        Some("scourge.rs") => source(CardSet::Scourge, "SCG"),
         Some("darksteel.rs") => source(CardSet::Darksteel, "DST"),
         Some("mirrodin_besieged.rs") => source(CardSet::MirrodinBesieged, "MBS"),
         Some("future_sight.rs") => source(CardSet::FutureSight, "FUT"),

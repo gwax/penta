@@ -2,9 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, PlayerRelation, ValueDef, ZoneKind, ZonePlacement, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ValueDef, ZoneKind, ZonePlacement,
+    cards,
 };
+use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 // MIR 14 — Enlightened Tutor
@@ -32,6 +34,43 @@ pub(in crate::card::sets) static ENLIGHTENED_TUTOR: CardRecord = CardRecord::new
         },
     )),
 );
+
+// MIR 180 — Goblin Tinkerer
+pub(in crate::card::sets) static GOBLIN_TINKERER: CardRecord = CardRecord::new(
+    cards::GOBLIN_TINKERER,
+    "Goblin Tinkerer",
+    CardArt::new("e6529852-8b3e-4a70-a4a1-029e012231c6", "Hannibal King"),
+    CardSet::Mirage,
+    // The artifact hits back on the way out, which is why a 1/2 body
+    // survives a Cursed Scroll and not much larger.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin", "Artificer"], 1, 2).with_ability(
+        AbilityDef::activated_with_targets(
+            "{R}, {T}: Destroy target artifact. That artifact deals damage equal to its mana value to this creature.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{R}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+            )],
+            EffectDef::Sequence(&GOBLIN_TINKERER_PROGRAM),
+        ),
+    ),
+);
+
+/// The damage is read after the destruction, from the target slot's own
+/// last-known information: the artifact is already in a graveyard by then,
+/// which is the only time the reading is interesting.
+static GOBLIN_TINKERER_PROGRAM: [EffectDef; 2] = [
+    EffectDef::Destroy {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        can_regenerate: true,
+    },
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Source,
+        amount: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
+    },
+];
 
 // MIR 245 — Tranquil Domain
 pub(in crate::card::sets) static TRANQUIL_DOMAIN: CardRecord = CardRecord::new(
@@ -81,7 +120,11 @@ pub(in crate::card::sets) static WORLDLY_TUTOR: CardRecord = CardRecord::new(
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&ENLIGHTENED_TUTOR, &TRANQUIL_DOMAIN, &WORLDLY_TUTOR];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &ENLIGHTENED_TUTOR,
+    &GOBLIN_TINKERER,
+    &TRANQUIL_DOMAIN,
+    &WORLDLY_TUTOR,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

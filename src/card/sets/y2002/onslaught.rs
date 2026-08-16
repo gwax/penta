@@ -4,10 +4,53 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, ResolvedEffectDurationDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement, cards,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
-use crate::{PlayerRelation, TargetIndex, TurnStepDef, mana_cost};
+use crate::{TargetIndex, TurnStepDef, mana_cost};
+
+/// "Each other attacking Goblin", so the Piledriver never counts itself and
+/// a lone one gets nothing.
+static OTHER_ATTACKING_GOBLINS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Subtype("Goblin"),
+        ObjectPredicateDef::Attacking,
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Any,
+);
+
+static GOBLIN_PILEDRIVER_BONUS: ScaledValueDef = ScaledValueDef {
+    value: ValueDef::CountMatchingObjects(&OTHER_ATTACKING_GOBLINS),
+    factor: 2,
+};
+
+// ONS 205 — Goblin Piledriver
+pub(in crate::card::sets) static GOBLIN_PILEDRIVER: CardRecord = CardRecord::new(
+    cards::GOBLIN_PILEDRIVER,
+    "Goblin Piledriver",
+    CardArt::new("f6c4df1f-f148-42ec-8e22-e7114216927d", "Matt Cavotta"),
+    CardSet::Onslaught,
+    // Protection from blue is half the card: it walks past the format's
+    // blue blockers while the rest of the team makes it enormous.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin", "Warrior"], 1, 2).with_abilities(&[
+        abilities::protection_from(ManaColor::Blue),
+        AbilityDef::triggered(
+            "Whenever this creature attacks, it gets +2/+0 until end of turn for each other attacking Goblin.",
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Scaled(&GOBLIN_PILEDRIVER_BONUS),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // ONS 206 — Goblin Pyromancer
 pub(in crate::card::sets) static GOBLIN_PYROMANCER: CardRecord = CardRecord::new(
@@ -199,6 +242,7 @@ pub(in crate::card::sets) static WOODED_FOOTHILLS: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &GOBLIN_PILEDRIVER,
     &GOBLIN_PYROMANCER,
     &GOBLIN_SHARPSHOOTER,
     &NATURALIZE,
