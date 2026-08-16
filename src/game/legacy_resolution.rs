@@ -244,7 +244,20 @@ impl Game {
                 }
             }
             ZoneKind::Graveyard => self.bury_cards(player, cards),
-            ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {
+            // Under the player who looked, which is what "you may put it
+            // onto the battlefield" means -- the card is still theirs and
+            // was never cast.
+            ZoneKind::Battlefield => {
+                for card in cards {
+                    self.put_card_onto_battlefield_from(
+                        card,
+                        ZoneKind::Library,
+                        super::BattlefieldArrival::under(player),
+                        None,
+                    );
+                }
+            }
+            ZoneKind::Stack | ZoneKind::Command => {
                 debug_assert!(false, "unsupported revealed-card destination: {zone:?}");
                 self.bury_cards(player, cards);
             }

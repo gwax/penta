@@ -204,3 +204,4 @@ pub const ABATTOIR_GHOUL: CardDefinitionId = CardDefinitionId(2003);
 pub const DREAD_SLAVER: CardDefinitionId = CardDefinitionId(2004);
 pub const GOBLIN_WIZARD: CardDefinitionId = CardDefinitionId(2005);
 pub const GAEAS_TOUCH: CardDefinitionId = CardDefinitionId(2006);
+pub const INTO_THE_WILDS: CardDefinitionId = CardDefinitionId(2007);

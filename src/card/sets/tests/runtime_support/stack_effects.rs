@@ -105,7 +105,12 @@ fn shared_decision_effect(effect: EffectDef) -> bool {
                 && shared_effect_recipient(looker)
                 && selection.object.is_none_or(shared_object_predicate)
                 && selection.minimum <= selection.maximum
-                && supported_zone(selection.selected_zone)
+                // What was taken may also arrive on the battlefield, under
+                // the player who looked. What was left behind may not: a
+                // card nobody chose has no reason to be put anywhere but
+                // back into a zone.
+                && (supported_zone(selection.selected_zone)
+                    || selection.selected_zone == ZoneKind::Battlefield)
                 && supported_zone(selection.rest_zone)
                 && selection
                     .then

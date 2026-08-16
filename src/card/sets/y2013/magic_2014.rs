@@ -2296,8 +2296,43 @@ pub(in crate::card::sets) static HOWL_OF_THE_NIGHT_PACK: CardRecord = CardRecord
 // M14 179 — Hunt the Weak
 // Audit: blocked — DealDamage can only attribute damage to the resolving spell, not to each fighting creature.
 
+/// Only a land may be taken, and taking it is optional -- a minimum of zero
+/// is the "you may". Whatever is not taken goes back on top rather than
+/// anywhere else, so a nonland card is still the next draw.
+static INTO_THE_WILDS_LOOK: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(1),
+    object: Some(ObjectPredicateDef::HasType(CardType::Land)),
+    minimum: 0,
+    maximum: 1,
+    reveal_selected: false,
+    selected_zone: ZoneKind::Battlefield,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Top,
+    then: None,
+};
+
 // M14 180 — Into the Wilds
-// Audit: blocked — LookAtTopAndSelect cannot put a selected land onto the battlefield.
+pub(in crate::card::sets) static INTO_THE_WILDS: CardRecord = CardRecord::new(
+    cards::INTO_THE_WILDS,
+    "Into the Wilds",
+    CardArt::new("ecfa6c8d-b5b5-4b68-9ad4-c9d8169659d6", "Véronique Meignaud"),
+    CardSet::Magic2014,
+    // A free land every upkeep the top card cooperates, and the land it puts
+    // down does not spend the turn's land drop.
+    CardRules::new_enchantment(mana_cost!("{3}{G}")).with_ability(AbilityDef::triggered(
+        "At the beginning of your upkeep, look at the top card of your library. If it's a land card, you may put it onto the battlefield.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::You,
+        },
+        EffectDef::LookAtTopAndSelect {
+            player: EffectRecipientDef::Controller,
+            looker: EffectRecipientDef::Controller,
+            selection: &INTO_THE_WILDS_LOOK,
+        },
+    )),
+);
 
 // M14 181 — Kalonian Hydra
 // Audit: blocked — Counter effects cannot double each creature's existing +1/+1 counter count.
@@ -3211,6 +3246,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GLADECOVER_SCOUT,
     &GROUNDSHAKER_SLIVER,
     &HOWL_OF_THE_NIGHT_PACK,
+    &INTO_THE_WILDS,
     &KALONIAN_TUSKER,
     &LAY_OF_THE_LAND,
     &MANAWEFT_SLIVER,

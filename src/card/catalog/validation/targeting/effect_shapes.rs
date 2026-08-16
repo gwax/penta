@@ -102,9 +102,16 @@ fn validate_effect_target_shapes(
             validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
             validate_recipient_shape(looker, targets, RecipientExpectation::Player)?;
             if selection.minimum > selection.maximum
+                // What was taken may also arrive on the battlefield. What was
+                // left behind may not: a card nobody chose has no reason to
+                // be put anywhere but back into a zone.
                 || !matches!(
                     selection.selected_zone,
-                    ZoneKind::Hand | ZoneKind::Library | ZoneKind::Graveyard | ZoneKind::Exile
+                    ZoneKind::Hand
+                        | ZoneKind::Library
+                        | ZoneKind::Graveyard
+                        | ZoneKind::Exile
+                        | ZoneKind::Battlefield
                 )
                 || !matches!(
                     selection.rest_zone,
@@ -518,9 +525,11 @@ mod recipient_shape_tests {
             minimum: 0,
             maximum: 1,
             reveal_selected: false,
-            selected_zone: ZoneKind::Battlefield,
+            selected_zone: ZoneKind::Hand,
             selected_placement: ZonePlacement::Top,
-            rest_zone: ZoneKind::Library,
+            // The battlefield is a fine place for what was taken and not for
+            // what was left behind.
+            rest_zone: ZoneKind::Battlefield,
             rest_placement: ZonePlacement::Bottom,
             then: None,
         };

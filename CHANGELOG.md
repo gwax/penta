@@ -133,6 +133,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Into the Wilds**. A top-card look may now put what it took onto the
+  battlefield. Only what was taken: a card nobody chose has no reason to be
+  put anywhere but back into a zone, so the leftover destination is unchanged.
+
 - **Goblin Wizard** and **Gaea's Touch**. Putting a card from your hand onto
   the battlefield needed no new machinery: the card choice reads hidden zones
   and moves what it finds, and the destination the runtime has always handled
