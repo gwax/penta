@@ -142,7 +142,7 @@ use continuous_state::{
 use decision_state::{
     ApplicableBeginTurnReplacement, BalanceAction, BalancePhase, BalanceTask, CounteredSpellZone,
     DecisionContinuation, DeferredBeginTurnEffect, FORK_COPY_COLOR, PendingDecision, Pregame,
-    ResolvedEffectPayment, SacrificeFollowup, ZoneMoveCause,
+    ResolvedEffectPayment, SacrificeDeclined, SacrificeFollowup, ZoneMoveCause,
 };
 use mana_state::{
     AppliedStackEffect, FlexibleManaSource, ManaAbilityActivation, ManaPaymentPurpose,

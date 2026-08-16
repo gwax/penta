@@ -163,6 +163,7 @@ pub(in crate::card::sets) static RENOUNCE_THE_GUILDS: CardRecord = CardRecord::n
             object: MULTICOLORED,
             then: None,
             amount: SacrificedAmountDef::Power,
+            otherwise: None,
             optional: false,
         },
     )),
@@ -2151,6 +2152,7 @@ fn far_away_composition() -> CardComposition {
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 then: None,
                 amount: SacrificedAmountDef::Power,
+                otherwise: None,
                 optional: false,
             },
         ));

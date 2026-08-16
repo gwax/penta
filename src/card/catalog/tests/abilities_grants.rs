@@ -675,6 +675,7 @@ fn granted_ability_validation_follows_sacrifice_continuations() {
             object: ObjectPredicateDef::Any,
             then: Some(&THEN),
             amount: crate::card::SacrificedAmountDef::Power,
+            otherwise: None,
             optional: false,
         },
     );

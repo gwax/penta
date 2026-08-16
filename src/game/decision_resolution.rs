@@ -469,7 +469,11 @@ impl Game {
                     },
                 );
             }
-            DecisionContinuation::SacrificeOfChoice { followup, optional } => {
+            DecisionContinuation::SacrificeOfChoice {
+                followup,
+                declined,
+                optional,
+            } => {
                 let sacrificed = pending
                     .observation
                     .options
@@ -492,6 +496,11 @@ impl Game {
                     );
                 } else {
                     self.move_permanents_to_graveyard(&sacrificed);
+                }
+                // The declined branch is the other half of one printed
+                // clause, so it runs only when nothing was actually given up.
+                if chosen.is_none() {
+                    self.resolve_sacrifice_declined(declined);
                 }
             }
             DecisionContinuation::SearchZone {

@@ -2,9 +2,9 @@ use super::{
     AbilityProcedureDef, AbilitySourceRef, AddManaEffectDef, BattlefieldArrival, CardPartId,
     CharacteristicSource, CopiableAbility, CounteredSpellZone, DeclarativeAbilityDef, EffectDef,
     EffectResolutionContext, Game, GameResult, InstalledTrigger, InstalledTriggerLifetime, Mana,
-    ManaPool, ManaSelectionDef, ManaSource, Permanent, ResolvedEffectPayment, SacrificeFollowup,
-    ScopedEffect, StackAbilityResolver, StackObject, Target, TriggerCapture, ValueDef, WinReason,
-    ZoneKind, ZoneMoveCause,
+    ManaPool, ManaSelectionDef, ManaSource, Permanent, ResolvedEffectPayment, SacrificeDeclined,
+    SacrificeFollowup, ScopedEffect, StackAbilityResolver, StackObject, Target, TriggerCapture,
+    ValueDef, WinReason, ZoneKind, ZoneMoveCause,
 };
 use crate::card::{EffectPaymentCostDef, InstalledTriggerLifetimeDef};
 
@@ -342,6 +342,7 @@ impl Game {
                 player: recipient,
                 object: predicate,
                 then,
+                otherwise,
                 optional,
             } => {
                 let source = object.source.unwrap_or(object.id);
@@ -360,7 +361,14 @@ impl Game {
                         context: context.clone(),
                         effect: scoped.with_effect(*effect),
                     });
-                    self.queue_chosen_sacrifice(player, predicate, source, followup, optional);
+                    let declined = otherwise.map(|effect| SacrificeDeclined {
+                        object: Box::new(object.clone()),
+                        context: context.clone(),
+                        effect: scoped.with_effect(*effect),
+                    });
+                    self.queue_chosen_sacrifice(
+                        player, predicate, source, followup, declined, optional,
+                    );
                 }
             }
             EffectDef::IfFormat {

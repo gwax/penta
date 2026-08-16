@@ -914,8 +914,56 @@ pub(in crate::card::sets) static DEVOURING_DEEP: CardRecord = CardRecord::new(
 // LEG 51 — Dream Coat
 // Audit: blocked — Needs a per-object, per-turn activation quota for “{0}: Enchanted creature becomes the color or colors of your choice. Activate only once each turn”.
 
+/// The declined branch: the Spawn goes and takes six with it. Reached when
+/// the controller says no *and* when there is no Island to say yes with.
+static ELDER_SPAWN_TOLL: [EffectDef; 2] = [
+    EffectDef::Sacrifice {
+        object: EffectRecipientDef::Source,
+    },
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(6),
+    },
+];
+
+static ELDER_SPAWN_TOLL_SEQUENCE: EffectDef = EffectDef::Sequence(&ELDER_SPAWN_TOLL);
+
+static ELDER_SPAWN_RED_BLOCKERS: AppliedEffectDef = AppliedEffectDef::Rule(
+    AppliedRuleDef::CannotBeBlockedBy(ObjectPredicateDef::Color(ManaColor::Red)),
+);
+
 // LEG 52 — Elder Spawn
-// Audit: blocked — Needs an unless-paid upkeep whose cost is sacrificing an Island. The blocking restriction itself is available.
+pub(in crate::card::sets) static ELDER_SPAWN: CardRecord = CardRecord::new(
+    cards::ELDER_SPAWN,
+    "Elder Spawn",
+    CardArt::new("99cc045e-01a8-4f14-a86d-0a67ec35d6b7", "Jesper Myrfors"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{4}{U}{U}{U}"), &["Spawn"], 6, 6).with_abilities(&[
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, unless you sacrifice an Island, sacrifice this \
+             creature and it deals 6 damage to you.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::SacrificeOfChoice {
+                player: EffectRecipientDef::Controller,
+                object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+                then: None,
+                otherwise: Some(&ELDER_SPAWN_TOLL_SEQUENCE),
+                amount: SacrificedAmountDef::Power,
+                optional: true,
+            },
+        ),
+        AbilityDef::static_ability(
+            "This creature can't be blocked by red creatures.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: ELDER_SPAWN_RED_BLOCKERS,
+            },
+        ),
+    ]),
+);
 
 // LEG 53 — Enchantment Alteration
 // Audit: blocked — Needs Aura reattachment targeting, enchant-legality validation, and attachment movement for “Attach target Aura attached to a creature or land to another permanent of that type”.
@@ -5010,6 +5058,7 @@ pub(in crate::card::sets) static LIFE_CHISEL: CardRecord = CardRecord::new(
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 then: Some(&LIFE_CHISEL_PAYOFF),
                 amount: SacrificedAmountDef::Toughness,
+                otherwise: None,
                 optional: false,
             },
         )
@@ -5511,6 +5560,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AZURE_DRAKE,
     &BOOMERANG,
     &DEVOURING_DEEP,
+    &ELDER_SPAWN,
     &ENERGY_TAP,
     &FLASH_COUNTER,
     &FLASH_FLOOD,

@@ -31,6 +31,16 @@ pub(super) struct SacrificeFollowup {
     pub(super) amount: SacrificedAmountDef,
 }
 
+/// The branch an optional sacrifice takes when it is declined or has nothing
+/// to take. Carried beside the follow-up because both are frozen when the
+/// offer is made, and exactly one of them runs.
+#[derive(Clone, Debug)]
+pub(super) struct SacrificeDeclined {
+    pub(super) object: Box<StackObject>,
+    pub(super) context: EffectResolutionContext,
+    pub(super) effect: ScopedEffect,
+}
+
 /// A payment whose dynamic values and payer have been frozen before a
 /// resolving effect suspends behind a decision.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -255,6 +265,7 @@ pub(super) enum DecisionContinuation {
     /// A sacrifice an effect demanded, chosen by the sacrificing player.
     SacrificeOfChoice {
         followup: Option<SacrificeFollowup>,
+        declined: Option<SacrificeDeclined>,
         optional: bool,
     },
     /// Holds the revealed cards while the caster decides which to keep; they

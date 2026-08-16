@@ -1474,6 +1474,7 @@ pub(in crate::card::sets) static DIAMOND_VALLEY: CardRecord = CardRecord::new(
             object: ObjectPredicateDef::HasType(CardType::Creature),
             then: Some(&DIAMOND_VALLEY_PAYOFF),
             amount: SacrificedAmountDef::Toughness,
+            otherwise: None,
             optional: false,
         },
     )),

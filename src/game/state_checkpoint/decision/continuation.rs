@@ -599,15 +599,21 @@ fn parse_continuation(
                     .ok_or("unknown pile-chosen resolver")?,
             }
         }
-        DecisionContinuationSnapshot::SacrificeOfChoice { followup, optional } => {
-            DecisionContinuation::SacrificeOfChoice {
-                followup: followup
-                    .as_ref()
-                    .map(|followup| parse_effect_continuation(followup, game))
-                    .transpose()?,
-                optional: *optional,
-            }
-        }
+        DecisionContinuationSnapshot::SacrificeOfChoice {
+            followup,
+            declined,
+            optional,
+        } => DecisionContinuation::SacrificeOfChoice {
+            followup: followup
+                .as_ref()
+                .map(|followup| parse_effect_continuation(followup, game))
+                .transpose()?,
+            declined: declined
+                .as_ref()
+                .map(|declined| parse_sacrifice_declined(declined, game))
+                .transpose()?,
+            optional: *optional,
+        },
         DecisionContinuationSnapshot::RecallDiscard { player: owner } => {
             DecisionContinuation::RecallDiscard {
                 player: player(*owner)?,

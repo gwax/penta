@@ -3,8 +3,8 @@ use super::{
     CommittedTriggerEvent, CounterKind, DecisionContinuation, DecisionOption, DecisionPreference,
     DecisionVisibility, DecisionZone, DeclarativeAbilityDef, EffectDef, EffectResolutionContext,
     Game, GameObjectId, ObjectPredicateDef, Permanent, PileChoice, PileChosen, PileSplit,
-    PilesSeparated, PlayerId, SacrificeFollowup, SacrificedAmountDef, ScopedEffect, StackObject,
-    Step, TopCardSelectionDef, ZoneKind, ZoneMoveCause,
+    PilesSeparated, PlayerId, SacrificeDeclined, SacrificeFollowup, SacrificedAmountDef,
+    ScopedEffect, StackObject, Step, TopCardSelectionDef, ZoneKind, ZoneMoveCause,
 };
 
 impl Game {
@@ -452,6 +452,7 @@ impl Game {
         predicate: ObjectPredicateDef,
         source: GameObjectId,
         followup: Option<SacrificeFollowup>,
+        declined: Option<SacrificeDeclined>,
         optional: bool,
     ) {
         let candidates = self
@@ -486,7 +487,10 @@ impl Game {
             }
             return;
         }
+        // Nothing to take is a declined offer, not a skipped one: "unless you
+        // sacrifice an Island" bites hardest when there is no Island.
         if optional && candidates.is_empty() {
+            self.resolve_sacrifice_declined(declined);
             return;
         }
         let options = self.card_decision_options(&candidates, DecisionZone::Battlefield);
@@ -502,8 +506,20 @@ impl Game {
             usize::from(!optional)..=1,
             false,
             options,
-            DecisionContinuation::SacrificeOfChoice { followup, optional },
+            DecisionContinuation::SacrificeOfChoice {
+                followup,
+                declined,
+                optional,
+            },
         );
+    }
+
+    /// Runs the branch an optional sacrifice owes when it was declined.
+    pub(super) fn resolve_sacrifice_declined(&mut self, declined: Option<SacrificeDeclined>) {
+        let Some(declined) = declined else {
+            return;
+        };
+        self.resolve_effect_def(declined.effect, &declined.object, declined.context);
     }
 
     /// Runs what a sacrifice owes once the permanent is chosen. The

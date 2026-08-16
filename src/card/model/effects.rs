@@ -715,6 +715,11 @@ pub enum EffectDef {
         /// reads. Both are last-known by the time it runs, so neither is
         /// harder to reach than the other -- the card simply has to say.
         amount: SacrificedAmountDef,
+        /// Run instead when an optional sacrifice was declined or had nothing
+        /// to take. This is the "unless" half: a card saying "unless you
+        /// sacrifice an Island, ..." is one offer with two branches rather
+        /// than a payment and a separate check.
+        otherwise: Option<&'static EffectDef>,
         /// Whether the player may decline. An optional sacrifice runs `then`
         /// only when something was actually sacrificed, which is what "if a
         /// player does" means; a compulsory one runs it either way, so an

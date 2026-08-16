@@ -1727,6 +1727,7 @@ pub(in crate::card::sets) static DEMONIC_TASKMASTER: CardRecord = CardRecord::ne
                 ]),
                 then: None,
                 amount: SacrificedAmountDef::Power,
+                otherwise: None,
                 optional: false,
             },
         ),

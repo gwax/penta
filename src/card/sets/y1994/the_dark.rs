@@ -2245,6 +2245,7 @@ pub(in crate::card::sets) static SAFE_HAVEN: CardRecord = CardRecord::new(
                     grant: None,
                 }),
                 amount: SacrificedAmountDef::Power,
+                otherwise: None,
                 optional: true,
             },
         ),

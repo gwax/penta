@@ -1599,6 +1599,7 @@ pub(in crate::card::sets) static DISCIPLE_OF_BOLAS: CardRecord = CardRecord::new
             ]),
             then: Some(&DISCIPLE_OF_BOLAS_PAYOFF),
             amount: SacrificedAmountDef::Power,
+            otherwise: None,
             optional: false,
         },
     )),

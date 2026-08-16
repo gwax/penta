@@ -4,8 +4,8 @@ use super::super::model::{ManaCostSnapshot, ResolvedEffectPaymentSnapshot};
 use super::super::procedure::draw_replacement_referenced_object_ids;
 use super::*;
 use crate::card::SacrificedAmountDef;
-use crate::game::ResolvedEffectPayment;
 use crate::game::{ApplicableZoneMoveReplacement, PendingBattlefieldExitBatch};
+use crate::game::{ResolvedEffectPayment, SacrificeDeclined};
 
 #[allow(clippy::too_many_lines)]
 pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
@@ -254,6 +254,20 @@ pub(super) fn parse_effect_continuation(
         } else {
             SacrificedAmountDef::Power
         },
+    })
+}
+
+/// The declined branch reads nothing off a sacrificed permanent, so unlike
+/// the follow-up it carries no characteristic.
+pub(super) fn parse_sacrifice_declined(
+    snapshot: &EffectContinuationSnapshot,
+    game: &Game,
+) -> Result<SacrificeDeclined, String> {
+    Ok(SacrificeDeclined {
+        object: Box::new(parse_detached_stack(&snapshot.object, game)?),
+        context: parse_effect_resolution_context(snapshot.context.clone())?,
+        effect: catalog_scoped_effect(&game.catalog, &snapshot.ability, &snapshot.effect)
+            .ok_or("declined-sacrifice locator is absent from this catalog")?,
     })
 }
 

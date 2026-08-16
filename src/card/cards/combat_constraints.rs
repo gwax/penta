@@ -162,3 +162,4 @@ pub const TIN_STREET_MARKET: CardDefinitionId = CardDefinitionId(1961);
 pub const BONE_SPLINTERS: CardDefinitionId = CardDefinitionId(1962);
 pub const INFERNAL_PLUNGE: CardDefinitionId = CardDefinitionId(1963);
 pub const SKAAB_GOLIATH: CardDefinitionId = CardDefinitionId(1964);
+pub const ELDER_SPAWN: CardDefinitionId = CardDefinitionId(1965);

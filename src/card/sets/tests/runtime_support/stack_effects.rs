@@ -122,6 +122,7 @@ fn shared_sacrifice_of_choice(effect: EffectDef) -> bool {
         player,
         object,
         then,
+        otherwise,
         ..
     } = effect
     else {
@@ -130,6 +131,9 @@ fn shared_sacrifice_of_choice(effect: EffectDef) -> bool {
     shared_effect_recipient(player)
         && shared_object_predicate(object)
         && then.is_none_or(|effect| shared_stack_effect_at_position(*effect, true))
+        // The declined branch runs in the same continuation, so it is bound
+        // by exactly the same rule as the follow-up.
+        && otherwise.is_none_or(|effect| shared_stack_effect_at_position(*effect, true))
 }
 
 #[allow(clippy::too_many_lines)]

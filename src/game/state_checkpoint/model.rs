@@ -784,7 +784,12 @@ pub(super) enum DecisionContinuationSnapshot {
         on_complete: String,
     },
     SacrificeOfChoice {
-        followup: Option<EffectContinuationSnapshot>,
+        followup: Option<Box<EffectContinuationSnapshot>>,
+        /// The branch a declined offer takes. Appended after the follow-up,
+        /// so a checkpoint written before this existed still reads. Boxed
+        /// alongside it to keep this variant off the enum's size.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        declined: Option<Box<EffectContinuationSnapshot>>,
         optional: bool,
     },
     RecallDiscard {

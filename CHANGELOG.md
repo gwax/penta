@@ -119,6 +119,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Elder Spawn**, and with it a declined branch on an optional sacrifice.
+  "Unless you sacrifice an Island" is one offer with two branches rather than
+  a payment and a separate check, so the toll falls both when the controller
+  says no and when there is no Island to say yes with -- the second case
+  without asking at all. Checkpoints carry the branch as an additive field.
+
 - **Skaab Goliath**, and with it additional costs that name more than one
   object. The casting enumeration offers one action per way of paying, so a
   cost naming two cards enumerates every pair -- three creature cards in the

@@ -579,6 +579,7 @@ mod dgm_stale_audits;
 mod discard_cost;
 mod disharmony;
 mod dka_stale_audits;
+mod elder_spawn;
 mod energy_tap;
 mod entry_replacements;
 mod equipment;

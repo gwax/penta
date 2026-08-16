@@ -513,7 +513,11 @@ fn continuation_snapshot(
                 on_complete: on_complete.key().to_owned(),
             }
         }
-        DecisionContinuation::SacrificeOfChoice { followup, optional } => {
+        DecisionContinuation::SacrificeOfChoice {
+            followup,
+            declined,
+            optional,
+        } => {
             DecisionContinuationSnapshot::SacrificeOfChoice {
                 followup: match followup {
                     Some(followup) => {
@@ -530,8 +534,19 @@ fn continuation_snapshot(
                         // to say which.
                         snapshot.reads_toughness =
                             followup.amount == crate::card::SacrificedAmountDef::Toughness;
-                        Some(snapshot)
+                        Some(Box::new(snapshot))
                     }
+                    None => None,
+                },
+                declined: match declined {
+                    Some(declined) => Some(Box::new(effect_continuation_snapshot(
+                        game,
+                        viewer,
+                        &declined.object,
+                        &declined.context,
+                        declined.effect,
+                        visible_rebindings,
+                    )?)),
                     None => None,
                 },
                 optional: *optional,
