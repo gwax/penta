@@ -8,13 +8,13 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
     CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef,
-    ControlDurationDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
-    DiscardSelectionDef, DividedTotal, EffectDef, EffectExecutionDef, EffectRecipientDef,
-    KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, SpellAdditionalCostDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef, DamagePreventionDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal,
+    EffectDef, EffectExecutionDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, SacrificedAmountDef, SpellAdditionalCostDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -875,8 +875,39 @@ pub(in crate::card::sets) static FAERIE_INVADERS: CardRecord = CardRecord::new(
         .with_abilities(&[abilities::flash(), abilities::flying()]),
 );
 
+/// Both directions of the same clause: nothing it deals lands and nothing
+/// dealt to it lands, so it blocks anything and survives, and kills nothing.
+static FOG_BANK_SHIELD: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(DamageEventMatcherDef {
+        kind: DamageKindDef::Combat,
+        source: DamageSourceMatcherDef::Any,
+        recipient: DamageRecipientMatcherDef::AffectedObject,
+    })),
+    AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(DamageEventMatcherDef {
+        kind: DamageKindDef::Combat,
+        source: DamageSourceMatcherDef::AffectedObject,
+        recipient: DamageRecipientMatcherDef::Any,
+    })),
+];
+
 // M13 52 — Fog Bank
-// Audit: blocked — No static prevention effect suppresses all combat damage both to and from the source.
+pub(in crate::card::sets) static FOG_BANK: CardRecord = CardRecord::new(
+    cards::FOG_BANK,
+    "Fog Bank",
+    CardArt::new("8a5a69dc-c6f3-459b-9dcd-b3363c26ca34", "Howard Lyon"),
+    CardSet::Magic2013,
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Wall"], 0, 2).with_abilities(&[
+        abilities::defender(),
+        abilities::flying(),
+        AbilityDef::static_ability(
+            "Prevent all combat damage that would be dealt to and dealt by this creature.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&FOG_BANK_SHIELD),
+            },
+        ),
+    ]),
+);
 
 // M13 53 — Harbor Serpent
 // Audit: blocked — Islandwalk and an attack restriction based on the total Island count are unavailable.
@@ -4006,6 +4037,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DOWNPOUR,
     &ESSENCE_SCATTER,
     &FAERIE_INVADERS,
+    &FOG_BANK,
     &HYDROSURGE,
     &JACE_MEMORY_ADEPT,
     &KRAKEN_HATCHLING,

@@ -691,6 +691,7 @@ impl Game {
                         // has to do to survive its own effect.
                         && (self.remains_attached_through_protection(aura)
                             || !(self.is_protected_from_colors(host, aura_colors)
+                                || self.is_protected_from_multicolored(host, aura_colors)
                                 || self.is_protected_from_creature_types(
                                     host,
                                     &self.effective_subtypes(aura),

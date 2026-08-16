@@ -108,3 +108,6 @@ pub const ELITE_INQUISITOR: CardDefinitionId = CardDefinitionId(1907);
 pub const GRAVE_BRAMBLE: CardDefinitionId = CardDefinitionId(1908);
 pub const MIDNIGHT_DUELIST: CardDefinitionId = CardDefinitionId(1909);
 pub const HOLY_MANTLE: CardDefinitionId = CardDefinitionId(1910);
+pub const GUILDSCORN_WARD: CardDefinitionId = CardDefinitionId(1911);
+pub const FOG_BANK: CardDefinitionId = CardDefinitionId(1912);
+pub const NIGHT_REVELERS: CardDefinitionId = CardDefinitionId(1913);

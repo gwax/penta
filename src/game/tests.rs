@@ -538,6 +538,7 @@ mod blocking_after_death;
 mod blocking_prevention;
 mod blocking_relation;
 mod blocking_relationship;
+mod board_conditioned_statics;
 mod candelabra_of_tawnos;
 mod cannot_attack;
 mod cannot_block;

@@ -119,6 +119,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Guildscorn Ward**, **Fog Bank** and **Night Revelers**. Protection gains a
+  fourth quality -- multicolored, which is a colour *count* rather than any one
+  colour, so a mono-black source gets past a Ward that stopped a black-red one.
+  A static "as long as" clause may now read a battlefield count, which is what
+  the Revelers watch the opponent's Humans with.
+
 - **Protection from creatures**, and with it **Holy Mantle**. The third
   protection quality, and the only one with no parameter at all: it reads the
   source's card type. The Aura granting it is an enchantment, so it does not

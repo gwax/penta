@@ -47,6 +47,7 @@ pub(super) enum KeywordSnapshot {
     ProtectionFromVampires,
     ProtectionFromWerewolves,
     ProtectionFromCreatures,
+    ProtectionFromMulticolored,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]

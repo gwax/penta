@@ -143,6 +143,7 @@ pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
             | KeywordAbility::ProtectionFrom(_)
             | KeywordAbility::ProtectionFromCreatureType(_)
             | KeywordAbility::ProtectionFromCreatures
+            | KeywordAbility::ProtectionFromMulticolored
     )
 }
 
@@ -382,6 +383,12 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
 /// resolving ability, or stack-target scope. Keep their condition boundary to
 /// the source-state predicates that can be evaluated from exactly that input.
 fn shared_static_trigger_condition(condition: TriggerConditionDef) -> bool {
+    // A battlefield count is re-read on every walk, so it tracks the board the
+    // way "as long as" asks. The predicate still has to be one that does not
+    // read back into the layer being computed.
+    if let TriggerConditionDef::ObjectCount { query, .. } = condition {
+        return shared_object_predicate(query.object);
+    }
     matches!(
         condition,
         // Counters live on the source, so a static clause can read them from

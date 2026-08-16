@@ -790,6 +790,11 @@ pub enum KeywordAbility {
     /// Protection from the card type, which is one quality rather than a
     /// family of them and so carries no parameter at all.
     ProtectionFromCreatures,
+    /// Protection from every object of two or more colors. Not the union of
+    /// the five color qualities: a monocolored source gets through, and a
+    /// two-color one is stopped even where neither of its colors alone would
+    /// have been.
+    ProtectionFromMulticolored,
 }
 
 /// The creature types a printed protection clause names. A closed set for the
@@ -840,6 +845,7 @@ impl KeywordAbility {
             Self::Menace => 15,
             Self::AttacksEachCombatIfAble => 16,
             Self::ProtectionFromCreatures => 17,
+            Self::ProtectionFromMulticolored => 27,
             Self::Indestructible => 18,
             Self::Shroud => 19,
             Self::Unleash => 26,

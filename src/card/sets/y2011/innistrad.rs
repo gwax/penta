@@ -2898,8 +2898,42 @@ pub(in crate::card::sets) static KESSIG_WOLF: CardRecord = CardRecord::new(
 // ISD 152 — Kruin Outlaw
 // Audit: blocked — Needs menace as an executable minimum-blocker constraint granted to Werewolves on the back face.
 
+static NIGHT_REVELERS_HASTE: AbilityDef = abilities::haste();
+
+/// An opponent's Human, so a Human of your own does not wake it up.
+static AN_OPPONENT_CONTROLS_A_HUMAN: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::Subtype("Human"),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::Opponent,
+    ),
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+static NIGHT_REVELERS_GRANT: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::add_ability(&NIGHT_REVELERS_HASTE),
+};
+
 // ISD 153 — Night Revelers
-// Audit: blocked — Needs a continuous condition that grants haste only while an opponent controls a Human.
+pub(in crate::card::sets) static NIGHT_REVELERS: CardRecord = CardRecord::new(
+    cards::NIGHT_REVELERS,
+    "Night Revelers",
+    CardArt::new("e3f82c5c-77fa-45f3-a91e-4c2489444855", "Steve Argyle"),
+    CardSet::Innistrad,
+    // "As long as", so the haste comes and goes with the opponent's board
+    // rather than being checked once.
+    CardRules::new_creature(mana_cost!("{4}{R}"), &["Vampire"], 4, 4).with_ability(
+        AbilityDef::static_ability(
+            "This creature has haste as long as an opponent controls a Human.",
+            EffectDef::IfCondition {
+                condition: &AN_OPPONENT_CONTROLS_A_HUMAN,
+                then: &NIGHT_REVELERS_GRANT,
+            },
+        ),
+    ),
+);
 
 // ISD 154 — Nightbird's Clutches
 pub(in crate::card::sets) static NIGHTBIRDS_CLUTCHES: CardRecord = CardRecord::new(
@@ -5219,6 +5253,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &INSTIGATOR_GANG,
     &INTO_THE_MAW_OF_HELL,
     &KESSIG_WOLF,
+    &NIGHT_REVELERS,
     &NIGHTBIRDS_CLUTCHES,
     &PAST_IN_FLAMES,
     &PITCHBURN_DEVILS,

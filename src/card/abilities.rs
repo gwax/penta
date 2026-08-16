@@ -305,6 +305,16 @@ pub const fn protection_from_creatures() -> AbilityDef {
     )
 }
 
+/// "Protection from multicolored", read off the source's color count rather
+/// than any one color.
+#[must_use]
+pub const fn protection_from_multicolored() -> AbilityDef {
+    keyword(
+        "Protection from multicolored",
+        KeywordAbility::ProtectionFromMulticolored,
+    )
+}
+
 /// The granted protection and the self-retention exception for each printed
 /// Ward. `EffectDef::Sequence` holds its clauses by reference, and a sequence
 /// built from a parameter cannot be promoted to `'static`, so the five are

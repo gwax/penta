@@ -236,8 +236,30 @@ pub(in crate::card::sets) static DUTIFUL_THRULL: CardRecord = CardRecord::new(
 // GTC 14 — Guardian of the Gateless
 // Audit: blocked — Needs blocking any number of creatures and a trigger amount equal to how many creatures the source is blocking.
 
+static GUILDSCORN_WARD_PROTECTION: AbilityDef = abilities::protection_from_multicolored();
+
 // GTC 15 — Guildscorn Ward
-// Audit: blocked — Protection can currently be expressed only from a specific color, not from multicolored objects.
+pub(in crate::card::sets) static GUILDSCORN_WARD: CardRecord = CardRecord::new(
+    cards::GUILDSCORN_WARD,
+    "Guildscorn Ward",
+    CardArt::new("89c5c496-0a3e-40e1-84ac-8ad3a9d8352b", "Ryan Barger"),
+    CardSet::Gatecrash,
+    // A guild card is two colors and is stopped; a mono-colored one of either
+    // of those colors is not, which is what makes this a Ravnica sideboard
+    // card rather than a colour hoser.
+    CardRules::new_enchantment(mana_cost!("{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature has protection from multicolored.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::add_ability(&GUILDSCORN_WARD_PROTECTION),
+                },
+            ),
+        ]),
+);
 
 static HOLD_THE_GATES_GATES: ObjectQueryDef = ObjectQueryDef::matching(
     ObjectPredicateDef::Subtype("Gate"),
@@ -3872,6 +3894,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DARING_SKYJEK,
     &DEBTORS_PULPIT,
     &DUTIFUL_THRULL,
+    &GUILDSCORN_WARD,
     &HOLD_THE_GATES,
     &HOLY_MANTLE,
     &KNIGHT_OF_OBLIGATION,

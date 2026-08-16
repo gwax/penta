@@ -225,6 +225,20 @@ impl Game {
             )
     }
 
+    /// Two or more colors, which is one quality on its own rather than the
+    /// union of the five single-color ones.
+    pub(super) fn is_protected_from_multicolored(
+        &self,
+        permanent: &Permanent,
+        source_colors: [bool; 5],
+    ) -> bool {
+        source_colors.iter().filter(|present| **present).count() >= 2
+            && self.permanent_has_executable_keyword(
+                permanent,
+                KeywordAbility::ProtectionFromMulticolored,
+            )
+    }
+
     /// Every quality at once, for the sources that are whole objects rather
     /// than a bare color set.
     pub(super) fn is_protected_from_object(
@@ -232,7 +246,9 @@ impl Game {
         permanent: &Permanent,
         source: GameObjectId,
     ) -> bool {
-        self.is_protected_from_colors(permanent, self.object_colors(source))
+        let colors = self.object_colors(source);
+        self.is_protected_from_colors(permanent, colors)
+            || self.is_protected_from_multicolored(permanent, colors)
             || self.is_protected_from_creature_types(permanent, &self.object_subtypes(source))
             || self.is_protected_from_creature(permanent, self.object_is_creature(source))
     }
@@ -424,6 +440,7 @@ impl Game {
     }
     pub(super) fn combat_is_protected(&self, blocker: &Permanent, attacker: &Permanent) -> bool {
         self.is_protected_from_colors(attacker, self.permanent_colors(blocker))
+            || self.is_protected_from_multicolored(attacker, self.permanent_colors(blocker))
             || self.is_protected_from_creature_types(attacker, &self.effective_subtypes(blocker))
             // A blocker is always a creature, so the parameterless quality
             // needs no lookup here.
