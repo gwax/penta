@@ -111,6 +111,17 @@ impl Game {
                     .len(),
             )
             .unwrap_or(i32::MAX),
+            // Zero when nothing matches, which is what "the greatest power
+            // among creatures you control" is worth with no creatures.
+            ValueDef::GreatestPowerAmong(query) => self
+                .objects_matching_effect_query(*query, object, context, scoped)
+                .into_iter()
+                .filter_map(|target| match target {
+                    Target::Permanent(id) => self.current_or_last_known_power(id),
+                    Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
+                })
+                .max()
+                .map_or(0, i32::from),
             ValueDef::AnyMatchingObject(query) => i32::from(self.any_battlefield_object_matches(
                 query,
                 object.source.unwrap_or(object.id),

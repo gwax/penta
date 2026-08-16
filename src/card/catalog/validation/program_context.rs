@@ -641,9 +641,9 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         // Both are read live from the static effect's own controller: a
         // battlefield count, or the size of that player's hand.
         ValueDef::Constant(_) | ValueDef::CardsInHandAbove { .. } => true,
-        ValueDef::CountMatchingObjects(query) | ValueDef::AnyMatchingObject(query) => {
-            static_query_supported(*query)
-        }
+        ValueDef::CountMatchingObjects(query)
+        | ValueDef::AnyMatchingObject(query)
+        | ValueDef::GreatestPowerAmong(query) => static_query_supported(*query),
         ValueDef::Scaled(scaled) => static_power_toughness_value_supported(scaled.value),
         ValueDef::Halved(halved) => static_power_toughness_value_supported(halved.value),
         ValueDef::Sum(sum) => {
@@ -681,6 +681,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
                 && static_cost_reduction_value_supported(sum.right)
         }
         ValueDef::CreaturesDiedThisTurn
+        | ValueDef::GreatestPowerAmong(_)
         | ValueDef::ChosenX
         | ValueDef::SourceCastX
         | ValueDef::SourcePower

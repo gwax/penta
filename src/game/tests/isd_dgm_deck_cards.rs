@@ -226,10 +226,7 @@ fn garruk_offers_only_supported_modes_and_makes_one_wurm_per_controlled_land() {
         })
     };
     assert!(offered(AbilityId::PRIMARY), "the supported +1 is offered");
-    assert!(
-        !offered(AbilityId(1)),
-        "the metadata-only minus three is withheld"
-    );
+    assert!(offered(AbilityId(1)), "the minus three is offered too");
     assert!(offered(AbilityId(2)), "the supported minus six is offered");
 
     let ultimate = actions

@@ -598,6 +598,7 @@ mod ghouls;
 mod giant_shark;
 mod gloom;
 mod granted_ability_cards;
+mod greatest_power;
 mod guardian_beast;
 mod gyre_sage;
 mod held_tapped;

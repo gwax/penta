@@ -3067,8 +3067,29 @@ pub(in crate::card::sets) static FLINTHOOF_BOAR: CardRecord = CardRecord::new(
     ]),
 );
 
+/// The largest power among your creatures, which is one creature's size
+/// rather than a count of them.
+static GREATEST_POWER_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
 // M13 173 — Fungal Sprouting
-// Audit: blocked — No value expression computes the greatest power among creatures the controller controls.
+pub(in crate::card::sets) static FUNGAL_SPROUTING: CardRecord = CardRecord::new(
+    cards::FUNGAL_SPROUTING,
+    "Fungal Sprouting",
+    CardArt::new("97413ae3-037e-4786-85a3-e92604acd771", "Brad Rigney"),
+    CardSet::Magic2013,
+    CardRules::new_sorcery(mana_cost!("{3}{G}")).with_ability(AbilityDef::spell(
+        "Create X 1/1 green Saproling creature tokens, where X is the greatest power among creatures you control.",
+        EffectDef::CreateToken {
+            token: cards::SAPROLING_TOKEN_1_1_GREEN,
+            count: ValueDef::GreatestPowerAmong(&GREATEST_POWER_YOU_CONTROL),
+            tapped: false,
+        },
+    )),
+);
 
 static LANDS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
     ObjectPredicateDef::HasType(CardType::Land),
@@ -3077,7 +3098,6 @@ static LANDS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
 );
 
 // M13 174 — Garruk, Primal Hunter
-// Audit: partial — Needs greatest-power evaluation for its draw ability.
 pub(in crate::card::sets) static GARRUK_PRIMAL_HUNTER: CardRecord = CardRecord::new(
     cards::GARRUK_PRIMAL_HUNTER,
     "Garruk, Primal Hunter",
@@ -3101,13 +3121,11 @@ pub(in crate::card::sets) static GARRUK_PRIMAL_HUNTER: CardRecord = CardRecord::
             AbilityDef::activated(
                 "−3: Draw cards equal to the greatest power among creatures you control.",
                 &[AbilityCostDef::Loyalty(-3)],
-                EffectDef::Special(
-                    "Draw cards equal to the greatest power among creatures you control",
-                ),
-            )
-            .with_coverage(AbilityCoverageDef::metadata_only(
-                "The greatest power among a set of creatures is not an available value.",
-            )),
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::GreatestPowerAmong(&GREATEST_POWER_YOU_CONTROL),
+                },
+            ),
             AbilityDef::activated(
                 "−6: Create a 6/6 green Wurm creature token for each land you control.",
                 &[AbilityCostDef::Loyalty(-6)],
@@ -4216,6 +4234,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ELVISH_VISIONARY,
     &FARSEEK,
     &FLINTHOOF_BOAR,
+    &FUNGAL_SPROUTING,
     &GARRUK_PRIMAL_HUNTER,
     &MWONVULI_BEAST_TRACKER,
     &PLUMMET,

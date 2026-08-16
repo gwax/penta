@@ -261,9 +261,9 @@ fn validate_value_shape(
             validate_value_shape(value.then, targets)?;
             validate_value_shape(value.otherwise, targets)
         }
-        ValueDef::CountMatchingObjects(query) | ValueDef::AnyMatchingObject(query) => {
-            validate_query_shape(*query, targets)
-        }
+        ValueDef::CountMatchingObjects(query)
+        | ValueDef::AnyMatchingObject(query)
+        | ValueDef::GreatestPowerAmong(query) => validate_query_shape(*query, targets),
         ValueDef::TargetPower(target)
         | ValueDef::TargetToughness(target)
         | ValueDef::TargetManaValue(target) => {

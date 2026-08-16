@@ -175,3 +175,5 @@ pub const TRIBUTE_TO_HUNGER: CardDefinitionId = CardDefinitionId(1974);
 pub const DEATHS_CARESS: CardDefinitionId = CardDefinitionId(1975);
 pub const DISCIPLE_OF_GRISELBRAND: CardDefinitionId = CardDefinitionId(1976);
 pub const KOROZDA_GUILDMAGE: CardDefinitionId = CardDefinitionId(1977);
+pub const ESSENCE_HARVEST: CardDefinitionId = CardDefinitionId(1978);
+pub const FUNGAL_SPROUTING: CardDefinitionId = CardDefinitionId(1979);

@@ -705,7 +705,9 @@ fn validate_value_target_references(
             validate_value_target_references(condition.then, target_count, scope)?;
             validate_value_target_references(condition.otherwise, target_count, scope)
         }
-        ValueDef::CountMatchingObjects(query) | ValueDef::AnyMatchingObject(query) => {
+        ValueDef::CountMatchingObjects(query)
+        | ValueDef::AnyMatchingObject(query)
+        | ValueDef::GreatestPowerAmong(query) => {
             validate_query(*query, target_count, scope)
         }
         ValueDef::TargetPower(target)

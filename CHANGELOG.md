@@ -119,6 +119,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Essence Harvest** and **Fungal Sprouting**, and Garruk, Primal Hunter's
+  draw ability, which had stood at metadata-only. A value now reads the
+  greatest power among a set of objects -- one creature's size rather than a
+  count of them or a total across them, and zero when nothing matches.
+
 - **Death's Caress**, **Disciple of Griselbrand**, and **Korozda Guildmage**.
   A target condition now reads its object as it last existed rather than only
   where it currently is: "if that creature was a Human" is asked after the

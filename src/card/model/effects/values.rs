@@ -147,6 +147,11 @@ pub enum ValueDef {
         player: PlayerRelation,
         source: Option<DamageSourceGroupDef>,
     },
+    /// The largest power among the matching objects, or zero when nothing
+    /// matches. Distinct from a count: "the greatest power among creatures
+    /// you control" asks one creature how big it is rather than asking how
+    /// many there are.
+    GreatestPowerAmong(&'static ObjectQueryDef),
     /// How many objects match, for the "for each" clauses. Held by reference
     /// so that `ValueDef` stays small enough to embed freely.
     CountMatchingObjects(&'static ObjectQueryDef),

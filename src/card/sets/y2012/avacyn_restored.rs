@@ -1772,8 +1772,40 @@ pub(in crate::card::sets) static DRIVER_OF_THE_DEAD: CardRecord = CardRecord::ne
     ),
 );
 
+/// The largest power among your creatures, which is one creature's size
+/// rather than a count of them.
+static GREATEST_POWER_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+/// One X read once and spent twice: the drain moves exactly what it takes.
+static ESSENCE_HARVEST_DRAIN: [EffectDef; 2] = [
+    EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::GreatestPowerAmong(&GREATEST_POWER_YOU_CONTROL),
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::GreatestPowerAmong(&GREATEST_POWER_YOU_CONTROL),
+    },
+];
+
 // AVR 100 — Essence Harvest
-// Audit: blocked — Needs a dynamic value equal to the greatest power among creatures you control.
+pub(in crate::card::sets) static ESSENCE_HARVEST: CardRecord = CardRecord::new(
+    cards::ESSENCE_HARVEST,
+    "Essence Harvest",
+    CardArt::new("7c3fac03-a019-4faa-bc1c-09e3a394fff7", "Daarken"),
+    CardSet::AvacynRestored,
+    CardRules::new_sorcery(mana_cost!("{2}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player loses X life and you gain X life, where X is the greatest power among creatures you control.",
+        &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(
+            PlayerRelation::Any,
+        ))],
+        EffectDef::Sequence(&ESSENCE_HARVEST_DRAIN),
+    )),
+);
 
 // AVR 101 — Evernight Shade
 pub(in crate::card::sets) static EVERNIGHT_SHADE: CardRecord = CardRecord::new(
@@ -4311,6 +4343,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DEMONIC_RISING,
     &DEMONIC_TASKMASTER,
     &DRIVER_OF_THE_DEAD,
+    &ESSENCE_HARVEST,
     &EVERNIGHT_SHADE,
     &GRISELBRAND,
     &HARVESTER_OF_SOULS,
