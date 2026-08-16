@@ -142,6 +142,15 @@ available suites.
   changes, not from the fact that work is ready for a push or PR. During
   implementation and before handoff, run the narrowest target or filtered test
   that exercises that behavior.
+- Two repository-wide invariants do not depend on which paths changed, so the
+  path map below never exempts them: run `make fmt` and
+  `make test-source-file-sizes` before every handoff or push, whatever the
+  change touched. Neither is an aggregate, and both finish in about a second
+  once the workspace is warm; only the first size check in a fresh worktree
+  pays for the `quick-test` profile. The size limit is the one a narrow test
+  cannot reach: ten lines added to a file someone else left at 995 breaks a
+  gate that no card-behavior filter runs, and it stays broken for everyone
+  afterwards.
 - Native card definitions, game rules, decks, and policies do not require web
   or WASM tests merely because the engine is compiled for the browser. Run
   browser-facing tests locally only when the change affects the WASM adapter,
