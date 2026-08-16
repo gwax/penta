@@ -384,6 +384,15 @@ pub enum TriggerConditionDef {
         comparison: ComparisonDef,
         amount: u8,
     },
+    /// The same, counted for the turn in progress. Read after the spell that
+    /// caused the trigger has already been counted, so "your second spell
+    /// each turn" is a comparison against two rather than one.
+    SpellsCastThisTurn {
+        quantifier: QuantifierDef,
+        player: PlayerRelation,
+        comparison: ComparisonDef,
+        amount: u8,
+    },
     /// How much loyalty the ability's own source has left.
     SourceLoyalty {
         comparison: ComparisonDef,

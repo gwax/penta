@@ -575,6 +575,28 @@ impl Game {
                 TriggerConditionDef::ActivePlayer(relation) => {
                     self.player_relation_matches(self.active_player, *relation, controller, context)
                 }
+                TriggerConditionDef::SpellsCastThisTurn {
+                    quantifier,
+                    player: relation,
+                    comparison,
+                    amount,
+                } => {
+                    let mut matching =
+                        [PlayerId::One, PlayerId::Two].into_iter().filter(|player| {
+                            self.player_relation_matches(*player, *relation, controller, context)
+                        });
+                    let satisfies = |player: PlayerId| {
+                        compare(
+                            &self.spells_cast_this_turn[player.index()],
+                            *comparison,
+                            &u16::from(*amount),
+                        )
+                    };
+                    match quantifier {
+                        QuantifierDef::Every => matching.all(satisfies),
+                        QuantifierDef::Any => matching.any(satisfies),
+                    }
+                }
                 TriggerConditionDef::SpellsCastLastTurn {
                     quantifier,
                     player: relation,

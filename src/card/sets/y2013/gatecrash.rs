@@ -10,10 +10,10 @@ use crate::card::{
     DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef,
     DividedTotal, EffectDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, SumValueDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation, QuantifierDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    SumValueDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnPhaseDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -685,8 +685,43 @@ pub(in crate::card::sets) static GRIDLOCK: CardRecord = CardRecord::new(
 // GTC 37 — Hands of Binding
 // Audit: blocked — Needs the next-untap-step skip effect and the cipher encoding and free-copy-casting procedure.
 
+/// Exactly the second, not the second or later: the spell that caused the
+/// trigger has already been counted by the time this is read.
+static INCURSION_SPECIALIST_SECOND_SPELL: TriggerConditionDef =
+    TriggerConditionDef::SpellsCastThisTurn {
+        quantifier: QuantifierDef::Any,
+        player: PlayerRelation::You,
+        comparison: ComparisonDef::Equal,
+        amount: 2,
+    };
+
 // GTC 38 — Incursion Specialist
-// Audit: blocked — Needs a second-spell-this-turn trigger event and a temporary unblockable clause on the source.
+pub(in crate::card::sets) static INCURSION_SPECIALIST: CardRecord = CardRecord::new(
+    cards::INCURSION_SPECIALIST,
+    "Incursion Specialist",
+    CardArt::new("290e56e0-e699-413a-9d6a-e740bf460b35", "Svetlin Velinov"),
+    CardSet::Gatecrash,
+    // A 3/3 that cannot be blocked once a turn goes long enough, which is
+    // what makes it the payoff for a hand full of cheap spells.
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Human", "Wizard"], 1, 3).with_ability(
+        AbilityDef::triggered_if(
+            "Whenever you cast your second spell each turn, this creature gets +2/+0 until end of turn and can't be blocked this turn.",
+            TriggerEventDef::SpellCast(ObjectPredicateDef::ControlledBy(PlayerRelation::You)),
+            &INCURSION_SPECIALIST_SECOND_SPELL,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(2),
+                        ValueDef::Constant(0),
+                    ),
+                    AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlocked),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
 
 /// Mandatory and unaimed: a minimum of one with no target slot, so the
 /// bounce cannot be answered with nothing and cannot be responded to by
@@ -4579,6 +4614,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CLOUDFIN_RAPTOR,
     &FRILLED_OCULUS,
     &GRIDLOCK,
+    &INCURSION_SPECIALIST,
     &KEYMASTER_ROGUE,
     &METROPOLIS_SPRITE,
     &MINDEYE_DRAKE,

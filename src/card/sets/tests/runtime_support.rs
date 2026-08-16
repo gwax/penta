@@ -386,6 +386,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceIsTapped
         | TriggerConditionDef::SourceIsUntapped
         | TriggerConditionDef::ControllerLifeAtMost(_)
+        | TriggerConditionDef::SpellsCastThisTurn { .. }
         | TriggerConditionDef::SpellsCastLastTurn { .. } => true,
     }
 }

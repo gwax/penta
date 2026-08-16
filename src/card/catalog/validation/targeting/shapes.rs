@@ -370,6 +370,7 @@ fn validate_trigger_condition_shape(
         | TriggerConditionDef::SourceUntapped
         | TriggerConditionDef::SourceIsPaired
         | TriggerConditionDef::ActivePlayer(_)
+        | TriggerConditionDef::SpellsCastThisTurn { .. }
         | TriggerConditionDef::SpellsCastLastTurn { .. }
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceActivationsThisTurn { .. }

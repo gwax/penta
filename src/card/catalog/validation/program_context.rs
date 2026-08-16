@@ -722,6 +722,9 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
     match condition {
         TriggerConditionDef::ObjectCount { query, .. } => static_query_supported(query),
         TriggerConditionDef::ActivePlayer(relation)
+        | TriggerConditionDef::SpellsCastThisTurn {
+            player: relation, ..
+        }
         | TriggerConditionDef::SpellsCastLastTurn {
             player: relation, ..
         } => static_player_relation_supported(relation),

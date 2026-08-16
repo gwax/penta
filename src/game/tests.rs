@@ -682,6 +682,7 @@ mod sacrifice_costs;
 mod sacrificed_toughness;
 mod scavenge;
 mod search_and_reveal;
+mod second_spell_each_turn;
 mod sentinel;
 mod shroud_grants;
 mod silence_and_sturmgeist;

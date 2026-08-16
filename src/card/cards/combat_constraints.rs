@@ -211,3 +211,4 @@ pub const AJANI_CALLER_OF_THE_PRIDE: CardDefinitionId = CardDefinitionId(2010);
 pub const SPELL_RUPTURE: CardDefinitionId = CardDefinitionId(2011);
 pub const GIANT_ADEPHAGE: CardDefinitionId = CardDefinitionId(2012);
 pub const KEYMASTER_ROGUE: CardDefinitionId = CardDefinitionId(2013);
+pub const INCURSION_SPECIALIST: CardDefinitionId = CardDefinitionId(2014);

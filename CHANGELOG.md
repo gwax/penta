@@ -133,6 +133,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Incursion Specialist**. A trigger condition may now compare the spells
+  cast so far this turn, mirroring the one that reads last turn's. The count
+  already includes the spell that caused the trigger, so "your second spell
+  each turn" compares equal to two -- and equal rather than at least, so a
+  third spell adds nothing.
+
 - **Keymaster Rogue**. Its bounce is a non-targeted choice made as the
   trigger resolves, which the object-choice effect has always supported; a
   minimum of one is what makes it mandatory, so with nothing else out the

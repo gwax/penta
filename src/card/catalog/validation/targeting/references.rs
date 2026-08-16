@@ -626,6 +626,7 @@ fn validate_trigger_condition(
         | TriggerConditionDef::SourceUntapped
         | TriggerConditionDef::SourceIsPaired
         | TriggerConditionDef::ActivePlayer(_)
+        | TriggerConditionDef::SpellsCastThisTurn { .. }
         | TriggerConditionDef::SpellsCastLastTurn { .. }
         | TriggerConditionDef::ControlsGreatestPowerCreature
         | TriggerConditionDef::SourceMatches { .. }
