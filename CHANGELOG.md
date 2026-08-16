@@ -119,6 +119,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Arrest** and **Mugging**. Arrest brings a prohibition on activating a
+  permanent's activated abilities -- only the activations, so its triggered
+  and static clauses are untouched -- and applies it with the attack and block
+  prohibitions as one effect, so the Aura leaving returns all three together.
+  Mugging needed nothing new.
+
 - **Reliquary Tower**, and with it a player rule removing the maximum hand
   size. Read at cleanup rather than captured, so losing the Tower puts the
   limit back for that very cleanup, and it says "you" -- an opposing Tower

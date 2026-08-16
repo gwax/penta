@@ -136,8 +136,10 @@ impl Game {
                 if !ability.is_executable()
                     || !definition.source_zones.contains(&ZoneKind::Battlefield)
                     // Detain stops activated abilities, not the permanent's
-                    // other clauses.
+                    // other clauses. An Aura saying so directly is the same
+                    // prohibition without the deadline.
                     || permanent.detained_until_turn_of.is_some()
+                    || self.activated_abilities_are_prohibited(permanent)
                     || !self.activation_timing_allows(player, definition.timing)
                     // The engine already counts every activation per ability
                     // and clears the counts each turn, so the printed cap is

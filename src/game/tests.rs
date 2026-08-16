@@ -648,6 +648,7 @@ mod premodern_zone_and_denial;
 mod prevention;
 mod prevention_modes;
 mod primordial_ooze;
+mod prohibition_cards;
 mod quota_and_aura_upkeep;
 mod rabid_wombat;
 mod rampage;

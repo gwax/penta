@@ -277,6 +277,7 @@ fn static_object_applied_effect_supported(
             | AppliedRuleDef::CannotBeEnchanted
             | AppliedRuleDef::CannotBecomeEnchanted
             | AppliedRuleDef::CannotAttack
+            | AppliedRuleDef::CannotActivateAbilities
             | AppliedRuleDef::MayAttackDespiteDefender
             | AppliedRuleDef::MayAttackAsThoughHasty
             | AppliedRuleDef::CannotBeBlocked

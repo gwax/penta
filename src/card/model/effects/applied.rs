@@ -111,6 +111,10 @@ pub enum AppliedRuleDef {
     /// never asks them to discard. A player rule rather than an object one:
     /// it is found by walking the battlefield for statics naming that player.
     NoMaximumHandSize,
+    /// The affected permanent's activated abilities can't be activated. Only
+    /// the activations: its triggered and static clauses, and any mana it
+    /// makes as a cost of something else, are untouched.
+    CannotActivateAbilities,
     /// A creature matching this predicate cannot block the affected creature.
     CannotBeBlockedBy(ObjectPredicateDef),
     /// No Aura may attach to the affected permanent. This restricts both the

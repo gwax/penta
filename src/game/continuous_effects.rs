@@ -67,6 +67,20 @@ impl Game {
         }
     }
 
+    /// Whether anything currently forbids activating this permanent's
+    /// activated abilities. Read live off the permanent, so an Aura leaving
+    /// gives the abilities straight back.
+    pub(super) fn activated_abilities_are_prohibited(&self, permanent: &Permanent) -> bool {
+        self.visit_applied_rules(permanent, |applied| {
+            if applied.rule == AppliedRuleDef::CannotActivateAbilities {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .is_break()
+    }
+
     /// Visits static and resolved rule leaves in timestamp/component order.
     /// Static rules remain source-derived; resolved rules use the same stored
     /// expiration path as resolved characteristic operations.

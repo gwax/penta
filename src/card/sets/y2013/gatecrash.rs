@@ -1630,8 +1630,34 @@ pub(in crate::card::sets) static MOLTEN_PRIMORDIAL: CardRecord = CardRecord::new
     ]),
 );
 
+static MUGGING_EFFECTS: [EffectDef; 2] = [
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(2),
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+];
+
 // GTC 102 — Mugging
-// Audit: blocked — No resolving effect can make a creature unable to block for the turn.
+pub(in crate::card::sets) static MUGGING: CardRecord = CardRecord::new(
+    cards::MUGGING,
+    "Mugging",
+    CardArt::new("05ca502f-73a3-42f3-b7ad-f69aa239900a", "Greg Staples"),
+    CardSet::Gatecrash,
+    // The prohibition lands even when the two damage was not enough to kill,
+    // which is the half that makes this more than a small burn spell.
+    CardRules::new_sorcery(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Mugging deals 2 damage to target creature. That creature can't block this turn.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Sequence(&MUGGING_EFFECTS),
+    )),
+);
 
 // GTC 103 — Ripscale Predator
 pub(in crate::card::sets) static RIPSCALE_PREDATOR: CardRecord = CardRecord::new(
@@ -3969,6 +3995,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MADCAP_SKILLS,
     &MASSIVE_RAID,
     &MOLTEN_PRIMORDIAL,
+    &MUGGING,
     &RIPSCALE_PREDATOR,
     &SCORCHWALKER,
     &SKINBRAND_GOBLIN,
