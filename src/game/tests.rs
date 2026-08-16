@@ -663,6 +663,7 @@ mod resolution_destinations;
 mod revealed_hands;
 mod ring_of_maruf;
 mod rings;
+mod sacrifice_costs;
 mod sacrificed_toughness;
 mod scavenge;
 mod search_and_reveal;

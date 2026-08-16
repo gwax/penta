@@ -119,6 +119,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Bone Splinters** and **Infernal Plunge**, both of which eat a creature on
+  the way to the stack. Neither needed engine work -- Altar's Reap in the same
+  set already pays the identical cost.
+
 - **Discarding a chosen card as an activation cost**, and with it **Mad
   Prophet** and **Tin Street Market**. The card travels with the activation
   the way a chosen sacrifice already does, so there is no mid-payment

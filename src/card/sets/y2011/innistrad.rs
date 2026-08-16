@@ -2774,7 +2774,20 @@ pub(in crate::card::sets) static HANWEIR_WATCHKEEP: CardRecord = CardRecord::new
 // Audit: blocked — Needs the greatest mana value among three specifically milled cards.
 
 // ISD 148 — Infernal Plunge
-// Audit: blocked — Needs choosing and sacrificing a creature as an additional casting cost.
+pub(in crate::card::sets) static INFERNAL_PLUNGE: CardRecord = CardRecord::new(
+    cards::INFERNAL_PLUNGE,
+    "Infernal Plunge",
+    CardArt::new("b3f50e17-c29c-4d2c-b3e7-45d1216b81ea", "Daarken"),
+    CardSet::Innistrad,
+    // A sorcery rather than a mana ability, so the three red arrive on the
+    // stack's terms and cannot be used to pay for the Plunge itself.
+    CardRules::new_sorcery(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_additional_cost(
+        "As an additional cost to cast this spell, sacrifice a creature.\nAdd {R}{R}{R}.",
+        &[],
+        SACRIFICE_A_CREATURE,
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red).with_amount(3)),
+    )),
+);
 
 static INSTIGATOR_GANG_FRONT_ABILITIES: [AbilityDef; 2] = [
     AbilityDef::static_ability(
@@ -5293,6 +5306,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FUROR_OF_THE_BITTEN,
     &GEISTFLAME,
     &HANWEIR_WATCHKEEP,
+    &INFERNAL_PLUNGE,
     &INSTIGATOR_GANG,
     &INTO_THE_MAW_OF_HELL,
     &KESSIG_WOLF,

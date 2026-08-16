@@ -11,8 +11,9 @@ use crate::card::{
     EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef,
     ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation,
     PlayerSetDef, ProtectedCreatureType, ReplacementChoiceDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -1571,8 +1572,34 @@ pub(in crate::card::sets) static BLOODFLOW_CONNOISSEUR: CardRecord = CardRecord:
     ),
 );
 
+static SACRIFICE_A_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    object: ObjectPredicateDef::HasType(CardType::Creature),
+    zone: ZoneKind::Battlefield,
+    count: 1,
+};
+
 // AVR 88 — Bone Splinters
-// Audit: blocked — Needs a nonmana additional spell cost that sacrifices a chosen creature.
+pub(in crate::card::sets) static BONE_SPLINTERS: CardRecord = CardRecord::new(
+    cards::BONE_SPLINTERS,
+    "Bone Splinters",
+    CardArt::new("387eda28-f35b-48b0-ba59-773d82902327", "Nils Hamm"),
+    CardSet::AvacynRestored,
+    // The sacrifice is paid on the way to the stack, so the creature it eats
+    // is gone before the target is destroyed -- and the spell can eat the
+    // very creature it is aimed at only if something else is left to target.
+    CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_additional_cost(
+        "As an additional cost to cast this spell, sacrifice a creature.\nDestroy target \
+             creature.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        SACRIFICE_A_CREATURE,
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            can_regenerate: true,
+        },
+    )),
+);
 
 // AVR 89 — Butcher Ghoul
 pub(in crate::card::sets) static BUTCHER_GHOUL: CardRecord = CardRecord::new(
@@ -4245,6 +4272,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WINGCRAFTER,
     &BLOOD_ARTIST,
     &BLOODFLOW_CONNOISSEUR,
+    &BONE_SPLINTERS,
     &BUTCHER_GHOUL,
     &CRYPT_CREEPER,
     &DEATH_WIND,

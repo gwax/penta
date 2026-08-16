@@ -159,3 +159,5 @@ pub const WAY_OF_THE_THIEF: CardDefinitionId = CardDefinitionId(1958);
 pub const DIMIR_KEYRUNE: CardDefinitionId = CardDefinitionId(1959);
 pub const MAD_PROPHET: CardDefinitionId = CardDefinitionId(1960);
 pub const TIN_STREET_MARKET: CardDefinitionId = CardDefinitionId(1961);
+pub const BONE_SPLINTERS: CardDefinitionId = CardDefinitionId(1962);
+pub const INFERNAL_PLUNGE: CardDefinitionId = CardDefinitionId(1963);
