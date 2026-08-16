@@ -42,6 +42,7 @@ pub fn parse_format_slug(slug: &str) -> Result<Format, String> {
         "isd-dgm-standard" | "isd_dgm_standard" | "isd-rtr-standard" | "isd_rtr_standard" => {
             Ok(Format::IsdDgmStandard)
         }
+        "premodern" => Ok(Format::Premodern),
         _ => Err(format!("unknown format: {slug}")),
     }
 }
@@ -52,6 +53,10 @@ pub fn deck_names_for_format(format: Format) -> Vec<&'static str> {
     match format {
         Format::OldSchool9394 => OLD_SCHOOL_DECK_NAMES.to_vec(),
         Format::IsdDgmStandard => ISD_DGM_STANDARD_DECK_NAMES.to_vec(),
+        // The staged Premodern lists are not registered yet: publishing a
+        // deck before every card in it can resolve would offer legal
+        // actions the engine cannot carry out.
+        Format::Premodern => Vec::new(),
     }
 }
 
@@ -139,6 +144,9 @@ pub fn deck_by_name_for_format(format: Format, name: &str) -> Option<Deck> {
             }
             _ => None,
         },
+        // Nothing registered yet; the staged lists are promoted one at a
+        // time as their cards become playable.
+        Format::Premodern => None,
     }
 }
 

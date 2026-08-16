@@ -19,12 +19,21 @@ Sondike's GAT, Bryan Gulotta's Replenish, Drew Glauberg's Stasis, Chris Danis's
 BW Control, TentacleFan's Landstill, Andy Dominguez's RG Goblins, and Ryan
 Marvin's Angry Hermit.
 
+## Format profile
+
+`Format::Premodern` is in place: the twenty-nine-set window from Fourth
+Edition through Scourge, the format's own thirty-three-card ban list, no
+restricted list, and contemporary mana rules. All three are taken from the
+[Premodern rules page][rules]. `CardSet` gained the fifteen sets in the window
+it was missing, so the window can be stated in full even where no card has
+been authored from a set yet.
+
+The format is not offered in the web client. It has no registered decks, and
+a format with nothing to play is worse than no format at all; the UI picks it
+up when the first staged list is promoted.
+
 ## Remaining format work
 
-- Add the `Premodern` format profile and its legal set window, from Fourth
-  Edition through Scourge. Premodern uses contemporary game rules and its own
-  maintained banned list; take both from the [Premodern rules page][rules] at
-  implementation time.
 - Add the missing printed-set modules and canonical printings. Definition IDs
   remain append-only even when a card belongs to an older set.
 - Add accurate characteristics and Oracle clauses for uncataloged cards.

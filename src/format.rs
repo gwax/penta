@@ -15,6 +15,9 @@ pub enum Format {
     OldSchool9394,
     /// The final pre-Theros Standard pool, from Innistrad through Magic 2014.
     IsdDgmStandard,
+    /// Premodern, the community format spanning Fourth Edition through
+    /// Scourge.
+    Premodern,
 }
 
 /// The construction and game-start values shared by every game in a format.
@@ -97,6 +100,100 @@ pub const ISD_DGM_STANDARD_ALLOWED_SETS: &[CardSet] = &[
     CardSet::Magic2014,
 ];
 
+/// The twenty-nine sets Premodern names, in release order. Portal and promo
+/// printings are excluded by the format rather than by the card: a card whose
+/// only modeled printing is a Portal one is not Premodern legal, which is why
+/// the window is stated as sets rather than as dates.
+pub const PREMODERN_ALLOWED_SETS: &[CardSet] = &[
+    CardSet::FourthEdition,
+    CardSet::IceAge,
+    CardSet::Chronicles,
+    CardSet::Homelands,
+    CardSet::Alliances,
+    CardSet::Mirage,
+    CardSet::Visions,
+    CardSet::FifthEdition,
+    CardSet::Weatherlight,
+    CardSet::Tempest,
+    CardSet::Stronghold,
+    CardSet::Exodus,
+    CardSet::UrzasSaga,
+    CardSet::UrzasLegacy,
+    CardSet::ClassicSixthEdition,
+    CardSet::UrzasDestiny,
+    CardSet::MercadianMasques,
+    CardSet::Nemesis,
+    CardSet::Prophecy,
+    CardSet::Invasion,
+    CardSet::Planeshift,
+    CardSet::SeventhEdition,
+    CardSet::Apocalypse,
+    CardSet::Odyssey,
+    CardSet::Torment,
+    CardSet::Judgment,
+    CardSet::Onslaught,
+    CardSet::Legions,
+    CardSet::Scourge,
+];
+
+/// Premodern's own maintained ban list, which is not derived from any other
+/// format's: several of these are banned to leave room for weaker cards
+/// rather than because they would be illegal elsewhere.
+pub const PREMODERN_BANNED_CARDS: &[&str] = &[
+    "Amulet of Quoz",
+    "Balance",
+    "Brainstorm",
+    "Bronze Tablet",
+    "Channel",
+    "Demonic Consultation",
+    "Earthcraft",
+    "Entomb",
+    "Flash",
+    "Force of Will",
+    "Goblin Recruiter",
+    "Grim Monolith",
+    "Jeweled Bird",
+    "Land Tax",
+    "Mana Vault",
+    "Memory Jar",
+    "Mind Twist",
+    "Mind's Desire",
+    "Mystical Tutor",
+    "Necropotence",
+    "Parallax Tide",
+    "Rebirth",
+    "Strip Mine",
+    "Tempest Efreet",
+    "Tendrils of Agony",
+    "Time Spiral",
+    "Timmerian Fiends",
+    "Tolarian Academy",
+    "Vampiric Tutor",
+    "Windfall",
+    "Worldgorger Dragon",
+    "Yawgmoth's Bargain",
+    "Yawgmoth's Will",
+];
+
+/// Premodern restricts nothing: the ban list is the whole of its card policy.
+pub const PREMODERN_RESTRICTED_CARDS: &[&str] = &[];
+
+const PREMODERN_RULES: FormatRules = FormatRules {
+    starting_life: 20,
+    opening_hand_size: 7,
+    minimum_main_deck_size: 60,
+    maximum_sideboard_size: 15,
+    maximum_copies: 4,
+    allowed_sets: PREMODERN_ALLOWED_SETS,
+    // "Played with contemporary Magic: the Gathering in-game rules", so the
+    // pool is old and the rules are not: no mana burn, and pools empty at
+    // every step.
+    mana_empties_at_end_of_step: true,
+    mana_burn: false,
+    banned_cards: PREMODERN_BANNED_CARDS,
+    restricted_cards: PREMODERN_RESTRICTED_CARDS,
+};
+
 const OLD_SCHOOL_RULES: FormatRules = FormatRules {
     starting_life: 20,
     opening_hand_size: 7,
@@ -141,6 +238,7 @@ impl Format {
         match self {
             Self::OldSchool9394 => &OLD_SCHOOL_RULES,
             Self::IsdDgmStandard => &ISD_DGM_STANDARD_RULES,
+            Self::Premodern => &PREMODERN_RULES,
         }
     }
 
@@ -149,6 +247,7 @@ impl Format {
         match self {
             Self::OldSchool9394 => "old-school-93-94",
             Self::IsdDgmStandard => "isd-dgm-standard",
+            Self::Premodern => "premodern",
         }
     }
 
@@ -157,6 +256,7 @@ impl Format {
         match self {
             Self::OldSchool9394 => "Old School 93/94",
             Self::IsdDgmStandard => "ISD-DGM Standard",
+            Self::Premodern => "Premodern",
         }
     }
 
@@ -214,7 +314,11 @@ mod tests {
 
     #[test]
     fn format_set_windows_are_nonempty_unique_and_exclude_tokens() {
-        for format in [Format::OldSchool9394, Format::IsdDgmStandard] {
+        for format in [
+            Format::OldSchool9394,
+            Format::IsdDgmStandard,
+            Format::Premodern,
+        ] {
             let sets = format.rules().allowed_sets;
             assert!(!sets.is_empty(), "{format} needs an allowed set window");
             assert!(
@@ -279,6 +383,83 @@ mod tests {
 
         assert!(Format::OldSchool9394.allows_card(&reprinted_spell));
         assert!(Format::IsdDgmStandard.allows_card(&reprinted_spell));
+    }
+
+    /// Premodern is a window, not a date range: a card whose only printing
+    /// is outside it stays illegal however old it is, which is what keeps
+    /// Portal out.
+    #[test]
+    fn premodern_takes_the_window_from_fourth_edition_through_scourge() {
+        let sets = Format::Premodern.rules().allowed_sets;
+        assert_eq!(sets.len(), 29, "the format names twenty-nine sets");
+        assert_eq!(sets.first(), Some(&CardSet::FourthEdition));
+        assert_eq!(sets.last(), Some(&CardSet::Scourge));
+
+        for inside in [
+            CardSet::FourthEdition,
+            CardSet::Alliances,
+            CardSet::Tempest,
+            CardSet::UrzasSaga,
+            CardSet::Invasion,
+            CardSet::Odyssey,
+            CardSet::Scourge,
+        ] {
+            assert!(Format::Premodern.allows_set(inside), "{inside:?} is legal");
+        }
+        for outside in [
+            // Older than the window on one side, newer on the other, and
+            // the Portal set that sits inside the years but outside the
+            // format.
+            CardSet::Alpha,
+            CardSet::FallenEmpires,
+            CardSet::PortalSecondAge,
+            CardSet::Darksteel,
+            CardSet::Innistrad,
+        ] {
+            assert!(
+                !Format::Premodern.allows_set(outside),
+                "{outside:?} is not legal"
+            );
+        }
+    }
+
+    /// The ban list is Premodern's own. It shares names with Old School in
+    /// both directions -- cards banned there and legal here, and the reverse
+    /// -- so neither list can be derived from the other.
+    #[test]
+    fn premodern_bans_its_own_list_and_restricts_nothing() {
+        for banned in [
+            "Brainstorm",
+            "Force of Will",
+            "Necropotence",
+            "Strip Mine",
+            "Yawgmoth's Will",
+            // Whitespace and case come from user input, not from the table.
+            "  mind twist  ",
+        ] {
+            assert!(Format::Premodern.is_banned(banned), "{banned} is banned");
+        }
+        for legal in [
+            "Swords to Plowshares",
+            "Wrath of God",
+            "Contract from Below",
+        ] {
+            assert!(!Format::Premodern.is_banned(legal), "{legal} is not");
+        }
+
+        assert!(
+            Format::Premodern.rules().restricted_cards.is_empty(),
+            "Premodern restricts nothing",
+        );
+        assert!(!Format::Premodern.is_restricted("Black Lotus"));
+    }
+
+    /// An old card pool played by new rules, which is the one thing that
+    /// separates it from Old School mechanically.
+    #[test]
+    fn premodern_uses_contemporary_mana_rules() {
+        assert!(!Format::Premodern.rules().mana_burn);
+        assert!(Format::Premodern.rules().mana_empties_at_end_of_step);
     }
 
     #[test]

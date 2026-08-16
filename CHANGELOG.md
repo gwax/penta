@@ -133,6 +133,13 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Premodern** is now a supported format: the twenty-nine-set window from
+  Fourth Edition through Scourge, its own thirty-three-card ban list, nothing
+  restricted, and contemporary mana rules. `CardSet` gained the fifteen sets
+  in that window it was missing. The format is not offered in the web client
+  yet -- it has no registered decks, and the staged tournament lists are
+  promoted one at a time as their cards become playable.
+
 - **Killing Glare**. A target predicate may now read the X a cast is being
   considered at. A spell has no stack object while its targets are being
   enumerated, so its chosen X was unreadable there; the enumerator already
