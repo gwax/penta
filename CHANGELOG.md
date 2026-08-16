@@ -119,6 +119,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Way of the Thief** and **Dimir Keyrune**. The Thief's evasion is another
+  Gate-conditional static, on the Aura's controller rather than the creature's;
+  the Keyrune applies its animation and its evasion as one effect, so both
+  lapse together at end of turn.
+
 - **Ethereal Armor** and **Ogre Jailbreaker**, two statics whose answer is a
   battlefield count. The Jailbreaker's audit line named the exact reason it
   was blocked -- a static condition counting Gates -- and that reason stopped

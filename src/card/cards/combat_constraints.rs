@@ -155,3 +155,5 @@ pub const SKYGAMES: CardDefinitionId = CardDefinitionId(1954);
 pub const ONE_THOUSAND_LASHES: CardDefinitionId = CardDefinitionId(1955);
 pub const ETHEREAL_ARMOR: CardDefinitionId = CardDefinitionId(1956);
 pub const OGRE_JAILBREAKER: CardDefinitionId = CardDefinitionId(1957);
+pub const WAY_OF_THE_THIEF: CardDefinitionId = CardDefinitionId(1958);
+pub const DIMIR_KEYRUNE: CardDefinitionId = CardDefinitionId(1959);

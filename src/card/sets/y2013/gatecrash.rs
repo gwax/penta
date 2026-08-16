@@ -5,13 +5,14 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef,
-    DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef,
-    DividedTotal, EffectDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PlayActionMatcherDef, PlayRestrictionDef,
-    PlayerRefDef, PlayerRelation, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
-    TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardTypeSet, ColorSet, ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef,
+    DamageEventMatcherDef, DamageKindDef, DamagePreventionDef, DamageRecipientMatcherDef,
+    DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectRecipientDef,
+    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -905,8 +906,53 @@ pub(in crate::card::sets) static TOTALLY_LOST: CardRecord = CardRecord::new(
 // GTC 55 — Voidwalk
 // Audit: blocked — Cipher's encoding and free-copy-casting procedure are unavailable, even though the initial delayed blink is expressible.
 
+/// The Aura's controller, not the creature's, so gifting the creature away
+/// leaves the evasion behind with the Gate that pays for it.
+static WAY_OF_THE_THIEF_HAS_A_GATE: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::Subtype("Gate"),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+static WAY_OF_THE_THIEF_EVASION: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::AttachedPermanent,
+    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlocked),
+};
+
 // GTC 56 — Way of the Thief
-// Audit: blocked — Needs a conditional attachment-scoped unblockable effect while the Aura's controller controls a Gate.
+pub(in crate::card::sets) static WAY_OF_THE_THIEF: CardRecord = CardRecord::new(
+    cards::WAY_OF_THE_THIEF,
+    "Way of the Thief",
+    CardArt::new("b249ca81-bd8d-4d3d-81d6-15e8d669c416", "Igor Kieryluk"),
+    CardSet::Gatecrash,
+    // The size is unconditional; only the evasion asks about the Gate.
+    CardRules::new_enchantment(mana_cost!("{3}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +2/+2.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(2),
+                        ValueDef::Constant(2),
+                    ),
+                },
+            ),
+            AbilityDef::static_ability(
+                "Enchanted creature can't be blocked as long as you control a Gate.",
+                EffectDef::IfCondition {
+                    condition: &WAY_OF_THE_THIEF_HAS_A_GATE,
+                    then: &WAY_OF_THE_THIEF_EVASION,
+                },
+            ),
+        ]),
+);
 
 // GTC 57 — Balustrade Spy
 // Audit: blocked — Needs revealing cards until a land is found and moving the whole revealed group to a graveyard.
@@ -3724,8 +3770,45 @@ pub(in crate::card::sets) static ARMORED_TRANSPORT: CardRecord = CardRecord::new
 // GTC 227 — Boros Keyrune
 // Audit: blocked — Needs its colors, creature type, and base power/toughness authored as one end-of-turn characteristic effect.
 
+/// The animation and the evasion are one effect for one duration, so both
+/// lapse together at end of turn.
+static DIMIR_KEYRUNE_ANIMATION: [AppliedEffectDef; 5] = [
+    AppliedEffectDef::add_card_types(
+        CardTypeSet::single(CardType::Creature).with(CardType::Artifact),
+    ),
+    AppliedEffectDef::set_creature_types(CreatureTypeSetDef::named(&["Horror"])),
+    AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::Blue, ManaColor::Black])),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlocked),
+];
+
 // GTC 228 — Dimir Keyrune
-// Audit: blocked — Needs its characteristic animation and temporary unblockable rule authored as one end-of-turn composite.
+pub(in crate::card::sets) static DIMIR_KEYRUNE: CardRecord = CardRecord::new(
+    cards::DIMIR_KEYRUNE,
+    "Dimir Keyrune",
+    CardArt::new("4d91bb34-5d8d-48c9-ad19-d28884e083bc", "Daniel Ljunggren"),
+    CardSet::Gatecrash,
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {U} or {B}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::Blue,
+                ManaColor::Black,
+            ])),
+        ),
+        AbilityDef::activated(
+            "{U}{B}: This artifact becomes a 2/2 blue and black Horror artifact creature until \
+             end of turn and can't be blocked this turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{U}{B}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&DIMIR_KEYRUNE_ANIMATION),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // GTC 229 — Glaring Spotlight
 // Audit: blocked — Needs a rule override that lets your effects target opposing hexproof creatures as though they lacked hexproof.
@@ -4041,6 +4124,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCATTER_ARC,
     &SKYGAMES,
     &TOTALLY_LOST,
+    &WAY_OF_THE_THIEF,
     &BASILICA_SCREECHER,
     &CONTAMINATED_GROUND,
     &CORPSE_BLOCKADE,
@@ -4138,6 +4222,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RUBBLEBELT_RAIDERS,
     &SHATTERING_BLOW,
     &ARMORED_TRANSPORT,
+    &DIMIR_KEYRUNE,
     &MILLENNIAL_GARGOYLE,
     &RAZORTIP_WHIP,
     &RIOT_GEAR,

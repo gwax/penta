@@ -1,8 +1,10 @@
-//! Two statics whose answer is a battlefield count.
+//! Four statics whose answer is a battlefield count, or a composite applied
+//! as one.
 //!
-//! Both were audited as blocked on the counting, and both now read it live:
-//! the Armor's bonus grows as enchantments arrive, and the Jailbreaker's
-//! permission comes and goes with the Gate.
+//! Three read the board live: the Armor's bonus grows as enchantments arrive,
+//! and the Jailbreaker's and the Thief's permissions come and go with the
+//! Gate. The Keyrune is the odd one out -- its animation and its evasion are
+//! one effect for one duration.
 
 use super::*;
 use crate::ImplementationStatus;
@@ -111,10 +113,107 @@ fn the_jailbreaker_needs_a_gate_to_attack() {
     assert!(!can_attack(&game), "and it locks again when the Gate goes");
 }
 
+fn blocked_by(game: &Game, attacker: GameObjectId, blocker: GameObjectId) -> bool {
+    game.legal_actions(PlayerId::Two)
+        .contains(&Action::DeclareBlocker { blocker, attacker })
+}
+
+/// Puts an attacker under a Way of the Thief opposite one blocker.
+fn thief_attack() -> (Game, GameObjectId, GameObjectId) {
+    let mut game = ready();
+    let mut attacker = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::One);
+    attacker.attacking = true;
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    let mut aura = creature(10_001, cards::WAY_OF_THE_THIEF, PlayerId::One);
+    aura.attached_to = Some(attacker_id);
+    game.battlefield.push(aura);
+    let blocker = creature(10_100, cards::AIR_ELEMENTAL, PlayerId::Two);
+    let blocker_id = blocker.card.id;
+    game.battlefield.push(blocker);
+
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareBlockers;
+    game.attackers_declared = true;
+    game.priority = PlayerId::Two;
+    (game, attacker_id, blocker_id)
+}
+
+/// The size is unconditional; only the evasion asks about the Gate.
 #[test]
-fn both_cards_report_complete_coverage() {
+fn the_thief_needs_a_gate_only_for_the_evasion() {
+    let (mut game, attacker, blocker) = thief_attack();
+    assert_eq!(
+        stats(&game, attacker),
+        (Some(4), Some(4)),
+        "a 2/2 with +2/+2, Gate or no Gate",
+    );
+    assert!(
+        blocked_by(&game, attacker, blocker),
+        "no Gate, so blockable"
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::BOROS_GUILDGATE)
+        .expect("cataloged");
+    assert!(
+        !blocked_by(&game, attacker, blocker),
+        "a Gate makes it unblockable",
+    );
+    assert_eq!(stats(&game, attacker), (Some(4), Some(4)), "size unchanged");
+}
+
+/// The Keyrune's animation and its evasion are one effect for one duration.
+#[test]
+fn the_keyrune_animates_and_slips_through_together() {
+    let mut game = ready();
+    let keyrune = creature(10_000, cards::DIMIR_KEYRUNE, PlayerId::One);
+    let keyrune_id = keyrune.card.id;
+    game.battlefield.push(keyrune);
+    game.players[PlayerId::One.index()].mana_pool.blue = 1;
+    game.players[PlayerId::One.index()].mana_pool.black = 1;
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == keyrune_id))
+        .expect("two mana covers it");
+    game.apply(PlayerId::One, action).expect("legal");
+    drain_pending(&mut game);
+
+    assert_eq!(stats(&game, keyrune_id), (Some(2), Some(2)), "a 2/2 now");
+
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == keyrune_id)
+    {
+        permanent.attacking = true;
+    }
+    let blocker = creature(10_100, cards::AIR_ELEMENTAL, PlayerId::Two);
+    let blocker_id = blocker.card.id;
+    game.battlefield.push(blocker);
+    game.step = Step::DeclareBlockers;
+    game.attackers_declared = true;
+    game.priority = PlayerId::Two;
+
+    assert!(
+        !blocked_by(&game, keyrune_id, blocker_id),
+        "and it cannot be blocked",
+    );
+}
+
+#[test]
+fn all_four_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::ETHEREAL_ARMOR, cards::OGRE_JAILBREAKER] {
+    for definition in [
+        cards::ETHEREAL_ARMOR,
+        cards::OGRE_JAILBREAKER,
+        cards::WAY_OF_THE_THIEF,
+        cards::DIMIR_KEYRUNE,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),
