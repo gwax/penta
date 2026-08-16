@@ -2,8 +2,8 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef,
-    AppliedRuleDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet, CardType,
-    ComparisonDef, DamageCoverageDef, DamageEventMatcherDef, DamagePreventionDef,
+    AppliedRuleDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
+    CardType, ComparisonDef, DamageCoverageDef, DamageEventMatcherDef, DamagePreventionDef,
     DamageRecipientMatcherDef, DamageSourceGroupDef, DiscardSelectionDef, EffectDef,
     EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
@@ -1113,8 +1113,46 @@ pub(in crate::card::sets) static FISSURE: CardRecord = CardRecord::new(
     )]),
 );
 
+/// Read live off the attachment, so a land that stops being a Mountain --
+/// or an Aura that moves -- switches the anthem off at once.
+static ENCHANTED_LAND_IS_A_BASIC_MOUNTAIN: TriggerConditionDef =
+    TriggerConditionDef::AttachedPermanentMatches {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::Supertype(CardSupertype::Basic),
+            ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
+        ]),
+    };
+
+static GOBLIN_CAVES_ANTHEM: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::Subtype("Goblin"),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::Any,
+    ),
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(0), ValueDef::Constant(2)),
+};
+
 // DRK 64 — Goblin Caves
-// Audit: blocked — Needs a static condition that reads the enchanted land's current basic type before applying the subtype-wide modifier for “As long as enchanted land is a basic Mountain, Goblin creatures get +0/+2”.
+pub(in crate::card::sets) static GOBLIN_CAVES: CardRecord = CardRecord::new(
+    cards::GOBLIN_CAVES,
+    "Goblin Caves",
+    CardArt::new("c6a415b0-00a2-4a65-8994-4a395c50ae2d", "Drew Tucker"),
+    CardSet::TheDark,
+    // Every Goblin, not only yours, which is what makes this a card for a
+    // mirror rather than an anthem.
+    CardRules::new_enchantment(mana_cost!("{1}{R}{R}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant land", &abilities::ENCHANT_LAND_TARGET),
+            AbilityDef::static_ability(
+                "As long as enchanted land is a basic Mountain, Goblin creatures get +0/+2.",
+                EffectDef::IfCondition {
+                    condition: &ENCHANTED_LAND_IS_A_BASIC_MOUNTAIN,
+                    then: &GOBLIN_CAVES_ANTHEM,
+                },
+            ),
+        ]),
+);
 
 // DRK 65 — Goblin Digging Team
 pub(in crate::card::sets) static GOBLIN_DIGGING_TEAM: CardRecord = CardRecord::new(
@@ -1197,8 +1235,52 @@ pub(in crate::card::sets) static GOBLIN_ROCK_SLED: CardRecord = CardRecord::new(
     ]),
 );
 
+static GOBLIN_SHRINE_ANTHEM: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::Subtype("Goblin"),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::Any,
+    ),
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)),
+};
+
 // DRK 68 — Goblin Shrine
-// Audit: blocked — Needs a static condition that reads the enchanted land's current basic type before applying the subtype-wide modifier for “As long as enchanted land is a basic Mountain, Goblin creatures get +1/+0”.
+pub(in crate::card::sets) static GOBLIN_SHRINE: CardRecord = CardRecord::new(
+    cards::GOBLIN_SHRINE,
+    "Goblin Shrine",
+    CardArt::new("cd69a6dc-27f3-42aa-9e63-4417796e4ef5", "Ron Spencer"),
+    CardSet::TheDark,
+    // The parting shot hits every Goblin including the ones it was pumping,
+    // so a board of 1/1s dies with it.
+    CardRules::new_enchantment(mana_cost!("{1}{R}{R}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant land", &abilities::ENCHANT_LAND_TARGET),
+            AbilityDef::static_ability(
+                "As long as enchanted land is a basic Mountain, Goblin creatures get +1/+0.",
+                EffectDef::IfCondition {
+                    condition: &ENCHANTED_LAND_IS_A_BASIC_MOUNTAIN,
+                    then: &GOBLIN_SHRINE_ANTHEM,
+                },
+            ),
+            AbilityDef::triggered(
+                "When this Aura leaves the battlefield, it deals 1 damage to each Goblin creature.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    Some(ZoneKind::Battlefield),
+                    None,
+                ),
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::Subtype("Goblin"),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::Any,
+                    ),
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
 
 // DRK 69 — Goblin Wizard
 // Audit: blocked — Needs a hidden-zone decision and continuation for “{T}: You may put a Goblin permanent card from your hand onto the battlefield”.
@@ -2175,9 +2257,11 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CAVE_PEOPLE,
     &FIRE_DRAKE,
     &FISSURE,
+    &GOBLIN_CAVES,
     &GOBLIN_DIGGING_TEAM,
     &GOBLIN_HERO,
     &GOBLIN_ROCK_SLED,
+    &GOBLIN_SHRINE,
     &GOBLINS_OF_THE_FLARG,
     &INFERNO,
     &ORC_GENERAL,

@@ -119,6 +119,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Angelic Voices**, **Beasts of Bogardan**, **Goblin Caves** and **Goblin
+  Shrine**, four old anthems the board switches on and off. All four fell out
+  of letting a static clause read the battlefield: Angelic Voices reads an
+  absence, the Beasts read the other side of the table, and the two Auras read
+  the land they are sitting on.
+
 - **Guildscorn Ward**, **Fog Bank** and **Night Revelers**. Protection gains a
   fourth quality -- multicolored, which is a colour *count* rather than any one
   colour, so a mono-black source gets past a Ward that stopped a black-red one.

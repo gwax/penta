@@ -110,8 +110,46 @@ pub(in crate::card::sets) static AMROU_KITHKIN: CardRecord = CardRecord::new(
     ),
 );
 
+/// An absence rather than a presence, so the anthem switches off the moment
+/// one off-plan creature arrives and comes back when it leaves.
+static ANGELIC_VOICES_PURITY: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Artifact)),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Color(ManaColor::White)),
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    comparison: ComparisonDef::Equal,
+    amount: 0,
+};
+
+static ANGELIC_VOICES_ANTHEM: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::HasType(CardType::Creature),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+};
+
 // LEG 4 — Angelic Voices
-// Audit: blocked — Needs a continuously reevaluated absence predicate over permanents you control for “Creatures you control get +1/+1 as long as you control no nonartifact, nonwhite creatures”.
+pub(in crate::card::sets) static ANGELIC_VOICES: CardRecord = CardRecord::new(
+    cards::ANGELIC_VOICES,
+    "Angelic Voices",
+    CardArt::new("8068c263-e5fa-4449-8887-418e9d0a4da4", "Julie Baroh"),
+    CardSet::Legends,
+    CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_ability(AbilityDef::static_ability(
+        "Creatures you control get +1/+1 as long as you control no nonartifact, nonwhite \
+         creatures.",
+        EffectDef::IfCondition {
+            condition: &ANGELIC_VOICES_PURITY,
+            then: &ANGELIC_VOICES_ANTHEM,
+        },
+    )),
+);
 
 // LEG 5 — Cleanse
 pub(in crate::card::sets) static CLEANSE: CardRecord = CardRecord::new(
@@ -2161,8 +2199,44 @@ pub(in crate::card::sets) static AERATHI_BERSERKER: CardRecord = CardRecord::new
 // LEG 132 — Backdraft
 // Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “Choose a player who cast one or more sorcery spells this turn. Backdraft deals damage to that player equal to half the damage dealt by one of those sorcery spells this turn, rounded down”.
 
+/// Nontoken, so a board of white tokens across the table leaves the Beasts at
+/// their printed size.
+static AN_OPPONENT_CONTROLS_A_NONTOKEN_WHITE_PERMANENT: TriggerConditionDef =
+    TriggerConditionDef::ObjectCount {
+        query: ObjectQueryDef::matching(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::Color(ManaColor::White),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+            ]),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::Opponent,
+        ),
+        comparison: ComparisonDef::GreaterOrEqual,
+        amount: 1,
+    };
+
+static BEASTS_OF_BOGARDAN_PUMP: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+};
+
 // LEG 133 — Beasts of Bogardan
-// Audit: blocked — Needs a continuously reevaluated opponent-permanent color and nontoken existence condition for its +1/+1 modifier.
+pub(in crate::card::sets) static BEASTS_OF_BOGARDAN: CardRecord = CardRecord::new(
+    cards::BEASTS_OF_BOGARDAN,
+    "Beasts of Bogardan",
+    CardArt::new("f885d776-2953-4ed4-b63f-91dc2b42783b", "Daniel Gelon"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{4}{R}"), &["Beast"], 3, 3).with_abilities(&[
+        abilities::protection_from(ManaColor::Red),
+        AbilityDef::static_ability(
+            "This creature gets +1/+1 as long as an opponent controls a nontoken white permanent.",
+            EffectDef::IfCondition {
+                condition: &AN_OPPONENT_CONTROLS_A_NONTOKEN_WHITE_PERMANENT,
+                then: &BEASTS_OF_BOGARDAN_PUMP,
+            },
+        ),
+    ]),
+);
 
 // LEG 134 — Blazing Effigy
 // Audit: blocked — Needs damage-history/source tracking or card-specific damage processing for “When this creature dies, it deals X damage to target creature, where X is 3 plus the amount of damage dealt to this creature this turn by other sources named Blazing Effigy”.
@@ -5359,6 +5433,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AKRON_LEGIONNAIRE,
     &ALABASTER_POTION,
     &AMROU_KITHKIN,
+    &ANGELIC_VOICES,
     &CLEANSE,
     &DAVENANT_ARCHER,
     &DIVINE_OFFERING,
@@ -5442,6 +5517,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WALL_OF_SHADOWS,
     &ACTIVE_VOLCANO,
     &AERATHI_BERSERKER,
+    &BEASTS_OF_BOGARDAN,
     &CHAIN_LIGHTNING,
     &CREVASSE,
     &CRIMSON_KOBOLDS,

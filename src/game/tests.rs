@@ -554,6 +554,7 @@ mod combat_constraints;
 mod combat_keywords;
 mod combat_relation_cards;
 mod combat_rescues;
+mod conditional_anthems;
 mod continuous_and_zones;
 mod control_duration;
 mod copy_effects;
