@@ -533,8 +533,32 @@ pub(in crate::card::sets) static MOORLAND_INQUISITOR: CardRecord = CardRecord::n
     ),
 );
 
+static NEARHEATH_PILGRIM_GRANTED: AbilityDef = abilities::lifelink();
+
+static NEARHEATH_PILGRIM_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&NEARHEATH_PILGRIM_GRANTED),
+};
+
 // AVR 31 — Nearheath Pilgrim
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and conditional ability grants to both paired creatures.
+pub(in crate::card::sets) static NEARHEATH_PILGRIM: CardRecord = CardRecord::new(
+    cards::NEARHEATH_PILGRIM,
+    "Nearheath Pilgrim",
+    CardArt::new("d81d6fe0-c7c2-46a6-811c-f121284937ea", "Erica Yang"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Cleric"], 2, 1).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, both creatures have \
+             lifelink.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &NEARHEATH_PILGRIM_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 32 — Restoration Angel
 // Audit: partial — Linked exile returns a blinked permanent under its owner rather than this ability's controller when the target was stolen.
@@ -989,8 +1013,40 @@ pub(in crate::card::sets) static FLEETING_DISTRACTION: CardRecord = CardRecord::
     )),
 );
 
+/// Granted to each creature separately, so each pays its own {2}{U} and
+/// untaps only itself.
+static GALVANIC_ALCHEMIST_GRANTED: AbilityDef = AbilityDef::activated(
+    "{2}{U}: Untap this creature.",
+    &[AbilityCostDef::Mana(mana_cost!("{2}{U}"))],
+    EffectDef::Untap {
+        object: EffectRecipientDef::Source,
+    },
+);
+
+static GALVANIC_ALCHEMIST_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&GALVANIC_ALCHEMIST_GRANTED),
+};
+
 // AVR 54 — Galvanic Alchemist
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and an activated untap ability granted to both paired creatures.
+pub(in crate::card::sets) static GALVANIC_ALCHEMIST: CardRecord = CardRecord::new(
+    cards::GALVANIC_ALCHEMIST,
+    "Galvanic Alchemist",
+    CardArt::new("b0e24d65-0e6f-4978-8de1-c5e4acac12fb", "Svetlin Velinov"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Human", "Wizard"], 1, 4).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, each of those creatures \
+             has \"{2}{U}: Untap this creature.\"",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &GALVANIC_ALCHEMIST_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 55 — Geist Snatch
 pub(in crate::card::sets) static GEIST_SNATCH: CardRecord = CardRecord::new(
@@ -1313,8 +1369,42 @@ pub(in crate::card::sets) static SCRAPSKIN_DRAKE: CardRecord = CardRecord::new(
 // AVR 76 — Spirit Away
 // Audit: blocked — Needs an attachment-scoped continuous control-changing effect.
 
+static STERN_MENTOR_GRANTED: AbilityDef = AbilityDef::activated_with_targets(
+    "{T}: Target player mills two cards.",
+    &[AbilityCostDef::TapSource],
+    &[AbilityTargetDef::exactly_one(
+        AbilityTargetPredicate::Player(PlayerRelation::Any),
+    )],
+    EffectDef::Mill {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(2),
+    },
+);
+
+static STERN_MENTOR_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&STERN_MENTOR_GRANTED),
+};
+
 // AVR 77 — Stern Mentor
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a targeted mill ability granted to both paired creatures.
+pub(in crate::card::sets) static STERN_MENTOR: CardRecord = CardRecord::new(
+    cards::STERN_MENTOR,
+    "Stern Mentor",
+    CardArt::new("ffe4d34f-68f0-4d79-9aab-58c5304224d9", "Igor Kieryluk"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{3}{U}"), &["Human", "Wizard"], 2, 2).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, each of those creatures \
+             has \"{T}: Target player mills two cards.\"",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &STERN_MENTOR_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 78 — Stolen Goods
 // Audit: blocked — Needs repeat-until library exile plus temporary permission to cast the resulting card without paying its mana cost.
@@ -1322,8 +1412,41 @@ pub(in crate::card::sets) static SCRAPSKIN_DRAKE: CardRecord = CardRecord::new(
 // AVR 79 — Tamiyo, the Moon Sage
 // Audit: blocked — Needs next-untap-step duration, a tapped-creature count, maximum-hand-size modification, and graveyard-entry triggers from every zone.
 
+/// Damage of any kind to an opponent, not only combat damage, and granted to
+/// each creature so either connecting draws.
+static TANDEM_LOOKOUT_GRANTED: AbilityDef = AbilityDef::triggered(
+    "Whenever this creature deals damage to an opponent, draw a card.",
+    TriggerEventDef::damage_to_player(ObjectPredicateDef::Source, PlayerRelation::Opponent),
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+);
+
+static TANDEM_LOOKOUT_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&TANDEM_LOOKOUT_GRANTED),
+};
+
 // AVR 80 — Tandem Lookout
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and a damage trigger granted to both paired creatures.
+pub(in crate::card::sets) static TANDEM_LOOKOUT: CardRecord = CardRecord::new(
+    cards::TANDEM_LOOKOUT,
+    "Tandem Lookout",
+    CardArt::new("83564e67-2677-4955-a3b9-3b221dbb100b", "Kev Walker"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Human", "Scout"], 2, 1).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as Tandem Lookout is paired with another creature, each of those creatures \
+             has \"Whenever this creature deals damage to an opponent, draw a card.\"",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &TANDEM_LOOKOUT_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 81 — Temporal Mastery
 pub(in crate::card::sets) static TEMPORAL_MASTERY: CardRecord = CardRecord::new(
@@ -2589,8 +2712,43 @@ pub(in crate::card::sets) static SOMBERWALD_VIGILANTE: CardRecord = CardRecord::
     ),
 );
 
+static STONEWRIGHT_GRANTED: AbilityDef = AbilityDef::activated(
+    "{R}: This creature gets +1/+0 until end of turn.",
+    &[AbilityCostDef::Mana(mana_cost!("{R}"))],
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(1),
+            ValueDef::Constant(0),
+        ),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+);
+
+static STONEWRIGHT_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&STONEWRIGHT_GRANTED),
+};
+
 // AVR 157 — Stonewright
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and an activated pump ability granted to both paired creatures.
+pub(in crate::card::sets) static STONEWRIGHT: CardRecord = CardRecord::new(
+    cards::STONEWRIGHT,
+    "Stonewright",
+    CardArt::new("9564d79d-5f4d-4192-94ee-5e5998011266", "Wesley Burt"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{R}"), &["Human", "Shaman"], 1, 1).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as Stonewright is paired with another creature, each of those creatures has \
+             \"{R}: This creature gets +1/+0 until end of turn.\"",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &STONEWRIGHT_BONUS,
+            },
+        ),
+    ]),
+);
 
 // AVR 158 — Thatcher Revolt
 // Audit: blocked — Needs identity links from the three created tokens to the delayed sacrifice so it does not sacrifice unrelated Human tokens.
@@ -2897,8 +3055,35 @@ pub(in crate::card::sets) static CRATERHOOF_BEHEMOTH: CardRecord = CardRecord::n
 // AVR 173 — Descendants' Path
 // Audit: blocked — Needs a top-card reveal, shared-creature-type test, free-cast permission, and bottom placement when the card is not cast.
 
+static DIREGRAF_ESCORT_GRANTED: AbilityDef = abilities::protection_from_creature_type(
+    "Protection from Zombies",
+    ProtectedCreatureType::Zombie,
+);
+
+static DIREGRAF_ESCORT_BONUS: EffectDef = EffectDef::StaticApply {
+    recipient: SOULBOND_PAIR_RECIPIENT,
+    effect: AppliedEffectDef::add_ability(&DIREGRAF_ESCORT_GRANTED),
+};
+
 // AVR 174 — Diregraf Escort
-// Audit: blocked — Needs soulbond pairing state, paired-object identity, and protection from Zombies granted to both paired creatures.
+pub(in crate::card::sets) static DIREGRAF_ESCORT: CardRecord = CardRecord::new(
+    cards::DIREGRAF_ESCORT,
+    "Diregraf Escort",
+    CardArt::new("640e21ad-5064-41bc-886e-2c997f69a3f5", "Ryan Pancoast"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{G}"), &["Human", "Cleric"], 1, 1).with_abilities(&[
+        SOULBOND_ABILITIES[0],
+        SOULBOND_ABILITIES[1],
+        AbilityDef::static_ability(
+            "As long as this creature is paired with another creature, both creatures have \
+             protection from Zombies.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::SourceIsPaired,
+                then: &DIREGRAF_ESCORT_BONUS,
+            },
+        ),
+    ]),
+);
 
 static DRUIDS_FAMILIAR_BONUS: EffectDef = EffectDef::StaticApply {
     recipient: SOULBOND_PAIR_RECIPIENT,
@@ -3969,6 +4154,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MIDNIGHT_DUELIST,
     &MOONLIGHT_GEIST,
     &MOORLAND_INQUISITOR,
+    &NEARHEATH_PILGRIM,
     &RESTORATION_ANGEL,
     &RIGHTEOUS_BLOW,
     &SERAPH_OF_DAWN,
@@ -3986,6 +4172,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FAVORABLE_WINDS,
     &FETTERGEIST,
     &FLEETING_DISTRACTION,
+    &GALVANIC_ALCHEMIST,
     &GEIST_SNATCH,
     &GHOSTFORM,
     &GRYFF_VANGUARD,
@@ -3997,6 +4184,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PEEL_FROM_REALITY,
     &ROTCROWN_GHOUL,
     &SCRAPSKIN_DRAKE,
+    &STERN_MENTOR,
+    &TANDEM_LOOKOUT,
     &TEMPORAL_MASTERY,
     &VANISHMENT,
     &WINGCRAFTER,
@@ -4046,6 +4235,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RUSH_OF_BLOOD,
     &SCALDING_DEVIL,
     &SOMBERWALD_VIGILANTE,
+    &STONEWRIGHT,
     &THUNDERBOLT,
     &THUNDEROUS_WRATH,
     &UNCANNY_SPEED,
@@ -4055,6 +4245,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BORDERLAND_RANGER,
     &BOWER_PASSAGE,
     &CRATERHOOF_BEHEMOTH,
+    &DIREGRAF_ESCORT,
     &DRUIDS_FAMILIAR,
     &DRUIDS_REPOSITORY,
     &GEIST_TRAPPERS,

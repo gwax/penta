@@ -224,6 +224,7 @@ fn each_keyword_grant_reaches_both_creatures() {
         (cards::GEIST_TRAPPERS, KeywordAbility::Reach),
         (cards::NIGHTSHADE_PEDDLER, KeywordAbility::Deathtouch),
         (cards::PATHBREAKER_WURM, KeywordAbility::Trample),
+        (cards::NEARHEATH_PILGRIM, KeywordAbility::Lifelink),
     ] {
         let mut game = ready();
         let bear = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::One);
@@ -295,6 +296,84 @@ fn each_size_grant_reaches_both_creatures() {
     }
 }
 
+/// The granted abilities go on each creature separately, so the pair has two
+/// of them rather than sharing one.
+#[test]
+fn a_granted_activated_ability_lands_on_both_creatures() {
+    let mut game = ready();
+    game.battlefield
+        .push(creature(10_000, cards::GRIZZLY_BEARS, PlayerId::One));
+    let bystander = creature(10_001, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bystander_id = bystander.card.id;
+    game.battlefield.push(bystander);
+
+    let mentor_id = arrive(&mut game, 10_100, cards::STERN_MENTOR, PlayerId::One);
+    // The pairing offer chooses one of the two; the other is the control.
+    let bear_id = partner(&game, mentor_id).expect("it paired with one of them");
+    let bystander_id = if bear_id == bystander_id {
+        GameObjectId(10_000)
+    } else {
+        bystander_id
+    };
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.priority = PlayerId::One;
+
+    let sources = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .filter_map(|action| match action {
+                Action::ActivateAbility { source, .. } => Some(*source),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+    };
+    assert!(sources(&game).contains(&mentor_id), "the Mentor has it");
+    assert!(sources(&game).contains(&bear_id), "and so does its partner");
+    assert!(
+        !sources(&game).contains(&bystander_id),
+        "and nobody else does",
+    );
+
+    game.battlefield
+        .retain(|permanent| permanent.card.id != bear_id);
+    game.check_state_based_actions();
+    assert!(
+        !sources(&game).contains(&mentor_id),
+        "the ability goes when the pair breaks",
+    );
+}
+
+/// The Escort's protection is the creature-type quality, so a Zombie's
+/// damage stops landing on either half.
+#[test]
+fn the_escort_shields_both_creatures_from_zombies() {
+    let mut game = ready();
+    let bear = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bear_id = bear.card.id;
+    game.battlefield.push(bear);
+    let zombie = creature(10_100, cards::ZOMBIE_TOKEN_2_2_BLACK, PlayerId::Two);
+    let zombie_id = zombie.card.id;
+    game.battlefield.push(zombie);
+
+    let escort_id = arrive(&mut game, 10_200, cards::DIREGRAF_ESCORT, PlayerId::One);
+    assert_eq!(partner(&game, escort_id), Some(bear_id));
+
+    for victim in [escort_id, bear_id] {
+        game.damage_target_from(Some(zombie_id), Some(Target::Permanent(victim)), 1);
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == victim)
+                .expect("still there")
+                .damage,
+            0,
+            "protection held",
+        );
+    }
+}
+
 #[test]
 fn every_soulbond_card_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -311,6 +390,12 @@ fn every_soulbond_card_reports_complete_coverage() {
         cards::NIGHTSHADE_PEDDLER,
         cards::PATHBREAKER_WURM,
         cards::WOLFIR_SILVERHEART,
+        cards::NEARHEATH_PILGRIM,
+        cards::GALVANIC_ALCHEMIST,
+        cards::STERN_MENTOR,
+        cards::TANDEM_LOOKOUT,
+        cards::STONEWRIGHT,
+        cards::DIREGRAF_ESCORT,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

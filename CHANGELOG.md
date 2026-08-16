@@ -119,6 +119,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Six more soulbond cards**: Nearheath Pilgrim, Galvanic Alchemist, Stern
+  Mentor, Tandem Lookout, Stonewright and Diregraf Escort. The four with a
+  quoted ability grant it to each creature separately, so the pair holds two
+  copies rather than sharing one.
+
 - **Eleven more soulbond cards**: Silverblade Paladin, Spectral Gateguards,
   Elgaud Shieldmate, Wingcrafter, Hanweir Lancer, Lightning Mauler, Druid's
   Familiar, Geist Trappers, Nightshade Peddler, Pathbreaker Wurm and Wolfir
