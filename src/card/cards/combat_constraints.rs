@@ -167,3 +167,5 @@ pub const CURSE_ARTIFACT: CardDefinitionId = CardDefinitionId(1966);
 pub const STONY_SILENCE: CardDefinitionId = CardDefinitionId(1967);
 pub const STURMGEIST: CardDefinitionId = CardDefinitionId(1968);
 pub const RIGHTEOUS_AUTHORITY: CardDefinitionId = CardDefinitionId(1969);
+pub const DEVOUR_FLESH: CardDefinitionId = CardDefinitionId(1970);
+pub const FEED_THE_PACK: CardDefinitionId = CardDefinitionId(1971);

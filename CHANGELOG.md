@@ -119,6 +119,13 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Devour Flesh** and **Feed the Pack**, both paid in the sacrificed
+  creature's toughness. Neither needed engine work -- the follow-up learned to
+  read toughness two commits ago, and their audit lines had simply not caught
+  up. Devour Flesh pays the player who lost the creature rather than the
+  caster; Feed the Pack names a nontoken creature, so the Wolves it makes can
+  never feed it back.
+
 - **Righteous Authority**. A hand-count power/toughness may now be read for the
   enchanted permanent's controller rather than the source's own, which the
   general player relation cannot answer because it has no source to follow.

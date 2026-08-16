@@ -8,9 +8,9 @@ use crate::card::{
     ComparisonDef, ConditionalValueDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
     DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectRecipientDef, KeywordAbility,
     LifeConditionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation,
-    QuantifierDef, ReplacementEffectDef, ResolvedEffectDurationDef, ScaledValueDef,
-    SpellAdditionalCostDef, SpellForm, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    QuantifierDef, ReplacementEffectDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    ScaledValueDef, SpellAdditionalCostDef, SpellForm, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetIndex};
 use crate::mana_cost;
@@ -2063,8 +2063,41 @@ pub(in crate::card::sets) static DERANGED_OUTCAST: CardRecord = CardRecord::new(
 // DKA 113 — Favor of the Woods
 // Audit: blocked — Trigger capture has no event for the attached creature becoming a blocker.
 
+/// One Wolf per point of toughness, which is why the food of choice is a
+/// Wall: the pack it makes is worth far more than what fed it.
+static FEED_THE_PACK_PAYOFF: EffectDef = EffectDef::CreateToken {
+    token: cards::WOLF_TOKEN_2_2_GREEN,
+    count: ValueDef::TriggerEventAmount,
+    tapped: false,
+};
+
 // DKA 114 — Feed the Pack
-// Audit: blocked — The optional sacrifice continuation exposes power, not the sacrificed nontoken creature's toughness, for the Wolf-token count.
+pub(in crate::card::sets) static FEED_THE_PACK: CardRecord = CardRecord::new(
+    cards::FEED_THE_PACK,
+    "Feed the Pack",
+    CardArt::new("9831e3cc-659b-4408-b5d8-a27ae2738680", "Steve Prescott"),
+    CardSet::DarkAscension,
+    CardRules::new_enchantment(mana_cost!("{5}{B}{B}")).with_ability(AbilityDef::triggered(
+        "At the beginning of your end step, you may sacrifice a nontoken creature. If you do, create X 2/2 green Wolf creature tokens, where X is the sacrificed creature's toughness.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::You,
+        },
+        EffectDef::SacrificeOfChoice {
+            player: EffectRecipientDef::Controller,
+            // Nontoken, so the Wolves it makes cannot feed it back.
+            // Nontoken, so the Wolves it makes cannot feed it back.
+            object: ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+            ]),
+            then: Some(&FEED_THE_PACK_PAYOFF),
+            amount: SacrificedAmountDef::Toughness,
+            otherwise: None,
+            optional: true,
+        },
+    )),
+);
 
 // DKA 115 — Ghoultree
 pub(in crate::card::sets) static GHOULTREE: CardRecord = CardRecord::new(
@@ -3038,6 +3071,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CRUSHING_VINES,
     &DAWNTREADER_ELK,
     &DERANGED_OUTCAST,
+    &FEED_THE_PACK,
     &GHOULTREE,
     &GRIM_FLOWERING,
     &HOLLOWHENGE_BEAST,

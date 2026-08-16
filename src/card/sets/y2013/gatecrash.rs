@@ -10,9 +10,9 @@ use crate::card::{
     DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectRecipientDef,
     InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
     ObjectRefDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -1059,8 +1059,36 @@ pub(in crate::card::sets) static CRYPT_GHAST: CardRecord = CardRecord::new(
 // GTC 62 — Death's Approach
 // Audit: blocked — The static value vocabulary cannot count creature cards in the attached creature's controller's graveyard.
 
+/// The life follows the sacrifice, so it belongs to the same continuation --
+/// and it goes to the player who paid, not to whoever cast the spell.
+static DEVOUR_FLESH_PAYOFF: EffectDef = EffectDef::GainLife {
+    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    amount: ValueDef::TriggerEventAmount,
+};
+
 // GTC 63 — Devour Flesh
-// Audit: blocked — The sacrifice-choice continuation exposes the sacrificed creature's power, not its last-known toughness.
+pub(in crate::card::sets) static DEVOUR_FLESH: CardRecord = CardRecord::new(
+    cards::DEVOUR_FLESH,
+    "Devour Flesh",
+    CardArt::new("88c42ebd-114a-430d-b3a4-ff2fb3093bf5", "Kev Walker"),
+    CardSet::Gatecrash,
+    // Edict removal that pays its victim: the toughness they gain is often
+    // more than the creature was worth to them.
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player sacrifices a creature. That player gains life equal to that creature's toughness.",
+        &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(
+            PlayerRelation::Any,
+        ))],
+        EffectDef::SacrificeOfChoice {
+            player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            then: Some(&DEVOUR_FLESH_PAYOFF),
+            amount: SacrificedAmountDef::Toughness,
+            otherwise: None,
+            optional: false,
+        },
+    )),
+);
 
 static DYING_WISH_DRAIN: [EffectDef; 2] = [
     EffectDef::LoseLife {
@@ -4159,6 +4187,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CONTAMINATED_GROUND,
     &CORPSE_BLOCKADE,
     &CRYPT_GHAST,
+    &DEVOUR_FLESH,
     &DYING_WISH,
     &GATEWAY_SHADE,
     &GRISLY_SPECTACLE,
