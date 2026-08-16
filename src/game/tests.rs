@@ -535,6 +535,7 @@ mod banding_formation;
 mod banding_with_other;
 mod blaze_of_glory;
 mod blessing_and_flame;
+mod blink_under_your_control;
 mod block_restriction_cards;
 mod blocker_status;
 mod blocking_after_death;

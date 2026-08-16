@@ -2278,6 +2278,7 @@ pub(in crate::card::sets) static SAFE_HAVEN: CardRecord = CardRecord::new(
                 then: Some(&EffectDef::ReturnLinkedExiles {
                     zone: ZoneKind::Battlefield,
                     grant: None,
+                    controller: None,
                 }),
                 amount: SacrificedAmountDef::Power,
                 otherwise: None,

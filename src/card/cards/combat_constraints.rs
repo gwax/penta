@@ -197,3 +197,5 @@ pub const BRAVE_THE_ELEMENTS: CardDefinitionId = CardDefinitionId(1996);
 pub const ALCHORS_TOMB: CardDefinitionId = CardDefinitionId(1997);
 pub const BALUSTRADE_SPY: CardDefinitionId = CardDefinitionId(1998);
 pub const UNDERCITY_INFORMER: CardDefinitionId = CardDefinitionId(1999);
+pub const NEPHALIA_SMUGGLER: CardDefinitionId = CardDefinitionId(2000);
+pub const CONJURERS_CLOSET: CardDefinitionId = CardDefinitionId(2001);

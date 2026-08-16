@@ -2872,6 +2872,7 @@ pub(in crate::card::sets) static HELVAULT: CardRecord = CardRecord::new(
                 EffectDef::ReturnLinkedExiles {
                     zone: ZoneKind::Battlefield,
                     grant: None,
+                    controller: None,
                 },
             ),
         ]),

@@ -875,6 +875,7 @@ impl Game {
         id: GameObjectId,
         zone: ZoneKind,
         grant: Option<KeywordAbility>,
+        arriving_controller: Option<PlayerId>,
     ) {
         let Some(owner) = [PlayerId::One, PlayerId::Two].into_iter().find(|player| {
             self.players[player.index()]
@@ -891,7 +892,7 @@ impl Game {
             self.put_card_onto_battlefield_from(
                 card,
                 ZoneKind::Exile,
-                BattlefieldArrival::under(owner),
+                BattlefieldArrival::under(arriving_controller.unwrap_or(owner)),
                 grant,
             );
         } else {

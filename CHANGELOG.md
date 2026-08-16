@@ -133,6 +133,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Nephalia Smuggler** and **Conjurer's Closet**. A linked return may now
+  name who the permanent arrives under rather than always handing it to its
+  owner. "Under your control" and "under its owner's control" differ exactly
+  when the creature was stolen, which is the reason a blink is worth playing.
+
 - **Balustrade Spy** and **Undercity Informer**. A library may now be milled
   until a matching card turns up, with the match buried alongside everything
   above it. Distinct from an ordinary mill, whose count is known before it

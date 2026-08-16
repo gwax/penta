@@ -726,6 +726,12 @@ pub enum EffectDef {
     ReturnLinkedExiles {
         zone: ZoneKind,
         grant: Option<KeywordAbility>,
+        /// Who the returning permanent arrives under. `None` is its owner,
+        /// which is what an ordinary "return it to the battlefield" means.
+        /// A card that says "under your control" needs the ability's own
+        /// controller instead, and the two differ exactly when the creature
+        /// was stolen -- which is the reason a blink is worth playing.
+        controller: Option<PlayerRelation>,
     },
     Sacrifice {
         object: EffectRecipientDef,

@@ -95,6 +95,7 @@ pub(in crate::card::sets) static ANGEL_OF_SERENITY: CardRecord = CardRecord::new
             EffectDef::ReturnLinkedExiles {
                 zone: ZoneKind::Hand,
                 grant: None,
+                controller: None,
             },
         ),
     ]),
@@ -3322,6 +3323,7 @@ pub(in crate::card::sets) static DETENTION_SPHERE: CardRecord = CardRecord::new(
             EffectDef::ReturnLinkedExiles {
                 zone: ZoneKind::Battlefield,
                 grant: None,
+                controller: None,
             },
         ),
     ]),

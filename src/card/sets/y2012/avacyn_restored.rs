@@ -629,6 +629,7 @@ pub(in crate::card::sets) static RESTORATION_ANGEL: CardRecord = CardRecord::new
                     EffectDef::ReturnLinkedExiles {
                         zone: ZoneKind::Battlefield,
                         grant: None,
+                        controller: None,
                     },
                 ]),
             },
@@ -1294,8 +1295,48 @@ pub(in crate::card::sets) static MIST_RAVEN: CardRecord = CardRecord::new(
 // AVR 68 — Misthollow Griffin
 // Audit: blocked — Needs a cast permission and play-option source zone for casting this card from exile.
 
+/// Exile and return in one resolution, and the return names your control
+/// rather than the card's owner. The two differ exactly when the creature
+/// was stolen, which is when a blink is worth the mana.
+static BLINK_UNDER_YOUR_CONTROL: [EffectDef; 2] = [
+    EffectDef::ExileLinkedToSource {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::ReturnLinkedExiles {
+        zone: ZoneKind::Battlefield,
+        grant: None,
+        controller: Some(PlayerRelation::You),
+    },
+];
+
 // AVR 69 — Nephalia Smuggler
-// Audit: blocked — Linked exile returns a stolen target under its owner rather than the ability controller required by the card.
+pub(in crate::card::sets) static NEPHALIA_SMUGGLER: CardRecord = CardRecord::new(
+    cards::NEPHALIA_SMUGGLER,
+    "Nephalia Smuggler",
+    CardArt::new("1a531b2f-2a9e-4cc9-aea6-9dce239f5511", "Matt Stewart"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{U}"), &["Human", "Rogue"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{3}{U}, {T}: Exile another target creature you control, then return that card to the battlefield under your control.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{3}{U}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::You),
+                    owner: None,
+                },
+            )],
+            EffectDef::Sequence(&BLINK_UNDER_YOUR_CONTROL),
+        ),
+    ),
+);
 
 // AVR 70 — Outwit
 // Audit: blocked — Needs a stack-object predicate for a spell that currently targets a player.
@@ -3945,7 +3986,33 @@ pub(in crate::card::sets) static BLADED_BRACERS: CardRecord = CardRecord::new(
 );
 
 // AVR 214 — Conjurer's Closet
-// Audit: blocked — Linked exile returns a stolen target under its owner rather than the ability controller required by the card.
+pub(in crate::card::sets) static CONJURERS_CLOSET: CardRecord = CardRecord::new(
+    cards::CONJURERS_CLOSET,
+    "Conjurer's Closet",
+    CardArt::new("7378e998-0382-42fc-8606-c6e7fc04b6a4", "Jason Felix"),
+    CardSet::AvacynRestored,
+    // The same blink every turn, for free, which is what makes five mana
+    // worth it on a board of entry triggers.
+    CardRules::new_artifact(mana_cost!("{5}")).with_ability(AbilityDef::triggered_with_targets(
+        "At the beginning of your end step, you may exile target creature you control, then return that card to the battlefield under your control.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::You,
+        },
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::You),
+                owner: None,
+            },
+        )],
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &EffectDef::Sequence(&BLINK_UNDER_YOUR_CONTROL),
+        },
+    )),
+);
 
 // AVR 215 — Gallows at Willow Hill
 // Audit: blocked — Needs an activation cost that taps three separately chosen untapped Humans you control.
@@ -4355,6 +4422,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LUNAR_MYSTIC,
     &MASS_APPEAL,
     &MIST_RAVEN,
+    &NEPHALIA_SMUGGLER,
     &PEEL_FROM_REALITY,
     &ROTCROWN_GHOUL,
     &SCRAPSKIN_DRAKE,
@@ -4450,6 +4518,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &YEW_SPIRIT,
     &SIGARDA_HOST_OF_HERONS,
     &BLADED_BRACERS,
+    &CONJURERS_CLOSET,
     &HAUNTED_GUARDIAN,
     &NARSTAD_SCRAPPER,
     &OTHERWORLD_ATLAS,

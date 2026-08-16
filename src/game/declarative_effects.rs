@@ -471,7 +471,11 @@ impl Game {
                     }
                 }
             }
-            EffectDef::ReturnLinkedExiles { zone, grant } => {
+            EffectDef::ReturnLinkedExiles {
+                zone,
+                grant,
+                controller,
+            } => {
                 let source = object.source.unwrap_or(object.id);
                 let returning = self
                     .linked_exiles
@@ -481,8 +485,20 @@ impl Game {
                     .collect::<Vec<_>>();
                 self.linked_exiles
                     .retain(|(exiled_by, _)| *exiled_by != source);
+                let arriving_controller = controller.map(|relation| {
+                    if self.player_relation_matches(
+                        object.controller,
+                        relation,
+                        object.controller,
+                        context.trigger,
+                    ) {
+                        object.controller
+                    } else {
+                        object.controller.opponent()
+                    }
+                });
                 for card in returning {
-                    self.return_exiled_card(card, zone, grant);
+                    self.return_exiled_card(card, zone, grant, arriving_controller);
                 }
             }
             EffectDef::Detain { object: recipient } => {

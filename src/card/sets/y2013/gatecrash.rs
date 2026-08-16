@@ -3297,6 +3297,7 @@ pub(in crate::card::sets) static OBZEDAT_GHOST_COUNCIL: CardRecord = CardRecord:
                     EffectDef::ReturnLinkedExiles {
                         zone: ZoneKind::Battlefield,
                         grant: Some(KeywordAbility::Haste),
+                        controller: None,
                     },
                 ))),
                 ]),
