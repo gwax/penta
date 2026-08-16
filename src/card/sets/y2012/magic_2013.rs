@@ -849,8 +849,46 @@ pub(in crate::card::sets) static DOWNPOUR: CardRecord = CardRecord::new(
     )),
 );
 
+static ENCHANT_ARTIFACT_OR_CREATURE_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Artifact),
+            ObjectPredicateDef::HasType(CardType::Creature),
+        ]),
+    )];
+
+/// Both halves for the same duration, so the Aura leaving returns the untap
+/// and the activations together.
+static ENCRUST_PROHIBITIONS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotActivateAbilities),
+];
+
 // M13 49 — Encrust
-// Audit: blocked — Static effects cannot prohibit activation of the attached permanent's activated abilities.
+pub(in crate::card::sets) static ENCRUST: CardRecord = CardRecord::new(
+    cards::ENCRUST,
+    "Encrust",
+    CardArt::new("dfd05474-5cec-4c71-85e7-79cf25958525", "Jason Felix"),
+    CardSet::Magic2013,
+    // It answers an artifact as readily as a creature, which is the whole
+    // reason to play it over an ordinary creature Aura.
+    CardRules::new_enchantment(mana_cost!("{1}{U}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell(
+                "Enchant artifact or creature",
+                &ENCHANT_ARTIFACT_OR_CREATURE_TARGET,
+            ),
+            AbilityDef::static_ability(
+                "Enchanted permanent doesn't untap during its controller's untap step and its \
+                 activated abilities can't be activated.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&ENCRUST_PROHIBITIONS),
+                },
+            ),
+        ]),
+);
 
 // M13 50 — Essence Scatter
 pub(in crate::card::sets) static ESSENCE_SCATTER: CardRecord = CardRecord::new(
@@ -4088,6 +4126,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AUGUR_OF_BOLAS,
     &BATTLE_OF_WITS,
     &DOWNPOUR,
+    &ENCRUST,
     &ESSENCE_SCATTER,
     &FAERIE_INVADERS,
     &FOG_BANK,

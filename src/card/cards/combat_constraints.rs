@@ -150,3 +150,5 @@ pub const FLOWERING_LUMBERKNOT: CardDefinitionId = CardDefinitionId(1949);
 pub const RELIQUARY_TOWER: CardDefinitionId = CardDefinitionId(1950);
 pub const MUGGING: CardDefinitionId = CardDefinitionId(1951);
 pub const ARREST: CardDefinitionId = CardDefinitionId(1952);
+pub const ENCRUST: CardDefinitionId = CardDefinitionId(1953);
+pub const SKYGAMES: CardDefinitionId = CardDefinitionId(1954);

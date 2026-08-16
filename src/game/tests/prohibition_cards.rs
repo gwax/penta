@@ -1,8 +1,9 @@
-//! Two cards that take something away rather than adding it.
+//! Four cards that take something away, or hand out a narrowed permission.
 //!
 //! Arrest shuts off three things at once and gives all three back together,
 //! and the activation half is narrow: only activated abilities go, not the
-//! creature's triggered or static clauses.
+//! creature's triggered or static clauses. Skygames is the mirror -- the
+//! ability it grants keeps the restriction printed on it.
 
 use super::*;
 use crate::ImplementationStatus;
@@ -136,10 +137,105 @@ fn mugging_stops_a_survivor_from_blocking() {
     );
 }
 
+/// Encrust answers an artifact as readily as a creature, and takes both the
+/// untap and the activations.
 #[test]
-fn both_cards_report_complete_coverage() {
+fn encrust_holds_an_artifact_down_and_shuts_it_off() {
+    let mut game = ready();
+    let artifact = creature(10_000, cards::ORNITHOPTER, PlayerId::Two);
+    let artifact_id = artifact.card.id;
+    game.battlefield.push(artifact);
+
+    let spell = card(20_000, cards::ENCRUST, PlayerId::One);
+    let spell_id = spell.id;
+    game.players[PlayerId::One.index()].hand.push(spell);
+    game.players[PlayerId::One.index()].mana_pool.blue = 2;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+
+    let legal = game.legal_actions(PlayerId::One);
+    assert!(
+        legal.contains(&cast_action(
+            spell_id,
+            vec![Target::Permanent(artifact_id)],
+            Vec::new(),
+            0,
+        )),
+        "an artifact is a legal host",
+    );
+
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            spell_id,
+            vec![Target::Permanent(artifact_id)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("the cast is legal");
+    drain_pending(&mut game);
+
+    if let Some(target) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == artifact_id)
+    {
+        target.tapped = true;
+    }
+    game.commit_next_turn(PlayerId::Two, Vec::new());
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == artifact_id)
+            .expect("still there")
+            .tapped,
+        "it stayed down through its controller's untap step",
+    );
+}
+
+/// The granted ability keeps its sorcery-speed restriction: the land may tap
+/// for it in a main phase and not while blockers are being declared.
+#[test]
+fn skygames_grants_a_sorcery_speed_ability() {
+    let mut game = ready();
+    game.put_onto_battlefield(PlayerId::One, cards::ISLAND)
+        .expect("cataloged");
+    let land = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::ISLAND)
+        .expect("it is there")
+        .card
+        .id;
+    let mut aura = creature(10_000, cards::SKYGAMES, PlayerId::One);
+    aura.attached_to = Some(land);
+    game.battlefield.push(aura);
+    game.battlefield
+        .push(creature(10_100, cards::GRIZZLY_BEARS, PlayerId::One));
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+
+    assert!(
+        can_activate(&game, land),
+        "a main phase is a sorcery-speed window",
+    );
+
+    // Upkeep is an ordinary instant-speed window, so only the printed
+    // restriction can be what closes it.
+    game.step = Step::Upkeep;
+    assert!(!can_activate(&game, land), "and an upkeep is not");
+}
+
+#[test]
+fn all_four_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::ARREST, cards::MUGGING] {
+    for definition in [
+        cards::ARREST,
+        cards::MUGGING,
+        cards::ENCRUST,
+        cards::SKYGAMES,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),

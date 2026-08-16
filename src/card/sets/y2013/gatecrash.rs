@@ -3,7 +3,7 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
+    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef,
     DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef,
@@ -837,8 +837,44 @@ pub(in crate::card::sets) static SCATTER_ARC: CardRecord = CardRecord::new(
 // GTC 50 — Simic Manipulator
 // Audit: blocked — Needs evolve, a variable counter-removal cost, a target-power limit based on counters removed, and indefinite control change.
 
+/// The land taps for this, not the creature, and the sorcery-speed
+/// restriction rides on the granted ability rather than on the Aura.
+static SKYGAMES_FLIGHT: AbilityDef = abilities::flying();
+
+static SKYGAMES_GRANTED: AbilityDef = AbilityDef::activated_with_targets(
+    "{T}: Target creature gains flying until end of turn. Activate only as a sorcery.",
+    &[AbilityCostDef::TapSource],
+    &[AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::HasType(CardType::Creature),
+    )],
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::add_ability(&SKYGAMES_FLIGHT),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+)
+.with_activation_timing(ActivationTimingDef::SorcerySpeed);
+
 // GTC 51 — Skygames
-// Audit: blocked — Granted activated abilities cannot carry an activate-only-as-a-sorcery timing restriction.
+pub(in crate::card::sets) static SKYGAMES: CardRecord = CardRecord::new(
+    cards::SKYGAMES,
+    "Skygames",
+    CardArt::new("7ab5bf75-762f-46ef-8304-aacdb248bc5b", "Sam Burley"),
+    CardSet::Gatecrash,
+    CardRules::new_enchantment(mana_cost!("{1}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant land", &abilities::ENCHANT_LAND_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted land has \"{T}: Target creature gains flying until end of turn. \
+                 Activate only as a sorcery.\"",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::add_ability(&SKYGAMES_GRANTED),
+                },
+            ),
+        ]),
+);
 
 // GTC 52 — Spell Rupture
 // Audit: blocked — No value computes the greatest power among creatures you control for the counter-unless payment.
@@ -3967,6 +4003,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SAGES_ROW_DENIZEN,
     &SAPPHIRE_DRAKE,
     &SCATTER_ARC,
+    &SKYGAMES,
     &TOTALLY_LOST,
     &BASILICA_SCREECHER,
     &CONTAMINATED_GROUND,
