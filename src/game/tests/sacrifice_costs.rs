@@ -1,8 +1,9 @@
-//! Two spells that eat a creature on the way to the stack.
+//! Three spells that spend something on the way to the stack.
 //!
-//! The sacrifice is an additional cost, so it is paid as the spell is cast
-//! rather than as it resolves: with no creature out there is nothing to cast,
-//! and the creature is already gone by the time the spell does its work.
+//! An additional cost is paid as the spell is cast rather than as it
+//! resolves: with nothing to spend there is nothing to cast, and what was
+//! spent is already gone by the time the spell does its work. A cost naming
+//! two objects enumerates every pair rather than every candidate.
 
 use super::*;
 use crate::ImplementationStatus;
@@ -93,10 +94,95 @@ fn infernal_plunge_trades_a_creature_for_three_red() {
     );
 }
 
+/// A cost naming two cards enumerates pairs, not candidates: three creature
+/// cards in the graveyard is three ways to pay, not three cards to pick.
 #[test]
-fn both_cards_report_complete_coverage() {
+fn the_goliath_offers_every_pair_of_creature_cards() {
+    let ways_to_pay = |creatures: u32, others: u32| {
+        let mut game = ready();
+        let spell = card(20_000, cards::SKAAB_GOLIATH, PlayerId::One);
+        let spell_id = spell.id;
+        game.players[PlayerId::One.index()].hand.push(spell);
+        game.players[PlayerId::One.index()].mana_pool.blue = 1;
+        game.players[PlayerId::One.index()].mana_pool.colorless = 5;
+        for index in 0..creatures {
+            game.players[PlayerId::One.index()].graveyard.push(card(
+                30_000 + index,
+                cards::GRIZZLY_BEARS,
+                PlayerId::One,
+            ));
+        }
+        for index in 0..others {
+            game.players[PlayerId::One.index()].graveyard.push(card(
+                31_000 + index,
+                cards::LIGHTNING_BOLT,
+                PlayerId::One,
+            ));
+        }
+        casts(&game, spell_id).len()
+    };
+
+    assert_eq!(ways_to_pay(1, 0), 0, "one creature card cannot pay for two");
+    assert_eq!(ways_to_pay(2, 0), 1, "exactly one pair");
+    assert_eq!(ways_to_pay(3, 0), 3, "three pairs from three cards");
+    assert_eq!(
+        ways_to_pay(2, 5),
+        1,
+        "the instants in the graveyard are not creature cards",
+    );
+}
+
+/// Paying it exiles both chosen cards, and nothing else.
+#[test]
+fn the_goliath_exiles_both_cards_it_names() {
+    let mut game = ready();
+    let spell = card(20_000, cards::SKAAB_GOLIATH, PlayerId::One);
+    let spell_id = spell.id;
+    game.players[PlayerId::One.index()].hand.push(spell);
+    game.players[PlayerId::One.index()].mana_pool.blue = 1;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 5;
+    for index in 0..3 {
+        game.players[PlayerId::One.index()].graveyard.push(card(
+            30_000 + index,
+            cards::GRIZZLY_BEARS,
+            PlayerId::One,
+        ));
+    }
+
+    let action = casts(&game, spell_id)
+        .into_iter()
+        .next()
+        .expect("three pairs to choose from");
+    game.apply(PlayerId::One, action)
+        .expect("the cast is legal");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].exile.len(),
+        2,
+        "two exiled, no more",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].graveyard.len(),
+        1,
+        "and the third stayed put",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SKAAB_GOLIATH),
+        "the Goliath resolved",
+    );
+}
+
+#[test]
+fn all_three_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
-    for definition in [cards::BONE_SPLINTERS, cards::INFERNAL_PLUNGE] {
+    for definition in [
+        cards::BONE_SPLINTERS,
+        cards::INFERNAL_PLUNGE,
+        cards::SKAAB_GOLIATH,
+    ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),

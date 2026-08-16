@@ -119,6 +119,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Skaab Goliath**, and with it additional costs that name more than one
+  object. The casting enumeration offers one action per way of paying, so a
+  cost naming two cards enumerates every pair -- three creature cards in the
+  graveyard is three ways to pay, not three cards to pick.
+
 - **Bone Splinters** and **Infernal Plunge**, both of which eat a creature on
   the way to the stack. Neither needed engine work -- Altar's Reap in the same
   set already pays the identical cost.

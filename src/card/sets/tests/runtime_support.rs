@@ -425,7 +425,7 @@ fn shared_spell_additional_cost(cost: Option<SpellAdditionalCostDef>) -> bool {
     let Some(cost) = cost else {
         return true;
     };
-    cost.count == 1
+    cost.count >= 1
         && matches!(
             cost.zone,
             ZoneKind::Battlefield | ZoneKind::Graveyard | ZoneKind::Hand

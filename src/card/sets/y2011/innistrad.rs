@@ -1445,8 +1445,31 @@ pub(in crate::card::sets) static SILENT_DEPARTURE: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Two cards, so a graveyard holding one creature cannot pay at all and a
+/// graveyard holding several offers every pair.
+static EXILE_TWO_CREATURE_CARDS: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    object: ObjectPredicateDef::HasType(CardType::Creature),
+    zone: ZoneKind::Graveyard,
+    count: 2,
+};
+
 // ISD 76 — Skaab Goliath
-// Audit: blocked — Needs selecting and exiling two creature cards from your graveyard as an additional casting cost.
+pub(in crate::card::sets) static SKAAB_GOLIATH: CardRecord = CardRecord::new(
+    cards::SKAAB_GOLIATH,
+    "Skaab Goliath",
+    CardArt::new("7c1134a5-5434-4733-812b-3587b1817813", "Volkan Baǵa"),
+    CardSet::Innistrad,
+    CardRules::new_creature(mana_cost!("{5}{U}"), &["Zombie", "Giant"], 6, 9).with_abilities(&[
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, exile two creature cards from your \
+             graveyard.",
+            &[],
+            EXILE_TWO_CREATURE_CARDS,
+            EffectDef::None,
+        ),
+        abilities::trample(),
+    ]),
+);
 
 // ISD 77 — Skaab Ruinator
 // Audit: blocked — Needs a three-card graveyard exile casting cost and permission to cast this card from your graveyard.
@@ -5261,6 +5284,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SELHOFF_OCCULTIST,
     &SENSORY_DEPRIVATION,
     &SILENT_DEPARTURE,
+    &SKAAB_GOLIATH,
     &SNAPCASTER_MAGE,
     &SPECTRAL_FLIGHT,
     &STITCHED_DRAKE,

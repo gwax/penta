@@ -71,12 +71,31 @@ impl Game {
                 .collect(),
             _ => Vec::new(),
         };
-        if usize::from(cost.count) != 1 {
-            // Only one object is chosen today; a cost naming more would need
-            // every combination rather than every candidate.
+        // One configuration per way of paying, so a cost naming more than one
+        // object enumerates combinations rather than candidates. Order does
+        // not matter -- exiling A then B is the same payment as B then A --
+        // so each combination appears once, in candidate order.
+        Self::object_combinations(&candidates, usize::from(cost.count))
+    }
+
+    /// Every `size`-element combination of `candidates`, in candidate order.
+    /// An empty requirement has exactly one payment: the empty one.
+    fn object_combinations(candidates: &[GameObjectId], size: usize) -> Vec<Vec<GameObjectId>> {
+        if size == 0 {
+            return vec![Vec::new()];
+        }
+        if candidates.len() < size {
             return Vec::new();
         }
-        candidates.into_iter().map(|id| vec![id]).collect()
+        let mut combinations = Vec::new();
+        for (index, candidate) in candidates.iter().enumerate() {
+            for mut rest in Self::object_combinations(&candidates[index + 1..], size - 1) {
+                let mut combination = vec![*candidate];
+                combination.append(&mut rest);
+                combinations.push(combination);
+            }
+        }
+        combinations
     }
 
     pub(super) fn add_land_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
