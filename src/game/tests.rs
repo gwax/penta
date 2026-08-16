@@ -704,6 +704,7 @@ mod targeting_characteristics;
 mod token_status_cards;
 mod toughness_payouts;
 mod transmogrant;
+mod traumatize;
 mod trigger_event_matchers;
 mod triggers_and_stack;
 mod triumphs;

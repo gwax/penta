@@ -210,6 +210,10 @@ pub enum ValueDef {
     /// as its power, and no harder to reach -- the card simply has to say
     /// which characteristic it wants.
     TargetToughness(TargetIndex),
+    /// How many cards are in the library of the player a target slot
+    /// points at. Read live, so an effect that mills as it goes sees
+    /// the library it started with only if it asks first.
+    TargetLibrarySize(TargetIndex),
     /// The mana value of what a target slot points at, read from last-known
     /// information after a permanent or spell has left its zone.
     TargetManaValue(TargetIndex),

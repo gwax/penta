@@ -15,11 +15,12 @@ use crate::card::{
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     CardTypeSet, ChoiceVisibilityDef, ChooseDef, ColorChoiceOperationDef, ComparisonDef,
     CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DiscardSelectionDef, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef,
-    TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    EffectRecipientDef, HalvedValueDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, RoundingDef,
+    SacrificedAmountDef, ScaledValueDef, TargetConditionDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -859,8 +860,31 @@ pub(in crate::card::sets) static TRAINED_CONDOR: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Half of what the library holds when the spell resolves, rounded down.
+/// Reading it from the target rather than from a fixed count is the whole
+/// clause: a Traumatize into an empty library mills nothing.
+static HALF_THEIR_LIBRARY: HalvedValueDef = HalvedValueDef::new(
+    ValueDef::TargetLibrarySize(TargetIndex::PRIMARY),
+    RoundingDef::Down,
+);
+
 // M14 77 — Traumatize
-// Audit: blocked — ValueDef cannot derive half of a targeted player's current library size.
+pub(in crate::card::sets) static TRAUMATIZE: CardRecord = CardRecord::new(
+    cards::TRAUMATIZE,
+    "Traumatize",
+    CardArt::new("9b8784dd-83f9-41f8-aedc-f0f81073ffcb", "Greg Staples"),
+    CardSet::Magic2014,
+    CardRules::new_sorcery(mana_cost!("{3}{U}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player mills half their library, rounded down.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::Mill {
+            player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Halved(&HALF_THEIR_LIBRARY),
+        },
+    )),
+);
 
 // M14 78 — Wall of Frost
 pub(in crate::card::sets) static WALL_OF_FROST: CardRecord = CardRecord::new(
@@ -3190,6 +3214,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TIME_EBB,
     &TOME_SCOUR,
     &TRAINED_CONDOR,
+    &TRAUMATIZE,
     &WALL_OF_FROST,
     &WATER_SERVANT,
     &WINDREADER_SPHINX,

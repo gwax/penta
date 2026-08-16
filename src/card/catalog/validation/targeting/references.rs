@@ -712,6 +712,7 @@ fn validate_value_target_references(
         }
         ValueDef::TargetPower(target)
         | ValueDef::TargetToughness(target)
+        | ValueDef::TargetLibrarySize(target)
         | ValueDef::TargetManaValue(target) => validate_target_index(target, target_count),
         ValueDef::Constant(_)
         | ValueDef::ChosenX

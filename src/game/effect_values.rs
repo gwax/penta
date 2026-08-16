@@ -59,6 +59,16 @@ impl Game {
                     })
                     .map_or(0, i32::from)
             }
+            ValueDef::TargetLibrarySize(target) => {
+                Self::chosen_targets(object, scoped.target_slot(target))
+                    .find_map(|target| match target {
+                        Target::Player(player) => {
+                            i32::try_from(self.players[player.index()].library.len()).ok()
+                        }
+                        Target::Permanent(_) | Target::Card(_) | Target::Spell(_) => None,
+                    })
+                    .unwrap_or(0)
+            }
             ValueDef::TargetManaValue(target) => {
                 Self::chosen_targets(object, scoped.target_slot(target))
                     .find_map(|target| match target {

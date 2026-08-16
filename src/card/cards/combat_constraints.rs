@@ -205,3 +205,4 @@ pub const DREAD_SLAVER: CardDefinitionId = CardDefinitionId(2004);
 pub const GOBLIN_WIZARD: CardDefinitionId = CardDefinitionId(2005);
 pub const GAEAS_TOUCH: CardDefinitionId = CardDefinitionId(2006);
 pub const INTO_THE_WILDS: CardDefinitionId = CardDefinitionId(2007);
+pub const TRAUMATIZE: CardDefinitionId = CardDefinitionId(2008);

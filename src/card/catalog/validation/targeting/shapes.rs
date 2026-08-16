@@ -264,6 +264,9 @@ fn validate_value_shape(
         ValueDef::CountMatchingObjects(query)
         | ValueDef::AnyMatchingObject(query)
         | ValueDef::GreatestPowerAmong(query) => validate_query_shape(*query, targets),
+        ValueDef::TargetLibrarySize(target) => {
+            validate_target_shape(target, targets, RecipientExpectation::Player, true)
+        }
         ValueDef::TargetPower(target)
         | ValueDef::TargetToughness(target)
         | ValueDef::TargetManaValue(target) => {

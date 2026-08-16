@@ -133,6 +133,10 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Traumatize**. A value may now read the size of the library belonging to
+  the player a target slot points at, which composes with the halving that
+  was already there.
+
 - **Into the Wilds**. A top-card look may now put what it took onto the
   battlefield. Only what was taken: a card nobody chose has no reason to be
   put anywhere but back into a zone, so the leftover destination is unchanged.
