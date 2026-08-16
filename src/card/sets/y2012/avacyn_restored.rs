@@ -3477,8 +3477,39 @@ pub(in crate::card::sets) static RAIN_OF_THORNS: CardRecord = CardRecord::new(
 // AVR 191 — Revenge of the Hunted
 // Audit: blocked — Needs a turn-scoped requirement that every creature able to block the target does so.
 
+/// The grant and the life are one resolution, and the life is read from the
+/// same slot the hexproof went to.
+static SHELTERING_WORD_PROGRAM: [EffectDef; 2] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::add_ability(&abilities::hexproof()),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::TargetToughness(TargetIndex::PRIMARY),
+    },
+];
+
 // AVR 192 — Sheltering Word
-// Audit: blocked — Needs a value for the targeted creature's toughness after the hexproof grant resolves.
+pub(in crate::card::sets) static SHELTERING_WORD: CardRecord = CardRecord::new(
+    cards::SHELTERING_WORD,
+    "Sheltering Word",
+    CardArt::new("93cd9be4-1ce4-4a7c-b2a6-98d3fde0a92b", "Igor Kieryluk"),
+    CardSet::AvacynRestored,
+    CardRules::new_instant(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Target creature you control gains hexproof until end of turn. You gain life equal to that creature's toughness.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::You),
+                owner: None,
+            },
+        )],
+        EffectDef::Sequence(&SHELTERING_WORD_PROGRAM),
+    )),
+);
 
 // AVR 193 — Snare the Skies
 pub(in crate::card::sets) static SNARE_THE_SKIES: CardRecord = CardRecord::new(
@@ -4342,6 +4373,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &NIGHTSHADE_PEDDLER,
     &PATHBREAKER_WURM,
     &RAIN_OF_THORNS,
+    &SHELTERING_WORD,
     &SNARE_THE_SKIES,
     &SOMBERWALD_SAGE,
     &SOUL_OF_THE_HARVEST,

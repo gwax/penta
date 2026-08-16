@@ -119,6 +119,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Predator's Rapport**, **Sheltering Word**, and **Tribute to Hunger**. A
+  target slot's power was readable and its toughness was not, which is the
+  only thing all three were waiting on; the sum of the two was already
+  expressible. Tribute to Hunger is Devour Flesh with the life pointed the
+  other way, and its audit line had gone stale on its own.
+
 - **Devour Flesh** and **Feed the Pack**, both paid in the sacrificed
   creature's toughness. Neither needed engine work -- the follow-up learned to
   read toughness two commits ago, and their audit lines had simply not caught

@@ -169,3 +169,6 @@ pub const STURMGEIST: CardDefinitionId = CardDefinitionId(1968);
 pub const RIGHTEOUS_AUTHORITY: CardDefinitionId = CardDefinitionId(1969);
 pub const DEVOUR_FLESH: CardDefinitionId = CardDefinitionId(1970);
 pub const FEED_THE_PACK: CardDefinitionId = CardDefinitionId(1971);
+pub const PREDATORS_RAPPORT: CardDefinitionId = CardDefinitionId(1972);
+pub const SHELTERING_WORD: CardDefinitionId = CardDefinitionId(1973);
+pub const TRIBUTE_TO_HUNGER: CardDefinitionId = CardDefinitionId(1974);

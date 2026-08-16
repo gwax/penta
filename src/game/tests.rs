@@ -684,6 +684,7 @@ mod static_animation;
 mod static_keyword_predicates;
 mod street_spasm;
 mod subtype_protection;
+mod target_toughness;
 mod targeted_answers;
 mod targeting_characteristics;
 mod token_status_cards;

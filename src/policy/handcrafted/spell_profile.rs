@@ -481,6 +481,7 @@ impl HandcraftedPolicy {
             | ValueDef::CountersOnSource(_)
             | ValueDef::DividedAmongTargets
             | ValueDef::TargetPower(_)
+            | ValueDef::TargetToughness(_)
             | ValueDef::TargetManaValue(_)
             | ValueDef::IfCreatureDiedThisTurn(_)
             | ValueDef::IfControllerLifeAtMost(_)

@@ -264,7 +264,9 @@ fn validate_value_shape(
         ValueDef::CountMatchingObjects(query) | ValueDef::AnyMatchingObject(query) => {
             validate_query_shape(*query, targets)
         }
-        ValueDef::TargetPower(target) | ValueDef::TargetManaValue(target) => {
+        ValueDef::TargetPower(target)
+        | ValueDef::TargetToughness(target)
+        | ValueDef::TargetManaValue(target) => {
             validate_target_shape(target, targets, RecipientExpectation::Object, true)
         }
         ValueDef::CreaturesDiedThisTurn

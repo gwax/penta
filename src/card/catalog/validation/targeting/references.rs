@@ -709,6 +709,7 @@ fn validate_value_target_references(
             validate_query(*query, target_count, scope)
         }
         ValueDef::TargetPower(target)
+        | ValueDef::TargetToughness(target)
         | ValueDef::TargetManaValue(target) => validate_target_index(target, target_count),
         ValueDef::Constant(_)
         | ValueDef::ChosenX

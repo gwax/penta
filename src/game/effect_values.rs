@@ -51,6 +51,14 @@ impl Game {
                     })
                     .map_or(0, i32::from)
             }
+            ValueDef::TargetToughness(target) => {
+                Self::chosen_targets(object, scoped.target_slot(target))
+                    .find_map(|target| match target {
+                        Target::Permanent(id) => self.current_or_last_known_toughness(id),
+                        Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
+                    })
+                    .map_or(0, i32::from)
+            }
             ValueDef::TargetManaValue(target) => {
                 Self::chosen_targets(object, scoped.target_slot(target))
                     .find_map(|target| match target {

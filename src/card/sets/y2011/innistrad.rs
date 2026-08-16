@@ -2375,8 +2375,34 @@ pub(in crate::card::sets) static STROMKIRK_PATROL: CardRecord = CardRecord::new(
     ),
 );
 
+/// The life comes to the caster rather than to the player who paid, which is
+/// the whole difference between this and Devour Flesh.
+static TRIBUTE_TO_HUNGER_PAYOFF: EffectDef = EffectDef::GainLife {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::TriggerEventAmount,
+};
+
 // ISD 119 — Tribute to Hunger
-// Audit: blocked — Needs the last known toughness of the creature the targeted opponent chooses to sacrifice.
+pub(in crate::card::sets) static TRIBUTE_TO_HUNGER: CardRecord = CardRecord::new(
+    cards::TRIBUTE_TO_HUNGER,
+    "Tribute to Hunger",
+    CardArt::new("f77e0f88-2285-4b59-9165-9948c75d77a3", "Dave Kendall"),
+    CardSet::Innistrad,
+    CardRules::new_instant(mana_cost!("{2}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target opponent sacrifices a creature of their choice. You gain life equal to that creature's toughness.",
+        &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(
+            PlayerRelation::Opponent,
+        ))],
+        EffectDef::SacrificeOfChoice {
+            player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            then: Some(&TRIBUTE_TO_HUNGER_PAYOFF),
+            amount: SacrificedAmountDef::Toughness,
+            otherwise: None,
+            optional: false,
+        },
+    )),
+);
 
 // ISD 120 — Typhoid Rats
 pub(in crate::card::sets) static TYPHOID_RATS: CardRecord = CardRecord::new(
@@ -5370,6 +5396,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SEVER_THE_BLOODLINE,
     &SKELETAL_GRIMACE,
     &STROMKIRK_PATROL,
+    &TRIBUTE_TO_HUNGER,
     &TYPHOID_RATS,
     &UNBURIAL_RITES,
     &VAMPIRE_INTERLOPER,

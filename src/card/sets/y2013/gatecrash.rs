@@ -11,8 +11,8 @@ use crate::card::{
     InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
     ObjectRefDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
     ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    SumValueDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnPhaseDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -2193,8 +2193,35 @@ pub(in crate::card::sets) static IVY_LANE_DENIZEN: CardRecord = CardRecord::new(
 // GTC 128 — Ooze Flux
 // Audit: blocked — Needs removing an arbitrary number of +1/+1 counters distributed among creatures and a token sized by the amount removed.
 
+/// Power plus toughness, which is why a Wall is a fine thing to aim it at
+/// and a Lightning-fast attacker often is not.
+static PREDATORS_RAPPORT_TOTAL: SumValueDef = SumValueDef {
+    left: ValueDef::TargetPower(TargetIndex::PRIMARY),
+    right: ValueDef::TargetToughness(TargetIndex::PRIMARY),
+};
+
 // GTC 129 — Predator's Rapport
-// Audit: blocked — Values expose target power but not target toughness or addition of the two characteristics.
+pub(in crate::card::sets) static PREDATORS_RAPPORT: CardRecord = CardRecord::new(
+    cards::PREDATORS_RAPPORT,
+    "Predator's Rapport",
+    CardArt::new("47324ab7-df78-4859-be0b-2eef5d4f8082", "Matt Stewart"),
+    CardSet::Gatecrash,
+    CardRules::new_instant(mana_cost!("{2}{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Choose target creature you control. You gain life equal to that creature's power plus its toughness.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::You),
+                owner: None,
+            },
+        )],
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Sum(&PREDATORS_RAPPORT_TOTAL),
+        },
+    )),
+);
 
 // GTC 130 — Rust Scarab
 // Audit: blocked — Needs a becomes-blocked trigger and a target constrained to the captured defending player.
@@ -4230,6 +4257,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GREENSIDE_WATCHER,
     &GYRE_SAGE,
     &IVY_LANE_DENIZEN,
+    &PREDATORS_RAPPORT,
     &SCAB_CLAN_CHARGER,
     &SKARRG_GOLIATH,
     &SLAUGHTERHORN,
