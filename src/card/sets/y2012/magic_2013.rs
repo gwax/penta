@@ -3984,7 +3984,29 @@ pub(in crate::card::sets) static GLACIAL_FORTRESS: CardRecord = CardRecord::new(
 // Audit: blocked — The counter vocabulary has no pressure counter, so the add and remove costs cannot use the printed counter kind.
 
 // M13 227 — Reliquary Tower
-// Audit: blocked — No static effect removes a player's maximum hand size.
+pub(in crate::card::sets) static RELIQUARY_TOWER: CardRecord = CardRecord::new(
+    cards::RELIQUARY_TOWER,
+    "Reliquary Tower",
+    CardArt::new("f92583e4-9749-4c11-9d32-fb81260c5b63", "Jesper Ejsing"),
+    CardSet::Magic2013,
+    // "You", so it does nothing for the opponent, and it is read at cleanup
+    // rather than captured -- losing the Tower on your own turn puts the
+    // limit straight back.
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::static_ability(
+            "You have no maximum hand size.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::You)),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::NoMaximumHandSize),
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {C}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+        ),
+    ]),
+);
 
 // M13 228 — Rootbound Crag
 pub(in crate::card::sets) static ROOTBOUND_CRAG: CardRecord = CardRecord::new(
@@ -4188,6 +4210,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DRAGONSKULL_SUMMIT,
     &DROWNED_CATACOMB,
     &GLACIAL_FORTRESS,
+    &RELIQUARY_TOWER,
     &ROOTBOUND_CRAG,
     &SUNPETAL_GROVE,
 ];

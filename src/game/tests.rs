@@ -653,6 +653,7 @@ mod rabid_wombat;
 mod rampage;
 mod random_discard;
 mod regeneration;
+mod reliquary_tower;
 mod removal_and_keywords;
 mod replacements_and_presentation;
 mod resolution_destinations;

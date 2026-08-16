@@ -147,3 +147,4 @@ pub const TANDEM_LOOKOUT: CardDefinitionId = CardDefinitionId(1946);
 pub const STONEWRIGHT: CardDefinitionId = CardDefinitionId(1947);
 pub const DIREGRAF_ESCORT: CardDefinitionId = CardDefinitionId(1948);
 pub const FLOWERING_LUMBERKNOT: CardDefinitionId = CardDefinitionId(1949);
+pub const RELIQUARY_TOWER: CardDefinitionId = CardDefinitionId(1950);

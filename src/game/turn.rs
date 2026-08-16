@@ -563,7 +563,9 @@ impl Game {
     }
 
     pub(super) fn cleanup(&mut self) {
-        if self.players[self.active_player.index()].hand.len() > 7 {
+        if self.players[self.active_player.index()].hand.len() > 7
+            && !self.player_has_no_maximum_hand_size(self.active_player)
+        {
             self.cleanup_pending = true;
         } else {
             self.complete_cleanup();

@@ -107,6 +107,10 @@ pub enum AppliedRuleDef {
     /// nothing to spill and no blocker is dealt a lethal share.
     AssignsNoCombatDamage,
     CannotBeCountered,
+    /// The affected player has no maximum hand size, so the cleanup step
+    /// never asks them to discard. A player rule rather than an object one:
+    /// it is found by walking the battlefield for statics naming that player.
+    NoMaximumHandSize,
     /// A creature matching this predicate cannot block the affected creature.
     CannotBeBlockedBy(ObjectPredicateDef),
     /// No Aura may attach to the affected permanent. This restricts both the

@@ -253,6 +253,8 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
         AppliedEffectDef::Rule(AppliedRuleDef::UntapAtMostOne(predicate)) => {
             static_object_predicate_supported(predicate)
         }
+        // Read by the cleanup step, by the same walk and for the same reason.
+        AppliedEffectDef::Rule(AppliedRuleDef::NoMaximumHandSize) => true,
         AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
     }
 }
@@ -328,6 +330,7 @@ fn static_object_applied_effect_supported(
         )
         | AppliedEffectDef::Rule(
             AppliedRuleDef::CannotBeCountered
+            | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::CannotPlay(_)
             | AppliedRuleDef::UntapAtMostOne(_)
             | AppliedRuleDef::RedirectDamageFromTo { .. },

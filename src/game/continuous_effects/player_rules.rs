@@ -156,6 +156,58 @@ impl Game {
         ControlFlow::Continue(())
     }
 
+    /// Whether any live static ability tells `affected_player` they have no
+    /// maximum hand size. Walked the same way as the damage limits above:
+    /// a player rule has no anchor object, so every static ability on the
+    /// battlefield is asked whether its recipient is this player.
+    pub(in crate::game) fn player_has_no_maximum_hand_size(
+        &self,
+        affected_player: PlayerId,
+    ) -> bool {
+        let land_type_sources = self.land_type_effect_sources(None);
+        for source in self.battlefield.iter().chain(self.emblems.iter()) {
+            let Some(rules) = self.effective_rules(source) else {
+                continue;
+            };
+            let (source_definition, source_part) = Self::effective_rules_source(source);
+            if self.rules_text_abilities_removed_from_sources(source, &land_type_sources) {
+                continue;
+            }
+            for attached in rules.indexed_abilities() {
+                if !attached.definition.is_executable()
+                    || !matches!(
+                        attached.definition.definition,
+                        DeclarativeAbilityDef::Static(_)
+                    )
+                {
+                    continue;
+                }
+                if !self.ability_survives_resolved_operations(
+                    source,
+                    AbilityOrigin::Printed {
+                        definition: source_definition,
+                        part: source_part,
+                        ability: attached.id,
+                    },
+                ) {
+                    continue;
+                }
+                let Some(EffectDef::StaticApply { recipient, effect }) =
+                    attached.definition.declarative_effect()
+                else {
+                    continue;
+                };
+                if effect != AppliedEffectDef::Rule(AppliedRuleDef::NoMaximumHandSize) {
+                    continue;
+                }
+                if self.static_player_recipient_matches(recipient, source, affected_player) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
     fn collect_static_play_restrictions(
         &self,
         effect: EffectDef,

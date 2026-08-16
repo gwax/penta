@@ -119,6 +119,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Reliquary Tower**, and with it a player rule removing the maximum hand
+  size. Read at cleanup rather than captured, so losing the Tower puts the
+  limit back for that very cleanup, and it says "you" -- an opposing Tower
+  does nothing for your discard.
+
 - **Flowering Lumberknot**, which can neither attack nor block unpaired. A
   static "as long as" clause may now read a predicate off its own source, the
   same way it already could off an attached permanent.
