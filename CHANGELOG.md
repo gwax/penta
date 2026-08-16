@@ -119,6 +119,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Discarding a chosen card as an activation cost**, and with it **Mad
+  Prophet** and **Tin Street Market**. The card travels with the activation
+  the way a chosen sacrifice already does, so there is no mid-payment
+  decision: the enumerator offers one activation per discardable card, and an
+  empty hand offers none.
+
 - **Way of the Thief** and **Dimir Keyrune**. The Thief's evasion is another
   Gate-conditional static, on the Aura's controller rather than the creature's;
   the Keyrune applies its animation and its evasion as one effect, so both

@@ -157,3 +157,5 @@ pub const ETHEREAL_ARMOR: CardDefinitionId = CardDefinitionId(1956);
 pub const OGRE_JAILBREAKER: CardDefinitionId = CardDefinitionId(1957);
 pub const WAY_OF_THE_THIEF: CardDefinitionId = CardDefinitionId(1958);
 pub const DIMIR_KEYRUNE: CardDefinitionId = CardDefinitionId(1959);
+pub const MAD_PROPHET: CardDefinitionId = CardDefinitionId(1960);
+pub const TIN_STREET_MARKET: CardDefinitionId = CardDefinitionId(1961);

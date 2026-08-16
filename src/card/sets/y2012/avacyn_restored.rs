@@ -2555,7 +2555,27 @@ pub(in crate::card::sets) static LIGHTNING_PROWESS: CardRecord = CardRecord::new
 );
 
 // AVR 146 — Mad Prophet
-// Audit: blocked — Needs discarding a chosen card as an activated-ability cost.
+pub(in crate::card::sets) static MAD_PROPHET: CardRecord = CardRecord::new(
+    cards::MAD_PROPHET,
+    "Mad Prophet",
+    CardArt::new("172383d9-9135-4daa-a647-9d76435d3158", "Wayne Reynolds"),
+    CardSet::AvacynRestored,
+    // Haste, so the looting starts the turn it lands.
+    CardRules::new_creature(mana_cost!("{3}{R}"), &["Human", "Shaman"], 2, 2).with_abilities(&[
+        abilities::haste(),
+        AbilityDef::activated(
+            "{T}, Discard a card: Draw a card.",
+            &[
+                AbilityCostDef::TapSource,
+                AbilityCostDef::DiscardCardMatching(ObjectPredicateDef::Any),
+            ],
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
 
 /// Granted to the host rather than kept on the Aura, so the tap cost is the
 /// creature's own and "this turn" is measured from wherever it resolves.
@@ -4262,6 +4282,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KRUIN_STRIKER,
     &LIGHTNING_MAULER,
     &LIGHTNING_PROWESS,
+    &MAD_PROPHET,
     &MALICIOUS_INTENT,
     &PILLAR_OF_FLAME,
     &RAGING_POLTERGEIST,

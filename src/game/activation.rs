@@ -110,6 +110,7 @@ impl Game {
                 | AbilityCostDef::PayLife(_)
                 | AbilityCostDef::DiscardSource
                 | AbilityCostDef::DiscardCards(_)
+                | AbilityCostDef::DiscardCardMatching(_)
                 | AbilityCostDef::DiscardCardsAtRandom(_)
                 | AbilityCostDef::SacrificePermanent { .. }
                 | AbilityCostDef::TapPermanent { .. }
@@ -219,6 +220,7 @@ impl Game {
                     | AbilityCostDef::RemoveCountersFromSource { .. }
                     | AbilityCostDef::PayLife(_)
                     | AbilityCostDef::DiscardCards(_)
+                    | AbilityCostDef::DiscardCardMatching(_)
                     | AbilityCostDef::DiscardCardsAtRandom(_)
                     | AbilityCostDef::SacrificePermanent { .. }
                     | AbilityCostDef::TapPermanent { .. }
@@ -381,6 +383,11 @@ impl Game {
                     }
                     AbilityCostDef::PayLife(amount) => {
                         self.lose_life(player, *amount);
+                    }
+                    AbilityCostDef::DiscardCardMatching(_) => {
+                        let chosen =
+                            cost_object.expect("a legal activation chose the discarded card");
+                        self.discard_cards(player, &[chosen]);
                     }
                     AbilityCostDef::ExileCardFromGraveyard(_) => {
                         let chosen = cost_object.expect("a legal activation chose the exiled card");

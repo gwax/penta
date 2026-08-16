@@ -576,6 +576,7 @@ mod delayed_triggers;
 mod derelor;
 mod detain;
 mod dgm_stale_audits;
+mod discard_cost;
 mod disharmony;
 mod dka_stale_audits;
 mod energy_tap;

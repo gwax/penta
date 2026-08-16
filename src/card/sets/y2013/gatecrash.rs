@@ -1807,8 +1807,38 @@ pub(in crate::card::sets) static SKINBRAND_GOBLIN: CardRecord = CardRecord::new(
 // GTC 107 — Structural Collapse
 // Audit: blocked — Needs two distinct resolving permanent choices and a continuation that deals damage after both sacrifices.
 
+/// The land taps for this, so the Market turns any spare land into a looter.
+static TIN_STREET_MARKET_GRANTED: AbilityDef = AbilityDef::activated(
+    "{T}, Discard a card: Draw a card.",
+    &[
+        AbilityCostDef::TapSource,
+        AbilityCostDef::DiscardCardMatching(ObjectPredicateDef::Any),
+    ],
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+);
+
 // GTC 108 — Tin Street Market
-// Audit: blocked — Discarding a card is not supported as a declarative activated-ability cost.
+pub(in crate::card::sets) static TIN_STREET_MARKET: CardRecord = CardRecord::new(
+    cards::TIN_STREET_MARKET,
+    "Tin Street Market",
+    CardArt::new("1c1f543b-2222-4ef5-b4f7-2c3d2ea27fdc", "Noah Bradley"),
+    CardSet::Gatecrash,
+    CardRules::new_enchantment(mana_cost!("{4}{R}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant land", &abilities::ENCHANT_LAND_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted land has \"{T}, Discard a card: Draw a card.\"",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::add_ability(&TIN_STREET_MARKET_GRANTED),
+                },
+            ),
+        ]),
+);
 
 // GTC 109 — Towering Thunderfist
 pub(in crate::card::sets) static TOWERING_THUNDERFIST: CardRecord = CardRecord::new(
@@ -4156,6 +4186,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RIPSCALE_PREDATOR,
     &SCORCHWALKER,
     &SKINBRAND_GOBLIN,
+    &TIN_STREET_MARKET,
     &TOWERING_THUNDERFIST,
     &VIASHINO_SHANKTAIL,
     &WARMIND_INFANTRY,

@@ -207,7 +207,8 @@ impl Game {
                         | AbilityCostDef::TapPermanent { .. }
                         // Payability is decided by whether any card qualifies,
                         // which the choice list below answers.
-                        | AbilityCostDef::ExileCardFromGraveyard(_) => false,
+                        | AbilityCostDef::ExileCardFromGraveyard(_)
+                        | AbilityCostDef::DiscardCardMatching(_) => false,
                         AbilityCostDef::UntapSource
                         | AbilityCostDef::DiscardSource
                         | AbilityCostDef::DiscardCards(_)
@@ -237,6 +238,7 @@ impl Game {
                         AbilityCostDef::SacrificePermanent { .. }
                             | AbilityCostDef::TapPermanent { .. }
                             | AbilityCostDef::ExileCardFromGraveyard(_)
+                            | AbilityCostDef::DiscardCardMatching(_)
                     )
                 });
                 let object_cost = object_costs.next();
@@ -299,6 +301,15 @@ impl Game {
                             ZoneKind::Graveyard,
                             permanent.card.id,
                         )
+                    })
+                    .map(|card| Some(card.id))
+                    .collect(),
+                    Some(AbilityCostDef::DiscardCardMatching(object)) => self.players
+                        [player.index()]
+                    .hand
+                    .iter()
+                    .filter(|card| {
+                        self.card_object_matches(*object, card, ZoneKind::Hand, permanent.card.id)
                     })
                     .map(|card| Some(card.id))
                     .collect(),
@@ -497,6 +508,7 @@ impl Game {
                         | AbilityCostDef::RemoveCountersFromSource { .. }
                         | AbilityCostDef::PayLife(_)
                         | AbilityCostDef::DiscardCards(_)
+                        | AbilityCostDef::DiscardCardMatching(_)
                         | AbilityCostDef::DiscardCardsAtRandom(_)
                         | AbilityCostDef::SacrificePermanent { .. }
                         | AbilityCostDef::TapPermanent { .. }
@@ -583,6 +595,7 @@ impl Game {
                             | AbilityCostDef::PayLife(_)
                             | AbilityCostDef::DiscardSource
                             | AbilityCostDef::DiscardCards(_)
+                            | AbilityCostDef::DiscardCardMatching(_)
                             | AbilityCostDef::DiscardCardsAtRandom(_)
                             | AbilityCostDef::SacrificePermanent { .. }
                             | AbilityCostDef::TapPermanent { .. }

@@ -334,9 +334,13 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
             // The chosen object comes from the battlefield or from the
             // activating player's own graveyard, so only the predicate
             // needs checking.
+            // The discard reads the payer's hand rather than the
+            // battlefield, but the shape is the same: a permanent to activate
+            // from and a predicate the shared walk can read.
             AbilityCostDef::SacrificePermanent { object, .. }
             | AbilityCostDef::TapPermanent { object, .. }
-            | AbilityCostDef::ExileCardFromGraveyard(object) => {
+            | AbilityCostDef::ExileCardFromGraveyard(object)
+            | AbilityCostDef::DiscardCardMatching(object) => {
                 battlefield && shared_object_predicate(*object)
             }
             // Exiling the source is the one cost a card can pay from its own

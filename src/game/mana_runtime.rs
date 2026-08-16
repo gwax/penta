@@ -46,6 +46,7 @@ impl Game {
                 | AbilityCostDef::SacrificeSource
                 | AbilityCostDef::DiscardSource
                 | AbilityCostDef::DiscardCards(_)
+                | AbilityCostDef::DiscardCardMatching(_)
                 | AbilityCostDef::DiscardCardsAtRandom(_)
                 | AbilityCostDef::SacrificePermanent { .. }
                 | AbilityCostDef::TapPermanent { .. }
@@ -89,6 +90,7 @@ impl Game {
             AbilityCostDef::UntapSource
             | AbilityCostDef::DiscardSource
             | AbilityCostDef::DiscardCards(_)
+            | AbilityCostDef::DiscardCardMatching(_)
             | AbilityCostDef::DiscardCardsAtRandom(_)
             | AbilityCostDef::SacrificePermanent { .. }
             | AbilityCostDef::TapPermanent { .. }

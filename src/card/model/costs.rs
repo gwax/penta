@@ -38,6 +38,11 @@ pub enum CostDef {
         controller: PlayerRelation,
     },
     ExileSource,
+    /// Discard a matching card from the payer's own hand, chosen as the
+    /// ability is activated. Unlike [`Self::DiscardCards`] the card travels
+    /// with the activation rather than being counted, which is what "discard
+    /// a card" and "discard a land card" both need.
+    DiscardCardMatching(ObjectPredicateDef),
     /// Exile a matching card from the controller's own graveyard. The card is
     /// chosen when the cost is paid, so it travels with the action rather
     /// than being a target.
