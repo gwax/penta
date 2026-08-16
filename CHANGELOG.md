@@ -119,6 +119,12 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Ivory Guardians** and **Woodborn Behemoth**, two more board-conditioned
+  statics. The Guardians pump by name rather than by control, so a copy on
+  either side of the table is covered -- but each copy's own "an opponent" is
+  read from its own controller, so only one of two facing copies is usually
+  live.
+
 - **Angelic Voices**, **Beasts of Bogardan**, **Goblin Caves** and **Goblin
   Shrine**, four old anthems the board switches on and off. All four fell out
   of letting a static clause read the battlefield: Angelic Voices reads an

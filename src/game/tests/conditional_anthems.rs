@@ -166,14 +166,113 @@ fn the_goblin_auras_read_the_land_they_sit_on() {
     );
 }
 
+/// The Guardians pump by name rather than by control, so a second copy on
+/// either side of the table is covered.
 #[test]
-fn all_four_report_complete_coverage() {
+fn the_guardians_pump_by_name_on_both_sides() {
+    let mut game = ready();
+    let mine = creature(10_000, cards::IVORY_GUARDIANS, PlayerId::One);
+    let mine_id = mine.card.id;
+    game.battlefield.push(mine);
+    let theirs = creature(10_100, cards::IVORY_GUARDIANS, PlayerId::Two);
+    let theirs_id = theirs.card.id;
+    game.battlefield.push(theirs);
+    let bystander = creature(10_101, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bystander_id = bystander.card.id;
+    game.battlefield.push(bystander);
+
+    assert_eq!(
+        stats(&game, mine_id),
+        (Some(3), Some(3)),
+        "no red permanent opposite yet",
+    );
+
+    // A red token opposite is red but not nontoken.
+    game.battlefield
+        .push(creature(10_102, cards::GOBLIN_TOKEN_1_1_RED, PlayerId::Two));
+    assert_eq!(stats(&game, mine_id), (Some(3), Some(3)), "still a token");
+
+    let red = creature(10_103, cards::GOBLINS_OF_THE_FLARG, PlayerId::Two);
+    let red_id = red.card.id;
+    game.battlefield.push(red);
+
+    // Only my Guardians' anthem is live: "an opponent" is read from each
+    // Guardians' own controller, and the red creature is theirs, so their
+    // copy sees no red permanent opposite it.
+    assert_eq!(stats(&game, mine_id), (Some(4), Some(4)));
+    assert_eq!(
+        stats(&game, theirs_id),
+        (Some(4), Some(4)),
+        "the anthem names no controller, so it crosses the table",
+    );
+    assert_eq!(
+        stats(&game, bystander_id),
+        (Some(2), Some(2)),
+        "and reaches nothing with another name",
+    );
+
+    game.battlefield
+        .retain(|permanent| permanent.card.id != red_id);
+    assert_eq!(stats(&game, mine_id), (Some(3), Some(3)), "and it lapses");
+}
+
+/// Both halves of the Behemoth's bonus sit behind one threshold.
+#[test]
+fn the_behemoth_takes_size_and_trample_together() {
+    let mut game = ready();
+    let behemoth = creature(10_000, cards::WOODBORN_BEHEMOTH, PlayerId::One);
+    let behemoth_id = behemoth.card.id;
+    game.battlefield.push(behemoth);
+
+    let tramples = |game: &Game| {
+        game.permanent_has_executable_keyword(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == behemoth_id)
+                .expect("still there"),
+            KeywordAbility::Trample,
+        )
+    };
+
+    for _ in 0..7 {
+        game.put_onto_battlefield(PlayerId::One, cards::FOREST)
+            .expect("cataloged");
+    }
+    assert_eq!(
+        stats(&game, behemoth_id),
+        (Some(4), Some(4)),
+        "seven is not eight",
+    );
+    assert!(!tramples(&game));
+
+    game.put_onto_battlefield(PlayerId::One, cards::FOREST)
+        .expect("cataloged");
+    assert_eq!(stats(&game, behemoth_id), (Some(8), Some(8)));
+    assert!(tramples(&game), "and the trample arrives with the size");
+
+    let land = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::FOREST)
+        .expect("it is there")
+        .card
+        .id;
+    game.battlefield
+        .retain(|permanent| permanent.card.id != land);
+    assert_eq!(stats(&game, behemoth_id), (Some(4), Some(4)));
+    assert!(!tramples(&game), "and leaves with it");
+}
+
+#[test]
+fn all_six_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
     for definition in [
         cards::ANGELIC_VOICES,
         cards::BEASTS_OF_BOGARDAN,
         cards::GOBLIN_CAVES,
         cards::GOBLIN_SHRINE,
+        cards::IVORY_GUARDIANS,
+        cards::WOODBORN_BEHEMOTH,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

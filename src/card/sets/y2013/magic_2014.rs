@@ -2636,8 +2636,47 @@ pub(in crate::card::sets) static WINDSTORM: CardRecord = CardRecord::new(
 // M14 202 — Witchstalker
 // Audit: blocked — A non-intervening spell-cast trigger cannot capture “during your turn” without incorrectly rechecking that restriction on resolution.
 
+static WOODBORN_BEHEMOTH_TRAMPLE: AbilityDef = abilities::trample();
+
+static WOODBORN_BEHEMOTH_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(4), ValueDef::Constant(4)),
+    AppliedEffectDef::add_ability(&WOODBORN_BEHEMOTH_TRAMPLE),
+];
+
+static EIGHT_LANDS: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::HasType(CardType::Land),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 8,
+};
+
+static WOODBORN_BEHEMOTH_GRANT: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::Composite(&WOODBORN_BEHEMOTH_BONUS),
+};
+
 // M14 203 — Woodborn Behemoth
-// Audit: blocked — Continuous effects cannot conditionally grant a composite bonus when an object count reaches a threshold.
+pub(in crate::card::sets) static WOODBORN_BEHEMOTH: CardRecord = CardRecord::new(
+    cards::WOODBORN_BEHEMOTH,
+    "Woodborn Behemoth",
+    CardArt::new("8c73dbf3-e68e-4f21-b6ca-94302bf5574c", "Matt Stewart"),
+    CardSet::Magic2014,
+    // Both halves are behind the same threshold, so losing the eighth land
+    // takes the trample away with the size.
+    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Elemental"], 4, 4).with_ability(
+        AbilityDef::static_ability(
+            "As long as you control eight or more lands, this creature gets +4/+4 and has \
+             trample.",
+            EffectDef::IfCondition {
+                condition: &EIGHT_LANDS,
+                then: &WOODBORN_BEHEMOTH_GRANT,
+            },
+        ),
+    ),
+);
 
 static ACCORDERS_SHIELD_VIGILANCE: AbilityDef = abilities::vigilance();
 
@@ -3153,6 +3192,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPOREMOUND,
     &TROLLHIDE,
     &WINDSTORM,
+    &WOODBORN_BEHEMOTH,
     &ACCORDERS_SHIELD,
     &DARKSTEEL_FORGE,
     &FIRESHRIEKER,

@@ -115,3 +115,5 @@ pub const ANGELIC_VOICES: CardDefinitionId = CardDefinitionId(1914);
 pub const BEASTS_OF_BOGARDAN: CardDefinitionId = CardDefinitionId(1915);
 pub const GOBLIN_CAVES: CardDefinitionId = CardDefinitionId(1916);
 pub const GOBLIN_SHRINE: CardDefinitionId = CardDefinitionId(1917);
+pub const IVORY_GUARDIANS: CardDefinitionId = CardDefinitionId(1918);
+pub const WOODBORN_BEHEMOTH: CardDefinitionId = CardDefinitionId(1919);

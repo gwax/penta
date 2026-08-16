@@ -461,8 +461,52 @@ pub(in crate::card::sets) static INDESTRUCTIBLE_AURA: CardRecord = CardRecord::n
 // LEG 22 — Infinite Authority
 // Audit: blocked — Needs a combat declaration or damage-assignment constraint for “Whenever enchanted creature blocks or becomes blocked by a creature with toughness 3 or less, destroy the other creature at end of combat. At the beginning of the next end step, if that…”.
 
+static AN_OPPONENT_CONTROLS_A_NONTOKEN_RED_PERMANENT: TriggerConditionDef =
+    TriggerConditionDef::ObjectCount {
+        query: ObjectQueryDef::matching(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::Color(ManaColor::Red),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+            ]),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::Opponent,
+        ),
+        comparison: ComparisonDef::GreaterOrEqual,
+        amount: 1,
+    };
+
+/// "Creatures named Ivory Guardians", so a second copy pumps the first and
+/// an opponent's is covered too.
+static IVORY_GUARDIANS_ANTHEM: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::SharesNameWithSource,
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::Any,
+    ),
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+};
+
 // LEG 23 — Ivory Guardians
-// Audit: blocked — Needs the exact token definition and creation/lifecycle behavior for “Creatures named Ivory Guardians get +1/+1 as long as an opponent controls a nontoken red permanent”.
+pub(in crate::card::sets) static IVORY_GUARDIANS: CardRecord = CardRecord::new(
+    cards::IVORY_GUARDIANS,
+    "Ivory Guardians",
+    CardArt::new("9bf9cccd-fe97-4632-a90a-9eeb0d41135e", "Melissa A. Benson"),
+    CardSet::Legends,
+    CardRules::new_creature(mana_cost!("{4}{W}{W}"), &["Giant", "Cleric"], 3, 3).with_abilities(&[
+        abilities::protection_from(ManaColor::Red),
+        AbilityDef::static_ability(
+            "Creatures named Ivory Guardians get +1/+1 as long as an opponent controls a nontoken \
+             red permanent.",
+            EffectDef::IfCondition {
+                condition: &AN_OPPONENT_CONTROLS_A_NONTOKEN_RED_PERMANENT,
+                then: &IVORY_GUARDIANS_ANTHEM,
+            },
+        ),
+    ]),
+);
 
 // LEG 24 — Keepers of the Faith
 pub(in crate::card::sets) static KEEPERS_OF_THE_FAITH: CardRecord = CardRecord::new(
@@ -5447,6 +5491,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HEAVENS_GATE,
     &HOLY_DAY,
     &INDESTRUCTIBLE_AURA,
+    &IVORY_GUARDIANS,
     &KEEPERS_OF_THE_FAITH,
     &KISMET,
     &LIFEBLOOD,
