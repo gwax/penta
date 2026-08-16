@@ -881,8 +881,35 @@ pub(in crate::card::sets) static SKYGAMES: CardRecord = CardRecord::new(
         ]),
 );
 
+/// The tax is whatever your biggest creature is, so this is a counterspell
+/// that grows with the board rather than with the turn.
+static SPELL_RUPTURE_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
 // GTC 52 — Spell Rupture
-// Audit: blocked — No value computes the greatest power among creatures you control for the counter-unless payment.
+pub(in crate::card::sets) static SPELL_RUPTURE: CardRecord = CardRecord::new(
+    cards::SPELL_RUPTURE,
+    "Spell Rupture",
+    CardArt::new("7267fcec-0879-4743-a45f-35057ccb2596", "Kev Walker"),
+    CardSet::Gatecrash,
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Counter target spell unless its controller pays {X}, where X is the greatest power among creatures you control.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Spell,
+                zones: &[ZoneKind::Stack],
+                controller: None,
+                owner: None,
+            },
+        )],
+        abilities::counter_target_unless_paid(ValueDef::GreatestPowerAmong(
+            &SPELL_RUPTURE_CREATURES,
+        )),
+    )),
+);
 
 // GTC 53 — Stolen Identity
 // Audit: blocked — Needs token copies of a target and cipher's encoding and free-copy-casting procedure.
@@ -2168,7 +2195,24 @@ pub(in crate::card::sets) static FORCED_ADAPTATION: CardRecord = CardRecord::new
 );
 
 // GTC 121 — Giant Adephage
-// Audit: blocked — Token creation cannot create a token copy of the source permanent.
+pub(in crate::card::sets) static GIANT_ADEPHAGE: CardRecord = CardRecord::new(
+    cards::GIANT_ADEPHAGE,
+    "Giant Adephage",
+    CardArt::new("8bae725f-e582-4377-a855-51af035cdac3", "Christine Choi"),
+    CardSet::Gatecrash,
+    // Every connection doubles the swarm, which is why trample matters more
+    // than the seven power does.
+    CardRules::new_creature(mana_cost!("{5}{G}{G}"), &["Insect"], 7, 7).with_abilities(&[
+        abilities::trample(),
+        AbilityDef::triggered(
+            "Whenever this creature deals combat damage to a player, create a token that's a copy of this creature.",
+            TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
+            EffectDef::CreateTokenCopyOf {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+    ]),
+);
 
 // GTC 122 — Greenside Watcher
 pub(in crate::card::sets) static GREENSIDE_WATCHER: CardRecord = CardRecord::new(
@@ -4490,6 +4534,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SAPPHIRE_DRAKE,
     &SCATTER_ARC,
     &SKYGAMES,
+    &SPELL_RUPTURE,
     &TOTALLY_LOST,
     &WAY_OF_THE_THIEF,
     &BALUSTRADE_SPY,
@@ -4538,6 +4583,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DISCIPLE_OF_THE_OLD_WAYS,
     &EXPERIMENT_ONE,
     &FORCED_ADAPTATION,
+    &GIANT_ADEPHAGE,
     &GREENSIDE_WATCHER,
     &GYRE_SAGE,
     &IVY_LANE_DENIZEN,
