@@ -3,7 +3,7 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, PlayerRelation, ZoneKind, ZonePlacement, cards,
+    ObjectPredicateDef, PlayerRelation, ValueDef, ZoneKind, ZonePlacement, cards,
 };
 use crate::mana_cost;
 
@@ -23,7 +23,7 @@ pub(in crate::card::sets) static ENLIGHTENED_TUTOR: CardRecord = CardRecord::new
                 ObjectPredicateDef::HasType(CardType::Enchantment),
             ]),
             minimum: 0,
-            maximum: 1,
+            maximum: ValueDef::Constant(1),
             reveal: true,
             destination: ZoneKind::Library,
             placement: ZonePlacement::Top,
@@ -71,7 +71,7 @@ pub(in crate::card::sets) static WORLDLY_TUTOR: CardRecord = CardRecord::new(
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Creature),
             minimum: 0,
-            maximum: 1,
+            maximum: ValueDef::Constant(1),
             reveal: true,
             destination: ZoneKind::Library,
             placement: ZonePlacement::Top,

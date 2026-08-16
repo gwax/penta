@@ -1573,7 +1573,29 @@ pub(in crate::card::sets) static DARK_FAVOR: CardRecord = CardRecord::new(
 );
 
 // M13 87 — Diabolic Revelation
-// Audit: blocked — SearchZone has a static maximum and cannot select up to the chosen X cards.
+pub(in crate::card::sets) static DIABOLIC_REVELATION: CardRecord = CardRecord::new(
+    cards::DIABOLIC_REVELATION,
+    "Diabolic Revelation",
+    CardArt::new("145d6d7b-1e87-47b7-baf3-d201458ad996", "Raymond Swanland"),
+    CardSet::Magic2013,
+    // "Up to X" with no qualifier on the cards: whatever X buys, it buys
+    // exactly, and a smaller library is its own ceiling.
+    CardRules::new_sorcery(mana_cost!("{X}{3}{B}{B}")).with_ability(AbilityDef::spell(
+        "Search your library for up to X cards, put those cards into your hand, then shuffle.",
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::Any,
+            minimum: 0,
+            maximum: ValueDef::ChosenX,
+            reveal: false,
+            destination: ZoneKind::Hand,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+        },
+    )),
+);
 
 // M13 88 — Disciple of Bolas
 pub(in crate::card::sets) static DISCIPLE_OF_BOLAS: CardRecord = CardRecord::new(
@@ -1813,7 +1835,7 @@ pub(in crate::card::sets) static LILIANAS_SHADE: CardRecord = CardRecord::new(
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp]),
                     minimum: 0,
-                    maximum: 1,
+                    maximum: ValueDef::Constant(1),
                     reveal: true,
                     destination: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
@@ -2883,8 +2905,40 @@ pub(in crate::card::sets) static BOND_BEETLE: CardRecord = CardRecord::new(
     ),
 );
 
+/// The lands you already control, which is what the search is sized by.
+static BOUNDLESS_REALMS_LANDS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Land),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
 // M13 162 — Boundless Realms
-// Audit: blocked — SearchZone has a static maximum and cannot make the selected lands enter tapped.
+pub(in crate::card::sets) static BOUNDLESS_REALMS: CardRecord = CardRecord::new(
+    cards::BOUNDLESS_REALMS,
+    "Boundless Realms",
+    CardArt::new("e3c3cf16-ba81-4558-b1a6-79942a02f629", "Cliff Childs"),
+    CardSet::Magic2013,
+    // It doubles the lands you have, so the seven it costs is measured
+    // against a board that is already large.
+    CardRules::new_sorcery(mana_cost!("{6}{G}")).with_ability(AbilityDef::spell(
+        "Search your library for up to X basic land cards, where X is the number of lands you control, put them onto the battlefield tapped, then shuffle.",
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Land),
+                ObjectPredicateDef::Supertype(CardSupertype::Basic),
+            ]),
+            minimum: 0,
+            maximum: ValueDef::CountMatchingObjects(&BOUNDLESS_REALMS_LANDS),
+            reveal: true,
+            destination: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: true,
+        },
+    )),
+);
 
 static BOUNTIFUL_HARVEST_LANDS: ObjectQueryDef = ObjectQueryDef::matching(
     ObjectPredicateDef::HasType(CardType::Land),
@@ -3028,7 +3082,7 @@ pub(in crate::card::sets) static FARSEEK: CardRecord = CardRecord::new(
                 BasicLandType::Mountain,
             ]),
             minimum: 0,
-            maximum: 1,
+            maximum: ValueDef::Constant(1),
             reveal: false,
             destination: ZoneKind::Battlefield,
             placement: ZonePlacement::Top,
@@ -3171,7 +3225,7 @@ pub(in crate::card::sets) static MWONVULI_BEAST_TRACKER: CardRecord = CardRecord
                     ]),
                 ]),
                 minimum: 1,
-                maximum: 1,
+                maximum: ValueDef::Constant(1),
                 reveal: true,
                 destination: ZoneKind::Library,
                 placement: ZonePlacement::Top,
@@ -3271,7 +3325,7 @@ pub(in crate::card::sets) static RANGERS_PATH: CardRecord = CardRecord::new(
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
             minimum: 0,
-            maximum: 2,
+            maximum: ValueDef::Constant(2),
             reveal: false,
             destination: ZoneKind::Battlefield,
             placement: ZonePlacement::Top,
@@ -4172,6 +4226,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &COWER_IN_FEAR,
     &CRIPPLING_BLIGHT,
     &DARK_FAVOR,
+    &DIABOLIC_REVELATION,
     &DISCIPLE_OF_BOLAS,
     &DISENTOMB,
     &DURESS,
@@ -4226,6 +4281,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ACIDIC_SLIME,
     &ARBOR_ELF,
     &BOND_BEETLE,
+    &BOUNDLESS_REALMS,
     &BOUNTIFUL_HARVEST,
     &CENTAUR_COURSER,
     &DEADLY_RECLUSE,

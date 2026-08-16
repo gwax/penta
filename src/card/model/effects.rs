@@ -740,7 +740,10 @@ pub enum EffectDef {
         source: ZoneKind,
         object: ObjectPredicateDef,
         minimum: usize,
-        maximum: usize,
+        /// How many cards may be taken. A value rather than a constant
+        /// because "up to X basic land cards, where X is the number of lands
+        /// you control" sizes the search from the board it is cast into.
+        maximum: ValueDef,
         reveal: bool,
         destination: ZoneKind,
         placement: ZonePlacement,

@@ -242,7 +242,7 @@ fn decision_effects_suspend_inside_shared_stack_sequences() {
         source: ZoneKind::Library,
         object: ObjectPredicateDef::Any,
         minimum: 1,
-        maximum: 1,
+        maximum: ValueDef::Constant(1),
         reveal: false,
         destination: ZoneKind::Hand,
         placement: ZonePlacement::Top,
@@ -325,31 +325,31 @@ fn zone_search_boundary_rejects_ambiguous_or_incoherent_shapes() {
     assert!(shared_stack_effect(search(
         ZoneKind::Library,
         ZoneKind::Hand,
-        2,
+        ValueDef::Constant(2),
         true,
     )));
     assert!(shared_stack_effect(search(
         ZoneKind::Library,
         ZoneKind::Battlefield,
-        1,
+        ValueDef::Constant(1),
         true,
     )));
     assert!(shared_stack_effect(search(
         ZoneKind::Library,
         ZoneKind::Battlefield,
-        2,
+        ValueDef::Constant(2),
         true,
     )));
     assert!(!shared_stack_effect(search(
         ZoneKind::Library,
         ZoneKind::Library,
-        2,
+        ValueDef::Constant(2),
         true,
     )));
     assert!(!shared_stack_effect(search(
         ZoneKind::Graveyard,
         ZoneKind::Hand,
-        1,
+        ValueDef::Constant(1),
         true,
     )));
 }

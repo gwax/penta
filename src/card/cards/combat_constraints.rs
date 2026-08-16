@@ -177,3 +177,6 @@ pub const DISCIPLE_OF_GRISELBRAND: CardDefinitionId = CardDefinitionId(1976);
 pub const KOROZDA_GUILDMAGE: CardDefinitionId = CardDefinitionId(1977);
 pub const ESSENCE_HARVEST: CardDefinitionId = CardDefinitionId(1978);
 pub const FUNGAL_SPROUTING: CardDefinitionId = CardDefinitionId(1979);
+pub const FRENZIED_TILLING: CardDefinitionId = CardDefinitionId(1980);
+pub const DIABOLIC_REVELATION: CardDefinitionId = CardDefinitionId(1981);
+pub const BOUNDLESS_REALMS: CardDefinitionId = CardDefinitionId(1982);

@@ -2954,8 +2954,44 @@ pub(in crate::card::sets) static FOUNDRY_CHAMPION: CardRecord = CardRecord::new(
     ]),
 );
 
+static FRENZIED_TILLING_PROGRAM: [EffectDef; 2] = [
+    EffectDef::Destroy {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        can_regenerate: true,
+    },
+    // Tapped, so the land it fetches does not pay for anything this turn --
+    // which is the whole reason a five-mana Stone Rain is playable.
+    EffectDef::SearchZone {
+        player: EffectRecipientDef::Controller,
+        source: ZoneKind::Library,
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Land),
+            ObjectPredicateDef::Supertype(CardSupertype::Basic),
+        ]),
+        minimum: 0,
+        maximum: ValueDef::Constant(1),
+        reveal: true,
+        destination: ZoneKind::Battlefield,
+        placement: ZonePlacement::Top,
+        shuffle: true,
+        enters_tapped: true,
+    },
+];
+
 // GTC 166 — Frenzied Tilling
-// Audit: blocked — SearchZone cannot make the found basic land enter tapped.
+pub(in crate::card::sets) static FRENZIED_TILLING: CardRecord = CardRecord::new(
+    cards::FRENZIED_TILLING,
+    "Frenzied Tilling",
+    CardArt::new("03bce9a7-6215-43ff-b4d0-55f96f683aba", "Noah Bradley"),
+    CardSet::Gatecrash,
+    CardRules::new_sorcery(mana_cost!("{3}{R}{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target land. Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Land),
+        )],
+        EffectDef::Sequence(&FRENZIED_TILLING_PROGRAM),
+    )),
+);
 
 // GTC 167 — Ghor-Clan Rampager
 pub(in crate::card::sets) static GHOR_CLAN_RAMPAGER: CardRecord = CardRecord::new(
@@ -4279,6 +4315,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FIREMANE_AVENGER,
     &FORTRESS_CYCLOPS,
     &FOUNDRY_CHAMPION,
+    &FRENZIED_TILLING,
     &GHOR_CLAN_RAMPAGER,
     &GROUND_ASSAULT,
     &HIGH_PRIEST_OF_PENANCE,

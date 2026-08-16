@@ -673,6 +673,7 @@ mod sentinel;
 mod shroud_grants;
 mod silence_and_sturmgeist;
 mod silenced_sources;
+mod sized_searches;
 mod soulbond;
 mod spell_colors;
 mod spell_cost_reduction;

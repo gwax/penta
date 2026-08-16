@@ -3693,7 +3693,7 @@ pub(in crate::card::sets) static UNTAMED_WILDS: CardRecord = CardRecord::new(
                 ObjectPredicateDef::Supertype(CardSupertype::Basic),
             ]),
             minimum: 0,
-            maximum: 1,
+            maximum: ValueDef::Constant(1),
             reveal: false,
             destination: ZoneKind::Battlefield,
             placement: ZonePlacement::Top,

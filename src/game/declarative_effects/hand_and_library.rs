@@ -222,6 +222,12 @@ impl Game {
                 enters_tapped,
             } => {
                 let source = object.source.unwrap_or(object.id);
+                // Sized once, before the search is offered: "up to X, where X
+                // is the number of lands you control" is answered by the
+                // board as the spell resolves.
+                let maximum =
+                    usize::try_from(self.effect_value(maximum, object, context, scoped).max(0))
+                        .unwrap_or(usize::MAX);
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Player(player) = target {
                         self.queue_zone_search(

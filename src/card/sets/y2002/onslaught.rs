@@ -128,7 +128,7 @@ const fn fetch_land(text: &'static str, land_types: &'static [BasicLandType]) ->
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasAnyBasicLandType(land_types),
             minimum: 0,
-            maximum: 1,
+            maximum: ValueDef::Constant(1),
             reveal: false,
             destination: ZoneKind::Battlefield,
             placement: ZonePlacement::Top,

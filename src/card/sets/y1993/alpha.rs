@@ -1910,7 +1910,7 @@ pub(in crate::card::sets) static DEMONIC_TUTOR: CardRecord = CardRecord::new(
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,
             minimum: 1,
-            maximum: 1,
+            maximum: ValueDef::Constant(1),
             reveal: false,
             destination: ZoneKind::Hand,
             placement: ZonePlacement::Top,

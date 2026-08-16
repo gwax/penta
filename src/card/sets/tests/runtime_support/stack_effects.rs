@@ -1,6 +1,7 @@
 use super::*;
 use crate::card::{
     ChooseDef, EffectPaymentDef, ObjectChoiceBindingDef, PartitionItemsDef, SplitIntoPilesDef,
+    ValueDef,
 };
 
 pub(in super::super) fn shared_stack_effect(effect: EffectDef) -> bool {
@@ -208,11 +209,20 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             shuffle,
             ..
         } => {
+            // A constant maximum is still checked against the minimum and
+            // against the one-card ceiling a library destination needs. A
+            // maximum sized from the board answers neither question here, so
+            // it is supported everywhere except back into a library.
+            let constant_maximum = match maximum {
+                ValueDef::Constant(value) => usize::try_from(value).ok(),
+                _ => None,
+            };
             deferred_decision_allowed
                 && shared_effect_recipient(player)
                 && shared_object_predicate(object)
-                && minimum <= maximum
-                && (destination != ZoneKind::Library || maximum <= 1)
+                && constant_maximum.is_none_or(|bound| minimum <= bound)
+                && (destination != ZoneKind::Library
+                    || constant_maximum.is_some_and(|bound| bound <= 1))
                 && (!shuffle || source == ZoneKind::Library)
                 && matches!(
                     source,

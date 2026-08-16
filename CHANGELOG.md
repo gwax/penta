@@ -119,6 +119,15 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Boundless Realms**, **Diabolic Revelation**, and **Frenzied Tilling**. A
+  library search's ceiling is now a value rather than a constant, so "up to X"
+  can be sized by the chosen X or by the board the spell is cast into. The
+  boundary check still holds a constant maximum to its minimum and to the
+  one-card ceiling a library destination needs; a maximum sized at resolution
+  answers neither question in the declaration, so it is supported everywhere
+  except back into a library. The tapped arrival two of these three wanted had
+  been available all along.
+
 - **Essence Harvest** and **Fungal Sprouting**, and Garruk, Primal Hunter's
   draw ability, which had stood at metadata-only. A value now reads the
   greatest power among a set of objects -- one creature's size rather than a

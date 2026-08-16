@@ -3068,7 +3068,7 @@ pub(in crate::card::sets) static BORDERLAND_RANGER: CardRecord = CardRecord::new
                     ObjectPredicateDef::Supertype(CardSupertype::Basic),
                 ]),
                 minimum: 0,
-                maximum: 1,
+                maximum: ValueDef::Constant(1),
                 reveal: true,
                 destination: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
