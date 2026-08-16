@@ -783,12 +783,39 @@ pub enum KeywordAbility {
     /// Landwalk naming a land supertype.
     LegendaryLandwalk,
     ProtectionFrom(ManaColor),
+    /// CR 702.16. Protection is really one keyword per quality, and a quality
+    /// need not be a color: "protection from Zombies" names a creature type
+    /// and behaves identically otherwise.
+    ProtectionFromCreatureType(ProtectedCreatureType),
+}
+
+/// The creature types a printed protection clause names. A closed set for the
+/// same reason [`BasicLandType`] is: every consumer that has to name one --
+/// the checkpoint tag among them -- stays exhaustive, and a new printing adds
+/// one variant here rather than an open string nobody can round-trip.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ProtectedCreatureType {
+    Zombie,
+    Vampire,
+    Werewolf,
+}
+
+impl ProtectedCreatureType {
+    /// The subtype string as it appears on a creature's type line.
+    #[must_use]
+    pub const fn subtype(self) -> &'static str {
+        match self {
+            Self::Zombie => "Zombie",
+            Self::Vampire => "Vampire",
+            Self::Werewolf => "Werewolf",
+        }
+    }
 }
 
 impl KeywordAbility {
     /// A dense index for the keywords that carry no parameter, so a set of
     /// them fits in a bitmask. Protection is excluded: it is really one
-    /// keyword per color.
+    /// keyword per quality, and the qualities are open-ended.
     #[must_use]
     pub const fn simple_index(self) -> Option<u32> {
         Some(match self {
@@ -820,7 +847,9 @@ impl KeywordAbility {
             Self::Landwalk(BasicLandType::Mountain) => 23,
             Self::Landwalk(BasicLandType::Forest) => 24,
             Self::LegendaryLandwalk => 25,
-            Self::ProtectionFrom(_) | Self::BandsWithOther(_) => return None,
+            Self::ProtectionFrom(_)
+            | Self::ProtectionFromCreatureType(_)
+            | Self::BandsWithOther(_) => return None,
         })
     }
 }

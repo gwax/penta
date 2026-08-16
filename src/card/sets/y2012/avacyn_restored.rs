@@ -10,9 +10,9 @@ use crate::card::{
     DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal,
     EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef,
     ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation,
-    PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, ScaledValueDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    PlayerSetDef, ProtectedCreatureType, ReplacementChoiceDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -445,7 +445,18 @@ pub(in crate::card::sets) static LEAP_OF_FAITH: CardRecord = CardRecord::new(
 );
 
 // AVR 27 — Midnight Duelist
-// Audit: blocked — Needs protection from the Vampire creature subtype rather than from a color.
+pub(in crate::card::sets) static MIDNIGHT_DUELIST: CardRecord = CardRecord::new(
+    cards::MIDNIGHT_DUELIST,
+    "Midnight Duelist",
+    CardArt::new("2371bd0c-ca38-4a62-b525-bef4d1ca0646", "Bud Cook"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{W}"), &["Human", "Soldier"], 1, 2).with_ability(
+        abilities::protection_from_creature_type(
+            "Protection from Vampires",
+            ProtectedCreatureType::Vampire,
+        ),
+    ),
+);
 
 // AVR 28 — Midvast Protector
 // Audit: blocked — Needs a resolving color choice and a duration-scoped protection ability parameterized by that choice.
@@ -3530,6 +3541,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GOLDNIGHT_REDEEMER,
     &HOLY_JUSTICIAR,
     &LEAP_OF_FAITH,
+    &MIDNIGHT_DUELIST,
     &MOONLIGHT_GEIST,
     &MOORLAND_INQUISITOR,
     &RESTORATION_ANGEL,

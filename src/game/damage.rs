@@ -601,7 +601,6 @@ impl Game {
                 .map(|permanent| self.trigger_event_object(permanent)),
             Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
         });
-        let source_colors = source.map_or([false; 5], |source| self.object_colors(source));
         let event = ProspectiveDamage {
             source,
             source_object: source_object.as_ref(),
@@ -622,7 +621,8 @@ impl Game {
                     .iter()
                     .find(|permanent| permanent.card.id == id)
                     .is_some_and(|permanent| {
-                        self.is_protected_from_colors(permanent, source_colors)
+                        source
+                            .is_some_and(|source| self.is_protected_from_object(permanent, source))
                     }),
                 Target::Player(_) | Target::Card(_) | Target::Spell(_) => false,
             })

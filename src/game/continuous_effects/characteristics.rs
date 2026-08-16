@@ -193,13 +193,79 @@ impl Game {
         })
     }
 
+    /// Protection from a creature type, the other half of CR 702.16. The
+    /// qualities compose: a source matching either the colors or the types a
+    /// permanent is protected from is stopped by the same rules.
+    pub(super) fn is_protected_from_creature_types(
+        &self,
+        permanent: &Permanent,
+        source_subtypes: &[&'static str],
+    ) -> bool {
+        [
+            ProtectedCreatureType::Zombie,
+            ProtectedCreatureType::Vampire,
+            ProtectedCreatureType::Werewolf,
+        ]
+        .into_iter()
+        .any(|creature_type| {
+            source_subtypes.contains(&creature_type.subtype())
+                && self.permanent_has_executable_keyword(
+                    permanent,
+                    KeywordAbility::ProtectionFromCreatureType(creature_type),
+                )
+        })
+    }
+
+    /// Every quality at once, for the sources that are whole objects rather
+    /// than a bare color set.
+    pub(super) fn is_protected_from_object(
+        &self,
+        permanent: &Permanent,
+        source: GameObjectId,
+    ) -> bool {
+        self.is_protected_from_colors(permanent, self.object_colors(source))
+            || self.is_protected_from_creature_types(permanent, &self.object_subtypes(source))
+    }
+
+    /// The subtypes of any object, wherever it is. The companion of
+    /// [`Self::object_colors`], and read the same way.
+    pub(super) fn object_subtypes(&self, object: GameObjectId) -> Vec<&'static str> {
+        if let Some(permanent) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == object)
+        {
+            return self.effective_subtypes(permanent).into_owned();
+        }
+        if let Some(stack) = self.stack.iter().find(|stack| stack.id == object) {
+            return self
+                .stack_trigger_event_object(stack)
+                .map(|event| event.subtypes.into_owned())
+                .unwrap_or_default();
+        }
+        match self.retired_objects.get(&object) {
+            Some(RetiredObject::Permanent { permanent, .. }) => {
+                self.effective_subtypes(permanent).into_owned()
+            }
+            Some(RetiredObject::Stack(stack)) => self
+                .stack_trigger_event_object(stack)
+                .map(|event| event.subtypes.into_owned())
+                .unwrap_or_default(),
+            Some(RetiredObject::Card(_)) | None => self
+                .object_definition(object)
+                .and_then(|definition| self.catalog.get(definition))
+                .map(|definition| definition.rules.subtypes().to_vec())
+                .unwrap_or_default(),
+        }
+    }
+
     pub(super) fn permanent_can_be_targeted_by(
         &self,
         permanent: &Permanent,
         controller: PlayerId,
         source: GameObjectId,
     ) -> bool {
-        !(self.is_protected_from_colors(permanent, self.object_colors(source))
+        !(self.is_protected_from_object(permanent, source)
             || self.permanent_has_executable_keyword(permanent, KeywordAbility::Shroud)
             || permanent.controller != controller
                 && self.permanent_has_executable_keyword(permanent, KeywordAbility::Hexproof)
@@ -316,7 +382,7 @@ impl Game {
             .map_or([false; 5], |definition| definition.rules.colors())
     }
     pub(super) fn combat_is_protected(&self, blocker: &Permanent, attacker: &Permanent) -> bool {
-        let blocker_colors = self.permanent_colors(blocker);
-        self.is_protected_from_colors(attacker, blocker_colors)
+        self.is_protected_from_colors(attacker, self.permanent_colors(blocker))
+            || self.is_protected_from_creature_types(attacker, &self.effective_subtypes(blocker))
     }
 }

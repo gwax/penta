@@ -12,7 +12,8 @@ use crate::card::{
     AbilityDef, AbilityOperationDef, AbilityProgramDef, AbilityTargetDef, AddManaEffectDef,
     AppliedEffectDef, BasicLandType, CharacteristicOperationDef, DamagePreventionDef,
     DamageSourceMatcherDef, DeclarativeAbilityDef, EffectDef, KeywordAbility, ManaColor,
-    ManaSpendEffectDef, ObjectPredicateDef, ReplacementEffectDef, SpellAbilityDef,
+    ManaSpendEffectDef, ObjectPredicateDef, ProtectedCreatureType, ReplacementEffectDef,
+    SpellAbilityDef,
 };
 
 pub(super) fn ability_locator(
@@ -734,6 +735,15 @@ pub(super) const fn keyword_snapshot(keyword: KeywordAbility) -> KeywordSnapshot
         KeywordAbility::ProtectionFrom(ManaColor::Colorless) => {
             KeywordSnapshot::ProtectionFromColorless
         }
+        KeywordAbility::ProtectionFromCreatureType(ProtectedCreatureType::Zombie) => {
+            KeywordSnapshot::ProtectionFromZombies
+        }
+        KeywordAbility::ProtectionFromCreatureType(ProtectedCreatureType::Vampire) => {
+            KeywordSnapshot::ProtectionFromVampires
+        }
+        KeywordAbility::ProtectionFromCreatureType(ProtectedCreatureType::Werewolf) => {
+            KeywordSnapshot::ProtectionFromWerewolves
+        }
     }
 }
 
@@ -776,6 +786,15 @@ pub(super) const fn parse_keyword(value: KeywordSnapshot) -> KeywordAbility {
         KeywordSnapshot::ProtectionFromBlack => KeywordAbility::ProtectionFrom(ManaColor::Black),
         KeywordSnapshot::ProtectionFromRed => KeywordAbility::ProtectionFrom(ManaColor::Red),
         KeywordSnapshot::ProtectionFromGreen => KeywordAbility::ProtectionFrom(ManaColor::Green),
+        KeywordSnapshot::ProtectionFromZombies => {
+            KeywordAbility::ProtectionFromCreatureType(ProtectedCreatureType::Zombie)
+        }
+        KeywordSnapshot::ProtectionFromVampires => {
+            KeywordAbility::ProtectionFromCreatureType(ProtectedCreatureType::Vampire)
+        }
+        KeywordSnapshot::ProtectionFromWerewolves => {
+            KeywordAbility::ProtectionFromCreatureType(ProtectedCreatureType::Werewolf)
+        }
         KeywordSnapshot::ProtectionFromColorless => {
             KeywordAbility::ProtectionFrom(ManaColor::Colorless)
         }

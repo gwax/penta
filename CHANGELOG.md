@@ -119,6 +119,13 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Protection from a creature type**, and with it **Elite Inquisitor**,
+  **Grave Bramble** and **Midnight Duelist**. Protection is one keyword per
+  quality and every quality used to be a color; a type is now equally a
+  quality, read in the same four places -- targeting, damage, being blocked,
+  and Aura legality. The types are a closed set for the same reason the basic
+  land types are, so the checkpoint tag stays exhaustive.
+
 - **Avenging Arrow** and **Executioner's Swing**, both of which can only aim
   at a creature that has already dealt damage this turn. That is the mirror of
   the record Giant Shark reads, and it counts damage to anything -- a creature

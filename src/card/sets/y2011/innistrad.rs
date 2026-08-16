@@ -10,11 +10,11 @@ use crate::card::{
     ComparisonDef, ConditionalValueDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
     DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectExecutionDef, EffectPaymentDef,
     EffectRecipientDef, HalvedValueDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
-    PlayOptionDef, PlayerRelation, PlayerSetDef, QuantifierDef, ReplacementConditionDef,
-    ReplacementEffectDef, ResolvedEffectDurationDef, RoundingDef, SacrificedAmountDef,
-    SpellAdditionalCostDef, SpellForm, TargetConditionDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    PlayOptionDef, PlayerRelation, PlayerSetDef, ProtectedCreatureType, QuantifierDef,
+    ReplacementConditionDef, ReplacementEffectDef, ResolvedEffectDurationDef, RoundingDef,
+    SacrificedAmountDef, SpellAdditionalCostDef, SpellForm, TargetConditionDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::game::{
     CardAbilityResolver, CardRuntime, PileChoice, PileChosen, PileSplit, PilesSeparated,
@@ -261,7 +261,33 @@ pub(in crate::card::sets) static ELDER_CATHAR: CardRecord = CardRecord::new(
 );
 
 // ISD 13 — Elite Inquisitor
-// Audit: blocked — Needs protection parameterized by creature subtypes, not only by color.
+pub(in crate::card::sets) static ELITE_INQUISITOR: CardRecord = CardRecord::new(
+    cards::ELITE_INQUISITOR,
+    "Elite Inquisitor",
+    CardArt::new(
+        "c9411c44-92a8-4f5d-b3de-d80046649c8c",
+        "Jana Schirmer & Johannes Voss",
+    ),
+    CardSet::Innistrad,
+    // CR 702.16: one instance per quality, so the printed clause naming three
+    // is three abilities and each carries its own text.
+    CardRules::new_creature(mana_cost!("{W}{W}"), &["Human", "Soldier"], 2, 2).with_abilities(&[
+        abilities::first_strike(),
+        abilities::vigilance(),
+        abilities::protection_from_creature_type(
+            "Protection from Vampires",
+            ProtectedCreatureType::Vampire,
+        ),
+        abilities::protection_from_creature_type(
+            "Protection from Werewolves",
+            ProtectedCreatureType::Werewolf,
+        ),
+        abilities::protection_from_creature_type(
+            "Protection from Zombies",
+            ProtectedCreatureType::Zombie,
+        ),
+    ]),
+);
 
 // ISD 14 — Feeling of Dread
 pub(in crate::card::sets) static FEELING_OF_DREAD: CardRecord = CardRecord::new(
@@ -3828,7 +3854,21 @@ pub(in crate::card::sets) static GATSTAF_SHEPHERD: CardRecord = CardRecord::new(
 // Audit: blocked — Needs multiplying the number of creature cards in your graveyard by two for a life-gain amount.
 
 // ISD 184 — Grave Bramble
-// Audit: blocked — Needs protection parameterized by the Zombie creature subtype.
+pub(in crate::card::sets) static GRAVE_BRAMBLE: CardRecord = CardRecord::new(
+    cards::GRAVE_BRAMBLE,
+    "Grave Bramble",
+    CardArt::new("8be1d4d2-5215-44b2-9b67-627d088efdb5", "Anthony Jones"),
+    CardSet::Innistrad,
+    // A wall that Zombies cannot get past at all: they can neither block it
+    // nor be blocked into it, and their damage does not land.
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Plant"], 3, 4).with_abilities(&[
+        abilities::defender(),
+        abilities::protection_from_creature_type(
+            "Protection from Zombies",
+            ProtectedCreatureType::Zombie,
+        ),
+    ]),
+);
 
 const fn grizzled_outcasts_front_rules() -> CardRules {
     CardRules::new_creature(mana_cost!("{4}{G}"), &["Human", "Werewolf"], 4, 4)
@@ -5088,6 +5128,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CLOISTERED_YOUTH,
     &DOOMED_TRAVELER,
     &ELDER_CATHAR,
+    &ELITE_INQUISITOR,
     &FEELING_OF_DREAD,
     &FIEND_HUNTER,
     &GALLOWS_WARDEN,
@@ -5204,6 +5245,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FULL_MOONS_RISE,
     &GARRUK_RELENTLESS,
     &GATSTAF_SHEPHERD,
+    &GRAVE_BRAMBLE,
     &GRIZZLED_OUTCASTS,
     &HAMLET_CAPTAIN,
     &HOLLOWHENGE_SCAVENGER,

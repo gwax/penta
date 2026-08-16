@@ -11,9 +11,10 @@ use super::{
     CharacteristicOperationDef, ColorSet, ContinuousEffectExpiration, ControlFlow,
     DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EffectRecipientSetDef, Game,
     GameObjectId, GrantId, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectRefDef,
-    ObjectSetDef, Permanent, PlayerId, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
-    RetiredObject, SetOperationDef, StackAbilityResolver, StackObject, StaticAppliedEffect,
-    StaticEffectTraversal, Target, TargetIndex, TriggerContext, ZoneKind,
+    ObjectSetDef, Permanent, PlayerId, ProtectedCreatureType, ResolvedContinuousEffect,
+    ResolvedContinuousEffectKind, RetiredObject, SetOperationDef, StackAbilityResolver,
+    StackObject, StaticAppliedEffect, StaticEffectTraversal, Target, TargetIndex, TriggerContext,
+    ZoneKind,
 };
 
 thread_local! {
@@ -689,7 +690,11 @@ impl Game {
                         // what an Aura granting protection from its own color
                         // has to do to survive its own effect.
                         && (self.remains_attached_through_protection(aura)
-                            || !self.is_protected_from_colors(host, aura_colors))
+                            || !(self.is_protected_from_colors(host, aura_colors)
+                                || self.is_protected_from_creature_types(
+                                    host,
+                                    &self.effective_subtypes(aura),
+                                )))
             }
             AbilityTargetPredicate::AnyTarget
             | AbilityTargetPredicate::PlayerOrPlaneswalker(_)

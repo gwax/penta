@@ -141,6 +141,7 @@ pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
             | KeywordAbility::BandsWithOther(_)
             | KeywordAbility::Unleash
             | KeywordAbility::ProtectionFrom(_)
+            | KeywordAbility::ProtectionFromCreatureType(_)
     )
 }
 

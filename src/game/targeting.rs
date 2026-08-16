@@ -198,8 +198,12 @@ impl Game {
                             // target your own. Protection stops everyone,
                             // including the permanent's own controller.
                             (permanent.controller == player || !self.has_hexproof(permanent))
-                                && !self
+                                && !(self
                                     .is_protected_from_colors(permanent, behavior.rules().colors())
+                                    || self.is_protected_from_creature_types(
+                                        permanent,
+                                        behavior.rules().subtypes(),
+                                    ))
                         }),
                     Target::Player(_) | Target::Card(_) | Target::Spell(_) => true,
                 })

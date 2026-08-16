@@ -11,9 +11,9 @@ use super::model::{
     DamagePreventionDef, DamageRecipientMatcherDef, EffectDef, EffectPaymentDef,
     EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ObjectChoiceBindingDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef, SplitIntoPilesDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ProtectedCreatureType, ReplacementAbilityDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef,
+    SplitIntoPilesDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -279,6 +279,19 @@ pub const fn poisonous_damage(amount: i32, text: &'static str) -> AbilityDef {
             recipient: EffectRecipientDef::EventPlayer,
             amount: ValueDef::Constant(amount),
         },
+    )
+}
+
+/// "Protection from <creature type>s". The text is supplied by the caller
+/// because a card naming several types prints them as one clause.
+#[must_use]
+pub const fn protection_from_creature_type(
+    text: &'static str,
+    creature_type: ProtectedCreatureType,
+) -> AbilityDef {
+    keyword(
+        text,
+        KeywordAbility::ProtectionFromCreatureType(creature_type),
     )
 }
 
