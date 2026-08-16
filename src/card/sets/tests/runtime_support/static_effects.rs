@@ -325,9 +325,11 @@ pub(in super::super) fn shared_static_applied_effect(
             matches!(recipient.0, EffectRecipientSetDef::Players(_))
                 && shared_object_predicate(restriction.object)
         }
-        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
-            AbilityOperationDef::Remove(_),
-        ))
+        // A switch reads nothing, so there is no value to gate on.
+        AppliedEffectDef::Characteristic(
+            CharacteristicOperationDef::Abilities(AbilityOperationDef::Remove(_))
+            | CharacteristicOperationDef::PowerToughness(PowerToughnessOperationDef::Switch),
+        )
         | AppliedEffectDef::Rule(_) => true,
     }
 }

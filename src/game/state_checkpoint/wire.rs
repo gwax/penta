@@ -747,6 +747,14 @@ fn parse_resolved_operation(
                 toughness: *toughness,
             },
         )),
+        (
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                PowerToughnessOperationDef::Switch,
+            )),
+            ResolvedContinuousOperationSnapshot::SwitchPowerToughness,
+        ) => Ok(ResolvedContinuousEffectKind::PowerToughness(
+            ResolvedPowerToughnessOperation::Switch,
+        )),
         _ => mismatch(),
     }
 }

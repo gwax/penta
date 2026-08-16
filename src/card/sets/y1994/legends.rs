@@ -2148,7 +2148,25 @@ pub(in crate::card::sets) static TOUCH_OF_DARKNESS: CardRecord = CardRecord::new
 );
 
 // LEG 123 — Transmutation
-// Audit: blocked — Needs a characteristic-layer effect or dynamic value for “Switch target creature's power and toughness until end of turn”.
+pub(in crate::card::sets) static TRANSMUTATION: CardRecord = CardRecord::new(
+    cards::TRANSMUTATION,
+    "Transmutation",
+    CardArt::new("329f7eb2-eadf-46ec-aed4-63152051f3c1", "Susan Van Camp"),
+    CardSet::Legends,
+    // Removal against a Wall and a pump against nothing: what it does depends
+    // entirely on which way the creature was lopsided.
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Switch target creature's power and toughness until end of turn.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::switch_power_toughness(),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // LEG 124 — Underworld Dreams
 // Audit: blocked — Needs an opponent-draw event trigger that deals damage to the exact player who drew.
@@ -5606,6 +5624,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &THE_ABYSS,
     &THE_WRETCHED,
     &TOUCH_OF_DARKNESS,
+    &TRANSMUTATION,
     &VAMPIRE_BATS,
     &WALKING_DEAD,
     &WALL_OF_PUTRID_FLESH,

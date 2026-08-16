@@ -189,3 +189,5 @@ pub const BOROS_KEYRUNE: CardDefinitionId = CardDefinitionId(1988);
 pub const GRUUL_KEYRUNE: CardDefinitionId = CardDefinitionId(1989);
 pub const ORZHOV_KEYRUNE: CardDefinitionId = CardDefinitionId(1990);
 pub const SIMIC_KEYRUNE: CardDefinitionId = CardDefinitionId(1991);
+pub const TRANSMUTATION: CardDefinitionId = CardDefinitionId(1992);
+pub const FLUXCHARGER: CardDefinitionId = CardDefinitionId(1993);

@@ -271,7 +271,12 @@ fn static_object_applied_effect_supported(
                     .copied()
                     .all(|effect| static_object_applied_effect_supported(recipient, effect))
         }
-        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(_))
+        // A switch reads nothing, so there is no value to gate on and no way
+        // for it to re-enter the characteristics walk.
+        AppliedEffectDef::Characteristic(
+            CharacteristicOperationDef::PowerToughness(PowerToughnessOperationDef::Switch)
+            | CharacteristicOperationDef::Abilities(_),
+        )
         | AppliedEffectDef::Rule(
             AppliedRuleDef::AssignsNoCombatDamage
             | AppliedRuleDef::CannotBeEnchanted

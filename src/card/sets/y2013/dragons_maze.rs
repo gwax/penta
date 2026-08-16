@@ -1255,7 +1255,29 @@ pub(in crate::card::sets) static FERAL_ANIMIST: CardRecord = CardRecord::new(
 );
 
 // DGM 71 — Fluxcharger
-// Audit: blocked — Needs a temporary power-and-toughness exchange effect.
+pub(in crate::card::sets) static FLUXCHARGER: CardRecord = CardRecord::new(
+    cards::FLUXCHARGER,
+    "Fluxcharger",
+    CardArt::new("7c58f6ed-2544-4b58-8dc0-a0a37b9547e6", "Willian Murai"),
+    CardSet::DragonsMaze,
+    // A 1/5 flier that becomes a 5/1 flier on demand, and back again with a
+    // second spell: two switches at once cancel.
+    CardRules::new_creature(mana_cost!("{2}{U}{R}"), &["Weird"], 1, 5).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered(
+            "Whenever you cast an instant or sorcery spell, you may switch this creature's power and toughness until end of turn.",
+            TriggerEventDef::SpellCast(INSTANT_OR_SORCERY_YOU_CAST),
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::switch_power_toughness(),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            },
+        ),
+    ]),
+);
 
 // DGM 72 — Gaze of Granite
 pub(in crate::card::sets) static GAZE_OF_GRANITE: CardRecord = CardRecord::new(
@@ -2742,6 +2764,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &EMMARA_TANDRIS,
     &EXAVA_RAKDOS_BLOOD_WITCH,
     &FERAL_ANIMIST,
+    &FLUXCHARGER,
     &GAZE_OF_GRANITE,
     &GLEAM_OF_BATTLE,
     &GRUUL_WAR_CHANT,

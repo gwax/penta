@@ -371,7 +371,7 @@ impl Game {
         };
         let counter_bonus = Self::counter_stat_bonus(permanent);
         let resolved_bonus = self.resolved_power_toughness_bonus(permanent);
-        crate::CreatureStats {
+        let stats = crate::CreatureStats {
             power: base.power
                 + ascended
                 + resolved_bonus.0
@@ -384,7 +384,54 @@ impl Game {
                 + static_bonus.1
                 + conditional_bonus.1
                 + counter_bonus.1,
+        };
+        // CR 613.4e: the switch is applied after everything above, and two
+        // switches in effect at once cancel -- so what matters is the parity
+        // of how many are applied, not their order among themselves.
+        if self.power_toughness_switches(permanent).is_multiple_of(2) {
+            stats
+        } else {
+            crate::CreatureStats {
+                power: stats.toughness,
+                toughness: stats.power,
+            }
         }
+    }
+
+    /// How many switch effects currently apply to this permanent, counted
+    /// across both the resolved effects it carries and the statics that name
+    /// it. Only the parity is ever used.
+    fn power_toughness_switches(&self, permanent: &Permanent) -> usize {
+        let resolved = permanent
+            .resolved_continuous_effects
+            .iter()
+            .filter(|effect| self.resolved_continuous_effect_is_active(effect))
+            .filter(|effect| {
+                matches!(
+                    effect.kind,
+                    ResolvedContinuousEffectKind::PowerToughness(
+                        ResolvedPowerToughnessOperation::Switch
+                    )
+                )
+            })
+            .count();
+        let Some(_pass) = StaticPowerToughnessLayerGuard::enter() else {
+            return resolved;
+        };
+        let mut statics = 0;
+        let result = self.visit_static_applied_effects(permanent, |applied| {
+            if matches!(
+                applied.effect,
+                AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                    PowerToughnessOperationDef::Switch
+                ))
+            ) {
+                statics += 1;
+            }
+            ControlFlow::Continue(())
+        });
+        debug_assert!(result.is_continue());
+        resolved + statics
     }
 
     pub(super) fn has_flying(&self, permanent: &Permanent) -> bool {

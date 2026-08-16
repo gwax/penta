@@ -63,6 +63,11 @@ pub enum PowerToughnessOperationDef {
         power: ValueDef,
         toughness: ValueDef,
     },
+    /// Exchange power and toughness in layer 7e, which CR 613.4e applies
+    /// after every other power-and-toughness layer. It carries no values
+    /// because it names none: two switches in effect at once cancel, so what
+    /// matters is how many are applied rather than what each one says.
+    Switch,
 }
 
 /// A typed continuous-effect leaf applied in its characteristic's rules
@@ -340,6 +345,14 @@ impl AppliedEffectDef {
     pub const fn set_base_toughness(toughness: ValueDef) -> Self {
         Self::Characteristic(CharacteristicOperationDef::PowerToughness(
             PowerToughnessOperationDef::SetBaseToughness(toughness),
+        ))
+    }
+
+    /// CR 613.4e: exchange power and toughness after every other layer.
+    #[must_use]
+    pub const fn switch_power_toughness() -> Self {
+        Self::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::Switch,
         ))
     }
 

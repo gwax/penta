@@ -307,16 +307,37 @@ pub(super) enum SetOperationSnapshot {
     rename_all_fields = "camelCase"
 )]
 pub(super) enum ResolvedContinuousOperationSnapshot {
-    AbilityAdd { grant_id: u8 },
+    AbilityAdd {
+        grant_id: u8,
+    },
     AbilityRemove,
-    BasicLandTypes { operation: SetOperationSnapshot },
-    CardTypes { operation: SetOperationSnapshot },
-    Colors { operation: SetOperationSnapshot },
-    CreatureTypes { operation: SetOperationSnapshot },
-    ModifyPowerToughness { power: i16, toughness: i16 },
+    BasicLandTypes {
+        operation: SetOperationSnapshot,
+    },
+    CardTypes {
+        operation: SetOperationSnapshot,
+    },
+    Colors {
+        operation: SetOperationSnapshot,
+    },
+    CreatureTypes {
+        operation: SetOperationSnapshot,
+    },
+    ModifyPowerToughness {
+        power: i16,
+        toughness: i16,
+    },
     Rule,
-    SetBasePower { power: i16 },
-    SetBasePowerToughness { power: i16, toughness: i16 },
+    /// Layer 7e. It carries nothing on the wire because it carries nothing
+    /// in the effect: what matters is that one is applied.
+    SwitchPowerToughness,
+    SetBasePower {
+        power: i16,
+    },
+    SetBasePowerToughness {
+        power: i16,
+        toughness: i16,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]

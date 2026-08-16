@@ -266,6 +266,7 @@ pub(super) fn attach_constant_resolved_characteristics(
                             toughness: constant(toughness),
                         }
                     }
+                    PowerToughnessOperationDef::Switch => ResolvedPowerToughnessOperation::Switch,
                 })
             }
         };
@@ -688,6 +689,7 @@ mod static_keyword_predicates;
 mod storage_lands;
 mod street_spasm;
 mod subtype_protection;
+mod switched_stats;
 mod target_toughness;
 mod targeted_answers;
 mod targeting_characteristics;

@@ -83,10 +83,23 @@ pub(super) enum ResolvedAbilityOperation {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum ResolvedPowerToughnessOperation {
-    SetBase { power: i16, toughness: i16 },
-    SetBasePower { power: i16 },
-    SetBaseToughness { toughness: i16 },
-    Modify { power: i16, toughness: i16 },
+    SetBase {
+        power: i16,
+        toughness: i16,
+    },
+    SetBasePower {
+        power: i16,
+    },
+    SetBaseToughness {
+        toughness: i16,
+    },
+    Modify {
+        power: i16,
+        toughness: i16,
+    },
+    /// Layer 7e, applied after all of the above. Carries nothing: two in
+    /// effect at once cancel each other out.
+    Switch,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

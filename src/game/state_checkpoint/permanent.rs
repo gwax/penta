@@ -216,6 +216,12 @@ fn resolved_operation_snapshot(
             power: *power,
             toughness: *toughness,
         }),
+        (
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                PowerToughnessOperationDef::Switch,
+            )),
+            ResolvedContinuousEffectKind::PowerToughness(ResolvedPowerToughnessOperation::Switch),
+        ) => Some(ResolvedContinuousOperationSnapshot::SwitchPowerToughness),
         _ => None,
     }
 }

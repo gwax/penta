@@ -400,6 +400,8 @@ impl Game {
                             toughness: freeze(toughness),
                         }
                     }
+                    // Nothing to freeze: the switch names no value.
+                    PowerToughnessOperationDef::Switch => ResolvedPowerToughnessOperation::Switch,
                 })
             }
         })

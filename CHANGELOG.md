@@ -119,6 +119,13 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Transmutation** and **Fluxcharger**. Power and toughness may now be
+  switched, in layer 7e and therefore after every other power-and-toughness
+  layer. The effect carries no values because it names none: two switches in
+  effect at once cancel, so only the parity of how many apply matters. Both
+  cards are tested against a lopsided creature, since a switch is invisible on
+  an evenly-statted one.
+
 - The four Gatecrash **Keyrunes** -- Boros, Gruul, Orzhov, and Simic. No
   engine work: the Return to Ravnica half of the cycle has shipped with this
   exact animation all along, and these four audit lines had simply not caught
