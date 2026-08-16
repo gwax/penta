@@ -67,6 +67,11 @@ pub enum TriggerEventDef {
     /// A player gained life. The amount is available as
     /// `ValueDef::TriggerEventAmount`.
     LifeGained(PlayerRelation),
+    /// "When you cycle this card" (CR 702.29b). Cycling is an activation, so
+    /// this fires when the ability is activated rather than when it resolves,
+    /// and the card is already in the graveyard by then. Only the cycled card
+    /// carries the clause, so the event names nothing else.
+    Cycled,
 }
 
 impl TriggerEventDef {

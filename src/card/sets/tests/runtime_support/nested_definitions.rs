@@ -76,7 +76,10 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         TriggerEventDef::SpellCast(object) => {
             shared_object_predicate(object) && !trigger_predicate_requires_live_battlefield(object)
         }
-        TriggerEventDef::StepBegins { .. }
+        // Cycling names no object of its own: the card that was cycled is
+        // the only thing that can be listening for it.
+        TriggerEventDef::Cycled
+        | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
         | TriggerEventDef::StateCondition => true,
         TriggerEventDef::DamageDealt(matcher) => {

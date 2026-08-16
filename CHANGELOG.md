@@ -133,9 +133,11 @@ distinguishes snapshots of the covered source and build inputs.
   only while its card is in hand: the discard is a cost, so the card is
   already in the graveyard when the draw resolves. Typecycling buys a library
   search for the named type instead of a draw, and failing to find is allowed.
-  Akroma's Vengeance, Secluded Steppe, and Eternal Dragon. "When you cycle
-  this card" is a trigger the engine does not raise yet, so the cards that
-  print one are still uncataloged.
+  "When you cycle this card" (CR 702.29b) fires on activation rather than on
+  resolution, so it goes on the stack beside the discard rather than after
+  the draw, and the cycled card is already in the graveyard when it does.
+  Akroma's Vengeance, Secluded Steppe, Eternal Dragon, and Gempalm
+  Incinerator.
 
 - **Banding.** `BandAttackers` names two declared attackers and puts them,
   with everything already banded with either, into one band; the engine offers

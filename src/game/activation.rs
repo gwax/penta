@@ -214,6 +214,11 @@ impl Game {
                             player,
                             cards: vec![(discarded_id, definition)],
                         });
+                        // Cycling is the only printed ability with this
+                        // shape, and CR 702.29b fires its trigger on
+                        // activation rather than on resolution -- so here,
+                        // beside the cost, rather than at the draw.
+                        self.capture_cycling_triggers(discarded_id, player);
                     }
                     AbilityCostDef::TapSource
                     | AbilityCostDef::UntapSource

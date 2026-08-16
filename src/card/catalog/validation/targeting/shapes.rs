@@ -26,7 +26,11 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         | TriggerEventDef::BecomesBlockedBy { .. }
         | TriggerEventDef::Transforms(_) => Some(ZoneKind::Battlefield),
         TriggerEventDef::SpellCast(_) => Some(ZoneKind::Stack),
-        TriggerEventDef::StepBegins { .. }
+        // The cycled card is in the graveyard by the time the trigger goes
+        // on the stack, but nothing reads it as an object, so it names no
+        // zone at all.
+        TriggerEventDef::Cycled
+        | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::DamageDealt(_)
         | TriggerEventDef::StateCondition
         | TriggerEventDef::LifeGained(_) => None,

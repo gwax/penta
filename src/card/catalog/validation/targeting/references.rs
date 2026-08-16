@@ -547,7 +547,8 @@ fn validate_trigger_event_references(
         TriggerEventDef::LifeGained(PlayerRelation::ChosenPlayer) => {
             Err(unsupported_trigger_event(event))
         }
-        TriggerEventDef::StepBegins { .. }
+        TriggerEventDef::Cycled
+        | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
         | TriggerEventDef::StateCondition => Ok(()),
     }

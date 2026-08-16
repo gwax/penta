@@ -42,8 +42,7 @@ up when the first staged list is promoted.
   typecycling are done; still outstanding are flashback, threshold, fading,
   echo, alternative costs, split cards, graveyard replacement/reanimation,
   named-card choices, tutors, continuous type/PT changes, and triggered
-  mana/untap restrictions. "When you cycle this card" is a trigger the
-  engine does not yet raise.
+  mana/untap restrictions.
 - Audit the existing definitions against their Premodern Oracle text and
   interactions.
 - Promote each staged deck into the runtime registry only when every main-deck
@@ -78,6 +77,7 @@ older unannotated definitions still require one):
 - `Fire // Ice` — complete
 - `Flooded Strand` — complete
 - `Forest`
+- `Gempalm Incinerator` — complete
 - `Goblin Lackey` — complete
 - `Goblin Matron` — complete
 - `Goblin Piledriver` — complete
@@ -163,7 +163,6 @@ Not yet cataloged:
 - [ ] `Flash of Insight`
 - [ ] `Forsaken City`
 - [ ] `Frantic Search`
-- [ ] `Gempalm Incinerator`
 - [ ] `Gemstone Mine`
 - [ ] `Gerrard's Verdict`
 - [ ] `Gilded Drake`

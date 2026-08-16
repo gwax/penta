@@ -196,6 +196,11 @@ const SET_MODULES: &[SetModule] = &[
         y2002::onslaught::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Legions,
+        y2003::legions::CARDS,
+        y2003::legions::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Scourge,
         y2003::scourge::CARDS,
         y2003::scourge::ADDITIONAL_PRINTINGS,

@@ -46,6 +46,40 @@ fn resolve(game: &mut Game) {
     }
 }
 
+/// Resolves everything, taking the last option of any decision -- which for
+/// an optional effect is the one that accepts it.
+fn settle(game: &mut Game) {
+    for _ in 0..16 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .last()
+                .map(|option| vec![option.id])
+                .unwrap_or_default();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the decision accepts what it offered");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+}
+
 /// Cycling a land: one white pays for it, the card ends up in the graveyard
 /// as a cost rather than an effect, and a card is drawn.
 #[test]
@@ -208,6 +242,103 @@ fn plainscycling_fetches_a_plains_and_only_a_plains() {
             .iter()
             .any(|card| card.definition == cards::ETERNAL_DRAGON),
         "and the Dragon paid for it by being discarded",
+    );
+}
+
+/// Cycling the Incinerator shoots for the number of Goblins on the
+/// battlefield -- and the Incinerator itself is in the graveyard by then, so
+/// it never counts itself.
+#[test]
+fn cycling_the_incinerator_shoots_for_each_goblin_on_the_battlefield() {
+    let mut game = ready();
+    game.battlefield
+        .push(creature(10_000, cards::GOBLIN_MATRON, PlayerId::One));
+    game.battlefield
+        .push(creature(10_001, cards::MOGG_FANATIC, PlayerId::Two));
+    // Not a Goblin, and the creature the damage is aimed at. A 4/4 survives
+    // the shot, so the exact number is readable rather than merely lethal.
+    let angel = creature(10_002, cards::SERRA_ANGEL, PlayerId::Two);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+
+    let incinerator = card(20_000, cards::GEMPALM_INCINERATOR, PlayerId::One);
+    let incinerator_id = incinerator.id;
+    game.players[PlayerId::One.index()].hand.push(incinerator);
+    game.players[PlayerId::One.index()].mana_pool.red = 1;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+
+    let action = cycle_action(&game, incinerator_id).expect("cycling is offered");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    settle(&mut game);
+
+    let damage = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == angel_id)
+        .map(|permanent| permanent.damage);
+    assert_eq!(
+        damage,
+        Some(2),
+        "two Goblins on the battlefield, and the Incinerator in the graveyard is not one of them",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        3,
+        "and the cycling still drew its card",
+    );
+}
+
+/// With no Goblins anywhere the trigger still fires; it just deals nothing,
+/// which is the difference between the count being of the board and of the
+/// card that was cycled.
+#[test]
+fn the_incinerator_deals_nothing_when_no_goblins_are_out() {
+    let mut game = ready();
+    let bear = creature(10_000, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bear_id = bear.card.id;
+    game.battlefield.push(bear);
+
+    let incinerator = card(20_000, cards::GEMPALM_INCINERATOR, PlayerId::One);
+    let incinerator_id = incinerator.id;
+    game.players[PlayerId::One.index()].hand.push(incinerator);
+    game.players[PlayerId::One.index()].mana_pool.red = 1;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+
+    let action = cycle_action(&game, incinerator_id).expect("cycling is offered");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    assert!(
+        !game.stack.is_empty(),
+        "the trigger fires whether or not there is anything for it to count",
+    );
+    settle(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == bear_id)
+            .map(|permanent| permanent.damage),
+        Some(0),
+        "the bear is untouched, and it is not a Goblin",
+    );
+}
+
+/// Discarding the Incinerator any other way is not cycling, so nothing
+/// triggers.
+#[test]
+fn an_ordinary_discard_does_not_fire_the_cycling_trigger() {
+    let mut game = ready();
+    game.battlefield
+        .push(creature(10_000, cards::GOBLIN_MATRON, PlayerId::One));
+    let incinerator = card(20_000, cards::GEMPALM_INCINERATOR, PlayerId::One);
+    let incinerator_id = incinerator.id;
+    game.players[PlayerId::One.index()].hand.push(incinerator);
+
+    game.discard_cards(PlayerId::One, &[incinerator_id]);
+    settle(&mut game);
+
+    assert!(
+        game.pending_triggers.is_empty() && game.stack.is_empty(),
+        "a discard is not a cycle",
     );
 }
 

@@ -1,5 +1,7 @@
 use crate::card::DamageSourceGroupDef;
 
+use crate::CharacteristicContext;
+
 use super::{
     AbilityDef, AbilityId, AbilityOrigin, AbilityProcedureDef, AbilitySourceRef, AddManaEffectDef,
     BattlefieldTriggerListener, CardDefinitionId, CardPartId, CardType, CommittedTriggerEvent,
@@ -109,6 +111,71 @@ impl Game {
     pub(super) fn capture_battlefield_triggers(&mut self, event: &CommittedTriggerEvent) {
         let listeners = self.battlefield_trigger_listeners();
         self.capture_battlefield_triggers_from_snapshot(&listeners, event);
+    }
+
+    /// "When you cycle this card" (CR 702.29b), raised as the cycling ability
+    /// is activated. Only the cycled card can carry the clause, so its own
+    /// printed abilities are the entire listener list -- there is no zone to
+    /// scan. The card is read in the graveyard the discard cost has already
+    /// put it in, which is also the object the trigger names.
+    pub(super) fn capture_cycling_triggers(&mut self, cycled: GameObjectId, player: PlayerId) {
+        let Some((_zone, card)) = self.card_in_nonbattlefield_zone(cycled) else {
+            return;
+        };
+        let card = card.clone();
+        let Some(object) = self.printed_trigger_event_object(
+            cycled,
+            card.definition,
+            player,
+            &CharacteristicContext::Graveyard,
+        ) else {
+            return;
+        };
+        let mut listeners = Vec::new();
+        self.for_each_printed_card_ability(&card, &CharacteristicContext::Graveyard, |effective| {
+            let ability = effective.ability;
+            let DeclarativeAbilityDef::Triggered(definition) = ability.definition else {
+                return;
+            };
+            if !ability.is_executable()
+                || definition.event != TriggerEventDef::Cycled
+                || definition.procedure != AbilityProcedureDef::Shared
+            {
+                return;
+            }
+            listeners.push(BattlefieldTriggerListener {
+                event: definition.event,
+                uses_stack: true,
+                installed: None,
+                capture: TriggerCapture {
+                    source: AbilitySourceRef {
+                        object: cycled,
+                        ability: effective.origin,
+                    },
+                    definition: Self::ability_presentation_definition(
+                        effective.origin,
+                        card.definition,
+                    ),
+                    owner: card.owner,
+                    controller: player,
+                    text: ability.text,
+                    target_defs: definition.targets.to_vec(),
+                    targets: Vec::new(),
+                    effect: ability.declarative_effect().unwrap_or(EffectDef::None),
+                    resolver: Self::ability_resolver(effective.origin, &ability),
+                    context: TriggerContext::empty().into(),
+                    condition: definition.condition,
+                    x: 0,
+                },
+            });
+        });
+        if listeners.is_empty() {
+            return;
+        }
+        self.capture_battlefield_triggers_from_snapshot(
+            &listeners,
+            &CommittedTriggerEvent::Cycled { object },
+        );
     }
 
     pub(super) fn battlefield_trigger_listeners(&self) -> Vec<BattlefieldTriggerListener> {
@@ -723,6 +790,12 @@ impl Game {
                 let controller = controller.unwrap_or(*player);
                 self.player_relation_matches(*player, relation, controller, event.context())
             }
+            // The listener list for a cycled card holds only that card's own
+            // clauses, so there is nothing further to match on: any card
+            // whose ability reached here is the card that was cycled.
+            (TriggerEventDef::Cycled, CommittedTriggerEvent::Cycled { object }) => {
+                object.id == source
+            }
             (
                 TriggerEventDef::SpellCast(predicate),
                 CommittedTriggerEvent::SpellCast { object },
@@ -750,183 +823,6 @@ impl Game {
                 self.player_relation_matches(*actual_player, player, controller, event.context())
             }
             _ => false,
-        }
-    }
-
-    fn damage_trigger_matches(
-        &self,
-        matcher: DamageEventMatcherDef,
-        event: &CommittedTriggerEvent,
-        ability_source: GameObjectId,
-        controller: Option<PlayerId>,
-    ) -> bool {
-        let CommittedTriggerEvent::DamageDealt {
-            source,
-            source_is_spell,
-            recipient,
-            recipient_object,
-            combat,
-            ..
-        } = event
-        else {
-            return false;
-        };
-        (matcher.kind == DamageKindDef::Any || *combat)
-            && self.damage_trigger_source_matches(
-                matcher.source,
-                source.as_ref(),
-                *source_is_spell,
-                ability_source,
-                controller,
-                event,
-            )
-            && self.damage_trigger_recipient_matches(
-                matcher.recipient,
-                *recipient,
-                recipient_object.as_ref(),
-                ability_source,
-                controller,
-                event,
-            )
-    }
-
-    fn damage_trigger_source_matches(
-        &self,
-        matcher: DamageSourceMatcherDef,
-        damage_source: Option<&TriggerEventObject>,
-        source_is_spell: bool,
-        ability_source: GameObjectId,
-        controller: Option<PlayerId>,
-        event: &CommittedTriggerEvent,
-    ) -> bool {
-        match matcher {
-            DamageSourceMatcherDef::Any => true,
-            DamageSourceMatcherDef::AffectedObject => {
-                damage_source.is_some_and(|object| object.id == ability_source)
-            }
-            DamageSourceMatcherDef::Object(reference) => self
-                .trigger_event_object_reference(reference, ability_source, event)
-                .is_some_and(|expected| damage_source.is_some_and(|object| object.id == expected)),
-            DamageSourceMatcherDef::Except(reference) => self
-                .trigger_event_object_reference(reference, ability_source, event)
-                .is_some_and(|excluded| damage_source.is_none_or(|object| object.id != excluded)),
-            DamageSourceMatcherDef::Matching(predicate) => damage_source.is_some_and(|object| {
-                self.trigger_object_matches_for_controller(
-                    predicate,
-                    object,
-                    ability_source,
-                    source_is_spell,
-                    controller,
-                )
-            }),
-            DamageSourceMatcherDef::Group(group) => damage_source.is_some_and(|object| {
-                let flying = KeywordAbility::Flying
-                    .simple_index()
-                    .is_some_and(|index| object.keywords & (1 << index) != 0);
-                match group {
-                    DamageSourceGroupDef::CreaturesWithFlying => {
-                        object.types.contains(CardType::Creature) && flying
-                    }
-                    DamageSourceGroupDef::AttackingCreaturesWithoutFlying => {
-                        object.types.contains(CardType::Creature) && object.attacking && !flying
-                    }
-                    DamageSourceGroupDef::Artifacts => object.types.contains(CardType::Artifact),
-                    DamageSourceGroupDef::UnblockedCreatures => {
-                        object.types.contains(CardType::Creature)
-                            && object.attacking
-                            && !self
-                                .battlefield
-                                .iter()
-                                .any(|blocker| blocker.is_blocking(object.id))
-                    }
-                }
-            }),
-        }
-    }
-
-    fn damage_trigger_recipient_matches(
-        &self,
-        matcher: DamageRecipientMatcherDef,
-        recipient: Target,
-        recipient_object: Option<&TriggerEventObject>,
-        ability_source: GameObjectId,
-        controller: Option<PlayerId>,
-        event: &CommittedTriggerEvent,
-    ) -> bool {
-        match matcher {
-            DamageRecipientMatcherDef::Any => true,
-            DamageRecipientMatcherDef::AffectedObject => {
-                recipient == Target::Permanent(ability_source)
-            }
-            DamageRecipientMatcherDef::Recipients(recipients) => match recipients.0 {
-                EffectRecipientSetDef::Objects(ObjectSetDef::One(reference)) => self
-                    .trigger_event_object_reference(reference, ability_source, event)
-                    .is_some_and(|expected| match recipient {
-                        Target::Card(object)
-                        | Target::Permanent(object)
-                        | Target::Spell(object) => object == expected,
-                        Target::Player(_) => false,
-                    }),
-                EffectRecipientSetDef::LegalTargets(_)
-                | EffectRecipientSetDef::Objects(
-                    ObjectSetDef::Binding(_)
-                    | ObjectSetDef::LegalTargets(_)
-                    | ObjectSetDef::Query(_)
-                    | ObjectSetDef::SharingNameWith(_),
-                ) => false,
-                EffectRecipientSetDef::Players(players) => {
-                    let Target::Player(recipient) = recipient else {
-                        return false;
-                    };
-                    self.damage_trigger_player_set_matches(
-                        players,
-                        recipient,
-                        ability_source,
-                        controller,
-                        event,
-                    )
-                }
-            },
-            DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player) => {
-                let Some(player) =
-                    self.trigger_event_player_reference(player, ability_source, controller, event)
-                else {
-                    return false;
-                };
-                match recipient {
-                    Target::Player(recipient) => recipient == player,
-                    Target::Permanent(object) => recipient_object.is_some_and(|recipient| {
-                        recipient.id == object
-                            && recipient.controller == player
-                            && recipient.types.contains(CardType::Creature)
-                    }),
-                    Target::Card(_) | Target::Spell(_) => false,
-                }
-            }
-        }
-    }
-
-    fn damage_trigger_player_set_matches(
-        &self,
-        players: PlayerSetDef,
-        recipient: PlayerId,
-        ability_source: GameObjectId,
-        controller: Option<PlayerId>,
-        event: &CommittedTriggerEvent,
-    ) -> bool {
-        match players {
-            PlayerSetDef::All => true,
-            PlayerSetDef::LegalTargets(_) => false,
-            PlayerSetDef::One(reference) => {
-                self.trigger_event_player_reference(reference, ability_source, controller, event)
-                    == Some(recipient)
-            }
-            PlayerSetDef::Related(PlayerRelation::ChosenPlayer) => {
-                self.chosen_player_of(ability_source) == Some(recipient)
-            }
-            PlayerSetDef::Related(relation) => controller.is_some_and(|controller| {
-                self.player_relation_matches(recipient, relation, controller, event.context())
-            }),
         }
     }
 
@@ -984,4 +880,5 @@ impl Game {
     }
 }
 
+include!("trigger_capture/damage_matching.rs");
 include!("trigger_capture/object_matching.rs");

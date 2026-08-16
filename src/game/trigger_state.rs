@@ -212,6 +212,11 @@ pub(super) enum CommittedTriggerEvent {
         step: TurnStepDef,
         player: PlayerId,
     },
+    /// A card was cycled. The object is the card in the graveyard, which is
+    /// where the discard cost has already put it.
+    Cycled {
+        object: TriggerEventObject,
+    },
 }
 
 impl CommittedTriggerEvent {
@@ -220,6 +225,7 @@ impl CommittedTriggerEvent {
             Self::ZoneChanged { object, .. }
             | Self::Attacks { object, .. }
             | Self::Transformed { object }
+            | Self::Cycled { object }
             | Self::AttacksAndIsNotBlocked { object } => TriggerContext {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
