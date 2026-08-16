@@ -593,6 +593,7 @@ mod extra_turns;
 mod fateful_hour;
 mod fetch_tapped;
 mod filtered_player_prevention;
+mod gatecrash_keyrunes;
 mod gatecrash_stale_audits;
 mod ghouls;
 mod giant_shark;

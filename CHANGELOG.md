@@ -119,6 +119,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- The four Gatecrash **Keyrunes** -- Boros, Gruul, Orzhov, and Simic. No
+  engine work: the Return to Ravnica half of the cycle has shipped with this
+  exact animation all along, and these four audit lines had simply not caught
+  up with it.
+
 - The five **storage lands** -- Bottomless Vault, Dwarven Hold, Hollow Trees,
   Icatian Store, and Sand Silos. A cost may now remove an open-ended number of
   counters, with the size chosen as the ability is activated: the mana path

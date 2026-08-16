@@ -3888,8 +3888,64 @@ pub(in crate::card::sets) static ARMORED_TRANSPORT: CardRecord = CardRecord::new
     ),
 );
 
+/// The Keyrune animation, identical across the cycle: it keeps its artifact
+/// type, gains a creature type and colours, and takes a printed body. Only
+/// the granted keyword differs enough to stay at the call site.
+const fn keyrune_animation(
+    power: i32,
+    toughness: i32,
+    creature_types: &'static [&'static str],
+    colors: ColorSet,
+) -> [AppliedEffectDef; 4] {
+    [
+        AppliedEffectDef::add_card_types(
+            CardTypeSet::single(CardType::Creature).with(CardType::Artifact),
+        ),
+        AppliedEffectDef::set_creature_types(CreatureTypeSetDef::named(creature_types)),
+        AppliedEffectDef::set_colors(colors),
+        AppliedEffectDef::set_base_power_toughness(
+            ValueDef::Constant(power),
+            ValueDef::Constant(toughness),
+        ),
+    ]
+}
+
+static BOROS_KEYRUNE_ANIMATION: [AppliedEffectDef; 4] = keyrune_animation(
+    1,
+    1,
+    &["Soldier"],
+    ColorSet::from_colors(&[ManaColor::Red, ManaColor::White]),
+);
+
 // GTC 227 — Boros Keyrune
-// Audit: blocked — Needs its colors, creature type, and base power/toughness authored as one end-of-turn characteristic effect.
+pub(in crate::card::sets) static BOROS_KEYRUNE: CardRecord = CardRecord::new(
+    cards::BOROS_KEYRUNE,
+    "Boros Keyrune",
+    CardArt::new("c4b65847-fee2-4e00-b598-7363059ec3ff", "Daniel Ljunggren"),
+    CardSet::Gatecrash,
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {R} or {W}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::Red,
+                ManaColor::White,
+            ])),
+        ),
+        AbilityDef::activated(
+            "{R}{W}: This artifact becomes a 1/1 red and white Soldier artifact creature with double strike until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{R}{W}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::Composite(&BOROS_KEYRUNE_ANIMATION),
+                    AppliedEffectDef::add_ability(&abilities::double_strike()),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 /// The animation and the evasion are one effect for one duration, so both
 /// lapse together at end of turn.
@@ -3934,8 +3990,42 @@ pub(in crate::card::sets) static DIMIR_KEYRUNE: CardRecord = CardRecord::new(
 // GTC 229 — Glaring Spotlight
 // Audit: blocked — Needs a rule override that lets your effects target opposing hexproof creatures as though they lacked hexproof.
 
+static GRUUL_KEYRUNE_ANIMATION: [AppliedEffectDef; 4] = keyrune_animation(
+    3,
+    2,
+    &["Beast"],
+    ColorSet::from_colors(&[ManaColor::Red, ManaColor::Green]),
+);
+
 // GTC 230 — Gruul Keyrune
-// Audit: blocked — Needs its colors, creature type, and base power/toughness authored as one end-of-turn characteristic effect.
+pub(in crate::card::sets) static GRUUL_KEYRUNE: CardRecord = CardRecord::new(
+    cards::GRUUL_KEYRUNE,
+    "Gruul Keyrune",
+    CardArt::new("7cf96f1c-066e-4fde-acb8-4674842fb6c2", "Daniel Ljunggren"),
+    CardSet::Gatecrash,
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {R} or {G}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::Red,
+                ManaColor::Green,
+            ])),
+        ),
+        AbilityDef::activated(
+            "{R}{G}: This artifact becomes a 3/2 red and green Beast artifact creature with trample until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{R}{G}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::Composite(&GRUUL_KEYRUNE_ANIMATION),
+                    AppliedEffectDef::add_ability(&abilities::trample()),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // GTC 231 — Illusionist's Bracers
 // Audit: blocked — Needs the equip procedure plus copying a nonmana activated ability of the equipped creature with optional new targets.
@@ -3950,8 +4040,42 @@ pub(in crate::card::sets) static MILLENNIAL_GARGOYLE: CardRecord = CardRecord::n
         .with_ability(abilities::flying()),
 );
 
+static ORZHOV_KEYRUNE_ANIMATION: [AppliedEffectDef; 4] = keyrune_animation(
+    1,
+    4,
+    &["Thrull"],
+    ColorSet::from_colors(&[ManaColor::White, ManaColor::Black]),
+);
+
 // GTC 233 — Orzhov Keyrune
-// Audit: blocked — Needs its colors, creature type, and base power/toughness authored as one end-of-turn characteristic effect.
+pub(in crate::card::sets) static ORZHOV_KEYRUNE: CardRecord = CardRecord::new(
+    cards::ORZHOV_KEYRUNE,
+    "Orzhov Keyrune",
+    CardArt::new("fd5c0f38-916a-4f6c-b678-7447cb0709e0", "Daniel Ljunggren"),
+    CardSet::Gatecrash,
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {W} or {B}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::White,
+                ManaColor::Black,
+            ])),
+        ),
+        AbilityDef::activated(
+            "{W}{B}: This artifact becomes a 1/4 white and black Thrull artifact creature with lifelink until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{W}{B}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::Composite(&ORZHOV_KEYRUNE_ANIMATION),
+                    AppliedEffectDef::add_ability(&abilities::lifelink()),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // GTC 234 — Prophetic Prism
 // Audit: blocked — The mana-ability procedure cannot combine a mana payment with a tap cost before choosing one of five output colors.
@@ -4005,8 +4129,42 @@ pub(in crate::card::sets) static RIOT_GEAR: CardRecord = CardRecord::new(
         ]),
 );
 
+static SIMIC_KEYRUNE_ANIMATION: [AppliedEffectDef; 4] = keyrune_animation(
+    2,
+    3,
+    &["Crab"],
+    ColorSet::from_colors(&[ManaColor::Green, ManaColor::Blue]),
+);
+
 // GTC 237 — Simic Keyrune
-// Audit: blocked — Needs its colors, creature type, and base power/toughness authored as one end-of-turn characteristic effect.
+pub(in crate::card::sets) static SIMIC_KEYRUNE: CardRecord = CardRecord::new(
+    cards::SIMIC_KEYRUNE,
+    "Simic Keyrune",
+    CardArt::new("d039aae6-38f5-42b5-a530-e0dd03abc7d5", "Daniel Ljunggren"),
+    CardSet::Gatecrash,
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {G} or {U}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::Green,
+                ManaColor::Blue,
+            ])),
+        ),
+        AbilityDef::activated(
+            "{G}{U}: This artifact becomes a 2/3 green and blue Crab artifact creature with hexproof until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{G}{U}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::Composite(&SIMIC_KEYRUNE_ANIMATION),
+                    AppliedEffectDef::add_ability(&abilities::hexproof()),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 static SKYBLINDER_STAFF_BONUS: [AppliedEffectDef; 2] = [
     AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)),
@@ -4347,10 +4505,14 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RUBBLEBELT_RAIDERS,
     &SHATTERING_BLOW,
     &ARMORED_TRANSPORT,
+    &BOROS_KEYRUNE,
     &DIMIR_KEYRUNE,
+    &GRUUL_KEYRUNE,
     &MILLENNIAL_GARGOYLE,
+    &ORZHOV_KEYRUNE,
     &RAZORTIP_WHIP,
     &RIOT_GEAR,
+    &SIMIC_KEYRUNE,
     &SKYBLINDER_STAFF,
     &BOROS_GUILDGATE,
     &BREEDING_POOL,

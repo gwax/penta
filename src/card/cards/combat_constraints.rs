@@ -185,3 +185,7 @@ pub const DWARVEN_HOLD: CardDefinitionId = CardDefinitionId(1984);
 pub const HOLLOW_TREES: CardDefinitionId = CardDefinitionId(1985);
 pub const ICATIAN_STORE: CardDefinitionId = CardDefinitionId(1986);
 pub const SAND_SILOS: CardDefinitionId = CardDefinitionId(1987);
+pub const BOROS_KEYRUNE: CardDefinitionId = CardDefinitionId(1988);
+pub const GRUUL_KEYRUNE: CardDefinitionId = CardDefinitionId(1989);
+pub const ORZHOV_KEYRUNE: CardDefinitionId = CardDefinitionId(1990);
+pub const SIMIC_KEYRUNE: CardDefinitionId = CardDefinitionId(1991);
