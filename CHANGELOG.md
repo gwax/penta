@@ -133,6 +133,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Mentor of the Meek**. Nothing new: an arrival trigger, a power predicate,
+  and an optional mana payment all existed, and "power 2 or less" is the
+  strict comparison the predicates offer against three -- power is an integer,
+  so at most two and below three are the same set.
+
 - **Incursion Specialist**. A trigger condition may now compare the spells
   cast so far this turn, mirroring the one that reads last turn's. The count
   already includes the spell that caused the trigger, so "your second spell

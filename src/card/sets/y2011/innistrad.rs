@@ -507,8 +507,47 @@ pub(in crate::card::sets) static MAUSOLEUM_GUARD: CardRecord = CardRecord::new(
     ),
 );
 
+/// "Power 2 or less" said with the strict comparison the predicates offer:
+/// power is an integer, so at most two and below three are the same set.
+static MENTOR_OF_THE_MEEK_ARRIVAL: EffectDef = EffectDef::PayOr(PayOrDef::optional(
+    EffectPaymentDef::mana(
+        PlayerSetDef::Related(PlayerRelation::You),
+        mana_cost!("{1}"),
+    ),
+    &EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+));
+
 // ISD 21 — Mentor of the Meek
-// Audit: blocked — Needs an enters trigger filtered by power 2 or less and its optional mana-payment continuation.
+pub(in crate::card::sets) static MENTOR_OF_THE_MEEK: CardRecord = CardRecord::new(
+    cards::MENTOR_OF_THE_MEEK,
+    "Mentor of the Meek",
+    CardArt::new(
+        "bd8f179a-f6ab-4d4c-8195-ed077a7770d3",
+        "Jana Schirmer & Johannes Voss",
+    ),
+    CardSet::Innistrad,
+    // A mana a card, as long as what you play stays small -- and it never
+    // pays for itself, since "another" excludes the Mentor.
+    CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Soldier"], 2, 2).with_ability(
+        AbilityDef::triggered(
+            "Whenever another creature you control with power 2 or less enters, you may pay {1}. If you do, draw a card.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                    ObjectPredicateDef::PowerLessThan(ValueDef::Constant(3)),
+                ]),
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            MENTOR_OF_THE_MEEK_ARRIVAL,
+        ),
+    ),
+);
 
 // ISD 22 — Midnight Haunting
 pub(in crate::card::sets) static MIDNIGHT_HAUNTING: CardRecord = CardRecord::new(
@@ -5398,6 +5437,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GHOSTLY_POSSESSION,
     &INTANGIBLE_VIRTUE,
     &MAUSOLEUM_GUARD,
+    &MENTOR_OF_THE_MEEK,
     &MIDNIGHT_HAUNTING,
     &MOMENT_OF_HEROISM,
     &PURIFY_THE_GRAVE,

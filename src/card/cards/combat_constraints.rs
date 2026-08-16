@@ -212,3 +212,4 @@ pub const SPELL_RUPTURE: CardDefinitionId = CardDefinitionId(2011);
 pub const GIANT_ADEPHAGE: CardDefinitionId = CardDefinitionId(2012);
 pub const KEYMASTER_ROGUE: CardDefinitionId = CardDefinitionId(2013);
 pub const INCURSION_SPECIALIST: CardDefinitionId = CardDefinitionId(2014);
+pub const MENTOR_OF_THE_MEEK: CardDefinitionId = CardDefinitionId(2015);
