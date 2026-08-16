@@ -644,6 +644,26 @@ impl Game {
                     }
                 }
             }
+            EffectDef::ChooseColor {
+                object: recipient,
+                operation,
+                duration,
+            } => {
+                // Resolved before the question is asked: targets are already
+                // chosen, and a group is whatever it is at this moment.
+                let targets = self.effect_recipients(recipient, object, &context, scoped);
+                if !targets.is_empty() {
+                    self.queue_color_choice(
+                        object.controller,
+                        Box::new(object.clone()),
+                        context.clone(),
+                        scoped,
+                        targets,
+                        operation,
+                        duration,
+                    );
+                }
+            }
             EffectDef::ChangeTextBasicLandType { object: recipient } => {
                 if let Some(target) = self
                     .effect_recipients(recipient, object, &context, scoped)

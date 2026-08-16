@@ -19,7 +19,10 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             deferred,
             ..
         } => extend_begin_turn_ids(&mut ids, applied, replacements, deferred),
-        DecisionContinuation::OptionalEffect {
+        DecisionContinuation::ChooseColor {
+            object, context, ..
+        }
+        | DecisionContinuation::OptionalEffect {
             object, context, ..
         }
         | DecisionContinuation::PayOr {
@@ -70,6 +73,7 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             followup: Some(followup),
             ..
         } => extend_stack_continuation_ids(&mut ids, &followup.object, &followup.context),
+
         DecisionContinuation::BattlefieldEntryPayment { context, .. }
         | DecisionContinuation::BattlefieldEntryOptional { context, .. } => {
             ids.push(context.source.object);

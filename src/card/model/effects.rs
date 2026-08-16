@@ -152,6 +152,19 @@ pub struct ChooseDef {
     pub then: &'static EffectDef,
 }
 
+/// What a named colour is used for once it has been chosen.
+///
+/// An operation rather than a general effect: the colour has to reach a
+/// characteristic leaf, and only the leaves that take one are meaningful
+/// here.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ColorChoiceOperationDef {
+    /// Gain protection from the chosen colour.
+    ProtectionFromChosenColor,
+    /// Become the chosen colour, replacing whatever colours it had.
+    BecomesChosenColor,
+}
+
 /// The supported cost of an optional effect payment.
 ///
 /// This is deliberately narrower than casting and activation costs: those
@@ -411,6 +424,18 @@ pub enum EffectDef {
     CannotBeForcedToSacrifice,
     /// On resolution, choose two different basic land-type words and apply
     /// the resulting indefinite, noncopiable text change to the object.
+    /// Ask a player to name a colour, then apply the named operation to the
+    /// recipients in that colour. The choice is made as the effect resolves,
+    /// so it cannot be a fixed colour in the declaration.
+    ///
+    /// The recipients are resolved before the question is asked -- targets
+    /// are already chosen by then, and a group is whatever it is at that
+    /// moment -- so the decision only has to carry the answer.
+    ChooseColor {
+        object: EffectRecipientDef,
+        operation: ColorChoiceOperationDef,
+        duration: ResolvedEffectDurationDef,
+    },
     ChangeTextBasicLandType {
         object: EffectRecipientDef,
     },

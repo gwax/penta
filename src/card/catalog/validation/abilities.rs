@@ -720,6 +720,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::AddCounters { .. }
         | EffectDef::RemoveCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
+        | EffectDef::ChooseColor { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::CreateEmblem { .. }
@@ -877,6 +878,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::AddCounters { .. }
         | EffectDef::RemoveCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
+        | EffectDef::ChooseColor { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::CreateEmblem { .. }

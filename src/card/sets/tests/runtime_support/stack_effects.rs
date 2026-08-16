@@ -295,6 +295,9 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::Reconfigure { object }
         | EffectDef::PairWithSource { object }
         | EffectDef::ChangeTextBasicLandType { object }
+        // The colour is named at resolution, so the declaration only has to
+        // say who receives it and for how long.
+        | EffectDef::ChooseColor { object, .. }
         | EffectDef::BecomeCopyOf { object, .. } => shared_effect_recipient(object),
         EffectDef::Counter { object, zone } => {
             matches!(zone, ZoneKind::Graveyard | ZoneKind::Exile) && shared_effect_recipient(object)

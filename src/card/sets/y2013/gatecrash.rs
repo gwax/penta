@@ -5,14 +5,15 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CardTypeSet, ColorSet, ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef,
-    DamageEventMatcherDef, DamageKindDef, DamagePreventionDef, DamageRecipientMatcherDef,
-    DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectRecipientDef,
-    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    SumValueDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnPhaseDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardTypeSet, ColorChoiceOperationDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
+    CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef, DamagePreventionDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal,
+    EffectDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PlayActionMatcherDef, PlayRestrictionDef,
+    PlayerRefDef, PlayerRelation, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, SacrificedAmountDef, SumValueDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -2603,7 +2604,31 @@ pub(in crate::card::sets) static BOROS_CHARM: CardRecord = CardRecord::new(
 // Audit: blocked — Cipher encoding and casting encoded spell copies without paying their mana costs are unavailable.
 
 // GTC 150 — Cartel Aristocrat
-// Audit: blocked — Protection needs a resolving color choice, not a fixed color known in the declaration.
+pub(in crate::card::sets) static CARTEL_ARISTOCRAT: CardRecord = CardRecord::new(
+    cards::CARTEL_ARISTOCRAT,
+    "Cartel Aristocrat",
+    CardArt::new("25bcfbc0-1401-4e5e-8145-c8936c4ff725", "James Ryman"),
+    CardSet::Gatecrash,
+    // Unkillable for as long as the bodies last: the colour is named after
+    // the removal spell is on the stack.
+    CardRules::new_creature(mana_cost!("{W}{B}"), &["Human", "Advisor"], 2, 2).with_ability(
+        AbilityDef::activated(
+            "Sacrifice another creature: This creature gains protection from the color of your choice until end of turn.",
+            &[AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                ]),
+                controller: PlayerRelation::You,
+            }],
+            EffectDef::ChooseColor {
+                object: EffectRecipientDef::Source,
+                operation: ColorChoiceOperationDef::ProtectionFromChosenColor,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
 
 // GTC 151 — Clan Defiance
 pub(in crate::card::sets) static CLAN_DEFIANCE: CardRecord = CardRecord::new(
@@ -4464,6 +4489,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AURELIAS_FURY,
     &BIOVISIONARY,
     &BOROS_CHARM,
+    &CARTEL_ARISTOCRAT,
     &CLAN_DEFIANCE,
     &DINROVA_HORROR,
     &DOMRI_RADE,

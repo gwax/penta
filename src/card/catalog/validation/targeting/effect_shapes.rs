@@ -150,6 +150,7 @@ fn validate_effect_target_shapes(
         | EffectDef::SkipNextUntapSteps { object, .. }
         | EffectDef::Sacrifice { object }
         | EffectDef::ChangeTextBasicLandType { object }
+        | EffectDef::ChooseColor { object, .. }
         | EffectDef::BecomeCopyOf { object, .. }
         | EffectDef::ExileLinkedToSource { object }
         | EffectDef::GainControl { object, .. }

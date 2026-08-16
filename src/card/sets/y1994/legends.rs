@@ -4,15 +4,15 @@ use crate::card::{
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef,
     AppliedRuleDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef, CardArt,
     CardBehavior, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef,
-    ChooseDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
-    DamageKindDef, DamageLimitDef, DamagePreventionDef, DamageRecipientMatcherDef,
-    DamageSourceGroupDef, DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal, EffectDef,
-    EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility,
-    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef,
-    SumValueDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    ChooseDef, ColorChoiceOperationDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
+    DamageEventMatcherDef, DamageKindDef, DamageLimitDef, DamagePreventionDef,
+    DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef, DiscardSelectionDef,
+    DividedTotal, EffectDef, EffectExecutionDef, EffectPaymentDef, EffectRecipientDef,
+    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    SacrificedAmountDef, ScaledValueDef, SumValueDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -4899,7 +4899,33 @@ pub(in crate::card::sets) static AL_ABARAS_CARPET: CardRecord = CardRecord::new(
 );
 
 // LEG 272 — Alchor's Tomb
-// Audit: blocked — Needs a characteristic-layer effect or dynamic value for “{2}, {T}: Target permanent you control becomes the color of your choice”.
+pub(in crate::card::sets) static ALCHORS_TOMB: CardRecord = CardRecord::new(
+    cards::ALCHORS_TOMB,
+    "Alchor's Tomb",
+    CardArt::new("f4395b19-2118-4a09-8932-f9ce9bc54d6d", "Jesper Myrfors"),
+    CardSet::Legends,
+    // "Lasts indefinitely", so the repaint outlives the turn it was made in.
+    CardRules::new_artifact(mana_cost!("{4}")).with_ability(AbilityDef::activated_with_targets(
+        "{2}, {T}: Target permanent you control becomes the color of your choice.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{2}")),
+            AbilityCostDef::TapSource,
+        ],
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Any,
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::You),
+                owner: None,
+            },
+        )],
+        EffectDef::ChooseColor {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            operation: ColorChoiceOperationDef::BecomesChosenColor,
+            duration: ResolvedEffectDurationDef::Permanent,
+        },
+    )),
+);
 
 // LEG 273 — Arena of the Ancients
 // Audit: partial — External static untap suppression cannot yet apply to every matching legendary creature through the ability-layer fixed point.
@@ -5735,6 +5761,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &VAEVICTIS_ASMADI,
     &XIRA_ARIEN,
     &AL_ABARAS_CARPET,
+    &ALCHORS_TOMB,
     &ARENA_OF_THE_ANCIENTS,
     &FORETHOUGHT_AMULET,
     &HORN_OF_DEAFENING,

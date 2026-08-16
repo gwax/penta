@@ -599,6 +599,31 @@ fn parse_continuation(
                     .ok_or("unknown pile-chosen resolver")?,
             }
         }
+        DecisionContinuationSnapshot::ChooseColor {
+            continuation,
+            targets,
+        } => {
+            let followup = parse_effect_continuation(continuation, game)?;
+            // The operation and the duration live on the effect itself,
+            // which the locator already found; storing them again would be
+            // two places for one fact to disagree.
+            let EffectDef::ChooseColor {
+                operation,
+                duration,
+                ..
+            } = followup.effect.effect
+            else {
+                return Err("a color choice located a different effect".to_owned());
+            };
+            DecisionContinuation::ChooseColor {
+                object: followup.object,
+                context: followup.context,
+                scoped: followup.effect,
+                targets: targets.iter().copied().map(parse_target).collect(),
+                operation,
+                duration,
+            }
+        }
         DecisionContinuationSnapshot::SacrificeOfChoice {
             followup,
             declined,

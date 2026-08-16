@@ -199,6 +199,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::AddCounters { .. }
         | EffectDef::RemoveCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
+        | EffectDef::ChooseColor { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::MoveToZone { .. }
         | EffectDef::CreateEmblem { .. }

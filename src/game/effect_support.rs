@@ -1,15 +1,16 @@
 use super::{
     AbilityDef, AbilityId, AbilityOperationDef, AbilityOrigin, AbilitySourceRef,
     AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef, CardPartId, CastSignature,
-    CharacteristicOperationDef, ColorSet, ComparisonDef, ContinuousEffectExpiration,
-    ContinuousEffectTimestamp, ControlFlow, CounterKind, EffectRecipientDef, EffectRecipientSetDef,
-    EffectResolutionContext, Game, GameObjectId, GrantId, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, Permanent, PlayerId, PlayerRefDef, PlayerSetDef,
-    PowerToughnessOperationDef, QuantifierDef, ResolvedAbilityOperation, ResolvedContinuousEffect,
-    ResolvedContinuousEffectKind, ResolvedDamageRedirect, ResolvedEffectDurationDef,
-    ResolvedPlayRestriction, ResolvedPowerToughnessOperation, ScopedEffect, StackObject,
-    StackObjectKind, Target, TargetIndex, TargetSelection, TargetSlotId, TemporaryAbilityGrant,
-    TriggerConditionDef, TriggerContext, ZoneKind,
+    CharacteristicOperationDef, ColorChoiceOperationDef, ColorSet, ComparisonDef,
+    ContinuousEffectExpiration, ContinuousEffectTimestamp, ControlFlow, CounterKind,
+    EffectRecipientDef, EffectRecipientSetDef, EffectResolutionContext, Game, GameObjectId,
+    GrantId, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, Permanent,
+    PlayerId, PlayerRefDef, PlayerSetDef, PowerToughnessOperationDef, QuantifierDef,
+    ResolvedAbilityOperation, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
+    ResolvedDamageRedirect, ResolvedEffectDurationDef, ResolvedPlayRestriction,
+    ResolvedPowerToughnessOperation, ScopedEffect, StackObject, StackObjectKind, Target,
+    TargetIndex, TargetSelection, TargetSlotId, TemporaryAbilityGrant, TriggerConditionDef,
+    TriggerContext, ZoneKind, abilities,
 };
 
 #[derive(Clone, Copy)]
@@ -25,6 +26,65 @@ struct ResolvedAppliedEffect<'a> {
 mod queries;
 
 impl Game {
+    /// One protection ability per colour, so the chosen one has a static
+    /// grant to point at. A granted ability is borrowed for the life of the
+    /// game, which a colour picked at resolution cannot supply on its own.
+    const PROTECTION_FROM_COLOR: [AbilityDef; 5] = [
+        abilities::protection_from(ManaColor::White),
+        abilities::protection_from(ManaColor::Blue),
+        abilities::protection_from(ManaColor::Black),
+        abilities::protection_from(ManaColor::Red),
+        abilities::protection_from(ManaColor::Green),
+    ];
+
+    /// The single-colour sets, in the same order the choice offers them.
+    const CHOSEN_COLOR_SETS: [ColorSet; 5] = [
+        ColorSet::from_colors(&[ManaColor::White]),
+        ColorSet::from_colors(&[ManaColor::Blue]),
+        ColorSet::from_colors(&[ManaColor::Black]),
+        ColorSet::from_colors(&[ManaColor::Red]),
+        ColorSet::from_colors(&[ManaColor::Green]),
+    ];
+
+    /// Apply a named colour to everything the choice was resolved against.
+    /// `index` is a position in [`Self::CHOOSABLE_COLORS`], which is what the
+    /// decision offered.
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn apply_chosen_color(
+        &mut self,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+        targets: &[Target],
+        operation: ColorChoiceOperationDef,
+        duration: ResolvedEffectDurationDef,
+        index: usize,
+    ) {
+        let effect = match operation {
+            ColorChoiceOperationDef::ProtectionFromChosenColor => {
+                AppliedEffectDef::add_ability(&Self::PROTECTION_FROM_COLOR[index])
+            }
+            ColorChoiceOperationDef::BecomesChosenColor => {
+                AppliedEffectDef::set_colors(Self::CHOSEN_COLOR_SETS[index])
+            }
+        };
+        let timestamp = self.allocate_continuous_effect_timestamp();
+        for target in targets {
+            self.apply_applied_effect_component(
+                *target,
+                effect,
+                ResolvedAppliedEffect {
+                    duration,
+                    timestamp,
+                    object,
+                    context,
+                    scoped,
+                    component_order: 0,
+                },
+            );
+        }
+    }
+
     pub(super) fn resolve_applied_effect(
         &mut self,
         recipient: EffectRecipientDef,

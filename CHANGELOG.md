@@ -133,6 +133,17 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Cartel Aristocrat**, **Midvast Protector**, **Brave the Elements**, and
+  **Alchor's Tomb**. An effect may now ask for a colour as it resolves and
+  apply the answer, which no card could say before: the colour depends on
+  what is on the stack, so it cannot be fixed in the declaration. Recipients
+  are settled before the question is asked -- targets are already chosen, and
+  a group is whatever it is at that moment -- so the decision carries only the
+  answer. What the answer does is one of two operations: gain protection from
+  the named colour, or become it. The checkpoint stores only the recipients;
+  the operation and duration are read back off the effect the continuation
+  already locates.
+
 - **Transmutation** and **Fluxcharger**. Power and toughness may now be
   switched, in layer 7e and therefore after every other power-and-toughness
   layer. The effect carries no values because it names none: two switches in

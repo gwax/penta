@@ -549,6 +549,7 @@ mod casting_and_targets;
 mod casting_modes;
 mod casting_windows;
 mod chaos_orb;
+mod chosen_colors;
 mod cocoon;
 mod coin_flips;
 mod combat;

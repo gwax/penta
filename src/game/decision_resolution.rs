@@ -46,6 +46,25 @@ impl Game {
                     self.queue_next_effect_discard(next, amount, remaining, chosen, cause);
                 }
             }
+            DecisionContinuation::ChooseColor {
+                object,
+                context,
+                scoped,
+                targets,
+                operation,
+                duration,
+            } => {
+                let Some(index) = options
+                    .first()
+                    .and_then(|option| usize::try_from(*option).ok())
+                    .filter(|index| *index < Self::CHOOSABLE_COLORS.len())
+                else {
+                    return;
+                };
+                self.apply_chosen_color(
+                    &object, &context, scoped, &targets, operation, duration, index,
+                );
+            }
             DecisionContinuation::BasicLandTypeTextChange { target } => {
                 let Some(option) = options.first().copied() else {
                     return;

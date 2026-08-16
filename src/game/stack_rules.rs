@@ -107,6 +107,7 @@ impl Game {
             | EffectDef::AddCounters { .. }
             | EffectDef::RemoveCounters { .. }
             | EffectDef::ChangeTextBasicLandType { .. }
+            | EffectDef::ChooseColor { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::May { .. }
             | EffectDef::CannotBeForcedToSacrifice

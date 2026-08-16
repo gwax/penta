@@ -1,8 +1,8 @@
 use crate::action::{ManaColor, Target};
 use crate::card::{
-    BattlefieldEntryScalarChoiceDef, CardTypeSet, ColorSet, EffectDef, ManaCost,
-    ObjectChoiceBindingDef, ReplacementEffectDef, TopCardSelectionDef, TurnKindDef, ZoneKind,
-    ZonePlacement,
+    BattlefieldEntryScalarChoiceDef, CardTypeSet, ColorChoiceOperationDef, ColorSet, EffectDef,
+    ManaCost, ObjectChoiceBindingDef, ReplacementEffectDef, TopCardSelectionDef, TurnKindDef,
+    ZoneKind, ZonePlacement,
 };
 use crate::casting::TargetSelection;
 use crate::ids::{CardDefinitionId, GameObjectId, ObjectSetBindingIndex, PlayerId};
@@ -11,8 +11,8 @@ use super::{
     AbilitySourceRef, ApplicableReplacement, ApplicableZoneMoveReplacement, CardInstance,
     DecisionObservation, DecisionOption, DecisionZone, DrawReplacement, EffectResolutionContext,
     PendingBattlefieldExitBatch, PendingTrigger, PileChosen, PileSplit, PilesSeparated,
-    ReplacementEffectContext, SacrificedAmountDef, ScopedEffect, StackObject,
-    TriggerPlacementBatch,
+    ReplacementEffectContext, ResolvedEffectDurationDef, SacrificedAmountDef, ScopedEffect,
+    StackObject, TriggerPlacementBatch,
 };
 
 /// Fork repaints its copy, so the copy is red and nothing else.
@@ -180,6 +180,19 @@ pub(super) enum DecisionContinuation {
     },
     BasicLandTypeTextChange {
         target: Target,
+    },
+    /// A player naming a colour, with everything the answer will be applied
+    /// to already settled. The resolving object travels with it for the same
+    /// reason a sacrifice follow-up carries one: the effect it produces has
+    /// to be attributed to the same source it would have been without the
+    /// question in the middle.
+    ChooseColor {
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
+        scoped: ScopedEffect,
+        targets: Vec<Target>,
+        operation: ColorChoiceOperationDef,
+        duration: ResolvedEffectDurationDef,
     },
     ChainLightning {
         player: PlayerId,

@@ -191,3 +191,7 @@ pub const ORZHOV_KEYRUNE: CardDefinitionId = CardDefinitionId(1990);
 pub const SIMIC_KEYRUNE: CardDefinitionId = CardDefinitionId(1991);
 pub const TRANSMUTATION: CardDefinitionId = CardDefinitionId(1992);
 pub const FLUXCHARGER: CardDefinitionId = CardDefinitionId(1993);
+pub const CARTEL_ARISTOCRAT: CardDefinitionId = CardDefinitionId(1994);
+pub const MIDVAST_PROTECTOR: CardDefinitionId = CardDefinitionId(1995);
+pub const BRAVE_THE_ELEMENTS: CardDefinitionId = CardDefinitionId(1996);
+pub const ALCHORS_TOMB: CardDefinitionId = CardDefinitionId(1997);

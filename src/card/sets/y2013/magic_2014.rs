@@ -13,13 +13,13 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CardTypeSet, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, CreatureTypeSetDef,
-    DamageEventMatcherDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, TargetConditionDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    CardTypeSet, ChoiceVisibilityDef, ChooseDef, ColorChoiceOperationDef, ComparisonDef,
+    CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DiscardSelectionDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef,
+    TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -117,7 +117,30 @@ pub(in crate::card::sets) static BONESCYTHE_SLIVER: CardRecord = CardRecord::new
 );
 
 // M14 10 — Brave the Elements
-// Audit: blocked — No resolving color choice can be stored and consumed by a protection ability granted to a group.
+pub(in crate::card::sets) static BRAVE_THE_ELEMENTS: CardRecord = CardRecord::new(
+    cards::BRAVE_THE_ELEMENTS,
+    "Brave the Elements",
+    CardArt::new("097d7838-ae58-4306-ba0f-e914601b31b6", "Goran Josic"),
+    CardSet::Magic2014,
+    // One mana that makes a white board unblockable, or immune to a sweeper:
+    // the group is settled first and the colour named afterwards.
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell(
+        "Choose a color. White creatures you control gain protection from the chosen color until end of turn.",
+        EffectDef::ChooseColor {
+            object: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Color(ManaColor::White),
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            operation: ColorChoiceOperationDef::ProtectionFromChosenColor,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // M14 11 — Capashen Knight
 pub(in crate::card::sets) static CAPASHEN_KNIGHT: CardRecord = CardRecord::new(
@@ -3092,6 +3115,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARCHANGEL_OF_THUNE,
     &AURAMANCER,
     &BONESCYTHE_SLIVER,
+    &BRAVE_THE_ELEMENTS,
     &CAPASHEN_KNIGHT,
     &CELESTIAL_FLARE,
     &CHARGING_GRIFFIN,

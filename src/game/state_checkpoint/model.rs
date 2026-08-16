@@ -818,6 +818,13 @@ pub(super) enum DecisionContinuationSnapshot {
         declined: Option<Box<EffectContinuationSnapshot>>,
         optional: bool,
     },
+    /// A colour choice waiting to be answered. Only the recipients are
+    /// stored: what to do with the answer and how long it lasts are read
+    /// back off the effect the continuation already locates.
+    ChooseColor {
+        continuation: Box<EffectContinuationSnapshot>,
+        targets: Vec<TargetSnapshot>,
+    },
     RecallDiscard {
         player: usize,
     },

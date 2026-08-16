@@ -1,12 +1,13 @@
 use super::{
     AbilityDef, AbilityOperationDef, AbilitySourceRef, ApplicableReplacement, AppliedEffectDef,
     BasicLandType, BattlefieldEntryModificationDef, CardTypeSet, CharacteristicOperationDef,
-    CommittedTriggerEvent, ConditionDef, ControlFlow, DecisionContinuation, DecisionOption,
-    DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef, EffectDef,
-    EffectPaymentCostDef, EffectPaymentDef, EffectResolutionContext, EntryCompletion, Game,
-    GameEvent, ObjectPredicateDef, PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect,
-    Permanent, PlayerId, ReplaceableEvent, ReplacementChoiceDef, ReplacementConditionDef,
-    ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectPayment,
+    ColorChoiceOperationDef, CommittedTriggerEvent, ConditionDef, ControlFlow,
+    DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
+    DeclarativeAbilityDef, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
+    EffectResolutionContext, EntryCompletion, Game, GameEvent, ManaColor, ObjectPredicateDef,
+    PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent, PlayerId,
+    ReplaceableEvent, ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectContext,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ResolvedEffectPayment,
     ScopedEffect, StackObject, StackObjectKind, Target, TriggerContext, ZoneKind,
 };
 
@@ -845,6 +846,67 @@ impl Game {
             false,
             options,
             DecisionContinuation::BasicLandTypeTextChange { target },
+        );
+    }
+
+    /// The five colours a card can name. Colourless is not among them: "the
+    /// color of your choice" names a colour, and colourless is the absence
+    /// of one.
+    pub(super) const CHOOSABLE_COLORS: [ManaColor; 5] = [
+        ManaColor::White,
+        ManaColor::Blue,
+        ManaColor::Black,
+        ManaColor::Red,
+        ManaColor::Green,
+    ];
+
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn queue_color_choice(
+        &mut self,
+        player: PlayerId,
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
+        scoped: ScopedEffect,
+        targets: Vec<Target>,
+        operation: ColorChoiceOperationDef,
+        duration: ResolvedEffectDurationDef,
+    ) {
+        let options = Self::CHOOSABLE_COLORS
+            .into_iter()
+            .enumerate()
+            .map(|(index, color)| DecisionOption {
+                id: u32::try_from(index).expect("five colours fit u32"),
+                label: match color {
+                    ManaColor::White => "White",
+                    ManaColor::Blue => "Blue",
+                    ManaColor::Black => "Black",
+                    ManaColor::Red => "Red",
+                    ManaColor::Green => "Green",
+                    ManaColor::Colorless => "Colorless",
+                }
+                .to_owned(),
+                card: None,
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::None,
+            })
+            .collect();
+        self.queue_decision(
+            player,
+            "Choose a color",
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::ChooseColor {
+                object,
+                context,
+                scoped,
+                targets,
+                operation,
+                duration,
+            },
         );
     }
 }

@@ -376,6 +376,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::AddCounters { .. }
         | EffectDef::RemoveCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
+        | EffectDef::ChooseColor { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::CreateEmblem { .. }

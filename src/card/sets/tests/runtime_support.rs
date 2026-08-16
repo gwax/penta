@@ -621,6 +621,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::AddCounters { .. }
                     | EffectDef::RemoveCounters { .. }
                     | EffectDef::ChangeTextBasicLandType { .. }
+                    | EffectDef::ChooseColor { .. }
                     | EffectDef::BecomeCopyOf { .. }
                     | EffectDef::CannotBeForcedToSacrifice
                     | EffectDef::CreateEmblem { .. }

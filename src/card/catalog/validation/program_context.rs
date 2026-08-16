@@ -475,6 +475,7 @@ fn validate_resolving_effect(
         | EffectDef::RemoveAllCounters { .. }
         | EffectDef::SkipNextUntapSteps { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
+        | EffectDef::ChooseColor { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
@@ -817,6 +818,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::RemoveAllCounters { .. } => "RemoveAllCounters",
         EffectDef::SkipNextUntapSteps { .. } => "SkipNextUntapSteps",
         EffectDef::ChangeTextBasicLandType { .. } => "ChangeTextBasicLandType",
+        EffectDef::ChooseColor { .. } => "ChooseColor",
         EffectDef::BecomeCopyOf { .. } => "BecomeCopyOf",
         EffectDef::GrantFlashToNextSorcery => "GrantFlashToNextSorcery",
         EffectDef::May { .. } => "May",

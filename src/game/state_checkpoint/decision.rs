@@ -513,6 +513,23 @@ fn continuation_snapshot(
                 on_complete: on_complete.key().to_owned(),
             }
         }
+        DecisionContinuation::ChooseColor {
+            object,
+            context,
+            scoped,
+            targets,
+            ..
+        } => DecisionContinuationSnapshot::ChooseColor {
+            continuation: Box::new(effect_continuation_snapshot(
+                game,
+                viewer,
+                object,
+                context,
+                *scoped,
+                visible_rebindings,
+            )?),
+            targets: targets.iter().copied().map(target_snapshot).collect(),
+        },
         DecisionContinuation::SacrificeOfChoice {
             followup,
             declined,

@@ -5,15 +5,15 @@ use crate::card::sets::y1993::alpha;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
-    CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ComparisonDef,
-    ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef, DamagePreventionDef,
-    DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal,
-    EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef,
-    ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation,
-    PlayerSetDef, ProtectedCreatureType, ReplacementChoiceDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ColorChoiceOperationDef,
+    ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef,
+    DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef,
+    DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ManaRestrictionDef, ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    PayOrDef, PlayerRelation, PlayerSetDef, ProtectedCreatureType, ReplacementChoiceDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef,
+    SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -484,7 +484,35 @@ pub(in crate::card::sets) static MIDNIGHT_DUELIST: CardRecord = CardRecord::new(
 );
 
 // AVR 28 — Midvast Protector
-// Audit: blocked — Needs a resolving color choice and a duration-scoped protection ability parameterized by that choice.
+pub(in crate::card::sets) static MIDVAST_PROTECTOR: CardRecord = CardRecord::new(
+    cards::MIDVAST_PROTECTOR,
+    "Midvast Protector",
+    CardArt::new("d4f6214f-90cb-4575-b221-3c8d0ed65ffe", "James Ryman"),
+    CardSet::AvacynRestored,
+    CardRules::new_creature(mana_cost!("{3}{W}"), &["Human", "Wizard"], 2, 3).with_ability(
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, target creature you control gains protection from the color of your choice until end of turn.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::You),
+                    owner: None,
+                },
+            )],
+            EffectDef::ChooseColor {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                operation: ColorChoiceOperationDef::ProtectionFromChosenColor,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
 
 // AVR 29 — Moonlight Geist
 pub(in crate::card::sets) static MOONLIGHT_GEIST: CardRecord = CardRecord::new(
@@ -4297,6 +4325,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HOLY_JUSTICIAR,
     &LEAP_OF_FAITH,
     &MIDNIGHT_DUELIST,
+    &MIDVAST_PROTECTOR,
     &MOONLIGHT_GEIST,
     &MOORLAND_INQUISITOR,
     &NEARHEATH_PILGRIM,

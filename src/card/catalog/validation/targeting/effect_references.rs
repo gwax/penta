@@ -117,6 +117,7 @@ fn validate_effect_references(
         | EffectDef::Sacrifice { object }
         | EffectDef::DiscardCards { object }
         | EffectDef::ChangeTextBasicLandType { object }
+        | EffectDef::ChooseColor { object, .. }
         | EffectDef::BecomeCopyOf { object, .. }
         | EffectDef::ExileLinkedToSource { object }
         | EffectDef::Detain { object }
