@@ -1,12 +1,19 @@
 //! The closure criterion, checked by playing the formats out.
 //!
-//! Every decision boundary a sampled game reaches is handed to
-//! `from_observation_checkpoint` twice: once with the host's true hidden zones
-//! and once with a hypothesis that deliberately disagrees with them. Both must
-//! produce a live game with the same public observation and the same indexed
-//! legal actions, because that pair is what a hosted search bot is promised.
+//! Sampled decision boundaries are handed to `from_observation_checkpoint`
+//! twice: once with the host's true hidden zones and once with a hypothesis
+//! that deliberately disagrees with them. Both must produce a live game with
+//! the same public observation and the same indexed legal actions, because
+//! that pair is what a hosted search bot is promised.
 //!
-//! The audit also counts what it walked past. A reconstruction suite that
+//! Every boundary of every game used to be reconstructed. The games grow with
+//! the deck registry, so that count grew with them -- three times the floor
+//! below, and climbing -- while the extra boundaries were the most redundant
+//! ones available, neighbours of positions already checked. See
+//! [`reconstructs_here`] for which half is paid for now.
+//!
+//! The audit also counts what it walked past at those boundaries. A
+//! reconstruction suite that
 //! stops reaching flashback, or pending replacement events, or restricted
 //! mana still passes -- it just stops proving anything -- so the categories
 //! below are required rather than merely reported.
@@ -52,7 +59,7 @@ impl Seat {
 
 #[test]
 #[ignore = "slow decision-boundary reconstruction audit"]
-fn every_sampled_game_decision_reconstructs_from_its_observation() {
+fn sampled_game_decisions_reconstruct_from_their_observations() {
     let catalog = crate::poc::catalog().expect("catalog builds");
     let mut audited = 0_usize;
     let mut census: BTreeMap<&'static str, usize> = BTreeMap::new();
@@ -125,57 +132,59 @@ fn audit_one_game(
             return;
         };
         let observation = game.observe(viewer);
-        let actions = crate::protocol::protocol_actions(&observation);
-        let wire = crate::protocol::observation_json_for_format(
-            catalog,
-            format,
-            &observation,
-            game.in_pregame(),
-            &actions,
-        );
-        for category in categories(&game, &wire) {
-            *census.entry(category).or_default() += 1;
-        }
-        let truth = true_hidden_hypothesis(&game, viewer);
-        for (kind, hidden) in [
-            ("the host's own hidden zones", truth.clone()),
-            ("a determinized hypothesis", determinized(&truth, viewer)),
-        ] {
-            let rebuilt = Game::from_observation_checkpoint(
-                catalog.clone(),
+        if reconstructs_here(seed, action_number) {
+            let actions = crate::protocol::protocol_actions(&observation);
+            let wire = crate::protocol::observation_json_for_format(
+                catalog,
                 format,
-                &wire,
-                &hidden,
-                seed ^ 0x5555,
-            )
-            .unwrap_or_else(|error| {
-                panic!(
-                    "{}: {error}",
-                    context(&game, format, seed, action_number, kind)
-                )
-            });
-            let rebuilt_observation = rebuilt.observe(viewer);
-            let rebuilt_actions = crate::protocol::protocol_actions(&rebuilt_observation);
-            assert_eq!(
-                rebuilt_actions,
-                actions,
-                "{}: rebuilt different actions",
-                context(&game, format, seed, action_number, kind),
+                &observation,
+                game.in_pregame(),
+                &actions,
             );
-            assert_eq!(
-                crate::protocol::observation_json_for_format(
-                    catalog,
+            for category in categories(&game, &wire) {
+                *census.entry(category).or_default() += 1;
+            }
+            let truth = true_hidden_hypothesis(&game, viewer);
+            for (kind, hidden) in [
+                ("the host's own hidden zones", truth.clone()),
+                ("a determinized hypothesis", determinized(&truth, viewer)),
+            ] {
+                let rebuilt = Game::from_observation_checkpoint(
+                    catalog.clone(),
                     format,
-                    &rebuilt_observation,
-                    rebuilt.in_pregame(),
-                    &rebuilt_actions,
-                ),
-                wire,
-                "{}: rebuilt different public state",
-                context(&game, format, seed, action_number, kind),
-            );
+                    &wire,
+                    &hidden,
+                    seed ^ 0x5555,
+                )
+                .unwrap_or_else(|error| {
+                    panic!(
+                        "{}: {error}",
+                        context(&game, format, seed, action_number, kind)
+                    )
+                });
+                let rebuilt_observation = rebuilt.observe(viewer);
+                let rebuilt_actions = crate::protocol::protocol_actions(&rebuilt_observation);
+                assert_eq!(
+                    rebuilt_actions,
+                    actions,
+                    "{}: rebuilt different actions",
+                    context(&game, format, seed, action_number, kind),
+                );
+                assert_eq!(
+                    crate::protocol::observation_json_for_format(
+                        catalog,
+                        format,
+                        &rebuilt_observation,
+                        rebuilt.in_pregame(),
+                        &rebuilt_actions,
+                    ),
+                    wire,
+                    "{}: rebuilt different public state",
+                    context(&game, format, seed, action_number, kind),
+                );
+            }
+            *audited += 1;
         }
-        *audited += 1;
 
         let Some(action) = seats[viewer.index()].choose(&observation) else {
             return;
@@ -183,6 +192,30 @@ fn audit_one_game(
         game.apply_observed_action(&observation, action)
             .expect("a sampled policy action is legal");
     }
+}
+
+/// Whether this boundary pays for the two reconstructions and the census.
+///
+/// The games themselves are still played out in full, every deck and both
+/// formats: what is sampled is the expensive work at each boundary, not which
+/// positions the sweep reaches. Consecutive boundaries in one game are nearly
+/// the same position, so thinning along that axis costs the least coverage
+/// per second saved -- unlike dropping decks or formats, which is where
+/// genuinely different rules states come from.
+///
+/// Every required category still appears, the rarest of them seventeen times.
+///
+/// The choice is hashed rather than taken on `action_number` parity because
+/// priority alternates between the seats: a periodic stride would audit one
+/// player's view far more often than the other's. Deterministic in the game's
+/// own seed, so a failure reproduces exactly.
+fn reconstructs_here(seed: u64, action_number: usize) -> bool {
+    let mut mixed = seed
+        ^ u64::try_from(action_number)
+            .expect("action number fits")
+            .wrapping_mul(0x9E37_79B9_7F4A_7C15);
+    mixed ^= mixed >> 31;
+    mixed.is_multiple_of(2)
 }
 
 fn categories(game: &Game, wire: &Value) -> Vec<&'static str> {

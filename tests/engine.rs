@@ -614,8 +614,18 @@ fn all_builtin_deck_matchups_complete_under_deterministic_greedy_bots() {
         ("Counterburn", penta::poc::counterburn()),
         ("Lions/Dib", penta::poc::lions_dib()),
     ];
-    for (first_name, first_deck) in &decks {
-        for (second_name, second_deck) in &decks {
+    // Every pairing plays, but only in one seating: the reversed game is the
+    // redundant half of a quadratic grid, and this is a termination check
+    // rather than a matchup evaluation. Which deck leads alternates with the
+    // pair's parity, so no deck is stuck on the play or on the draw.
+    for (left, (left_name, left_deck)) in decks.iter().enumerate() {
+        for (offset, (right_name, right_deck)) in decks.iter().skip(left).enumerate() {
+            let [(first_name, first_deck), (second_name, second_deck)] = if (left + offset) % 2 == 0
+            {
+                [(left_name, left_deck), (right_name, right_deck)]
+            } else {
+                [(right_name, right_deck), (left_name, left_deck)]
+            };
             let mut game = Game::new(
                 penta::poc::catalog().unwrap(),
                 [first_deck.clone(), second_deck.clone()],
