@@ -165,8 +165,127 @@ fn equip_is_restricted_to_your_own_creatures_at_sorcery_speed() {
     );
 }
 
+/// The Pike recounts your graveyard continuously, so a spell arriving later
+/// grows the creature without re-equipping.
 #[test]
-fn all_five_report_complete_coverage() {
+fn the_pike_recounts_the_graveyard() {
+    let (mut game, _, host) = equip_onto(cards::RUNECHANTERS_PIKE, cards::GRIZZLY_BEARS);
+    assert_eq!(stats(&game, host), (Some(2), Some(2)), "an empty graveyard");
+    assert!(
+        game.permanent_has_executable_keyword(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == host)
+                .expect("still there"),
+            KeywordAbility::FirstStrike,
+        ),
+        "the first strike is unconditional",
+    );
+
+    // A creature card in the graveyard is neither an instant nor a sorcery.
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        30_000,
+        cards::GRIZZLY_BEARS,
+        PlayerId::One,
+    ));
+    assert_eq!(stats(&game, host), (Some(2), Some(2)), "wrong card type");
+
+    for index in 0..2 {
+        game.players[PlayerId::One.index()].graveyard.push(card(
+            30_100 + index,
+            cards::LIGHTNING_BOLT,
+            PlayerId::One,
+        ));
+    }
+    assert_eq!(stats(&game, host), (Some(4), Some(2)), "two instants");
+
+    // The opponent's graveyard is not yours.
+    game.players[PlayerId::Two.index()].graveyard.push(card(
+        30_200,
+        cards::LIGHTNING_BOLT,
+        PlayerId::Two,
+    ));
+    assert_eq!(stats(&game, host), (Some(4), Some(2)), "still two");
+}
+
+/// The Trident forces the attack, and unequipping releases it.
+#[test]
+fn the_trident_forces_the_attack_while_it_is_on() {
+    let (mut game, gear, host) = equip_onto(cards::TORMENTORS_TRIDENT, cards::GRIZZLY_BEARS);
+    assert_eq!(stats(&game, host), (Some(5), Some(2)));
+
+    game.step = Step::DeclareAttackers;
+    let must_attack = |game: &Game| {
+        !game
+            .legal_actions(PlayerId::One)
+            .contains(&Action::FinishDeclaringAttackers)
+    };
+    assert!(must_attack(&game), "the requirement is on");
+
+    let index = game
+        .battlefield
+        .iter()
+        .position(|permanent| permanent.card.id == gear)
+        .expect("still there");
+    game.battlefield[index].attached_to = None;
+    assert!(!must_attack(&game), "and off again once unequipped");
+}
+
+/// The Shield's extra block is one more than the usual one.
+#[test]
+fn the_shield_buys_one_extra_block() {
+    let (mut game, _, host) = equip_onto(cards::VANGUARDS_SHIELD, cards::GRIZZLY_BEARS);
+    assert_eq!(stats(&game, host), (Some(2), Some(5)));
+
+    game.active_player = PlayerId::Two;
+    game.step = Step::DeclareBlockers;
+    game.attackers_declared = true;
+    game.priority = PlayerId::One;
+    let mut attackers = Vec::new();
+    for index in 0..3 {
+        let mut attacker = creature(20_000 + index, cards::GRIZZLY_BEARS, PlayerId::Two);
+        attacker.attacking = true;
+        attackers.push(attacker.card.id);
+        game.battlefield.push(attacker);
+    }
+
+    let offered = |game: &Game| {
+        attackers
+            .iter()
+            .filter(|attacker| {
+                game.legal_actions(PlayerId::One)
+                    .contains(&Action::DeclareBlocker {
+                        blocker: host,
+                        attacker: **attacker,
+                    })
+            })
+            .count()
+    };
+    assert_eq!(offered(&game), 3, "all three are candidates to begin with");
+
+    game.apply(
+        PlayerId::One,
+        Action::DeclareBlocker {
+            blocker: host,
+            attacker: attackers[0],
+        },
+    )
+    .expect("the first block is legal");
+    assert_eq!(offered(&game), 2, "the Shield buys a second block");
+
+    game.apply(
+        PlayerId::One,
+        Action::DeclareBlocker {
+            blocker: host,
+            attacker: attackers[1],
+        },
+    )
+    .expect("the second block is legal");
+    assert_eq!(offered(&game), 0, "but not a third");
+}
+
+#[test]
+fn all_eight_report_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
     for definition in [
         cards::RIOT_GEAR,
@@ -174,6 +293,9 @@ fn all_five_report_complete_coverage() {
         cards::EXECUTIONERS_HOOD,
         cards::HEAVY_MATTOCK,
         cards::BLADED_BRACERS,
+        cards::RUNECHANTERS_PIKE,
+        cards::TORMENTORS_TRIDENT,
+        cards::VANGUARDS_SHIELD,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

@@ -119,6 +119,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Runechanter's Pike**, **Tormentor's Trident** and **Vanguard's Shield**,
+  three more Equipment. The Pike recounts your graveyard continuously, the
+  Trident's attack requirement travels with the Equipment, and the Shield's
+  extra block reuses the additional-block rule banding needed.
+
 - **Riot Gear**, **Kitesail**, **Executioner's Hood**, **Heavy Mattock** and
   **Bladed Bracers**. Two dozen audit lines claim Equipment and the equip
   procedure are unavailable; they have been available for a while. The Mattock

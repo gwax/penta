@@ -4762,8 +4762,51 @@ pub(in crate::card::sets) static ONE_EYED_SCARECROW: CardRecord = CardRecord::ne
     ]),
 );
 
+static RUNECHANTERS_PIKE_FIRST_STRIKE: AbilityDef = abilities::first_strike();
+
+/// Your graveyard, whoever the Pike is on, and recounted continuously -- so
+/// casting one more instant grows the creature mid-combat.
+static RUNECHANTERS_PIKE_SPELLS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::HasType(CardType::Instant),
+        ObjectPredicateDef::HasType(CardType::Sorcery),
+    ]),
+    &[ZoneKind::Graveyard],
+    PlayerRelation::You,
+);
+
+static RUNECHANTERS_PIKE_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(
+        ValueDef::CountMatchingObjects(&RUNECHANTERS_PIKE_SPELLS),
+        ValueDef::Constant(0),
+    ),
+    AppliedEffectDef::add_ability(&RUNECHANTERS_PIKE_FIRST_STRIKE),
+];
+
 // ISD 231 — Runechanter's Pike
-// Audit: blocked — Needs the equip procedure and a dynamic count of instant and sorcery cards in your graveyard.
+pub(in crate::card::sets) static RUNECHANTERS_PIKE: CardRecord = CardRecord::new(
+    cards::RUNECHANTERS_PIKE,
+    "Runechanter's Pike",
+    CardArt::new("0f54e38b-b4a0-4406-a635-7a5ab3722f25", "John Avon"),
+    CardSet::Innistrad,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature has first strike and gets +X/+0, where X is the number of \
+                 instant and sorcery cards in your graveyard.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&RUNECHANTERS_PIKE_BONUS),
+                },
+            ),
+            abilities::equip(
+                mana_cost!("{2}"),
+                "Equip {2} ({2}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
 
 // ISD 232 — Sharpened Pitchfork
 pub(in crate::card::sets) static SHARPENED_PITCHFORK: CardRecord = CardRecord::new(
@@ -5306,6 +5349,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GHOULCALLERS_BELL,
     &MASK_OF_AVACYN,
     &ONE_EYED_SCARECROW,
+    &RUNECHANTERS_PIKE,
     &SHARPENED_PITCHFORK,
     &SILVER_INLAID_DAGGER,
     &TRAVELERS_AMULET,

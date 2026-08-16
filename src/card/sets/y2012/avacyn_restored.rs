@@ -3402,11 +3402,68 @@ pub(in crate::card::sets) static SCROLL_OF_AVACYN: CardRecord = CardRecord::new(
 // AVR 221 — Scroll of Griselbrand
 // Audit: blocked — Needs a continuation that waits for the opponent's discard choice before checking for a Demon and applying the printed life loss.
 
+static TORMENTORS_TRIDENT_REQUIREMENT: AbilityDef =
+    abilities::attacks_each_combat_if_able("Attacks each combat if able");
+
+static TORMENTORS_TRIDENT_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(3), ValueDef::Constant(0)),
+    AppliedEffectDef::add_ability(&TORMENTORS_TRIDENT_REQUIREMENT),
+];
+
 // AVR 222 — Tormentor's Trident
-// Audit: blocked — Needs Equipment attach actions and an attack requirement granted to the equipped creature.
+pub(in crate::card::sets) static TORMENTORS_TRIDENT: CardRecord = CardRecord::new(
+    cards::TORMENTORS_TRIDENT,
+    "Tormentor's Trident",
+    CardArt::new("9543d454-27d6-42ba-aad8-54811d180cfb", "Anthony Palumbo"),
+    CardSet::AvacynRestored,
+    // The requirement travels with the Equipment, so unequipping is how the
+    // creature stops being forced to attack.
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +3/+0 and attacks each combat if able.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&TORMENTORS_TRIDENT_BONUS),
+                },
+            ),
+            abilities::equip(
+                mana_cost!("{3}"),
+                "Equip {3} ({3}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
+
+static VANGUARDS_SHIELD_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(0), ValueDef::Constant(3)),
+    AppliedEffectDef::Rule(AppliedRuleDef::MayBlockAdditionalCreatures(1)),
+];
 
 // AVR 223 — Vanguard's Shield
-// Audit: blocked — Needs Equipment attach actions and support for blocking one additional creature each combat.
+pub(in crate::card::sets) static VANGUARDS_SHIELD: CardRecord = CardRecord::new(
+    cards::VANGUARDS_SHIELD,
+    "Vanguard's Shield",
+    CardArt::new("ce8d9db6-5737-4a1f-ae4e-75821a602784", "Ryan Pancoast"),
+    CardSet::AvacynRestored,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +0/+3 and can block an additional creature each combat.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&VANGUARDS_SHIELD_BONUS),
+                },
+            ),
+            abilities::equip(
+                mana_cost!("{3}"),
+                "Equip {3} ({3}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
 
 // AVR 224 — Vessel of Endless Rest
 pub(in crate::card::sets) static VESSEL_OF_ENDLESS_REST: CardRecord = CardRecord::new(
@@ -3720,6 +3777,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &NARSTAD_SCRAPPER,
     &OTHERWORLD_ATLAS,
     &SCROLL_OF_AVACYN,
+    &TORMENTORS_TRIDENT,
+    &VANGUARDS_SHIELD,
     &VESSEL_OF_ENDLESS_REST,
     &ALCHEMISTS_REFUGE,
     &CAVERN_OF_SOULS,

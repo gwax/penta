@@ -124,3 +124,6 @@ pub const KITESAIL: CardDefinitionId = CardDefinitionId(1923);
 pub const EXECUTIONERS_HOOD: CardDefinitionId = CardDefinitionId(1924);
 pub const HEAVY_MATTOCK: CardDefinitionId = CardDefinitionId(1925);
 pub const BLADED_BRACERS: CardDefinitionId = CardDefinitionId(1926);
+pub const RUNECHANTERS_PIKE: CardDefinitionId = CardDefinitionId(1927);
+pub const TORMENTORS_TRIDENT: CardDefinitionId = CardDefinitionId(1928);
+pub const VANGUARDS_SHIELD: CardDefinitionId = CardDefinitionId(1929);
