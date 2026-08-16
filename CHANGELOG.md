@@ -133,6 +133,13 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Goblin Wizard** and **Gaea's Touch**. Putting a card from your hand onto
+  the battlefield needed no new machinery: the card choice reads hidden zones
+  and moves what it finds, and the destination the runtime has always handled
+  was simply outside what the boundary check admitted. Widened to match --
+  an outside-game import still has one destination, and a card already in a
+  zone may also go to the battlefield.
+
 - **Abattoir Ghoul** and **Dread Slaver**. Neither needed the trigger their
   audit lines named -- "whenever a creature dealt damage by this creature this
   turn dies" has shipped since Sengir Vampire -- and the toughness and

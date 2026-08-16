@@ -260,10 +260,17 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
                     matches!(
                         source,
                         CardChoiceSourceDef::OutsideGame
-                            | CardChoiceSourceDef::Zone(ZoneKind::Exile)
+                            | CardChoiceSourceDef::Zone(ZoneKind::Exile | ZoneKind::Hand)
                     )
                 })
-                && destination == ZoneKind::Hand
+                // An outside-game import has one destination the runtime
+                // knows; a card already in a zone can also be put onto the
+                // battlefield, which the choice continuation has always done.
+                && (destination == ZoneKind::Hand
+                    || (destination == ZoneKind::Battlefield
+                        && sources
+                            .iter()
+                            .all(|source| !matches!(source, CardChoiceSourceDef::OutsideGame))))
         }
         EffectDef::ReplaceNextDrawThisTurn { player, effect } => {
             shared_effect_recipient(player) && shared_stack_effect_at_position(*effect, true)

@@ -645,6 +645,7 @@ mod open_activation;
 mod osai_vultures;
 mod paralyze;
 mod part_water;
+mod play_from_hand;
 mod poison;
 mod populate;
 mod populate_cards;

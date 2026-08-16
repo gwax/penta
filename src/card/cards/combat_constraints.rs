@@ -202,3 +202,5 @@ pub const CONJURERS_CLOSET: CardDefinitionId = CardDefinitionId(2001);
 pub const RISE_FROM_THE_GRAVE: CardDefinitionId = CardDefinitionId(2002);
 pub const ABATTOIR_GHOUL: CardDefinitionId = CardDefinitionId(2003);
 pub const DREAD_SLAVER: CardDefinitionId = CardDefinitionId(2004);
+pub const GOBLIN_WIZARD: CardDefinitionId = CardDefinitionId(2005);
+pub const GAEAS_TOUCH: CardDefinitionId = CardDefinitionId(2006);

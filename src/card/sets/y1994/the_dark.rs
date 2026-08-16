@@ -2,12 +2,12 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef,
-    AppliedRuleDef, BasicLandType, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
-    CardType, ComparisonDef, DamageCoverageDef, DamageEventMatcherDef, DamagePreventionDef,
-    DamageRecipientMatcherDef, DamageSourceGroupDef, DiscardSelectionDef, EffectDef,
-    EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, HalvedValueDef, KeywordAbility,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, RoundingDef,
+    AppliedRuleDef, BasicLandType, CardArt, CardBehavior, CardChoiceSourceDef, CardRules, CardSet,
+    CardSupertype, CardType, ComparisonDef, DamageCoverageDef, DamageEventMatcherDef,
+    DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceGroupDef, DiscardSelectionDef,
+    EffectDef, EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, HalvedValueDef,
+    KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, RoundingDef,
     SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
     ZonePlacement, abilities, cards,
 };
@@ -1357,8 +1357,51 @@ pub(in crate::card::sets) static GOBLIN_SHRINE: CardRecord = CardRecord::new(
         ]),
 );
 
+static FROM_YOUR_HAND: [CardChoiceSourceDef; 1] = [CardChoiceSourceDef::Zone(ZoneKind::Hand)];
+
+/// A minimum of zero is the "you may": the choice is offered and may be
+/// answered with nothing.
+static GOBLIN_WIZARD_CHOICE: EffectDef = EffectDef::ChooseCards {
+    player: EffectRecipientDef::Controller,
+    sources: &FROM_YOUR_HAND,
+    object: ObjectPredicateDef::Subtype("Goblin"),
+    minimum: 0,
+    maximum: 1,
+    reveal: false,
+    destination: ZoneKind::Battlefield,
+    placement: ZonePlacement::Top,
+};
+
 // DRK 69 — Goblin Wizard
-// Audit: blocked — Needs a hidden-zone decision and continuation for “{T}: You may put a Goblin permanent card from your hand onto the battlefield”.
+pub(in crate::card::sets) static GOBLIN_WIZARD: CardRecord = CardRecord::new(
+    cards::GOBLIN_WIZARD,
+    "Goblin Wizard",
+    CardArt::new("9b73dfb4-d930-4a89-b621-129dd9f6328c", "Daniel Gelon"),
+    CardSet::TheDark,
+    CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Goblin", "Wizard"], 1, 1).with_abilities(
+        &[
+            AbilityDef::activated(
+                "{T}: You may put a Goblin permanent card from your hand onto the battlefield.",
+                &[AbilityCostDef::TapSource],
+                GOBLIN_WIZARD_CHOICE,
+            ),
+            AbilityDef::activated_with_targets(
+                "{R}: Target Goblin gains protection from white until end of turn.",
+                &[AbilityCostDef::Mana(mana_cost!("{R}"))],
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::Subtype("Goblin"),
+                )],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::add_ability(&abilities::protection_from(
+                        ManaColor::White,
+                    )),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ],
+    ),
+);
 
 // DRK 70 — Goblins of the Flarg
 pub(in crate::card::sets) static GOBLINS_OF_THE_FLARG: CardRecord = CardRecord::new(
@@ -1490,8 +1533,45 @@ pub(in crate::card::sets) static ELVES_OF_DEEP_SHADOW: CardRecord = CardRecord::
     ),
 );
 
+/// A basic Forest specifically, so a nonbasic that happens to make green
+/// mana is not on offer.
+static GAEAS_TOUCH_CHOICE: EffectDef = EffectDef::ChooseCards {
+    player: EffectRecipientDef::Controller,
+    sources: &FROM_YOUR_HAND,
+    object: ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Supertype(CardSupertype::Basic),
+        ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+    ]),
+    minimum: 0,
+    maximum: 1,
+    reveal: false,
+    destination: ZoneKind::Battlefield,
+    placement: ZonePlacement::Top,
+};
+
 // DRK 77 — Gaea's Touch
-// Audit: blocked — Needs a hidden-zone decision and continuation for “{0}: You may put a basic Forest card from your hand onto the battlefield. Activate only as a sorcery and only once each turn”.
+pub(in crate::card::sets) static GAEAS_TOUCH: CardRecord = CardRecord::new(
+    cards::GAEAS_TOUCH,
+    "Gaea's Touch",
+    CardArt::new("0e1ae3d6-6d96-4db6-bbc4-cee91bae6cf7", "Mark Poole"),
+    CardSet::TheDark,
+    // A free extra land each turn, or two green mana when you are done with
+    // it.
+    CardRules::new_enchantment(mana_cost!("{G}{G}")).with_abilities(&[
+        AbilityDef::activated(
+            "{0}: You may put a basic Forest card from your hand onto the battlefield. Activate only as a sorcery and only once each turn.",
+            &[],
+            GAEAS_TOUCH_CHOICE,
+        )
+        .with_activation_timing(ActivationTimingDef::SorcerySpeed)
+        .once_each_turn(),
+        AbilityDef::activated_mana(
+            "Sacrifice this enchantment: Add {G}{G}.",
+            &[AbilityCostDef::SacrificeSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green).with_amount(2)),
+        ),
+    ]),
+);
 
 // DRK 78 — Hidden Path
 pub(in crate::card::sets) static HIDDEN_PATH: CardRecord = CardRecord::new(
@@ -2343,12 +2423,14 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GOBLIN_HERO,
     &GOBLIN_ROCK_SLED,
     &GOBLIN_SHRINE,
+    &GOBLIN_WIZARD,
     &GOBLINS_OF_THE_FLARG,
     &INFERNO,
     &ORC_GENERAL,
     &SISTERS_OF_THE_FLAME,
     &CARNIVOROUS_PLANT,
     &ELVES_OF_DEEP_SHADOW,
+    &GAEAS_TOUCH,
     &HIDDEN_PATH,
     &LAND_LEECHES,
     &MARSH_VIPER,
