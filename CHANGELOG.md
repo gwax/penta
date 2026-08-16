@@ -119,6 +119,11 @@ distinguishes snapshots of the covered source and build inputs.
   Icatian Phalanx, Icatian Skirmishers, Knights of Thorn, Pikemen, Nalathni
   Dragon, and Fortified Area.
 
+- **Ethereal Armor** and **Ogre Jailbreaker**, two statics whose answer is a
+  battlefield count. The Jailbreaker's audit line named the exact reason it
+  was blocked -- a static condition counting Gates -- and that reason stopped
+  being true when static clauses were allowed to read the board.
+
 - **One Thousand Lashes**, which is Arrest's three prohibitions plus a drain
   that follows the enchanted creature's controller. Nothing new was needed.
 

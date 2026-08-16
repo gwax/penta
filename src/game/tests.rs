@@ -560,6 +560,7 @@ mod continuous_and_zones;
 mod control_duration;
 mod copy_effects;
 mod counted_bodies;
+mod counted_statics;
 mod counter_conditions;
 mod countering_and_mana;
 mod creature_bond;

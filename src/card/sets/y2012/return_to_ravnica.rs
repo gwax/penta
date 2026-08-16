@@ -262,8 +262,44 @@ pub(in crate::card::sets) static CONCORDIA_PEGASUS: CardRecord = keyword_creatur
     abilities::flying(),
 );
 
+static ETHEREAL_ARMOR_FIRST_STRIKE: AbilityDef = abilities::first_strike();
+
+/// The Armor is itself an enchantment you control, so it always counts at
+/// least one -- and every other Aura and enchantment adds to it live.
+static ETHEREAL_ARMOR_ENCHANTMENTS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Enchantment),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static ETHEREAL_ARMOR_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(
+        ValueDef::CountMatchingObjects(&ETHEREAL_ARMOR_ENCHANTMENTS),
+        ValueDef::CountMatchingObjects(&ETHEREAL_ARMOR_ENCHANTMENTS),
+    ),
+    AppliedEffectDef::add_ability(&ETHEREAL_ARMOR_FIRST_STRIKE),
+];
+
 // RTR 9 — Ethereal Armor
-// Audit: blocked — Needs an Aura bonus whose size continuously tracks the number of enchantments you control.
+pub(in crate::card::sets) static ETHEREAL_ARMOR: CardRecord = CardRecord::new(
+    cards::ETHEREAL_ARMOR,
+    "Ethereal Armor",
+    CardArt::new("76960e65-e5c7-4414-b9a5-37d7b2ded4a0", "Daarken"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_enchantment(mana_cost!("{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +1/+1 for each enchantment you control and has first \
+                 strike.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&ETHEREAL_ARMOR_BONUS),
+                },
+            ),
+        ]),
+);
 
 static EYES_IN_THE_SKIES_EFFECTS: [EffectDef; 2] = [
     EffectDef::CreateToken {
@@ -1537,8 +1573,41 @@ pub(in crate::card::sets) static NECROPOLIS_REGENT: CardRecord = CardRecord::new
     ]),
 );
 
+static OGRE_JAILBREAKER_HAS_A_GATE: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::Subtype("Gate"),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+/// A permission rather than an ability removal: the Ogre keeps defender, so
+/// anything reading "a creature with defender" still finds one.
+static OGRE_JAILBREAKER_PERMISSION: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::Rule(AppliedRuleDef::MayAttackDespiteDefender),
+};
+
 // RTR 72 — Ogre Jailbreaker
-// Audit: blocked — The permission to attack despite defender is available, but its condition counts Gates across the battlefield, and the static walk is only trusted with conditions reachable from the source itself.
+pub(in crate::card::sets) static OGRE_JAILBREAKER: CardRecord = CardRecord::new(
+    cards::OGRE_JAILBREAKER,
+    "Ogre Jailbreaker",
+    CardArt::new("9a96c83d-96d9-4f8f-8020-77990130ad81", "Karl Kopinski"),
+    CardSet::ReturnToRavnica,
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Ogre", "Rogue"], 4, 4).with_abilities(&[
+        abilities::defender(),
+        AbilityDef::static_ability(
+            "This creature can attack as though it didn't have defender as long as you control a \
+             Gate.",
+            EffectDef::IfCondition {
+                condition: &OGRE_JAILBREAKER_HAS_A_GATE,
+                then: &OGRE_JAILBREAKER_PERMISSION,
+            },
+        ),
+    ]),
+);
 
 // RTR 73 — Pack Rat
 // Audit: blocked — Needs dynamic Rat-count power and toughness and creation of a copiable token copy of the source.
@@ -5094,6 +5163,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AZORIUS_JUSTICIAR,
     &BAZAAR_KROVOD,
     &CONCORDIA_PEGASUS,
+    &ETHEREAL_ARMOR,
     &EYES_IN_THE_SKIES,
     &FENCING_ACE,
     &KEENING_APPARITION,
@@ -5141,6 +5211,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DRAINPIPE_VERMIN,
     &GRIM_ROUSTABOUT,
     &NECROPOLIS_REGENT,
+    &OGRE_JAILBREAKER,
     &PERILOUS_SHADOW,
     &SEWER_SHAMBLER,
     &SHRIEKING_AFFLICTION,
