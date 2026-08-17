@@ -147,6 +147,19 @@ macro_rules! deck {
     };
 }
 
+/// Built-in Premodern decklists, from the Sacred Torch Showdown Top 8.
+///
+/// A list is registered only once every card in it resolves; the rest of the
+/// staged tranche stays in `decks/premodern/` until it does.
+pub mod premodern {
+    deck!(
+        rg_goblins,
+        "premodern",
+        "rg_goblins_andy_dominguez.yaml",
+        "Returns Andy Dominguez's RG Goblins list from the Sacred Torch Showdown."
+    );
+}
+
 /// Built-in Eternal Central Old School 93/94 decklists.
 pub mod old_school_93_94 {
     deck!(
@@ -548,6 +561,31 @@ mod tests {
             assert_eq!(deck.sideboard.len(), 15);
             deck.validate_for_format(&catalog, Format::IsdDgmStandard)
                 .unwrap();
+        }
+    }
+
+    /// The one registered Premodern list has to be legal in the format it is
+    /// registered under, and every card in it has to actually resolve --
+    /// publishing a deck whose cards the engine cannot carry out would offer
+    /// legal actions it then fails to perform.
+    #[test]
+    fn the_registered_premodern_deck_is_legal_and_fully_playable() {
+        let catalog = crate::card::catalog().expect("catalog builds");
+        let deck = super::premodern::rg_goblins();
+        assert_eq!(deck.main.len(), 60);
+        assert_eq!(deck.sideboard.len(), 15);
+        deck.clone()
+            .validate_for_format(&catalog, Format::Premodern)
+            .expect("the list is Premodern legal");
+
+        for definition in deck.main.iter().copied() {
+            let card = catalog.get(definition).expect("every card is cataloged");
+            assert_eq!(
+                card.rules.implementation_status(),
+                crate::ImplementationStatus::Complete,
+                "{} is in the registered main deck and must resolve",
+                card.name,
+            );
         }
     }
 

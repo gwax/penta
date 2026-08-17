@@ -145,6 +145,18 @@ distinguishes snapshots of the covered source and build inputs.
   Akroma's Vengeance, Secluded Steppe, Eternal Dragon, and Gempalm
   Incinerator.
 
+- **The first Premodern deck is registered.** `RG Goblins` is selectable in
+  the Premodern format: every main-deck card resolves, and the list validates
+  against the format's own set window and ban list. Registering it needed the
+  Fourth Edition and Chronicles reprints of Red Elemental Blast and Tormod's
+  Crypt, which are what put those two inside the window. The other seven
+  staged lists stay in `decks/premodern/` until their cards resolve too.
+
+- **Pyrokinesis**, with its damage complete and its alternative cost not.
+  Every layer that carries an alternative cost is mana-only, so "exile a red
+  card from your hand rather than pay this spell's mana cost" is recorded as
+  metadata rather than executed. The card is castable for its printed cost.
+
 - **Kicker.** A kicked spell is a spell cast for more mana with different
   instructions, which is what an alternative cast already models -- so kicker
   is one, carrying the whole kicked total rather than the surcharge. Overload

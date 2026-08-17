@@ -121,9 +121,24 @@ const SET_MODULES: &[SetModule] = &[
         y1994::promo_1994::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::FourthEdition,
+        y1995::fourth_edition::CARDS,
+        y1995::fourth_edition::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::IceAge,
         y1995::ice_age::CARDS,
         y1995::ice_age::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Chronicles,
+        y1995::chronicles::CARDS,
+        y1995::chronicles::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Alliances,
+        y1996::alliances::CARDS,
+        y1996::alliances::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::Mirage,

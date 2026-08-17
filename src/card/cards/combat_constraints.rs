@@ -228,3 +228,4 @@ pub const GOBLIN_RINGLEADER: CardDefinitionId = CardDefinitionId(2027);
 pub const SKIRK_PROSPECTOR: CardDefinitionId = CardDefinitionId(2028);
 pub const OVERLOAD: CardDefinitionId = CardDefinitionId(2029);
 pub const PROHIBIT: CardDefinitionId = CardDefinitionId(2030);
+pub const PYROKINESIS: CardDefinitionId = CardDefinitionId(2031);

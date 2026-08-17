@@ -46,7 +46,8 @@ up when the first staged list is promoted.
 - Audit the existing definitions against their Premodern Oracle text and
   interactions.
 - Promote each staged deck into the runtime registry only when every main-deck
-  card is playable and the sideboard has honest catalog coverage.
+  card is playable and the sideboard has honest catalog coverage. RG Goblins
+  is registered; the other seven lists remain staged.
 - Add protocol/binding documentation and UI format/deck selection when the
   profile becomes public.
 
@@ -110,6 +111,7 @@ older unannotated definitions still require one):
 - `Presence of the Master` — complete
 - `Prohibit` — complete
 - `Pyroblast` — complete
+- `Pyrokinesis` — damage complete; the exile-from-hand alternative cost is partial
 - `Quirion Dryad` — complete
 - `Ray of Revelation`
 - `Red Elemental Blast`
@@ -189,7 +191,6 @@ Not yet cataloged:
 - [ ] `Portent`
 - [ ] `Powder Keg`
 - [ ] `Psychatog`
-- [ ] `Pyrokinesis`
 - [ ] `Reflecting Pool`
 - [ ] `Replenish`
 - [ ] `Shallow Grave`
