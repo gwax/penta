@@ -524,6 +524,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                         AbilityCostDef::TapSource
                             | AbilityCostDef::SacrificeSource
                             | AbilityCostDef::ExileSource
+                            // Sacrificing another permanent bounds the
+                            // ability the same way spending the source does.
+                            | AbilityCostDef::SacrificePermanent { .. }
                     )
                 })
             }
@@ -542,6 +545,10 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                             // an open-ended removal into one activation per
                             // size, so this is where it belongs.
                             | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
+                            // And the one place that enumerates a "sacrifice
+                            // a <thing>" cost into one activation per
+                            // candidate, for the same reason.
+                            | AbilityCostDef::SacrificePermanent { .. }
                             | AbilityCostDef::PayLife(_)
                     ) || matches!(
                         cost,

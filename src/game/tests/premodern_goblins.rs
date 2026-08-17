@@ -371,6 +371,139 @@ fn the_ringleader_takes_every_goblin_from_the_top_four() {
     );
 }
 
+/// The Prospector's sacrifice is a choice of which Goblin, and a mana
+/// ability has no window in which to ask -- so each candidate is its own
+/// offered activation, and a non-Goblin is never among them.
+#[test]
+fn the_prospector_offers_one_activation_per_goblin() {
+    let mut game = ready();
+    let prospector = creature(10_000, cards::SKIRK_PROSPECTOR, PlayerId::One);
+    let prospector_id = prospector.card.id;
+    game.battlefield.push(prospector);
+    let matron = creature(10_001, cards::GOBLIN_MATRON, PlayerId::One);
+    let matron_id = matron.card.id;
+    game.battlefield.push(matron);
+    // Not a Goblin, and a Goblin the other player controls: neither is
+    // yours to sacrifice.
+    game.battlefield
+        .push(creature(10_002, cards::GRIZZLY_BEARS, PlayerId::One));
+    game.battlefield
+        .push(creature(10_003, cards::MOGG_FANATIC, PlayerId::Two));
+
+    let mut offered: Vec<_> = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility {
+                source,
+                cost_object,
+                ..
+            } if source == prospector_id => cost_object,
+            _ => None,
+        })
+        .collect();
+    offered.sort_unstable();
+    let mut expected = vec![prospector_id, matron_id];
+    expected.sort_unstable();
+    assert_eq!(
+        offered, expected,
+        "your two Goblins, and the Prospector counts as one of them",
+    );
+}
+
+/// Sacrificing the Prospector to its own ability is legal, and it produces
+/// the mana on its way out rather than being unable to pay for itself.
+#[test]
+fn the_prospector_can_eat_itself_for_mana() {
+    let mut game = ready();
+    let prospector = creature(10_000, cards::SKIRK_PROSPECTOR, PlayerId::One);
+    let prospector_id = prospector.card.id;
+    game.battlefield.push(prospector);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateManaAbility { cost_object: Some(id), .. } if *id == prospector_id
+            )
+        })
+        .expect("a lone Prospector can still sacrifice itself");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.red,
+        1,
+        "one red mana",
+    );
+    assert!(game.battlefield.is_empty(), "and the Prospector is gone");
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SKIRK_PROSPECTOR),
+        "into the graveyard, not exile",
+    );
+}
+
+/// Eating a different Goblin leaves the Prospector standing, ready to do it
+/// again.
+#[test]
+fn the_prospector_survives_eating_another_goblin() {
+    let mut game = ready();
+    let prospector = creature(10_000, cards::SKIRK_PROSPECTOR, PlayerId::One);
+    let prospector_id = prospector.card.id;
+    game.battlefield.push(prospector);
+    let matron = creature(10_001, cards::GOBLIN_MATRON, PlayerId::One);
+    let matron_id = matron.card.id;
+    game.battlefield.push(matron);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateManaAbility { cost_object: Some(id), .. } if *id == matron_id
+            )
+        })
+        .expect("the Matron is on offer");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    settle(&mut game);
+
+    assert_eq!(game.players[PlayerId::One.index()].mana_pool.red, 1);
+    let standing: Vec<_> = game
+        .battlefield
+        .iter()
+        .map(|permanent| permanent.card.id)
+        .collect();
+    assert_eq!(
+        standing,
+        vec![prospector_id],
+        "the Matron went, the Prospector stayed",
+    );
+}
+
+/// With no Goblin to eat there is no ability at all -- the cost is not
+/// optional.
+#[test]
+fn a_prospector_with_nothing_to_eat_offers_nothing() {
+    let mut game = ready();
+    // The Prospector itself is the only Goblin it could ever eat, so the
+    // negative case has to be a board where it is not there. A Matron alone
+    // has no sacrifice ability of its own.
+    game.battlefield
+        .push(creature(10_000, cards::GOBLIN_MATRON, PlayerId::One));
+
+    let offers_mana = game
+        .legal_actions(PlayerId::One)
+        .iter()
+        .any(|action| matches!(action, Action::ActivateManaAbility { .. }));
+    assert!(!offers_mana, "no Prospector, no red mana from a Goblin");
+}
+
 #[test]
 fn every_goblin_reports_complete_coverage() {
     let catalog = poc::catalog().expect("catalog builds");
@@ -382,6 +515,7 @@ fn every_goblin_reports_complete_coverage() {
         cards::SIEGE_GANG_COMMANDER,
         cards::GOBLIN_TINKERER,
         cards::GOBLIN_RINGLEADER,
+        cards::SKIRK_PROSPECTOR,
     ] {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(

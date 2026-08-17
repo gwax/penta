@@ -15,6 +15,7 @@ fn trigger_placement_preserves_the_nonactive_players_priority() {
             ability: mana_ability_for(&game, CardInstanceId(10_000), ManaColor::Blue),
             color: ManaColor::Blue,
             counters_removed: None,
+            cost_object: None,
         },
     )
     .unwrap();
@@ -115,6 +116,7 @@ fn city_trigger_can_be_answered_when_mana_was_floated_first() {
             ability: mana_ability_for(&game, CardInstanceId(10_000), ManaColor::Red),
             color: ManaColor::Red,
             counters_removed: None,
+            cost_object: None,
         },
     )
     .unwrap();
@@ -464,6 +466,7 @@ fn workshop_mana_is_three_individual_values_restricted_to_artifact_spells() {
             ability,
             color: ManaColor::Colorless,
             counters_removed: None,
+            cost_object: None,
         },
     )
     .unwrap();

@@ -118,6 +118,7 @@ older unannotated definitions still require one):
 - `Seal of Fire` — complete
 - `Secluded Steppe` — complete
 - `Siege-Gang Commander` — complete
+- `Skirk Prospector` — complete
 - `Sleight of Hand` — complete
 - `Stasis` — complete
 - `Swamp`
@@ -193,7 +194,6 @@ Not yet cataloged:
 - [ ] `Replenish`
 - [ ] `Shallow Grave`
 - [ ] `Skeletal Scrying`
-- [ ] `Skirk Prospector`
 - [ ] `Skycloud Expanse`
 - [ ] `Standstill`
 - [ ] `Stifle`

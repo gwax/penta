@@ -40,6 +40,7 @@ pub fn action_json(action: &Action) -> Value {
             ability,
             color,
             counters_removed,
+            cost_object,
         } => {
             let mut action = json!({
                 "type": "ActivateManaAbility",
@@ -52,6 +53,11 @@ pub fn action_json(action: &Action) -> Value {
             // unchanged.
             if let Some(removed) = counters_removed {
                 action["countersRemoved"] = json!(removed);
+            }
+            // Likewise optional, and present only for a cost that sacrifices
+            // some other permanent.
+            if let Some(sacrificed) = cost_object {
+                action["costObject"] = json!(sacrificed.0);
             }
             action
         }

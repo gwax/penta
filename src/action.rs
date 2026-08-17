@@ -101,6 +101,13 @@ pub enum Action {
         /// part of the action rather than something chosen afterwards.
         /// `None` for every ability whose cost has only one size.
         counters_removed: Option<u16>,
+        /// The permanent a "Sacrifice a <thing>" cost consumes. Source,
+        /// ability, and colour name one Goblin-sacrificing ability once per
+        /// Goblin, so which one is part of the action: a mana ability
+        /// resolves without ever holding priority, so there is no window in
+        /// which to ask afterwards. `None` for every ability that sacrifices
+        /// nothing but itself.
+        cost_object: Option<GameObjectId>,
     },
     PayLifeForMana,
     CastSpell {

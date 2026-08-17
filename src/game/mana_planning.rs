@@ -4,10 +4,10 @@ use super::{
     AbilityCostDef, AbilityOrigin, AbilityProcedureDef, Action, ActivatedAbilityDef,
     AppliedEffectDef, CardBehavior, CardDefinitionId, CardInstance, CardType,
     CharacteristicContext, CharacteristicOperationDef, CostConfiguration, DeclarativeAbilityDef,
-    EffectDef, EffectRecipientDef, FlexibleManaSource, Game, GameObjectId, HybridPair, ManaColor,
-    ManaCost, ManaPaymentPurpose, ManaPool, Permanent, PlannedManaActivation, PlayActionKind,
-    PlayOptionDef, PlayerId, SetOperationDef, TriggerContext, ValueDef, ZoneKind,
-    extra_target_cost,
+    EffectDef, EffectRecipientDef, FlexibleManaSource, Game, GameObjectId, HybridPair,
+    ManaAbilityActivation, ManaColor, ManaCost, ManaPaymentPurpose, ManaPool, ManaSourceOutputs,
+    Permanent, PlannedManaActivation, PlayActionKind, PlayOptionDef, PlayerId, SetOperationDef,
+    TriggerContext, ValueDef, ZoneKind, extra_target_cost,
 };
 
 impl Game {
@@ -301,6 +301,31 @@ impl Game {
         spare.total() >= cost.generic
     }
 
+    /// One planning tuple per enumerated activation. The last two members
+    /// are the choices that distinguish otherwise identical activations of
+    /// one source: the counter size and the sacrificed permanent.
+    fn planned_outputs(
+        activations: &[ManaAbilityActivation],
+        purpose: &ManaPaymentPurpose,
+    ) -> ManaSourceOutputs {
+        activations
+            .iter()
+            .map(|activation| {
+                let benefits_payment = Self::mana_for_activation(*activation)
+                    .first()
+                    .is_some_and(|mana| Self::mana_has_spend_effect_for(*mana, purpose));
+                (
+                    activation.ability,
+                    activation.color,
+                    Self::mana_production(*activation),
+                    benefits_payment,
+                    activation.counters_removed,
+                    activation.cost_object,
+                )
+            })
+            .collect()
+    }
+
     pub(super) fn assigned_mana_activations_for(
         &self,
         player: PlayerId,
@@ -375,24 +400,10 @@ impl Game {
                     || hybrid_pays_with(cost, activation.color);
                 (!benefits_payment, !pays_colored_symbol)
             });
-            let outputs = activations
-                .into_iter()
-                .map(|activation| {
-                    let benefits_payment = Self::mana_for_activation(activation)
-                        .first()
-                        .is_some_and(|mana| Self::mana_has_spend_effect_for(*mana, purpose));
-                    (
-                        activation.ability,
-                        activation.color,
-                        Self::mana_production(activation),
-                        benefits_payment,
-                        activation.counters_removed,
-                    )
-                })
-                .collect::<Vec<_>>();
+            let outputs = Self::planned_outputs(&activations, purpose);
             match outputs.as_slice() {
                 [] => {}
-                [(ability, color, production, benefits_payment, counters_removed)] => {
+                [(ability, color, production, benefits_payment, counters_removed, cost_object)] => {
                     pool.add(*production);
                     assigned.push(PlannedManaActivation {
                         source: permanent.card.id,
@@ -403,6 +414,7 @@ impl Game {
                         flexibility: 1,
                         order,
                         counters_removed: *counters_removed,
+                        cost_object: *cost_object,
                     });
                 }
                 _ => flexible.push(FlexibleManaSource {
@@ -625,6 +637,7 @@ impl Game {
                 activation.ability,
                 activation.color,
                 activation.counters_removed,
+                activation.cost_object,
             );
         }
     }
@@ -717,7 +730,7 @@ pub(super) fn assign_flexible_mana_outputs(
             source
                 .outputs
                 .iter()
-                .map(|(_, _, output, _, _)| output.total())
+                .map(|(_, _, output, _, _, _)| output.total())
                 .max()
         })
         .fold(pool.total(), u16::saturating_add);
@@ -731,7 +744,8 @@ pub(super) fn assign_flexible_mana_outputs(
     let Some(source) = sources.get(index) else {
         return can_pay(pool, cost, x);
     };
-    for (ability, color, output, benefits_payment, counters_removed) in &source.outputs {
+    for (ability, color, output, benefits_payment, counters_removed, cost_object) in &source.outputs
+    {
         let mut next = pool;
         next.add(*output);
         assignment.push(PlannedManaActivation {
@@ -743,6 +757,7 @@ pub(super) fn assign_flexible_mana_outputs(
             flexibility: source.outputs.len(),
             order: source.order,
             counters_removed: *counters_removed,
+            cost_object: *cost_object,
         });
         if assign_flexible_mana_outputs(sources, index + 1, next, cost, x, assignment) {
             return true;

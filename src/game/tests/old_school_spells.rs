@@ -714,6 +714,7 @@ fn black_lotus_sacrifices_for_three_red_mana() {
         ability: mana_ability_for(&game, lotus_id, ManaColor::Red),
         color: ManaColor::Red,
         counters_removed: None,
+        cost_object: None,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));
 

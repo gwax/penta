@@ -205,13 +205,20 @@ impl Game {
         ability: AbilityOrigin,
         color: ManaColor,
         counters_removed: Option<u16>,
+        cost_object: Option<GameObjectId>,
     ) {
         let activation = self
             .battlefield
             .iter()
             .find(|permanent| permanent.card.id == source)
             .and_then(|permanent| {
-                self.mana_ability_activation(permanent, ability, color, counters_removed)
+                self.mana_ability_activation(
+                    permanent,
+                    ability,
+                    color,
+                    counters_removed,
+                    cost_object,
+                )
             })
             .expect("legal mana action references a mana source");
         let produced_mana = Self::mana_for_activation(activation);
@@ -223,9 +230,12 @@ impl Game {
                     let _ = self.tap_permanent_for_mana(source);
                 }
                 // The open-ended removal never arrives: enumeration sized it
-                // before the activation was built.
+                // before the activation was built. The two sacrifices and the
+                // exile are deferred to the batch below, so that a Goblin
+                // sacrificing itself leaves the battlefield once.
                 AbilityCostDef::SacrificeSource
                 | AbilityCostDef::ExileSource
+                | AbilityCostDef::SacrificePermanent { .. }
                 | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_) => {}
                 AbilityCostDef::RemoveCountersFromSource { kind, amount } => {
                     self.battlefield
@@ -250,7 +260,6 @@ impl Game {
                 | AbilityCostDef::DiscardCards(_)
                 | AbilityCostDef::DiscardCardMatching(_)
                 | AbilityCostDef::DiscardCardsAtRandom(_)
-                | AbilityCostDef::SacrificePermanent { .. }
                 | AbilityCostDef::TapPermanent { .. }
                 | AbilityCostDef::Special(_) => {
                     unreachable!("unsupported mana-ability costs are not enumerated")
@@ -259,16 +268,30 @@ impl Game {
         }
         if activation.costs.contains(&AbilityCostDef::ExileSource) {
             self.exile_permanent(source);
-        } else if activation.costs.contains(&AbilityCostDef::SacrificeSource) {
-            self.move_permanents_to_graveyard_then(
-                &[source],
-                Some(BattlefieldExitCompletion::CompleteManaAbility {
-                    player,
-                    activation,
-                    produced_mana,
-                }),
-            );
-            return;
+        } else {
+            // The source's own sacrifice and a named permanent's are the same
+            // exit, so they go in one batch. Skirk Prospector sacrificing
+            // itself names its own id here, and the batch holds it once.
+            let mut sacrificed = Vec::new();
+            if activation.costs.contains(&AbilityCostDef::SacrificeSource) {
+                sacrificed.push(source);
+            }
+            if let Some(chosen) = activation.cost_object
+                && !sacrificed.contains(&chosen)
+            {
+                sacrificed.push(chosen);
+            }
+            if !sacrificed.is_empty() {
+                self.move_permanents_to_graveyard_then(
+                    &sacrificed,
+                    Some(BattlefieldExitCompletion::CompleteManaAbility {
+                        player,
+                        activation,
+                        produced_mana,
+                    }),
+                );
+                return;
+            }
         }
         self.complete_mana_ability(player, activation, produced_mana);
     }

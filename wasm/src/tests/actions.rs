@@ -72,6 +72,66 @@ fn cast_action_labels_distinguish_normal_flashback_and_overload() {
 }
 
 #[test]
+/// Two Prospector activations differ only in which Goblin dies, so the label
+/// has to name the sacrifice -- otherwise the player is offered what reads as
+/// the same option twice.
+fn a_sacrificing_mana_ability_names_what_it_eats() {
+    let mut game = WebGame::new(
+        "The Deck",
+        "Robots",
+        "Handcrafted",
+        true,
+        2,
+        Some("old-school-93-94".into()),
+    )
+    .unwrap();
+    let prospector = game
+        .session
+        .engine_mut()
+        .put_onto_battlefield(game.human, penta::card::cards::SKIRK_PROSPECTOR)
+        .expect("Skirk Prospector enters the test battlefield");
+    let matron = game
+        .session
+        .engine_mut()
+        .put_onto_battlefield(game.human, penta::card::cards::GOBLIN_MATRON)
+        .expect("Goblin Matron enters the test battlefield");
+    let observation = game.session.engine_mut().observe(game.human);
+    let ability = AbilityOrigin::Printed {
+        definition: penta::card::cards::SKIRK_PROSPECTOR,
+        part: penta::CardPartId::PRIMARY,
+        ability: penta::AbilityId(0),
+    };
+    let label = |cost_object| {
+        game.action_label(
+            &observation,
+            &Action::ActivateManaAbility {
+                source: prospector,
+                ability,
+                color: penta::ManaColor::Red,
+                counters_removed: None,
+                cost_object,
+            },
+        )
+    };
+
+    assert_eq!(
+        label(Some(prospector)),
+        "Sacrifice Skirk Prospector for Red mana"
+    );
+    assert_eq!(label(Some(matron)), "Sacrifice Goblin Matron for Red mana");
+    assert_ne!(
+        label(Some(prospector)),
+        label(Some(matron)),
+        "the two offers are distinguishable",
+    );
+    assert_eq!(
+        label(None),
+        "Tap Skirk Prospector for Red mana",
+        "an ability that sacrifices nothing still reads as a tap",
+    );
+}
+
+#[test]
 fn activated_action_labels_distinguish_exact_ability_origins() {
     let mut game = WebGame::new(
         "The Deck",
@@ -440,6 +500,7 @@ fn ability_actions_expose_their_stable_origins() {
         ability: penta::AbilityOrigin::IntrinsicBasicLand(penta::BasicLandType::Mountain),
         color: penta::ManaColor::Red,
         counters_removed: None,
+        cost_object: None,
     };
     assert_eq!(
         action_ability_origin(&mana_action),

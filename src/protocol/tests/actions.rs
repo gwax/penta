@@ -1,5 +1,37 @@
 use super::*;
 
+/// Both optional members are absent unless the ability offers the choice
+/// they answer, so an old consumer reading an ordinary mana ability sees the
+/// wire shape it always saw.
+#[test]
+fn mana_actions_publish_their_choices_only_when_there_is_one() {
+    let plain = action_json(&Action::ActivateManaAbility {
+        source: GameObjectId(9),
+        ability: AbilityOrigin::IntrinsicBasicLand(BasicLandType::Mountain),
+        color: ManaColor::Red,
+        counters_removed: None,
+        cost_object: None,
+    });
+    assert!(plain.get("countersRemoved").is_none());
+    assert!(
+        plain.get("costObject").is_none(),
+        "a Mountain sacrifices nothing",
+    );
+
+    let sacrificing = action_json(&Action::ActivateManaAbility {
+        source: GameObjectId(9),
+        ability: AbilityOrigin::IntrinsicBasicLand(BasicLandType::Mountain),
+        color: ManaColor::Red,
+        counters_removed: Some(2),
+        cost_object: Some(GameObjectId(14)),
+    });
+    assert_eq!(sacrificing["countersRemoved"], 2);
+    assert_eq!(
+        sacrificing["costObject"], 14,
+        "which permanent the cost consumes is part of the action",
+    );
+}
+
 #[test]
 fn activated_actions_serialize_their_exact_ability_origin() {
     let mana = action_json(&Action::ActivateManaAbility {
@@ -7,6 +39,7 @@ fn activated_actions_serialize_their_exact_ability_origin() {
         ability: AbilityOrigin::IntrinsicBasicLand(BasicLandType::Mountain),
         color: ManaColor::Red,
         counters_removed: None,
+        cost_object: None,
     });
     assert_eq!(mana["ability"]["kind"], "intrinsicBasicLand");
     assert_eq!(mana["ability"]["landType"], "mountain");

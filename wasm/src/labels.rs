@@ -424,12 +424,28 @@ impl WebGame {
                     .unwrap_or_else(|| self.instance_name(observation, *card));
                 format!("Play {option}")
             }
-            Action::ActivateManaAbility { source, color, .. } => {
-                format!(
-                    "Tap {} for {} mana",
-                    self.instance_name(observation, *source),
-                    readable_debug(*color)
-                )
+            Action::ActivateManaAbility {
+                source,
+                color,
+                cost_object,
+                ..
+            } => {
+                // An ability that sacrifices some other permanent is offered
+                // once per candidate, and the source and colour are the same
+                // every time -- so the sacrifice is what the label has to
+                // name, or the choices read as duplicates.
+                match cost_object {
+                    Some(sacrificed) => format!(
+                        "Sacrifice {} for {} mana",
+                        self.instance_name(observation, *sacrificed),
+                        readable_debug(*color)
+                    ),
+                    None => format!(
+                        "Tap {} for {} mana",
+                        self.instance_name(observation, *source),
+                        readable_debug(*color)
+                    ),
+                }
             }
             Action::PayLifeForMana => "Pay 1 life for 1 colorless mana".into(),
             Action::CastSpell {

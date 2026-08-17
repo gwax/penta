@@ -87,6 +87,11 @@ impl Game {
             | AbilityCostDef::ExileSource
             | AbilityCostDef::RemoveCountersFromSource { .. }
             | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
+            // Sacrificing another permanent spends the board just as surely
+            // as spending the source does, so it bounds the ability the same
+            // way. Which permanent is a choice, and it is answered by
+            // enumerating one activation per candidate.
+            | AbilityCostDef::SacrificePermanent { .. }
             | AbilityCostDef::PayLife(_) => true,
             AbilityCostDef::Mana(mana) => {
                 !mana.variable_x
@@ -97,6 +102,7 @@ impl Game {
                             AbilityCostDef::TapSource
                                 | AbilityCostDef::SacrificeSource
                                 | AbilityCostDef::ExileSource
+                                | AbilityCostDef::SacrificePermanent { .. }
                         )
                     })
             }
@@ -105,7 +111,6 @@ impl Game {
             | AbilityCostDef::DiscardCards(_)
             | AbilityCostDef::DiscardCardMatching(_)
             | AbilityCostDef::DiscardCardsAtRandom(_)
-            | AbilityCostDef::SacrificePermanent { .. }
             | AbilityCostDef::TapPermanent { .. }
             | AbilityCostDef::Loyalty(_)
             | AbilityCostDef::ExileCardFromGraveyard(_)
@@ -236,6 +241,42 @@ impl Game {
 
     /// The concrete activations one mana ability offers, which is one per
     /// colour it can produce.
+    /// Which permanents a mana ability's "Sacrifice a <thing>" cost could
+    /// take, one per activation. An ability with no such cost yields a single
+    /// `None`, so the enumeration below runs once for it rather than not at
+    /// all.
+    fn mana_ability_sacrifice_candidates(
+        &self,
+        permanent: &Permanent,
+        definition: ActivatedAbilityDef,
+    ) -> Vec<Option<GameObjectId>> {
+        let Some((object, controller)) = definition.costs.iter().find_map(|cost| match cost {
+            AbilityCostDef::SacrificePermanent { object, controller } => {
+                Some((*object, *controller))
+            }
+            _ => None,
+        }) else {
+            return vec![None];
+        };
+        self.battlefield
+            .iter()
+            .filter(|candidate| {
+                self.player_relation_matches(
+                    candidate.controller,
+                    controller,
+                    permanent.controller,
+                    TriggerContext::empty(),
+                ) && self.trigger_object_matches(
+                    object,
+                    &self.trigger_event_object(candidate),
+                    permanent.card.id,
+                    false,
+                )
+            })
+            .map(|candidate| Some(candidate.card.id))
+            .collect()
+    }
+
     pub(super) fn mana_activations_for(
         &self,
         permanent: &Permanent,
@@ -270,7 +311,11 @@ impl Game {
                     .collect::<Vec<_>>(),
                 None => vec![(definition.costs, effect.amount, None)],
             };
-            let mut add_activation = |color, costs, amount, counters_removed| {
+            // "Sacrifice a Goblin" is a choice of which one, and a mana
+            // ability has no window in which to ask: like the counter sizes
+            // above, each candidate becomes its own activation.
+            let sacrifices = self.mana_ability_sacrifice_candidates(permanent, definition);
+            let mut add_activation = |color, costs, amount, counters_removed, cost_object| {
                 activations.push(ManaAbilityActivation {
                     source: permanent.card.id,
                     ability: origin,
@@ -278,16 +323,25 @@ impl Game {
                     costs,
                     effect: AddManaEffectDef { amount, ..effect },
                     counters_removed,
+                    cost_object,
                 });
             };
             for (costs, amount, counters_removed) in sizes {
-                match effect.mana {
-                    ManaSelectionDef::One(color) => {
-                        add_activation(color, costs, amount, counters_removed);
-                    }
-                    ManaSelectionDef::Choice(colors) => {
-                        for color in colors {
-                            add_activation(*color, costs, amount, counters_removed);
+                for cost_object in &sacrifices {
+                    match effect.mana {
+                        ManaSelectionDef::One(color) => {
+                            add_activation(color, costs, amount, counters_removed, *cost_object);
+                        }
+                        ManaSelectionDef::Choice(colors) => {
+                            for color in colors {
+                                add_activation(
+                                    *color,
+                                    costs,
+                                    amount,
+                                    counters_removed,
+                                    *cost_object,
+                                );
+                            }
                         }
                     }
                 }
@@ -318,6 +372,7 @@ impl Game {
                 costs,
                 effect: AddManaEffectDef::one(color),
                 counters_removed: None,
+                cost_object: None,
             })
             .collect()
     }
@@ -386,6 +441,7 @@ impl Game {
         ability: AbilityOrigin,
         color: ManaColor,
         counters_removed: Option<u16>,
+        cost_object: Option<GameObjectId>,
     ) -> Option<ManaAbilityActivation> {
         self.mana_ability_activations(permanent)
             .into_iter()
@@ -394,8 +450,9 @@ impl Game {
                     && activation.color == color
                     // Source, ability, and colour name one storage land's
                     // ability three times over; the size is what tells them
-                    // apart.
+                    // apart, and for a sacrifice cost the permanent does.
                     && activation.counters_removed == counters_removed
+                    && activation.cost_object == cost_object
             })
     }
 
@@ -778,6 +835,7 @@ impl Game {
                     ability: activation.ability,
                     color: activation.color,
                     counters_removed: activation.counters_removed,
+                    cost_object: activation.cost_object,
                 },
             ));
         }

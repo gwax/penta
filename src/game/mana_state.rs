@@ -48,7 +48,26 @@ pub(super) struct ManaAbilityActivation {
     /// `None` whenever the cost has only one size, which is every other
     /// mana ability.
     pub(super) counters_removed: Option<u16>,
+    /// The permanent a "Sacrifice a <thing>" cost consumes. Like the counter
+    /// size above, source and colour do not distinguish one Goblin from
+    /// another, so the choice is enumerated into the activation rather than
+    /// asked afterwards -- a mana ability has no window in which to ask.
+    /// `None` for every ability that sacrifices nothing but itself.
+    pub(super) cost_object: Option<GameObjectId>,
 }
+
+/// One enumerated output of a mana source: the ability, the colour, what it
+/// produces, whether that mana helps the payment at hand, and the two choices
+/// that distinguish otherwise identical activations -- the counter size and
+/// the sacrificed permanent.
+pub(super) type ManaSourceOutputs = Vec<(
+    AbilityOrigin,
+    ManaColor,
+    ManaPool,
+    bool,
+    Option<u16>,
+    Option<GameObjectId>,
+)>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct PlannedManaActivation {
@@ -62,6 +81,9 @@ pub(super) struct PlannedManaActivation {
     /// Which sized activation this plan means, for a source that offers
     /// several. `None` for every ability with only one size.
     pub(super) counters_removed: Option<u16>,
+    /// Which permanent this plan sacrifices, for a source that offers
+    /// several. `None` for every ability that sacrifices nothing but itself.
+    pub(super) cost_object: Option<GameObjectId>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -70,6 +92,6 @@ pub(super) struct FlexibleManaSource {
     /// Ability, colour, what it makes, whether it benefits the payment,
     /// and how many counters its sized removal takes when the ability
     /// offers more than one size.
-    pub(super) outputs: Vec<(AbilityOrigin, ManaColor, ManaPool, bool, Option<u16>)>,
+    pub(super) outputs: ManaSourceOutputs,
     pub(super) order: usize,
 }

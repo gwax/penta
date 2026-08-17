@@ -176,6 +176,26 @@ pub(in crate::card::sets) static GOBLIN_SHARPSHOOTER: CardRecord = CardRecord::n
     ]),
 );
 
+// ONS 230 — Skirk Prospector
+pub(in crate::card::sets) static SKIRK_PROSPECTOR: CardRecord = CardRecord::new(
+    cards::SKIRK_PROSPECTOR,
+    "Skirk Prospector",
+    CardArt::new("eb545dcd-3a7a-46a7-9c35-d28faebc6d17", "Doug Chaffee"),
+    CardSet::Onslaught,
+    // A one-drop that turns the rest of the board into mana, including
+    // itself: the sacrifice names any Goblin, and the Prospector is one.
+    CardRules::new_creature(mana_cost!("{R}"), &["Goblin"], 1, 1).with_ability(
+        AbilityDef::activated_mana(
+            "Sacrifice a Goblin: Add {R}.",
+            &[AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::Subtype("Goblin"),
+                controller: PlayerRelation::You,
+            }],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red)),
+        ),
+    ),
+);
+
 // ONS 275 — Naturalize
 pub(in crate::card::sets) static NATURALIZE: CardRecord = CardRecord::new(
     cards::NATURALIZE,
@@ -302,6 +322,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GOBLIN_PILEDRIVER,
     &GOBLIN_PYROMANCER,
     &GOBLIN_SHARPSHOOTER,
+    &SKIRK_PROSPECTOR,
     &NATURALIZE,
     &BLOODSTAINED_MIRE,
     &FLOODED_STRAND,

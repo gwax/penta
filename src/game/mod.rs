@@ -147,7 +147,7 @@ use decision_state::{
 };
 use mana_state::{
     AppliedStackEffect, FlexibleManaSource, ManaAbilityActivation, ManaPaymentPurpose,
-    PlannedManaActivation,
+    ManaSourceOutputs, PlannedManaActivation,
 };
 use procedure_state::{DrawReplacement, PendingProcedure};
 use replacement_state::{

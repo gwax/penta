@@ -643,6 +643,7 @@ fn fellwar_mana_and_nested_color_queries_use_their_typed_legacy_clauses() {
         ability: mana_ability_for(&game, source, ManaColor::Blue),
         color: ManaColor::Blue,
         counters_removed: None,
+        cost_object: None,
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&action));
@@ -780,6 +781,7 @@ fn copy_artifact_copies_declarative_mana_abilities_without_a_behavior_hook() {
             ability,
             color: ManaColor::Colorless,
             counters_removed: None,
+            cost_object: None,
         },
     )
     .unwrap();

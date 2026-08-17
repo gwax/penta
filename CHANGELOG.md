@@ -139,6 +139,14 @@ distinguishes snapshots of the covered source and build inputs.
   Akroma's Vengeance, Secluded Steppe, Eternal Dragon, and Gempalm
   Incinerator.
 
+- **A mana ability can sacrifice another permanent.** "Sacrifice a Goblin:
+  Add {R}" is a choice of which Goblin, and a mana ability never holds
+  priority, so there is no window in which to ask: each candidate is
+  enumerated as its own activation, the way an open-ended counter removal
+  already becomes one activation per size. `ActivateManaAbility` carries the
+  chosen permanent in an optional `costObject`, absent for every ability that
+  sacrifices nothing but itself. Skirk Prospector.
+
 - **Goblin Ringleader.** A look at the top of a library can now take every
   card matching its predicate without asking. "Put all Goblin cards revealed
   this way into your hand" is mandatory and has no printed bound, so a

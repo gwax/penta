@@ -130,6 +130,7 @@ fn lotus_petal_sacrifices_for_one_mana_of_the_chosen_color() {
         ability: mana_ability_for(&game, source, ManaColor::Blue),
         color: ManaColor::Blue,
         counters_removed: None,
+        cost_object: None,
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&action));
