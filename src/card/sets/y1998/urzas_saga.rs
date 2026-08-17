@@ -4,7 +4,7 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardChoiceSourceDef, CardRules, CardSet,
     CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, cards,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -119,6 +119,20 @@ pub(in crate::card::sets) static GOBLIN_MATRON: CardRecord = CardRecord::new(
     ),
 );
 
+// USG 193 — Goblin Patrol
+pub(in crate::card::sets) static GOBLIN_PATROL: CardRecord = CardRecord::new(
+    cards::GOBLIN_PATROL,
+    "Goblin Patrol",
+    CardArt::new("d0fcd8d3-f159-49a1-8dd9-582ae4a0adc3", "Greg Staples"),
+    CardSet::UrzasSaga,
+    // A 2/1 for one, rented rather than bought: the echo comes due on your
+    // next upkeep and once only.
+    CardRules::new_creature(mana_cost!("{R}"), &["Goblin"], 2, 1).with_ability(abilities::echo(
+        "Echo {R} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)",
+        mana_cost!("{R}"),
+    )),
+);
+
 // USG 290 — Claws of Gix
 pub(in crate::card::sets) static CLAWS_OF_GIX: CardRecord = CardRecord::new(
     cards::CLAWS_OF_GIX,
@@ -149,6 +163,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANNUL,
     &GOBLIN_LACKEY,
     &GOBLIN_MATRON,
+    &GOBLIN_PATROL,
     &CLAWS_OF_GIX,
 ];
 

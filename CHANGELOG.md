@@ -145,6 +145,12 @@ distinguishes snapshots of the covered source and build inputs.
   Akroma's Vengeance, Secluded Steppe, Eternal Dragon, and Gempalm
   Incinerator.
 
+- **Echo.** "At the beginning of your upkeep, if this came under your control
+  since the beginning of your last upkeep, sacrifice it unless you pay its
+  echo cost." The intervening-if is what makes the cost come due exactly
+  once, so the condition it reads is the new part; the trigger and the
+  sacrifice-unless-paid were already there. Goblin Patrol.
+
 - **"Activate only if ..." on an activated ability.** Threshold is a
   restriction on whether the activation is offered at all, not on what it
   does, so a false condition means there is no legal action rather than one

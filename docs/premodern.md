@@ -39,8 +39,7 @@ up when the first staged list is promoted.
 - Add accurate characteristics and Oracle clauses for uncataloged cards.
   Unsupported clauses must be metadata-only rather than executable no-ops.
 - Implement reusable mechanics before card-local behavior. Cycling and
-  typecycling are done; still outstanding are flashback, threshold, fading,
-  echo, alternative costs that exile from hand, split cards, graveyard replacement/reanimation,
+  typecycling are done; still outstanding are flashback, fading, alternative costs that exile from hand, split cards, graveyard replacement/reanimation,
   named-card choices, tutors, continuous type/PT changes, and triggered
   mana/untap restrictions.
 - Audit the existing definitions against their Premodern Oracle text and
@@ -82,6 +81,7 @@ older unannotated definitions still require one):
 - `Gempalm Incinerator` — complete
 - `Goblin Lackey` — complete
 - `Goblin Matron` — complete
+- `Goblin Patrol` — complete
 - `Goblin Piledriver` — complete
 - `Goblin Pyromancer` — complete
 - `Goblin Ringleader` — complete
@@ -173,7 +173,6 @@ Not yet cataloged:
 - [ ] `Gemstone Mine`
 - [ ] `Gerrard's Verdict`
 - [ ] `Gilded Drake`
-- [ ] `Goblin Patrol`
 - [ ] `Grim Lavamancer`
 - [ ] `Gush`
 - [ ] `Haunting Echoes`

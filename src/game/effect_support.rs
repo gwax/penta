@@ -567,6 +567,19 @@ impl Game {
                     .battlefield
                     .iter()
                     .any(|permanent| permanent.card.id == source),
+                // The permanent records the controller's turn count as it
+                // arrived. By this upkeep that count has advanced once, so
+                // "since the last upkeep" is exactly one turn ago -- and the
+                // check stops being true afterwards, which is what keeps an
+                // echo cost from coming due a second time.
+                TriggerConditionDef::SourceArrivedSinceControllersLastUpkeep => self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == source)
+                    .is_some_and(|permanent| {
+                        self.turns_started[permanent.controller.index()]
+                            == permanent.entered_controller_turn.saturating_add(1)
+                    }),
                 TriggerConditionDef::SourceUntapped => self
                     .battlefield
                     .iter()

@@ -736,6 +736,7 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
             static_object_predicate_supported(object)
         }
         TriggerConditionDef::CreatureDiedThisTurn
+        | TriggerConditionDef::SourceArrivedSinceControllersLastUpkeep
         | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped
         | TriggerConditionDef::SourceIsPaired

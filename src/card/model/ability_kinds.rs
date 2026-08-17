@@ -372,6 +372,10 @@ pub enum ComparisonDef {
 pub enum TriggerConditionDef {
     /// Whether the original source object is still on the battlefield.
     SourceOnBattlefield,
+    /// Whether the source came under its controller's control since the
+    /// beginning of that player's previous upkeep -- the condition echo is
+    /// written against, and what makes an echo cost come due exactly once.
+    SourceArrivedSinceControllersLastUpkeep,
     /// Whether the source permanent is currently untapped.
     SourceUntapped,
     /// Whether the source is soulbonded to another creature. The clause every

@@ -217,3 +217,71 @@ fn the_vandal_trades_its_damage_for_an_artifact() {
         });
     assert!(assigns_none, "and the Vandal deals nothing this turn");
 }
+
+/// Echo comes due on your next upkeep and only then. The Patrol is put onto
+/// the battlefield on one turn, survives that turn, and is asked for its echo
+/// at the following upkeep -- after which it is never asked again.
+fn patrol_at_upkeep(turns_later: u32, pay: bool) -> Game {
+    let mut game = ready();
+    let mut patrol = creature(10_000, cards::GOBLIN_PATROL, PlayerId::One);
+    patrol.entered_controller_turn = 5;
+    game.battlefield.push(patrol);
+    game.turns_started[PlayerId::One.index()] = 5 + turns_later;
+    game.turn = 5 + turns_later;
+    game.step = Step::Upkeep;
+    if pay {
+        game.players[PlayerId::One.index()].mana_pool.red = 1;
+    }
+
+    game.capture_battlefield_triggers(&CommittedTriggerEvent::StepBegins {
+        step: crate::TurnStepDef::Upkeep,
+        player: PlayerId::One,
+    });
+    settle(&mut game);
+    game
+}
+
+fn patrol_survived(game: &Game) -> bool {
+    game.battlefield
+        .iter()
+        .any(|permanent| permanent.card.id == CardInstanceId(10_000))
+}
+
+#[test]
+fn the_echo_is_not_asked_on_the_turn_it_arrived() {
+    // Same turn it entered: the condition is false, so nothing triggers and
+    // no payment is demanded.
+    let game = patrol_at_upkeep(0, false);
+    assert!(patrol_survived(&game), "echo is not due yet");
+}
+
+#[test]
+fn an_unpaid_echo_sacrifices_the_creature() {
+    let game = patrol_at_upkeep(1, false);
+    assert!(
+        !patrol_survived(&game),
+        "with no red available the echo goes unpaid",
+    );
+}
+
+#[test]
+fn a_paid_echo_keeps_the_creature() {
+    let game = patrol_at_upkeep(1, true);
+    assert!(patrol_survived(&game), "the echo was paid");
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.red,
+        0,
+        "and it cost the red mana",
+    );
+}
+
+#[test]
+fn the_echo_never_comes_due_a_second_time() {
+    // Two turns on, with no mana at all: if the condition were still true the
+    // Patrol would be sacrificed, so surviving is the whole assertion.
+    let game = patrol_at_upkeep(2, false);
+    assert!(
+        patrol_survived(&game),
+        "echo is a one-time cost, not an upkeep tax",
+    );
+}

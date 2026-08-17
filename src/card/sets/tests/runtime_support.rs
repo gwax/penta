@@ -374,6 +374,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
             shared_object_predicate(object)
         }
         TriggerConditionDef::CreatureDiedThisTurn
+        | TriggerConditionDef::SourceArrivedSinceControllersLastUpkeep
         | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped
         | TriggerConditionDef::SourceIsPaired
@@ -411,6 +412,7 @@ fn shared_static_trigger_condition(condition: TriggerConditionDef) -> bool {
         // Counters live on the source, so a static clause can read them from
         // exactly the input it has.
         TriggerConditionDef::CreatureDiedThisTurn
+        | TriggerConditionDef::SourceArrivedSinceControllersLastUpkeep
         | TriggerConditionDef::SourceOnBattlefield
             | TriggerConditionDef::SourceUntapped
         | TriggerConditionDef::SourceIsPaired
