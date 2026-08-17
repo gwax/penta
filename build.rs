@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -391,6 +392,13 @@ fn main() {
             package.checksum.as_deref().unwrap_or("local"),
         );
     }
+    // Written out a byte at a time rather than with `{:x}`: sha2 0.11
+    // returns a plain array, which has no LowerHex of its own. The bytes and
+    // therefore the fingerprint are the same either way.
     let digest = hash.finalize();
-    println!("cargo::rustc-env=PENTA_SIMULATION_FINGERPRINT=sha256-{digest:x}");
+    let mut hex = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        write!(&mut hex, "{byte:02x}").expect("writing to a String cannot fail");
+    }
+    println!("cargo::rustc-env=PENTA_SIMULATION_FINGERPRINT=sha256-{hex}");
 }
