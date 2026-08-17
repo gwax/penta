@@ -540,6 +540,10 @@ pub struct AlternativeCastAbilityDef {
     /// Rules text for the spell as modified by this alternative, when the
     /// procedure changes its visible instructions (as overload does).
     pub stack_text: Option<&'static str>,
+    /// A nonmana cost paid in place of the mana one. The objects it names are
+    /// spent the way the zone says: a permanent is sacrificed, a card in a
+    /// graveyard is exiled, a card in hand is discarded.
+    pub additional_cost: Option<SpellAdditionalCostDef>,
     /// What the modified spell targets. Overload replaces "target" with
     /// "each" and so declares none, but a kicked spell targets exactly what
     /// the unkicked one does -- and the clause carries its own instructions,
@@ -554,6 +558,11 @@ pub enum AlternativeCastKindDef {
     /// Cast from hand only in the window opened by drawing the card, as the
     /// first card drawn that turn.
     Miracle,
+    /// A plain "you may <do something> rather than pay this spell's mana
+    /// cost". Like flashback it only changes what the spell costs, never what
+    /// it does, so the spell's own clause still supplies the instructions --
+    /// what it carries instead is a nonmana cost in `additional_cost`.
+    AlternativeCost,
     /// Cast from hand with its kicker paid. A kicker is printed as an
     /// optional additional cost, but the kicked spell is exactly a spell cast
     /// for the printed cost plus the kicker with a different set of
@@ -591,6 +600,7 @@ impl AlternativeCastKindDef {
             Self::Overload => "Overload",
             Self::Miracle => "Miracle",
             Self::Kicked => "Kicker",
+            Self::AlternativeCost => "Alternative cost",
         }
     }
 }
@@ -634,6 +644,8 @@ impl AlternativeCastAbilityDef {
             (AlternativeCastKindDef::Kicked, AlternativeCastManaCostDef::ThisCardManaCost) => {
                 "Kicked".into()
             }
+            // The card prints what is paid instead, so it supplies the text.
+            (AlternativeCastKindDef::AlternativeCost, _) => "Alternative cost".into(),
         }
     }
 

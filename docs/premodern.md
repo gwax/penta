@@ -76,6 +76,7 @@ older unannotated definitions still require one):
 - `Eternal Dragon` — complete
 - `Fact or Fiction` — complete
 - `Fire // Ice` — complete
+- `Fireblast` — complete
 - `Flooded Strand` — complete
 - `Forest`
 - `Gempalm Incinerator` — complete
@@ -166,7 +167,6 @@ Not yet cataloged:
 - [ ] `Dragon Breath`
 - [ ] `Engineered Plague`
 - [ ] `Exalted Angel`
-- [ ] `Fireblast`
 - [ ] `Flash of Insight`
 - [ ] `Forsaken City`
 - [ ] `Frantic Search`

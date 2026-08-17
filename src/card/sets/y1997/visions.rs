@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, TopCardSelectionDef,
-    ValueDef, ZoneKind, ZonePlacement, cards,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, BasicLandType,
+    CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, ObjectPredicateDef,
+    SpellAdditionalCostDef, TopCardSelectionDef, ValueDef, ZoneKind, ZonePlacement, cards,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 static IMPULSE_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     count: ValueDef::Constant(4),
@@ -37,6 +38,44 @@ pub(in crate::card::sets) static IMPULSE: CardRecord = CardRecord::new(
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&IMPULSE];
+/// Two Mountains off the battlefield, which is why the card is a finisher
+/// rather than a burn spell: it is cast from an empty board on the turn the
+/// lands stop mattering.
+static SACRIFICE_TWO_MOUNTAINS: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
+    zone: ZoneKind::Battlefield,
+    count: 2,
+};
+
+static FIREBLAST_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
+// VIS 79 — Fireblast
+pub(in crate::card::sets) static FIREBLAST: CardRecord = CardRecord::new(
+    cards::FIREBLAST,
+    "Fireblast",
+    CardArt::new("b1eb5b2c-1f02-48a6-a287-88eb189d6780", "Michael Danza"),
+    CardSet::Visions,
+    CardRules::new_instant(mana_cost!("{4}{R}{R}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Fireblast deals 4 damage to any target.",
+            &FIREBLAST_TARGET,
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(4),
+            },
+        ),
+        AbilityDef::alternative_cast(
+            crate::mana_cost!("{0}"),
+            AlternativeCastKindDef::AlternativeCost,
+            Some("You may sacrifice two Mountains rather than pay this spell's mana cost."),
+            EffectDef::None,
+        )
+        .with_alternative_additional_cost(&SACRIFICE_TWO_MOUNTAINS),
+    ]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&IMPULSE, &FIREBLAST];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

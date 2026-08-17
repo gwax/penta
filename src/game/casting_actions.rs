@@ -18,10 +18,22 @@ impl Game {
     fn additional_cost_choices(
         &self,
         definition: &CardDefinition,
+        option: &PlayOptionDef,
+        costs: &CostConfiguration,
         card: &CardInstance,
         player: PlayerId,
     ) -> Vec<Vec<GameObjectId>> {
-        let Some(cost) =
+        // A cost paid instead of the mana cost replaces the spell's own
+        // additional cost rather than stacking with it: "rather than pay this
+        // spell's mana cost" is the whole payment.
+        let selected = costs
+            .alternative()
+            .and_then(|selected| Self::alternative_cast_ability(definition, option, selected))
+            .and_then(|(_, ability, _)| match ability.definition {
+                DeclarativeAbilityDef::AlternativeCast(alternative) => alternative.additional_cost,
+                _ => None,
+            });
+        let cost = selected.or_else(|| {
             definition
                 .rules
                 .ability_clauses()
@@ -32,7 +44,8 @@ impl Game {
                     }
                     _ => None,
                 })
-        else {
+        });
+        let Some(cost) = cost else {
             return vec![Vec::new()];
         };
         let candidates: Vec<GameObjectId> = match cost.zone {
@@ -304,7 +317,9 @@ impl Game {
                                             .map(|permanent| vec![permanent.card.id])
                                             .collect()
                                     } else {
-                                        self.additional_cost_choices(definition, card, player)
+                                        self.additional_cost_choices(
+                                            definition, option, &costs, card, player,
+                                        )
                                     };
                                     for sacrifices in sacrifice_choices {
                                         actions.push(Action::CastSpell {
@@ -521,15 +536,22 @@ impl Game {
                     Some(
                         AlternativeCastKindDef::Overload
                         | AlternativeCastKindDef::Miracle
-                        | AlternativeCastKindDef::Kicked,
+                        | AlternativeCastKindDef::Kicked
+                        | AlternativeCastKindDef::AlternativeCost,
                     )
                     | None,
                 ) => false,
-                // A kicked spell is cast from hand like any other; only what
-                // it costs and what it does are different.
+                // A kicked spell, and one paid for some other way, are both
+                // cast from hand like any other; only what they cost and what
+                // they do are different.
                 (
                     CastSourceZone::Hand,
-                    Some(AlternativeCastKindDef::Overload | AlternativeCastKindDef::Kicked) | None,
+                    Some(
+                        AlternativeCastKindDef::Overload
+                        | AlternativeCastKindDef::Kicked
+                        | AlternativeCastKindDef::AlternativeCost,
+                    )
+                    | None,
                 )
                 | (CastSourceZone::Graveyard, Some(AlternativeCastKindDef::Flashback)) => true,
                 // Only in the window the draw opened, and only for the card

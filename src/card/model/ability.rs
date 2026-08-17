@@ -364,6 +364,7 @@ impl AbilityDef {
                 kind,
                 stack_text,
                 targets,
+                additional_cost: None,
             }),
             effect,
         )
@@ -385,6 +386,7 @@ impl AbilityDef {
                 kind,
                 stack_text,
                 targets: &[],
+                additional_cost: None,
             }),
             effect,
         )
@@ -483,6 +485,24 @@ impl AbilityDef {
             panic!("only an activated ability has an activation window");
         };
         self.definition = DeclarativeAbilityDef::Activated(definition.with_timing(timing));
+        self
+    }
+
+    /// A nonmana cost paid in place of a spell's mana cost.
+    ///
+    /// # Panics
+    ///
+    /// Panics for any ability that is not an alternative cast.
+    #[must_use]
+    pub const fn with_alternative_additional_cost(
+        mut self,
+        cost: &'static SpellAdditionalCostDef,
+    ) -> Self {
+        let DeclarativeAbilityDef::AlternativeCast(mut definition) = self.definition else {
+            panic!("only an alternative cast pays instead of a mana cost");
+        };
+        definition.additional_cost = Some(*cost);
+        self.definition = DeclarativeAbilityDef::AlternativeCast(definition);
         self
     }
 

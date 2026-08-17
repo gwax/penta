@@ -145,6 +145,13 @@ distinguishes snapshots of the covered source and build inputs.
   Akroma's Vengeance, Secluded Steppe, Eternal Dragon, and Gempalm
   Incinerator.
 
+- **A spell can be paid for with something other than mana.** "You may
+  sacrifice two Mountains rather than pay this spell's mana cost" is an
+  alternative cast that changes only the cost, the way flashback does, and
+  carries a nonmana cost instead of a mana one. The objects it names are
+  spent as their zone dictates, which the cast path already did for a spell's
+  own additional cost. Fireblast.
+
 - **Echo.** "At the beginning of your upkeep, if this came under your control
   since the beginning of your last upkeep, sacrifice it unless you pay its
   echo cost." The intervening-if is what makes the cost come due exactly

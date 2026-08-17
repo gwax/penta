@@ -721,9 +721,11 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
         DeclarativeAbilityDef::AlternativeCast(definition) => match definition.kind {
             // Both are permission to cast rather than effects of their
             // own; the card's spell clause does the work.
-            AlternativeCastKindDef::Flashback | AlternativeCastKindDef::Miracle => {
-                effect == EffectDef::None
-            }
+            // All three are permission to cast rather than effects of their
+            // own; the card's spell clause does the work.
+            AlternativeCastKindDef::Flashback
+            | AlternativeCastKindDef::Miracle
+            | AlternativeCastKindDef::AlternativeCost => effect == EffectDef::None,
             // Both carry the instructions the modified spell resolves with,
             // so both have to be effects the shared runtime can execute.
             AlternativeCastKindDef::Overload | AlternativeCastKindDef::Kicked => {

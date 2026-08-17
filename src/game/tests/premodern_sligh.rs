@@ -285,3 +285,99 @@ fn the_echo_never_comes_due_a_second_time() {
         "echo is a one-time cost, not an upkeep tax",
     );
 }
+
+/// Fireblast can be cast for six mana or for two Mountains, and the second is
+/// what the deck plays it for -- from an empty board on the turn the lands
+/// stop mattering.
+fn fireblast_casts(mountains: usize, mana: bool) -> (Game, Vec<Action>) {
+    let mut game = ready();
+    for index in 0..mountains {
+        game.battlefield.push(creature(
+            10_000 + u32::try_from(index).expect("small"),
+            cards::MOUNTAIN,
+            PlayerId::One,
+        ));
+    }
+    let fireblast = card(20_000, cards::FIREBLAST, PlayerId::One);
+    let fireblast_id = fireblast.id;
+    game.players[PlayerId::One.index()].hand.push(fireblast);
+    if mana {
+        game.players[PlayerId::One.index()].mana_pool.red = 2;
+        game.players[PlayerId::One.index()].mana_pool.colorless = 4;
+    }
+
+    let casts = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == fireblast_id))
+        .collect();
+    (game, casts)
+}
+
+/// "Any target" enumerates a cast per legal target, so what is asserted is
+/// the shape of every offer rather than how many there are.
+#[test]
+fn fireblast_is_free_with_two_mountains_and_no_mana() {
+    let (_, casts) = fireblast_casts(2, false);
+    assert!(!casts.is_empty(), "two Mountains pay for it with no mana");
+    assert!(
+        casts.iter().all(|action| matches!(action,
+            Action::CastSpell { choices, sacrifices, .. }
+                if choices.costs().alternative().is_some() && sacrifices.len() == 2)),
+        "every offer is the free one, and each spends both Mountains",
+    );
+}
+
+#[test]
+fn one_mountain_does_not_pay_for_fireblast() {
+    let (_, casts) = fireblast_casts(1, false);
+    assert!(casts.is_empty(), "the cost is two Mountains, not one");
+}
+
+/// With both routes available each target is offered twice: once for six
+/// mana, once for the Mountains.
+#[test]
+fn fireblast_offers_the_printed_cost_and_the_sacrifice_separately() {
+    let (_, casts) = fireblast_casts(2, true);
+    let free = casts
+        .iter()
+        .filter(|action| {
+            matches!(action, Action::CastSpell { choices, .. }
+                if choices.costs().alternative().is_some())
+        })
+        .count();
+    let paid = casts.len() - free;
+    assert!(free > 0, "the free cast is offered");
+    assert_eq!(free, paid, "and the printed cost reaches the same targets");
+}
+
+/// Paying with Mountains actually spends them and deals the four.
+#[test]
+fn the_free_fireblast_sacrifices_its_mountains() {
+    let (mut game, casts) = fireblast_casts(2, false);
+    let cast = casts
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { choices, .. } => choices
+                .targets()
+                .iter()
+                .any(|slot| slot.targets().contains(&Target::Player(PlayerId::Two))),
+            _ => false,
+        })
+        .expect("the opponent can be named");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::MOUNTAIN),
+        "both Mountains were sacrificed",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        16,
+        "and the opponent took four",
+    );
+}

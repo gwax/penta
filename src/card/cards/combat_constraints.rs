@@ -232,3 +232,4 @@ pub const PYROKINESIS: CardDefinitionId = CardDefinitionId(2031);
 pub const GOBLIN_VANDAL: CardDefinitionId = CardDefinitionId(2032);
 pub const BARBARIAN_RING: CardDefinitionId = CardDefinitionId(2033);
 pub const GOBLIN_PATROL: CardDefinitionId = CardDefinitionId(2034);
+pub const FIREBLAST: CardDefinitionId = CardDefinitionId(2035);
