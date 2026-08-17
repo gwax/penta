@@ -61,6 +61,7 @@ older unannotated definitions still require one):
 - `Ancient Tomb` — complete
 - `Annul` — complete
 - `Armageddon`
+- `Barbarian Ring` — complete
 - `Black Vise`
 - `Blue Elemental Blast`
 - `Caves of Koilos` — complete
@@ -86,6 +87,7 @@ older unannotated definitions still require one):
 - `Goblin Ringleader` — complete
 - `Goblin Sharpshooter` — complete
 - `Goblin Tinkerer` — complete
+- `Goblin Vandal` — complete
 - `Goblin Warchief` — complete
 - `Hydroblast` — complete
 - `Impulse` — complete
@@ -149,7 +151,6 @@ Not yet cataloged:
 - [ ] `Arcane Denial`
 - [ ] `Attunement`
 - [ ] `Aura of Silence`
-- [ ] `Barbarian Ring`
 - [ ] `Brain Freeze`
 - [ ] `Cabal Therapy`
 - [ ] `Cephalid Coliseum`
@@ -173,7 +174,6 @@ Not yet cataloged:
 - [ ] `Gerrard's Verdict`
 - [ ] `Gilded Drake`
 - [ ] `Goblin Patrol`
-- [ ] `Goblin Vandal`
 - [ ] `Grim Lavamancer`
 - [ ] `Gush`
 - [ ] `Haunting Echoes`

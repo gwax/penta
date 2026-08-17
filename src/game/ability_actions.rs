@@ -149,6 +149,19 @@ impl Game {
                             *origin == effective.origin && *count >= limit
                         })
                     })
+                    // "Activate only if ...". A false condition means there is
+                    // no legal activation at all, rather than one that
+                    // resolves and does nothing.
+                    || definition.condition.is_some_and(|condition| {
+                        !self.trigger_condition_holds(
+                            condition,
+                            permanent.card.id,
+                            permanent.controller,
+                            TriggerContext::empty(),
+                            Some(effective.origin),
+                            None,
+                        )
+                    })
                 {
                     return;
                 }

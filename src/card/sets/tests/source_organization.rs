@@ -194,6 +194,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("mirage.rs") => source(CardSet::Mirage, "MIR"),
         Some("visions.rs") => source(CardSet::Visions, "VIS"),
         Some("tempest.rs") => source(CardSet::Tempest, "TMP"),
+        Some("weatherlight.rs") => source(CardSet::Weatherlight, "WTH"),
         Some("stronghold.rs") => source(CardSet::Stronghold, "STH"),
         Some("portal_second_age.rs") => source(CardSet::PortalSecondAge, "P02"),
         Some("urzas_saga.rs") => source(CardSet::UrzasSaga, "USG"),

@@ -274,6 +274,11 @@ pub struct ActivatedAbilityDef {
     /// The permanent stays the ability's source whoever pays, so the damage
     /// it deals is still the permanent's damage.
     pub any_player_may_activate: bool,
+    /// A printed "activate only if ..." restriction, checked where the
+    /// activation is offered rather than where it resolves -- an ability
+    /// whose condition is false is not a legal action at all, which is what
+    /// threshold means.
+    pub condition: Option<&'static TriggerConditionDef>,
 }
 
 impl ActivatedAbilityDef {
@@ -292,6 +297,7 @@ impl ActivatedAbilityDef {
             timing: ActivationTimingDef::Any,
             activation_limit: None,
             any_player_may_activate: false,
+            condition: None,
         }
     }
 
@@ -300,6 +306,14 @@ impl ActivatedAbilityDef {
     #[must_use]
     pub const fn open_to_any_player(mut self) -> Self {
         self.any_player_may_activate = true;
+        self
+    }
+
+    /// "Activate only if ...", the restriction threshold and its relatives
+    /// print. It gates the offer, not the resolution.
+    #[must_use]
+    pub const fn only_if(mut self, condition: &'static TriggerConditionDef) -> Self {
+        self.condition = Some(condition);
         self
     }
 

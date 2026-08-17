@@ -145,6 +145,15 @@ distinguishes snapshots of the covered source and build inputs.
   Akroma's Vengeance, Secluded Steppe, Eternal Dragon, and Gempalm
   Incinerator.
 
+- **"Activate only if ..." on an activated ability.** Threshold is a
+  restriction on whether the activation is offered at all, not on what it
+  does, so a false condition means there is no legal action rather than one
+  that resolves and does nothing. Barbarian Ring.
+
+- **Goblin Vandal**, which needed nothing new: an unblocked-attacker trigger,
+  an optional payment, and a rule that stops the attacker assigning damage
+  were all already there.
+
 - **The first Premodern deck is registered.** `RG Goblins` is selectable in
   the Premodern format: every main-deck card resolves, and the list validates
   against the format's own set window and ban list. Registering it needed the

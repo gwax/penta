@@ -486,6 +486,23 @@ impl AbilityDef {
         self
     }
 
+    /// A printed "activate only if ..." restriction on an activated ability.
+    ///
+    /// # Panics
+    ///
+    /// Panics for any other ability category, which has no activation to gate.
+    #[must_use]
+    pub const fn with_activation_condition(
+        mut self,
+        condition: &'static TriggerConditionDef,
+    ) -> Self {
+        let DeclarativeAbilityDef::Activated(definition) = self.definition else {
+            panic!("only an activated ability has an activation restriction");
+        };
+        self.definition = DeclarativeAbilityDef::Activated(definition.only_if(condition));
+        self
+    }
+
     /// Opens an activated ability to every player, for a printed "any player
     /// may activate this ability" clause. The permanent stays the source.
     ///
