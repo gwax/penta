@@ -42,7 +42,7 @@ fn exile_source_and_life_costs_are_paid_before_the_ability_goes_on_the_stack() {
         source: source_id,
         ability: activated_ability_for(&game, source_id, 0),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));

@@ -20,7 +20,7 @@ fn griselbrand_pays_seven_life_then_draws_seven_cards() {
         source,
         ability: activated_ability_for(&game, source, 0),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));
@@ -104,7 +104,7 @@ fn door_to_nothingness_makes_its_target_lose() {
         source,
         ability: activated_ability_for(&game, source, 0),
         targets: activated_targets(Target::Player(PlayerId::Two)),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));

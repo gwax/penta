@@ -119,10 +119,12 @@ pub enum Action {
         source: GameObjectId,
         ability: AbilityOrigin,
         targets: Vec<TargetSelection>,
-        /// The object chosen to pay a cost that names one, such as the
-        /// permanent a sacrifice cost takes or the card an exile cost lifts
-        /// from a graveyard.
-        cost_object: Option<GameObjectId>,
+        /// The objects chosen to pay a nonmana cost: the permanent a
+        /// sacrifice cost takes, or the cards an exile cost lifts from a
+        /// graveyard. Most costs name one or none; a cost that spends several
+        /// names them all, because an activation has no window in which to
+        /// ask afterwards. Empty when the cost spends nothing chosen.
+        cost_objects: Vec<GameObjectId>,
         /// The value chosen for X in the activation cost, zero when the cost
         /// has no X.
         x: u16,

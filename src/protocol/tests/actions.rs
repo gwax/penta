@@ -58,7 +58,7 @@ fn activated_actions_serialize_their_exact_ability_origin() {
                 Target::Permanent(GameObjectId(11)),
             ),
         ],
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     });
     assert_eq!(activated["ability"]["kind"], "printed");
@@ -87,7 +87,7 @@ fn activated_actions_serialize_their_exact_ability_origin() {
             grant: crate::GrantId(3),
         },
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     });
     assert_eq!(granted["ability"]["kind"], "granted");

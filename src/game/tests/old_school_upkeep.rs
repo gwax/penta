@@ -275,7 +275,7 @@ fn triskelion_enters_with_counters_and_spends_one_to_deal_damage() {
             source: permanent_id,
             ability: activated_ability_for(&game, permanent_id, 0),
             targets: activated_targets(Target::Player(PlayerId::Two)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -477,7 +477,7 @@ fn order_of_leitbur_can_gain_first_strike() {
         source: order_id,
         ability: activated_ability_for(&game, order_id, 0),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
 
@@ -730,7 +730,7 @@ fn ivory_tower_and_jayemdae_tome_provide_control_card_advantage() {
             source: tome_id,
             ability: activated_ability_for(&game, tome_id, 0),
             targets: Vec::new(),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -760,7 +760,7 @@ fn library_of_alexandria_draw_activation_keeps_its_printed_ability_id() {
         source: library_id,
         ability: expected_origin,
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
 

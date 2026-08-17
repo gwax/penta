@@ -133,7 +133,7 @@ fn bloodrush_action(source: CardInstanceId, target: CardInstanceId) -> Action {
         source,
         ability: BLOODRUSH,
         targets: activated_targets(Target::Permanent(target)),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     }
 }

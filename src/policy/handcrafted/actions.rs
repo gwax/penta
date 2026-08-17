@@ -169,9 +169,9 @@ impl HandcraftedPolicy {
                 source,
                 ability,
                 targets,
-                cost_object,
+                cost_objects,
                 x,
-            } => self.score_ability(observation, *source, *ability, targets, *cost_object, *x),
+            } => self.score_ability(observation, *source, *ability, targets, cost_objects, *x),
             Action::DeclareAttacker { attacker, defender } => {
                 Self::score_attack(observation, *attacker)
                     + Self::defender_preference(observation, *attacker, *defender)

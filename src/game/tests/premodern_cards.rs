@@ -12,7 +12,7 @@ fn mogg_fanatic_and_seal_of_fire_pay_sacrifice_before_dealing_damage() {
             source,
             ability: primary_ability(definition),
             targets: activated_targets(Target::Player(PlayerId::Two)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         };
 
@@ -200,7 +200,7 @@ fn seal_of_cleansing_and_monk_realist_destroy_enchantments_at_their_printed_timi
             source: seal_id,
             ability: primary_ability(cards::SEAL_OF_CLEANSING),
             targets: activated_targets(Target::Permanent(artifact_id)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )

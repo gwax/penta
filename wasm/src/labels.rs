@@ -505,21 +505,23 @@ impl WebGame {
                 source,
                 ability,
                 targets: target_selections,
-                cost_object,
+                cost_objects,
                 x,
             } => {
                 let mut label = self.activation_label(observation, *source, *ability);
                 if source_ability_has_multiple_x_values(observation, *source, *ability) {
                     let _ = write!(label, " (X={x})");
                 }
-                if let Some(cost_object) = cost_object
-                    && cost_object != source
-                {
-                    let _ = write!(
-                        label,
-                        " (sacrifice {})",
-                        self.instance_name(observation, *cost_object)
-                    );
+                // Two activations of one ability can differ only in which
+                // objects the cost spends -- the Lavamancer's pairs of
+                // graveyard cards -- so the label names all of them.
+                let spent: Vec<String> = cost_objects
+                    .iter()
+                    .filter(|spent| *spent != source)
+                    .map(|spent| self.instance_name(observation, *spent))
+                    .collect();
+                if !spent.is_empty() {
+                    let _ = write!(label, " (sacrifice {})", spent.join(", "));
                 }
                 let values = target_selections
                     .iter()

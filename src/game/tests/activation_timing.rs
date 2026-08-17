@@ -394,8 +394,8 @@ mod unblocked_by_the_window {
             .find(|action| {
                 matches!(
                     action,
-                    Action::ActivateAbility { source, cost_object: Some(paid), .. }
-                        if *source == caretaker_id && *paid == fodder_id
+                    Action::ActivateAbility { source, cost_objects, .. }
+                        if *source == caretaker_id && cost_objects.as_slice() == [fodder_id]
                 )
             })
             .expect("the Caretaker offers the trade in its own upkeep");

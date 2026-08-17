@@ -14,7 +14,7 @@ fn copied_grant_source_definition_is_part_of_the_granted_ability_origin() {
         source: receiver,
         ability: first_origin,
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&stale_action));
@@ -38,7 +38,7 @@ fn copied_grant_source_definition_is_part_of_the_granted_ability_origin() {
         source: receiver,
         ability: second_origin,
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     }));
 }
@@ -106,7 +106,7 @@ fn declarative_activation_preserves_multiple_slots_before_sacrificing_its_source
         source,
         ability: primary_ability(definition_id),
         targets: targets.clone(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
 
@@ -117,7 +117,7 @@ fn declarative_activation_preserves_multiple_slots_before_sacrificing_its_source
             TargetSelection::single(TargetSlotId(1), Target::Player(PlayerId::Two)),
             TargetSelection::single(TargetSlotId(0), Target::Permanent(creature_target)),
         ],
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert!(game.apply(PlayerId::One, invalid_slots).is_err());
@@ -219,7 +219,7 @@ fn one_ability_target_slot_resolves_for_every_selected_legal_target() {
                 Target::Permanent(second_target),
             ],
         )],
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
 
@@ -464,14 +464,14 @@ fn legacy_activated_clauses_dispatch_from_their_own_effect_execution() {
         source,
         ability: library_origin,
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let regeneration = Action::ActivateAbility {
         source,
         ability: regeneration_origin,
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let actions = game.legal_actions(PlayerId::One);
@@ -561,7 +561,7 @@ fn a_legacy_activation_after_a_shared_clause_keeps_its_own_origin() {
         source,
         ability: legacy_origin,
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
 

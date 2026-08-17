@@ -59,7 +59,7 @@ fn factory_and_sorceress_queen_base_setters_follow_timestamp_without_losing_type
             source: factory,
             ability: activated_ability_for(&game, factory, 0),
             targets: Vec::new(),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -72,7 +72,7 @@ fn factory_and_sorceress_queen_base_setters_follow_timestamp_without_losing_type
             source: queen,
             ability: activated_ability_for(&game, queen, 0),
             targets: activated_targets(Target::Permanent(factory)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -107,7 +107,7 @@ fn factory_and_sorceress_queen_base_setters_follow_timestamp_without_losing_type
             source: factory,
             ability: activated_ability_for(&game, factory, 0),
             targets: Vec::new(),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -439,7 +439,7 @@ fn stage_copying_a_basic_land_stays_basic_through_blood_moon() {
             source: stage_id,
             ability: copy_ability,
             targets: activated_targets(Target::Permanent(island_id)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -502,7 +502,7 @@ fn stage_activation_already_on_the_stack_resolves_through_blood_moon() {
             source: stage_id,
             ability: copy_ability,
             targets: activated_targets(Target::Permanent(island_id)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -553,7 +553,7 @@ fn stage_copying_a_nonbasic_land_is_masked_but_persists_through_blood_moon() {
             source: stage_id,
             ability: copy_ability,
             targets: activated_targets(Target::Permanent(yavimaya_id)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )

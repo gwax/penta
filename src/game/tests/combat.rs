@@ -18,7 +18,7 @@ fn domri_ultimate_grants_two_combat_damage_steps() {
             ability: AbilityId(2),
         },
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&ultimate));

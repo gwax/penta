@@ -156,8 +156,8 @@ mod saproling_sacrifice {
             .find(|action| {
                 matches!(
                     action,
-                    Action::ActivateAbility { source: actual, cost_object: Some(paid), .. }
-                        if *actual == source && *paid == fodder
+                    Action::ActivateAbility { source: actual, cost_objects, .. }
+                        if *actual == source && cost_objects.as_slice() == [fodder]
                 )
             })
             .expect("sacrificing the Saproling is offered")
@@ -214,8 +214,8 @@ mod saproling_sacrifice {
             !game.legal_actions(PlayerId::One).iter().any(|action| {
                 matches!(
                     action,
-                    Action::ActivateAbility { source, cost_object: Some(paid), .. }
-                        if *source == farmer_id && *paid == bear_id
+                    Action::ActivateAbility { source, cost_objects, .. }
+                        if *source == farmer_id && cost_objects.as_slice() == [bear_id]
                 )
             }),
             "only a Saproling pays this cost"

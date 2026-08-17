@@ -351,9 +351,9 @@ impl Game {
                 source,
                 ability,
                 targets,
-                cost_object,
+                cost_objects,
                 x,
-            } => self.activate_ability(player, source, ability, targets, cost_object, x),
+            } => self.activate_ability(player, source, ability, targets, &cost_objects, x),
             Action::DeclareAttacker { attacker, defender } => {
                 self.declare_attacker(attacker, defender);
             }

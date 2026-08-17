@@ -18,12 +18,19 @@ Observations and catalogs also advertise named additive capabilities. Replay
 and reconstruction payloads carry their own format versions instead of moving
 the bot-wire epoch.
 
-## 0.7.0 — protocol 24
+## 0.7.0 — protocol 25
 
-This release reports engine 0.7.0 and protocol 24. The simulation fingerprint
+This release reports engine 0.7.0 and protocol 25. The simulation fingerprint
 distinguishes snapshots of the covered source and build inputs.
 
 ### Changed
+
+- **Protocol 25 makes `ActivateAbility.costObject` an array, `costObjects`.**
+  A cost can name more than one object -- "exile two cards from your
+  graveyard" -- and an activation never holds priority, so there is no window
+  in which to ask afterwards: every chosen object travels with the action.
+  Read it as a list; an ability that spends nothing chosen has an empty array
+  rather than a null. `ActivateManaAbility.costObject` is unchanged.
 
 - **Protocol 24 makes a permanent's `blocking` a list.** It was one attacker
   id or `null`. A creature can be blocking several attackers at once: a band is
@@ -144,6 +151,10 @@ distinguishes snapshots of the covered source and build inputs.
   the draw, and the cycled card is already in the graveyard when it does.
   Akroma's Vengeance, Secluded Steppe, Eternal Dragon, and Gempalm
   Incinerator.
+
+- **Grim Lavamancer**, the card that made the cost an array: two graveyard
+  cards per shot, chosen by the player, so every pair is its own offered
+  activation.
 
 - **A spell can be paid for with something other than mana.** "You may
   sacrifice two Mountains rather than pay this spell's mana cost" is an

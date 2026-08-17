@@ -179,8 +179,8 @@ fn tapping_a_chosen_gate_pays_for_the_ability() {
 
     assert!(
         !game.legal_actions(PlayerId::One).iter().any(|action| {
-            matches!(action, Action::ActivateAbility { source, cost_object: Some(_), .. }
-                if *source == shade_id)
+            matches!(action, Action::ActivateAbility { source, cost_objects, .. }
+                if *source == shade_id && !cost_objects.is_empty())
         }),
         "with no Gate there is nothing to tap"
     );
@@ -193,8 +193,8 @@ fn tapping_a_chosen_gate_pays_for_the_ability() {
         .legal_actions(PlayerId::One)
         .into_iter()
         .find(|action| {
-            matches!(action, Action::ActivateAbility { source, cost_object: Some(chosen), .. }
-                if *source == shade_id && *chosen == gate_id)
+            matches!(action, Action::ActivateAbility { source, cost_objects, .. }
+                if *source == shade_id && cost_objects.as_slice() == [gate_id])
         })
         .expect("the Gate can pay for it");
     game.apply(PlayerId::One, action)

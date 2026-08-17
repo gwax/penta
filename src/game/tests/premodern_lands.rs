@@ -96,14 +96,14 @@ fn wasteland_sacrifices_to_destroy_a_nonbasic_but_cannot_target_a_basic() {
         source,
         ability,
         targets: activated_targets(Target::Permanent(basic_id)),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let target_nonbasic = Action::ActivateAbility {
         source,
         ability,
         targets: activated_targets(Target::Permanent(nonbasic_id)),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
 
@@ -146,7 +146,7 @@ fn dust_bowl_sacrifices_a_land_and_rishadan_port_taps_one() {
             source: bowl_id,
             ability: activated_ability_for(&game, bowl_id, 0),
             targets: activated_targets(Target::Permanent(target_id)),
-            cost_object: Some(fodder_id),
+            cost_objects: vec![fodder_id],
             x: 0,
         },
     )
@@ -184,7 +184,7 @@ fn dust_bowl_sacrifices_a_land_and_rishadan_port_taps_one() {
             source: port_id,
             ability: activated_ability_for(&game, port_id, 0),
             targets: activated_targets(Target::Permanent(land_id)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -236,7 +236,7 @@ fn coastal_tower_enters_tapped_and_fetchlands_find_only_their_land_types() {
                 source,
                 ability: activated_ability_for(&game, source, 0),
                 targets: Vec::new(),
-                cost_object: None,
+                cost_objects: Vec::new(),
                 x: 0,
             },
         )

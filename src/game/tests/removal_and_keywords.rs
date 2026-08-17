@@ -138,7 +138,7 @@ fn nevinyrrals_disk_uses_the_shared_stack_and_destroys_every_named_type() {
         source: disk_id,
         ability: activated_ability_for(&game, disk_id, 0),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));

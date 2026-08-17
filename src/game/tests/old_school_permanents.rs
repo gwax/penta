@@ -282,14 +282,14 @@ fn vraska_destroys_a_nonland_permanent_and_ultimates_into_three_assassins() {
         source: GameObjectId(10_000),
         ability: activated_ability_for(&game, GameObjectId(10_000), 1),
         targets: activated_targets(Target::Permanent(GameObjectId(10_001))),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let at_the_land = Action::ActivateAbility {
         source: GameObjectId(10_000),
         ability: activated_ability_for(&game, GameObjectId(10_000), 1),
         targets: activated_targets(Target::Permanent(GameObjectId(10_002))),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let actions = game.legal_actions(PlayerId::One);
@@ -330,7 +330,7 @@ fn vraskas_ultimate_makes_three_assassins() {
             source: GameObjectId(10_000),
             ability: activated_ability_for(&game, GameObjectId(10_000), 2),
             targets: Vec::new(),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -378,7 +378,7 @@ fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
             source: GameObjectId(10_000),
             ability: activated_ability_for(&game, GameObjectId(10_000), 1),
             targets: Vec::new(),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -489,7 +489,7 @@ fn jaces_first_ability_taxes_attackers_until_his_controller_comes_back_around() 
             source: GameObjectId(10_000),
             ability: activated_ability_for(&game, GameObjectId(10_000), 0),
             targets: Vec::new(),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -565,14 +565,14 @@ fn pendelhaven_only_pumps_something_that_is_still_a_one_one_when_it_resolves() {
         source: GameObjectId(10_000),
         ability: activated_ability_for(&game, GameObjectId(10_000), 0),
         targets: activated_targets(Target::Permanent(GameObjectId(10_001))),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let at_the_two_one = Action::ActivateAbility {
         source: GameObjectId(10_000),
         ability: activated_ability_for(&game, GameObjectId(10_000), 0),
         targets: activated_targets(Target::Permanent(GameObjectId(10_002))),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let actions = game.legal_actions(PlayerId::One);
@@ -632,7 +632,7 @@ fn pendelhaven_pumps_a_one_one_that_stays_one() {
             source: GameObjectId(10_000),
             ability: activated_ability_for(&game, GameObjectId(10_000), 0),
             targets: activated_targets(Target::Permanent(GameObjectId(10_001))),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -674,7 +674,7 @@ fn glasses_of_urza_waits_on_the_stack_before_revealing_a_hand() {
             source: GameObjectId(10_000),
             ability: activated_ability_for(&game, GameObjectId(10_000), 0),
             targets: activated_targets(Target::Player(PlayerId::Two)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -710,7 +710,7 @@ fn dragon_whelp_only_burns_itself_out_on_the_fourth_activation() {
         source: GameObjectId(10_000),
         ability: activated_ability_for(game, GameObjectId(10_000), 0),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     for _ in 0..3 {
@@ -772,7 +772,7 @@ fn dragon_whelps_activation_count_resets_with_the_turn() {
             source: GameObjectId(10_000),
             ability: activated_ability_for(&game, GameObjectId(10_000), 0),
             targets: Vec::new(),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         };
         game.apply(PlayerId::One, action).unwrap();
@@ -790,7 +790,7 @@ fn dragon_whelps_activation_count_resets_with_the_turn() {
         source: GameObjectId(10_000),
         ability: activated_ability_for(&game, GameObjectId(10_000), 0),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     game.apply(PlayerId::One, action).unwrap();
@@ -822,7 +822,7 @@ fn stone_giant_throws_only_what_it_can_lift_and_the_landing_kills_it() {
         source: GameObjectId(10_000),
         ability: activated_ability_for(&game, GameObjectId(10_000), 0),
         targets: activated_targets(Target::Permanent(target)),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let actions = game.legal_actions(PlayerId::One);
@@ -902,7 +902,7 @@ fn maze_of_ith_stops_the_damage_without_calling_off_the_attack() {
         source: GameObjectId(10_000),
         ability: activated_ability_for(&game, GameObjectId(10_000), 0),
         targets: activated_targets(Target::Permanent(GameObjectId(10_001))),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert!(

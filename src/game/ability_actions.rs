@@ -223,7 +223,7 @@ impl Game {
                         | AbilityCostDef::TapPermanent { .. }
                         // Payability is decided by whether any card qualifies,
                         // which the choice list below answers.
-                        | AbilityCostDef::ExileCardFromGraveyard(_)
+                        | AbilityCostDef::ExileCardsFromGraveyard { .. }
                         | AbilityCostDef::DiscardCardMatching(_) => false,
                         AbilityCostDef::UntapSource
                         | AbilityCostDef::DiscardSource
@@ -253,7 +253,7 @@ impl Game {
                         cost,
                         AbilityCostDef::SacrificePermanent { .. }
                             | AbilityCostDef::TapPermanent { .. }
-                            | AbilityCostDef::ExileCardFromGraveyard(_)
+                            | AbilityCostDef::ExileCardsFromGraveyard { .. }
                             | AbilityCostDef::DiscardCardMatching(_)
                     )
                 });
@@ -262,7 +262,7 @@ impl Game {
                     return;
                 }
                 let cost_object_choices = match object_cost {
-                    None => vec![None],
+                    None => vec![Vec::new()],
                     Some(AbilityCostDef::SacrificePermanent { object, controller }) => self
                         .battlefield
                         .iter()
@@ -281,7 +281,7 @@ impl Game {
                                     false,
                                 )
                         })
-                        .map(|candidate| Some(candidate.card.id))
+                        .map(|candidate| vec![candidate.card.id])
                         .collect(),
                     // The permanent paying has to be untapped and cannot be
                     // the source, which is already tapping itself if asked.
@@ -304,22 +304,26 @@ impl Game {
                                     false,
                                 )
                         })
-                        .map(|candidate| Some(candidate.card.id))
+                        .map(|candidate| vec![candidate.card.id])
                         .collect(),
-                    Some(AbilityCostDef::ExileCardFromGraveyard(object)) => self.players
-                        [player.index()]
-                    .graveyard
-                    .iter()
-                    .filter(|card| {
-                        self.card_object_matches(
-                            *object,
-                            card,
-                            ZoneKind::Graveyard,
-                            permanent.card.id,
-                        )
-                    })
-                    .map(|card| Some(card.id))
-                    .collect(),
+                    // The one cost that can name more than one card, so every
+                    // combination of that many is its own activation.
+                    Some(AbilityCostDef::ExileCardsFromGraveyard { object, count }) => {
+                        let candidates: Vec<GameObjectId> = self.players[player.index()]
+                            .graveyard
+                            .iter()
+                            .filter(|card| {
+                                self.card_object_matches(
+                                    *object,
+                                    card,
+                                    ZoneKind::Graveyard,
+                                    permanent.card.id,
+                                )
+                            })
+                            .map(|card| card.id)
+                            .collect();
+                        Self::object_combinations(&candidates, usize::from(*count))
+                    }
                     Some(AbilityCostDef::DiscardCardMatching(object)) => self.players
                         [player.index()]
                     .hand
@@ -327,7 +331,7 @@ impl Game {
                     .filter(|card| {
                         self.card_object_matches(*object, card, ZoneKind::Hand, permanent.card.id)
                     })
-                    .map(|card| Some(card.id))
+                    .map(|card| vec![card.id])
                     .collect(),
                     Some(_) => unreachable!("the filter admits only object costs"),
                 };
@@ -371,12 +375,12 @@ impl Game {
                         {
                             continue;
                         }
-                        for cost_object in &cost_object_choices {
+                        for cost_objects in &cost_object_choices {
                             actions.push(Action::ActivateAbility {
                                 source: permanent.card.id,
                                 ability: effective.origin,
                                 targets: selections.clone(),
-                                cost_object: *cost_object,
+                                cost_objects: cost_objects.clone(),
                                 x,
                             });
                         }
@@ -411,7 +415,7 @@ impl Game {
                     source: permanent.card.id,
                     ability,
                     targets: Vec::new(),
-                    cost_object: None,
+                    cost_objects: Vec::new(),
                     x: 0,
                 });
             }
@@ -424,7 +428,7 @@ impl Game {
                     source: permanent.card.id,
                     ability,
                     targets: Vec::new(),
-                    cost_object: None,
+                    cost_objects: Vec::new(),
                     x: 0,
                 });
             }
@@ -531,7 +535,7 @@ impl Game {
                         | AbilityCostDef::TapPermanent { .. }
                         | AbilityCostDef::ExileSource
                         | AbilityCostDef::Loyalty(_)
-                        | AbilityCostDef::ExileCardFromGraveyard(_)
+                        | AbilityCostDef::ExileCardsFromGraveyard { .. }
                         | AbilityCostDef::Special(_) => supported = false,
                     }
                 }
@@ -562,7 +566,7 @@ impl Game {
                             source: card.id,
                             ability: effective.origin,
                             targets,
-                            cost_object: None,
+                            cost_objects: Vec::new(),
                             x,
                         });
                     }
@@ -618,7 +622,7 @@ impl Game {
                             | AbilityCostDef::SacrificePermanent { .. }
                             | AbilityCostDef::TapPermanent { .. }
                             | AbilityCostDef::Loyalty(_)
-                            | AbilityCostDef::ExileCardFromGraveyard(_)
+                            | AbilityCostDef::ExileCardsFromGraveyard { .. }
                             | AbilityCostDef::Special(_) => supported = false,
                         }
                     }
@@ -646,7 +650,7 @@ impl Game {
                             source: card.id,
                             ability: effective.origin,
                             targets,
-                            cost_object: None,
+                            cost_objects: Vec::new(),
                             x: 0,
                         });
                     }

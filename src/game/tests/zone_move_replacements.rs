@@ -246,7 +246,7 @@ fn activated_ability_resolves_only_after_ugins_nexus_replacement_choice() {
             source: vraska,
             ability: activated_ability_for(&game, vraska, 1),
             targets: activated_targets(Target::Permanent(nexus)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -344,7 +344,7 @@ fn sacrifice_cost_finishes_only_after_ugins_nexus_replacement_choice() {
             source: claws,
             ability: activated_ability_for(&game, claws, 0),
             targets: Vec::new(),
-            cost_object: Some(nexus),
+            cost_objects: vec![nexus],
             x: 0,
         },
     )

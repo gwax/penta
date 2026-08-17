@@ -768,9 +768,10 @@ pub(in crate::card::sets) static HAVENGUL_RUNEBINDER: CardRecord = CardRecord::n
             &[
                 AbilityCostDef::Mana(mana_cost!("{2}{U}")),
                 AbilityCostDef::TapSource,
-                AbilityCostDef::ExileCardFromGraveyard(ObjectPredicateDef::HasType(
-                    CardType::Creature,
-                )),
+                AbilityCostDef::ExileCardsFromGraveyard {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    count: 1,
+                },
             ],
             EffectDef::Sequence(&[
                 EffectDef::CreateToken {

@@ -822,7 +822,7 @@ fn ratchet_bomb_sweeps_the_mana_value_it_ticked_up_to() {
                             ability,
                         },
                         targets: Vec::new(),
-                        cost_object: None,
+                        cost_objects: Vec::new(),
                         x: 0,
                     },
                 )),

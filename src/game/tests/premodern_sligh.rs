@@ -381,3 +381,88 @@ fn the_free_fireblast_sacrifices_its_mountains() {
         "and the opponent took four",
     );
 }
+
+/// The Lavamancer spends two cards per shot, and the player picks which two,
+/// so each pair is its own offered activation.
+fn lavamancer_with_graveyard(cards_in_graveyard: usize) -> (Game, Vec<Action>) {
+    let mut game = ready();
+    let lavamancer = creature(10_000, cards::GRIM_LAVAMANCER, PlayerId::One);
+    let lavamancer_id = lavamancer.card.id;
+    game.battlefield.push(lavamancer);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    for index in 0..cards_in_graveyard {
+        game.players[PlayerId::One.index()].graveyard.push(card(
+            30_000 + u32::try_from(index).expect("small"),
+            cards::GRIZZLY_BEARS,
+            PlayerId::One,
+        ));
+    }
+    game.players[PlayerId::One.index()].mana_pool.red = 1;
+
+    let shots = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == lavamancer_id)
+        })
+        .collect();
+    (game, shots)
+}
+
+#[test]
+fn one_card_in_the_graveyard_does_not_pay_for_the_lavamancer() {
+    let (_, shots) = lavamancer_with_graveyard(1);
+    assert!(shots.is_empty(), "the cost is two cards, not one");
+}
+
+/// With three cards there are three pairs, and "any target" doubles each --
+/// what matters is that every offer names exactly two distinct cards.
+#[test]
+fn the_lavamancer_offers_every_pair_it_could_exile() {
+    let (_, shots) = lavamancer_with_graveyard(3);
+    assert!(!shots.is_empty(), "two cards pay for it");
+    assert!(
+        shots.iter().all(|action| matches!(action,
+            Action::ActivateAbility { cost_objects, .. }
+                if cost_objects.len() == 2 && cost_objects[0] != cost_objects[1])),
+        "every offer spends two distinct cards",
+    );
+    let pairs: std::collections::BTreeSet<Vec<GameObjectId>> = shots
+        .iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility { cost_objects, .. } => Some(cost_objects.clone()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(pairs.len(), 3, "three cards make three pairs");
+}
+
+/// And activating one really exiles both and deals the two.
+#[test]
+fn the_lavamancer_exiles_both_cards_and_deals_two() {
+    let (mut game, shots) = lavamancer_with_graveyard(2);
+    let shot = shots
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility { targets, .. } => targets
+                .iter()
+                .any(|slot| slot.targets().contains(&Target::Player(PlayerId::Two))),
+            _ => false,
+        })
+        .expect("the opponent can be named");
+    game.apply(PlayerId::One, shot).expect("it is activated");
+    settle(&mut game);
+
+    assert!(
+        game.players[PlayerId::One.index()].graveyard.is_empty(),
+        "both cards left the graveyard",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].exile.len(),
+        2,
+        "and both went to exile rather than anywhere else",
+    );
+    assert_eq!(game.players[PlayerId::Two.index()].life, 18, "two damage");
+}

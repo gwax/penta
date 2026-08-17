@@ -96,7 +96,7 @@ fn handcrafted_scavenging_ooze_exiles_an_opponents_graveyard_card() {
         source: ooze,
         ability: printed_ability(cards::SCAVENGING_OOZE, 0),
         targets: activated_targets(Target::Card(food)),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let mut observation = policy_observation(
@@ -130,7 +130,7 @@ fn handcrafted_animates_a_factory_once_rather_than_every_priority() {
             ability: AbilityId(1),
         },
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
 

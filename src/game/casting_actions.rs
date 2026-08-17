@@ -93,7 +93,10 @@ impl Game {
 
     /// Every `size`-element combination of `candidates`, in candidate order.
     /// An empty requirement has exactly one payment: the empty one.
-    fn object_combinations(candidates: &[GameObjectId], size: usize) -> Vec<Vec<GameObjectId>> {
+    pub(super) fn object_combinations(
+        candidates: &[GameObjectId],
+        size: usize,
+    ) -> Vec<Vec<GameObjectId>> {
         if size == 0 {
             return vec![Vec::new()];
         }

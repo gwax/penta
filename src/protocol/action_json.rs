@@ -80,7 +80,7 @@ pub fn action_json(action: &Action) -> Value {
             source,
             ability,
             targets,
-            cost_object,
+            cost_objects,
             x,
         } => json!({
             "type": "ActivateAbility",
@@ -100,7 +100,7 @@ pub fn action_json(action: &Action) -> Value {
                 .map(target_json)
                 .collect::<Vec<_>>(),
             "targetSelections": target_selections_json(targets),
-            "costObject": cost_object.map(|card| card.0),
+            "costObjects": cost_objects.iter().map(|card| card.0).collect::<Vec<_>>(),
         }),
         Action::DeclareAttacker { attacker, defender } => {
             json!({ "type": "DeclareAttacker", "attacker": attacker.0, "defender": defender_json(*defender) })

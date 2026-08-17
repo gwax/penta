@@ -524,7 +524,7 @@ fn silklash_spider_deals_x_to_every_flier_and_never_to_itself() {
             source: spider.card.id,
             ability,
             targets: Vec::new(),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 2,
         },
     )

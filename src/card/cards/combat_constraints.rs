@@ -233,3 +233,4 @@ pub const GOBLIN_VANDAL: CardDefinitionId = CardDefinitionId(2032);
 pub const BARBARIAN_RING: CardDefinitionId = CardDefinitionId(2033);
 pub const GOBLIN_PATROL: CardDefinitionId = CardDefinitionId(2034);
 pub const FIREBLAST: CardDefinitionId = CardDefinitionId(2035);
+pub const GRIM_LAVAMANCER: CardDefinitionId = CardDefinitionId(2036);

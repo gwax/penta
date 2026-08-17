@@ -253,7 +253,7 @@ fn handcrafted_scores_declarative_nevinyrrals_disk_by_the_board_swing() {
         source: disk,
         ability: printed_ability(poc::cards::NEVINYRRALS_DISK, 1),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
 
@@ -314,7 +314,7 @@ fn handcrafted_fires_nevinyrrals_disk_for_noncreature_permanents() {
         source: disk,
         ability: printed_ability(poc::cards::NEVINYRRALS_DISK, 1),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let observation = policy_observation(

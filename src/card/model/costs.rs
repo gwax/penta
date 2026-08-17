@@ -54,7 +54,13 @@ pub enum CostDef {
     /// Exile a matching card from the controller's own graveyard. The card is
     /// chosen when the cost is paid, so it travels with the action rather
     /// than being a target.
-    ExileCardFromGraveyard(ObjectPredicateDef),
+    /// Exile `count` matching cards from the activating player's graveyard.
+    /// Most printed forms take one; Grim Lavamancer takes two, and the player
+    /// chooses which, so every combination is its own offered activation.
+    ExileCardsFromGraveyard {
+        object: ObjectPredicateDef,
+        count: u8,
+    },
     /// Add or remove that many loyalty counters. A planeswalker's abilities
     /// are the only costs paid this way, and paying one is what makes them
     /// once per turn at sorcery speed.

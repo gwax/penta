@@ -264,7 +264,7 @@ fn loyalty_action(
             ability: AbilityId(ability),
         },
         targets,
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     }
 }

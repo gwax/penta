@@ -54,7 +54,7 @@ impl Game {
                 | AbilityCostDef::TapPermanent { .. }
                 | AbilityCostDef::ExileSource
                 | AbilityCostDef::Loyalty(_)
-                | AbilityCostDef::ExileCardFromGraveyard(_)
+                | AbilityCostDef::ExileCardsFromGraveyard { .. }
                 | AbilityCostDef::Special(_) => true,
             })
             && Self::source_counter_costs_are_payable(permanent, definition.costs.as_slice())
@@ -113,7 +113,7 @@ impl Game {
             | AbilityCostDef::DiscardCardsAtRandom(_)
             | AbilityCostDef::TapPermanent { .. }
             | AbilityCostDef::Loyalty(_)
-            | AbilityCostDef::ExileCardFromGraveyard(_)
+            | AbilityCostDef::ExileCardsFromGraveyard { .. }
             | AbilityCostDef::Special(_) => false,
         }
     }

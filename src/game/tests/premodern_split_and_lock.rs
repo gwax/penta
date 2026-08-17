@@ -195,7 +195,7 @@ fn kor_haven_prevents_damage_from_the_attacker_but_not_to_it() {
             source: haven_id,
             ability: activated_ability_for(&game, haven_id, 0),
             targets: activated_targets(Target::Permanent(attacker_id)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )

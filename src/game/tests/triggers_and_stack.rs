@@ -180,7 +180,7 @@ fn a_resolving_tap_effect_uses_the_same_city_trigger_path() {
         source: CardInstanceId(10_000),
         ability: activated_ability_for(&game, CardInstanceId(10_000), 0),
         targets: activated_targets(Target::Permanent(CardInstanceId(10_001))),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));

@@ -86,7 +86,7 @@ use observation_json::{card_part_name, decision_json, stack_object_json};
 /// `isd-dgm-standard`. Version 24 makes a permanent's `blocking` an array of
 /// attacker ids rather than one id or null, because a creature can block a
 /// band as a group and can be allowed more than one block.
-pub const PROTOCOL_VERSION: u32 = 24;
+pub const PROTOCOL_VERSION: u32 = 25;
 
 /// The engine package release. This is ordinary Cargo `SemVer`, not an exact
 /// ruleset identity; use [`SIMULATION_FINGERPRINT`] for replay and model

@@ -163,7 +163,7 @@ fn activated_action_labels_distinguish_exact_ability_origins() {
             ability: penta::AbilityId(1),
         },
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let pump = Action::ActivateAbility {
@@ -177,7 +177,7 @@ fn activated_action_labels_distinguish_exact_ability_origins() {
             penta::TargetSlotId(0),
             Target::Permanent(source),
         )],
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
 
@@ -250,7 +250,7 @@ fn activated_action_labels_show_distinct_x_and_every_selected_target() {
             penta::TargetSlotId(0),
             vec![Target::Permanent(pilgrim), Target::Permanent(thragtusk)],
         )],
-        cost_object: None,
+        cost_objects: Vec::new(),
         x,
     };
     let zero = action(0);
@@ -470,7 +470,7 @@ fn ability_actions_expose_their_stable_origins() {
                 ],
             ),
         ],
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert_eq!(
@@ -520,7 +520,7 @@ fn ability_actions_expose_their_stable_origins() {
             grant: penta::GrantId(3),
         },
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert_eq!(

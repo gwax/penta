@@ -172,7 +172,7 @@ fn ability_events_distinguish_the_stack_object_from_a_source_that_left_play() {
             source: source_id,
             ability: activated_ability_for(&game, source_id, 0),
             targets: activated_targets(Target::Permanent(target_id)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )

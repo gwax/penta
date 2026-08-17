@@ -153,14 +153,14 @@ fn handcrafted_prioritizes_time_vaults_declarative_extra_turn() {
         source,
         ability: printed_ability(cards::TIME_VAULT, 3),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let draw = Action::ActivateAbility {
         source: tome,
         ability: printed_ability(cards::JAYEMDAE_TOME, 0),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let observation = policy_observation(
@@ -294,7 +294,7 @@ fn handcrafted_animates_a_manland_only_when_it_can_attack() {
             ability: AbilityId(1),
         },
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let vault = || permanent(1, cards::MUTAVAULT, PlayerId::One, None, None);

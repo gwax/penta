@@ -248,9 +248,13 @@ pub(super) fn action_sacrifices(action: &Action) -> Vec<u32> {
         Action::CastSpell { sacrifices, .. } => sacrifices.iter().map(|id| id.0).collect(),
         Action::ActivateAbility {
             source,
-            cost_object: Some(cost_object),
+            cost_objects,
             ..
-        } if cost_object != source => vec![cost_object.0],
+        } => cost_objects
+            .iter()
+            .filter(|spent| *spent != source)
+            .map(|spent| spent.0)
+            .collect(),
         _ => Vec::new(),
     }
 }

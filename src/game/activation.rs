@@ -116,7 +116,7 @@ impl Game {
                 | AbilityCostDef::SacrificePermanent { .. }
                 | AbilityCostDef::TapPermanent { .. }
                 | AbilityCostDef::Loyalty(_)
-                | AbilityCostDef::ExileCardFromGraveyard(_)
+                | AbilityCostDef::ExileCardsFromGraveyard { .. }
                 | AbilityCostDef::Special(_) => {
                     unreachable!("unsupported graveyard-zone costs are not offered")
                 }
@@ -149,7 +149,7 @@ impl Game {
         source: GameObjectId,
         ability: AbilityOrigin,
         targets: Vec<TargetSelection>,
-        cost_object: Option<GameObjectId>,
+        cost_objects: &[GameObjectId],
         x: u16,
     ) {
         if let Some(source_card) = self.players[player.index()]
@@ -233,7 +233,7 @@ impl Game {
                     | AbilityCostDef::TapPermanent { .. }
                     | AbilityCostDef::ExileSource
                     | AbilityCostDef::Loyalty(_)
-                    | AbilityCostDef::ExileCardFromGraveyard(_)
+                    | AbilityCostDef::ExileCardsFromGraveyard { .. }
                     | AbilityCostDef::Special(_) => {
                         unreachable!("unsupported hand-zone costs are not offered")
                     }
@@ -327,7 +327,8 @@ impl Game {
                 .costs
                 .iter()
                 .any(|cost| matches!(cost, AbilityCostDef::SacrificePermanent { .. }));
-            let sacrifice_choice_is_source = has_generic_sacrifice && cost_object == Some(source);
+            let sacrifice_choice_is_source =
+                has_generic_sacrifice && cost_objects.contains(&source);
             if definition
                 .costs
                 .iter()
@@ -335,7 +336,9 @@ impl Game {
             {
                 // Ahead of the loop, so automatic mana payment cannot tap the
                 // chosen permanent out from under the cost it is paying.
-                let chosen = cost_object.expect("a legal activation chose the one to tap");
+                let chosen = *cost_objects
+                    .first()
+                    .expect("a legal activation chose the one to tap");
                 let _ = self.tap_permanent(chosen);
             }
             for cost in definition.costs.as_slice() {
@@ -395,17 +398,18 @@ impl Game {
                         self.lose_life(player, *amount);
                     }
                     AbilityCostDef::DiscardCardMatching(_) => {
-                        let chosen =
-                            cost_object.expect("a legal activation chose the discarded card");
-                        self.discard_cards(player, &[chosen]);
+                        self.discard_cards(player, cost_objects);
                     }
-                    AbilityCostDef::ExileCardFromGraveyard(_) => {
-                        let chosen = cost_object.expect("a legal activation chose the exiled card");
-                        if let Some(card) =
-                            remove_card(&mut self.players[player.index()].graveyard, chosen)
-                        {
-                            let (card, _zone_change) = self.zone_change_card(card);
-                            self.players[player.index()].exile.push(card);
+                    // The cost names as many cards as it prints, and the
+                    // activation carried every one of them.
+                    AbilityCostDef::ExileCardsFromGraveyard { .. } => {
+                        for chosen in cost_objects {
+                            if let Some(card) =
+                                remove_card(&mut self.players[player.index()].graveyard, *chosen)
+                            {
+                                let (card, _zone_change) = self.zone_change_card(card);
+                                self.players[player.index()].exile.push(card);
+                            }
                         }
                     }
                     AbilityCostDef::Loyalty(change) => {
@@ -439,11 +443,13 @@ impl Game {
                 }
             }
             let mut remaining_sacrifices = Vec::new();
-            if has_generic_sacrifice
-                && let Some(sacrificed) = cost_object
-                && sacrificed != source
-            {
-                remaining_sacrifices.push(sacrificed);
+            if has_generic_sacrifice {
+                remaining_sacrifices.extend(
+                    cost_objects
+                        .iter()
+                        .copied()
+                        .filter(|chosen| *chosen != source),
+                );
             }
             if definition.costs.contains(&AbilityCostDef::ExileSource) {
                 self.exile_permanent(source);
@@ -460,10 +466,10 @@ impl Game {
                     Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
                 })
                 .collect::<Vec<_>>();
-            if let Some(sacrificed) = cost_object
-                && !chosen_permanents.contains(&sacrificed)
-            {
-                chosen_permanents.push(sacrificed);
+            for chosen in cost_objects {
+                if !chosen_permanents.contains(chosen) {
+                    chosen_permanents.push(*chosen);
+                }
             }
             self.continue_activated_ability_costs(
                 source,

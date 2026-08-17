@@ -288,7 +288,7 @@ impl HandcraftedPolicy {
         source: GameObjectId,
         ability: AbilityOrigin,
         targets: &[crate::TargetSelection],
-        sacrifice: Option<GameObjectId>,
+        sacrifices: &[GameObjectId],
         x: u16,
     ) -> i32 {
         let source_definition = Self::permanent_definition(observation, source)
@@ -309,10 +309,14 @@ impl HandcraftedPolicy {
             .copied()
             .map(|value| Self::activated_target_score(observation, value, declarative))
             .sum::<i32>();
-        let sacrifice_cost = sacrifice
-            .filter(|card| *card != source)
-            .and_then(|card| Self::permanent_definition(observation, card))
-            .map_or(0, |definition| self.card_value(definition));
+        // Every object the cost spends is a cost, so a clause naming two
+        // cards is scored as twice the loss rather than once.
+        let sacrifice_cost = sacrifices
+            .iter()
+            .filter(|card| **card != source)
+            .filter_map(|card| Self::permanent_definition(observation, *card))
+            .map(|definition| self.card_value(definition))
+            .sum::<i32>();
         let discard_source_cost = self.discard_source_cost(source_definition, ability);
         let card_owned_hint_score = self.card_owned_hint_score(observation, ability, targets);
         let loyalty_cost = self.loyalty_cost_of(source_definition, ability);
@@ -379,7 +383,7 @@ impl HandcraftedPolicy {
             None if declarative.is_some() => 4_500 + target_score,
             None => -10_000,
         };
-        if sacrifice.is_some()
+        if !sacrifices.is_empty()
             && let Some(amount) = declarative.and_then(|profile| profile.damage)
             && matches!(target, Some(Target::Player(player)) if player == observation.viewer.opponent())
             && observation.life_totals[observation.viewer.opponent().index()]

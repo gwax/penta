@@ -51,7 +51,7 @@ fn loyalty_action(
         source,
         ability: loyalty_origin(definition, ability),
         targets,
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     }
 }

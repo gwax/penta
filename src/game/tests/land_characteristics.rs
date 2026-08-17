@@ -551,7 +551,7 @@ fn magical_hack_on_stage_applies_to_land_types_that_stage_later_copies() {
             source: stage_id,
             ability: activated_ability_for(&game, stage_id, 0),
             targets: activated_targets(Target::Permanent(arbor_id)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )

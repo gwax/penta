@@ -154,12 +154,12 @@ fn the_informer_pays_a_creature_for_the_same_effect() {
             Action::ActivateAbility {
                 source,
                 targets,
-                cost_object,
+                cost_objects,
                 ..
             } => {
                 *source == informer_id
                     // It may legally eat itself, so the bear has to be named.
-                    && *cost_object == Some(bear_id)
+                    && cost_objects.as_slice() == [bear_id]
                     && targets.iter().any(|selection| {
                         selection.targets().contains(&Target::Player(PlayerId::Two))
                     })

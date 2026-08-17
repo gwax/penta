@@ -339,7 +339,7 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
             // from and a predicate the shared walk can read.
             AbilityCostDef::SacrificePermanent { object, .. }
             | AbilityCostDef::TapPermanent { object, .. }
-            | AbilityCostDef::ExileCardFromGraveyard(object)
+            | AbilityCostDef::ExileCardsFromGraveyard { object, .. }
             | AbilityCostDef::DiscardCardMatching(object) => {
                 battlefield && shared_object_predicate(*object)
             }

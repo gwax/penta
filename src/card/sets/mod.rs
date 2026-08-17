@@ -206,6 +206,11 @@ const SET_MODULES: &[SetModule] = &[
         y2001::odyssey::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Torment,
+        y2002::torment::CARDS,
+        y2002::torment::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Judgment,
         y2002::judgment::CARDS,
         y2002::judgment::ADDITIONAL_PRINTINGS,

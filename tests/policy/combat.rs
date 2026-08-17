@@ -105,7 +105,7 @@ fn handcrafted_uses_domri_to_win_a_favorable_fight() {
             TargetSelection::single(TargetSlotId(0), Target::Permanent(CardInstanceId(2))),
             TargetSelection::single(TargetSlotId(1), Target::Permanent(CardInstanceId(3))),
         ],
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let observation = policy_observation(
@@ -116,7 +116,7 @@ fn handcrafted_uses_domri_to_win_a_favorable_fight() {
                 source: CardInstanceId(1),
                 ability: printed_ability(cards::DOMRI_RADE, 0),
                 targets: Vec::new(),
-                cost_object: None,
+                cost_objects: Vec::new(),
                 x: 0,
             },
             fight.clone(),
@@ -294,7 +294,7 @@ fn handcrafted_only_uses_orcish_mechanics_on_a_player_for_lethal() {
                 source: mechanics,
                 ability: PRIMARY_PRINTED_ABILITY,
                 targets: activated_targets(Target::Player(PlayerId::Two)),
-                cost_object: Some(vise),
+                cost_objects: vec![vise],
                 x: 0,
             },
         ],
@@ -321,7 +321,7 @@ fn handcrafted_scores_triskelion_from_its_declarative_damage_effect() {
         source: triskelion,
         ability,
         targets: activated_targets(Target::Permanent(target)),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     let observation = policy_observation(
@@ -335,7 +335,7 @@ fn handcrafted_scores_triskelion_from_its_declarative_damage_effect() {
                 source: triskelion,
                 ability,
                 targets: activated_targets(Target::Player(PlayerId::Two)),
-                cost_object: None,
+                cost_objects: Vec::new(),
                 x: 0,
             },
             hit_creature.clone(),
@@ -374,14 +374,14 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
                 source: atog,
                 ability: atog_ability,
                 targets: Vec::new(),
-                cost_object: Some(vise),
+                cost_objects: vec![vise],
                 x: 0,
             },
             Action::ActivateAbility {
                 source: atog,
                 ability: atog_ability,
                 targets: Vec::new(),
-                cost_object: Some(mox),
+                cost_objects: vec![mox],
                 x: 0,
             },
         ],
@@ -396,7 +396,7 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
             source: atog,
             ability: atog_ability,
             targets: Vec::new(),
-            cost_object: Some(vise),
+            cost_objects: vec![vise],
             x: 0,
         })
     );

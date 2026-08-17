@@ -48,7 +48,7 @@ fn duplicate_source_counter_costs_are_aggregated_before_an_activation_is_offered
         source: source_id,
         ability: activated_ability_for(&game, source_id, 0),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
 
@@ -159,7 +159,7 @@ fn source_counters_are_removed_before_a_source_sacrifice_cost_regardless_of_prin
         source: source_id,
         ability: activated_ability_for(&game, source_id, 0),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));
@@ -230,7 +230,7 @@ fn a_generic_source_sacrifice_waits_for_its_tap_and_counter_costs() {
         source: source_id,
         ability: primary_ability(definition_id),
         targets: Vec::new(),
-        cost_object: Some(source_id),
+        cost_objects: vec![source_id],
         x: 0,
     };
 
@@ -305,14 +305,14 @@ fn separate_source_sacrifice_costs_require_separate_permanents() {
         source: source_id,
         ability: primary_ability(definition_id),
         targets: Vec::new(),
-        cost_object: Some(other_id),
+        cost_objects: vec![other_id],
         x: 0,
     };
     let illegal_double_payment = Action::ActivateAbility {
         source: source_id,
         ability: primary_ability(definition_id),
         targets: Vec::new(),
-        cost_object: Some(source_id),
+        cost_objects: vec![source_id],
         x: 0,
     };
     let actions = game.legal_actions(PlayerId::One);
@@ -394,7 +394,7 @@ fn javelineers_on_the_stack_retain_the_sources_last_known_color() {
             source,
             ability: activated_ability_for(&game, source, 0),
             targets: activated_targets(Target::Permanent(target_id)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )

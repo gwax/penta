@@ -5315,9 +5315,10 @@ pub(in crate::card::sets) static MOORLAND_HAUNT: CardRecord = CardRecord::new(
             &[
                 AbilityCostDef::Mana(mana_cost!("{W}{U}")),
                 AbilityCostDef::TapSource,
-                AbilityCostDef::ExileCardFromGraveyard(ObjectPredicateDef::HasType(
-                    CardType::Creature,
-                )),
+                AbilityCostDef::ExileCardsFromGraveyard {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    count: 1,
+                },
             ],
             EffectDef::CreateToken {
                 token: cards::SPIRIT_TOKEN_1_1_WHITE,

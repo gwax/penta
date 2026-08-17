@@ -90,7 +90,7 @@ fn mana_preview_uses_the_selected_declarative_activated_ability_cost() {
         source: tome_id,
         ability: activated_ability_for(&game, tome_id, 0),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
 
@@ -132,7 +132,7 @@ fn mana_preview_uses_the_selected_declarative_activated_ability_cost() {
         source,
         ability: activated_ability_for(&game, source, 0),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
 
@@ -158,7 +158,7 @@ fn orcish_mechanics_can_sacrifice_an_artifact_to_damage_a_creature() {
         source: mechanics_id,
         ability: activated_ability_for(&game, mechanics_id, 0),
         targets: activated_targets(Target::Permanent(target_id)),
-        cost_object: Some(artifact_id),
+        cost_objects: vec![artifact_id],
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));
@@ -674,7 +674,7 @@ fn factory_animates_and_strip_mine_destroys_lands() {
             source: factory_id,
             ability: activated_ability_for(&game, factory_id, 0),
             targets: Vec::new(),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -697,7 +697,7 @@ fn factory_animates_and_strip_mine_destroys_lands() {
                     ability: crate::AbilityId(2),
                 },
                 targets: activated_targets(Target::Permanent(factory_id)),
-                cost_object: None,
+                cost_objects: Vec::new(),
                 x: 0,
             })
     );
@@ -708,7 +708,7 @@ fn factory_animates_and_strip_mine_destroys_lands() {
             source: strip_id,
             ability: activated_ability_for(&game, strip_id, 0),
             targets: activated_targets(Target::Permanent(opposing_id)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -756,7 +756,7 @@ fn mishras_factory_can_use_its_own_mana_to_animate() {
         source: factory_id,
         ability: activated_ability_for(&game, factory_id, 0),
         targets: Vec::new(),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
 
@@ -831,7 +831,7 @@ fn strip_mine_can_be_activated_in_response_to_strip_mine() {
             source: second_strip_id,
             ability: activated_ability_for(&game, second_strip_id, 0),
             targets: activated_targets(Target::Permanent(first_strip_id)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -842,7 +842,7 @@ fn strip_mine_can_be_activated_in_response_to_strip_mine() {
         source: first_strip_id,
         ability: activated_ability_for(&game, first_strip_id, 0),
         targets: activated_targets(Target::Permanent(other_land_id)),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&response));
@@ -878,7 +878,7 @@ fn icatian_javelineers_cannot_activate_until_their_controller_turn() {
         source,
         ability: activated_ability_for(&game, source, 0),
         targets: activated_targets(Target::Player(PlayerId::Two)),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert_eq!(game.power(&game.battlefield[0]), Some(1));
@@ -912,7 +912,7 @@ fn icatian_javelineers_counter_cost_preserves_white_source_targeting() {
         source,
         ability: activated_ability_for(&game, source, 0),
         targets: activated_targets(Target::Permanent(knight_id)),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     assert!(
@@ -926,7 +926,7 @@ fn icatian_javelineers_counter_cost_preserves_white_source_targeting() {
         source,
         ability: activated_ability_for(&game, source, 0),
         targets: activated_targets(Target::Player(PlayerId::Two)),
-        cost_object: None,
+        cost_objects: Vec::new(),
         x: 0,
     };
     game.apply(PlayerId::One, player_target).unwrap();

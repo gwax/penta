@@ -680,7 +680,7 @@ fn a_spell_created_installed_trigger_reconstructs_at_an_action_boundary() {
                 source: whelp_id,
                 ability,
                 targets: Vec::new(),
-                cost_object: None,
+                cost_objects: Vec::new(),
                 x: 0,
             },
         )

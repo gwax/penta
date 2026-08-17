@@ -481,7 +481,7 @@ fn sage_and_relic_barrier_use_the_shared_activated_ability_stack() {
             source: sage_id,
             ability: activated_ability_for(&game, sage_id, 0),
             targets: Vec::new(),
-            cost_object: Some(ring_id),
+            cost_objects: vec![ring_id],
             x: 0,
         },
     )
@@ -508,7 +508,7 @@ fn sage_and_relic_barrier_use_the_shared_activated_ability_stack() {
             source: barrier_id,
             ability: activated_ability_for(&game, barrier_id, 0),
             targets: activated_targets(Target::Permanent(ring_id)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )

@@ -90,6 +90,7 @@ older unannotated definitions still require one):
 - `Goblin Tinkerer` — complete
 - `Goblin Vandal` — complete
 - `Goblin Warchief` — complete
+- `Grim Lavamancer` — complete
 - `Hydroblast` — complete
 - `Impulse` — complete
 - `Incinerate` — damage complete; no-regeneration rider is partial
@@ -173,7 +174,6 @@ Not yet cataloged:
 - [ ] `Gemstone Mine`
 - [ ] `Gerrard's Verdict`
 - [ ] `Gilded Drake`
-- [ ] `Grim Lavamancer`
 - [ ] `Gush`
 - [ ] `Haunting Echoes`
 - [ ] `Hermit Druid`

@@ -335,7 +335,7 @@ fn izzet_staticaster_reads_the_name_copied_by_thespians_stage() {
             source: stage,
             ability: activated_ability_for(&game, stage, 0),
             targets: activated_targets(Target::Permanent(arbor)),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     )
@@ -801,7 +801,7 @@ fn aetherling_dodges_a_blocker_and_comes_back_at_the_end_step() {
                     ability,
                 },
                 targets: Vec::new(),
-                cost_object: None,
+                cost_objects: Vec::new(),
                 x: 0,
             },
         )

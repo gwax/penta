@@ -104,7 +104,7 @@ fn second_main_waits_for_spells_lands_and_non_mana_abilities() {
                 ability: penta::AbilityId::PRIMARY,
             },
             targets: Vec::new(),
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
     ];
@@ -339,7 +339,7 @@ fn a_pump_ability_holds_combat_open_only_while_it_matters() {
                 penta::TargetSlotId(0),
                 Target::Permanent(CardInstanceId(9)),
             )],
-            cost_object: None,
+            cost_objects: Vec::new(),
             x: 0,
         },
         Action::PassPriority,

@@ -256,7 +256,7 @@ impl Game {
                 AbilityCostDef::DiscardSource
                 | AbilityCostDef::UntapSource
                 | AbilityCostDef::Loyalty(_)
-                | AbilityCostDef::ExileCardFromGraveyard(_)
+                | AbilityCostDef::ExileCardsFromGraveyard { .. }
                 | AbilityCostDef::DiscardCards(_)
                 | AbilityCostDef::DiscardCardMatching(_)
                 | AbilityCostDef::DiscardCardsAtRandom(_)
