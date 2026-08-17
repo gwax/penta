@@ -100,6 +100,7 @@ impl Game {
             | EffectDef::MillUntil { .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
+            | EffectDef::RevealAtRandomFromHand { .. }
             | EffectDef::RevealHand { .. }
             | EffectDef::SearchZone { .. }
             | EffectDef::ChooseCards { .. }

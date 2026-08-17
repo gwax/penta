@@ -152,6 +152,13 @@ distinguishes snapshots of the covered source and build inputs.
   Akroma's Vengeance, Secluded Steppe, Eternal Dragon, and Gempalm
   Incinerator.
 
+- **Cursed Scroll**, and the two primitives it needed: revealing a card at
+  random from a hand and binding it, and a condition comparing two bound
+  objects by name. The reveal is drawn through the game's seeded RNG, so a
+  replay reveals the same card. Naming a card is modelled as naming one of
+  the cards in hand -- every name worth choosing is one of those, the choice
+  is public either way, and nothing achievable is lost.
+
 - **Grim Lavamancer**, the card that made the cost an array: two graveyard
   cards per shot, chosen by the player, so every pair is its own offered
   activation.

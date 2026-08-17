@@ -623,6 +623,7 @@ fn validate_trigger_condition(
             validate_target_index(slot, target_count)
         }
         TriggerConditionDef::CreatureDiedThisTurn
+        | TriggerConditionDef::BoundObjectsShareName { .. }
         | TriggerConditionDef::SourceArrivedSinceControllersLastUpkeep
         | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped

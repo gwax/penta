@@ -466,3 +466,127 @@ fn the_lavamancer_exiles_both_cards_and_deals_two() {
     );
     assert_eq!(game.players[PlayerId::Two.index()].life, 18, "two damage");
 }
+
+/// Cursed Scroll names a card and then reveals one at random. With a hand of
+/// one card the name is certain to match; with a hand of one *other* card it
+/// is certain to miss. Both are settled by the hand, not by the RNG, which is
+/// what makes them assertable.
+fn cursed_scroll_shot(hand: &[CardDefinitionId], name_index: usize) -> Game {
+    let mut game = ready();
+    let scroll = creature(10_000, cards::CURSED_SCROLL, PlayerId::One);
+    let scroll_id = scroll.card.id;
+    game.battlefield.push(scroll);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    for (index, definition) in hand.iter().enumerate() {
+        game.players[PlayerId::One.index()].hand.push(card(
+            20_000 + u32::try_from(index).expect("small"),
+            *definition,
+            PlayerId::One,
+        ));
+    }
+    game.players[PlayerId::One.index()].mana_pool.colorless = 3;
+
+    let shot = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == scroll_id
+                    && targets
+                        .iter()
+                        .any(|slot| slot.targets().contains(&Target::Player(PlayerId::Two)))
+            }
+            _ => false,
+        })
+        .expect("the Scroll can shoot the opponent");
+    game.apply(PlayerId::One, shot).expect("it is activated");
+
+    // The ability resolves off the stack before it asks anything, so let it
+    // get there and then answer the naming decision.
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    // A hand with only one name to give has nothing to ask about, so the
+    // decision appears only when there is a real choice.
+    if let Some(decision) = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+    {
+        let option = decision.options[name_index].id;
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![option],
+            },
+        )
+        .expect("the name is accepted");
+    }
+    settle(&mut game);
+    game
+}
+
+#[test]
+fn cursed_scroll_hits_when_the_hand_holds_only_the_named_card() {
+    let game = cursed_scroll_shot(&[cards::GRIZZLY_BEARS], 0);
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        18,
+        "the only card in hand is the named one, so the reveal must match",
+    );
+}
+
+/// Two copies of the same card: whichever is revealed, the name matches.
+#[test]
+fn cursed_scroll_matches_a_second_copy_of_the_named_card() {
+    let game = cursed_scroll_shot(&[cards::GRIZZLY_BEARS, cards::GRIZZLY_BEARS], 0);
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        18,
+        "a second copy of the named card is still the named card",
+    );
+}
+
+/// The reveal is public, so the opponent learns a card either way.
+#[test]
+fn cursed_scroll_reveals_the_card_it_drew() {
+    let game = cursed_scroll_shot(&[cards::GRIZZLY_BEARS], 0);
+    assert!(
+        game.events.iter().any(|event| matches!(
+            event,
+            GameEvent::CardRevealed { definition, .. } if *definition == cards::GRIZZLY_BEARS
+        )),
+        "the randomly chosen card was revealed to everyone",
+    );
+}
+
+/// The comparison has to be able to fail, and a two-card hand proves it
+/// without depending on which card the seed picks: the reveal is the same in
+/// both runs, so naming one card and then the other must hit exactly once.
+#[test]
+fn cursed_scroll_misses_when_the_named_card_is_not_the_revealed_one() {
+    let named_first = cursed_scroll_shot(&[cards::GRIZZLY_BEARS, cards::SAVANNAH_LIONS], 0);
+    let named_second = cursed_scroll_shot(&[cards::GRIZZLY_BEARS, cards::SAVANNAH_LIONS], 1);
+    let damage = |game: &Game| 20 - game.players[PlayerId::Two.index()].life;
+
+    assert_eq!(
+        damage(&named_first) + damage(&named_second),
+        2,
+        "exactly one of the two names matches the card the seed revealed",
+    );
+    assert!(
+        damage(&named_first) == 0 || damage(&named_second) == 0,
+        "and the other names a card that was not revealed, so it deals nothing",
+    );
+}

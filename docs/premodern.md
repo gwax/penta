@@ -68,6 +68,7 @@ older unannotated definitions still require one):
 - `Claws of Gix` — complete
 - `Coastal Tower` — complete
 - `Counterspell`
+- `Cursed Scroll` — complete; naming a card is modelled as naming one held
 - `Disenchant`
 - `Duress`
 - `Dust Bowl` — complete
@@ -159,7 +160,6 @@ Not yet cataloged:
 - [ ] `Chain of Vapor`
 - [ ] `Chill`
 - [ ] `Circle of Protection: Red`
-- [ ] `Cursed Scroll`
 - [ ] `Cursed Totem`
 - [ ] `Daze`
 - [ ] `Decree of Justice`

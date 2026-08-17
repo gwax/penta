@@ -382,6 +382,9 @@ fn validate_resolving_effect(
             validate_resolving_effect(*on_failure, source_zones)
         }
         EffectDef::Choose(choice) => validate_resolving_effect(*choice.then, source_zones),
+        EffectDef::RevealAtRandomFromHand { then, .. } => {
+            validate_resolving_effect(*then, source_zones)
+        }
         EffectDef::PayOr(payment) => {
             for effect in payment.if_paid.iter().chain(payment.otherwise.iter()) {
                 validate_resolving_effect(**effect, source_zones)?;
@@ -736,6 +739,7 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
             static_object_predicate_supported(object)
         }
         TriggerConditionDef::CreatureDiedThisTurn
+        | TriggerConditionDef::BoundObjectsShareName { .. }
         | TriggerConditionDef::SourceArrivedSinceControllersLastUpkeep
         | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped
@@ -815,6 +819,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::MillUntil { .. } => "MillUntil",
         EffectDef::LookAtHand { .. } => "LookAtHand",
         EffectDef::RevealHand { .. } => "RevealHand",
+        EffectDef::RevealAtRandomFromHand { .. } => "RevealAtRandomFromHand",
         EffectDef::LookAtTopAndSelect { .. } => "LookAtTopAndSelect",
         EffectDef::SearchZone { .. } => "SearchZone",
         EffectDef::ChooseCards { .. } => "ChooseCards",

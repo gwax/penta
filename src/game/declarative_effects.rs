@@ -231,6 +231,7 @@ impl Game {
             | EffectDef::Mill { .. }
             | EffectDef::MillUntil { .. }
             | EffectDef::LookAtHand { .. }
+            | EffectDef::RevealAtRandomFromHand { .. }
             | EffectDef::RevealHand { .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::SearchZone { .. }

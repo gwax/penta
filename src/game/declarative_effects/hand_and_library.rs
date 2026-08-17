@@ -192,6 +192,35 @@ impl Game {
                     }
                 }
             }
+            EffectDef::RevealAtRandomFromHand {
+                player: recipient,
+                binding,
+                then,
+            } => {
+                let mut context = context.clone();
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Player(revealer) = target {
+                        // Drawn through the game's seeded RNG so a replay
+                        // reveals the same card, and read before anything
+                        // moves so the reveal is of the hand as it stands.
+                        let hand = &self.players[revealer.index()].hand;
+                        let revealed = (!hand.is_empty()).then(|| {
+                            let index = self.rng.index_below(hand.len());
+                            let card = &self.players[revealer.index()].hand[index];
+                            (card.id, card.definition)
+                        });
+                        if let Some((card, definition)) = revealed {
+                            self.events.push(GameEvent::CardRevealed {
+                                player: revealer,
+                                card,
+                                definition,
+                            });
+                            context.bind_single_object(binding, Some(Target::Card(card)));
+                        }
+                    }
+                }
+                self.resolve_effect_def(scoped.with_effect(*then), object, context);
+            }
             EffectDef::LookAtTopAndSelect {
                 player: recipient,
                 looker,

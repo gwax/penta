@@ -19,6 +19,10 @@ fn validate_effect_target_shapes(
             validate_effect_target_shapes(*on_success, targets, triggering_object_zone)?;
             validate_effect_target_shapes(*on_failure, targets, triggering_object_zone)
         }
+        EffectDef::RevealAtRandomFromHand { player, then, .. } => {
+            validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
+            validate_effect_target_shapes(*then, targets, triggering_object_zone)
+        }
         EffectDef::Choose(choice) => {
             validate_player_reference_shape(choice.chooser, targets)?;
             validate_object_set_shape(choice.candidates, targets)?;

@@ -1,4 +1,4 @@
-use crate::ids::{AbilityId, AlternativeCostId, ModeId, TargetIndex};
+use crate::ids::{AbilityId, AlternativeCostId, ModeId, ObjectBindingIndex, TargetIndex};
 
 use super::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AlternativeCostDef,
@@ -372,6 +372,13 @@ pub enum ComparisonDef {
 pub enum TriggerConditionDef {
     /// Whether the original source object is still on the battlefield.
     SourceOnBattlefield,
+    /// Whether two bound objects share a card name. Naming a card and then
+    /// revealing one is a comparison of names rather than of identity: a
+    /// second copy of the named card is still the named card.
+    BoundObjectsShareName {
+        first: ObjectBindingIndex,
+        second: ObjectBindingIndex,
+    },
     /// Whether the source came under its controller's control since the
     /// beginning of that player's previous upkeep -- the condition echo is
     /// written against, and what makes an echo cost come due exactly once.

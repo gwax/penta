@@ -19,6 +19,10 @@ fn validate_effect_references(
             validate_effect_references(*on_success, target_count, scope)?;
             validate_effect_references(*on_failure, target_count, scope)
         }
+        EffectDef::RevealAtRandomFromHand { player, then, .. } => {
+            validate_recipient_target_references(player, target_count, scope)?;
+            validate_effect_references(*then, target_count, scope)
+        }
         EffectDef::Choose(choice) => {
             validate_player_reference(choice.chooser, target_count, scope)?;
             validate_recipient_target_references(

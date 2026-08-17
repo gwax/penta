@@ -4,10 +4,12 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
+use crate::ids::ObjectBindingIndex;
 use crate::{TargetIndex, mana_cost};
 
 // TMP 51 — Warmth
@@ -117,6 +119,75 @@ pub(in crate::card::sets) static ROOT_MAZE: CardRecord = CardRecord::new(
     )),
 );
 
+/// Naming a card is modelled as picking one of the cards in hand. Every name
+/// worth choosing is one of those -- naming something you do not hold can
+/// only fail -- and the choice is public either way, so nothing is hidden and
+/// nothing achievable is lost.
+static NAMED_CARD: ObjectBindingIndex = ObjectBindingIndex::PRIMARY;
+static REVEALED_CARD: ObjectBindingIndex = ObjectBindingIndex::new(1);
+
+static SCROLL_NAMES_MATCH: TriggerConditionDef = TriggerConditionDef::BoundObjectsShareName {
+    first: NAMED_CARD,
+    second: REVEALED_CARD,
+};
+
+static SCROLL_SHOT: EffectDef = EffectDef::DealDamage {
+    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    amount: ValueDef::Constant(2),
+};
+
+static SCROLL_IF_MATCHED: EffectDef = EffectDef::IfCondition {
+    condition: &SCROLL_NAMES_MATCH,
+    then: &SCROLL_SHOT,
+};
+
+static SCROLL_REVEAL: EffectDef = EffectDef::RevealAtRandomFromHand {
+    player: EffectRecipientDef::Controller,
+    binding: REVEALED_CARD,
+    then: &SCROLL_IF_MATCHED,
+};
+
+static CARDS_IN_YOUR_HAND: ObjectQueryDef = ObjectQueryDef::owned_by(
+    ObjectPredicateDef::Any,
+    &[ZoneKind::Hand],
+    PlayerSetDef::Related(PlayerRelation::You),
+);
+
+// TMP 281 — Cursed Scroll
+pub(in crate::card::sets) static CURSED_SCROLL: CardRecord = CardRecord::new(
+    cards::CURSED_SCROLL,
+    "Cursed Scroll",
+    CardArt::new(
+        "31415b9b-fb30-4132-a9a3-795b4573a901",
+        "D. Alexander Gregory",
+    ),
+    CardSet::Tempest,
+    // An empty hand makes it a certainty, which is why the card belongs in a
+    // deck that has already spent everything.
+    CardRules::new_artifact(mana_cost!("{1}")).with_ability(AbilityDef::activated_with_targets(
+        "{3}, {T}: Choose a card name, then reveal a card at random from your hand. If that card has the chosen name, this artifact deals 2 damage to any target.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{3}")),
+            AbilityCostDef::TapSource,
+        ],
+        &SCROLL_TARGET,
+        EffectDef::Choose(ChooseDef {
+            binding: ObjectChoiceBindingDef::Object(NAMED_CARD),
+            chooser: PlayerRefDef::EffectController,
+            candidates: ObjectSetDef::Query(CARDS_IN_YOUR_HAND),
+            exclude: None,
+            minimum: 1,
+            maximum: 1,
+            visibility: ChoiceVisibilityDef::Public,
+            then: &SCROLL_REVEAL,
+        }),
+    )),
+);
+
+static SCROLL_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
 // TMP 294 — Lotus Petal
 pub(in crate::card::sets) static LOTUS_PETAL: CardRecord = CardRecord::new(
     cards::LOTUS_PETAL,
@@ -175,6 +246,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &JACKAL_PUP,
     &MOGG_FANATIC,
     &ROOT_MAZE,
+    &CURSED_SCROLL,
     &LOTUS_PETAL,
     &ANCIENT_TOMB,
     &WASTELAND,

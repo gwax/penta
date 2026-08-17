@@ -370,6 +370,7 @@ fn validate_trigger_condition_shape(
             validate_object_predicate_shape(object, targets)
         }
         TriggerConditionDef::CreatureDiedThisTurn
+        | TriggerConditionDef::BoundObjectsShareName { .. }
         | TriggerConditionDef::SourceArrivedSinceControllersLastUpkeep
         | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped

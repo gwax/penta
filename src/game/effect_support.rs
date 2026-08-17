@@ -567,6 +567,26 @@ impl Game {
                     .battlefield
                     .iter()
                     .any(|permanent| permanent.card.id == source),
+                // Names, not identities: a second copy of the named card is
+                // still the named card, so the definitions are compared.
+                TriggerConditionDef::BoundObjectsShareName { first, second } => {
+                    let named = |binding| {
+                        object
+                            .and_then(|(_, _, context): (_, _, &EffectResolutionContext)| {
+                                context.single_object(binding)
+                            })
+                            .and_then(|target| match target {
+                                Target::Permanent(id) | Target::Card(id) | Target::Spell(id) => {
+                                    self.object_definition(id)
+                                }
+                                Target::Player(_) => None,
+                            })
+                    };
+                    match (named(*first), named(*second)) {
+                        (Some(first), Some(second)) => first == second,
+                        _ => false,
+                    }
+                }
                 // The permanent records the controller's turn count as it
                 // arrived. By this upkeep that count has advanced once, so
                 // "since the last upkeep" is exactly one turn ago -- and the

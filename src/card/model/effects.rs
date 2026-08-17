@@ -649,6 +649,18 @@ pub enum EffectDef {
     },
     /// Every card in the named player's hand is revealed to everyone.
     ///
+    /// Reveal one card chosen at random from a player's hand, bind it, and
+    /// continue.
+    ///
+    /// The card does not move; what changes is that everyone has seen it and
+    /// the following clause can read it. An empty hand reveals nothing and
+    /// binds nothing, so the continuation still runs and simply finds no
+    /// bound object.
+    RevealAtRandomFromHand {
+        player: EffectRecipientDef,
+        binding: ObjectBindingIndex,
+        then: &'static EffectDef,
+    },
     /// Nothing moves; what changes is what the table knows. It is a separate
     /// step from whatever reads the hand afterwards, because the reveal
     /// happens even when the clause that follows finds nothing to do -- and

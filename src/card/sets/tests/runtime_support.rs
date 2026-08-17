@@ -374,6 +374,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
             shared_object_predicate(object)
         }
         TriggerConditionDef::CreatureDiedThisTurn
+        | TriggerConditionDef::BoundObjectsShareName { .. }
         | TriggerConditionDef::SourceArrivedSinceControllersLastUpkeep
         | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceUntapped
@@ -412,6 +413,7 @@ fn shared_static_trigger_condition(condition: TriggerConditionDef) -> bool {
         // Counters live on the source, so a static clause can read them from
         // exactly the input it has.
         TriggerConditionDef::CreatureDiedThisTurn
+        | TriggerConditionDef::BoundObjectsShareName { .. }
         | TriggerConditionDef::SourceArrivedSinceControllersLastUpkeep
         | TriggerConditionDef::SourceOnBattlefield
             | TriggerConditionDef::SourceUntapped
@@ -623,6 +625,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::MillUntil { .. }
                     | EffectDef::LookAtTopAndSelect { .. }
                     | EffectDef::LookAtHand { .. }
+                    | EffectDef::RevealAtRandomFromHand { .. }
                     | EffectDef::RevealHand { .. }
                     | EffectDef::SearchZone { .. }
                     | EffectDef::ChooseCards { .. }

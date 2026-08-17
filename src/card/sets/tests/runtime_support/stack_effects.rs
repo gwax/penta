@@ -168,6 +168,11 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
                 && shared_choose(choice)
                 && shared_stack_effect_at_position(*choice.then, true)
         }
+        // The reveal itself asks nothing, so it opens no decision window;
+        // what follows it is still bound by whatever this position allows.
+        EffectDef::RevealAtRandomFromHand { then, .. } => {
+            shared_stack_effect_at_position(*then, deferred_decision_allowed)
+        }
         EffectDef::PayOr(payment) => {
             deferred_decision_allowed
                 && shared_effect_payment(payment.payment)
