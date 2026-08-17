@@ -430,185 +430,6 @@ impl Game {
         })
     }
 
-    pub(super) fn alternative_cast_clause(
-        definition: &CardDefinition,
-        option: &PlayOptionDef,
-        alternative: AlternativeCostId,
-    ) -> Option<(AbilityOrigin, AbilityDef, AlternativeCastKindDef)> {
-        let parts: &[CardPartId] = match &option.form {
-            crate::card::SpellForm::Part(part) => std::slice::from_ref(part),
-            crate::card::SpellForm::Combined(parts) => parts,
-        };
-        parts.iter().find_map(|part_id| {
-            definition
-                .part(*part_id)?
-                .rules
-                .indexed_abilities()
-                .find_map(|attached| {
-                    let DeclarativeAbilityDef::AlternativeCast(alternative_cast) =
-                        attached.definition.definition
-                    else {
-                        return None;
-                    };
-                    (attached.alternative_cost_id() == Some(alternative)).then_some((
-                        AbilityOrigin::Printed {
-                            definition: definition.id,
-                            part: *part_id,
-                            ability: attached.id,
-                        },
-                        attached.definition,
-                        alternative_cast.kind,
-                    ))
-                })
-        })
-    }
-
-    pub(super) fn alternative_cast_ability(
-        definition: &CardDefinition,
-        option: &PlayOptionDef,
-        alternative: AlternativeCostId,
-    ) -> Option<(AbilityOrigin, AbilityDef, AlternativeCastKindDef)> {
-        Self::alternative_cast_clause(definition, option, alternative)
-            .filter(|(_, ability, _)| ability.is_executable())
-    }
-
-    pub(super) fn selected_alternative_kind(
-        &self,
-        definition: &CardDefinition,
-        option: &PlayOptionDef,
-        card: GameObjectId,
-        costs: &CostConfiguration,
-    ) -> Option<AlternativeCastKindDef> {
-        let selected = costs.alternative()?;
-        if Some(selected) == Self::temporary_alternative_cost_id(option)
-            && self.granted_flashback(card, option).is_some()
-        {
-            return Some(AlternativeCastKindDef::Flashback);
-        }
-        Self::alternative_cast_ability(definition, option, selected).map(|(_, _, kind)| kind)
-    }
-
-    pub(super) fn temporary_alternative_cost_id(
-        option: &PlayOptionDef,
-    ) -> Option<AlternativeCostId> {
-        (u8::MIN..=u8::MAX)
-            .rev()
-            .map(AlternativeCostId)
-            .find(|candidate| {
-                option
-                    .alternative_costs
-                    .iter()
-                    .all(|cost| cost.id != *candidate)
-            })
-    }
-
-    pub(super) fn granted_flashback(
-        &self,
-        card: GameObjectId,
-        option: &PlayOptionDef,
-    ) -> Option<(AlternativeCastAbilityDef, ManaCost)> {
-        self.temporary_ability_grants
-            .iter()
-            .filter(|grant| grant.object == card)
-            .find_map(|grant| {
-                if !grant.ability.is_executable() {
-                    return None;
-                }
-                let DeclarativeAbilityDef::AlternativeCast(alternative) = grant.ability.definition
-                else {
-                    return None;
-                };
-                (alternative.kind == AlternativeCastKindDef::Flashback)
-                    .then(|| alternative.mana_cost.resolve(option.mana_cost))
-                    .flatten()
-                    .map(|mana_cost| (alternative, mana_cost))
-            })
-    }
-    pub(super) fn spell_custom_followup(
-        definition: &CardDefinition,
-        option: &PlayOptionDef,
-        primary: AbilityId,
-    ) -> Option<CardBehavior> {
-        let crate::card::SpellForm::Part(part_id) = &option.form else {
-            return None;
-        };
-        definition
-            .part(*part_id)?
-            .rules
-            .indexed_abilities()
-            .find_map(|attached| {
-                (attached.id != primary)
-                    .then(|| attached.definition.custom_behavior())
-                    .flatten()
-            })
-    }
-
-    pub(super) fn frozen_spell_payload(
-        &self,
-        definition_id: CardDefinitionId,
-        signature: &CastSignature,
-    ) -> Option<StackAbilityPayload> {
-        let definition = self.catalog.get(definition_id)?;
-        let option = definition.play_option(signature.play_option())?;
-        if let Some(selected) = signature.costs().alternative()
-            && let Some((origin, ability, AlternativeCastKindDef::Overload)) =
-                Self::alternative_cast_ability(definition, option, selected)
-        {
-            let DeclarativeAbilityDef::AlternativeCast(alternative_cast) = ability.definition
-            else {
-                unreachable!("alternative_cast_ability returns an alternative-cast clause")
-            };
-            return Some(StackAbilityPayload {
-                origin,
-                definition: Some(Box::new(ability)),
-                presentation_definition: definition_id,
-                text: alternative_cast.stack_text.or(Some(ability.text)),
-                target_defs: Vec::new(),
-                targets: signature.targets().to_vec(),
-                context: TriggerContext::empty().into(),
-                resolver: Self::ability_resolver(origin, &ability),
-                condition: None,
-                mode_effects: Vec::new(),
-                x: signature.x(),
-            });
-        }
-        let (origin, ability) = Self::spell_ability(definition, option)?;
-        let AbilityOrigin::Printed {
-            ability: ability_id,
-            ..
-        } = origin
-        else {
-            unreachable!("a printed spell clause has a printed origin")
-        };
-        let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
-            unreachable!("spell_ability returns a spell clause")
-        };
-        let followup = Self::spell_custom_followup(definition, option, ability_id);
-        let plan = Self::selected_spell_plan(spell, signature.modes())
-            .expect("validated modes select declared spell targets and branches");
-        Some(StackAbilityPayload {
-            origin,
-            definition: Some(Box::new(ability)),
-            presentation_definition: definition_id,
-            text: Some(ability.text),
-            target_defs: plan.target_defs,
-            targets: signature.targets().to_vec(),
-            context: TriggerContext::empty().into(),
-            condition: None,
-            resolver: match (ability.declarative_effect(), followup) {
-                (Some(effect), Some(behavior)) => {
-                    StackAbilityResolver::DeclarativeWithCustomFollowup {
-                        effect: ScopedEffect::primary(effect),
-                        behavior,
-                    }
-                }
-                _ => Self::ability_resolver(origin, &ability),
-            },
-            mode_effects: plan.mode_effects,
-            x: signature.x(),
-        })
-    }
-
     pub(super) fn uses_legacy_behavior_targets(
         definition: &CardDefinition,
         option: &PlayOptionDef,
@@ -697,9 +518,19 @@ impl Game {
                 (CastSourceZone::Hand, Some(AlternativeCastKindDef::Flashback))
                 | (
                     CastSourceZone::Graveyard,
-                    Some(AlternativeCastKindDef::Overload | AlternativeCastKindDef::Miracle) | None,
+                    Some(
+                        AlternativeCastKindDef::Overload
+                        | AlternativeCastKindDef::Miracle
+                        | AlternativeCastKindDef::Kicked,
+                    )
+                    | None,
                 ) => false,
-                (CastSourceZone::Hand, Some(AlternativeCastKindDef::Overload) | None)
+                // A kicked spell is cast from hand like any other; only what
+                // it costs and what it does are different.
+                (
+                    CastSourceZone::Hand,
+                    Some(AlternativeCastKindDef::Overload | AlternativeCastKindDef::Kicked) | None,
+                )
                 | (CastSourceZone::Graveyard, Some(AlternativeCastKindDef::Flashback)) => true,
                 // Only in the window the draw opened, and only for the card
                 // that was drawn.
@@ -995,3 +826,5 @@ impl Game {
         selections
     }
 }
+
+include!("casting_actions/selected_clause.rs");

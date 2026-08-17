@@ -40,7 +40,7 @@ up when the first staged list is promoted.
   Unsupported clauses must be metadata-only rather than executable no-ops.
 - Implement reusable mechanics before card-local behavior. Cycling and
   typecycling are done; still outstanding are flashback, threshold, fading,
-  echo, alternative costs, split cards, graveyard replacement/reanimation,
+  echo, alternative costs that exile from hand, split cards, graveyard replacement/reanimation,
   named-card choices, tutors, continuous type/PT changes, and triggered
   mana/untap restrictions.
 - Audit the existing definitions against their Premodern Oracle text and
@@ -104,9 +104,11 @@ older unannotated definitions still require one):
 - `Mountain`
 - `Naturalize` — complete
 - `Opt` — complete
+- `Overload` — complete
 - `Phyrexian Arena` — complete
 - `Plains`
 - `Presence of the Master` — complete
+- `Prohibit` — complete
 - `Pyroblast` — complete
 - `Quirion Dryad` — complete
 - `Ray of Revelation`
@@ -181,13 +183,11 @@ Not yet cataloged:
 - [ ] `Mogg Salvage`
 - [ ] `Mox Diamond`
 - [ ] `Opalescence`
-- [ ] `Overload`
 - [ ] `Parallax Wave`
 - [ ] `Phyrexian Dreadnought`
 - [ ] `Phyrexian Furnace`
 - [ ] `Portent`
 - [ ] `Powder Keg`
-- [ ] `Prohibit`
 - [ ] `Psychatog`
 - [ ] `Pyrokinesis`
 - [ ] `Reflecting Pool`

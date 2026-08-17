@@ -422,6 +422,29 @@ pub const fn overload(
     )
 }
 
+/// A kicker: "Kicker {cost} (You may pay an additional {cost} as you cast
+/// this spell.)", together with what the spell does when it was paid.
+///
+/// `mana_cost` is the whole kicked total, not the surcharge -- a kicked spell
+/// is a spell cast for more mana with different instructions, which is what
+/// an alternative cast already models. The caller supplies the printed
+/// reminder text, because that text names the surcharge instead.
+#[must_use]
+pub const fn kicker(
+    mana_cost: ManaCost,
+    stack_text: &'static str,
+    targets: &'static [AbilityTargetDef],
+    effect: EffectDef,
+) -> AbilityDef {
+    AbilityDef::alternative_cast_with_targets(
+        mana_cost,
+        AlternativeCastKindDef::Kicked,
+        Some(stack_text),
+        targets,
+        effect,
+    )
+}
+
 /// A Bloodrush ability activated from the card carrying it in hand. The
 /// mechanic always discards that card in addition to paying its mana cost;
 /// the card supplies its exact rules text, target declaration, and effect.

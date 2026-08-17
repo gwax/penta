@@ -722,7 +722,11 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             AlternativeCastKindDef::Flashback | AlternativeCastKindDef::Miracle => {
                 effect == EffectDef::None
             }
-            AlternativeCastKindDef::Overload => shared_stack_effect(effect),
+            // Both carry the instructions the modified spell resolves with,
+            // so both have to be effects the shared runtime can execute.
+            AlternativeCastKindDef::Overload | AlternativeCastKindDef::Kicked => {
+                shared_stack_effect(effect)
+            }
         },
         DeclarativeAbilityDef::Keyword(keyword) => shared_keyword(keyword),
         DeclarativeAbilityDef::SpecialAction(_) | DeclarativeAbilityDef::Legacy => false,

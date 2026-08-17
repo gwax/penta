@@ -2,12 +2,12 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt,
-    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    PlayerRelation, TopCardSelectionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardType, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 static FACT_OR_FICTION_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
     EffectDef::MoveToZone {
@@ -79,6 +79,116 @@ pub(in crate::card::sets) static OPT: CardRecord = CardRecord::new(
     )),
 );
 
+/// Prohibit targets any spell and then asks how big it was, so a five-drop
+/// can be named and simply survives. Both halves share the target; only the
+/// ceiling moves.
+static TARGET_SPELL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Spell,
+        zones: &[ZoneKind::Stack],
+        controller: None,
+        owner: None,
+    },
+)];
+
+static COUNTER_TARGET_SPELL: EffectDef = EffectDef::Counter {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    zone: ZoneKind::Graveyard,
+};
+
+static SMALL_ENOUGH_TO_COUNTER: TriggerConditionDef = TriggerConditionDef::TargetMatches {
+    slot: TargetIndex::PRIMARY,
+    object: ObjectPredicateDef::ManaValueAtMost(2),
+};
+
+static BIG_ENOUGH_TO_COUNTER_KICKED: TriggerConditionDef = TriggerConditionDef::TargetMatches {
+    slot: TargetIndex::PRIMARY,
+    object: ObjectPredicateDef::ManaValueAtMost(4),
+};
+
+static PROHIBIT_UNKICKED: EffectDef = EffectDef::IfCondition {
+    condition: &SMALL_ENOUGH_TO_COUNTER,
+    then: &COUNTER_TARGET_SPELL,
+};
+
+static PROHIBIT_KICKED: EffectDef = EffectDef::IfCondition {
+    condition: &BIG_ENOUGH_TO_COUNTER_KICKED,
+    then: &COUNTER_TARGET_SPELL,
+};
+
+// INV 67 — Prohibit
+pub(in crate::card::sets) static PROHIBIT: CardRecord = CardRecord::new(
+    cards::PROHIBIT,
+    "Prohibit",
+    CardArt::new("0daa5458-2a97-40d0-b18d-2381a7a68ee1", "Adam Rex"),
+    CardSet::Invasion,
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Counter target spell if its mana value is 2 or less.",
+            &TARGET_SPELL,
+            PROHIBIT_UNKICKED,
+        ),
+        abilities::kicker(
+            mana_cost!("{3}{U}"),
+            "Counter target spell if its mana value is 4 or less.",
+            &TARGET_SPELL,
+            PROHIBIT_KICKED,
+        ),
+    ]),
+);
+
+static TARGET_ARTIFACT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+)];
+
+static DESTROY_TARGET_ARTIFACT: EffectDef = EffectDef::Destroy {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    can_regenerate: true,
+};
+
+static ARTIFACT_SMALL_ENOUGH: TriggerConditionDef = TriggerConditionDef::TargetMatches {
+    slot: TargetIndex::PRIMARY,
+    object: ObjectPredicateDef::ManaValueAtMost(2),
+};
+
+static ARTIFACT_SMALL_ENOUGH_KICKED: TriggerConditionDef = TriggerConditionDef::TargetMatches {
+    slot: TargetIndex::PRIMARY,
+    object: ObjectPredicateDef::ManaValueAtMost(5),
+};
+
+static OVERLOAD_UNKICKED: EffectDef = EffectDef::IfCondition {
+    condition: &ARTIFACT_SMALL_ENOUGH,
+    then: &DESTROY_TARGET_ARTIFACT,
+};
+
+static OVERLOAD_KICKED: EffectDef = EffectDef::IfCondition {
+    condition: &ARTIFACT_SMALL_ENOUGH_KICKED,
+    then: &DESTROY_TARGET_ARTIFACT,
+};
+
+// INV 157 — Overload
+pub(in crate::card::sets) static OVERLOAD: CardRecord = CardRecord::new(
+    cards::OVERLOAD,
+    "Overload",
+    CardArt::new("c91fca91-7296-422e-b251-d571b710ff71", "Gary Ruddell"),
+    CardSet::Invasion,
+    // One mana answers a Lotus Petal or a Cursed Scroll; three answers most
+    // of what a Premodern deck actually plays.
+    CardRules::new_instant(mana_cost!("{R}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Destroy target artifact if its mana value is 2 or less.",
+            &TARGET_ARTIFACT,
+            OVERLOAD_UNKICKED,
+        ),
+        abilities::kicker(
+            mana_cost!("{2}{R}"),
+            "Destroy target artifact if its mana value is 5 or less.",
+            &TARGET_ARTIFACT,
+            OVERLOAD_KICKED,
+        ),
+    ]),
+);
+
 // INV 317 — Tsabo's Web
 pub(in crate::card::sets) static TSABOS_WEB: CardRecord = CardRecord::new(
     cards::TSABOS_WEB,
@@ -126,7 +236,13 @@ pub(in crate::card::sets) static COASTAL_TOWER: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&FACT_OR_FICTION, &OPT, &TSABOS_WEB, &COASTAL_TOWER];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &FACT_OR_FICTION,
+    &OPT,
+    &PROHIBIT,
+    &OVERLOAD,
+    &TSABOS_WEB,
+    &COASTAL_TOWER,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

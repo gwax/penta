@@ -346,12 +346,24 @@ impl AbilityDef {
         stack_text: Option<&'static str>,
         effect: EffectDef,
     ) -> Self {
+        Self::alternative_cast_with_targets(mana_cost, kind, stack_text, &[], effect)
+    }
+
+    #[must_use]
+    pub const fn alternative_cast_with_targets(
+        mana_cost: ManaCost,
+        kind: AlternativeCastKindDef,
+        stack_text: Option<&'static str>,
+        targets: &'static [AbilityTargetDef],
+        effect: EffectDef,
+    ) -> Self {
         Self::defined(
             kind.label(),
             DeclarativeAbilityDef::AlternativeCast(AlternativeCastAbilityDef {
                 mana_cost: AlternativeCastManaCostDef::Fixed(mana_cost),
                 kind,
                 stack_text,
+                targets,
             }),
             effect,
         )
@@ -372,6 +384,7 @@ impl AbilityDef {
                 mana_cost: AlternativeCastManaCostDef::ThisCardManaCost,
                 kind,
                 stack_text,
+                targets: &[],
             }),
             effect,
         )

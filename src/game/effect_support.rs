@@ -709,19 +709,28 @@ impl Game {
                     object: predicate,
                 } => object.is_some_and(|(stack, scoped, _)| {
                     Self::chosen_targets(stack, scoped.target_slot(*slot)).any(|target| {
-                        matches!(target, Target::Permanent(id)
-                        if self
-                            .battlefield
-                            .iter()
-                            .find(|permanent| permanent.card.id == id)
-                            .is_some_and(|permanent| {
-                                self.trigger_object_matches(
-                                    *predicate,
-                                    &self.trigger_event_object(permanent),
-                                    source,
-                                    false,
-                                )
-                            }))
+                        // A target is a permanent or a spell depending on
+                        // what the slot names, and "if its mana value is 2 or
+                        // less" is asked of either -- Prohibit reads a spell
+                        // on the stack where Overload reads a permanent.
+                        let matched = match target {
+                            Target::Permanent(id) => self
+                                .battlefield
+                                .iter()
+                                .find(|permanent| permanent.card.id == id)
+                                .map(|permanent| self.trigger_event_object(permanent)),
+                            Target::Spell(id) => self
+                                .stack
+                                .iter()
+                                .find(|candidate| candidate.id == id)
+                                .and_then(|candidate| self.stack_trigger_event_object(candidate)),
+                            // A card in a hidden zone has no continuous
+                            // effects to read; nothing targets one this way.
+                            Target::Player(_) | Target::Card(_) => None,
+                        };
+                        matched.is_some_and(|matched| {
+                            self.trigger_object_matches(*predicate, &matched, source, false)
+                        })
                     })
                 }),
                 TriggerConditionDef::SourceDealtDamageToOpponentThisTurn => self

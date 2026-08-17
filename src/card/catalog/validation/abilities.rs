@@ -320,9 +320,8 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
         DeclarativeAbilityDef::SpecialAction(special_action) => {
             (Some(special_action.source_zones), &[][..], false)
         }
-        DeclarativeAbilityDef::AlternativeCast(_)
-        | DeclarativeAbilityDef::Keyword(_)
-        | DeclarativeAbilityDef::Legacy => (None, &[][..], false),
+        DeclarativeAbilityDef::AlternativeCast(alternative) => (None, alternative.targets, false),
+        DeclarativeAbilityDef::Keyword(_) | DeclarativeAbilityDef::Legacy => (None, &[][..], false),
     };
 
     if source_zones.is_some_and(<[ZoneKind]>::is_empty) {

@@ -522,6 +522,11 @@ pub struct AlternativeCastAbilityDef {
     /// Rules text for the spell as modified by this alternative, when the
     /// procedure changes its visible instructions (as overload does).
     pub stack_text: Option<&'static str>,
+    /// What the modified spell targets. Overload replaces "target" with
+    /// "each" and so declares none, but a kicked spell targets exactly what
+    /// the unkicked one does -- and the clause carries its own instructions,
+    /// so it has to declare the slots those instructions read.
+    pub targets: &'static [AbilityTargetDef],
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -531,6 +536,12 @@ pub enum AlternativeCastKindDef {
     /// Cast from hand only in the window opened by drawing the card, as the
     /// first card drawn that turn.
     Miracle,
+    /// Cast from hand with its kicker paid. A kicker is printed as an
+    /// optional additional cost, but the kicked spell is exactly a spell cast
+    /// for the printed cost plus the kicker with a different set of
+    /// instructions -- which is what an alternative cast already is, so the
+    /// mana cost here is the whole kicked total rather than the surcharge.
+    Kicked,
 }
 
 /// How an alternative-casting ability determines the cost it supplies.
@@ -561,6 +572,7 @@ impl AlternativeCastKindDef {
             Self::Flashback => "Flashback",
             Self::Overload => "Overload",
             Self::Miracle => "Miracle",
+            Self::Kicked => "Kicker",
         }
     }
 }
@@ -596,6 +608,14 @@ impl AlternativeCastAbilityDef {
                 AlternativeCastKindDef::Miracle,
                 AlternativeCastManaCostDef::ThisCardManaCost,
             ) => "Miracle—the miracle cost is equal to this card's mana cost. (You may cast this card for its miracle cost when you draw it if it's the first card you drew this turn.)".into(),
+            // The printed reminder names the surcharge, but the cost carried
+            // here is the kicked total, so the card supplies its own text.
+            (AlternativeCastKindDef::Kicked, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
+                format!("Kicked, for {mana_cost} in total")
+            }
+            (AlternativeCastKindDef::Kicked, AlternativeCastManaCostDef::ThisCardManaCost) => {
+                "Kicked".into()
+            }
         }
     }
 

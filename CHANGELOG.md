@@ -40,6 +40,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A condition reading a target's characteristics never saw a spell.** It
+  matched permanents on the battlefield and nothing else, so "counter target
+  spell if its mana value is 2 or less" would have been false for every spell
+  ever targeted. Nothing shipped depended on it; Prohibit is the first card
+  that asks.
+
 - **An ability activated from the graveyard could not name its own card.** A
   source reference always resolved to a permanent, so a graveyard-source
   clause that said "return this card to your hand" found nothing on the
@@ -138,6 +144,12 @@ distinguishes snapshots of the covered source and build inputs.
   the draw, and the cycled card is already in the graveyard when it does.
   Akroma's Vengeance, Secluded Steppe, Eternal Dragon, and Gempalm
   Incinerator.
+
+- **Kicker.** A kicked spell is a spell cast for more mana with different
+  instructions, which is what an alternative cast already models -- so kicker
+  is one, carrying the whole kicked total rather than the surcharge. Overload
+  and Prohibit, both of which target first and ask how big the thing was
+  afterwards, so a too-large target is named legally and simply survives.
 
 - **A mana ability can sacrifice another permanent.** "Sacrifice a Goblin:
   Add {R}" is a choice of which Goblin, and a mana ability never holds

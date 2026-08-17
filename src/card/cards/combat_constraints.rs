@@ -226,3 +226,5 @@ pub const ETERNAL_DRAGON: CardDefinitionId = CardDefinitionId(2025);
 pub const GEMPALM_INCINERATOR: CardDefinitionId = CardDefinitionId(2026);
 pub const GOBLIN_RINGLEADER: CardDefinitionId = CardDefinitionId(2027);
 pub const SKIRK_PROSPECTOR: CardDefinitionId = CardDefinitionId(2028);
+pub const OVERLOAD: CardDefinitionId = CardDefinitionId(2029);
+pub const PROHIBIT: CardDefinitionId = CardDefinitionId(2030);
