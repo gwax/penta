@@ -201,7 +201,7 @@ fn validate_object_set_shape(
         ObjectSetDef::LegalTargets(target) => {
             validate_target_projection(target, targets, RecipientExpectation::Object)
         }
-        ObjectSetDef::Binding(_) => Ok(()),
+        ObjectSetDef::Binding(_) | ObjectSetDef::BottomOfGraveyard(_) => Ok(()),
     }
 }
 
@@ -468,7 +468,11 @@ fn recipient_may_name_nonbattlefield_object(
             .iter()
             .any(|zone| *zone != ZoneKind::Battlefield),
         EffectRecipientSetDef::Objects(
-            ObjectSetDef::One(ObjectRefDef::Binding(_)) | ObjectSetDef::Binding(_),
+            ObjectSetDef::One(ObjectRefDef::Binding(_))
+            | ObjectSetDef::Binding(_)
+            // A graveyard is not the battlefield, which is the whole point of
+            // naming its bottom card.
+            | ObjectSetDef::BottomOfGraveyard(_),
         ) => true,
         EffectRecipientSetDef::Objects(ObjectSetDef::One(ObjectRefDef::TriggeringObject)) => {
             triggering_object_zone != Some(ZoneKind::Battlefield)
@@ -513,7 +517,9 @@ fn recipient_nonbattlefield_zones_support_flashback(
             )
         }
         EffectRecipientSetDef::Objects(
-            ObjectSetDef::One(ObjectRefDef::Binding(_)) | ObjectSetDef::Binding(_),
+            ObjectSetDef::One(ObjectRefDef::Binding(_))
+            | ObjectSetDef::Binding(_)
+            | ObjectSetDef::BottomOfGraveyard(_),
         ) => false,
         EffectRecipientSetDef::Objects(
             ObjectSetDef::One(

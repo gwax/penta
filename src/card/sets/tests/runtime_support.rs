@@ -94,6 +94,7 @@ pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
         | EffectRecipientSetDef::Objects(
             ObjectSetDef::One(_)
             | ObjectSetDef::Binding(_)
+            | ObjectSetDef::BottomOfGraveyard(_)
             | ObjectSetDef::LegalTargets(_)
             | ObjectSetDef::SharingNameWith(_),
         )

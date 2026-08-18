@@ -548,6 +548,7 @@ fn static_object_set_supported(objects: ObjectSetDef) -> bool {
             | ObjectRefDef::TriggeringObject,
         )
         | ObjectSetDef::Binding(_)
+        | ObjectSetDef::BottomOfGraveyard(_)
         | ObjectSetDef::SharingNameWith(_) => false,
     }
 }

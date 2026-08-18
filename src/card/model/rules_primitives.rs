@@ -49,10 +49,13 @@ pub enum CounterKind {
     /// Gemstone Mine's counter, which counts how much the land has left to
     /// give: it enters with three and spends itself dry.
     Mining,
+    /// Powder Keg's counter, which is both its timer and its dial: how many
+    /// have accumulated is exactly the mana value it goes off on.
+    Fuse,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 21;
+    pub const COUNT: usize = 22;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -76,6 +79,7 @@ impl CounterKind {
         Self::Wind,
         Self::Storage,
         Self::Mining,
+        Self::Fuse,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -104,7 +108,8 @@ impl CounterKind {
             | Self::Corpse
             | Self::Wind
             | Self::Storage
-            | Self::Mining => (0, 0),
+            | Self::Mining
+            | Self::Fuse => (0, 0),
         }
     }
 
@@ -132,6 +137,7 @@ impl CounterKind {
             Self::Wind => 18,
             Self::Storage => 19,
             Self::Mining => 20,
+            Self::Fuse => 21,
         }
     }
 
@@ -159,6 +165,7 @@ impl CounterKind {
             Self::Wind => "wind",
             Self::Storage => "storage",
             Self::Mining => "mining",
+            Self::Fuse => "fuse",
         }
     }
 }

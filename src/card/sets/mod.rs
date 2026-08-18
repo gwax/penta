@@ -181,6 +181,11 @@ const SET_MODULES: &[SetModule] = &[
         y1999::urzas_legacy::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::UrzasDestiny,
+        y1999::urzas_destiny::CARDS,
+        y1999::urzas_destiny::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::MercadianMasques,
         y1999::mercadian_masques::CARDS,
         y1999::mercadian_masques::ADDITIONAL_PRINTINGS,

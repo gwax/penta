@@ -665,6 +665,7 @@ mod premodern_goblins;
 mod premodern_hosers;
 mod premodern_kicker;
 mod premodern_lands;
+mod premodern_landstill;
 mod premodern_library_selection;
 mod premodern_permanents;
 mod premodern_pyrokinesis;

@@ -6,8 +6,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardRules, CardSet,
     CardType, CounterKind, EffectDef, EffectPaymentDef, EffectRecipientDef, ObjectPredicateDef,
-    PayOrDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef,
-    TriggerEventDef, ZoneKind,
+    ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -97,6 +97,71 @@ pub(in crate::card::sets) static GOBLIN_VANDAL: CardRecord = CardRecord::new(
     ),
 );
 
+/// Any card in any graveyard, which is what the sacrifice mode reaches. The
+/// tap mode needs no target beyond the player, because a graveyard has only
+/// one bottom card.
+static A_CARD_IN_A_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Any,
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: None,
+    },
+)];
+
+static A_PLAYER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+static FURNACE_EXILE_AND_DRAW: EffectDef = EffectDef::Sequence(&[
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        zone: ZoneKind::Exile,
+        controller: None,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+]);
+
+// WTH 155 — Phyrexian Furnace
+pub(in crate::card::sets) static PHYREXIAN_FURNACE: CardRecord = CardRecord::new(
+    cards::PHYREXIAN_FURNACE,
+    "Phyrexian Furnace",
+    CardArt::new("e98bca31-a1f4-4d9e-bbb8-fd9b6f4d2b91", "George Pratt"),
+    CardSet::Weatherlight,
+    // The tap mode eats a graveyard from the bottom, one card a turn; the
+    // sacrifice mode answers the one card that actually mattered.
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{T}: Exile the bottom card of target player's graveyard.",
+            &[AbilityCostDef::TapSource],
+            &A_PLAYER,
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::objects(ObjectSetDef::BottomOfGraveyard(
+                    PlayerRefDef::Target(TargetIndex::PRIMARY),
+                )),
+                zone: ZoneKind::Exile,
+                controller: None,
+                placement: ZonePlacement::Top,
+                arrival_effect: None,
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{1}, Sacrifice this artifact: Exile target card from a graveyard. Draw a card.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}")),
+                AbilityCostDef::SacrificeSource,
+            ],
+            &A_CARD_IN_A_GRAVEYARD,
+            FURNACE_EXILE_AND_DRAW,
+        ),
+    ]),
+);
+
 // WTH 164 — Gemstone Mine
 pub(in crate::card::sets) static GEMSTONE_MINE: CardRecord = CardRecord::new(
     cards::GEMSTONE_MINE,
@@ -133,7 +198,11 @@ static GEMSTONE_MINE_COSTS: [AbilityCostDef; 2] = [
     },
 ];
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&AURA_OF_SILENCE, &GOBLIN_VANDAL, &GEMSTONE_MINE];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &AURA_OF_SILENCE,
+    &GOBLIN_VANDAL,
+    &PHYREXIAN_FURNACE,
+    &GEMSTONE_MINE,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

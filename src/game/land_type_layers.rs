@@ -429,6 +429,7 @@ impl Game {
                 )
                 | ObjectSetDef::Binding(_)
                 | ObjectSetDef::LegalTargets(_)
+                | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::SharingNameWith(_),
             )
             | EffectRecipientSetDef::Players(_) => false,

@@ -124,6 +124,7 @@ impl Game {
                     ObjectSetDef::Binding(_)
                     | ObjectSetDef::LegalTargets(_)
                     | ObjectSetDef::Query(_)
+                    | ObjectSetDef::BottomOfGraveyard(_)
                     | ObjectSetDef::SharingNameWith(_),
                 ) => false,
                 EffectRecipientSetDef::Players(players) => {

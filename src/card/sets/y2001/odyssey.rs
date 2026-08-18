@@ -195,4 +195,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CEPHALID_COLISEUM,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
+    PrintingRecord::reprint(&crate::card::sets::y2012::return_to_ravnica::SYNCOPATE), // ODY 103
+];

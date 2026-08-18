@@ -1,6 +1,7 @@
 //! Card sets first released in 1999.
 
 pub(super) mod mercadian_masques;
+pub(super) mod urzas_destiny;
 pub(super) mod urzas_legacy;
 
 pub(super) use super::{CardRecord, PrintingRecord};

@@ -290,6 +290,14 @@ impl Game {
             ObjectSetDef::SharingNameWith(reference) => {
                 self.objects_sharing_name_with_reference(reference, object, context, scoped)
             }
+            // The front of the vector is the oldest card, which is the one at
+            // the bottom of the pile.
+            ObjectSetDef::BottomOfGraveyard(player) => self
+                .player_reference(player, object, context, scoped)
+                .and_then(|player| self.players[player.index()].graveyard.first())
+                .map(|card| Target::Card(card.id))
+                .into_iter()
+                .collect(),
         }
     }
 }

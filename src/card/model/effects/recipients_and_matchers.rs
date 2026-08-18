@@ -57,6 +57,10 @@ pub enum ObjectSetDef {
     /// Every battlefield permanent sharing the referenced object's effective
     /// name, including the referenced object itself.
     SharingNameWith(ObjectRefDef),
+    /// The oldest card in a player's graveyard, which is what "the bottom
+    /// card of target player's graveyard" names. Nothing is chosen: a
+    /// graveyard has one bottom card, and an empty one has none.
+    BottomOfGraveyard(PlayerRefDef),
 }
 
 /// The typed subject of an effect. A target slot remains its own category
@@ -132,6 +136,7 @@ impl EffectRecipientDef {
             EffectRecipientSetDef::LegalTargets(_)
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::Binding(_)
+                | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::Query(_)
                 | ObjectSetDef::SharingNameWith(_),
@@ -148,6 +153,7 @@ impl EffectRecipientDef {
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::One(_)
                 | ObjectSetDef::Binding(_)
+                | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::SharingNameWith(_),
             )
