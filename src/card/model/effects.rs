@@ -207,6 +207,14 @@ pub enum EffectPaymentCostDef {
     /// go is a separate decision queued behind the payment, because by then
     /// the branch has already been settled.
     Discard(u16),
+    /// Discard one card the predicate matches. Mox Diamond's "you may discard
+    /// a land card instead" is a real restriction, so a hand with nothing
+    /// matching cannot pay at all even though it holds plenty of cards.
+    ///
+    /// Which card goes is part of this decision rather than a second one
+    /// behind it: each candidate is its own option, the way a mana ability
+    /// that sacrifices a permanent offers one activation per candidate.
+    DiscardMatching(ObjectPredicateDef),
 }
 
 /// A payment offered while an effect or replacement procedure resolves.

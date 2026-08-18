@@ -244,7 +244,7 @@ fn parse_continuation(
         }
         DecisionContinuationSnapshot::PayOr {
             player: payer,
-            payment,
+            payment: payment_snapshot,
             object,
             ability,
             context,
@@ -254,7 +254,6 @@ fn parse_continuation(
             if payer != observation.player {
                 return Err("pay-or payer disagrees with the visible decision".into());
             }
-            let payment = parse_resolved_effect_payment(payment)?;
             let object = Box::new(parse_detached_stack(object, game)?);
             let context = parse_effect_resolution_context(context.clone())?;
             if !ability_locator_matches_origin(ability, &object) {
@@ -265,10 +264,15 @@ fn parse_continuation(
             let EffectDef::PayOr(authored) = scoped.effect else {
                 return Err("pay-or locator does not identify an optional payment".into());
             };
-            let expected =
+            let (expected_payer, payment) =
                 resolved_effect_payment(game, authored.payment, &object, &context, scoped)
                     .ok_or("pay-or authored payment no longer has exactly one payer")?;
-            if expected != (payer, payment) {
+            // Compared as snapshots, and kept as the authored value: a
+            // payment that names a predicate cannot be rebuilt from the
+            // checkpoint alone, and the authored effect is what defines it.
+            if expected_payer != payer
+                || resolved_effect_payment_snapshot(payment) != *payment_snapshot
+            {
                 return Err("pay-or payer or payment disagrees with its authored effect".into());
             }
             let can_pay = game.can_pay_effect_payment(payer, payment);
@@ -279,7 +283,7 @@ fn parse_continuation(
                     "pay-or checkpoint encodes a choice that would resolve automatically".into(),
                 );
             }
-            let options = payment_decision_options(payment, can_pay, "Decline");
+            let options = payment_decision_options(game, payer, payment, can_pay, "Decline");
             validate_authored_decision(
                 observation,
                 payer,
@@ -388,7 +392,7 @@ fn parse_continuation(
         DecisionContinuationSnapshot::BattlefieldEntryPayment {
             context,
             player: payer,
-            payment,
+            payment: payment_snapshot,
             effect,
         } => {
             let context = parse_replacement_context(*context)?;
@@ -399,20 +403,28 @@ fn parse_continuation(
                 return Err("battlefield entry payment locator is not an optional payment".into());
             };
             let payer = player(*payer)?;
-            let payment = parse_resolved_effect_payment(payment)?;
             let pending = game
                 .pending_events
                 .front()
                 .ok_or("battlefield entry payment lacks its pending event")?;
+            let authored = game.pending_resolved_payment(
+                pending,
+                context,
+                match definition {
+                    ReplacementEffectDef::PayOr { payment, .. } => payment,
+                    _ => unreachable!(),
+                },
+            );
+            let Some((authored_payer, payment)) = authored else {
+                return Err(
+                    "battlefield entry payer or payment disagrees with its authored effect".into(),
+                );
+            };
+            // As above: snapshots decide agreement, and the authored payment
+            // is the one restored.
             if payer != observation.player
-                || game.pending_resolved_payment(
-                    pending,
-                    context,
-                    match definition {
-                        ReplacementEffectDef::PayOr { payment, .. } => payment,
-                        _ => unreachable!(),
-                    },
-                ) != Some((payer, payment))
+                || authored_payer != payer
+                || resolved_effect_payment_snapshot(payment) != *payment_snapshot
             {
                 return Err(
                     "battlefield entry payer or payment disagrees with its authored effect".into(),
@@ -423,7 +435,7 @@ fn parse_continuation(
             }
             let name = game.pending_entry_name(pending);
             let payment_label = Game::effect_payment_label(payment);
-            let options = payment_decision_options(payment, true, "Do not pay");
+            let options = payment_decision_options(game, payer, payment, true, "Do not pay");
             validate_authored_decision(
                 observation,
                 payer,

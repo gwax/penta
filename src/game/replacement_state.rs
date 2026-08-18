@@ -184,6 +184,10 @@ pub(super) struct PendingBattlefieldEntry {
     pub(super) permanent: Permanent,
     pub(super) from: ZoneKind,
     pub(super) completion: EntryCompletion,
+    /// Where this goes instead of the battlefield. Mox Diamond's unpaid entry
+    /// is the case: the permanent never arrives, so nothing about it enters,
+    /// and the card is put where the replacement sent it.
+    pub(super) redirected_to: Option<ZoneKind>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

@@ -40,4 +40,6 @@ pub(in crate::card::sets) static SYLVAN_SAFEKEEPER: CardRecord = CardRecord::new
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&SYLVAN_SAFEKEEPER];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
+    PrintingRecord::reprint(&crate::card::sets::y2012::dark_ascension::RAY_OF_REVELATION), // JUD 20
+];

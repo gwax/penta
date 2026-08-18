@@ -443,3 +443,216 @@ fn portent_draws_a_card_at_the_next_upkeep() {
         "the delayed draw arrives at the next upkeep",
     );
 }
+
+/// Casts Mox Diamond and returns the entry-payment decision it stops on.
+fn cast_mox_diamond(game: &mut Game) -> DecisionObservation {
+    let mox = card(10_000, cards::MOX_DIAMOND, PlayerId::One);
+    let mox_id = mox.id;
+    game.players[PlayerId::One.index()].hand.push(mox);
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(mox_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("a free artifact is castable");
+    pass_priority_pair(game);
+    game.observe(PlayerId::One)
+        .decision
+        .expect("Mox Diamond asks for its land")
+}
+
+fn on_battlefield(game: &Game, definition: CardDefinitionId) -> bool {
+    game.battlefield
+        .iter()
+        .any(|permanent| permanent.card.definition == definition)
+}
+
+#[test]
+fn mox_diamond_offers_each_land_in_hand_and_nothing_else() {
+    let mut game = ready_game();
+    game.players[PlayerId::One.index()].hand.clear();
+    let island = card(10_001, cards::ISLAND, PlayerId::One);
+    let island_id = island.id;
+    game.players[PlayerId::One.index()].hand.push(island);
+    game.players[PlayerId::One.index()].hand.push(card(
+        10_002,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
+
+    let decision = cast_mox_diamond(&mut game);
+    let paying: Vec<GameObjectId> = decision
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(card, _)| card))
+        .collect();
+    assert_eq!(
+        paying,
+        vec![island_id],
+        "the land can pay and the burn spell cannot",
+    );
+}
+
+#[test]
+fn discarding_a_land_keeps_the_mox() {
+    let mut game = ready_game();
+    game.players[PlayerId::One.index()].hand.clear();
+    let island = card(10_001, cards::ISLAND, PlayerId::One);
+    let island_id = island.id;
+    game.players[PlayerId::One.index()].hand.push(island);
+
+    let decision = cast_mox_diamond(&mut game);
+    let pay = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(card, _)| card == island_id))
+        .expect("the Island is offered")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![pay],
+        },
+    )
+    .expect("discarding the Island pays");
+    drain_pending(&mut game);
+
+    assert!(on_battlefield(&game, cards::MOX_DIAMOND), "the Mox entered");
+    assert!(
+        game.players[PlayerId::One.index()].hand.is_empty(),
+        "and the Island is gone",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::ISLAND),
+        "discarded to the graveyard",
+    );
+}
+
+/// Declining sends the Mox itself to the graveyard, which is the half that
+/// needs the entry to be replaced rather than undone.
+#[test]
+fn declining_puts_the_mox_in_the_graveyard() {
+    let mut game = ready_game();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.players[PlayerId::One.index()]
+        .hand
+        .push(card(10_001, cards::ISLAND, PlayerId::One));
+
+    let decision = cast_mox_diamond(&mut game);
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![0],
+        },
+    )
+    .expect("declining is always available");
+    drain_pending(&mut game);
+
+    assert!(
+        !on_battlefield(&game, cards::MOX_DIAMOND),
+        "an unpaid Mox never enters",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MOX_DIAMOND),
+        "it is in its owner's graveyard",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        1,
+        "and the Island stayed in hand",
+    );
+}
+
+/// A hand with no land cannot pay at all, so the Mox is not even asked about.
+#[test]
+fn a_landless_hand_is_never_offered_the_choice() {
+    let mut game = ready_game();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.players[PlayerId::One.index()].hand.push(card(
+        10_001,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
+
+    let mox = card(10_000, cards::MOX_DIAMOND, PlayerId::One);
+    let mox_id = mox.id;
+    game.players[PlayerId::One.index()].hand.push(mox);
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(mox_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("a free artifact is castable");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.observe(PlayerId::One).decision.is_none(),
+        "there is nothing to decide",
+    );
+    assert!(
+        !on_battlefield(&game, cards::MOX_DIAMOND),
+        "and the Mox goes straight to the graveyard",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MOX_DIAMOND),
+    );
+}
+
+/// The half the deck is actually paying for.
+#[test]
+fn a_mox_that_entered_taps_for_any_color() {
+    let mut game = ready_game();
+    game.players[PlayerId::One.index()].hand.clear();
+    let island = card(10_001, cards::ISLAND, PlayerId::One);
+    let island_id = island.id;
+    game.players[PlayerId::One.index()].hand.push(island);
+
+    let decision = cast_mox_diamond(&mut game);
+    let pay = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(card, _)| card == island_id))
+        .expect("the Island is offered")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![pay],
+        },
+    )
+    .expect("discarding the Island pays");
+    drain_pending(&mut game);
+
+    let mox = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::MOX_DIAMOND)
+        .expect("the Mox entered")
+        .card
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: mox,
+            ability: mana_ability_for(&game, mox, ManaColor::Green),
+            color: ManaColor::Green,
+            counters_removed: None,
+            cost_object: None,
+        },
+    )
+    .expect("the Mox taps for any color");
+    assert_eq!(game.players[PlayerId::One.index()].mana_pool.green, 1);
+}

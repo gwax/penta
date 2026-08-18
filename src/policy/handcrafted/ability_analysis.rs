@@ -419,6 +419,7 @@ impl HandcraftedPolicy {
                     | crate::card::EffectPaymentCostDef::Life(_)
                     | crate::card::EffectPaymentCostDef::Mill(_)
                     | crate::card::EffectPaymentCostDef::Discard(_)
+                    | crate::card::EffectPaymentCostDef::DiscardMatching(_)
                     | crate::card::EffectPaymentCostDef::ColoredMana { .. } => None,
                 };
                 payment_condition.or_else(|| {

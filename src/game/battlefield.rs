@@ -770,6 +770,7 @@ impl Game {
             permanent,
             from: ZoneKind::Graveyard,
             completion: EntryCompletion::None,
+            redirected_to: None,
         });
     }
 

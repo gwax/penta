@@ -26,6 +26,7 @@ fn arrive(game: &mut Game, id: u32, definition: CardDefinitionId, controller: Pl
         permanent: creature(id, definition, controller),
         from: ZoneKind::Hand,
         completion: EntryCompletion::None,
+        redirected_to: None,
     });
 }
 

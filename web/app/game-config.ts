@@ -59,6 +59,7 @@ export const formatConfigs: Record<FormatId, FormatConfig> = {
     // list becomes playable, so this registry grows rather than arriving whole.
     deckNotes: {
       Sligh: "1st · Neal Sacks · Mono-red aggro",
+      GAT: "2nd · Daniel Sondike · Threshold tempo",
       "RG Goblins": "7th · Andy Dominguez · Red-green Goblins",
     },
   },

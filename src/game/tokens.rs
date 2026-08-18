@@ -64,6 +64,7 @@ impl Game {
             permanent,
             from: ZoneKind::Stack,
             completion: EntryCompletion::AttachSource { source },
+            redirected_to: None,
         });
     }
 
@@ -96,6 +97,7 @@ impl Game {
             permanent,
             from: ZoneKind::Stack,
             completion: EntryCompletion::None,
+            redirected_to: None,
         });
     }
 }

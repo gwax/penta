@@ -103,7 +103,7 @@ pub(in crate::game::state_checkpoint) enum SpellFormSnapshot {
     Combined { part_ids: Vec<u8> },
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(in crate::game::state_checkpoint) struct ManaCostSnapshot {
     pub(in crate::game::state_checkpoint) generic: u16,

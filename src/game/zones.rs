@@ -152,6 +152,7 @@ impl Game {
             permanent,
             from: ZoneKind::Stack,
             completion: EntryCompletion::Setup,
+            redirected_to: None,
         });
         Ok(id)
     }
@@ -398,6 +399,7 @@ impl Game {
             permanent,
             from,
             completion: EntryCompletion::None,
+            redirected_to: None,
         });
         // The entry is committed here unless a replacement needs an answer
         // first, and committing mints a fresh identity -- the card that left

@@ -186,6 +186,7 @@ fn the_soul_draws_off_creature_cards_entering() {
             permanent: creature(10_100, definition, PlayerId::One),
             from: ZoneKind::Hand,
             completion: EntryCompletion::None,
+            redirected_to: None,
         });
         drain_accepting(&mut game);
         game.players[PlayerId::One.index()].hand.len() - before

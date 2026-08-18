@@ -1,11 +1,13 @@
 use super::{
-    CharacteristicSource, ColorSet, DecisionContinuation, DecisionKind, DecisionObservation,
-    DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
-    EffectResolutionContext, FORK_COPY_COLOR, Game, ManaCost, PendingDecision, PlayerId,
-    ResolvedEffectPayment, ScopedEffect, StackObject, Target, TargetSelection, TargetSlotId,
-    TriggerContext, ZoneMoveCause, flatten_target_selections, target_combinations,
+    CardInstance, CharacteristicContext, CharacteristicSource, ColorSet, DecisionContinuation,
+    DecisionKind, DecisionObservation, DecisionOption, DecisionPreference, DecisionVisibility,
+    DecisionZone, DeclarativeAbilityDef, EffectResolutionContext, FORK_COPY_COLOR, Game, ManaCost,
+    PendingDecision, PlayerId, ResolvedEffectPayment, ScopedEffect, StackObject, Target,
+    TargetSelection, TargetSlotId, TriggerContext, ZoneMoveCause, flatten_target_selections,
+    target_combinations,
 };
-use crate::card::ChoiceVisibilityDef;
+use crate::card::{ChoiceVisibilityDef, ObjectPredicateDef};
+use crate::ids::GameObjectId;
 
 pub(super) const fn effect_choice_visibility(
     visibility: ChoiceVisibilityDef,
@@ -79,24 +81,7 @@ impl Game {
             self.resolve_effect_def(effect, object, context);
             return;
         }
-        let mut options = vec![DecisionOption {
-            id: 0,
-            label: "Decline".into(),
-            card: None,
-            members: Vec::new(),
-            ability_text: None,
-            zone: DecisionZone::None,
-        }];
-        if can_pay {
-            options.push(DecisionOption {
-                id: 1,
-                label: Self::effect_payment_label(payment),
-                card: None,
-                members: Vec::new(),
-                ability_text: None,
-                zone: DecisionZone::None,
-            });
-        }
+        let options = self.payment_options(player, payment, can_pay, "Decline");
         self.queue_decision(
             player,
             object.ability_text().unwrap_or("Pay the cost?"),
@@ -115,6 +100,35 @@ impl Game {
                 otherwise,
             },
         );
+    }
+
+    /// Applies a payment decision's answer: option zero declines, and every
+    /// other option is a way of paying. Only a matching discard has more than
+    /// one, and its option carries the card that goes.
+    pub(super) fn settle_payment_decision(
+        &mut self,
+        player: PlayerId,
+        payment: ResolvedEffectPayment,
+        answered: &[u32],
+        options: &[DecisionOption],
+    ) -> bool {
+        let Some(chosen) = answered.iter().copied().find(|option| *option != 0) else {
+            return false;
+        };
+        match payment {
+            ResolvedEffectPayment::DiscardMatching(predicate) => {
+                let Some(card) = options
+                    .iter()
+                    .find(|option| option.id == chosen)
+                    .and_then(|option| option.card)
+                    .map(|(card, _)| card)
+                else {
+                    return false;
+                };
+                self.pay_matching_discard(player, predicate, card)
+            }
+            payment => chosen == 1 && self.pay_effect_payment(player, payment),
+        }
     }
 
     pub(super) fn can_pay_effect_payment(
@@ -136,7 +150,92 @@ impl Game {
             ResolvedEffectPayment::Discard(amount) => {
                 self.players[player.index()].hand.len() >= usize::from(amount)
             }
+            // A hand full of spells cannot pay for a land, which is the whole
+            // difference between this and the count above.
+            ResolvedEffectPayment::DiscardMatching(predicate) => {
+                !self.matching_cards_in_hand(player, predicate).is_empty()
+            }
         }
+    }
+
+    /// The payer's own cards that a payment predicate matches, in hand order.
+    /// This is the candidate list a payment decision offers and the one its
+    /// checkpoint rebuilds, so both read it from the same place.
+    pub(super) fn matching_cards_in_hand(
+        &self,
+        player: PlayerId,
+        predicate: ObjectPredicateDef,
+    ) -> Vec<CardInstance> {
+        self.players[player.index()]
+            .hand
+            .iter()
+            .filter(|card| {
+                self.printed_trigger_event_object(
+                    card.id,
+                    card.definition,
+                    player,
+                    &CharacteristicContext::Hand,
+                )
+                .is_some_and(|object| {
+                    self.trigger_object_matches(predicate, &object, card.id, false)
+                })
+            })
+            .cloned()
+            .collect()
+    }
+
+    /// The options a payment decision offers: declining, and then one entry
+    /// per way of paying. Everything but a matching discard has exactly one
+    /// way, so it stays the single option it has always been.
+    pub(super) fn payment_options(
+        &self,
+        player: PlayerId,
+        payment: ResolvedEffectPayment,
+        can_pay: bool,
+        decline: &str,
+    ) -> Vec<DecisionOption> {
+        let mut options = vec![DecisionOption {
+            id: 0,
+            label: decline.into(),
+            card: None,
+            members: Vec::new(),
+            ability_text: None,
+            zone: DecisionZone::None,
+        }];
+        if !can_pay {
+            return options;
+        }
+        match payment {
+            ResolvedEffectPayment::DiscardMatching(predicate) => {
+                for (index, card) in self
+                    .matching_cards_in_hand(player, predicate)
+                    .into_iter()
+                    .enumerate()
+                {
+                    let name = self
+                        .catalog
+                        .get(card.definition)
+                        .map_or_else(|| "a card".to_string(), |card| card.name.clone());
+                    options.push(DecisionOption {
+                        id: u32::try_from(index + 1).unwrap_or(u32::MAX),
+                        label: format!("Discard {name}"),
+                        card: Some((card.id, card.definition)),
+                        members: Vec::new(),
+                        ability_text: None,
+                        zone: DecisionZone::Hand,
+                    });
+                }
+            }
+            payment => options.push(DecisionOption {
+                id: 1,
+                label: Self::effect_payment_label(payment),
+                card: None,
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::None,
+            }),
+        }
+        options
     }
 
     pub(super) fn pay_effect_payment(
@@ -165,7 +264,34 @@ impl Game {
                 i32::from(amount),
                 ZoneMoveCause::Effect { controller: player },
             ),
+            // Paid by [`Self::pay_matching_discard`], which knows which card
+            // was named. Reaching here means a caller lost that answer.
+            ResolvedEffectPayment::DiscardMatching(_) => return false,
         }
+        true
+    }
+
+    /// Pays a matching discard with the card the payer named. The card is
+    /// checked against the predicate again rather than trusted: the option
+    /// list was built before the decision was answered.
+    pub(super) fn pay_matching_discard(
+        &mut self,
+        player: PlayerId,
+        predicate: ObjectPredicateDef,
+        card: GameObjectId,
+    ) -> bool {
+        if !self
+            .matching_cards_in_hand(player, predicate)
+            .iter()
+            .any(|candidate| candidate.id == card)
+        {
+            return false;
+        }
+        self.discard_cards_with_cause(
+            player,
+            &[card],
+            ZoneMoveCause::Effect { controller: player },
+        );
         true
     }
 
@@ -175,6 +301,9 @@ impl Game {
             ResolvedEffectPayment::Life(amount) => format!("Pay {amount} life"),
             ResolvedEffectPayment::Mill(amount) => format!("Mill {amount} cards"),
             ResolvedEffectPayment::Discard(amount) => format!("Discard {amount} cards"),
+            // Every candidate carries its own label, so this one only names
+            // the prompt the decision is introduced with.
+            ResolvedEffectPayment::DiscardMatching(_) => "Discard a matching card".to_string(),
         }
     }
 

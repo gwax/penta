@@ -481,6 +481,9 @@ fn validate_entry_replacement_program(effect: ReplacementEffectDef) -> Result<()
     match effect {
         ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::Choose(_)
+        // Sending the entering card somewhere else instead, which is how an
+        // unpaid Mox Diamond reaches its owner's graveyard.
+        | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::CopyEntering { .. } => Ok(()),
         ReplacementEffectDef::Sequence(effects) => {
             if effects.is_empty() {
@@ -510,7 +513,6 @@ fn validate_entry_replacement_program(effect: ReplacementEffectDef) -> Result<()
             Ok(())
         }
         ReplacementEffectDef::ReplaceEventWithNothing
-        | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::Perform(_)
         | ReplacementEffectDef::MultiplyEventAmount(_) => Err(replacement_operation_name(effect)),
     }

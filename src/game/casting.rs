@@ -52,6 +52,7 @@ impl Game {
             permanent,
             from: ZoneKind::Hand,
             completion: EntryCompletion::LandPlayed { player },
+            redirected_to: None,
         });
     }
 

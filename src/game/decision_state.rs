@@ -1,8 +1,8 @@
 use crate::action::{ManaColor, Target};
 use crate::card::{
     BattlefieldEntryScalarChoiceDef, CardTypeSet, ColorChoiceOperationDef, ColorSet, EffectDef,
-    ManaCost, ObjectChoiceBindingDef, ReplacementEffectDef, TopCardSelectionDef, TurnKindDef,
-    ZoneKind, ZonePlacement,
+    ManaCost, ObjectChoiceBindingDef, ObjectPredicateDef, ReplacementEffectDef,
+    TopCardSelectionDef, TurnKindDef, ZoneKind, ZonePlacement,
 };
 use crate::casting::TargetSelection;
 use crate::ids::{CardDefinitionId, GameObjectId, ObjectSetBindingIndex, PlayerId};
@@ -49,6 +49,9 @@ pub(super) enum ResolvedEffectPayment {
     Life(u16),
     Mill(u16),
     Discard(u16),
+    /// One card matching the predicate, named as part of the payment
+    /// decision rather than after it.
+    DiscardMatching(ObjectPredicateDef),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

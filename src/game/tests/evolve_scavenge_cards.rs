@@ -59,6 +59,7 @@ fn experiment_one_spends_the_counters_evolve_banked() {
             ),
             from: ZoneKind::Hand,
             completion: EntryCompletion::None,
+            redirected_to: None,
         });
         drain_pending(&mut game);
     }

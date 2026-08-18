@@ -32,34 +32,24 @@ fn resolved_effect_payment(
         EffectPaymentCostDef::Discard(amount) => {
             super::super::ResolvedEffectPayment::Discard(amount)
         }
+        EffectPaymentCostDef::DiscardMatching(predicate) => {
+            super::super::ResolvedEffectPayment::DiscardMatching(predicate)
+        }
     };
     Some((*player, payment))
 }
 
+/// The same options the live game offers, built by the same code: a payment
+/// whose candidates come off the payer's hand cannot be checked against a
+/// second implementation of the list.
 fn payment_decision_options(
+    game: &Game,
+    player: PlayerId,
     payment: super::super::ResolvedEffectPayment,
     can_pay: bool,
     decline: &str,
 ) -> Vec<DecisionOption> {
-    let mut options = vec![DecisionOption {
-        id: 0,
-        label: decline.into(),
-        card: None,
-        members: Vec::new(),
-        ability_text: None,
-        zone: DecisionZone::None,
-    }];
-    if can_pay {
-        options.push(DecisionOption {
-            id: 1,
-            label: Game::effect_payment_label(payment),
-            card: None,
-            members: Vec::new(),
-            ability_text: None,
-            zone: DecisionZone::None,
-        });
-    }
-    options
+    game.payment_options(player, payment, can_pay, decline)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -129,7 +119,7 @@ fn validate_top_card_selection_observation(
     validate_authored_decision(
         observation,
         player,
-        "Choose cards from the top of the library",
+        Game::top_card_selection_prompt(selection),
         DecisionVisibility::Private,
         preference,
         minimum,

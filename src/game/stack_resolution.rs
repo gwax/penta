@@ -88,6 +88,7 @@ impl Game {
                     card: object.id,
                     definition,
                 },
+                redirected_to: None,
             });
             return;
         }

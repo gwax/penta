@@ -45,6 +45,7 @@ fn the_krasis_evolves_off_a_bigger_creature() {
             ),
             from: ZoneKind::Hand,
             completion: EntryCompletion::None,
+            redirected_to: None,
         });
         drain_pending(&mut game);
     }
@@ -179,6 +180,7 @@ fn emmara_covers_a_token_that_arrives_later() {
         permanent: creature(10_100, cards::HUMAN_TOKEN_1_1_WHITE, PlayerId::One),
         from: ZoneKind::Battlefield,
         completion: EntryCompletion::None,
+        redirected_to: None,
     });
     drain_pending(&mut game);
 

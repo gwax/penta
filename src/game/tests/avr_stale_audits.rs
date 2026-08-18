@@ -88,6 +88,7 @@ fn the_redeemer_gains_two_for_each_other_creature() {
         permanent: creature(10_200, cards::GOLDNIGHT_REDEEMER, PlayerId::One),
         from: ZoneKind::Hand,
         completion: EntryCompletion::None,
+        redirected_to: None,
     });
     drain_pending(&mut game);
 

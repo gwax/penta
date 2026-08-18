@@ -93,6 +93,7 @@ fn arrive(
         permanent: creature(id, definition, player),
         from: ZoneKind::Hand,
         completion: EntryCompletion::None,
+        redirected_to: None,
     });
     drain_pairing(game);
     game.battlefield
@@ -192,6 +193,7 @@ fn a_paired_forcemage_offers_nothing_on_a_later_arrival() {
         permanent: creature(10_200, cards::GRIZZLY_BEARS, PlayerId::One),
         from: ZoneKind::Hand,
         completion: EntryCompletion::None,
+        redirected_to: None,
     });
     for _ in 0..8 {
         if !game.pending_decisions.is_empty() {

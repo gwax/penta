@@ -11,16 +11,14 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 38 of them not yet cataloged
-- 2 lists registered and playable: Neal Sacks's Sligh and Andy Dominguez's RG
-  Goblins. Nothing in either is metadata-only or partial
+- 145 distinct cards across the tranche, 37 of them not yet cataloged
+- 3 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
+  and Andy Dominguez's RG Goblins. Nothing in any of them is metadata-only or
+  partial
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: GAT 1 card, Landstill 7, Stasis 7, BW Control 10, Replenish 11,
-Angry Hermit 12. GAT is one Mox Diamond short of registration; the discard it
-replaces its own entry with has to be restricted to a land card, and the
-payment vocabulary discards any card. A list is blocked only by uncataloged cards -- no staged deck
+together: Landstill 7, Stasis 7, BW Control 10, Replenish 11, Angry Hermit 12. A list is blocked only by uncataloged cards -- no staged deck
 contains a card that is cataloged but unplayable.
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -51,18 +49,20 @@ result and rebuild sampled Premodern positions from their observations.
 - Implement reusable mechanics before card-local behavior. Cycling and
   typecycling, flashback, split cards, tutors, alternative costs that exile a
   card from hand, and single-card reanimation are all in place. What the
-  remaining lists still need: a payment that discards a card matching a
-  predicate (Mox Diamond); fading (Parallax Wave); morph (Exalted Angel);
+  remaining lists still need: fading (Parallax Wave); morph (Exalted Angel);
   storm (Brain Freeze); countering an activated or triggered ability (Stifle);
   a mass graveyard-to-battlefield return (Replenish); and the layer rewrites
   Humility and Opalescence ask for. Naming a card and reading the name back,
-  arranging the top of a library, and spending a land's counters all landed
-  with the GAT tranche.
+  arranging the top of a library, spending a land's counters, and a payment
+  that discards a card matching a predicate all landed with the GAT tranche.
 - Audit the existing definitions against their Premodern Oracle text and
   interactions.
 - Promote each staged deck into the runtime registry only when every main-deck
-  card is playable and the sideboard has honest catalog coverage. RG Goblins and
-  Sligh are registered; the other six lists remain staged.
+  card is playable and the sideboard has honest catalog coverage. GAT, RG
+  Goblins, and Sligh are registered; the other five lists remain staged.
+  Registration is also what first checks a list against the format's set
+  window: promoting GAT is what found that seven of its cards were cataloged
+  only from printings outside it.
 - Keep the web deck notes in step with the registry as lists are promoted;
   `web/app/game-config.ts` and the deck names in `src/protocol/decks.rs` are
   checked against each other by the browser contract suite.
@@ -136,6 +136,7 @@ older unannotated definitions still require one):
 - `Mogg Salvage` — complete
 - `Monk Realist` — complete
 - `Mountain`
+- `Mox Diamond` — complete; an unpaid entry is replaced, not undone
 - `Naturalize` — complete
 - `Opt` — complete
 - `Overload` — complete
@@ -203,7 +204,6 @@ Not yet cataloged:
 - [ ] `Humility`
 - [ ] `Intuition`
 - [ ] `Krosan Reclamation`
-- [ ] `Mox Diamond`
 - [ ] `Opalescence`
 - [ ] `Parallax Wave`
 - [ ] `Phyrexian Dreadnought`

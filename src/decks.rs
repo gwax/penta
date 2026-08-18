@@ -164,6 +164,12 @@ pub mod premodern {
         "sligh_neal_sacks.yaml",
         "Returns Neal Sacks's Sligh list from the Sacred Torch Showdown."
     );
+    deck!(
+        gat,
+        "premodern",
+        "gat_daniel_sondike.yaml",
+        "Returns Daniel Sondike's GAT list from the Sacred Torch Showdown."
+    );
 }
 
 /// Built-in Eternal Central Old School 93/94 decklists.
@@ -581,6 +587,7 @@ mod tests {
         for build in [
             super::premodern::rg_goblins as fn() -> crate::Deck,
             super::premodern::sligh,
+            super::premodern::gat,
         ] {
             let deck = build();
             assert_eq!(deck.main.len(), 60);

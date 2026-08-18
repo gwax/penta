@@ -670,25 +670,6 @@ pub(super) fn mana_cost_snapshot(cost: ManaCost) -> ManaCostSnapshot {
     }
 }
 
-pub(super) fn parse_mana_cost(value: &ManaCostSnapshot) -> Result<ManaCost, String> {
-    if value.hybrid.len() != crate::HybridPair::COUNT {
-        return Err("mana cost hybrid vector has the wrong length".into());
-    }
-    let mut hybrid = [0; crate::HybridPair::COUNT];
-    hybrid.copy_from_slice(&value.hybrid);
-    Ok(ManaCost {
-        generic: value.generic,
-        white: value.white,
-        blue: value.blue,
-        black: value.black,
-        red: value.red,
-        green: value.green,
-        hybrid,
-        variable_x: value.variable_x,
-        x_multiplier: value.x_multiplier,
-    })
-}
-
 pub(super) fn resolved_effect_payment_snapshot(
     payment: ResolvedEffectPayment,
 ) -> ResolvedEffectPaymentSnapshot {
@@ -699,20 +680,8 @@ pub(super) fn resolved_effect_payment_snapshot(
         ResolvedEffectPayment::Life(amount) => ResolvedEffectPaymentSnapshot::Life(amount),
         ResolvedEffectPayment::Mill(amount) => ResolvedEffectPaymentSnapshot::Mill(amount),
         ResolvedEffectPayment::Discard(amount) => ResolvedEffectPaymentSnapshot::Discard(amount),
+        ResolvedEffectPayment::DiscardMatching(_) => ResolvedEffectPaymentSnapshot::DiscardMatching,
     }
-}
-
-pub(super) fn parse_resolved_effect_payment(
-    payment: &ResolvedEffectPaymentSnapshot,
-) -> Result<ResolvedEffectPayment, String> {
-    Ok(match payment {
-        ResolvedEffectPaymentSnapshot::Mana(cost) => {
-            ResolvedEffectPayment::Mana(parse_mana_cost(cost)?)
-        }
-        ResolvedEffectPaymentSnapshot::Life(amount) => ResolvedEffectPayment::Life(*amount),
-        ResolvedEffectPaymentSnapshot::Mill(amount) => ResolvedEffectPayment::Mill(*amount),
-        ResolvedEffectPaymentSnapshot::Discard(amount) => ResolvedEffectPayment::Discard(*amount),
-    })
 }
 
 pub(super) const fn cause_snapshot(cause: ZoneMoveCause) -> ZoneMoveCauseSnapshot {

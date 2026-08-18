@@ -13,10 +13,13 @@ fn is_zero_u16(value: &u16) -> bool {
     *value == 0
 }
 
+mod balance;
 mod stack;
 mod triggers;
 pub(in crate::game::state_checkpoint) use stack::*;
 pub(in crate::game::state_checkpoint) use triggers::*;
+
+pub(super) use balance::{BalanceActionSnapshot, BalancePhaseSnapshot, BalanceTaskSnapshot};
 
 use super::model_keyword::{KeywordSnapshot, UpkeepKeywordSnapshot};
 pub(super) use super::model_prevention::*;
@@ -475,7 +478,7 @@ pub(super) struct EmblemSnapshot {
     pub(super) entered_controller_turn: u32,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(tag = "kind", content = "value", rename_all = "camelCase")]
 pub(super) enum ResolvedEffectPaymentSnapshot {
     Mana(ManaCostSnapshot),
@@ -484,6 +487,10 @@ pub(super) enum ResolvedEffectPaymentSnapshot {
     /// payment existed still reads as one of them.
     Mill(u16),
     Discard(u16),
+    /// Which cards match is read back from the authored effect rather than
+    /// carried here: the predicate is a static definition, and the payment
+    /// this describes is only ever restored beside the ability that named it.
+    DiscardMatching,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -891,33 +898,6 @@ pub(super) struct DecisionOptionSnapshot {
 pub(super) struct DecisionCardSnapshot {
     pub(super) object_id: u32,
     pub(super) definition: u16,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) enum BalancePhaseSnapshot {
-    Lands,
-    Hands,
-    Creatures,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct BalanceTaskSnapshot {
-    pub(super) player: usize,
-    pub(super) prompt: String,
-    pub(super) zone: DecisionZoneSnapshot,
-    pub(super) cards: Option<Vec<DetachedCardSnapshot>>,
-    pub(super) count: usize,
-    pub(super) action: BalanceActionSnapshot,
-    pub(super) cause: ZoneMoveCauseSnapshot,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) enum BalanceActionSnapshot {
-    Sacrifice,
-    Discard,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]

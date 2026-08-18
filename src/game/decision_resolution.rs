@@ -12,6 +12,10 @@ impl Game {
     pub(super) fn choose_decision(&mut self, player: PlayerId, decision: u32, options: &[u32]) {
         let pending = self.pending_decisions.remove(0);
         debug_assert_eq!(pending.observation.id, decision);
+        // Kept beside the answer because a payment decision that offered one
+        // option per candidate has to look up which card the chosen option
+        // named.
+        let pending_options = pending.observation.options.clone();
         match pending.continuation {
             DecisionContinuation::BeginTurn {
                 player,
@@ -209,7 +213,8 @@ impl Game {
                 definition,
             } => {
                 if let Some(mut pending) = self.pending_events.pop_front() {
-                    let paid = options.contains(&1) && self.pay_effect_payment(player, payment);
+                    let paid =
+                        self.settle_payment_decision(player, payment, options, &pending_options);
                     let ReplacementEffectDef::PayOr {
                         if_paid,
                         if_declined,
@@ -290,11 +295,7 @@ impl Game {
                 if_paid,
                 otherwise,
             } => {
-                let paid = if options.contains(&1) {
-                    self.pay_effect_payment(player, payment)
-                } else {
-                    false
-                };
+                let paid = self.settle_payment_decision(player, payment, options, &pending_options);
                 let branch = if paid { if_paid } else { otherwise };
                 if let Some(effect) = branch {
                     self.resolve_nested_effect_before_later(effect, &object, context);

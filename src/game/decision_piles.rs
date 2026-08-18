@@ -91,14 +91,7 @@ impl Game {
         };
         self.queue_decision(
             looker,
-            if selection.selected_order_follows_choice {
-                // The order is the whole answer here, so the prompt has to say
-                // so: nothing else in the decision distinguishes an
-                // arrangement from an ordinary dig.
-                "Put them back in any order, naming the top card first"
-            } else {
-                "Choose cards from the top of the library"
-            },
+            Self::top_card_selection_prompt(selection),
             DecisionVisibility::Private,
             preference,
             if no_selection {
@@ -117,6 +110,20 @@ impl Game {
                 effect: scoped,
             },
         );
+    }
+
+    /// What the looker is asked. An arrangement says so, because the order is
+    /// the whole answer and nothing else in the decision distinguishes one
+    /// from an ordinary dig. Shared with the checkpoint, which compares the
+    /// prompt it rebuilds against the one the observation carries.
+    pub(super) const fn top_card_selection_prompt(
+        selection: &'static crate::card::TopCardSelectionDef,
+    ) -> &'static str {
+        if selection.selected_order_follows_choice {
+            "Put them back in any order, naming the top card first"
+        } else {
+            "Choose cards from the top of the library"
+        }
     }
 
     /// Where the two halves of an inspected group go once they are settled.

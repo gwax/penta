@@ -156,7 +156,13 @@ pub(super) fn shared_entry_replacement_effect(effect: ReplacementEffectDef) -> b
     match effect {
         ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::Choose(_)
-        | ReplacementEffectDef::CopyEntering { .. } => true,
+        | ReplacementEffectDef::CopyEntering { .. }
+        // The entering card goes somewhere else instead. Only the zones a
+        // card can actually be sent to are inside the boundary; a redirect
+        // back onto the battlefield would be the entry it replaced.
+        | ReplacementEffectDef::MoveToZone(
+            ZoneKind::Graveyard | ZoneKind::Exile | ZoneKind::Hand | ZoneKind::Library,
+        ) => true,
         ReplacementEffectDef::Sequence(effects) => {
             !effects.is_empty() && effects.iter().copied().all(shared_entry_replacement_effect)
         }

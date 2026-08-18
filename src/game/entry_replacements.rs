@@ -278,10 +278,16 @@ impl Game {
                     Some(pending)
                 }
             }
+            // The permanent never arrives: the card goes where this says
+            // instead, and nothing about it enters the battlefield.
+            ReplacementEffectDef::MoveToZone(zone) => {
+                let ReplaceableEvent::BattlefieldEntry(entry) = &mut pending.event;
+                entry.redirected_to = Some(zone);
+                Some(pending)
+            }
             // These primitives belong to other prospective-event procedures
             // and cannot alter a battlefield-entry event.
             ReplacementEffectDef::ReplaceEventWithNothing
-            | ReplacementEffectDef::MoveToZone(_)
             | ReplacementEffectDef::Perform(_)
             | ReplacementEffectDef::MultiplyEventAmount(_) => Some(pending),
         }
@@ -391,6 +397,9 @@ impl Game {
             EffectPaymentCostDef::Life(amount) => ResolvedEffectPayment::Life(amount),
             EffectPaymentCostDef::Mill(amount) => ResolvedEffectPayment::Mill(amount),
             EffectPaymentCostDef::Discard(amount) => ResolvedEffectPayment::Discard(amount),
+            EffectPaymentCostDef::DiscardMatching(predicate) => {
+                ResolvedEffectPayment::DiscardMatching(predicate)
+            }
         };
         Some((*player, resolved))
     }
@@ -404,6 +413,7 @@ impl Game {
         definition: ReplacementEffectDef,
     ) {
         let payment_label = Self::effect_payment_label(resolved);
+        let options = self.payment_options(player, resolved, true, "Do not pay");
         self.queue_decision(
             player,
             format!("{payment_label} as {name} enters the battlefield?"),
@@ -411,24 +421,7 @@ impl Game {
             DecisionPreference::Neutral,
             1..=1,
             false,
-            vec![
-                DecisionOption {
-                    id: 0,
-                    label: "Do not pay".into(),
-                    card: None,
-                    members: Vec::new(),
-                    ability_text: None,
-                    zone: DecisionZone::None,
-                },
-                DecisionOption {
-                    id: 1,
-                    label: payment_label,
-                    card: None,
-                    members: Vec::new(),
-                    ability_text: None,
-                    zone: DecisionZone::None,
-                },
-            ],
+            options,
             DecisionContinuation::BattlefieldEntryPayment {
                 context,
                 player,
@@ -778,7 +771,29 @@ impl Game {
         }
     }
 
+    /// Finishes an entry that was replaced with a move somewhere else. The
+    /// card completes the zone change it was already making, so it is the
+    /// card that arrives rather than the permanent it was going to be: no
+    /// enters-the-battlefield trigger sees it, and nothing it would have
+    /// brought with it happens.
+    fn commit_redirected_entry(&mut self, entry: PendingBattlefieldEntry, zone: ZoneKind) {
+        let owner = entry.permanent.card.owner;
+        let (card, _zone_change) = self.zone_change_card(entry.permanent.card);
+        match zone {
+            ZoneKind::Graveyard => self.put_card_into_graveyard(owner, card),
+            ZoneKind::Exile => self.players[owner.index()].exile.push(card),
+            ZoneKind::Hand => self.players[owner.index()].hand.push(card),
+            ZoneKind::Library => self.players[owner.index()].library.push(card),
+            // Every other destination would be the entry this replaced.
+            ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {}
+        }
+    }
+
     pub(super) fn commit_battlefield_entry(&mut self, mut entry: PendingBattlefieldEntry) {
+        if let Some(zone) = entry.redirected_to {
+            self.commit_redirected_entry(entry, zone);
+            return;
+        }
         if entry.completion != EntryCompletion::Setup {
             let (card, _zone_change) = self.zone_change_card(entry.permanent.card);
             entry.permanent.card = card;

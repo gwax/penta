@@ -62,6 +62,7 @@ fn evolve_grows_what_the_next_tap_is_worth() {
         permanent: creature(10_100, cards::AIR_ELEMENTAL, PlayerId::One),
         from: ZoneKind::Hand,
         completion: EntryCompletion::None,
+        redirected_to: None,
     });
     drain_pending(&mut game);
 
