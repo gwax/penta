@@ -647,6 +647,55 @@ fn all_builtin_deck_matchups_complete_under_deterministic_greedy_bots() {
     }
 }
 
+#[test]
+#[ignore = "slow simulation sweep"]
+fn every_registered_premodern_matchup_completes_under_deterministic_greedy_bots() {
+    // Read from the registry rather than named here, so a list promoted out of
+    // `decks/premodern/` is swept the day it is registered instead of the day
+    // somebody remembers to add it.
+    let names = penta::protocol::deck_names_for_format(Format::Premodern);
+    assert!(
+        !names.is_empty(),
+        "the Premodern registry is empty, so this sweeps nothing"
+    );
+    let catalog = poc::catalog().unwrap();
+
+    // Both seatings, and the mirror: two decks make too small a grid to give
+    // up half of it, and a mirror is the one pairing where a deck has to beat
+    // its own clock.
+    for (left, left_name) in names.iter().enumerate() {
+        for right_name in names.iter().skip(left) {
+            for (offset, [first, second]) in [[left_name, right_name], [right_name, left_name]]
+                .into_iter()
+                .enumerate()
+            {
+                let build = |name: &str| {
+                    penta::protocol::deck_by_name_for_format(Format::Premodern, name)
+                        .unwrap_or_else(|| panic!("{name} is a registered Premodern deck"))
+                };
+                let mut game = Game::new_with_format(
+                    Format::Premodern,
+                    catalog.clone(),
+                    [build(first), build(second)],
+                    2_026 + u64::try_from(offset).expect("seating index fits"),
+                )
+                .unwrap();
+                for _ in 0..50_000 {
+                    let Some(player) = game.decision_player() else {
+                        break;
+                    };
+                    let action = choose_greedy_action(&game, player).unwrap();
+                    game.apply(player, action).unwrap();
+                }
+                assert!(
+                    game.result().is_some(),
+                    "{first} versus {second} did not terminate"
+                );
+            }
+        }
+    }
+}
+
 fn choose_greedy_action(game: &Game, player: PlayerId) -> Option<Action> {
     if let Some(decision) = game.observe(player).decision {
         return Some(Action::ChooseDecision {

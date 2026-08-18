@@ -64,7 +64,12 @@ fn sampled_game_decisions_reconstruct_from_their_observations() {
     let mut audited = 0_usize;
     let mut census: BTreeMap<&'static str, usize> = BTreeMap::new();
 
-    for format in [crate::Format::OldSchool9394, crate::Format::IsdDgmStandard] {
+    let formats = [
+        crate::Format::OldSchool9394,
+        crate::Format::IsdDgmStandard,
+        crate::Format::Premodern,
+    ];
+    for (format_index, format) in formats.into_iter().enumerate() {
         let decks = crate::protocol::deck_names_for_format(format);
         for (index, name) in decks.iter().enumerate() {
             // Every built-in deck plays both seats across the pass, so a card
@@ -74,7 +79,7 @@ fn sampled_game_decisions_reconstruct_from_their_observations() {
                 let seed = 30_000
                     + u64::try_from(index).expect("deck index fits") * 211
                     + pass * 7
-                    + u64::from(format != crate::Format::OldSchool9394) * 4_099;
+                    + u64::try_from(format_index).expect("format index fits") * 4_099;
                 audit_one_game(
                     &catalog,
                     format,
