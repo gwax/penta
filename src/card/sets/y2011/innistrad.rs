@@ -1187,6 +1187,7 @@ static FORBIDDEN_ALCHEMY_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     selected_placement: ZonePlacement::Top,
     rest_zone: ZoneKind::Graveyard,
     rest_placement: ZonePlacement::Top,
+    selected_order_follows_choice: false,
     then: None,
 };
 

@@ -1293,6 +1293,7 @@ static ORCISH_SPY_LOOK: TopCardSelectionDef = TopCardSelectionDef {
     selected_placement: ZonePlacement::Top,
     rest_zone: ZoneKind::Library,
     rest_placement: ZonePlacement::Top,
+    selected_order_follows_choice: false,
     then: None,
 };
 

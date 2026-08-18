@@ -60,6 +60,7 @@ static OPT_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     selected_placement: ZonePlacement::Bottom,
     rest_zone: ZoneKind::Library,
     rest_placement: ZonePlacement::Top,
+    selected_order_follows_choice: false,
     then: Some(&OPT_DRAW),
 };
 

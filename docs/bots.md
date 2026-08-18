@@ -543,6 +543,17 @@ distinct legal action; cancelling is not the same as choosing zero options.
 `OutsideGame` is a provenance value used for a privately offered sideboard
 card; it is not a Magic zone and sideboards are not added to observations.
 
+For most decisions the submitted list is a set: which options you picked
+matters and the order you list them does not. One shape reads the order too.
+An arrangement -- "look at the top three cards, then put them back in any
+order" -- offers every inspected card, requires all of them, and places them
+in the sequence you submit, first ID on top. The decision is otherwise an
+ordinary pick-several: a bot that ignores the ordering still submits a legal
+answer, and gets an arrangement it did not choose rather than an error. The
+prompt says so; nothing else in the decision distinguishes it, so a bot that
+wants to arrange deliberately should look for a decision whose `minimum` and
+`maximum` both equal the number of options.
+
 Decision prompts and option labels are presentation text, not stable protocol
 identifiers. They can become more precise when a rules procedure moves to a
 shared implementation without changing the decision shape or option IDs. Read

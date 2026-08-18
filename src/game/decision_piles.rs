@@ -91,7 +91,14 @@ impl Game {
         };
         self.queue_decision(
             looker,
-            "Choose cards from the top of the library",
+            if selection.selected_order_follows_choice {
+                // The order is the whole answer here, so the prompt has to say
+                // so: nothing else in the decision distinguishes an
+                // arrangement from an ordinary dig.
+                "Put them back in any order, naming the top card first"
+            } else {
+                "Choose cards from the top of the library"
+            },
             DecisionVisibility::Private,
             preference,
             if no_selection {

@@ -129,6 +129,13 @@ pub struct TopCardSelectionDef {
     pub selected_placement: ZonePlacement,
     pub rest_zone: ZoneKind,
     pub rest_placement: ZonePlacement,
+    /// The selected cards are placed in the order they were chosen rather
+    /// than the order they were drawn out of the library. This is what "put
+    /// them back in any order" asks for: with every inspected card selected,
+    /// the sequence of the choice is the arrangement. Ordinary digs leave it
+    /// off, so which of two cards went to the graveyard first stays an
+    /// implementation detail rather than a decision a bot has to make.
+    pub selected_order_follows_choice: bool,
     pub then: Option<&'static EffectDef>,
 }
 

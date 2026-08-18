@@ -689,6 +689,7 @@ pub(in crate::card::sets) static GLIMPSE_THE_FUTURE: CardRecord = CardRecord::ne
                 selected_placement: ZonePlacement::Top,
                 rest_zone: ZoneKind::Graveyard,
                 rest_placement: ZonePlacement::Top,
+                selected_order_follows_choice: false,
                 then: None,
             },
         },
@@ -2335,6 +2336,7 @@ static INTO_THE_WILDS_LOOK: TopCardSelectionDef = TopCardSelectionDef {
     selected_placement: ZonePlacement::Top,
     rest_zone: ZoneKind::Library,
     rest_placement: ZonePlacement::Top,
+    selected_order_follows_choice: false,
     then: None,
 };
 

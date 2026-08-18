@@ -20,6 +20,7 @@ static IMPULSE_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     selected_placement: ZonePlacement::Top,
     rest_zone: ZoneKind::Library,
     rest_placement: ZonePlacement::Bottom,
+    selected_order_follows_choice: false,
     then: None,
 };
 

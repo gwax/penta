@@ -339,9 +339,107 @@ fn the_mage_is_not_offered_a_land_to_name() {
         .iter()
         .map(|option| option.label.as_str())
         .collect();
-    assert!(labels.contains(&"Lightning Bolt"), "a spell is nameable",);
+    assert!(labels.contains(&"Lightning Bolt"), "a spell is nameable");
     assert!(
         !labels.contains(&"Island") && !labels.contains(&"Gemstone Mine"),
         "no land is, basic or otherwise",
+    );
+}
+
+/// Casts Portent at `target` and returns the three cards it is looking at, in
+/// the order the decision offers them.
+fn portent_at(game: &mut Game, target: PlayerId) -> Vec<GameObjectId> {
+    let spell = card(10_000, cards::PORTENT, PlayerId::One);
+    let spell_id = spell.id;
+    game.players[PlayerId::One.index()].hand.push(spell);
+    game.players[PlayerId::One.index()].mana_pool.blue = 1;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(spell_id, vec![Target::Player(target)], Vec::new(), 0),
+    )
+    .expect("Portent is cast");
+    pass_priority_pair(game);
+    game.observe(PlayerId::One)
+        .decision
+        .expect("Portent asks for an arrangement")
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(card, _)| card))
+        .collect()
+}
+
+/// Names the looked-at cards in the given top-first order.
+fn arrange(game: &mut Game, order: &[GameObjectId]) {
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("Portent asks for an arrangement");
+    let options: Vec<u32> = order
+        .iter()
+        .map(|wanted| {
+            decision
+                .options
+                .iter()
+                .find(|option| option.card.is_some_and(|(card, _)| card == *wanted))
+                .expect("every looked-at card is offered")
+                .id
+        })
+        .collect();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options,
+        },
+    )
+    .expect("naming all three is a legal arrangement");
+    drain_pending(game);
+}
+
+#[test]
+fn portent_puts_the_three_back_in_the_order_they_were_named() {
+    let mut game = ready_game();
+    let seen = portent_at(&mut game, PlayerId::One);
+    assert_eq!(seen.len(), 3);
+
+    // Reversed, so an implementation that ignores the order fails rather than
+    // passing by accident on a library that came back the way it went in.
+    let wanted: Vec<GameObjectId> = seen.iter().rev().copied().collect();
+    arrange(&mut game, &wanted);
+
+    let top: Vec<GameObjectId> = game.players[PlayerId::One.index()]
+        .library
+        .iter()
+        .rev()
+        .take(3)
+        .map(|card| card.id)
+        .collect();
+    assert_eq!(top, wanted, "the arrangement is the order they were named");
+}
+
+/// The delayed draw is the rest of the card: it arrives an upkeep later, not
+/// on resolution.
+#[test]
+fn portent_draws_a_card_at_the_next_upkeep() {
+    let mut game = ready_game();
+    let seen = portent_at(&mut game, PlayerId::One);
+    let before = game.players[PlayerId::One.index()].hand.len();
+    arrange(&mut game, &seen);
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        before,
+        "nothing is drawn while it resolves",
+    );
+
+    // The next upkeep, reached the way the delayed-trigger tests reach one.
+    game.turn += 1;
+    game.step = Step::Upkeep;
+    game.handle_upkeep_triggers();
+    drain_pending(&mut game);
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        before + 1,
+        "the delayed draw arrives at the next upkeep",
     );
 }

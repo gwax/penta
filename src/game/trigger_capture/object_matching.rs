@@ -170,6 +170,39 @@ impl Game {
         }
     }
 
+    /// Whether `object` answers to the scalar `source` chose as it entered.
+    ///
+    /// A source that never made its choice matches nothing: Meddling Mage's
+    /// lock and Engineered Plague's shrink both key on a specific answer, and
+    /// a permanent with none of its own would otherwise match everything.
+    fn matches_chosen_scalar(
+        &self,
+        destination: BattlefieldEntryChoiceDestinationDef,
+        object: &TriggerEventObject,
+        source: GameObjectId,
+    ) -> bool {
+        let chooser = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source);
+        match destination {
+            BattlefieldEntryChoiceDestinationDef::CardName => chooser
+                .and_then(|permanent| permanent.chosen_card_name.as_deref())
+                .is_some_and(|chosen| {
+                    self.object_card_name(object.id)
+                        .is_some_and(|actual| actual == chosen)
+                }),
+            BattlefieldEntryChoiceDestinationDef::CreatureType => chooser
+                .and_then(|permanent| permanent.chosen_creature_type.as_deref())
+                .is_some_and(|chosen| {
+                    object
+                        .subtypes
+                        .iter()
+                        .any(|subtype| subtype.eq_ignore_ascii_case(chosen))
+                }),
+        }
+    }
+
     fn trigger_object_matches_for_controller(
         &self,
         predicate: ObjectPredicateDef,
@@ -238,26 +271,7 @@ impl Game {
             // shrink both key on a name or type that a permanent which
             // never made its entry choice simply does not have.
             ObjectPredicateDef::HasSourcesChosenScalar(destination) => {
-                let chooser = self
-                    .battlefield
-                    .iter()
-                    .find(|permanent| permanent.card.id == source);
-                match destination {
-                    BattlefieldEntryChoiceDestinationDef::CardName => chooser
-                        .and_then(|permanent| permanent.chosen_card_name.as_deref())
-                        .is_some_and(|chosen| {
-                            self.object_card_name(object.id)
-                                .is_some_and(|actual| actual == chosen)
-                        }),
-                    BattlefieldEntryChoiceDestinationDef::CreatureType => chooser
-                        .and_then(|permanent| permanent.chosen_creature_type.as_deref())
-                        .is_some_and(|chosen| {
-                            object
-                                .subtypes
-                                .iter()
-                                .any(|subtype| subtype.eq_ignore_ascii_case(chosen))
-                        }),
-                }
+                self.matches_chosen_scalar(destination, object, source)
             }
             ObjectPredicateDef::HasKeyword(keyword) => keyword
                 .simple_index()

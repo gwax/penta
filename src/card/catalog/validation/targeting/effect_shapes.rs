@@ -525,6 +525,7 @@ mod recipient_shape_tests {
             selected_placement: ZonePlacement::Top,
             rest_zone: ZoneKind::Library,
             rest_placement: ZonePlacement::Bottom,
+            selected_order_follows_choice: false,
             then: None,
         };
         static INVALID_ZONE: TopCardSelectionDef = TopCardSelectionDef {
@@ -540,6 +541,7 @@ mod recipient_shape_tests {
             // what was left behind.
             rest_zone: ZoneKind::Battlefield,
             rest_placement: ZonePlacement::Bottom,
+            selected_order_follows_choice: false,
             then: None,
         };
 

@@ -11,14 +11,16 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 42 of them not yet cataloged
+- 145 distinct cards across the tranche, 38 of them not yet cataloged
 - 2 lists registered and playable: Neal Sacks's Sligh and Andy Dominguez's RG
   Goblins. Nothing in either is metadata-only or partial
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: GAT 5 cards, Landstill 7, Stasis 7, BW Control 10, Replenish 11,
-Angry Hermit 12. A list is blocked only by uncataloged cards -- no staged deck
+together: GAT 1 card, Landstill 7, Stasis 7, BW Control 10, Replenish 11,
+Angry Hermit 12. GAT is one Mox Diamond short of registration; the discard it
+replaces its own entry with has to be restricted to a land card, and the
+payment vocabulary discards any card. A list is blocked only by uncataloged cards -- no staged deck
 contains a card that is cataloged but unplayable.
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -49,11 +51,13 @@ result and rebuild sampled Premodern positions from their observations.
 - Implement reusable mechanics before card-local behavior. Cycling and
   typecycling, flashback, split cards, tutors, alternative costs that exile a
   card from hand, and single-card reanimation are all in place. What the
-  remaining lists still need: naming a card that is not in hand, and the
-  casting restriction that reads it (Meddling Mage); fading (Parallax Wave);
-  morph (Exalted Angel); storm (Brain Freeze); countering an activated or
-  triggered ability (Stifle); a mass graveyard-to-battlefield return
-  (Replenish); and the layer rewrites Humility and Opalescence ask for.
+  remaining lists still need: a payment that discards a card matching a
+  predicate (Mox Diamond); fading (Parallax Wave); morph (Exalted Angel);
+  storm (Brain Freeze); countering an activated or triggered ability (Stifle);
+  a mass graveyard-to-battlefield return (Replenish); and the layer rewrites
+  Humility and Opalescence ask for. Naming a card and reading the name back,
+  arranging the top of a library, and spending a land's counters all landed
+  with the GAT tranche.
 - Audit the existing definitions against their Premodern Oracle text and
   interactions.
 - Promote each staged deck into the runtime registry only when every main-deck
@@ -92,6 +96,7 @@ older unannotated definitions still require one):
 - `Duress`
 - `Dust Bowl` — complete
 - `Earthquake`
+- `Engineered Plague` — complete
 - `Enlightened Tutor` — complete
 - `Eternal Dragon` — complete
 - `Fact or Fiction` — complete
@@ -100,6 +105,7 @@ older unannotated definitions still require one):
 - `Flooded Strand` — complete
 - `Forest`
 - `Gempalm Incinerator` — complete
+- `Gemstone Mine` — complete
 - `Goblin Lackey` — complete
 - `Goblin Matron` — complete
 - `Goblin Patrol` — complete
@@ -124,6 +130,7 @@ older unannotated definitions still require one):
 - `Lotus Petal` — complete
 - `Mana Leak` — complete
 - `Mana Short` — complete
+- `Meddling Mage` — complete; the lock is symmetric and leaves with it
 - `Mishra's Factory`
 - `Mogg Fanatic` — complete
 - `Mogg Salvage` — complete
@@ -134,6 +141,7 @@ older unannotated definitions still require one):
 - `Overload` — complete
 - `Phyrexian Arena` — complete
 - `Plains`
+- `Portent` — complete; the arrangement is the order the cards are named
 - `Presence of the Master` — complete
 - `Prohibit` — complete
 - `Psychatog` — complete
@@ -184,12 +192,10 @@ Not yet cataloged:
 - [ ] `Decree of Silence`
 - [ ] `Defense Grid`
 - [ ] `Dragon Breath`
-- [ ] `Engineered Plague`
 - [ ] `Exalted Angel`
 - [ ] `Flash of Insight`
 - [ ] `Forsaken City`
 - [ ] `Frantic Search`
-- [ ] `Gemstone Mine`
 - [ ] `Gerrard's Verdict`
 - [ ] `Gilded Drake`
 - [ ] `Haunting Echoes`
@@ -197,13 +203,11 @@ Not yet cataloged:
 - [ ] `Humility`
 - [ ] `Intuition`
 - [ ] `Krosan Reclamation`
-- [ ] `Meddling Mage`
 - [ ] `Mox Diamond`
 - [ ] `Opalescence`
 - [ ] `Parallax Wave`
 - [ ] `Phyrexian Dreadnought`
 - [ ] `Phyrexian Furnace`
-- [ ] `Portent`
 - [ ] `Powder Keg`
 - [ ] `Reflecting Pool`
 - [ ] `Replenish`

@@ -134,16 +134,35 @@ impl Game {
                 context,
                 effect,
             } => {
-                let selected = pending
-                    .observation
-                    .options
+                // Walked in the order the cards were named rather than the
+                // order they were offered, because an arrangement reads that
+                // sequence back below. Membership is all the ordinary path
+                // asks of it, so nothing else notices.
+                let selected = options
                     .iter()
-                    .filter(|option| options.contains(&option.id))
+                    .filter_map(|chosen| {
+                        pending
+                            .observation
+                            .options
+                            .iter()
+                            .find(|option| option.id == *chosen)
+                    })
                     .filter_map(|option| option.card.map(|(card, _)| card))
                     .collect::<Vec<_>>();
-                let (chosen, rest): (Vec<_>, Vec<_>) = revealed
+                let (mut chosen, rest): (Vec<_>, Vec<_>) = revealed
                     .into_iter()
                     .partition(|card| selected.contains(&card.id));
+                // "Put them back in any order": the arrangement is the order
+                // the cards were named, so it has to survive the partition,
+                // which otherwise reports them in library order.
+                if selection.selected_order_follows_choice {
+                    chosen.sort_by_key(|card| {
+                        selected
+                            .iter()
+                            .position(|id| *id == card.id)
+                            .unwrap_or(usize::MAX)
+                    });
+                }
                 self.finish_top_card_selection(player, chosen, rest, selection);
                 if let Some(then) = selection.then {
                     self.resolve_nested_effect_before_later(

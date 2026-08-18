@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
-    CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ResolvedEffectDurationDef, ValueDef, abilities, cards,
+    CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
+    ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef, TopCardSelectionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -29,6 +30,68 @@ pub(in crate::card::sets) static HYDROBLAST: CardRecord = CardRecord::new(
                 true,
             ),
         ],
+    )),
+);
+
+/// Three cards named in the order they go back, so the whole arrangement is
+/// one decision rather than three. Every inspected card is selected, which is
+/// what makes the choice an ordering rather than a filter.
+static PORTENT_LOOK: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(3),
+    object: None,
+    minimum: 3,
+    maximum: 3,
+    select_all_matching: false,
+    reveal_selected: false,
+    selected_zone: ZoneKind::Library,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Top,
+    selected_order_follows_choice: true,
+    then: Some(&PORTENT_SHUFFLE_AND_DRAW),
+};
+
+/// The shuffle comes after the look and is the caster's call: having seen the
+/// three, you decide whether to leave them arranged or wash them away. The
+/// draw is delayed a turn, which is the price the card pays for costing one.
+static PORTENT_SHUFFLE_AND_DRAW: EffectDef = EffectDef::Sequence(&[
+    EffectDef::May {
+        player: EffectRecipientDef::Controller,
+        effect: &EffectDef::ShuffleLibrary {
+            player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    },
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+        "At the beginning of the next turn's upkeep, draw a card.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::Any,
+        },
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    ))),
+]);
+
+static PORTENT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+// ICE 90 — Portent
+pub(in crate::card::sets) static PORTENT: CardRecord = CardRecord::new(
+    cards::PORTENT,
+    "Portent",
+    CardArt::new("e040be83-3fb5-4da5-ba7a-4923b8854b74", "Liz Danforth"),
+    CardSet::IceAge,
+    CardRules::new_sorcery(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Look at the top three cards of target player's library, then put them back in any order. You may have that player shuffle.\nDraw a card at the beginning of the next turn's upkeep.",
+        &PORTENT_TARGET,
+        EffectDef::LookAtTopAndSelect {
+            player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            looker: EffectRecipientDef::Controller,
+            selection: &PORTENT_LOOK,
+        },
     )),
 );
 
@@ -116,6 +179,7 @@ pub(in crate::card::sets) static UNDERGROUND_RIVER: CardRecord = CardRecord::new
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HYDROBLAST,
+    &PORTENT,
     &INCINERATE,
     &PYROBLAST,
     &ADARKAR_WASTES,
