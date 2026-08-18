@@ -54,6 +54,8 @@ pub(super) enum ResolvedEffectPayment {
     DiscardMatching(ObjectPredicateDef),
     /// Generic mana in an amount the payer chooses, named the same way.
     ChosenGenericMana,
+    /// One matching permanent, returned to its owner's hand.
+    ReturnPermanentMatching(ObjectPredicateDef),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

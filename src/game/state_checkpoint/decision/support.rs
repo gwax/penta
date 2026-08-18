@@ -684,6 +684,9 @@ pub(super) fn resolved_effect_payment_snapshot(
         ResolvedEffectPayment::ChosenGenericMana => {
             ResolvedEffectPaymentSnapshot::ChosenGenericMana
         }
+        ResolvedEffectPayment::ReturnPermanentMatching(_) => {
+            ResolvedEffectPaymentSnapshot::ReturnPermanentMatching
+        }
     }
 }
 

@@ -15,8 +15,10 @@ pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&alpha::SWORDS_TO_PLOWSHARES), // 4ED 52
     PrintingRecord::reprint(&alpha::BLUE_ELEMENTAL_BLAST), // 4ED 63
     PrintingRecord::reprint(&alpha::COUNTERSPELL), // 4ED 65
+    PrintingRecord::reprint(&alpha::STASIS),     // 4ED 104
     PrintingRecord::reprint(&alpha::EARTHQUAKE), // 4ED 189
     PrintingRecord::reprint(&alpha::LIGHTNING_BOLT), // 4ED 208
     PrintingRecord::reprint(&alpha::RED_ELEMENTAL_BLAST), // 4ED 218
+    PrintingRecord::reprint(&alpha::BLACK_VISE), // 4ED 299
     PrintingRecord::reprint(&antiquities::MISHRA_S_FACTORY), // 4ED 361
 ];

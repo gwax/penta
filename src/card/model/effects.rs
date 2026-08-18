@@ -212,6 +212,10 @@ pub enum EffectPaymentCostDef {
     /// {X}" during a resolution, where X is settled by the payment rather
     /// than by the cast that produced it.
     ChosenGenericMana,
+    /// Return one matching permanent its payer controls to its owner's hand,
+    /// named as part of the payment. Treva's Ruins asks for a land that is
+    /// not another Lair, so a second copy cannot pay for the first.
+    ReturnPermanentMatching(ObjectPredicateDef),
     /// Discard one card the predicate matches. Mox Diamond's "you may discard
     /// a land card instead" is a real restriction, so a hand with nothing
     /// matching cannot pay at all even though it holds plenty of cards.
@@ -309,6 +313,19 @@ impl PayOrDef {
         Self {
             payment,
             if_paid: Some(if_paid),
+            otherwise: Some(otherwise),
+            visibility: ChoiceVisibilityDef::Private,
+        }
+    }
+
+    /// Continue unless the payer pays. Nothing happens when they do, which is
+    /// what "sacrifice it unless you return a land" says: paying is the whole
+    /// point of the clause and buys only the absence of the consequence.
+    #[must_use]
+    pub const fn unless(payment: EffectPaymentDef, otherwise: &'static EffectDef) -> Self {
+        Self {
+            payment,
+            if_paid: None,
             otherwise: Some(otherwise),
             visibility: ChoiceVisibilityDef::Private,
         }

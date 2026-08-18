@@ -2,11 +2,15 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, AppliedRuleDef, BattlefieldEntryChoiceDestinationDef,
-    BattlefieldEntryScalarChoiceDef, CardArt, CardRules, CardSet, CounterKind, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayActionMatcherDef, PlayRestrictionDef,
-    PlayerRelation, ReplacementChoiceDef, ReplacementEffectDef, TriggerEventDef, ValueDef, cards,
+    AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef,
+    BattlefieldEntryChoiceDestinationDef, BattlefieldEntryScalarChoiceDef, CardArt, CardRules,
+    CardSet, CardType, ChoiceVisibilityDef, ChooseDef, CounterKind, EffectDef,
+    EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementChoiceDef,
+    ReplacementEffectDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, cards,
 };
+use crate::ids::ObjectBindingIndex;
 use crate::mana_cost;
 
 // PLS 89 — Quirion Dryad
@@ -73,6 +77,120 @@ pub(in crate::card::sets) static MEDDLING_MAGE: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&QUIRION_DRYAD, &MEDDLING_MAGE];
+/// A card from your own hand, whichever you can spare. The exile is the
+/// upkeep cost of a land that would otherwise stay tapped forever.
+static A_CARD_IN_YOUR_HAND: ObjectQueryDef = ObjectQueryDef::owned_by(
+    ObjectPredicateDef::Any,
+    &[ZoneKind::Hand],
+    PlayerSetDef::Related(PlayerRelation::You),
+);
+
+static CITY_EXILE_AND_UNTAP: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::Query(A_CARD_IN_YOUR_HAND),
+    exclude: None,
+    minimum: 1,
+    maximum: 1,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &EffectDef::Sequence(&[
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+            zone: ZoneKind::Exile,
+            controller: None,
+            placement: ZonePlacement::Top,
+            arrival_effect: None,
+        },
+        EffectDef::Untap {
+            object: EffectRecipientDef::Source,
+        },
+    ]),
+});
+
+// PLS 139 — Forsaken City
+pub(in crate::card::sets) static FORSAKEN_CITY: CardRecord = CardRecord::new(
+    cards::FORSAKEN_CITY,
+    "Forsaken City",
+    CardArt::new("676703fe-0e1a-4b40-9a2b-8b2e2c6b4a05", "Dana Knutson"),
+    CardSet::Planeshift,
+    // Perfect mana for a deck with cards to spare, and a dead land for one
+    // without: the Stasis deck is holding a hand it is not casting anyway.
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::static_ability(
+            "This land doesn't untap during your untap step.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+            },
+        ),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, you may exile a card from your hand. If you do, untap this land.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &CITY_EXILE_AND_UNTAP,
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add one mana of any color.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::any_color()),
+        ),
+    ]),
+);
+
+// PLS 143 — Treva's Ruins
+pub(in crate::card::sets) static TREVAS_RUINS: CardRecord = CardRecord::new(
+    cards::TREVAS_RUINS,
+    "Treva's Ruins",
+    CardArt::new("8bae2458-7cfa-4e0e-9d55-2b2ef8d1c6a1", "Jerry Tiritilli"),
+    CardSet::Planeshift,
+    // Three colours for the price of a land drop you already made: the Lair
+    // costs tempo rather than cards.
+    CardRules::new_land(&["Lair"]).with_abilities(&[
+        AbilityDef::triggered(
+            "When this land enters, sacrifice it unless you return a non-Lair land you control to its owner's hand.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::PayOr(PayOrDef::unless(
+                EffectPaymentDef {
+                    payer: PlayerSetDef::Related(PlayerRelation::You),
+                    cost: EffectPaymentCostDef::ReturnPermanentMatching(NON_LAIR_LAND_YOU_CONTROL),
+                },
+                &EffectDef::Sacrifice {
+                    object: EffectRecipientDef::Source,
+                },
+            )),
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {G}, {W}, or {U}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&TREVA_COLORS)),
+        ),
+    ]),
+);
+
+static TREVA_COLORS: [ManaColor; 3] = [ManaColor::Green, ManaColor::White, ManaColor::Blue];
+
+/// The Lair itself is excluded by its own subtype, so a second one cannot pay
+/// for the first.
+static NON_LAIR_LAND_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Land),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Lair")),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &QUIRION_DRYAD,
+    &MEDDLING_MAGE,
+    &FORSAKEN_CITY,
+    &TREVAS_RUINS,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

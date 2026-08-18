@@ -494,6 +494,8 @@ pub(super) enum ResolvedEffectPaymentSnapshot {
     /// Likewise: how much can be paid is read off the payer's mana rather
     /// than written down, because the options are rebuilt from it.
     ChosenGenericMana,
+    /// And likewise for the permanents a return payment can name.
+    ReturnPermanentMatching,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

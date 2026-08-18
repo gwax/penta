@@ -3,8 +3,8 @@ use super::{
     DecisionKind, DecisionObservation, DecisionOption, DecisionPreference, DecisionVisibility,
     DecisionZone, DeclarativeAbilityDef, EffectResolutionContext, FORK_COPY_COLOR, Game, ManaCost,
     PendingDecision, PlayerId, ResolvedEffectPayment, ScopedEffect, StackObject, Target,
-    TargetSelection, TargetSlotId, TriggerContext, ZoneMoveCause, flatten_target_selections,
-    target_combinations,
+    TargetSelection, TargetSlotId, TriggerContext, ZoneKind, ZoneMoveCause, ZonePlacement,
+    flatten_target_selections, target_combinations,
 };
 use crate::card::{ChoiceVisibilityDef, ObjectPredicateDef};
 use crate::ids::GameObjectId;
@@ -126,6 +126,27 @@ impl Game {
                 let _spent = self.pay_player_cost(player, cost, 0);
                 Some(amount)
             }
+            ResolvedEffectPayment::ReturnPermanentMatching(predicate) => {
+                let permanent = options
+                    .iter()
+                    .find(|option| option.id == chosen)
+                    .and_then(|option| option.card)
+                    .map(|(permanent, _)| permanent)?;
+                if !self
+                    .matching_permanents_controlled(player, predicate)
+                    .contains(&permanent)
+                {
+                    return None;
+                }
+                self.move_target_to_zone(
+                    Target::Permanent(permanent),
+                    ZoneKind::Hand,
+                    ZoneMoveCause::Effect { controller: player },
+                    None,
+                    ZonePlacement::Top,
+                );
+                Some(0)
+            }
             ResolvedEffectPayment::DiscardMatching(predicate) => {
                 let card = options
                     .iter()
@@ -179,6 +200,9 @@ impl Game {
             ResolvedEffectPayment::ChosenGenericMana => {
                 self.can_pay_cost(player, ManaCost::new(1, 0), 0)
             }
+            ResolvedEffectPayment::ReturnPermanentMatching(predicate) => !self
+                .matching_permanents_controlled(player, predicate)
+                .is_empty(),
         }
     }
 
@@ -205,6 +229,30 @@ impl Game {
                 })
             })
             .cloned()
+            .collect()
+    }
+
+    /// The payer's own permanents a payment predicate matches, in battlefield
+    /// order. Read by the option list and by the payment that follows it, so
+    /// a permanent that stopped matching in between cannot be spent.
+    pub(super) fn matching_permanents_controlled(
+        &self,
+        player: PlayerId,
+        predicate: ObjectPredicateDef,
+    ) -> Vec<GameObjectId> {
+        self.battlefield
+            .iter()
+            .filter(|permanent| permanent.controller == player)
+            .filter(|permanent| {
+                self.trigger_object_matches_for_controller(
+                    predicate,
+                    &self.trigger_event_object(permanent),
+                    permanent.card.id,
+                    false,
+                    Some(player),
+                )
+            })
+            .map(|permanent| permanent.card.id)
             .collect()
     }
 
@@ -241,6 +289,29 @@ impl Game {
                         members: Vec::new(),
                         ability_text: None,
                         zone: DecisionZone::None,
+                    });
+                }
+            }
+            ResolvedEffectPayment::ReturnPermanentMatching(predicate) => {
+                for (index, permanent) in self
+                    .matching_permanents_controlled(player, predicate)
+                    .into_iter()
+                    .enumerate()
+                {
+                    let name = self
+                        .permanent_card_name(permanent)
+                        .map_or_else(|| "a permanent".to_string(), ToOwned::to_owned);
+                    options.push(DecisionOption {
+                        id: u32::try_from(index + 1).unwrap_or(u32::MAX),
+                        label: format!("Return {name}"),
+                        card: self
+                            .battlefield
+                            .iter()
+                            .find(|candidate| candidate.card.id == permanent)
+                            .map(|candidate| (permanent, candidate.card.definition)),
+                        members: Vec::new(),
+                        ability_text: None,
+                        zone: DecisionZone::Battlefield,
                     });
                 }
             }
@@ -306,9 +377,8 @@ impl Game {
             // which card was named or how much was chosen. Reaching here
             // means a caller lost that answer.
             ResolvedEffectPayment::DiscardMatching(_)
-            | ResolvedEffectPayment::ChosenGenericMana => {
-                return false;
-            }
+            | ResolvedEffectPayment::ChosenGenericMana
+            | ResolvedEffectPayment::ReturnPermanentMatching(_) => return false,
         }
         true
     }
@@ -347,6 +417,9 @@ impl Game {
             // the prompt the decision is introduced with.
             ResolvedEffectPayment::DiscardMatching(_) => "Discard a matching card".to_string(),
             ResolvedEffectPayment::ChosenGenericMana => "Pay {X}".to_string(),
+            ResolvedEffectPayment::ReturnPermanentMatching(_) => {
+                "Return a matching permanent".to_string()
+            }
         }
     }
 

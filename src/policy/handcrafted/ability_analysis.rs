@@ -421,6 +421,7 @@ impl HandcraftedPolicy {
                     | crate::card::EffectPaymentCostDef::Discard(_)
                     | crate::card::EffectPaymentCostDef::DiscardMatching(_)
                     | crate::card::EffectPaymentCostDef::ChosenGenericMana
+                    | crate::card::EffectPaymentCostDef::ReturnPermanentMatching(_)
                     | crate::card::EffectPaymentCostDef::ColoredMana { .. } => None,
                 };
                 payment_condition.or_else(|| {

@@ -80,6 +80,9 @@ impl Game {
                     EffectPaymentCostDef::Life(amount) => ResolvedEffectPayment::Life(amount),
                     EffectPaymentCostDef::Mill(amount) => ResolvedEffectPayment::Mill(amount),
                     EffectPaymentCostDef::Discard(amount) => ResolvedEffectPayment::Discard(amount),
+                    EffectPaymentCostDef::ReturnPermanentMatching(predicate) => {
+                        ResolvedEffectPayment::ReturnPermanentMatching(predicate)
+                    }
                     EffectPaymentCostDef::ChosenGenericMana => {
                         ResolvedEffectPayment::ChosenGenericMana
                     }
