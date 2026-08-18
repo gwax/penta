@@ -198,6 +198,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("stronghold.rs") => source(CardSet::Stronghold, "STH"),
         Some("portal_second_age.rs") => source(CardSet::PortalSecondAge, "P02"),
         Some("urzas_saga.rs") => source(CardSet::UrzasSaga, "USG"),
+        Some("urzas_legacy.rs") => source(CardSet::UrzasLegacy, "ULG"),
         Some("mercadian_masques.rs") => source(CardSet::MercadianMasques, "MMQ"),
         Some("nemesis.rs") => source(CardSet::Nemesis, "NEM"),
         Some("invasion.rs") => source(CardSet::Invasion, "INV"),

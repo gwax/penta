@@ -56,6 +56,10 @@ impl Game {
             ObjectPredicateDef::HasType(card_type) => self
                 .permanent_types(affected)
                 .map(|types| types.contains(card_type)),
+            // Both read a scalar the source chose on entry and then compare
+            // it against a characteristic the layers own, so they take the
+            // complete snapshot rather than a shortcut.
+            ObjectPredicateDef::HasSourcesChosenScalar(_) => None,
             ObjectPredicateDef::HasAnyBasicLandType(land_types) => {
                 let is_land = self.permanent_types(affected)?.contains(CardType::Land);
                 if !is_land {

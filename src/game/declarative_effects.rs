@@ -110,6 +110,9 @@ impl Game {
                 // Resolving from the stack, the ability's own controller is
                 // the only recipient any current card names.
                 recipient: _,
+                // A counter-spending land is offered by the mana runtime,
+                // which is also where its rider is checked.
+                sacrifice_source_when_out_of: _,
             }) => {
                 let color = kind;
                 let source = object

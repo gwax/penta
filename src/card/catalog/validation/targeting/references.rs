@@ -300,6 +300,7 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::HasSourcesChosenScalar(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
@@ -357,6 +358,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::HasSourcesChosenScalar(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::AttachedToSource

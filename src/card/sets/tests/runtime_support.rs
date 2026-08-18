@@ -50,6 +50,7 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::HasSourcesChosenScalar(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasCounter(_)

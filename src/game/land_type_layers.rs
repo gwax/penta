@@ -483,6 +483,7 @@ impl Game {
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::DebutSet(_)
             | ObjectPredicateDef::SharesNameWithSource
+            | ObjectPredicateDef::HasSourcesChosenScalar(_)
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::HasKeyword(_)
             | ObjectPredicateDef::HasCounter(_)

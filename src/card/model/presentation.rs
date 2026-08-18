@@ -114,6 +114,7 @@ fn object_predicate_implies(predicate: ObjectPredicateDef, expected: ObjectPredi
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::HasSourcesChosenScalar(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasCounter(_)
@@ -167,6 +168,7 @@ fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor> {
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::HasSourcesChosenScalar(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasCounter(_)
@@ -223,6 +225,7 @@ fn predicate_color_count(predicate: ObjectPredicateDef) -> Option<u8> {
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::HasSourcesChosenScalar(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasCounter(_)
@@ -279,6 +282,7 @@ fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'static str> {
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::HasSourcesChosenScalar(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasCounter(_)
@@ -340,6 +344,7 @@ fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option<&'static s
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::HasSourcesChosenScalar(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasCounter(_)
@@ -398,6 +403,7 @@ fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<i16> {
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::HasSourcesChosenScalar(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasCounter(_)
@@ -455,6 +461,7 @@ fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Option<u8> {
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::HasSourcesChosenScalar(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasCounter(_)
@@ -511,6 +518,7 @@ fn predicate_controller(predicate: ObjectPredicateDef) -> Option<PlayerRelation>
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::HasSourcesChosenScalar(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasCounter(_)
@@ -571,6 +579,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::HasSourcesChosenScalar(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasCounter(_)

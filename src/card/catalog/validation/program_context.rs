@@ -622,6 +622,7 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
+        | ObjectPredicateDef::HasSourcesChosenScalar(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility

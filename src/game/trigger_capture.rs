@@ -1,4 +1,4 @@
-use crate::card::DamageSourceGroupDef;
+use crate::card::{BattlefieldEntryChoiceDestinationDef, DamageSourceGroupDef};
 
 use crate::CharacteristicContext;
 
@@ -462,6 +462,7 @@ impl Game {
             recipient,
             amount_override,
             variable_amount: _,
+            sacrifice_source_when_out_of: _,
         } = effect
         else {
             return;

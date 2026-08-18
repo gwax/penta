@@ -267,6 +267,13 @@ pub struct AddManaEffectDef {
     /// colour does not change, so this is an amount rather than a second
     /// mana selection.
     pub amount_override: Option<ManaAmountOverrideDef>,
+    /// "If there are no mining counters on this land, sacrifice it." The
+    /// check belongs to this ability's own resolution, which is why it is a
+    /// rider here rather than a state trigger: a mana ability never uses the
+    /// stack, and a land that spends its last counter is gone before anyone
+    /// could respond. It also means nothing happens when some other effect
+    /// takes the counters away, which is what the printed card says.
+    pub sacrifice_source_when_out_of: Option<CounterKind>,
 }
 
 /// "... add this much instead."
@@ -288,6 +295,7 @@ impl AddManaEffectDef {
             recipient: PlayerRefDef::EffectController,
             variable_amount: None,
             amount_override: None,
+            sacrifice_source_when_out_of: None,
         }
     }
 
@@ -302,6 +310,7 @@ impl AddManaEffectDef {
             recipient: PlayerRefDef::EffectController,
             variable_amount: None,
             amount_override: None,
+            sacrifice_source_when_out_of: None,
         }
     }
 
@@ -321,6 +330,15 @@ impl AddManaEffectDef {
     #[must_use]
     pub const fn any_color() -> Self {
         Self::choice(&ManaColor::COLORS)
+    }
+
+    /// Spends the source when the named counter runs out. See
+    /// [`Self::sacrifice_source_when_out_of`] for why this rides the ability
+    /// rather than triggering off the empty permanent.
+    #[must_use]
+    pub const fn sacrificing_source_when_out_of(mut self, kind: CounterKind) -> Self {
+        self.sacrifice_source_when_out_of = Some(kind);
+        self
     }
 
     #[must_use]

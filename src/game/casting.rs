@@ -310,6 +310,17 @@ impl Game {
                 activation.effect.damage_to_controller,
             );
         }
+        // "If there are no mining counters on this land, sacrifice it."
+        // Checked here because a mana ability resolves without the stack:
+        // the land is gone by the time anyone could respond, and a counter
+        // removed by anything other than this ability leaves it alone.
+        if let Some(kind) = activation.effect.sacrifice_source_when_out_of
+            && self.battlefield.iter().any(|permanent| {
+                permanent.card.id == activation.source && permanent.counters(kind) == 0
+            })
+        {
+            self.move_permanents_to_graveyard(&[activation.source]);
+        }
         self.consecutive_passes = 0;
         self.events.push(GameEvent::ManaAdded {
             player,

@@ -1,8 +1,8 @@
 use crate::ids::TargetIndex;
 
 use super::{
-    BasicLandType, CardSet, CardSupertype, CardType, CounterKind, KeywordAbility, ManaColor,
-    PlayerRelation, ValueDef, ZoneKind,
+    BasicLandType, BattlefieldEntryChoiceDestinationDef, CardSet, CardSupertype, CardType,
+    CounterKind, KeywordAbility, ManaColor, PlayerRelation, ValueDef, ZoneKind,
 };
 
 /// A composable predicate over a card or game object.
@@ -88,6 +88,15 @@ pub enum ObjectPredicateDef {
     /// name is written out; "bands with other creatures named X" is the one
     /// place the rules ask for it without a source to compare against.
     Named(&'static str),
+    /// Matches the scalar the ability's source chose as it entered: the card
+    /// name Meddling Mage locked out, or the creature type Engineered Plague
+    /// named. The axis is the same one the entry choice was recorded on, so
+    /// the two halves cannot drift apart.
+    ///
+    /// A source that never made its choice matches nothing rather than
+    /// everything, which is the difference between a Plague that shrinks one
+    /// tribe and one that shrinks the board.
+    HasSourcesChosenScalar(BattlefieldEntryChoiceDestinationDef),
     /// Currently attacking or blocking. Only a battlefield object can be, so
     /// this never matches a card or a spell.
     AttackingOrBlocking,

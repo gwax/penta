@@ -3,10 +3,11 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::cards;
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    AppliedRuleDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectPaymentDef,
-    EffectRecipientDef, ObjectPredicateDef, PayOrDef, PlayerRelation, PlayerSetDef,
-    ResolvedEffectDurationDef, TriggerEventDef, ZoneKind,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardRules, CardSet,
+    CardType, CounterKind, EffectDef, EffectPaymentDef, EffectRecipientDef, ObjectPredicateDef,
+    PayOrDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef,
+    TriggerEventDef, ZoneKind,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -96,6 +97,43 @@ pub(in crate::card::sets) static GOBLIN_VANDAL: CardRecord = CardRecord::new(
     ),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&AURA_OF_SILENCE, &GOBLIN_VANDAL];
+// WTH 164 — Gemstone Mine
+pub(in crate::card::sets) static GEMSTONE_MINE: CardRecord = CardRecord::new(
+    cards::GEMSTONE_MINE,
+    "Gemstone Mine",
+    CardArt::new("09507f7f-c58f-4f57-b878-b39811a5b619", "Brom"),
+    CardSet::Weatherlight,
+    // Three activations of perfect mana, and then nothing: the deck that
+    // plays four of these is buying the first three turns, not the tenth.
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::as_enters(
+            "This land enters with three mining counters on it.",
+            ReplacementEffectDef::ModifyBattlefieldEntry(
+                BattlefieldEntryModificationDef::AddCounters {
+                    kind: CounterKind::Mining,
+                    amount: 3,
+                },
+            ),
+        ),
+        AbilityDef::activated_mana(
+            "{T}, Remove a mining counter from this land: Add one mana of any color. If there are no mining counters on this land, sacrifice it.",
+            &GEMSTONE_MINE_COSTS,
+            EffectDef::AddMana(
+                AddManaEffectDef::any_color().sacrificing_source_when_out_of(CounterKind::Mining),
+            ),
+        ),
+    ]),
+);
+
+static GEMSTONE_MINE_COSTS: [AbilityCostDef; 2] = [
+    AbilityCostDef::TapSource,
+    AbilityCostDef::RemoveCountersFromSource {
+        kind: CounterKind::Mining,
+        amount: 1,
+    },
+];
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&AURA_OF_SILENCE, &GOBLIN_VANDAL, &GEMSTONE_MINE];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

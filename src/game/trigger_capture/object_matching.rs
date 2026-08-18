@@ -232,6 +232,33 @@ impl Game {
             ObjectPredicateDef::Named(name) => self
                 .object_card_name(object.id)
                 .is_some_and(|actual| actual == name),
+            // The chosen scalars, read off the source that chose them. A
+            // source with no choice recorded matches nothing rather than
+            // everything: Meddling Mage's lock and Engineered Plague's
+            // shrink both key on a name or type that a permanent which
+            // never made its entry choice simply does not have.
+            ObjectPredicateDef::HasSourcesChosenScalar(destination) => {
+                let chooser = self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == source);
+                match destination {
+                    BattlefieldEntryChoiceDestinationDef::CardName => chooser
+                        .and_then(|permanent| permanent.chosen_card_name.as_deref())
+                        .is_some_and(|chosen| {
+                            self.object_card_name(object.id)
+                                .is_some_and(|actual| actual == chosen)
+                        }),
+                    BattlefieldEntryChoiceDestinationDef::CreatureType => chooser
+                        .and_then(|permanent| permanent.chosen_creature_type.as_deref())
+                        .is_some_and(|chosen| {
+                            object
+                                .subtypes
+                                .iter()
+                                .any(|subtype| subtype.eq_ignore_ascii_case(chosen))
+                        }),
+                }
+            }
             ObjectPredicateDef::HasKeyword(keyword) => keyword
                 .simple_index()
                 .is_some_and(|index| object.keywords & (1 << index) != 0),

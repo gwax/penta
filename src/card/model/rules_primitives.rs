@@ -46,10 +46,13 @@ pub enum CounterKind {
     /// The storage lands' counter, banked one per upkeep and spent all at
     /// once for that much mana.
     Storage,
+    /// Gemstone Mine's counter, which counts how much the land has left to
+    /// give: it enters with three and spends itself dry.
+    Mining,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 20;
+    pub const COUNT: usize = 21;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -72,6 +75,7 @@ impl CounterKind {
         Self::Corpse,
         Self::Wind,
         Self::Storage,
+        Self::Mining,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -99,7 +103,8 @@ impl CounterKind {
             | Self::Vitality
             | Self::Corpse
             | Self::Wind
-            | Self::Storage => (0, 0),
+            | Self::Storage
+            | Self::Mining => (0, 0),
         }
     }
 
@@ -126,6 +131,7 @@ impl CounterKind {
             Self::Corpse => 17,
             Self::Wind => 18,
             Self::Storage => 19,
+            Self::Mining => 20,
         }
     }
 
@@ -152,6 +158,7 @@ impl CounterKind {
             Self::Corpse => "corpse",
             Self::Wind => "wind",
             Self::Storage => "storage",
+            Self::Mining => "mining",
         }
     }
 }

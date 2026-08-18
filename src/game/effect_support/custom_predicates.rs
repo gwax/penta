@@ -28,6 +28,7 @@ impl Game {
             | ObjectPredicateDef::HasType(_)
             | ObjectPredicateDef::HasAnyBasicLandType(_)
             | ObjectPredicateDef::Spell
+            | ObjectPredicateDef::HasSourcesChosenScalar(_)
             | ObjectPredicateDef::NoncreatureSpell
             | ObjectPredicateDef::Color(_)
             | ObjectPredicateDef::ColorCount(_)
