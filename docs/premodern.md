@@ -11,8 +11,15 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche
+- 145 distinct cards across the tranche, 42 of them not yet cataloged
+- 2 lists registered and playable: Neal Sacks's Sligh and Andy Dominguez's RG
+  Goblins. Nothing in either is metadata-only or partial
 - per-card catalog and interaction-audit status tracked in the inventory below
+
+What each remaining list is waiting on, counting main deck and sideboard
+together: GAT 5 cards, Landstill 7, Stasis 7, BW Control 10, Replenish 11,
+Angry Hermit 12. A list is blocked only by uncataloged cards -- no staged deck
+contains a card that is cataloged but unplayable.
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
 Sondike's GAT, Bryan Gulotta's Replenish, Drew Glauberg's Stasis, Chris Danis's
@@ -28,9 +35,10 @@ restricted list, and contemporary mana rules. All three are taken from the
 it was missing, so the window can be stated in full even where no card has
 been authored from a set yet.
 
-The format is not offered in the web client. It has no registered decks, and
-a format with nothing to play is worse than no format at all; the UI picks it
-up when the first staged list is promoted.
+The format is offered in the web client, and its picker lists exactly the
+decks the engine has registered. Whole-game coverage matches the other two
+formats: the deferred sweeps play every registered Premodern matchup to a
+result and rebuild sampled Premodern positions from their observations.
 
 ## Remaining format work
 
@@ -39,16 +47,21 @@ up when the first staged list is promoted.
 - Add accurate characteristics and Oracle clauses for uncataloged cards.
   Unsupported clauses must be metadata-only rather than executable no-ops.
 - Implement reusable mechanics before card-local behavior. Cycling and
-  typecycling are done; still outstanding are flashback, fading, alternative costs that exile from hand, split cards, graveyard replacement/reanimation,
-  named-card choices, tutors, continuous type/PT changes, and triggered
-  mana/untap restrictions.
+  typecycling, flashback, split cards, tutors, alternative costs that exile a
+  card from hand, and single-card reanimation are all in place. What the
+  remaining lists still need: naming a card that is not in hand, and the
+  casting restriction that reads it (Meddling Mage); fading (Parallax Wave);
+  morph (Exalted Angel); storm (Brain Freeze); countering an activated or
+  triggered ability (Stifle); a mass graveyard-to-battlefield return
+  (Replenish); and the layer rewrites Humility and Opalescence ask for.
 - Audit the existing definitions against their Premodern Oracle text and
   interactions.
 - Promote each staged deck into the runtime registry only when every main-deck
   card is playable and the sideboard has honest catalog coverage. RG Goblins and
   Sligh are registered; the other six lists remain staged.
-- Add protocol/binding documentation and UI format/deck selection when the
-  profile becomes public.
+- Keep the web deck notes in step with the registry as lists are promoted;
+  `web/app/game-config.ts` and the deck names in `src/protocol/decks.rs` are
+  checked against each other by the browser contract suite.
 
 ## Card inventory
 
@@ -101,7 +114,7 @@ older unannotated definitions still require one):
 - `Gush` — complete
 - `Hydroblast` — complete
 - `Impulse` — complete
-- `Incinerate` — damage complete; no-regeneration rider is partial
+- `Incinerate` — complete; the rider follows the damage, not the target
 - `Island`
 - `Jackal Pup` — complete
 - `Karplusan Forest` — complete
