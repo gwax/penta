@@ -11,19 +11,14 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 34 of them not yet cataloged
-- 3 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
-  and Andy Dominguez's RG Goblins. Nothing in any of them is metadata-only or
-  partial
+- 145 distinct cards across the tranche, 31 of them not yet cataloged
+- 4 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
+  TentacleFan's Landstill, and Andy Dominguez's RG Goblins. Nothing in any of
+  them is metadata-only or partial
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: Landstill 3, Stasis 7, BW Control 10, Replenish 11, Angry Hermit 12.
-Landstill is waiting on Decree of Justice, which needs a payment whose
-amount the payer chooses and which the paid branch can then read; Thawing
-Glaciers, which returns itself at the beginning of the next cleanup step, a
-step that raises no trigger today; and Teferi's Response, which counters an
-ability rather than a spell. A list is blocked only by uncataloged cards -- no staged deck
+together: Stasis 7, BW Control 10, Replenish 11, Angry Hermit 12. A list is blocked only by uncataloged cards -- no staged deck
 contains a card that is cataloged but unplayable.
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -54,13 +49,13 @@ result and rebuild sampled Premodern positions from their observations.
 - Implement reusable mechanics before card-local behavior. Cycling and
   typecycling, flashback, split cards, tutors, alternative costs that exile a
   card from hand, and single-card reanimation are all in place. What the
-  remaining lists still need: a payment whose amount the payer chooses
-  (Decree of Justice); a trigger at the beginning of the cleanup step
-  (Thawing Glaciers); countering an activated or triggered ability (Stifle,
-  Teferi's Response); fading (Parallax Wave); morph (Exalted Angel); storm
-  (Brain Freeze); a mass graveyard-to-battlefield return (Replenish); and the
-  layer rewrite Opalescence asks for. Humility needed none: the layers
-  already remove abilities and set base power and toughness. Naming a card and reading the name back,
+  remaining lists still need: fading (Parallax Wave); morph (Exalted Angel);
+  storm (Brain Freeze); and a mass graveyard-to-battlefield return
+  (Replenish), plus the layer rewrite Opalescence asks for. Countering an
+  ability landed with Teferi's Response, so Stifle needs only its own
+  authoring; a payment whose amount the payer chooses, a cleanup-step
+  trigger, and a predicate reading what a stack object targets all landed
+  with the Landstill tranche. Naming a card and reading the name back,
   arranging the top of a library, spending a land's counters, and a payment
   that discards a card matching a predicate all landed with the GAT tranche.
 - Audit the existing definitions against their Premodern Oracle text and
@@ -69,8 +64,8 @@ result and rebuild sampled Premodern positions from their observations.
   card is playable and the sideboard has honest catalog coverage. GAT, RG
   Goblins, and Sligh are registered; the other five lists remain staged.
   Registration is also what first checks a list against the format's set
-  window: promoting GAT is what found that seven of its cards were cataloged
-  only from printings outside it.
+  window: promoting GAT found seven of its cards cataloged only from
+  printings outside it, and Landstill four more.
 - Keep the web deck notes in step with the registry as lists are promoted;
   `web/app/game-config.ts` and the deck names in `src/protocol/decks.rs` are
   checked against each other by the browser contract suite.
@@ -100,6 +95,7 @@ older unannotated definitions still require one):
 - `Cursed Scroll` — complete; naming a card is modelled as naming one held
 - `Cursed Totem` — complete
 - `Daze` — complete
+- `Decree of Justice` — complete; cycling buys Soldiers by the mana
 - `Disenchant`
 - `Duress`
 - `Dust Bowl` — complete
@@ -177,6 +173,8 @@ older unannotated definitions still require one):
 - `Swords to Plowshares`
 - `Syncopate`
 - `Sylvan Safekeeper` — complete
+- `Teferi's Response` — complete; the countered ability's source dies with it
+- `Thawing Glaciers` — complete; the return is a cleanup-step trigger
 - `Thwart` — complete
 - `Tormod's Crypt` — complete
 - `Tranquil Domain` — complete
@@ -200,7 +198,6 @@ Not yet cataloged:
 - [ ] `Brain Freeze`
 - [ ] `Cabal Therapy`
 - [ ] `Chain of Vapor`
-- [ ] `Decree of Justice`
 - [ ] `Decree of Silence`
 - [ ] `Defense Grid`
 - [ ] `Dragon Breath`
@@ -224,8 +221,6 @@ Not yet cataloged:
 - [ ] `Skycloud Expanse`
 - [ ] `Stifle`
 - [ ] `Sutured Ghoul`
-- [ ] `Teferi's Response`
-- [ ] `Thawing Glaciers`
 - [ ] `Treva's Ruins`
 - [ ] `Vision Charm`
 
