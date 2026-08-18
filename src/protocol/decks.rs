@@ -145,8 +145,8 @@ pub fn deck_by_name_for_format(format: Format, name: &str) -> Option<Deck> {
             }
             _ => None,
         },
-        // Nothing registered yet; the staged lists are promoted one at a
-        // time as their cards become playable.
+        // The staged lists are promoted one at a time, as their cards become
+        // playable; the rest wait in `decks/premodern/`.
         Format::Premodern => match name.as_str() {
             "rg goblins" | "rg-goblins" => Some(decks::premodern::rg_goblins()),
             "sligh" => Some(decks::premodern::sligh()),

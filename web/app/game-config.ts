@@ -1,4 +1,4 @@
-export type FormatId = "old-school-93-94" | "isd-dgm-standard";
+export type FormatId = "old-school-93-94" | "isd-dgm-standard" | "premodern";
 
 type FormatConfig = {
   name: string;
@@ -50,9 +50,25 @@ export const formatConfigs: Record<FormatId, FormatConfig> = {
       "Braun-Duin Naya Midrange": "Brian Braun-Duin · Naya midrange",
     },
   },
+  premodern: {
+    name: "Premodern",
+    shortName: "PREMODERN · 4ED–SCG",
+    cardBackMark: "PM",
+    description: "Fourth Edition through Scourge · no mana burn · Sacred Torch Showdown lists",
+    // The staged Top 8 is promoted one list at a time, as every card in a
+    // list becomes playable, so this registry grows rather than arriving whole.
+    deckNotes: {
+      Sligh: "1st · Neal Sacks · Mono-red aggro",
+      "RG Goblins": "7th · Andy Dominguez · Red-green Goblins",
+    },
+  },
 };
 
-export const formatIds: FormatId[] = ["old-school-93-94", "isd-dgm-standard"];
+export const formatIds: FormatId[] = [
+  "old-school-93-94",
+  "isd-dgm-standard",
+  "premodern",
+];
 
 export const defaultFormat: FormatId = "old-school-93-94";
 
