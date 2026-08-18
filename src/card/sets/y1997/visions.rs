@@ -4,7 +4,8 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, BasicLandType,
     CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    SpellAdditionalCostDef, TopCardSelectionDef, ValueDef, ZoneKind, ZonePlacement, cards,
+    SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef, ValueDef, ZoneKind, ZonePlacement,
+    cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -45,6 +46,7 @@ static SACRIFICE_TWO_MOUNTAINS: SpellAdditionalCostDef = SpellAdditionalCostDef 
     object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
     zone: ZoneKind::Battlefield,
     count: 2,
+    spend: SpendModeDef::ByZone,
 };
 
 static FIREBLAST_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(

@@ -659,6 +659,7 @@ mod power_blocking;
 mod power_blocking_restrictions;
 mod premodern_cards;
 mod premodern_cycling;
+mod premodern_free_spells;
 mod premodern_goblins;
 mod premodern_hosers;
 mod premodern_kicker;

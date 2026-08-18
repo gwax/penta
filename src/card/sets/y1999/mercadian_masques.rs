@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation,
-    abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
+    BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, SpellAdditionalCostDef,
+    SpendModeDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -12,6 +13,71 @@ static NONBASIC_LAND: ObjectPredicateDef = ObjectPredicateDef::All(&[
     ObjectPredicateDef::HasType(CardType::Land),
     ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(CardSupertype::Basic)),
 ]);
+
+/// Islands you control, returned rather than sacrificed: what the cycle buys
+/// is tempo, not card advantage, and the lands are back in hand to replay.
+const fn return_islands(count: u8) -> SpellAdditionalCostDef {
+    SpellAdditionalCostDef::new(
+        ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+        ZoneKind::Battlefield,
+        count,
+    )
+    .spent(SpendModeDef::ReturnToHand)
+}
+
+static GUSH_COST: SpellAdditionalCostDef = return_islands(2);
+static THWART_COST: SpellAdditionalCostDef = return_islands(3);
+
+static TARGET_SPELL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Spell,
+        zones: &[ZoneKind::Stack],
+        controller: None,
+        owner: None,
+    },
+)];
+
+// MMQ 82 — Gush
+pub(in crate::card::sets) static GUSH: CardRecord = CardRecord::new(
+    cards::GUSH,
+    "Gush",
+    CardArt::new("e755bbef-bf34-49c0-ae72-d70e3599de52", "Kev Walker"),
+    CardSet::MercadianMasques,
+    CardRules::new_instant(mana_cost!("{4}{U}")).with_abilities(&[
+        AbilityDef::spell(
+            "Draw two cards.",
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(2),
+            },
+        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::AlternativeCost,
+            Some("You may return two Islands you control to their owner's hand rather than pay this spell's mana cost."),
+            EffectDef::None,
+        )
+        .with_alternative_additional_cost(&GUSH_COST),
+    ]),
+);
+
+// MMQ 108 — Thwart
+pub(in crate::card::sets) static THWART: CardRecord = CardRecord::new(
+    cards::THWART,
+    "Thwart",
+    CardArt::new("c12a0717-e9ea-4be3-a29f-179671ed4489", "Christopher Moeller"),
+    CardSet::MercadianMasques,
+    CardRules::new_instant(mana_cost!("{2}{U}{U}")).with_abilities(&[
+        AbilityDef::counter_target("Counter target spell.", &TARGET_SPELL[0]),
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::AlternativeCost,
+            Some("You may return three Islands you control to their owner's hand rather than pay this spell's mana cost."),
+            EffectDef::None,
+        )
+        .with_alternative_additional_cost(&THWART_COST),
+    ]),
+);
 
 // MMQ 316 — Dust Bowl
 pub(in crate::card::sets) static DUST_BOWL: CardRecord = CardRecord::new(
@@ -61,6 +127,7 @@ pub(in crate::card::sets) static RISHADAN_PORT: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&DUST_BOWL, &RISHADAN_PORT];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&GUSH, &THWART, &DUST_BOWL, &RISHADAN_PORT];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

@@ -152,6 +152,13 @@ distinguishes snapshots of the covered source and build inputs.
   Akroma's Vengeance, Secluded Steppe, Eternal Dragon, and Gempalm
   Incinerator.
 
+- **Spending has a mode.** A nonmana cost used to spend whatever it named the
+  way that object's zone implied -- a permanent sacrificed, a card in hand
+  discarded. A cost can now say otherwise, which is what the free-spell cycle
+  needs: Daze, Gush, and Thwart return their Islands to hand rather than
+  losing them, and Pyrokinesis exiles the red card it spends rather than
+  discarding it. That last one completes Pyrokinesis, which shipped partial.
+
 - **Cursed Scroll**, and the two primitives it needed: revealing a card at
   random from a hand and binding it, and a condition comparing two bound
   objects by name. The reveal is drawn through the game's seeded RNG, so a

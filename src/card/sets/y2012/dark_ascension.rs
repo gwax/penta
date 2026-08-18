@@ -9,9 +9,9 @@ use crate::card::{
     DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectRecipientDef, KeywordAbility,
     LifeConditionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation,
     QuantifierDef, ReplacementEffectDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    ScaledValueDef, SpellAdditionalCostDef, SpellForm, TargetConditionDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    ScaledValueDef, SpellAdditionalCostDef, SpellForm, SpendModeDef, TargetConditionDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetIndex};
 use crate::mana_cost;
@@ -798,6 +798,7 @@ static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Graveyard,
     count: 1,
+    spend: SpendModeDef::ByZone,
 };
 
 // DKA 40 — Headless Skaab

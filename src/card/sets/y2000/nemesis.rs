@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, DamageEventMatcherDef, DamagePreventionDef, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef, ResolvedEffectDurationDef,
-    ValueDef, ZoneKind, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
+    BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, DamageEventMatcherDef,
+    DamagePreventionDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectRefDef, ResolvedEffectDurationDef, SpellAdditionalCostDef, SpendModeDef, ValueDef,
+    ZoneKind, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -31,6 +32,46 @@ pub(in crate::card::sets) static SEAL_OF_CLEANSING: CardRecord = CardRecord::new
             EffectDef::destroy_target(TargetIndex::PRIMARY, true),
         ),
     ),
+);
+
+/// One Island back to hand, which is what makes the card free on turn one and
+/// a real cost on turn six.
+static DAZE_COST: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+    ZoneKind::Battlefield,
+    1,
+)
+.spent(SpendModeDef::ReturnToHand);
+
+static DAZE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Spell,
+        zones: &[ZoneKind::Stack],
+        controller: None,
+        owner: None,
+    },
+)];
+
+// NEM 30 — Daze
+pub(in crate::card::sets) static DAZE: CardRecord = CardRecord::new(
+    cards::DAZE,
+    "Daze",
+    CardArt::new("d03bff25-0d5e-4dcf-8d75-6df846afea3b", "Matthew D. Wilson"),
+    CardSet::Nemesis,
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Counter target spell unless its controller pays {1}.",
+            &DAZE_TARGET,
+            abilities::counter_target_unless_paid(ValueDef::Constant(1)),
+        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::AlternativeCost,
+            Some("You may return an Island you control to its owner's hand rather than pay this spell's mana cost."),
+            EffectDef::None,
+        )
+        .with_alternative_additional_cost(&DAZE_COST),
+    ]),
 );
 
 // NEM 98 — Seal of Fire
@@ -93,6 +134,6 @@ pub(in crate::card::sets) static KOR_HAVEN: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&SEAL_OF_CLEANSING, &SEAL_OF_FIRE, &KOR_HAVEN];
+    &[&SEAL_OF_CLEANSING, &DAZE, &SEAL_OF_FIRE, &KOR_HAVEN];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

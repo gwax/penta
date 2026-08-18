@@ -50,6 +50,41 @@ pub struct SpellAdditionalCostDef {
     pub object: ObjectPredicateDef,
     pub zone: ZoneKind,
     pub count: u8,
+    pub spend: SpendModeDef,
+}
+
+/// What spending a named object actually does to it.
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub enum SpendModeDef {
+    /// Whatever the object's zone implies, which is what almost every printed
+    /// cost means: a permanent is sacrificed, a card in a graveyard is
+    /// exiled, and a card in hand is discarded.
+    #[default]
+    ByZone,
+    /// Exiled rather than put in a graveyard. "Exile a red card from your
+    /// hand" spends it without ever making it a graveyard card.
+    Exile,
+    /// Returned to its owner's hand. The free-spell cycle pays this way: the
+    /// lands come back rather than being lost.
+    ReturnToHand,
+}
+
+impl SpellAdditionalCostDef {
+    #[must_use]
+    pub const fn new(object: ObjectPredicateDef, zone: ZoneKind, count: u8) -> Self {
+        Self {
+            object,
+            zone,
+            count,
+            spend: SpendModeDef::ByZone,
+        }
+    }
+
+    #[must_use]
+    pub const fn spent(mut self, spend: SpendModeDef) -> Self {
+        self.spend = spend;
+        self
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

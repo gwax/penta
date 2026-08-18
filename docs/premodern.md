@@ -74,6 +74,7 @@ older unannotated definitions still require one):
 - `Counterspell`
 - `Cursed Scroll` — complete; naming a card is modelled as naming one held
 - `Cursed Totem` — complete
+- `Daze` — complete
 - `Disenchant`
 - `Duress`
 - `Dust Bowl` — complete
@@ -97,6 +98,7 @@ older unannotated definitions still require one):
 - `Goblin Vandal` — complete
 - `Goblin Warchief` — complete
 - `Grim Lavamancer` — complete
+- `Gush` — complete
 - `Hydroblast` — complete
 - `Impulse` — complete
 - `Incinerate` — damage complete; no-regeneration rider is partial
@@ -122,7 +124,7 @@ older unannotated definitions still require one):
 - `Prohibit` — complete
 - `Psychatog` — complete
 - `Pyroblast` — complete
-- `Pyrokinesis` — damage complete; the exile-from-hand alternative cost is partial
+- `Pyrokinesis` — complete
 - `Quirion Dryad` — complete
 - `Ray of Revelation`
 - `Red Elemental Blast`
@@ -141,6 +143,7 @@ older unannotated definitions still require one):
 - `Swords to Plowshares`
 - `Syncopate`
 - `Sylvan Safekeeper` — complete
+- `Thwart` — complete
 - `Tormod's Crypt` — complete
 - `Tranquil Domain` — complete
 - `Tsabo's Web` — complete
@@ -163,7 +166,6 @@ Not yet cataloged:
 - [ ] `Brain Freeze`
 - [ ] `Cabal Therapy`
 - [ ] `Chain of Vapor`
-- [ ] `Daze`
 - [ ] `Decree of Justice`
 - [ ] `Decree of Silence`
 - [ ] `Defense Grid`
@@ -176,7 +178,6 @@ Not yet cataloged:
 - [ ] `Gemstone Mine`
 - [ ] `Gerrard's Verdict`
 - [ ] `Gilded Drake`
-- [ ] `Gush`
 - [ ] `Haunting Echoes`
 - [ ] `Hermit Druid`
 - [ ] `Humility`
@@ -200,7 +201,6 @@ Not yet cataloged:
 - [ ] `Sutured Ghoul`
 - [ ] `Teferi's Response`
 - [ ] `Thawing Glaciers`
-- [ ] `Thwart`
 - [ ] `Treva's Ruins`
 - [ ] `Vision Charm`
 

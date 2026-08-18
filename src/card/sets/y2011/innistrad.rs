@@ -12,9 +12,9 @@ use crate::card::{
     EffectRecipientDef, HalvedValueDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
     ObjectRefDef, PayOrDef, PlayOptionDef, PlayerRelation, PlayerSetDef, ProtectedCreatureType,
     QuantifierDef, ReplacementConditionDef, ReplacementEffectDef, ResolvedEffectDurationDef,
-    RoundingDef, SacrificedAmountDef, SpellAdditionalCostDef, SpellForm, TargetConditionDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement, abilities, cards,
+    RoundingDef, SacrificedAmountDef, SpellAdditionalCostDef, SpellForm, SpendModeDef,
+    TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::game::{
     CardAbilityResolver, CardRuntime, PileChoice, PileChosen, PileSplit, PilesSeparated,
@@ -1352,6 +1352,7 @@ static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Graveyard,
     count: 1,
+    spend: SpendModeDef::ByZone,
 };
 
 // ISD 65 — Makeshift Mauler
@@ -1518,6 +1519,7 @@ static EXILE_TWO_CREATURE_CARDS: SpellAdditionalCostDef = SpellAdditionalCostDef
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Graveyard,
     count: 2,
+    spend: SpendModeDef::ByZone,
 };
 
 // ISD 76 — Skaab Goliath
@@ -1755,6 +1757,7 @@ static SACRIFICE_A_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Battlefield,
     count: 1,
+    spend: SpendModeDef::ByZone,
 };
 
 // ISD 86 — Altar's Reap

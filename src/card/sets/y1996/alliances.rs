@@ -2,8 +2,9 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet, CardType,
-    DividedTotal, EffectDef, EffectRecipientDef, ObjectPredicateDef, ValueDef, cards,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, CardArt,
+    CardRules, CardSet, CardType, DividedTotal, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, SpellAdditionalCostDef, SpendModeDef, ValueDef, ZoneKind, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -23,8 +24,13 @@ static PYROKINESIS_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
     divided_total: Some(DividedTotal::Fixed(4)),
 }];
 
+/// Exiled from hand rather than discarded: the card is spent without ever
+/// becoming a graveyard card, which is what "exile a red card" means.
+static EXILE_A_RED_CARD: SpellAdditionalCostDef =
+    SpellAdditionalCostDef::new(ObjectPredicateDef::Color(ManaColor::Red), ZoneKind::Hand, 1)
+        .spent(SpendModeDef::Exile);
+
 // ALL 78 — Pyrokinesis
-// Audit: partial — Needs an alternative cost paid by exiling a card rather than by mana.
 pub(in crate::card::sets) static PYROKINESIS: CardRecord = CardRecord::new(
     cards::PYROKINESIS,
     "Pyrokinesis",
@@ -33,10 +39,13 @@ pub(in crate::card::sets) static PYROKINESIS: CardRecord = CardRecord::new(
     // The free cast is what the card is played for -- a blowout from an empty
     // board -- so the printed cost alone understates it considerably.
     CardRules::new_instant(mana_cost!("{4}{R}{R}")).with_abilities(&[
-        AbilityDef::not_implemented(
-            "You may exile a red card from your hand rather than pay this spell's mana cost.",
-            "an alternative cost paid by exiling a card, rather than by mana, is not yet expressible",
-        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::AlternativeCost,
+            Some("You may exile a red card from your hand rather than pay this spell's mana cost."),
+            EffectDef::None,
+        )
+        .with_alternative_additional_cost(&EXILE_A_RED_CARD),
         AbilityDef::spell_with_targets(
             "Pyrokinesis deals 4 damage divided as you choose among any number of target creatures.",
             &PYROKINESIS_TARGETS,

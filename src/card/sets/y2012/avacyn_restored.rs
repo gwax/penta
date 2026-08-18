@@ -12,7 +12,7 @@ use crate::card::{
     EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef, ManaSpendEffectDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRelation, PlayerSetDef,
     ProtectedCreatureType, ReplacementChoiceDef, ReplacementEffectDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostDef, TriggerConditionDef,
+    SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef,
     TriggerEventDef, TurnStepDef, ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement,
     abilities, cards,
 };
@@ -1654,6 +1654,7 @@ static SACRIFICE_A_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Battlefield,
     count: 1,
+    spend: SpendModeDef::ByZone,
 };
 
 // AVR 88 — Bone Splinters

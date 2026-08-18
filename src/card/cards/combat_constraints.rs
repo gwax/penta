@@ -241,3 +241,6 @@ pub const PSYCHATOG: CardDefinitionId = CardDefinitionId(2040);
 pub const CEPHALID_COLISEUM: CardDefinitionId = CardDefinitionId(2041);
 pub const AURA_OF_SILENCE: CardDefinitionId = CardDefinitionId(2042);
 pub const STANDSTILL: CardDefinitionId = CardDefinitionId(2043);
+pub const DAZE: CardDefinitionId = CardDefinitionId(2044);
+pub const GUSH: CardDefinitionId = CardDefinitionId(2045);
+pub const THWART: CardDefinitionId = CardDefinitionId(2046);

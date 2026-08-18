@@ -6,10 +6,10 @@ use super::{
     DeclarativeAbilityDef, EntryCompletion, Game, GameEvent, GameObjectId, Mana, ManaColor,
     ManaCost, ManaPaymentPurpose, PendingBattlefieldEntry, Permanent, PlayActionKind,
     PlayOptionDef, PlayOptionId, PlayRestriction, PlayerId, StackObject, StackObjectKind, Target,
-    TargetPredicate, TargetSlotDef, TargetSlotId, TriggerContext, ZoneKind, add_generic,
-    add_mana_cost, extra_target_cost, reduce_generic, remove_card,
+    TargetPredicate, TargetSlotDef, TargetSlotId, TriggerContext, ZoneKind, ZoneMoveCause,
+    ZonePlacement, add_generic, add_mana_cost, extra_target_cost, reduce_generic, remove_card,
 };
-use crate::card::{BattlefieldEntryScalarChoiceDef, CardSet, ScalarChoiceListDef};
+use crate::card::{BattlefieldEntryScalarChoiceDef, CardSet, ScalarChoiceListDef, SpendModeDef};
 
 impl Game {
     pub(super) fn play_land(
@@ -633,15 +633,64 @@ impl Game {
         self.continue_spell_cast(stack_object, targets, sacrifices.to_vec());
     }
 
+    /// How this spell's additional cost spends what it named. A cast that
+    /// selected an alternative reads that alternative's cost; everything else
+    /// reads the spell's own.
+    fn spell_additional_cost_spend(&self, object: &StackObject) -> SpendModeDef {
+        let Some(signature) = object.signature.as_ref() else {
+            return SpendModeDef::ByZone;
+        };
+        let Some(definition) = self.catalog.get(object.card.definition) else {
+            return SpendModeDef::ByZone;
+        };
+        let Some(option) = definition.play_option(signature.play_option()) else {
+            return SpendModeDef::ByZone;
+        };
+        if let Some(selected) = signature.costs().alternative()
+            && let Some((_, ability, _)) =
+                Self::alternative_cast_ability(definition, option, selected)
+            && let DeclarativeAbilityDef::AlternativeCast(alternative) = ability.definition
+            && let Some(cost) = alternative.additional_cost
+        {
+            return cost.spend;
+        }
+        definition
+            .rules
+            .ability_clauses()
+            .iter()
+            .find_map(|ability| match ability.definition {
+                DeclarativeAbilityDef::Spell(spell) if ability.is_executable() => {
+                    spell.additional_cost()
+                }
+                _ => None,
+            })
+            .map_or(SpendModeDef::ByZone, |cost| cost.spend)
+    }
+
     pub(super) fn continue_spell_cast(
         &mut self,
         stack_object: StackObject,
         targets: Vec<Target>,
         mut remaining_sacrifices: Vec<GameObjectId>,
     ) {
-        // The same list carries every object an additional cost spends. A
-        // card in a graveyard is exiled outright; only a permanent needs the
-        // battlefield-exit machinery, which can suspend.
+        // The same list carries every object an additional cost spends. What
+        // spending means is the cost's own business: by default the object's
+        // zone decides, but a cost can say otherwise -- the free-spell cycle
+        // returns its lands to hand rather than losing them.
+        let spend = self.spell_additional_cost_spend(&stack_object);
+        if spend == SpendModeDef::ReturnToHand {
+            for spent in remaining_sacrifices.drain(..) {
+                self.move_target_to_zone(
+                    Target::Permanent(spent),
+                    ZoneKind::Hand,
+                    ZoneMoveCause::Effect {
+                        controller: stack_object.controller,
+                    },
+                    None,
+                    ZonePlacement::Top,
+                );
+            }
+        }
         while let Some(&spent) = remaining_sacrifices.first() {
             if self
                 .battlefield
@@ -658,12 +707,16 @@ impl Game {
             } else if let Some(card) = remove_card(&mut self.players[owner.index()].hand, spent) {
                 let definition = card.definition;
                 let (card, _zone_change) = self.zone_change_card(card);
-                let discarded = card.id;
-                self.put_card_into_graveyard(owner, card);
-                self.events.push(GameEvent::CardsDiscarded {
-                    player: owner,
-                    cards: vec![(discarded, definition)],
-                });
+                let moved = card.id;
+                if spend == SpendModeDef::Exile {
+                    self.players[owner.index()].exile.push(card);
+                } else {
+                    self.put_card_into_graveyard(owner, card);
+                    self.events.push(GameEvent::CardsDiscarded {
+                        player: owner,
+                        cards: vec![(moved, definition)],
+                    });
+                }
             }
         }
         if !remaining_sacrifices.is_empty() {
