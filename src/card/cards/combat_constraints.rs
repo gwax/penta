@@ -235,3 +235,6 @@ pub const GOBLIN_PATROL: CardDefinitionId = CardDefinitionId(2034);
 pub const FIREBLAST: CardDefinitionId = CardDefinitionId(2035);
 pub const GRIM_LAVAMANCER: CardDefinitionId = CardDefinitionId(2036);
 pub const CURSED_SCROLL: CardDefinitionId = CardDefinitionId(2037);
+pub const CHILL: CardDefinitionId = CardDefinitionId(2038);
+pub const CURSED_TOTEM: CardDefinitionId = CardDefinitionId(2039);
+pub const PSYCHATOG: CardDefinitionId = CardDefinitionId(2040);

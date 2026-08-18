@@ -31,6 +31,24 @@ pub(in crate::card::sets) static WARMTH: CardRecord = CardRecord::new(
     )),
 );
 
+// TMP 56 — Chill
+pub(in crate::card::sets) static CHILL: CardRecord = CardRecord::new(
+    cards::CHILL,
+    "Chill",
+    CardArt::new("5a7bd777-6f11-441e-887f-9cee1ef96035", "Greg Simanson"),
+    CardSet::Tempest,
+    // Two extra mana on every burn spell, which is most of what a red deck
+    // has to say.
+    CardRules::new_enchantment(mana_cost!("{1}{U}")).with_ability(AbilityDef::static_ability(
+        "Red spells cost {2} more to cast.",
+        EffectDef::IncreaseMatchingSpellCostBy {
+            spell: ObjectPredicateDef::Color(ManaColor::Red),
+            caster: PlayerRelation::Any,
+            amount: mana_cost!("{2}"),
+        },
+    )),
+);
+
 // TMP 151 — Reanimate
 pub(in crate::card::sets) static REANIMATE: CardRecord = CardRecord::new(
     cards::REANIMATE,
@@ -242,6 +260,7 @@ pub(in crate::card::sets) static WASTELAND: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WARMTH,
+    &CHILL,
     &REANIMATE,
     &JACKAL_PUP,
     &MOGG_FANATIC,

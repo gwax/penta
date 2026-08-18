@@ -64,11 +64,14 @@ older unannotated definitions still require one):
 - `Black Vise`
 - `Blue Elemental Blast`
 - `Caves of Koilos` — complete
+- `Chill` — complete
+- `Circle of Protection: Red` — complete; Fourth Edition brings it inside the window
 - `City of Brass`
 - `Claws of Gix` — complete
 - `Coastal Tower` — complete
 - `Counterspell`
 - `Cursed Scroll` — complete; naming a card is modelled as naming one held
+- `Cursed Totem` — complete
 - `Disenchant`
 - `Duress`
 - `Dust Bowl` — complete
@@ -115,6 +118,7 @@ older unannotated definitions still require one):
 - `Plains`
 - `Presence of the Master` — complete
 - `Prohibit` — complete
+- `Psychatog` — complete
 - `Pyroblast` — complete
 - `Pyrokinesis` — damage complete; the exile-from-hand alternative cost is partial
 - `Quirion Dryad` — complete
@@ -158,9 +162,6 @@ Not yet cataloged:
 - [ ] `Cabal Therapy`
 - [ ] `Cephalid Coliseum`
 - [ ] `Chain of Vapor`
-- [ ] `Chill`
-- [ ] `Circle of Protection: Red`
-- [ ] `Cursed Totem`
 - [ ] `Daze`
 - [ ] `Decree of Justice`
 - [ ] `Decree of Silence`
@@ -189,7 +190,6 @@ Not yet cataloged:
 - [ ] `Phyrexian Furnace`
 - [ ] `Portent`
 - [ ] `Powder Keg`
-- [ ] `Psychatog`
 - [ ] `Reflecting Pool`
 - [ ] `Replenish`
 - [ ] `Shallow Grave`

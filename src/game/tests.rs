@@ -660,6 +660,7 @@ mod power_blocking_restrictions;
 mod premodern_cards;
 mod premodern_cycling;
 mod premodern_goblins;
+mod premodern_hosers;
 mod premodern_kicker;
 mod premodern_lands;
 mod premodern_library_selection;

@@ -9,5 +9,6 @@ use crate::card::sets::y1993::alpha;
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&alpha::RED_ELEMENTAL_BLAST), // 4ED 218
+    PrintingRecord::reprint(&alpha::CIRCLE_OF_PROTECTION_RED), // 4ED 17
+    PrintingRecord::reprint(&alpha::RED_ELEMENTAL_BLAST),      // 4ED 218
 ];

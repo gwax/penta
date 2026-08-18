@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ValueDef, ZoneKind, ZonePlacement,
-    cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, AppliedRuleDef, CardArt,
+    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
+    PlayerRelation, ValueDef, ZoneKind, ZonePlacement, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -120,11 +120,36 @@ pub(in crate::card::sets) static WORLDLY_TUTOR: CardRecord = CardRecord::new(
     )),
 );
 
+// MIR 299 — Cursed Totem
+pub(in crate::card::sets) static CURSED_TOTEM: CardRecord = CardRecord::new(
+    cards::CURSED_TOTEM,
+    "Cursed Totem",
+    CardArt::new(
+        "cc99ee76-45b6-4f1d-b0b0-7da8775ca90c",
+        "D. Alexander Gregory",
+    ),
+    CardSet::Mirage,
+    // Symmetrical and unconditional: it shuts off every creature on the
+    // table, including the ones that make mana.
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::static_ability(
+        "Activated abilities of creatures can't be activated.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotActivateAbilities),
+        },
+    )),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ENLIGHTENED_TUTOR,
     &GOBLIN_TINKERER,
     &TRANQUIL_DOMAIN,
     &WORLDLY_TUTOR,
+    &CURSED_TOTEM,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

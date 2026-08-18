@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    CardArt, CardRules, CardSet, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TriggerConditionDef, ValueDef, ZoneKind,
-    ZonePlacement, cards,
+    AppliedEffectDef, CardArt, CardRules, CardSet, ComparisonDef, EffectDef, EffectRecipientDef,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef,
+    TriggerConditionDef, ValueDef, ZoneKind, ZonePlacement, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -29,6 +29,41 @@ pub(in crate::card::sets) static UPHEAVAL: CardRecord = CardRecord::new(
             controller: None,
         },
     )),
+);
+
+/// Both halves pump the same amount, so they share the applied effect. The
+/// Atog eats its own graveyard as readily as its hand, which is why it grows
+/// so fast in a deck that has been drawing and discarding all game.
+static ATOG_PUMP: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+};
+
+// ODY 292 — Psychatog
+pub(in crate::card::sets) static PSYCHATOG: CardRecord = CardRecord::new(
+    cards::PSYCHATOG,
+    "Psychatog",
+    CardArt::new(
+        "6757bf0e-489f-4be2-9e41-463b59f00dd1",
+        "Edward P. Beard, Jr.",
+    ),
+    CardSet::Odyssey,
+    CardRules::new_creature(mana_cost!("{1}{U}{B}"), &["Atog"], 1, 2).with_abilities(&[
+        AbilityDef::activated(
+            "Discard a card: This creature gets +1/+1 until end of turn.",
+            &[AbilityCostDef::DiscardCardMatching(ObjectPredicateDef::Any)],
+            ATOG_PUMP,
+        ),
+        AbilityDef::activated(
+            "Exile two cards from your graveyard: This creature gets +1/+1 until end of turn.",
+            &[AbilityCostDef::ExileCardsFromGraveyard {
+                object: ObjectPredicateDef::Any,
+                count: 2,
+            }],
+            ATOG_PUMP,
+        ),
+    ]),
 );
 
 /// Threshold: seven or more cards in your own graveyard. The count is of
@@ -80,6 +115,6 @@ pub(in crate::card::sets) static BARBARIAN_RING: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&UPHEAVAL, &BARBARIAN_RING];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&UPHEAVAL, &PSYCHATOG, &BARBARIAN_RING];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
