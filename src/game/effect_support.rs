@@ -139,18 +139,7 @@ impl Game {
         let mut components = Vec::new();
         Self::flatten_applied_effect(effect, &mut components);
         for target in self.effect_recipients(recipient, object, context, scoped) {
-            for (index, component) in components.iter().copied().enumerate() {
-                let component_order = u16::try_from(index)
-                    .expect("one applied effect contains at most 65,536 components");
-                self.apply_applied_effect_component(
-                    target,
-                    component,
-                    ResolvedAppliedEffect {
-                        component_order,
-                        ..base_resolution
-                    },
-                );
-            }
+            Self::apply_components_to(self, target, &components, base_resolution);
         }
         // Everything else lasts until cleanup. Keeping the duration explicit
         // here makes unsupported permanent/granted effects visible rather
@@ -164,6 +153,55 @@ impl Game {
                 | ResolvedEffectDurationDef::UntilYourNextTurn
                 | ResolvedEffectDurationDef::WhileSourceTapped
         ));
+    }
+
+    /// The same application, for recipients an effect has already resolved to
+    /// concrete targets. Damage riders need this: which objects they apply to
+    /// is decided by what the damage did, not by a recipient the runtime can
+    /// evaluate a second time.
+    pub(super) fn apply_effect_to_targets(
+        &mut self,
+        targets: &[Target],
+        effect: AppliedEffectDef,
+        duration: ResolvedEffectDurationDef,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) {
+        let timestamp = self.allocate_continuous_effect_timestamp();
+        let base_resolution = ResolvedAppliedEffect {
+            duration,
+            timestamp,
+            object,
+            context,
+            scoped,
+            component_order: 0,
+        };
+        let mut components = Vec::new();
+        Self::flatten_applied_effect(effect, &mut components);
+        for target in targets.iter().copied() {
+            Self::apply_components_to(self, target, &components, base_resolution);
+        }
+    }
+
+    fn apply_components_to(
+        game: &mut Self,
+        target: Target,
+        components: &[AppliedEffectDef],
+        base_resolution: ResolvedAppliedEffect<'_>,
+    ) {
+        for (index, component) in components.iter().copied().enumerate() {
+            let component_order = u16::try_from(index)
+                .expect("one applied effect contains at most 65,536 components");
+            game.apply_applied_effect_component(
+                target,
+                component,
+                ResolvedAppliedEffect {
+                    component_order,
+                    ..base_resolution
+                },
+            );
+        }
     }
 
     fn flatten_applied_effect(effect: AppliedEffectDef, components: &mut Vec<AppliedEffectDef>) {

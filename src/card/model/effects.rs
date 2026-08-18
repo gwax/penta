@@ -496,6 +496,22 @@ pub enum EffectDef {
         recipient: EffectRecipientDef,
         amount: ValueDef,
     },
+    /// Deals damage exactly as [`Self::DealDamage`] does, then applies
+    /// `applied` for `duration` to each object that actually took damage.
+    ///
+    /// The two sets are not the same. Prevention, redirection, and a
+    /// recipient that has already left the battlefield all mean a chosen
+    /// recipient can end up dealt nothing, and a rider that reads "a creature
+    /// dealt damage this way" must not touch it when that happens. That
+    /// linkage is why this is one effect rather than a sequence of two: an
+    /// ordinary sequence would have to name the recipients again, and naming
+    /// them is precisely what loses the distinction.
+    DealDamageAndApply {
+        recipient: EffectRecipientDef,
+        amount: ValueDef,
+        applied: AppliedEffectDef,
+        duration: ResolvedEffectDurationDef,
+    },
     Destroy {
         object: EffectRecipientDef,
         can_regenerate: bool,

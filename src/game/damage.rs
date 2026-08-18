@@ -379,7 +379,7 @@ impl Game {
     /// Where damage actually lands. A permanent whose static effect redirects
     /// its controller's damage takes it instead, provided the source is in
     /// the group that effect names.
-    fn redirected_damage_target(
+    pub(super) fn redirected_damage_target(
         &self,
         source: Option<GameObjectId>,
         target: Option<Target>,

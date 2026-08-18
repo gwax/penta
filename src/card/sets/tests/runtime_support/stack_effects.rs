@@ -190,6 +190,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         }
         EffectDef::AddMana(_) => shared_mana_effect(effect, false),
         EffectDef::DealDamage { recipient, .. }
+        | EffectDef::DealDamageAndApply { recipient, .. }
         | EffectDef::DrainLife { recipient, .. }
         | EffectDef::GainLife { recipient, .. }
         | EffectDef::AddPoisonCounters { recipient, .. }

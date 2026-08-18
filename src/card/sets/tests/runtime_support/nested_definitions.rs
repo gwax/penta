@@ -336,7 +336,11 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         EffectDef::InstallTrigger(trigger) => {
             assert_nested_installed_ability(card_name, trigger.ability);
         }
-        EffectDef::StaticApply { effect, .. } | EffectDef::Apply { effect, .. } => {
+        EffectDef::StaticApply { effect, .. }
+        | EffectDef::Apply { effect, .. }
+        | EffectDef::DealDamageAndApply {
+            applied: effect, ..
+        } => {
             assert_nested_definition_applied_effect(card_name, effect);
         }
         EffectDef::LookAtTopAndSelect { selection, .. } => {

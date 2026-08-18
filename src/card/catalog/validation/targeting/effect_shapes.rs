@@ -60,6 +60,9 @@ fn validate_effect_target_shapes(
             Ok(())
         }
         EffectDef::DealDamage { recipient, amount }
+        | EffectDef::DealDamageAndApply {
+            recipient, amount, ..
+        }
         | EffectDef::DrainLife { recipient, amount } => {
             validate_recipient_shape(recipient, targets, RecipientExpectation::Any)?;
             validate_value_shape(amount, targets)

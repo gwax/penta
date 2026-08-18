@@ -677,7 +677,11 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
                 collect_ability_grants(*effect, grants);
             }
         }
-        EffectDef::StaticApply { effect, .. } | EffectDef::Apply { effect, .. } => {
+        EffectDef::StaticApply { effect, .. }
+        | EffectDef::Apply { effect, .. }
+        | EffectDef::DealDamageAndApply {
+            applied: effect, ..
+        } => {
             collect_applied_ability_grants(effect, grants);
         }
         EffectDef::None
@@ -837,9 +841,11 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         EffectDef::IfFormat {
             then, otherwise, ..
         } => ability_grant_sites(*then).max(ability_grant_sites(*otherwise)),
-        EffectDef::StaticApply { effect, .. } | EffectDef::Apply { effect, .. } => {
-            applied_ability_grant_sites(effect)
-        }
+        EffectDef::StaticApply { effect, .. }
+        | EffectDef::Apply { effect, .. }
+        | EffectDef::DealDamageAndApply {
+            applied: effect, ..
+        } => applied_ability_grant_sites(effect),
         EffectDef::None
         | EffectDef::AddMana(_)
         | EffectDef::AddManaEqualTo { .. }

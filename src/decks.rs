@@ -606,10 +606,11 @@ mod tests {
         // A partial card is allowed in a registered deck only when its main
         // function resolves and the gap is a rider. Naming them here is what
         // stops the list growing quietly: a new partial fails this until
-        // somebody decides it is acceptable and says so.
+        // somebody decides it is acceptable and says so. Nothing registered is
+        // partial today, and an empty set is the strongest form of that.
         assert_eq!(
             partial,
-            BTreeSet::from(["Incinerate".to_owned()]),
+            BTreeSet::new(),
             "the partial cards in registered decks are not the expected ones",
         );
     }

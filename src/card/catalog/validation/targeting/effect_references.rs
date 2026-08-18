@@ -93,6 +93,9 @@ fn validate_effect_references(
             validate_effect_references(*partition.then, target_count, nested)
         }
         EffectDef::DealDamage { recipient, amount }
+        | EffectDef::DealDamageAndApply {
+            recipient, amount, ..
+        }
         | EffectDef::DrainLife { recipient, amount }
         | EffectDef::GainLife { recipient, amount }
         | EffectDef::AddPoisonCounters { recipient, amount }

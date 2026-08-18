@@ -442,6 +442,7 @@ fn validate_resolving_effect(
         | EffectDef::AddMana(_)
         | EffectDef::AddPoisonCounters { .. }
         | EffectDef::DealDamage { .. }
+        | EffectDef::DealDamageAndApply { .. }
         | EffectDef::GainLife { .. }
         | EffectDef::DrawCards { .. }
         | EffectDef::ShuffleLibrary { .. }
@@ -796,6 +797,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::AddMana(_) => "AddMana",
         EffectDef::AddPoisonCounters { .. } => "AddPoisonCounters",
         EffectDef::DealDamage { .. } => "DealDamage",
+        EffectDef::DealDamageAndApply { .. } => "DealDamageAndApply",
         EffectDef::GainLife { .. } => "GainLife",
         EffectDef::DrawCards { .. } => "DrawCards",
         EffectDef::ShuffleLibrary { .. } => "ShuffleLibrary",

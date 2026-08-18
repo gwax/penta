@@ -372,6 +372,7 @@ impl Game {
             | EffectDef::SplitIntoPiles(_)
             | EffectDef::PreventDamage { .. }
             | EffectDef::DealDamage { .. }
+            | EffectDef::DealDamageAndApply { .. }
             | EffectDef::DrainLife { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::AddPoisonCounters { .. }

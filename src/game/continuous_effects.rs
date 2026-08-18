@@ -454,6 +454,7 @@ impl Game {
                 | EffectDef::AddMana(_)
                 | EffectDef::AddManaEqualTo { .. }
                 | EffectDef::DealDamage { .. }
+                | EffectDef::DealDamageAndApply { .. }
                 | EffectDef::DrainLife { .. }
                 | EffectDef::GainLife { .. }
                 | EffectDef::AddPoisonCounters { .. }

@@ -161,6 +161,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::AddMana(_)
         | EffectDef::AddManaEqualTo { .. }
         | EffectDef::DealDamage { .. }
+        | EffectDef::DealDamageAndApply { .. }
         | EffectDef::DrainLife { .. }
         | EffectDef::GainLife { .. }
         | EffectDef::AddPoisonCounters { .. }

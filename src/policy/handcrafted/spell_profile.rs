@@ -304,6 +304,7 @@ impl HandcraftedPolicy {
             }
             EffectDef::May { effect, .. } => Self::is_empty_without_x(*effect),
             EffectDef::DealDamage { amount, .. }
+            | EffectDef::DealDamageAndApply { amount, .. }
             | EffectDef::DrainLife { amount, .. }
             | EffectDef::DrawCards { amount, .. }
             | EffectDef::Discard { amount, .. }
@@ -351,6 +352,9 @@ impl HandcraftedPolicy {
                 Self::collect_spell_effect_profile(*effect, x, targets, profile);
             }
             EffectDef::DealDamage { recipient, amount }
+            | EffectDef::DealDamageAndApply {
+                recipient, amount, ..
+            }
             | EffectDef::DrainLife { recipient, amount } => {
                 Self::collect_damage_profile(recipient, amount, x, profile);
             }

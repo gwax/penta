@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
-    CardSet, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ValueDef, abilities,
-    cards,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
+    CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ResolvedEffectDurationDef, ValueDef, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -44,14 +44,13 @@ pub(in crate::card::sets) static INCINERATE: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::AnyTarget,
             )],
-            EffectDef::DealDamage {
+            EffectDef::DealDamageAndApply {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(3),
+                applied: AppliedEffectDef::Rule(AppliedRuleDef::CannotRegenerate),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The prohibition exists, but applying it only when this spell actually dealt damage to a creature needs damage-result linkage.",
-        )),
+        ),
     ),
 );
 
