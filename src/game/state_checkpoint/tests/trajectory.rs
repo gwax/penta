@@ -36,7 +36,13 @@ const ID_FIELDS: &[&str] = &[
 ];
 
 /// The same, for fields holding a list of bare object ids.
-const ID_LIST_FIELDS: &[&str] = &["cards", "chosenPermanents", "permanents", "sacrifices"];
+const ID_LIST_FIELDS: &[&str] = &[
+    "cards",
+    "chosenPermanents",
+    "costObjects",
+    "permanents",
+    "sacrifices",
+];
 
 #[test]
 #[ignore = "slow decision-boundary reconstruction audit"]
