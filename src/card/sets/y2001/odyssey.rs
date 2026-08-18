@@ -3,11 +3,39 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, CardArt, CardRules, CardSet, ComparisonDef, EffectDef, EffectRecipientDef,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef,
-    TriggerConditionDef, ValueDef, ZoneKind, ZonePlacement, cards,
+    AppliedEffectDef, CardArt, CardRules, CardSet, ComparisonDef, DiscardSelectionDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    PlayerSetDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, cards,
 };
 use crate::{TargetIndex, mana_cost};
+
+/// Everyone who is not the caster draws, so casting into it is what makes it
+/// resolve against you. In a two-player game that is the opponent alone.
+static STANDSTILL_REFILL: EffectDef = EffectDef::Sequence(&[
+    EffectDef::Sacrifice {
+        object: EffectRecipientDef::Source,
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::Opponent)),
+        amount: ValueDef::Constant(3),
+    },
+]);
+
+// ODY 102 — Standstill
+pub(in crate::card::sets) static STANDSTILL: CardRecord = CardRecord::new(
+    cards::STANDSTILL,
+    "Standstill",
+    CardArt::new("3ede3f6f-e642-4fe4-aa37-0f01cdf4d149", "Heather Hudson"),
+    CardSet::Odyssey,
+    // A deck built to do nothing profits from the stalemate; whoever blinks
+    // first hands over three cards.
+    CardRules::new_enchantment(mana_cost!("{1}{U}")).with_ability(AbilityDef::triggered(
+        "When a player casts a spell, sacrifice this enchantment. If you do, each of that player's opponents draws three cards.",
+        TriggerEventDef::SpellCast(ObjectPredicateDef::Any),
+        STANDSTILL_REFILL,
+    )),
+);
 
 // ODY 113 — Upheaval
 pub(in crate::card::sets) static UPHEAVAL: CardRecord = CardRecord::new(
@@ -115,6 +143,56 @@ pub(in crate::card::sets) static BARBARIAN_RING: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&UPHEAVAL, &PSYCHATOG, &BARBARIAN_RING];
+static COLISEUM_DIG: EffectDef = EffectDef::Sequence(&[
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(3),
+        selection: DiscardSelectionDef::RecipientChooses,
+    },
+]);
+
+static COLISEUM_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+// ODY 317 — Cephalid Coliseum
+pub(in crate::card::sets) static CEPHALID_COLISEUM: CardRecord = CardRecord::new(
+    cards::CEPHALID_COLISEUM,
+    "Cephalid Coliseum",
+    CardArt::new("d5d74112-7244-4c3f-a5eb-b6be671aefe8", "John Avon"),
+    CardSet::Odyssey,
+    // The blue Barbarian Ring: a life every time it makes mana, and once the
+    // graveyard is deep enough it cashes itself in for three fresh cards.
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {U}. This land deals 1 damage to you.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Blue).with_damage_to_controller(1)),
+        ),
+        AbilityDef::activated_with_targets(
+            "Threshold — {U}, {T}, Sacrifice this land: Target player draws three cards, then discards three cards. Activate only if there are seven or more cards in your graveyard.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{U}")),
+                AbilityCostDef::TapSource,
+                AbilityCostDef::SacrificeSource,
+            ],
+            &COLISEUM_TARGET,
+            COLISEUM_DIG,
+        )
+        .with_activation_condition(&THRESHOLD),
+    ]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &STANDSTILL,
+    &UPHEAVAL,
+    &PSYCHATOG,
+    &BARBARIAN_RING,
+    &CEPHALID_COLISEUM,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

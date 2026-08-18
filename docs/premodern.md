@@ -60,10 +60,12 @@ older unannotated definitions still require one):
 - `Ancient Tomb` — complete
 - `Annul` — complete
 - `Armageddon`
+- `Aura of Silence` — complete
 - `Barbarian Ring` — complete
 - `Black Vise`
 - `Blue Elemental Blast`
 - `Caves of Koilos` — complete
+- `Cephalid Coliseum` — complete
 - `Chill` — complete
 - `Circle of Protection: Red` — complete; Fourth Edition brings it inside the window
 - `City of Brass`
@@ -133,6 +135,7 @@ older unannotated definitions still require one):
 - `Siege-Gang Commander` — complete
 - `Skirk Prospector` — complete
 - `Sleight of Hand` — complete
+- `Standstill` — complete
 - `Stasis` — complete
 - `Swamp`
 - `Swords to Plowshares`
@@ -157,10 +160,8 @@ Not yet cataloged:
 - [ ] `Abeyance`
 - [ ] `Arcane Denial`
 - [ ] `Attunement`
-- [ ] `Aura of Silence`
 - [ ] `Brain Freeze`
 - [ ] `Cabal Therapy`
-- [ ] `Cephalid Coliseum`
 - [ ] `Chain of Vapor`
 - [ ] `Daze`
 - [ ] `Decree of Justice`
@@ -195,7 +196,6 @@ Not yet cataloged:
 - [ ] `Shallow Grave`
 - [ ] `Skeletal Scrying`
 - [ ] `Skycloud Expanse`
-- [ ] `Standstill`
 - [ ] `Stifle`
 - [ ] `Sutured Ghoul`
 - [ ] `Teferi's Response`

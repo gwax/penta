@@ -3,12 +3,49 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::cards;
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
-    CardArt, CardRules, CardSet, CardType, EffectDef, EffectPaymentDef, EffectRecipientDef,
-    ObjectPredicateDef, PayOrDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
-    TriggerEventDef, ZoneKind,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
+    AppliedRuleDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectPaymentDef,
+    EffectRecipientDef, ObjectPredicateDef, PayOrDef, PlayerRelation, PlayerSetDef,
+    ResolvedEffectDurationDef, TriggerEventDef, ZoneKind,
 };
 use crate::{TargetIndex, mana_cost};
+
+/// The tax names spells an opponent casts, so it never touches your own.
+static OPPONENTS_ARTIFACTS_AND_ENCHANTMENTS: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::HasType(CardType::Enchantment),
+]);
+
+// WTH 7 — Aura of Silence
+pub(in crate::card::sets) static AURA_OF_SILENCE: CardRecord = CardRecord::new(
+    cards::AURA_OF_SILENCE,
+    "Aura of Silence",
+    CardArt::new(
+        "57e6c366-b8c7-4f66-b8e1-82dc69c0081c",
+        "D. Alexander Gregory",
+    ),
+    CardSet::Weatherlight,
+    // It taxes while it sits and answers something on the way out, so the
+    // opponent pays either way.
+    CardRules::new_enchantment(mana_cost!("{1}{W}{W}")).with_abilities(&[
+        AbilityDef::static_ability(
+            "Artifact and enchantment spells your opponents cast cost {2} more to cast.",
+            EffectDef::IncreaseMatchingSpellCostBy {
+                spell: OPPONENTS_ARTIFACTS_AND_ENCHANTMENTS,
+                caster: PlayerRelation::Opponent,
+                amount: mana_cost!("{2}"),
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "Sacrifice this enchantment: Destroy target artifact or enchantment.",
+            &[AbilityCostDef::SacrificeSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                OPPONENTS_ARTIFACTS_AND_ENCHANTMENTS,
+            )],
+            EffectDef::destroy_target(TargetIndex::PRIMARY, true),
+        ),
+    ]),
+);
 
 /// The artifact has to belong to the player being attacked, which in a
 /// two-player game is the only opponent there is.
@@ -59,6 +96,6 @@ pub(in crate::card::sets) static GOBLIN_VANDAL: CardRecord = CardRecord::new(
     ),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&GOBLIN_VANDAL];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&AURA_OF_SILENCE, &GOBLIN_VANDAL];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

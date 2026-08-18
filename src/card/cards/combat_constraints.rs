@@ -238,3 +238,6 @@ pub const CURSED_SCROLL: CardDefinitionId = CardDefinitionId(2037);
 pub const CHILL: CardDefinitionId = CardDefinitionId(2038);
 pub const CURSED_TOTEM: CardDefinitionId = CardDefinitionId(2039);
 pub const PSYCHATOG: CardDefinitionId = CardDefinitionId(2040);
+pub const CEPHALID_COLISEUM: CardDefinitionId = CardDefinitionId(2041);
+pub const AURA_OF_SILENCE: CardDefinitionId = CardDefinitionId(2042);
+pub const STANDSTILL: CardDefinitionId = CardDefinitionId(2043);
