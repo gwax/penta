@@ -178,6 +178,16 @@ fn is_excluded_discovery_directory(repository_root: &Path, directory: &Path) -> 
         return true;
     }
 
+    // A nested checkout carries some other branch's files: the harness puts
+    // linked worktrees under `.claude/worktrees`, and a stray clone can sit
+    // anywhere. Their paths are not this repository's, so they miss the
+    // card-set exemption and report another branch's set files as violations
+    // here. A linked worktree's `.git` is a file rather than a directory,
+    // which is why this asks whether the entry exists at all.
+    if directory.join(".git").exists() {
+        return true;
+    }
+
     let Ok(repository_relative) = directory.strip_prefix(repository_root) else {
         return false;
     };
@@ -272,4 +282,21 @@ fn cargo_root_discovery_exclusions_are_repository_relative() {
         repository_root,
         &repository_root.join("crates/dist")
     ));
+}
+
+#[test]
+fn a_nested_checkout_is_left_to_its_own_repository() {
+    let root = std::env::temp_dir().join("penta-source-file-sizes-nested-checkout");
+    let worktree = root.join("worktree");
+    let ordinary = root.join("ordinary");
+    let _ = fs::remove_dir_all(&root);
+    fs::create_dir_all(&worktree).expect("the temporary directories are creatable");
+    fs::create_dir_all(&ordinary).expect("the temporary directories are creatable");
+    // What `git worktree add` leaves behind: a file, not a directory.
+    fs::write(worktree.join(".git"), "gitdir: elsewhere\n").expect("the marker is writable");
+
+    assert!(is_excluded_discovery_directory(&root, &worktree));
+    assert!(!is_excluded_discovery_directory(&root, &ordinary));
+
+    let _ = fs::remove_dir_all(&root);
 }
