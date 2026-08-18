@@ -545,6 +545,7 @@ fn static_object_set_supported(objects: ObjectSetDef) -> bool {
             ObjectRefDef::ResolvingObject
             | ObjectRefDef::Binding(_)
             | ObjectRefDef::Target(_)
+            | ObjectRefDef::SourceOfTargetedStackObject(_)
             | ObjectRefDef::TriggeringObject,
         )
         | ObjectSetDef::Binding(_)
@@ -624,6 +625,7 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::HasSourcesChosenScalar(_)
+        | ObjectPredicateDef::TargetsObjectMatching(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
@@ -678,6 +680,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::IfTargetMatches(_)
         | ValueDef::IfMatchingObjectCount(_)
         | ValueDef::CountersOnSource(_)
+        | ValueDef::PaidAmount
         | ValueDef::TargetPower(_)
         | ValueDef::TargetToughness(_)
         | ValueDef::TargetLibrarySize(_)
@@ -715,6 +718,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::IfTargetMatches(_)
         | ValueDef::IfMatchingObjectCount(_)
         | ValueDef::CountersOnSource(_)
+        | ValueDef::PaidAmount
         | ValueDef::TargetPower(_)
         | ValueDef::TargetToughness(_)
         | ValueDef::TargetLibrarySize(_)

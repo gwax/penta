@@ -170,6 +170,73 @@ impl Game {
         }
     }
 
+    /// The predicates that compare an object against a name, a chosen scalar,
+    /// or the targets something else already has.
+    ///
+    /// A source with no choice recorded matches nothing rather than
+    /// everything: Meddling Mage's lock and Engineered Plague's shrink both
+    /// key on a name or type that a permanent which never made its entry
+    /// choice simply does not have.
+    fn indirect_predicate_matches(
+        &self,
+        predicate: ObjectPredicateDef,
+        object: &TriggerEventObject,
+        source: GameObjectId,
+        controller: Option<PlayerId>,
+    ) -> bool {
+        match predicate {
+            ObjectPredicateDef::Named(name) => self
+                .object_card_name(object.id)
+                .is_some_and(|actual| actual == name),
+            ObjectPredicateDef::TargetsObjectMatching(predicate) => {
+                self.stack_object_targets_match(object.id, *predicate, source, controller)
+            }
+            ObjectPredicateDef::HasSourcesChosenScalar(destination) => {
+                self.matches_chosen_scalar(destination, object, source)
+            }
+            _ => unreachable!("only the three indirect predicates arrive here"),
+        }
+    }
+
+    /// Whether a spell or ability on the stack already targets something
+    /// matching. Read off the targets it chose, not the ones it could have
+    /// taken: "that targets a land you control" is about the object as it
+    /// sits on the stack.
+    fn stack_object_targets_match(
+        &self,
+        object: GameObjectId,
+        predicate: ObjectPredicateDef,
+        source: GameObjectId,
+        controller: Option<PlayerId>,
+    ) -> bool {
+        self.stack
+            .iter()
+            .find(|candidate| candidate.id == object)
+            .is_some_and(|stack_object| {
+                stack_object.iter_targets().any(|target| {
+                    let Target::Permanent(id) = target else {
+                        return false;
+                    };
+                    self.battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == *id)
+                        .is_some_and(|permanent| {
+                            // Carried through rather than re-derived from the
+                            // source: the source of a spell being targeted is
+                            // still a card in hand, and "a land you control"
+                            // is measured from whoever is doing the asking.
+                            self.trigger_object_matches_for_controller(
+                                predicate,
+                                &self.trigger_event_object(permanent),
+                                source,
+                                false,
+                                controller,
+                            )
+                        })
+                })
+            })
+    }
+
     /// Whether `object` answers to the scalar `source` chose as it entered.
     ///
     /// A source that never made its choice matches nothing: Meddling Mage's
@@ -203,7 +270,7 @@ impl Game {
         }
     }
 
-    fn trigger_object_matches_for_controller(
+    pub(in crate::game) fn trigger_object_matches_for_controller(
         &self,
         predicate: ObjectPredicateDef,
         object: &TriggerEventObject,
@@ -262,16 +329,13 @@ impl Game {
                 let name = self.object_card_name(object.id);
                 name.is_some() && name == self.object_card_name(source)
             }
-            ObjectPredicateDef::Named(name) => self
-                .object_card_name(object.id)
-                .is_some_and(|actual| actual == name),
-            // The chosen scalars, read off the source that chose them. A
-            // source with no choice recorded matches nothing rather than
-            // everything: Meddling Mage's lock and Engineered Plague's
-            // shrink both key on a name or type that a permanent which
-            // never made its entry choice simply does not have.
-            ObjectPredicateDef::HasSourcesChosenScalar(destination) => {
-                self.matches_chosen_scalar(destination, object, source)
+            // The three that read a value from somewhere other than the
+            // object's own characteristics: a printed name, a scalar the
+            // source chose on entry, or the targets something else has.
+            ObjectPredicateDef::Named(_)
+            | ObjectPredicateDef::TargetsObjectMatching(_)
+            | ObjectPredicateDef::HasSourcesChosenScalar(_) => {
+                self.indirect_predicate_matches(predicate, object, source, controller)
             }
             ObjectPredicateDef::HasKeyword(keyword) => keyword
                 .simple_index()

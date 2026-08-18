@@ -5,7 +5,8 @@ impl Game {
             | AbilityTargetPredicate::PlayerOrPlaneswalker(_)
             | AbilityTargetPredicate::ControlledByTargetOf { .. }
             | AbilityTargetPredicate::Player(_) => false,
-            AbilityTargetPredicate::Object { object, .. } => {
+            AbilityTargetPredicate::Object { object, .. }
+            | AbilityTargetPredicate::StackObject { object, .. } => {
                 Self::object_predicate_uses_custom_predicate(object)
             }
         }
@@ -29,6 +30,7 @@ impl Game {
             | ObjectPredicateDef::HasAnyBasicLandType(_)
             | ObjectPredicateDef::Spell
             | ObjectPredicateDef::HasSourcesChosenScalar(_)
+            | ObjectPredicateDef::TargetsObjectMatching(_)
             | ObjectPredicateDef::NoncreatureSpell
             | ObjectPredicateDef::Color(_)
             | ObjectPredicateDef::ColorCount(_)

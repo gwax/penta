@@ -180,3 +180,278 @@ fn humility_flattens_every_creature_on_the_board() {
         "its activated ability is gone with the rest",
     );
 }
+
+/// Thawing Glaciers is the reason cleanup raises a trigger at all: it fetches
+/// and then leaves, so it is available again next turn.
+#[test]
+fn thawing_glaciers_fetches_a_basic_and_returns_at_cleanup() {
+    let mut game = ready_game();
+    let glaciers = creature(10_000, cards::THAWING_GLACIERS, PlayerId::One);
+    let glaciers_id = glaciers.card.id;
+    game.battlefield.push(glaciers);
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    let lands_before = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.controller == PlayerId::One)
+        .count();
+
+    let activation = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == glaciers_id)
+        })
+        .expect("the Glaciers can fetch");
+    game.apply(PlayerId::One, activation).unwrap();
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.controller == PlayerId::One)
+            .count()
+            > lands_before,
+        "a basic arrived",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == glaciers_id),
+        "and the Glaciers is still there until cleanup",
+    );
+
+    game.step = Step::Cleanup;
+    game.complete_cleanup();
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == glaciers_id),
+        "cleanup took it back",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::THAWING_GLACIERS),
+        "to its owner's hand",
+    );
+}
+
+/// Cycling Decree of Justice asks how much to pay, and the answer is the
+/// number of Soldiers: X is settled by the payment rather than by a cast.
+#[test]
+fn cycling_decree_of_justice_buys_soldiers_by_the_mana() {
+    let mut game = ready_game();
+    let decree = card(10_000, cards::DECREE_OF_JUSTICE, PlayerId::One);
+    let decree_id = decree.id;
+    game.players[PlayerId::One.index()].hand.push(decree);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.white = 1;
+    pool.colorless = 5;
+
+    let cycling = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == decree_id)
+        })
+        .expect("the Decree can be cycled");
+    game.apply(PlayerId::One, cycling).unwrap();
+    pass_priority_pair(&mut game);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the cycling trigger asks how much to pay");
+    let three = decision
+        .options
+        .iter()
+        .find(|option| option.id == 3)
+        .expect("three is affordable with three left")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![three],
+        },
+    )
+    .expect("paying three is legal");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::SOLDIER_TOKEN_1_1_WHITE)
+            .count(),
+        3,
+        "three mana bought three Soldiers",
+    );
+}
+
+/// Declining is always available, and buys nothing.
+#[test]
+fn declining_the_decrees_trigger_makes_no_soldiers() {
+    let mut game = ready_game();
+    let decree = card(10_000, cards::DECREE_OF_JUSTICE, PlayerId::One);
+    let decree_id = decree.id;
+    game.players[PlayerId::One.index()].hand.push(decree);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.white = 1;
+    pool.colorless = 5;
+
+    let cycling = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == decree_id)
+        })
+        .expect("the Decree can be cycled");
+    game.apply(PlayerId::One, cycling).unwrap();
+    pass_priority_pair(&mut game);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the cycling trigger asks how much to pay");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![0],
+        },
+    )
+    .expect("declining is legal");
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SOLDIER_TOKEN_1_1_WHITE),
+        "nothing was paid, so nothing arrived",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.colorless,
+        3,
+        "and only the two generic the cycling cost left the pool",
+    );
+}
+
+/// The answer to Wasteland: the land lives, the thing that came for it dies.
+#[test]
+fn teferis_response_counters_a_land_destruction_ability_and_kills_its_source() {
+    let mut game = ready_game();
+    // Nonbasic, because that is what Wasteland can aim at.
+    let factory = creature(10_001, cards::MISHRA_S_FACTORY, PlayerId::One);
+    let factory_id = factory.card.id;
+    game.battlefield.push(factory);
+    let mut wasteland = creature(10_002, cards::WASTELAND, PlayerId::Two);
+    wasteland.tapped = false;
+    let wasteland_id = wasteland.card.id;
+    game.battlefield.push(wasteland);
+
+    // The opponent aims Wasteland at the Island.
+    game.priority = PlayerId::Two;
+    let activation = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateAbility { source, targets, .. }
+                    if *source == wasteland_id
+                        && targets.iter().any(|selection| {
+                            selection.targets().contains(&Target::Permanent(factory_id))
+                        })
+            )
+        })
+        .expect("Wasteland can aim at the Factory");
+    game.apply(PlayerId::Two, activation).unwrap();
+
+    let ability = game.stack.last().expect("the ability is on the stack").id;
+    let response = card(10_000, cards::TEFERIS_RESPONSE, PlayerId::One);
+    let response_id = response.id;
+    game.players[PlayerId::One.index()].hand.push(response);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.blue = 1;
+    pool.colorless = 1;
+    game.priority = PlayerId::One;
+    let before = game.players[PlayerId::One.index()].hand.len();
+
+    game.apply(
+        PlayerId::One,
+        cast_action(response_id, vec![Target::Spell(ability)], Vec::new(), 0),
+    )
+    .expect("the Response can answer a land-targeting ability");
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == factory_id),
+        "the Factory survived",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == wasteland_id),
+        "and the Wasteland did not",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        before - 1 + 2,
+        "two cards drawn, one Response spent",
+    );
+}
+
+/// The slot is narrow on purpose: an ability aimed elsewhere is not a target.
+#[test]
+fn teferis_response_ignores_an_ability_that_wants_someone_elses_land() {
+    let mut game = ready_game();
+    let theirs = creature(10_001, cards::MISHRA_S_FACTORY, PlayerId::Two);
+    let theirs_id = theirs.card.id;
+    game.battlefield.push(theirs);
+    let wasteland = creature(10_002, cards::WASTELAND, PlayerId::Two);
+    let wasteland_id = wasteland.card.id;
+    game.battlefield.push(wasteland);
+
+    game.priority = PlayerId::Two;
+    let activation = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateAbility { source, targets, .. }
+                    if *source == wasteland_id
+                        && targets.iter().any(|selection| {
+                            selection
+                                .targets()
+                                .contains(&Target::Permanent(theirs_id))
+                        })
+            )
+        })
+        .expect("Wasteland can aim at their own Factory");
+    game.apply(PlayerId::Two, activation).unwrap();
+
+    let response = card(10_000, cards::TEFERIS_RESPONSE, PlayerId::One);
+    let response_id = response.id;
+    game.players[PlayerId::One.index()].hand.push(response);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.blue = 1;
+    pool.colorless = 1;
+    game.priority = PlayerId::One;
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::CastSpell { card, .. } if *card == response_id)
+        }),
+        "no land of yours is targeted, so the Response has nothing to answer",
+    );
+}

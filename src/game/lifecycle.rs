@@ -328,6 +328,16 @@ impl Game {
             .insert(object.id, RetiredObject::Stack(Box::new(object.clone())));
     }
 
+    /// The source recorded on a stack object that has already left the stack.
+    /// A countered ability is retired with its source intact, which is how
+    /// "destroy that permanent" finds the permanent afterwards.
+    pub(super) fn retired_stack_object_source(&self, object: GameObjectId) -> Option<GameObjectId> {
+        match self.retired_objects.get(&object) {
+            Some(RetiredObject::Stack(stack)) => stack.source,
+            _ => None,
+        }
+    }
+
     pub(super) fn current_or_last_known_power(&self, object: GameObjectId) -> Option<i16> {
         self.battlefield
             .iter()

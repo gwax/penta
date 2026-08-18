@@ -425,6 +425,7 @@ impl Game {
                     ObjectRefDef::Binding(_)
                     | ObjectRefDef::ResolvingObject
                     | ObjectRefDef::Target(_)
+                    | ObjectRefDef::SourceOfTargetedStackObject(_)
                     | ObjectRefDef::TriggeringObject,
                 )
                 | ObjectSetDef::Binding(_)
@@ -485,6 +486,7 @@ impl Game {
             | ObjectPredicateDef::DebutSet(_)
             | ObjectPredicateDef::SharesNameWithSource
             | ObjectPredicateDef::HasSourcesChosenScalar(_)
+            | ObjectPredicateDef::TargetsObjectMatching(_)
             | ObjectPredicateDef::AttackingOrBlocking
             | ObjectPredicateDef::HasKeyword(_)
             | ObjectPredicateDef::HasCounter(_)

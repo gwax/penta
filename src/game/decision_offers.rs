@@ -111,24 +111,43 @@ impl Game {
         payment: ResolvedEffectPayment,
         answered: &[u32],
         options: &[DecisionOption],
-    ) -> bool {
-        let Some(chosen) = answered.iter().copied().find(|option| *option != 0) else {
-            return false;
-        };
+    ) -> Option<u16> {
+        let chosen = answered.iter().copied().find(|option| *option != 0)?;
         match payment {
+            // The option id is the amount, so the answer carries how much was
+            // paid without a second question.
+            ResolvedEffectPayment::ChosenGenericMana => {
+                let amount = u16::try_from(chosen).unwrap_or(u16::MAX);
+                let cost = ManaCost::new(amount, 0);
+                if !self.can_pay_cost(player, cost, 0) {
+                    return None;
+                }
+                self.activate_mana_for_cost(player, cost, 0);
+                let _spent = self.pay_player_cost(player, cost, 0);
+                Some(amount)
+            }
             ResolvedEffectPayment::DiscardMatching(predicate) => {
-                let Some(card) = options
+                let card = options
                     .iter()
                     .find(|option| option.id == chosen)
                     .and_then(|option| option.card)
-                    .map(|(card, _)| card)
-                else {
-                    return false;
-                };
+                    .map(|(card, _)| card)?;
                 self.pay_matching_discard(player, predicate, card)
+                    .then_some(0)
             }
-            payment => chosen == 1 && self.pay_effect_payment(player, payment),
+            payment => (chosen == 1 && self.pay_effect_payment(player, payment)).then_some(0),
         }
+    }
+
+    /// The largest generic payment the player could make right now, which is
+    /// what a chosen-amount payment offers. Read through the ordinary cost
+    /// check so an unspendable source cannot inflate the list.
+    pub(super) fn maximum_generic_payment(&self, player: PlayerId) -> u16 {
+        let mut amount = 0;
+        while amount < u16::MAX && self.can_pay_cost(player, ManaCost::new(amount + 1, 0), 0) {
+            amount += 1;
+        }
+        amount
     }
 
     pub(super) fn can_pay_effect_payment(
@@ -154,6 +173,11 @@ impl Game {
             // difference between this and the count above.
             ResolvedEffectPayment::DiscardMatching(predicate) => {
                 !self.matching_cards_in_hand(player, predicate).is_empty()
+            }
+            // Paying nothing is not paying, so this needs one generic mana
+            // before the choice is worth offering at all.
+            ResolvedEffectPayment::ChosenGenericMana => {
+                self.can_pay_cost(player, ManaCost::new(1, 0), 0)
             }
         }
     }
@@ -206,6 +230,20 @@ impl Game {
             return options;
         }
         match payment {
+            // One option per amount the payer can actually afford, with the
+            // amount as the option id.
+            ResolvedEffectPayment::ChosenGenericMana => {
+                for amount in 1..=self.maximum_generic_payment(player) {
+                    options.push(DecisionOption {
+                        id: u32::from(amount),
+                        label: format!("Pay {{{amount}}}"),
+                        card: None,
+                        members: Vec::new(),
+                        ability_text: None,
+                        zone: DecisionZone::None,
+                    });
+                }
+            }
             ResolvedEffectPayment::DiscardMatching(predicate) => {
                 for (index, card) in self
                     .matching_cards_in_hand(player, predicate)
@@ -264,9 +302,13 @@ impl Game {
                 i32::from(amount),
                 ZoneMoveCause::Effect { controller: player },
             ),
-            // Paid by [`Self::pay_matching_discard`], which knows which card
-            // was named. Reaching here means a caller lost that answer.
-            ResolvedEffectPayment::DiscardMatching(_) => return false,
+            // Both are paid by [`Self::settle_payment_decision`], which knows
+            // which card was named or how much was chosen. Reaching here
+            // means a caller lost that answer.
+            ResolvedEffectPayment::DiscardMatching(_)
+            | ResolvedEffectPayment::ChosenGenericMana => {
+                return false;
+            }
         }
         true
     }
@@ -304,6 +346,7 @@ impl Game {
             // Every candidate carries its own label, so this one only names
             // the prompt the decision is introduced with.
             ResolvedEffectPayment::DiscardMatching(_) => "Discard a matching card".to_string(),
+            ResolvedEffectPayment::ChosenGenericMana => "Pay {X}".to_string(),
         }
     }
 

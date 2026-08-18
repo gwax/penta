@@ -213,8 +213,9 @@ impl Game {
                 definition,
             } => {
                 if let Some(mut pending) = self.pending_events.pop_front() {
-                    let paid =
-                        self.settle_payment_decision(player, payment, options, &pending_options);
+                    let paid = self
+                        .settle_payment_decision(player, payment, options, &pending_options)
+                        .is_some();
                     let ReplacementEffectDef::PayOr {
                         if_paid,
                         if_declined,
@@ -296,8 +297,12 @@ impl Game {
                 otherwise,
             } => {
                 let paid = self.settle_payment_decision(player, payment, options, &pending_options);
-                let branch = if paid { if_paid } else { otherwise };
+                let branch = if paid.is_some() { if_paid } else { otherwise };
                 if let Some(effect) = branch {
+                    // "If you do, create X ...": the branch reads back what
+                    // the payment actually cost.
+                    let mut context = context;
+                    context.paid_amount = paid;
                     self.resolve_nested_effect_before_later(effect, &object, context);
                 }
             }

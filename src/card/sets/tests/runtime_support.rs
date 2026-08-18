@@ -51,6 +51,7 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::HasSourcesChosenScalar(_)
+        | ObjectPredicateDef::TargetsObjectMatching(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasCounter(_)
@@ -188,7 +189,9 @@ pub(super) fn shared_mana_effect(effect: EffectDef, choices_are_supported: bool)
     if let EffectDef::AddManaEqualTo { amount, .. } = effect {
         return matches!(
             amount,
-            ValueDef::CountersOnSource(_) | ValueDef::CountMatchingObjects(_)
+            ValueDef::CountersOnSource(_)
+                | ValueDef::PaidAmount
+                | ValueDef::CountMatchingObjects(_)
         );
     }
     let EffectDef::AddMana(mana) = effect else {

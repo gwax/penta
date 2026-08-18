@@ -722,6 +722,8 @@ impl Game {
             AbilityTargetPredicate::AnyTarget
             | AbilityTargetPredicate::PlayerOrPlaneswalker(_)
             | AbilityTargetPredicate::ControlledByTargetOf { .. }
+            // An Aura attaches to a permanent, so a stack slot never names one.
+            | AbilityTargetPredicate::StackObject { .. }
             | AbilityTargetPredicate::Player(_) => false,
         }
     }
@@ -794,6 +796,7 @@ impl Game {
                     ObjectRefDef::Binding(_)
                     | ObjectRefDef::ResolvingObject
                     | ObjectRefDef::Target(_)
+                    | ObjectRefDef::SourceOfTargetedStackObject(_)
                     | ObjectRefDef::TriggeringObject,
                 )
                 | ObjectSetDef::Binding(_)

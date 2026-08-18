@@ -2,9 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, CardArt,
-    CardRules, CardSet, CardType, DividedTotal, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, SpellAdditionalCostDef, SpendModeDef, ValueDef, ZoneKind, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, DividedTotal, EffectDef,
+    EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef, PlayerRelation,
+    SpellAdditionalCostDef, SpendModeDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -57,6 +59,65 @@ pub(in crate::card::sets) static PYROKINESIS: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&PYROKINESIS];
+/// The land fetches, and then leaves: the return is a delayed trigger so
+/// that the land is available to tap again next turn rather than staying to
+/// be tapped twice in one.
+static GLACIERS_RETURN: EffectDef =
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+        "At the beginning of the next cleanup step, return this land to its owner's hand.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Cleanup,
+            player: PlayerRelation::Any,
+        },
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::Source,
+            zone: ZoneKind::Hand,
+            controller: None,
+            placement: ZonePlacement::Top,
+            arrival_effect: None,
+        },
+    )));
+
+static GLACIERS_FETCH: EffectDef = EffectDef::Sequence(&[
+    EffectDef::SearchZone {
+        player: EffectRecipientDef::Controller,
+        source: ZoneKind::Library,
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Land),
+            ObjectPredicateDef::Supertype(CardSupertype::Basic),
+        ]),
+        minimum: 0,
+        maximum: ValueDef::Constant(1),
+        reveal: false,
+        destination: ZoneKind::Battlefield,
+        placement: ZonePlacement::Top,
+        shuffle: true,
+        enters_tapped: true,
+    },
+    GLACIERS_RETURN,
+]);
+
+// ALL 144 — Thawing Glaciers
+pub(in crate::card::sets) static THAWING_GLACIERS: CardRecord = CardRecord::new(
+    cards::THAWING_GLACIERS,
+    "Thawing Glaciers",
+    CardArt::new("6411a8c6-010f-4863-a0fa-bbebe09d5c34", "Jeff A. Menges"),
+    CardSet::Alliances,
+    // One basic a turn, forever: slow enough that only a deck with nothing
+    // better to do at end of turn wants it, which is exactly Landstill.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped("This land enters tapped."),
+        AbilityDef::activated(
+            "{1}, {T}: Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle. Return this land to its owner's hand at the beginning of the next cleanup step.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}")),
+                AbilityCostDef::TapSource,
+            ],
+            GLACIERS_FETCH,
+        ),
+    ]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&PYROKINESIS, &THAWING_GLACIERS];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

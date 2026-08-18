@@ -176,6 +176,10 @@ pub enum ValueDef {
     Halved(&'static HalvedValueDef),
     /// How many counters of one kind sit on the ability's own source.
     CountersOnSource(CounterKind),
+    /// What was actually paid for a [`super::EffectPaymentCostDef::ChosenGenericMana`]
+    /// payment in this resolution. Zero anywhere else, so a branch that reads
+    /// it without a payment behind it does nothing rather than guessing.
+    PaidAmount,
     /// How many creatures have died this turn, for "for each creature that
     /// died this turn". Counted as they die rather than read off a zone,
     /// because a graveyard is not a record of this turn.

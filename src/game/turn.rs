@@ -198,8 +198,10 @@ impl Game {
         self.events.push(GameEvent::DamageDealt { player, amount });
     }
 
-    pub(super) const fn turn_step_def(step: Step) -> Option<TurnStepDef> {
-        Some(match step {
+    /// Every step a card can name, which is now all of them: Thawing
+    /// Glaciers returns itself at the beginning of the cleanup step.
+    pub(super) const fn turn_step_def(step: Step) -> TurnStepDef {
+        match step {
             Step::Upkeep => TurnStepDef::Upkeep,
             Step::Draw => TurnStepDef::Draw,
             Step::PrecombatMain => TurnStepDef::PrecombatMain,
@@ -210,8 +212,8 @@ impl Game {
             Step::EndOfCombat => TurnStepDef::EndOfCombat,
             Step::PostcombatMain => TurnStepDef::PostcombatMain,
             Step::End => TurnStepDef::End,
-            Step::Cleanup => return None,
-        })
+            Step::Cleanup => TurnStepDef::Cleanup,
+        }
     }
 
     /// A miracle window belongs to one card sitting in hand. Once that card
@@ -575,7 +577,31 @@ impl Game {
     pub(super) fn complete_cleanup(&mut self) {
         self.finish_cleanup();
         self.empty_mana_pools();
-        if self.result.is_none() && !self.advance_after_turn_phase(TurnPhaseResume::NextTurn) {
+        if self.result.is_some() {
+            return;
+        }
+        // CR 514.2-3: the turn-based actions happen first, and only then does
+        // anything that triggered at the beginning of this step go on the
+        // stack. When something does, the turn stops here and both players
+        // get priority instead of the step ending silently.
+        //
+        // The extra cleanup step CR 514.3 grants afterwards is not modeled:
+        // no supported card creates an effect during cleanup that a second
+        // round would have to clear.
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::StepBegins {
+            step: TurnStepDef::Cleanup,
+            player: self.active_player,
+        });
+        if !self.pending_triggers.is_empty() {
+            self.priority = self.active_player;
+            self.events.push(GameEvent::StepChanged {
+                turn: self.turn,
+                active_player: self.active_player,
+                step: self.step,
+            });
+            return;
+        }
+        if !self.advance_after_turn_phase(TurnPhaseResume::NextTurn) {
             self.finish_step_advance();
         }
     }

@@ -65,6 +65,27 @@ impl Game {
         )
     }
 
+    /// The same view, widened to the abilities waiting on the stack. An
+    /// ability has no cast signature and no characteristics of its own, so it
+    /// borrows its source's and keeps its own id and controller: what a
+    /// predicate asks about one is which stack object it is and what it
+    /// targets, not what it costs.
+    pub(super) fn stack_object_event_object(
+        &self,
+        object: &StackObject,
+    ) -> Option<TriggerEventObject> {
+        self.stack_trigger_event_object(object).or_else(|| {
+            let mut view = self.printed_trigger_event_object(
+                object.id,
+                object.card.definition,
+                object.controller,
+                &CharacteristicContext::Command,
+            )?;
+            view.controller = object.controller;
+            Some(view)
+        })
+    }
+
     pub(super) fn printed_trigger_event_object(
         &self,
         id: GameObjectId,

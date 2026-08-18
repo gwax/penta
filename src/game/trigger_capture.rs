@@ -861,9 +861,10 @@ impl Game {
                 self.current_or_last_known_attached_host(ability_source)
             }
             ObjectRefDef::TriggeringObject => event.context().object,
-            ObjectRefDef::ResolvingObject | ObjectRefDef::Binding(_) | ObjectRefDef::Target(_) => {
-                None
-            }
+            ObjectRefDef::ResolvingObject
+            | ObjectRefDef::Binding(_)
+            | ObjectRefDef::Target(_)
+            | ObjectRefDef::SourceOfTargetedStackObject(_) => None,
         }
     }
 

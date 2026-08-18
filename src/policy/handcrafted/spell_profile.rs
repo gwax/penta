@@ -487,6 +487,7 @@ impl HandcraftedPolicy {
             | ValueDef::GreatestPowerAmong(_)
             | ValueDef::AnyMatchingObject(_)
             | ValueDef::CountersOnSource(_)
+            | ValueDef::PaidAmount
             | ValueDef::DividedAmongTargets
             | ValueDef::TargetPower(_)
             | ValueDef::TargetToughness(_)

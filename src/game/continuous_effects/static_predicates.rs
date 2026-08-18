@@ -34,6 +34,53 @@ impl Game {
     /// Composite predicates retain useful short-circuit answers: one known
     /// false arm decides `All`, and one known true arm decides `AnyOf`, even
     /// when a different arm would require the fallback.
+    /// Whether a land carries any of these basic types, reading the subtype
+    /// layer rather than the printed line.
+    fn static_basic_land_type_matches(
+        &self,
+        land_types: &[crate::card::BasicLandType],
+        affected: &Permanent,
+        prospective: Option<&Permanent>,
+    ) -> Option<bool> {
+        if !self.permanent_types(affected)?.contains(CardType::Land) {
+            return Some(false);
+        }
+        let subtypes = prospective.map_or_else(
+            || self.effective_subtypes(affected),
+            |prospective| self.effective_subtypes_with_prospective(affected, prospective),
+        );
+        Some(
+            land_types
+                .iter()
+                .any(|land_type| subtypes.contains(&land_type.subtype())),
+        )
+    }
+
+    /// The predicates that need nothing beyond the two permanents in hand.
+    /// Split from the walker below only to keep either readable; together
+    /// they are one decision about what a shortcut can answer.
+    fn static_leaf_predicate_matches_lazily(
+        &self,
+        predicate: ObjectPredicateDef,
+        source: &Permanent,
+        affected: &Permanent,
+    ) -> Option<bool> {
+        match predicate {
+            ObjectPredicateDef::Any => Some(true),
+            ObjectPredicateDef::Source => Some(source.card.id == affected.card.id),
+            ObjectPredicateDef::Token => Some(self.is_token(affected.card.definition)),
+            ObjectPredicateDef::Tapped => Some(affected.tapped),
+            ObjectPredicateDef::WasDealtDamageThisTurn => Some(affected.was_dealt_damage_this_turn),
+            ObjectPredicateDef::DealtDamageThisTurn => Some(affected.dealt_damage_this_turn),
+            ObjectPredicateDef::Unpaired => Some(affected.paired_with.is_none()),
+            // Symmetric, so reading it off the source is the same answer.
+            ObjectPredicateDef::PairedWithSource => {
+                Some(source.paired_with == Some(affected.card.id))
+            }
+            _ => None,
+        }
+    }
+
     fn static_object_predicate_matches_lazily(
         &self,
         predicate: ObjectPredicateDef,
@@ -41,36 +88,17 @@ impl Game {
         affected: &Permanent,
         prospective: Option<&Permanent>,
     ) -> Option<bool> {
+        if let Some(answer) = self.static_leaf_predicate_matches_lazily(predicate, source, affected)
+        {
+            return Some(answer);
+        }
         match predicate {
-            ObjectPredicateDef::Any => Some(true),
-            ObjectPredicateDef::Source => Some(source.card.id == affected.card.id),
-            ObjectPredicateDef::Token => Some(self.is_token(affected.card.definition)),
-            ObjectPredicateDef::Tapped => Some(affected.tapped),
-            ObjectPredicateDef::WasDealtDamageThisTurn => {
-                Some(affected.was_dealt_damage_this_turn)
+            ObjectPredicateDef::HasAnyBasicLandType(land_types) => {
+                self.static_basic_land_type_matches(land_types, affected, prospective)
             }
-            ObjectPredicateDef::DealtDamageThisTurn => Some(affected.dealt_damage_this_turn),
-            ObjectPredicateDef::Unpaired => Some(affected.paired_with.is_none()),
-            // Symmetric, so reading it off the source is the same answer.
-            ObjectPredicateDef::PairedWithSource => Some(source.paired_with == Some(affected.card.id)),
             ObjectPredicateDef::HasType(card_type) => self
                 .permanent_types(affected)
                 .map(|types| types.contains(card_type)),
-            ObjectPredicateDef::HasAnyBasicLandType(land_types) => {
-                let is_land = self.permanent_types(affected)?.contains(CardType::Land);
-                if !is_land {
-                    return Some(false);
-                }
-                let subtypes = prospective.map_or_else(
-                    || self.effective_subtypes(affected),
-                    |prospective| self.effective_subtypes_with_prospective(affected, prospective),
-                );
-                Some(
-                    land_types
-                        .iter()
-                        .any(|land_type| subtypes.contains(&land_type.subtype())),
-                )
-            }
             // A static recipient is always a battlefield permanent, never a
             // spell, matching the `is_spell = false` general matcher call.
             ObjectPredicateDef::Spell | ObjectPredicateDef::NoncreatureSpell => Some(false),
@@ -143,10 +171,22 @@ impl Game {
             | ObjectPredicateDef::AttackedThisTurn
             | ObjectPredicateDef::CameUnderControlThisTurn
             | ObjectPredicateDef::AttackedDuringControllersLastTurn
-            // Reads a scalar the source chose on entry and compares it with a
-            // characteristic the layers own, so it takes the complete
+            // Both read something the layers own -- a chosen scalar, or the
+            // targets a stack object already has -- so they take the complete
             // snapshot rather than a shortcut.
+            // Answered by the leaf helper before this match, and named here
+            // so a new one has to be classified rather than falling through
+            // silently.
+            | ObjectPredicateDef::Any
+            | ObjectPredicateDef::Source
+            | ObjectPredicateDef::Token
+            | ObjectPredicateDef::Tapped
+            | ObjectPredicateDef::WasDealtDamageThisTurn
+            | ObjectPredicateDef::DealtDamageThisTurn
+            | ObjectPredicateDef::Unpaired
+            | ObjectPredicateDef::PairedWithSource
             | ObjectPredicateDef::HasSourcesChosenScalar(_)
+            | ObjectPredicateDef::TargetsObjectMatching(_)
             | ObjectPredicateDef::Special(_) => None,
         }
     }

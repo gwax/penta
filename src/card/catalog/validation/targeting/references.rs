@@ -150,7 +150,10 @@ fn validate_object_reference(
     scope: BindingScope,
 ) -> Result<(), GrantedAbilityValidationError> {
     match reference {
-        ObjectRefDef::Target(target) => validate_target_index(target, target_count),
+        ObjectRefDef::Target(target)
+        | ObjectRefDef::SourceOfTargetedStackObject(target) => {
+            validate_target_index(target, target_count)
+        }
         ObjectRefDef::Binding(binding) => {
             if scope.objects & (1 << binding.index()) != 0 {
                 Ok(())
@@ -267,6 +270,7 @@ fn validate_trigger_object_predicate(
                     | ValueDef::LifeTotal(_)
         | ValueDef::SourceToughness
                     | ValueDef::CountersOnSource(_)
+                    | ValueDef::PaidAmount
             ) {
                 Ok(())
             } else {
@@ -301,6 +305,7 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::HasSourcesChosenScalar(_)
+        | ObjectPredicateDef::TargetsObjectMatching(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
@@ -359,6 +364,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
         | ObjectPredicateDef::HasSourcesChosenScalar(_)
+        | ObjectPredicateDef::TargetsObjectMatching(_)
         | ObjectPredicateDef::AttackingOrBlocking
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::AttachedToSource
@@ -740,6 +746,7 @@ fn validate_value_target_references(
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
+        | ValueDef::PaidAmount
         | ValueDef::CreaturesDiedThisTurn
         // This reads the share assigned to the target currently being
         // affected; the surrounding recipient carries the slot reference.

@@ -11,6 +11,11 @@ pub enum ObjectRefDef {
     AttachedToSource,
     Target(TargetIndex),
     TriggeringObject,
+    /// The permanent a targeted stack ability came from. Read after that
+    /// ability has left the stack, which is what "if a permanent's ability is
+    /// countered this way, destroy that permanent" asks for; a targeted spell
+    /// has no such source and resolves to nothing.
+    SourceOfTargetedStackObject(TargetIndex),
 }
 
 /// A player reference evaluated in the resolving effect's context.
@@ -170,6 +175,7 @@ impl EffectRecipientDef {
                 | ObjectRefDef::ResolvingObject
                 | ObjectRefDef::AttachedToSource
                 | ObjectRefDef::Target(_)
+                | ObjectRefDef::SourceOfTargetedStackObject(_)
                 | ObjectRefDef::TriggeringObject,
             )
             | None => None,

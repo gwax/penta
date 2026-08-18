@@ -60,6 +60,7 @@ export const formatConfigs: Record<FormatId, FormatConfig> = {
     deckNotes: {
       Sligh: "1st · Neal Sacks · Mono-red aggro",
       GAT: "2nd · Daniel Sondike · Threshold tempo",
+      Landstill: "6th · TentacleFan · Blue-white control",
       "RG Goblins": "7th · Andy Dominguez · Red-green Goblins",
     },
   },

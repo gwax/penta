@@ -13,6 +13,7 @@ mod effects;
 mod identity;
 mod mana_cost;
 mod presentation;
+mod presentation_predicates;
 mod rules;
 mod rules_primitives;
 mod targeting;

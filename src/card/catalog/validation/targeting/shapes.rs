@@ -46,6 +46,7 @@ fn target_matches_expectation(
         RecipientExpectation::Object => matches!(
             predicate,
             AbilityTargetPredicate::Object { .. }
+                | AbilityTargetPredicate::StackObject { .. }
                 | AbilityTargetPredicate::ControlledByTargetOf { .. }
         ),
         RecipientExpectation::Player => matches!(predicate, AbilityTargetPredicate::Player(_)),
@@ -289,6 +290,7 @@ fn validate_value_shape(
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
+        | ValueDef::PaidAmount
         | ValueDef::DividedAmongTargets => Ok(()),
     }
 }
@@ -481,7 +483,10 @@ fn recipient_may_name_nonbattlefield_object(
             ObjectSetDef::One(
                 ObjectRefDef::Source
                 | ObjectRefDef::ResolvingObject
-                | ObjectRefDef::AttachedToSource,
+                | ObjectRefDef::AttachedToSource
+                // The permanent behind a countered ability, which is on the
+                // battlefield or nowhere.
+                | ObjectRefDef::SourceOfTargetedStackObject(_),
             )
             | ObjectSetDef::SharingNameWith(_),
         )
@@ -525,7 +530,8 @@ fn recipient_nonbattlefield_zones_support_flashback(
             ObjectSetDef::One(
                 ObjectRefDef::Source
                 | ObjectRefDef::ResolvingObject
-                | ObjectRefDef::AttachedToSource,
+                | ObjectRefDef::AttachedToSource
+                | ObjectRefDef::SourceOfTargetedStackObject(_),
             )
             | ObjectSetDef::SharingNameWith(_),
         )

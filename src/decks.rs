@@ -170,6 +170,12 @@ pub mod premodern {
         "gat_daniel_sondike.yaml",
         "Returns Daniel Sondike's GAT list from the Sacred Torch Showdown."
     );
+    deck!(
+        landstill,
+        "premodern",
+        "landstill_tentaclefan.yaml",
+        "Returns the sixth-place Landstill list from the Sacred Torch Showdown."
+    );
 }
 
 /// Built-in Eternal Central Old School 93/94 decklists.
@@ -588,6 +594,7 @@ mod tests {
             super::premodern::rg_goblins as fn() -> crate::Deck,
             super::premodern::sligh,
             super::premodern::gat,
+            super::premodern::landstill,
         ] {
             let deck = build();
             assert_eq!(deck.main.len(), 60);

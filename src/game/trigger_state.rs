@@ -38,6 +38,10 @@ impl TriggerContext {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct EffectResolutionContext {
     pub(super) trigger: TriggerContext,
+    /// What a payment made during this resolution actually cost, for the
+    /// branch that reads it back. "You may pay {X}" settles X here rather
+    /// than at the cast, which is where an ordinary X lives.
+    pub(super) paid_amount: Option<u16>,
     single_objects: [Option<Target>; ObjectBindingIndex::COUNT],
     object_groups: [Vec<Target>; ObjectSetBindingIndex::COUNT],
 }
@@ -46,6 +50,7 @@ impl EffectResolutionContext {
     pub(super) fn new(trigger: TriggerContext) -> Self {
         Self {
             trigger,
+            paid_amount: None,
             single_objects: [None; ObjectBindingIndex::COUNT],
             object_groups: std::array::from_fn(|_| Vec::new()),
         }
@@ -95,6 +100,7 @@ impl EffectResolutionContext {
     ) -> Self {
         Self {
             trigger,
+            paid_amount: None,
             single_objects,
             object_groups,
         }

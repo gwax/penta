@@ -286,8 +286,15 @@ pub(super) fn applied_effects(ability: &AbilityDef) -> Vec<AppliedEffectDef> {
 }
 
 fn collect_applied_effects_from_effect(effect: EffectDef, found: &mut Vec<AppliedEffectDef>) {
-    if let EffectDef::Apply { effect, .. } = effect {
-        collect_applied_effect(effect, found);
+    // Every effect that carries a rider, not just the one that is nothing but
+    // a rider: a damage clause with one attached leaves a resolved effect on
+    // the battlefield that has to be locatable again.
+    match effect {
+        EffectDef::Apply {
+            effect: applied, ..
+        }
+        | EffectDef::DealDamageAndApply { applied, .. } => collect_applied_effect(applied, found),
+        _ => {}
     }
     for child in child_effects(effect) {
         collect_applied_effects_from_effect(child, found);
@@ -671,6 +678,9 @@ fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static Abil
     match effect {
         EffectDef::Apply { effect, .. } | EffectDef::StaticApply { effect, .. } => {
             collect_applied_abilities(effect, abilities);
+        }
+        EffectDef::DealDamageAndApply { applied, .. } => {
+            collect_applied_abilities(applied, abilities);
         }
         EffectDef::InstallTrigger(installed) => abilities.push(installed.ability),
         _ => {}

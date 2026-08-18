@@ -4,8 +4,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef, PlayerRelation,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -167,6 +168,55 @@ static OVERLOAD_KICKED: EffectDef = EffectDef::IfCondition {
     then: &DESTROY_TARGET_ARTIFACT,
 };
 
+/// A land you control, read off what the spell or ability already targets.
+static A_LAND_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Land),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+static RESPONSE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::StackObject {
+        object: ObjectPredicateDef::TargetsObjectMatching(&A_LAND_YOU_CONTROL),
+        controller: Some(PlayerRelation::Opponent),
+    },
+)];
+
+/// The destroy follows the counter rather than preceding it: the countered
+/// ability is retired with its source recorded, so the permanent is still
+/// findable afterwards, and a spell -- which has no such source -- leaves
+/// nothing to destroy.
+static RESPONSE_EFFECT: EffectDef = EffectDef::Sequence(&[
+    EffectDef::Counter {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        zone: ZoneKind::Graveyard,
+    },
+    EffectDef::Destroy {
+        object: EffectRecipientDef::object(ObjectRefDef::SourceOfTargetedStackObject(
+            TargetIndex::PRIMARY,
+        )),
+        can_regenerate: true,
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+]);
+
+// INV 78 — Teferi's Response
+pub(in crate::card::sets) static TEFERIS_RESPONSE: CardRecord = CardRecord::new(
+    cards::TEFERIS_RESPONSE,
+    "Teferi's Response",
+    CardArt::new("f3bb2df8-8b6e-4f7c-9e9a-6c8b0f4b8e2d", "Scott Bailey"),
+    CardSet::Invasion,
+    // The answer to Wasteland and Dust Bowl: the land lives, the thing that
+    // came for it dies, and two cards make the exchange worth a card.
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Counter target spell or ability an opponent controls that targets a land you control. If a permanent's ability is countered this way, destroy that permanent.\nDraw two cards.",
+        &RESPONSE_TARGET,
+        RESPONSE_EFFECT,
+    )),
+);
+
 // INV 157 — Overload
 pub(in crate::card::sets) static OVERLOAD: CardRecord = CardRecord::new(
     cards::OVERLOAD,
@@ -241,6 +291,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FACT_OR_FICTION,
     &OPT,
     &PROHIBIT,
+    &TEFERIS_RESPONSE,
     &OVERLOAD,
     &TSABOS_WEB,
     &COASTAL_TOWER,

@@ -43,6 +43,9 @@ impl Game {
                 }
             }),
             ObjectRefDef::ResolvingObject => self.live_object_target(object.id),
+            ObjectRefDef::SourceOfTargetedStackObject(target) => self
+                .targeted_stack_object_source(target, object, scoped)
+                .map(Target::Permanent),
             ObjectRefDef::Binding(binding) => context.single_object(binding),
             ObjectRefDef::AttachedToSource => object
                 .source
@@ -91,9 +94,37 @@ impl Game {
                         Target::Player(_) => None,
                     })
             }
+            ObjectRefDef::SourceOfTargetedStackObject(target) => {
+                self.targeted_stack_object_source(target, object, scoped)
+            }
             ObjectRefDef::TriggeringObject => context.trigger.object,
         }
     }
+
+    /// The permanent a targeted stack ability came from. Read after the
+    /// ability has left the stack -- which is when "destroy that permanent"
+    /// asks -- so the retired record is the one that answers, and a targeted
+    /// spell has no such source at all.
+    fn targeted_stack_object_source(
+        &self,
+        target: crate::TargetIndex,
+        object: &StackObject,
+        scoped: ScopedEffect,
+    ) -> Option<GameObjectId> {
+        let Some(Target::Spell(id)) = Self::raw_target_reference(target, object, scoped) else {
+            return None;
+        };
+        let source = self
+            .stack
+            .iter()
+            .find(|candidate| candidate.id == id)
+            .map_or_else(|| self.retired_stack_object_source(id), |stack| stack.source)?;
+        self.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == source)
+            .then_some(source)
+    }
+
 
     fn player_reference(
         &self,

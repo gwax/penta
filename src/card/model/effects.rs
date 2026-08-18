@@ -207,6 +207,11 @@ pub enum EffectPaymentCostDef {
     /// go is a separate decision queued behind the payment, because by then
     /// the branch has already been settled.
     Discard(u16),
+    /// Generic mana in an amount the payer chooses, which the paid branch
+    /// then reads back with [`ValueDef::PaidAmount`]. This is "you may pay
+    /// {X}" during a resolution, where X is settled by the payment rather
+    /// than by the cast that produced it.
+    ChosenGenericMana,
     /// Discard one card the predicate matches. Mox Diamond's "you may discard
     /// a land card instead" is a real restriction, so a hand with nothing
     /// matching cannot pay at all even though it holds plenty of cards.
@@ -937,4 +942,8 @@ pub enum TurnStepDef {
     EndOfCombat,
     PostcombatMain,
     End,
+    /// CR 514. Nothing is cast here and nobody receives priority unless
+    /// something triggers, which is what "at the beginning of the next
+    /// cleanup step" is buying.
+    Cleanup,
 }

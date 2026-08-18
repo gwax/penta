@@ -52,6 +52,8 @@ pub(super) enum ResolvedEffectPayment {
     /// One card matching the predicate, named as part of the payment
     /// decision rather than after it.
     DiscardMatching(ObjectPredicateDef),
+    /// Generic mana in an amount the payer chooses, named the same way.
+    ChosenGenericMana,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

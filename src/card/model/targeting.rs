@@ -84,6 +84,10 @@ pub enum ObjectPredicateDef {
     /// Has the same printed name as the ability's source. Negate it for
     /// "not named <this card>".
     SharesNameWithSource,
+    /// A spell or ability on the stack whose chosen targets include an object
+    /// matching this. "That targets a land you control" reads the targets it
+    /// already has rather than what it could have taken.
+    TargetsObjectMatching(&'static ObjectPredicateDef),
     /// Bears exactly this name. Printed name matching is rare enough that the
     /// name is written out; "bands with other creatures named X" is the one
     /// place the rules ask for it without a source to compare against.
@@ -180,6 +184,14 @@ pub enum AbilityTargetPredicate {
         slot: TargetIndex,
     },
     Player(PlayerRelation),
+    /// A spell or an ability waiting on the stack. [`Self::Object`] over a
+    /// stack zone names only spells, because that is what "target spell"
+    /// means everywhere else; this is the wider slot "target spell or
+    /// ability" needs.
+    StackObject {
+        object: ObjectPredicateDef,
+        controller: Option<PlayerRelation>,
+    },
     Object {
         object: ObjectPredicateDef,
         zones: &'static [ZoneKind],

@@ -491,6 +491,9 @@ pub(super) enum ResolvedEffectPaymentSnapshot {
     /// carried here: the predicate is a static definition, and the payment
     /// this describes is only ever restored beside the ability that named it.
     DiscardMatching,
+    /// Likewise: how much can be paid is read off the payer's mana rather
+    /// than written down, because the options are rebuilt from it.
+    ChosenGenericMana,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

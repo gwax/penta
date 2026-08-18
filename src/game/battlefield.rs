@@ -908,9 +908,7 @@ impl Game {
         if self.step == Step::Upkeep {
             return;
         }
-        let Some(step) = Self::turn_step_def(self.step) else {
-            return;
-        };
+        let step = Self::turn_step_def(self.step);
         self.capture_battlefield_triggers(&CommittedTriggerEvent::StepBegins {
             step,
             player: self.active_player,

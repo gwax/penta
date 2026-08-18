@@ -7,10 +7,13 @@ static MUTAVAULT_TEST_CHARACTERISTICS: [AppliedEffectDef; 3] = [
     AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
 ];
 
+/// Cleanup is a step a card can name now, because Thawing Glaciers returns
+/// itself at the beginning of one. What stays true is that every step maps to
+/// exactly one label.
 #[test]
-fn cleanup_has_no_authored_step_trigger_label() {
-    assert_eq!(Game::turn_step_def(Step::Cleanup), None);
-    assert_eq!(Game::turn_step_def(Step::Upkeep), Some(TurnStepDef::Upkeep));
+fn every_step_including_cleanup_has_one_authored_label() {
+    assert_eq!(Game::turn_step_def(Step::Cleanup), TurnStepDef::Cleanup);
+    assert_eq!(Game::turn_step_def(Step::Upkeep), TurnStepDef::Upkeep);
 }
 
 #[test]

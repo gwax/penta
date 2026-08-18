@@ -84,6 +84,36 @@ impl Game {
             AbilityTargetPredicate::Object { .. } => {
                 self.ability_object_targets_matching(predicate, controller, source, context)
             }
+            // Spells and abilities alike, which is the whole difference from
+            // the stack-zone object slot above.
+            AbilityTargetPredicate::StackObject {
+                object,
+                controller: controller_relation,
+            } => self
+                .stack
+                .iter()
+                .filter_map(|stack_object| {
+                    let characteristics = self.stack_object_event_object(stack_object)?;
+                    (controller_relation.is_none_or(|relation| {
+                        self.player_relation_matches(
+                            stack_object.controller,
+                            relation,
+                            controller,
+                            context,
+                        )
+                    }) && self.trigger_object_matches_for_controller(
+                        object,
+                        &characteristics,
+                        source,
+                        true,
+                        // The player choosing targets, which is who "a land
+                        // you control" is measured from. A spell still in
+                        // hand has no controller to derive it from.
+                        Some(controller),
+                    ))
+                    .then_some(Target::Spell(stack_object.id))
+                })
+                .collect(),
         }
     }
 

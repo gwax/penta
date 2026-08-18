@@ -90,6 +90,10 @@ impl Game {
                     })
                     .map_or(0, i32::from)
             }
+            // Zero without a payment behind it: a branch that reads this
+            // outside a chosen-amount payment does nothing rather than
+            // guessing at a number.
+            ValueDef::PaidAmount => i32::from(context.paid_amount.unwrap_or(0)),
             ValueDef::CountersOnSource(kind) => object.source.map_or(0, |source| {
                 i32::from(self.current_or_last_known_counters(source, kind))
             }),

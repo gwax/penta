@@ -32,6 +32,7 @@ fn resolved_effect_payment(
         EffectPaymentCostDef::Discard(amount) => {
             super::super::ResolvedEffectPayment::Discard(amount)
         }
+        EffectPaymentCostDef::ChosenGenericMana => super::super::ResolvedEffectPayment::ChosenGenericMana,
         EffectPaymentCostDef::DiscardMatching(predicate) => {
             super::super::ResolvedEffectPayment::DiscardMatching(predicate)
         }

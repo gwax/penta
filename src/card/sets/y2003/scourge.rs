@@ -3,14 +3,60 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, EffectDef, EffectPaymentCostDef,
+    EffectPaymentDef, EffectRecipientDef, ObjectPredicateDef, PayOrDef, PlayerRelation,
+    PlayerSetDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 static GOBLIN_SPELLS: ObjectPredicateDef = ObjectPredicateDef::Subtype("Goblin");
+
+/// The cycling half: X is settled by the payment rather than by a cast, so
+/// the branch that makes the tokens reads back what was actually paid.
+static DECREE_SOLDIERS: EffectDef = EffectDef::CreateToken {
+    token: cards::SOLDIER_TOKEN_1_1_WHITE,
+    count: ValueDef::PaidAmount,
+    tapped: false,
+};
+
+static DECREE_CYCLING_TRIGGER: EffectDef = EffectDef::PayOr(PayOrDef::optional(
+    EffectPaymentDef {
+        payer: PlayerSetDef::Related(PlayerRelation::You),
+        cost: EffectPaymentCostDef::ChosenGenericMana,
+    },
+    &DECREE_SOLDIERS,
+));
+
+// SCG 8 — Decree of Justice
+pub(in crate::card::sets) static DECREE_OF_JUSTICE: CardRecord = CardRecord::new(
+    cards::DECREE_OF_JUSTICE,
+    "Decree of Justice",
+    CardArt::new("5e8a7e5c-2a37-4e73-b5c9-b8a4b9d0b6e9", "Adam Rex"),
+    CardSet::Scourge,
+    // Cast for Angels when the game went long, cycled for Soldiers at the end
+    // of an opponent's turn when it did not. Landstill wants the second mode
+    // far more often than the first.
+    CardRules::new_sorcery(mana_cost!("{X}{X}{2}{W}{W}")).with_abilities(&[
+        AbilityDef::spell(
+            "Create X 4/4 white Angel creature tokens with flying.",
+            EffectDef::CreateToken {
+                token: cards::ANGEL_TOKEN_4_4_WHITE,
+                count: ValueDef::ChosenX,
+                tapped: false,
+            },
+        ),
+        abilities::cycling(
+            "Cycling {2}{W} ({2}{W}, Discard this card: Draw a card.)",
+            mana_cost!("{2}{W}"),
+        ),
+        AbilityDef::triggered(
+            "When you cycle this card, you may pay {X}. If you do, create X 1/1 white Soldier creature tokens.",
+            TriggerEventDef::Cycled,
+            DECREE_CYCLING_TRIGGER,
+        ),
+    ]),
+);
 
 // SCG 12 — Eternal Dragon
 pub(in crate::card::sets) static ETERNAL_DRAGON: CardRecord = CardRecord::new(
@@ -125,7 +171,11 @@ pub(in crate::card::sets) static SIEGE_GANG_COMMANDER: CardRecord = CardRecord::
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&ETERNAL_DRAGON, &GOBLIN_WARCHIEF, &SIEGE_GANG_COMMANDER];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &DECREE_OF_JUSTICE,
+    &ETERNAL_DRAGON,
+    &GOBLIN_WARCHIEF,
+    &SIEGE_GANG_COMMANDER,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
