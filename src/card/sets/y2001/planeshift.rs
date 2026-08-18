@@ -2,8 +2,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CounterKind, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, cards,
+    AbilityDef, AppliedEffectDef, AppliedRuleDef, BattlefieldEntryChoiceDestinationDef,
+    BattlefieldEntryScalarChoiceDef, CardArt, CardRules, CardSet, CounterKind, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayActionMatcherDef, PlayRestrictionDef,
+    PlayerRelation, ReplacementChoiceDef, ReplacementEffectDef, TriggerEventDef, ValueDef, cards,
 };
 use crate::mana_cost;
 
@@ -34,6 +36,43 @@ pub(in crate::card::sets) static QUIRION_DRYAD: CardRecord = CardRecord::new(
     ),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&QUIRION_DRYAD];
+/// The lock is a player-facing rule rather than an object one: it names the
+/// action, and the predicate reads the name the Mage chose on the way in.
+static SPELLS_WITH_THE_CHOSEN_NAME: PlayRestrictionDef = PlayRestrictionDef::new(
+    PlayActionMatcherDef::CastSpell,
+    ObjectPredicateDef::HasSourcesChosenScalar(BattlefieldEntryChoiceDestinationDef::CardName),
+);
+
+// PLS 116 — Meddling Mage
+pub(in crate::card::sets) static MEDDLING_MAGE: CardRecord = CardRecord::new(
+    cards::MEDDLING_MAGE,
+    "Meddling Mage",
+    CardArt::new(
+        "176f84c6-aa5e-449c-bd2b-cc91a898f0c7",
+        "Christopher Moeller",
+    ),
+    CardSet::Planeshift,
+    // Both players, which is why the mirror is miserable: the Mage does not
+    // care who was going to cast the card it named.
+    CardRules::new_creature(mana_cost!("{W}{U}"), &["Human", "Wizard"], 2, 2).with_abilities(&[
+        AbilityDef::replacement(
+            "As this creature enters, choose a nonland card name.",
+            ReplacementEffectDef::Choose(ReplacementChoiceDef::Scalar(
+                BattlefieldEntryScalarChoiceDef::NONLAND_CARD_NAME,
+            )),
+        ),
+        AbilityDef::static_ability(
+            "Spells with the chosen name can't be cast.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::EachPlayer,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(
+                    SPELLS_WITH_THE_CHOSEN_NAME,
+                )),
+            },
+        ),
+    ]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&QUIRION_DRYAD, &MEDDLING_MAGE];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

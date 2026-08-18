@@ -79,6 +79,10 @@ pub enum ScalarChoiceListDef {
     /// Every independently nameable card part in the catalog, including split
     /// halves and back faces rather than only top-level card identities.
     CardNames,
+    /// The same, without the lands. "Choose a nonland card name" is a real
+    /// restriction on Meddling Mage rather than flavor: naming a land would
+    /// otherwise lock out a fetch that was never castable anyway.
+    NonlandCardNames,
     /// Every creature subtype available to the current game.
     CreatureTypes,
 }
@@ -104,6 +108,11 @@ pub struct BattlefieldEntryScalarChoiceDef {
 impl BattlefieldEntryScalarChoiceDef {
     pub const CARD_NAME: Self = Self {
         list: ScalarChoiceListDef::CardNames,
+        destination: BattlefieldEntryChoiceDestinationDef::CardName,
+    };
+
+    pub const NONLAND_CARD_NAME: Self = Self {
+        list: ScalarChoiceListDef::NonlandCardNames,
         destination: BattlefieldEntryChoiceDestinationDef::CardName,
     };
 

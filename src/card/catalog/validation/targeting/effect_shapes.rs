@@ -304,7 +304,7 @@ fn validate_replacement_effect_target_shapes(
             if matches!(
                 (choice.list, choice.destination),
                 (
-                    ScalarChoiceListDef::CardNames,
+                    ScalarChoiceListDef::CardNames | ScalarChoiceListDef::NonlandCardNames,
                     BattlefieldEntryChoiceDestinationDef::CardName
                 ) | (
                     ScalarChoiceListDef::CreatureTypes,

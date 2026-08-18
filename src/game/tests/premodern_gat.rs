@@ -232,3 +232,116 @@ fn a_spent_mine_offers_nothing() {
         "a land in the graveyard is not a mana source",
     );
 }
+
+/// Casts Meddling Mage and has it name `named`, returning the Mage.
+fn meddling_mage_naming(game: &mut Game, named: &str) -> GameObjectId {
+    let mage = card(10_000, cards::MEDDLING_MAGE, PlayerId::One);
+    let mage_id = mage.id;
+    game.players[PlayerId::One.index()].hand.push(mage);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.white = 1;
+    pool.blue = 1;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(mage_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("the Mage is cast");
+    pass_priority_pair(game);
+    choose_scalar(game, PlayerId::One, named);
+    game.battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::MEDDLING_MAGE)
+        .expect("the Mage entered once its name was chosen")
+        .card
+        .id
+}
+
+/// Whether `player` is offered a cast of the card object `card`.
+fn can_cast(game: &Game, player: PlayerId, card: GameObjectId) -> bool {
+    game.legal_actions(player).iter().any(
+        |action| matches!(action, Action::CastSpell { card: candidate, .. } if *candidate == card),
+    )
+}
+
+#[test]
+fn meddling_mage_locks_out_the_name_it_chose() {
+    let mut game = ready_game();
+    let bolt = card(10_001, cards::LIGHTNING_BOLT, PlayerId::Two);
+    let bolt_id = bolt.id;
+    game.players[PlayerId::Two.index()].hand.push(bolt);
+    let opt = card(10_002, cards::OPT, PlayerId::Two);
+    let opt_id = opt.id;
+    game.players[PlayerId::Two.index()].hand.push(opt);
+    let pool = &mut game.players[PlayerId::Two.index()].mana_pool;
+    pool.red = 1;
+    pool.blue = 1;
+
+    meddling_mage_naming(&mut game, "Lightning Bolt");
+    game.priority = PlayerId::Two;
+
+    assert!(
+        !can_cast(&game, PlayerId::Two, bolt_id),
+        "the named spell cannot be cast",
+    );
+    assert!(
+        can_cast(&game, PlayerId::Two, opt_id),
+        "everything else still can",
+    );
+}
+
+/// The lock is symmetric, and it dies with the Mage.
+#[test]
+fn the_lock_binds_its_own_controller_and_leaves_with_the_mage() {
+    let mut game = ready_game();
+    let bolt = card(10_001, cards::LIGHTNING_BOLT, PlayerId::One);
+    let bolt_id = bolt.id;
+    game.players[PlayerId::One.index()].hand.push(bolt);
+
+    let mage = meddling_mage_naming(&mut game, "Lightning Bolt");
+    game.players[PlayerId::One.index()].mana_pool.red = 1;
+    assert!(
+        !can_cast(&game, PlayerId::One, bolt_id),
+        "the Mage does not care who was going to cast it",
+    );
+
+    game.move_permanents_to_graveyard(&[mage]);
+    drain_pending(&mut game);
+    assert!(
+        can_cast(&game, PlayerId::One, bolt_id),
+        "and the lock leaves with it",
+    );
+}
+
+/// "Choose a nonland card name" is a restriction, not flavor.
+#[test]
+fn the_mage_is_not_offered_a_land_to_name() {
+    let mut game = ready_game();
+    let mage = card(10_000, cards::MEDDLING_MAGE, PlayerId::One);
+    let mage_id = mage.id;
+    game.players[PlayerId::One.index()].hand.push(mage);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.white = 1;
+    pool.blue = 1;
+    game.apply(
+        PlayerId::One,
+        cast_action(mage_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("the Mage is cast");
+    pass_priority_pair(&mut game);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the Mage asks for a name");
+    let labels: Vec<&str> = decision
+        .options
+        .iter()
+        .map(|option| option.label.as_str())
+        .collect();
+    assert!(labels.contains(&"Lightning Bolt"), "a spell is nameable",);
+    assert!(
+        !labels.contains(&"Island") && !labels.contains(&"Gemstone Mine"),
+        "no land is, basic or otherwise",
+    );
+}

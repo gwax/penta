@@ -173,17 +173,30 @@ impl Game {
         choice: BattlefieldEntryScalarChoiceDef,
     ) -> (&'static str, Vec<String>) {
         let (prompt, mut choices, fallback) = match choice.list {
-            ScalarChoiceListDef::CardNames => {
+            ScalarChoiceListDef::CardNames | ScalarChoiceListDef::NonlandCardNames => {
+                let nonland_only = choice.list == ScalarChoiceListDef::NonlandCardNames;
                 let mut names = self
                     .catalog
                     .definitions()
                     .into_iter()
                     .filter(|definition| definition.debut_set != CardSet::Token)
-                    .flat_map(|definition| definition.parts.iter().map(|part| part.name.clone()))
+                    .flat_map(|definition| definition.parts.iter())
+                    // A split card is nameable half by half, so the land test
+                    // belongs to the part rather than to the whole card.
+                    .filter(|part| !nonland_only || !part.rules.types().contains(CardType::Land))
+                    .map(|part| part.name.clone())
                     .collect::<Vec<_>>();
                 names.sort();
                 names.dedup();
-                ("Choose a card name", names, "Black Lotus")
+                (
+                    if nonland_only {
+                        "Choose a nonland card name"
+                    } else {
+                        "Choose a card name"
+                    },
+                    names,
+                    "Black Lotus",
+                )
             }
             ScalarChoiceListDef::CreatureTypes => (
                 "Choose a creature type",
