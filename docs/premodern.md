@@ -11,14 +11,19 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 37 of them not yet cataloged
+- 145 distinct cards across the tranche, 34 of them not yet cataloged
 - 3 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
   and Andy Dominguez's RG Goblins. Nothing in any of them is metadata-only or
   partial
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: Landstill 7, Stasis 7, BW Control 10, Replenish 11, Angry Hermit 12. A list is blocked only by uncataloged cards -- no staged deck
+together: Landstill 3, Stasis 7, BW Control 10, Replenish 11, Angry Hermit 12.
+Landstill is waiting on Decree of Justice, which needs a payment whose
+amount the payer chooses and which the paid branch can then read; Thawing
+Glaciers, which returns itself at the beginning of the next cleanup step, a
+step that raises no trigger today; and Teferi's Response, which counters an
+ability rather than a spell. A list is blocked only by uncataloged cards -- no staged deck
 contains a card that is cataloged but unplayable.
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -49,10 +54,13 @@ result and rebuild sampled Premodern positions from their observations.
 - Implement reusable mechanics before card-local behavior. Cycling and
   typecycling, flashback, split cards, tutors, alternative costs that exile a
   card from hand, and single-card reanimation are all in place. What the
-  remaining lists still need: fading (Parallax Wave); morph (Exalted Angel);
-  storm (Brain Freeze); countering an activated or triggered ability (Stifle);
-  a mass graveyard-to-battlefield return (Replenish); and the layer rewrites
-  Humility and Opalescence ask for. Naming a card and reading the name back,
+  remaining lists still need: a payment whose amount the payer chooses
+  (Decree of Justice); a trigger at the beginning of the cleanup step
+  (Thawing Glaciers); countering an activated or triggered ability (Stifle,
+  Teferi's Response); fading (Parallax Wave); morph (Exalted Angel); storm
+  (Brain Freeze); a mass graveyard-to-battlefield return (Replenish); and the
+  layer rewrite Opalescence asks for. Humility needed none: the layers
+  already remove abilities and set base power and toughness. Naming a card and reading the name back,
   arranging the top of a library, spending a land's counters, and a payment
   that discards a card matching a predicate all landed with the GAT tranche.
 - Audit the existing definitions against their Premodern Oracle text and
@@ -118,6 +126,7 @@ older unannotated definitions still require one):
 - `Goblin Warchief` — complete
 - `Grim Lavamancer` — complete
 - `Gush` — complete
+- `Humility` — complete
 - `Hydroblast` — complete
 - `Impulse` — complete
 - `Incinerate` — complete; the rider follows the damage, not the target
@@ -141,8 +150,10 @@ older unannotated definitions still require one):
 - `Opt` — complete
 - `Overload` — complete
 - `Phyrexian Arena` — complete
+- `Phyrexian Furnace` — complete; the tap mode eats the oldest card
 - `Plains`
 - `Portent` — complete; the arrangement is the order the cards are named
+- `Powder Keg` — complete
 - `Presence of the Master` — complete
 - `Prohibit` — complete
 - `Psychatog` — complete
@@ -201,14 +212,11 @@ Not yet cataloged:
 - [ ] `Gilded Drake`
 - [ ] `Haunting Echoes`
 - [ ] `Hermit Druid`
-- [ ] `Humility`
 - [ ] `Intuition`
 - [ ] `Krosan Reclamation`
 - [ ] `Opalescence`
 - [ ] `Parallax Wave`
 - [ ] `Phyrexian Dreadnought`
-- [ ] `Phyrexian Furnace`
-- [ ] `Powder Keg`
 - [ ] `Reflecting Pool`
 - [ ] `Replenish`
 - [ ] `Shallow Grave`

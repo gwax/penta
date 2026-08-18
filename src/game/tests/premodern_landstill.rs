@@ -141,3 +141,42 @@ fn powder_keg_destroys_what_its_fuse_counters_name() {
         "a one-drop did not",
     );
 }
+
+/// Humility is a layers question: the abilities go in layer 6 and the stats
+/// are set in 7b, so a creature it catches keeps neither.
+#[test]
+fn humility_flattens_every_creature_on_the_board() {
+    let mut game = ready_game();
+    let flier = creature(10_001, cards::GOBLIN_BALLOON_BRIGADE, PlayerId::One);
+    let flier_id = flier.card.id;
+    game.battlefield.push(flier);
+    let big = creature(10_002, cards::GOBLIN_RINGLEADER, PlayerId::Two);
+    let big_id = big.card.id;
+    game.battlefield.push(big);
+
+    let humility = creature(10_000, cards::HUMILITY, PlayerId::One);
+    game.battlefield.push(humility);
+    drain_pending(&mut game);
+
+    for id in [flier_id, big_id] {
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .expect("still on the battlefield");
+        assert_eq!(game.power(permanent), Some(1));
+        assert_eq!(game.toughness(permanent), Some(1));
+    }
+    let brigade = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == flier_id)
+        .expect("still there");
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == brigade.card.id)),
+        "its activated ability is gone with the rest",
+    );
+}

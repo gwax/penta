@@ -2,15 +2,45 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, TriggerConditionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
+    AddManaEffectDef, AppliedEffectDef, BattlefieldEntryModificationDef, CardArt, CardRules,
+    CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ReplacementEventDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{TargetIndex, mana_cost};
+
+/// Everything at once, in one static effect: the abilities go in layer 6 and
+/// the stats are set in layer 7b, and a creature that arrives later is caught
+/// by the same continuous effect rather than needing its own.
+static HUMBLED: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+];
+
+// TMP 24 — Humility
+pub(in crate::card::sets) static HUMILITY: CardRecord = CardRecord::new(
+    cards::HUMILITY,
+    "Humility",
+    CardArt::new("a2fb7128-806b-4148-80fe-eb967f248021", "Phil Foglio"),
+    CardSet::Tempest,
+    // Symmetric and total: the control deck playing it has no creatures to
+    // lose, which is the whole argument for the card.
+    CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_ability(AbilityDef::static_ability(
+        "All creatures lose all abilities and have base power and toughness 1/1.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::Composite(&HUMBLED),
+        },
+    )),
+);
 
 // TMP 51 — Warmth
 pub(in crate::card::sets) static WARMTH: CardRecord = CardRecord::new(
@@ -259,6 +289,7 @@ pub(in crate::card::sets) static WASTELAND: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &HUMILITY,
     &WARMTH,
     &CHILL,
     &REANIMATE,
