@@ -152,6 +152,17 @@ distinguishes snapshots of the covered source and build inputs.
   Akroma's Vengeance, Secluded Steppe, Eternal Dragon, and Gempalm
   Incinerator.
 
+- **Sligh is the second registered Premodern deck.** Registering it needed
+  Mogg Salvage, whose free cast is conditional on the board -- an alternative
+  cast can now carry a condition, and conditions can be conjoined, since the
+  clause names two facts at once. Lightning Bolt, Earthquake, and Volcanic
+  Hammer also gained the printings that put them inside the window.
+
+  The registration test no longer demands that every main-deck card be
+  complete: Incinerate's "can't be regenerated" rider needs damage-result
+  linkage the engine lacks. It demands instead that nothing is metadata-only,
+  and names the partial cards explicitly so the list cannot grow quietly.
+
 - **Spending has a mode.** A nonmana cost used to spend whatever it named the
   way that object's zone implied -- a permanent sacrificed, a card in hand
   discarded. A cost can now say otherwise, which is what the free-spell cycle

@@ -45,8 +45,8 @@ up when the first staged list is promoted.
 - Audit the existing definitions against their Premodern Oracle text and
   interactions.
 - Promote each staged deck into the runtime registry only when every main-deck
-  card is playable and the sideboard has honest catalog coverage. RG Goblins
-  is registered; the other seven lists remain staged.
+  card is playable and the sideboard has honest catalog coverage. RG Goblins and
+  Sligh are registered; the other six lists remain staged.
 - Add protocol/binding documentation and UI format/deck selection when the
   profile becomes public.
 
@@ -113,6 +113,7 @@ older unannotated definitions still require one):
 - `Mana Short` — complete
 - `Mishra's Factory`
 - `Mogg Fanatic` — complete
+- `Mogg Salvage` — complete
 - `Monk Realist` — complete
 - `Mountain`
 - `Naturalize` — complete
@@ -184,7 +185,6 @@ Not yet cataloged:
 - [ ] `Intuition`
 - [ ] `Krosan Reclamation`
 - [ ] `Meddling Mage`
-- [ ] `Mogg Salvage`
 - [ ] `Mox Diamond`
 - [ ] `Opalescence`
 - [ ] `Parallax Wave`

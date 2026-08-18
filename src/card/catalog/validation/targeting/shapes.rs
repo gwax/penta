@@ -360,6 +360,10 @@ fn validate_trigger_condition_shape(
     targets: &[AbilityTargetDef],
 ) -> Result<(), GrantedAbilityValidationError> {
     match condition {
+        TriggerConditionDef::All(conditions) => conditions
+            .iter()
+            .copied()
+            .try_for_each(|condition| validate_trigger_condition_shape(condition, targets)),
         TriggerConditionDef::ObjectCount { query, .. } => validate_query_shape(query, targets),
         TriggerConditionDef::SourceMatches { object }
         | TriggerConditionDef::AttachedPermanentMatches { object } => {

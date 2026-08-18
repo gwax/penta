@@ -277,6 +277,7 @@ fn cost_configuration_visitor_preserves_option_order() {
         game.visit_cost_configurations(
             &definition,
             GameObjectId(10_201),
+            PlayerId::One,
             &option,
             CastSourceZone::Hand,
             |configuration| {

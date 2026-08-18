@@ -616,6 +616,10 @@ fn validate_trigger_condition(
     scope: BindingScope,
 ) -> Result<(), GrantedAbilityValidationError> {
     match condition {
+        TriggerConditionDef::All(conditions) => conditions
+            .iter()
+            .copied()
+            .try_for_each(|condition| validate_trigger_condition(condition, target_count, scope)),
         TriggerConditionDef::ObjectCount { query, .. } => {
             validate_query(query, target_count, scope)
         }

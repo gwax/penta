@@ -405,6 +405,10 @@ pub enum ComparisonDef {
 /// ability would go on the stack, and again as it resolves.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TriggerConditionDef {
+    /// Every listed condition holds. A card whose clause names two facts at
+    /// once -- "if an opponent controls an Island and you control a Mountain"
+    /// -- is one condition made of two rather than two clauses.
+    All(&'static [TriggerConditionDef]),
     /// Whether the original source object is still on the battlefield.
     SourceOnBattlefield,
     /// Whether two bound objects share a card name. Naming a card and then
@@ -586,6 +590,10 @@ pub struct AlternativeCastAbilityDef {
     /// spent the way the zone says: a permanent is sacrificed, a card in a
     /// graveyard is exiled, a card in hand is discarded.
     pub additional_cost: Option<SpellAdditionalCostDef>,
+    /// A board condition the alternative requires. Mogg Salvage's free cast
+    /// is only available while the two lands it names are out, so a false
+    /// condition means the alternative is not offered at all.
+    pub condition: Option<&'static TriggerConditionDef>,
     /// What the modified spell targets. Overload replaces "target" with
     /// "each" and so declares none, but a kicked spell targets exactly what
     /// the unkicked one does -- and the clause carries its own instructions,

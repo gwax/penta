@@ -458,7 +458,7 @@ impl Game {
         }
 
         if !self
-            .visit_cost_configurations(definition, card_id, option, source_zone, |costs| {
+            .visit_cost_configurations(definition, card_id, player, option, source_zone, |costs| {
                 if &costs == choices.costs() {
                     ControlFlow::Break(())
                 } else {

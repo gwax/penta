@@ -158,6 +158,12 @@ pub mod premodern {
         "rg_goblins_andy_dominguez.yaml",
         "Returns Andy Dominguez's RG Goblins list from the Sacred Torch Showdown."
     );
+    deck!(
+        sligh,
+        "premodern",
+        "sligh_neal_sacks.yaml",
+        "Returns Neal Sacks's Sligh list from the Sacred Torch Showdown."
+    );
 }
 
 /// Built-in Eternal Central Old School 93/94 decklists.
@@ -564,29 +570,48 @@ mod tests {
         }
     }
 
-    /// The one registered Premodern list has to be legal in the format it is
-    /// registered under, and every card in it has to actually resolve --
-    /// publishing a deck whose cards the engine cannot carry out would offer
-    /// legal actions it then fails to perform.
+    /// A registered Premodern list has to be legal in the format it is
+    /// registered under, and no card in it may be metadata-only -- publishing
+    /// a deck whose cards the engine cannot carry out would offer legal
+    /// actions it then fails to perform.
     #[test]
     fn the_registered_premodern_deck_is_legal_and_fully_playable() {
         let catalog = crate::card::catalog().expect("catalog builds");
-        let deck = super::premodern::rg_goblins();
-        assert_eq!(deck.main.len(), 60);
-        assert_eq!(deck.sideboard.len(), 15);
-        deck.clone()
-            .validate_for_format(&catalog, Format::Premodern)
-            .expect("the list is Premodern legal");
+        let mut partial = BTreeSet::new();
+        for build in [
+            super::premodern::rg_goblins as fn() -> crate::Deck,
+            super::premodern::sligh,
+        ] {
+            let deck = build();
+            assert_eq!(deck.main.len(), 60);
+            assert_eq!(deck.sideboard.len(), 15);
+            deck.clone()
+                .validate_for_format(&catalog, Format::Premodern)
+                .expect("the list is Premodern legal");
 
-        for definition in deck.main.iter().copied() {
-            let card = catalog.get(definition).expect("every card is cataloged");
-            assert_eq!(
-                card.rules.implementation_status(),
-                crate::ImplementationStatus::Complete,
-                "{} is in the registered main deck and must resolve",
-                card.name,
-            );
+            for definition in deck.main.iter().copied() {
+                let card = catalog.get(definition).expect("every card is cataloged");
+                assert_ne!(
+                    card.rules.implementation_status(),
+                    crate::ImplementationStatus::MetadataOnly,
+                    "{} is in a registered main deck and does nothing at all",
+                    card.name,
+                );
+                if card.rules.implementation_status() == crate::ImplementationStatus::Partial {
+                    partial.insert(card.name.clone());
+                }
+            }
         }
+
+        // A partial card is allowed in a registered deck only when its main
+        // function resolves and the gap is a rider. Naming them here is what
+        // stops the list growing quietly: a new partial fails this until
+        // somebody decides it is acceptable and says so.
+        assert_eq!(
+            partial,
+            BTreeSet::from(["Incinerate".to_owned()]),
+            "the partial cards in registered decks are not the expected ones",
+        );
     }
 
     #[test]

@@ -365,6 +365,7 @@ impl AbilityDef {
                 stack_text,
                 targets,
                 additional_cost: None,
+                condition: None,
             }),
             effect,
         )
@@ -387,6 +388,7 @@ impl AbilityDef {
                 stack_text,
                 targets: &[],
                 additional_cost: None,
+                condition: None,
             }),
             effect,
         )
@@ -502,6 +504,25 @@ impl AbilityDef {
             panic!("only an alternative cast pays instead of a mana cost");
         };
         definition.additional_cost = Some(*cost);
+        self.definition = DeclarativeAbilityDef::AlternativeCast(definition);
+        self
+    }
+
+    /// A board condition an alternative cast requires, for a free cast that
+    /// is only available while something is true.
+    ///
+    /// # Panics
+    ///
+    /// Panics for any ability that is not an alternative cast.
+    #[must_use]
+    pub const fn with_alternative_condition(
+        mut self,
+        condition: &'static TriggerConditionDef,
+    ) -> Self {
+        let DeclarativeAbilityDef::AlternativeCast(mut definition) = self.definition else {
+            panic!("only an alternative cast has a casting condition");
+        };
+        definition.condition = Some(condition);
         self.definition = DeclarativeAbilityDef::AlternativeCast(definition);
         self
     }

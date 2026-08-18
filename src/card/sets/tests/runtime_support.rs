@@ -367,6 +367,9 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
 
 pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
     match condition {
+        TriggerConditionDef::All(conditions) => {
+            conditions.iter().copied().all(shared_trigger_condition)
+        }
         TriggerConditionDef::ObjectCount { query, .. } => shared_object_predicate(query.object),
         TriggerConditionDef::TargetMatches { object, .. }
         | TriggerConditionDef::SourceMatches { object }

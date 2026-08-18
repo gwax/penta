@@ -3,10 +3,11 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, DamageEventMatcherDef,
-    DamagePreventionDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectRefDef, ResolvedEffectDurationDef, SpellAdditionalCostDef, SpendModeDef, ValueDef,
-    ZoneKind, abilities, cards,
+    BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
+    DamageEventMatcherDef, DamagePreventionDef, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PlayerRelation, ResolvedEffectDurationDef,
+    SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, ValueDef, ZoneKind, abilities,
+    cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -74,6 +75,60 @@ pub(in crate::card::sets) static DAZE: CardRecord = CardRecord::new(
     ]),
 );
 
+/// "If an opponent controls an Island and you control a Mountain" -- one
+/// condition made of two, checked where the free cast is offered rather than
+/// where it resolves.
+static AN_OPPONENTS_ISLAND: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Opponent,
+);
+
+static YOUR_MOUNTAIN: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static SALVAGE_WINDOW: TriggerConditionDef = TriggerConditionDef::All(&[
+    TriggerConditionDef::ObjectCount {
+        query: AN_OPPONENTS_ISLAND,
+        comparison: ComparisonDef::GreaterOrEqual,
+        amount: 1,
+    },
+    TriggerConditionDef::ObjectCount {
+        query: YOUR_MOUNTAIN,
+        comparison: ComparisonDef::GreaterOrEqual,
+        amount: 1,
+    },
+]);
+
+// NEM 94 — Mogg Salvage
+pub(in crate::card::sets) static MOGG_SALVAGE: CardRecord = CardRecord::new(
+    cards::MOGG_SALVAGE,
+    "Mogg Salvage",
+    CardArt::new("403aa48c-b684-4c54-8863-460958055a1f", "Paolo Parente"),
+    CardSet::Nemesis,
+    // Free only against the deck it was printed to beat, which is why it is a
+    // sideboard card rather than a maindeck one.
+    CardRules::new_instant(mana_cost!("{2}{R}")).with_abilities(&[
+        AbilityDef::destroy_target(
+            "Destroy target artifact.",
+            &AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::HasType(
+                CardType::Artifact,
+            )),
+            true,
+        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::AlternativeCost,
+            Some("If an opponent controls an Island and you control a Mountain, you may cast this spell without paying its mana cost."),
+            EffectDef::None,
+        )
+        .with_alternative_condition(&SALVAGE_WINDOW),
+    ]),
+);
+
 // NEM 98 — Seal of Fire
 pub(in crate::card::sets) static SEAL_OF_FIRE: CardRecord = CardRecord::new(
     cards::SEAL_OF_FIRE,
@@ -133,7 +188,12 @@ pub(in crate::card::sets) static KOR_HAVEN: CardRecord = CardRecord::new(
         ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&SEAL_OF_CLEANSING, &DAZE, &SEAL_OF_FIRE, &KOR_HAVEN];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &SEAL_OF_CLEANSING,
+    &DAZE,
+    &MOGG_SALVAGE,
+    &SEAL_OF_FIRE,
+    &KOR_HAVEN,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

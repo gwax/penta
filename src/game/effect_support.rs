@@ -563,6 +563,11 @@ impl Game {
         } = condition
         else {
             return match condition {
+                TriggerConditionDef::All(conditions) => conditions.iter().all(|condition| {
+                    self.trigger_condition_holds(
+                        condition, source, controller, context, ability, object,
+                    )
+                }),
                 TriggerConditionDef::SourceOnBattlefield => self
                     .battlefield
                     .iter()

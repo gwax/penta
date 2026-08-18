@@ -231,6 +231,7 @@ impl Game {
                     let _ = self.visit_cost_configurations(
                         definition,
                         card.id,
+                        player,
                         option,
                         source_zone,
                         |costs| {
@@ -509,6 +510,7 @@ impl Game {
         &self,
         definition: &CardDefinition,
         card: GameObjectId,
+        player: PlayerId,
         option: &PlayOptionDef,
         source_zone: CastSourceZone,
         mut visitor: impl FnMut(CostConfiguration) -> ControlFlow<()>,
@@ -532,37 +534,59 @@ impl Game {
                 Some(_) => continue,
                 None => None,
             };
-            let available = match (source_zone, kind) {
-                (CastSourceZone::Hand, Some(AlternativeCastKindDef::Flashback))
-                | (
-                    CastSourceZone::Graveyard,
-                    Some(
-                        AlternativeCastKindDef::Overload
-                        | AlternativeCastKindDef::Miracle
-                        | AlternativeCastKindDef::Kicked
-                        | AlternativeCastKindDef::AlternativeCost,
-                    )
-                    | None,
-                ) => false,
-                // A kicked spell, and one paid for some other way, are both
-                // cast from hand like any other; only what they cost and what
-                // they do are different.
-                (
-                    CastSourceZone::Hand,
-                    Some(
-                        AlternativeCastKindDef::Overload
-                        | AlternativeCastKindDef::Kicked
-                        | AlternativeCastKindDef::AlternativeCost,
-                    )
-                    | None,
-                )
-                | (CastSourceZone::Graveyard, Some(AlternativeCastKindDef::Flashback)) => true,
-                // Only in the window the draw opened, and only for the card
-                // that was drawn.
-                (CastSourceZone::Hand, Some(AlternativeCastKindDef::Miracle)) => {
-                    self.miracle_window == Some(card)
-                }
+            // A free cast gated on the board is not offered while its
+            // condition is false, the same way an "activate only if" ability
+            // is not offered.
+            let gated = match Self::alternative_cast_clause(definition, option, cost.id) {
+                Some((origin, ability, _)) => match ability.definition {
+                    DeclarativeAbilityDef::AlternativeCast(alternative) => {
+                        alternative.condition.is_some_and(|condition| {
+                            !self.trigger_condition_holds(
+                                condition,
+                                card,
+                                player,
+                                TriggerContext::empty(),
+                                Some(origin),
+                                None,
+                            )
+                        })
+                    }
+                    _ => false,
+                },
+                None => false,
             };
+            let available = !gated
+                && match (source_zone, kind) {
+                    (CastSourceZone::Hand, Some(AlternativeCastKindDef::Flashback))
+                    | (
+                        CastSourceZone::Graveyard,
+                        Some(
+                            AlternativeCastKindDef::Overload
+                            | AlternativeCastKindDef::Miracle
+                            | AlternativeCastKindDef::Kicked
+                            | AlternativeCastKindDef::AlternativeCost,
+                        )
+                        | None,
+                    ) => false,
+                    // A kicked spell, and one paid for some other way, are both
+                    // cast from hand like any other; only what they cost and what
+                    // they do are different.
+                    (
+                        CastSourceZone::Hand,
+                        Some(
+                            AlternativeCastKindDef::Overload
+                            | AlternativeCastKindDef::Kicked
+                            | AlternativeCastKindDef::AlternativeCost,
+                        )
+                        | None,
+                    )
+                    | (CastSourceZone::Graveyard, Some(AlternativeCastKindDef::Flashback)) => true,
+                    // Only in the window the draw opened, and only for the card
+                    // that was drawn.
+                    (CastSourceZone::Hand, Some(AlternativeCastKindDef::Miracle)) => {
+                        self.miracle_window == Some(card)
+                    }
+                };
             if available
                 && Self::visit_additional_cost_configurations(
                     option,

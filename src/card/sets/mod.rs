@@ -196,6 +196,11 @@ const SET_MODULES: &[SetModule] = &[
         y2001::planeshift::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::SeventhEdition,
+        y2001::seventh_edition::CARDS,
+        y2001::seventh_edition::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Apocalypse,
         y2001::apocalypse::CARDS,
         y2001::apocalypse::ADDITIONAL_PRINTINGS,

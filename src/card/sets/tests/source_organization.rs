@@ -202,6 +202,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("nemesis.rs") => source(CardSet::Nemesis, "NEM"),
         Some("invasion.rs") => source(CardSet::Invasion, "INV"),
         Some("planeshift.rs") => source(CardSet::Planeshift, "PLS"),
+        Some("seventh_edition.rs") => source(CardSet::SeventhEdition, "7ED"),
         Some("apocalypse.rs") => source(CardSet::Apocalypse, "APC"),
         Some("odyssey.rs") => source(CardSet::Odyssey, "ODY"),
         Some("judgment.rs") => source(CardSet::Judgment, "JUD"),

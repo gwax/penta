@@ -723,6 +723,10 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
 
 fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
     match condition {
+        TriggerConditionDef::All(conditions) => conditions
+            .iter()
+            .copied()
+            .all(static_trigger_condition_supported),
         TriggerConditionDef::ObjectCount { query, .. } => static_query_supported(query),
         TriggerConditionDef::ActivePlayer(relation)
         | TriggerConditionDef::SpellsCastThisTurn {

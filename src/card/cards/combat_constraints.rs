@@ -244,3 +244,4 @@ pub const STANDSTILL: CardDefinitionId = CardDefinitionId(2043);
 pub const DAZE: CardDefinitionId = CardDefinitionId(2044);
 pub const GUSH: CardDefinitionId = CardDefinitionId(2045);
 pub const THWART: CardDefinitionId = CardDefinitionId(2046);
+pub const MOGG_SALVAGE: CardDefinitionId = CardDefinitionId(2047);
