@@ -19,6 +19,7 @@ mod y2002;
 mod y2003;
 mod y2004;
 mod y2007;
+mod y2008;
 mod y2009;
 mod y2010;
 mod y2011;
@@ -276,6 +277,11 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::Zendikar,
         y2009::zendikar::CARDS,
         y2009::zendikar::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::ShardsOfAlara,
+        y2008::shards_of_alara::CARDS,
+        y2008::shards_of_alara::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::ScarsOfMirrodin,

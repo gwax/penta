@@ -564,3 +564,104 @@ fn the_krasis_adapts_only_while_it_has_no_counters() {
         "and a second adapt adds nothing while they are still on it",
     );
 }
+
+/// The Sculler holds a card rather than taking it: the exile is linked to
+/// the body, so answering the body gives the card back. And it is "leaves",
+/// not "dies", so bouncing the Sculler returns the card too.
+#[test]
+fn the_sculler_holds_a_nonland_card_until_it_leaves() {
+    for bounce_instead in [false, true] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[PlayerId::Two.index()].hand.clear();
+        // Two nonlands, so the choice is a real one, and a land that must
+        // never be among the options.
+        game.players[PlayerId::Two.index()].hand.push(card(
+            66_000,
+            cards::LIGHTNING_BOLT,
+            PlayerId::Two,
+        ));
+        game.players[PlayerId::Two.index()].hand.push(card(
+            66_001,
+            cards::SERRA_ANGEL,
+            PlayerId::Two,
+        ));
+        game.players[PlayerId::Two.index()]
+            .hand
+            .push(card(66_002, cards::FOREST, PlayerId::Two));
+
+        let sculler = game
+            .put_onto_battlefield(PlayerId::One, cards::TIDEHOLLOW_SCULLER)
+            .expect("cataloged");
+
+        // Two answers: which opponent the trigger targets, and then which
+        // card to take out of the hand it revealed.
+        let mut offered_cards = Vec::new();
+        for _ in 0..8 {
+            if let Some(decision) = game.observe(PlayerId::One).decision {
+                let cards = decision
+                    .options
+                    .iter()
+                    .filter_map(|option| option.card.map(|(_, definition)| definition))
+                    .collect::<Vec<_>>();
+                if !cards.is_empty() {
+                    offered_cards = cards;
+                }
+                game.apply(
+                    PlayerId::One,
+                    Action::ChooseDecision {
+                        decision: decision.id,
+                        options: vec![decision.options[0].id],
+                    },
+                )
+                .expect("the offered choice is legal");
+                continue;
+            }
+            if game.stack.is_empty() && game.pending_triggers.is_empty() {
+                break;
+            }
+            let player = game.priority;
+            assert!(
+                game.apply(player, Action::PassPriority).is_ok(),
+                "the enters trigger is waiting",
+            );
+        }
+        offered_cards.sort_unstable();
+        let mut nonlands = vec![cards::LIGHTNING_BOLT, cards::SERRA_ANGEL];
+        nonlands.sort_unstable();
+        assert_eq!(
+            offered_cards, nonlands,
+            "the nonland cards, and the Forest is not one",
+        );
+
+        assert_eq!(
+            game.players[PlayerId::Two.index()].exile.len(),
+            1,
+            "one card is held while the Sculler stands",
+        );
+        let held = game.players[PlayerId::Two.index()].exile[0].definition;
+        assert!(
+            game.players[PlayerId::Two.index()]
+                .hand
+                .iter()
+                .all(|card| card.definition != held),
+        );
+
+        if bounce_instead {
+            game.return_permanent_to_hand(sculler);
+        } else {
+            game.move_permanents_to_graveyard(&[sculler]);
+        }
+        drain_pending(&mut game);
+
+        assert!(
+            game.players[PlayerId::Two.index()]
+                .hand
+                .iter()
+                .any(|card| card.definition == held),
+            "and comes back to its owner's hand once the body leaves \
+             (bounced: {bounce_instead})",
+        );
+        assert!(game.players[PlayerId::Two.index()].exile.is_empty());
+    }
+}
