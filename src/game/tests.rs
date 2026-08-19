@@ -744,6 +744,7 @@ mod venarian_gold;
 mod vintage_cube_artifacts;
 mod vintage_cube_creatures;
 mod vintage_cube_lands;
+mod vintage_cube_library;
 mod vintage_cube_spells;
 mod wards;
 mod while_source_tapped;

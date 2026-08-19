@@ -8,8 +8,8 @@ use crate::card::{
     ChooseDef, ColorChoiceOperationDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
     ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
     PlayerRefDef, PlayerRelation, ReplacementChoiceDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
-    cards,
+    ResolvedEffectDurationDef, SpellAdditionalCostDef, SpendModeDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -160,6 +160,46 @@ pub(in crate::card::sets) static ENGINEERED_PLAGUE: CardRecord = CardRecord::new
 
 static RANCOR_GRANT: AbilityDef = abilities::trample();
 
+/// Sacrificing a land is what makes this an instant-speed tutor rather than a
+/// ramp spell: the land you give up pays for the one you go and get, so the
+/// board count never moves.
+static SACRIFICE_A_LAND: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    object: ObjectPredicateDef::HasType(CardType::Land),
+    zone: ZoneKind::Battlefield,
+    count: 1,
+    count_is_x: false,
+    spend: SpendModeDef::ByZone,
+};
+
+// ULG 98 — Crop Rotation
+pub(in crate::card::sets) static CROP_ROTATION: CardRecord = CardRecord::new(
+    cards::CROP_ROTATION,
+    "Crop Rotation",
+    CardArt::new("6563f790-862c-465a-b963-7a61f2385516", "DiTerlizzi"),
+    CardSet::UrzasLegacy,
+    CardRules::new_instant(mana_cost!("{G}")).with_ability(
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, sacrifice a land.\nSearch your library for a land card, put that card onto the battlefield, then shuffle.",
+            &[],
+            SACRIFICE_A_LAND,
+            EffectDef::SearchZone {
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: ObjectPredicateDef::HasType(CardType::Land),
+                minimum: 0,
+                maximum: ValueDef::Constant(1),
+                reveal: false,
+                destination: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: false,
+                binding: None,
+                then: None,
+            },
+        ),
+    ),
+);
+
 // ULG 110 — Rancor
 pub(in crate::card::sets) static RANCOR: CardRecord = CardRecord::new(
     cards::RANCOR,
@@ -256,6 +296,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FRANTIC_SEARCH,
     &MISCALCULATION,
     &ENGINEERED_PLAGUE,
+    &CROP_ROTATION,
     &RANCOR,
     &DEFENSE_GRID,
     &GRIM_MONOLITH,

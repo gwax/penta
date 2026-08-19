@@ -57,3 +57,4 @@ pub const INSPIRING_VANTAGE: CardDefinitionId = CardDefinitionId(2139);
 pub const SPIREBLUFF_CANAL: CardDefinitionId = CardDefinitionId(2140);
 pub const PYROGOYF: CardDefinitionId = CardDefinitionId(2141);
 pub const MANA_CRYPT: CardDefinitionId = CardDefinitionId(2142);
+pub const CROP_ROTATION: CardDefinitionId = CardDefinitionId(2143);
