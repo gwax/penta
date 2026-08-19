@@ -344,6 +344,36 @@ impl Game {
     }
 
     /// Freezes every affected player's choice before any selected cards move.
+    /// Applies a name chosen mid-resolution: bind every card of that name
+    /// where the effect looks, then continue with the rest of it.
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn resolve_card_name_choice(
+        &mut self,
+        choices: &[String],
+        searched: PlayerId,
+        zone: ZoneKind,
+        binding: crate::ObjectSetBindingIndex,
+        object: &StackObject,
+        mut context: EffectResolutionContext,
+        effect: ScopedEffect,
+        options: &[u32],
+    ) {
+        let Some(name) = options
+            .first()
+            .and_then(|option| usize::try_from(*option).ok())
+            .and_then(|index| choices.get(index))
+            .cloned()
+        else {
+            return;
+        };
+        // Bound as the name is chosen: the rest of the effect names a set of
+        // cards rather than a name it would have to match again.
+        let matched = self.cards_named_in_zone(searched, zone, &name);
+        context.bind_object_group(binding, matched);
+        context.chosen_name = Some(name);
+        self.resolve_nested_effect_before_later(effect, object, context);
+    }
+
     pub(super) fn queue_effect_discards(
         &mut self,
         players: Vec<PlayerId>,

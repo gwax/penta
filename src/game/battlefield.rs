@@ -67,32 +67,6 @@ impl Game {
             })
     }
 
-    /// Every card of this name in one player's zone, as targets. Cabal
-    /// Therapy names one and takes them all.
-    pub(super) fn cards_named_in_zone(
-        &self,
-        player: PlayerId,
-        zone: ZoneKind,
-        name: &str,
-    ) -> Vec<Target> {
-        let cards = match zone {
-            ZoneKind::Hand => &self.players[player.index()].hand,
-            ZoneKind::Graveyard => &self.players[player.index()].graveyard,
-            ZoneKind::Exile => &self.players[player.index()].exile,
-            ZoneKind::Library => &self.players[player.index()].library,
-            ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => return Vec::new(),
-        };
-        cards
-            .iter()
-            .filter(|card| {
-                self.catalog
-                    .get(card.definition)
-                    .is_some_and(|definition| definition.name == name)
-            })
-            .map(|card| Target::Card(card.id))
-            .collect()
-    }
-
     /// The copiable name a permanent presents, for the cards that gather
     /// everything sharing a name.
     pub(super) fn permanent_card_name(&self, id: GameObjectId) -> Option<&str> {

@@ -55,24 +55,11 @@ impl Game {
                 zone,
                 binding,
                 object,
-                mut context,
+                context,
                 effect,
-            } => {
-                if let Some(name) = options
-                    .first()
-                    .and_then(|option| usize::try_from(*option).ok())
-                    .and_then(|index| choices.get(index))
-                    .cloned()
-                {
-                    // Bound as the name is chosen: the rest of the effect
-                    // names a set of cards rather than a name it would have
-                    // to match again.
-                    let matched = self.cards_named_in_zone(searched, zone, &name);
-                    context.bind_object_group(binding, matched);
-                    context.chosen_name = Some(name);
-                    self.resolve_nested_effect_before_later(effect, &object, context);
-                }
-            }
+            } => self.resolve_card_name_choice(
+                &choices, searched, zone, binding, &object, context, effect, options,
+            ),
             DecisionContinuation::ChooseColor {
                 object,
                 context,
@@ -989,7 +976,7 @@ impl Game {
         self.pending_decisions.remove(0);
     }
 
-    fn resolve_nested_effect_before_later(
+    pub(super) fn resolve_nested_effect_before_later(
         &mut self,
         effect: super::ScopedEffect,
         object: &super::StackObject,
