@@ -894,3 +894,50 @@ fn the_freebooter_takes_a_noncreature_nonland_card_and_gives_it_back() {
     );
     assert!(game.players[PlayerId::Two.index()].exile.is_empty());
 }
+
+/// The Squadron grows every creature token that arrives, whoever made it and
+/// whatever made it -- but only tokens, and only yours.
+#[test]
+fn the_squadron_puts_a_counter_on_every_creature_token_you_control() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.put_onto_battlefield(PlayerId::One, cards::SECURITRON_SQUADRON)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let size_of = |game: &Game, definition| {
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == definition)
+            .expect("the token arrived");
+        (game.power(permanent), game.toughness(permanent))
+    };
+
+    game.create_token(PlayerId::One, cards::BEAST_TOKEN_3_3_GREEN);
+    drain_pending(&mut game);
+    assert_eq!(
+        size_of(&game, cards::BEAST_TOKEN_3_3_GREEN),
+        (Some(4), Some(4)),
+        "a 3/3 token arrives and is grown",
+    );
+
+    // A Food token is a token but not a creature.
+    game.create_token(PlayerId::One, cards::FOOD_TOKEN);
+    drain_pending(&mut game);
+    let food = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::FOOD_TOKEN)
+        .expect("the Food arrived");
+    assert_eq!(food.counters(CounterKind::PlusOnePlusOne), 0);
+
+    // An opponent's token is not one you control.
+    game.create_token(PlayerId::Two, cards::KNIGHT_TOKEN_2_2_WHITE);
+    drain_pending(&mut game);
+    assert_eq!(
+        size_of(&game, cards::KNIGHT_TOKEN_2_2_WHITE),
+        (Some(2), Some(2)),
+        "and the other player's token is untouched",
+    );
+}

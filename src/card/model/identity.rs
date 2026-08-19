@@ -78,6 +78,7 @@ pub enum CardSet {
     Kaladesh,
     LordOfTheRings,
     RavnicaClueEdition,
+    Fallout,
     ModernHorizons3,
     ModernHorizons3Commander,
     FoundationsJumpstart,

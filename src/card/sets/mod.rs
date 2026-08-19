@@ -416,6 +416,11 @@ const SET_MODULES: &[SetModule] = &[
         y2024::ravnica_clue_edition::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Fallout,
+        y2024::fallout::CARDS,
+        y2024::fallout::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::ModernHorizons3,
         y2024::modern_horizons_3::CARDS,
         y2024::modern_horizons_3::ADDITIONAL_PRINTINGS,

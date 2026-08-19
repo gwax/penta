@@ -65,3 +65,4 @@ pub const BLOOD_TOKEN: CardDefinitionId = CardDefinitionId(2147);
 pub const IVORA_INSATIABLE_HEIR: CardDefinitionId = CardDefinitionId(2148);
 pub const KITESAIL_FREEBOOTER: CardDefinitionId = CardDefinitionId(2149);
 pub const SPELLSEEKER: CardDefinitionId = CardDefinitionId(2150);
+pub const SECURITRON_SQUADRON: CardDefinitionId = CardDefinitionId(2151);
