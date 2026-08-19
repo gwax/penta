@@ -553,3 +553,79 @@ fn phyrexian_dreadnought_can_be_paid_for_one_creature_at_a_time() {
         "and three Angels went to pay for it",
     );
 }
+
+/// Dragon Breath listens from the graveyard: something enormous arrives and
+/// it comes back attached to give it haste.
+#[test]
+fn dragon_breath_returns_from_the_graveyard_attached() {
+    let mut game = ready_game();
+    game.players[PlayerId::One.index()]
+        .graveyard
+        .push(card(10_000, cards::DRAGON_BREATH, PlayerId::One));
+
+    // Serra Angel costs five, which is not enough to wake it.
+    game.battlefield
+        .push(creature(10_010, cards::SERRA_ANGEL, PlayerId::One));
+    game.finish_rules_procedure();
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+    assert_eq!(
+        game.players[PlayerId::One.index()].graveyard.len(),
+        1,
+        "a five-mana creature is under the threshold",
+    );
+
+    // Six is the threshold, and Exalted Angel is exactly six.
+    let big = card(10_020, cards::EXALTED_ANGEL, PlayerId::One);
+    let big_id = big.id;
+    game.players[PlayerId::One.index()].hand.push(big);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.white = 2;
+    pool.colorless = 4;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(big_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("six mana casts it face up");
+    pass_until_decision(&mut game);
+    let offer = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the trigger asks whether to bring it back");
+    let accept = offer
+        .options
+        .iter()
+        .find(|option| option.label != "Decline")
+        .expect("accepting is on offer")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: offer.id,
+            options: vec![accept],
+        },
+    )
+    .expect("accepting is legal");
+    drain_pending(&mut game);
+
+    let breath = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::DRAGON_BREATH)
+        .expect("the Breath came back from the graveyard");
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::EXALTED_ANGEL)
+        .expect("the six-drop is on the battlefield");
+    assert_eq!(
+        breath.attached_to,
+        Some(angel.card.id),
+        "and it arrived attached to the creature that woke it",
+    );
+    assert!(
+        game.permanent_has_executable_keyword(angel, KeywordAbility::Haste),
+        "which is what the deck wants it for",
+    );
+}

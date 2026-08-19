@@ -3,11 +3,11 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, EffectDef, EffectPaymentCostDef,
-    EffectPaymentDef, EffectRecipientDef, ObjectPredicateDef, PayOrDef, PlayerRefDef,
-    ComparisonDef, CounterKind, PlayerRelation, PlayerSetDef, StackTargetKindDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
-    cards,
+    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardType, ComparisonDef,
+    CounterKind, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
+    ObjectPredicateDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ResolvedEffectDurationDef, StackTargetKindDef, TriggerConditionDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -215,6 +215,68 @@ pub(in crate::card::sets) static STIFLE: CardRecord = CardRecord::new(
     )),
 );
 
+static DRAGON_BREATH_HASTE: AbilityDef = abilities::haste();
+
+/// Six or more, which the deck reaches by assembling a creature rather than
+/// by paying for one: the Ghoul arrives enormous and the Breath comes back
+/// attached to give it haste.
+static A_BIG_CREATURE_ENTERING: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::ManaValueAtMostValue(ValueDef::Constant(
+        5,
+    ))),
+]);
+
+// SCG 86 — Dragon Breath
+pub(in crate::card::sets) static DRAGON_BREATH: CardRecord = CardRecord::new(
+    cards::DRAGON_BREATH,
+    "Dragon Breath",
+    CardArt::new("addf9bde-5caf-4b0d-bdc0-a36c18c12604", "Greg Staples"),
+    CardSet::Scourge,
+    // Nobody casts it. It is discarded on the way to filling a graveyard and
+    // comes back for free the turn something enormous arrives.
+    CardRules::new_enchantment(mana_cost!("{1}{R}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature has haste.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::add_ability(&DRAGON_BREATH_HASTE),
+                },
+            ),
+            AbilityDef::activated(
+                "{R}: Enchanted creature gets +1/+0 until end of turn.",
+                &[AbilityCostDef::Mana(mana_cost!("{R}"))],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(0),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+            AbilityDef::triggered(
+                "When a creature with mana value 6 or greater enters, you may return this card from your graveyard to the battlefield attached to that creature.",
+                TriggerEventDef::zone_changed(
+                    A_BIG_CREATURE_ENTERING,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                EffectDef::May {
+                    player: EffectRecipientDef::Controller,
+                    effect: &EffectDef::ReturnAttached {
+                        object: EffectRecipientDef::Source,
+                        attach_to: EffectRecipientDef::TriggeringObject,
+                    },
+                },
+            )
+            .with_source_zones(&[ZoneKind::Graveyard]),
+        ]),
+);
+
 // SCG 97 — Goblin Warchief
 pub(in crate::card::sets) static GOBLIN_WARCHIEF: CardRecord = CardRecord::new(
     cards::GOBLIN_WARCHIEF,
@@ -302,6 +364,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BRAIN_FREEZE,
     &DECREE_OF_SILENCE,
     &STIFLE,
+    &DRAGON_BREATH,
     &GOBLIN_WARCHIEF,
     &SIEGE_GANG_COMMANDER,
 ];

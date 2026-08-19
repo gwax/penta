@@ -152,6 +152,7 @@ fn validate_effect_references(
         | EffectDef::RemoveAllCounters { object, .. }
         | EffectDef::Untap { object }
         | EffectDef::Attach { object }
+        | EffectDef::ReturnAttached { object, .. }
         | EffectDef::Reconfigure { object }
         | EffectDef::PairWithSource { object }
         | EffectDef::Destroy { object, .. }

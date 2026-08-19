@@ -175,6 +175,7 @@ fn validate_effect_target_shapes(
         | EffectDef::RemoveFromCombat { object }
         | EffectDef::Untap { object }
         | EffectDef::Attach { object }
+        | EffectDef::ReturnAttached { object, .. }
         | EffectDef::Reconfigure { object }
         | EffectDef::PairWithSource { object }
         | EffectDef::Destroy { object, .. }

@@ -1,0 +1,69 @@
+//! Triggers that listen from a graveyard rather than from the battlefield.
+//!
+//! A permanent's abilities are read through an effective-rules walk, because
+//! something on the battlefield may be changing them. Nothing modifies a card
+//! lying in a graveyard, so its own printed clause is the whole of what
+//! listens, and it is read directly.
+
+use super::{
+    AbilityProcedureDef, AbilitySourceRef, BattlefieldTriggerListener, CharacteristicContext,
+    DeclarativeAbilityDef, EffectDef, Game, PlayerId, TriggerCapture, TriggerContext, ZoneKind,
+};
+
+impl Game {
+    pub(super) fn extend_with_graveyard_trigger_listeners(
+        &self,
+        listeners: &mut Vec<BattlefieldTriggerListener>,
+    ) {
+    // A card in a graveyard can carry a trigger too. It is read from the
+    // printed card rather than from an effective-rules walk: nothing on
+    // the battlefield is modifying a card lying in a graveyard, and its
+    // own printed clause is the whole of what listens.
+    for player in [PlayerId::One, PlayerId::Two] {
+        for card in &self.players[player.index()].graveyard {
+            self.for_each_printed_card_ability(
+                card,
+                &CharacteristicContext::Graveyard,
+                |effective| {
+                    let ability = effective.ability;
+                    let DeclarativeAbilityDef::Triggered(definition) = ability.definition
+                    else {
+                        return;
+                    };
+                    if !ability.is_executable()
+                        || definition.procedure != AbilityProcedureDef::Shared
+                        || !definition.source_zones.contains(&ZoneKind::Graveyard)
+                    {
+                        return;
+                    }
+                    listeners.push(BattlefieldTriggerListener {
+                        event: definition.event,
+                        uses_stack: true,
+                        installed: None,
+                        capture: TriggerCapture {
+                            source: AbilitySourceRef {
+                                object: card.id,
+                                ability: effective.origin,
+                            },
+                            definition: Self::ability_presentation_definition(
+                                effective.origin,
+                                card.definition,
+                            ),
+                            owner: card.owner,
+                            controller: player,
+                            text: ability.text,
+                            target_defs: definition.targets.to_vec(),
+                            targets: Vec::new(),
+                            effect: ability.declarative_effect().unwrap_or(EffectDef::None),
+                            resolver: Self::ability_resolver(effective.origin, &ability),
+                            context: TriggerContext::empty().into(),
+                            condition: definition.condition,
+                            x: 0,
+                        },
+                    });
+                },
+            );
+        }
+    }
+    }
+}

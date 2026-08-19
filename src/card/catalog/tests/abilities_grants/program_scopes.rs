@@ -547,8 +547,11 @@ fn shared_trigger_catalog_rejects_undiscoverable_or_incomplete_listeners() {
         step: TurnStepDef::Upkeep,
         player: PlayerRelation::You,
     };
+    // A graveyard listener is discoverable; a hand one is not, and neither
+    // is a listener that claims two zones at once, because the capture pass
+    // reads a card from exactly one of them.
     let outside_battlefield = AbilityDef::triggered("At upkeep, trigger.", upkeep, EffectDef::None)
-        .with_source_zones(&[ZoneKind::Graveyard]);
+        .with_source_zones(&[ZoneKind::Hand]);
     let mixed_zones = AbilityDef::triggered("At upkeep, trigger.", upkeep, EffectDef::None)
         .with_source_zones(&[ZoneKind::Battlefield, ZoneKind::Graveyard]);
     let state_without_condition = AbilityDef::triggered(

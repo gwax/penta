@@ -637,6 +637,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::RemoveAllCounters { .. }
                     | EffectDef::Untap { .. }
                     | EffectDef::Attach { .. }
+                    | EffectDef::ReturnAttached { .. }
                     | EffectDef::Reconfigure { .. }
                     | EffectDef::CreateToken { .. }
                     | EffectDef::CreateAttachedToken { .. }
@@ -730,8 +731,13 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             // would trigger on every state-based check forever.
             let condition_is_required = definition.event != TriggerEventDef::StateCondition
                 || definition.condition.is_some();
-            battlefield_only(definition.source_zones)
-                && definition.procedure == AbilityProcedureDef::Shared
+            // A trigger listens from the battlefield or from a graveyard;
+            // the capture pass reads a card from exactly one zone, so a
+            // listener claiming both is not discoverable from either.
+            matches!(
+                definition.source_zones,
+                [ZoneKind::Battlefield | ZoneKind::Graveyard]
+            ) && definition.procedure == AbilityProcedureDef::Shared
                 && shared_trigger_event(definition.event)
                 && condition_is_required
                 && definition

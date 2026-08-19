@@ -15,3 +15,4 @@ pub const KROSAN_RECLAMATION: CardDefinitionId = CardDefinitionId(2074);
 pub const FACE_DOWN_CREATURE: CardDefinitionId = CardDefinitionId(2075);
 pub const GILDED_DRAKE: CardDefinitionId = CardDefinitionId(2083);
 pub const PHYREXIAN_DREADNOUGHT: CardDefinitionId = CardDefinitionId(2085);
+pub const DRAGON_BREATH: CardDefinitionId = CardDefinitionId(2088);

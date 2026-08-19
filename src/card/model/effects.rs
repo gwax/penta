@@ -284,6 +284,14 @@ pub enum EffectDef {
     Attach {
         object: EffectRecipientDef,
     },
+    /// Put an Aura onto the battlefield from another zone, already attached
+    /// to a host. One effect rather than a move followed by an attach: the
+    /// card that arrives is a new object, so nothing an ordinary attach
+    /// could name still points at it.
+    ReturnAttached {
+        object: EffectRecipientDef,
+        attach_to: EffectRecipientDef,
+    },
     /// Soulbond's pairing. The chosen creature and the ability's source
     /// record each other; the pair is symmetric and survives until one of
     /// them stops being a creature its controller controls.

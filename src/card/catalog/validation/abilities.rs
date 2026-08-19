@@ -335,7 +335,10 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
             DeclarativeAbilityDef::TriggeredMana(triggered)
             | DeclarativeAbilityDef::Triggered(triggered) => {
                 if triggered.procedure == AbilityProcedureDef::Shared
-                    && (triggered.source_zones != [ZoneKind::Battlefield]
+                    && (!matches!(
+                        triggered.source_zones,
+                        [ZoneKind::Battlefield | ZoneKind::Graveyard]
+                    )
                         || (triggered.event == crate::card::TriggerEventDef::StateCondition
                             && triggered.condition.is_none())
                         || (matches!(ability.definition, DeclarativeAbilityDef::TriggeredMana(_))
@@ -714,6 +717,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::Untap { .. }
         | EffectDef::PreventDamage { .. }
         | EffectDef::Attach { .. }
+        | EffectDef::ReturnAttached { .. }
         | EffectDef::Reconfigure { .. }
         | EffectDef::PairWithSource { .. }
         | EffectDef::CreateToken { .. }
@@ -883,6 +887,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::Untap { .. }
         | EffectDef::PreventDamage { .. }
         | EffectDef::Attach { .. }
+        | EffectDef::ReturnAttached { .. }
         | EffectDef::Reconfigure { .. }
         | EffectDef::PairWithSource { .. }
         | EffectDef::CreateToken { .. }

@@ -94,6 +94,7 @@ impl Game {
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::Untap { .. }
             | EffectDef::Attach { .. }
+            | EffectDef::ReturnAttached { .. }
             | EffectDef::Reconfigure { .. }
             | EffectDef::PairWithSource { .. }
             | EffectDef::Destroy { .. }

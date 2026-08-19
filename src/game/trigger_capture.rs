@@ -15,6 +15,8 @@ use super::{
     ZoneKind,
 };
 
+mod graveyard;
+
 impl Game {
     /// Finishes an atomic rules procedure before a player can receive
     /// priority. Mana abilities invoked while casting resolve inside the
@@ -306,6 +308,7 @@ impl Game {
                 });
             });
         }
+        self.extend_with_graveyard_trigger_listeners(&mut listeners);
         // Installed triggers listen the same way, minus a permanent to hang
         // on; they are appended last so a permanent's own triggers keep the
         // relative order they had before any existed.
@@ -502,6 +505,7 @@ impl Game {
             | EffectDef::CannotAttackIf(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
+            | EffectDef::ReturnAttached { .. }
             | EffectDef::Reconfigure { .. }
             | EffectDef::PairWithSource { .. }
             | EffectDef::CreateToken { .. }
