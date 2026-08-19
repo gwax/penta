@@ -137,6 +137,42 @@ pub(in crate::card::sets) static CECIL_DARK_KNIGHT: CardRecord = CardRecord::new
 )
 .with_composition(cecil_composition);
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&CECIL_DARK_KNIGHT];
+/// A land you control, not any land: the opponent's fetchland does nothing
+/// for her.
+static A_LAND_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Land),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+/// Doubling is +X/+0 where X is her power as this resolves, so two landfalls
+/// in a turn compound: the second reads the size the first left behind.
+static TIFA_DOUBLES: [AbilityDef; 2] = [
+    abilities::trample(),
+    AbilityDef::triggered(
+        "Landfall — Whenever a land you control enters, double Tifa Lockhart's power until end of turn.",
+        TriggerEventDef::zone_changed(A_LAND_YOU_CONTROL, None, Some(ZoneKind::Battlefield)),
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::SourcePower,
+                ValueDef::Constant(0),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    ),
+];
+
+// FIN 206 — Tifa Lockhart
+pub(in crate::card::sets) static TIFA_LOCKHART: CardRecord = CardRecord::new(
+    cards::TIFA_LOCKHART,
+    "Tifa Lockhart",
+    CardArt::new("fb781323-2746-405d-a9b2-e778c037a6e9", "Laurel Austin"),
+    CardSet::FinalFantasy,
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Human", "Monk"], 1, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&TIFA_DOUBLES),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&CECIL_DARK_KNIGHT, &TIFA_LOCKHART];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

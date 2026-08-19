@@ -665,3 +665,64 @@ fn the_sculler_holds_a_nonland_card_until_it_leaves() {
         assert!(game.players[PlayerId::Two.index()].exile.is_empty());
     }
 }
+
+/// Doubling compounds within a turn, because each trigger reads the size the
+/// one before it left behind. A 1/2 that sees three lands is an 8/2.
+#[test]
+fn tifa_doubles_her_power_once_per_land_and_compounds() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let tifa = creature(68_000, cards::TIFA_LOCKHART, PlayerId::One);
+    let tifa_id = tifa.card.id;
+    game.battlefield.push(tifa);
+
+    let size = |game: &Game| {
+        let tifa = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == tifa_id)
+            .expect("she is still there");
+        (game.power(tifa), game.toughness(tifa))
+    };
+    assert_eq!(size(&game), (Some(1), Some(2)));
+
+    for (index, expected) in [2, 4, 8].into_iter().enumerate() {
+        game.put_onto_battlefield(
+            PlayerId::One,
+            if index == 0 {
+                cards::FOREST
+            } else {
+                cards::ISLAND
+            },
+        )
+        .expect("a land arrives");
+        drain_pending(&mut game);
+        assert_eq!(
+            size(&game),
+            (Some(expected), Some(2)),
+            "land {index} doubles her power and leaves toughness alone",
+        );
+    }
+}
+
+/// "A land you control" is the whole restriction: the opponent's land does
+/// nothing for her.
+#[test]
+fn tifa_ignores_lands_the_other_player_plays() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let tifa = creature(68_100, cards::TIFA_LOCKHART, PlayerId::One);
+    let tifa_id = tifa.card.id;
+    game.battlefield.push(tifa);
+
+    game.put_onto_battlefield(PlayerId::Two, cards::FOREST)
+        .expect("a land arrives for the opponent");
+    drain_pending(&mut game);
+
+    let tifa = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == tifa_id)
+        .expect("she is still there");
+    assert_eq!((game.power(tifa), game.toughness(tifa)), (Some(1), Some(2)));
+}

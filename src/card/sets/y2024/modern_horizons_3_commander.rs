@@ -4,7 +4,7 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    TriggerEventDef, ValueDef, ZoneKind, cards,
+    PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -13,6 +13,7 @@ use crate::{TargetIndex, mana_cost};
 static A_LHURGOYF_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
     ObjectPredicateDef::HasType(CardType::Creature),
     ObjectPredicateDef::Subtype("Lhurgoyf"),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
 ]);
 
 static PYROGOYF_DAMAGE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(

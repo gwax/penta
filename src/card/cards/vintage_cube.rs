@@ -60,3 +60,4 @@ pub const MANA_CRYPT: CardDefinitionId = CardDefinitionId(2142);
 pub const CROP_ROTATION: CardDefinitionId = CardDefinitionId(2143);
 pub const UNRULY_KRASIS: CardDefinitionId = CardDefinitionId(2144);
 pub const TIDEHOLLOW_SCULLER: CardDefinitionId = CardDefinitionId(2145);
+pub const TIFA_LOCKHART: CardDefinitionId = CardDefinitionId(2146);
