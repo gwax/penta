@@ -201,6 +201,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::ReplaceNextDrawThisTurn { .. }
         | EffectDef::IfFormat { .. }
         | EffectDef::Counter { .. }
+        | EffectDef::CopyResolvingSpell { .. }
         | EffectDef::AddCounters { .. }
         | EffectDef::RemoveCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }

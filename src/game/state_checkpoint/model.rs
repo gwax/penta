@@ -496,6 +496,8 @@ pub(super) enum ResolvedEffectPaymentSnapshot {
     ChosenGenericMana,
     /// And likewise for the permanents a return payment can name.
     ReturnPermanentMatching,
+    /// The same, for the one it sacrifices.
+    SacrificePermanentMatching,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -757,6 +759,9 @@ pub(super) enum DecisionContinuationSnapshot {
         player: usize,
         spell: DetachedStackSnapshot,
         target_lists: Vec<Vec<TargetSelectionSnapshot>>,
+        /// Absent for a card copying itself, which keeps its own colours.
+        #[serde(default)]
+        repainted: bool,
     },
     OptionalEffect {
         object: DetachedStackSnapshot,

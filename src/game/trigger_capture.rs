@@ -405,6 +405,7 @@ impl Game {
             | EffectDef::ReplaceNextDrawThisTurn { .. }
             | EffectDef::IfFormat { .. }
             | EffectDef::Counter { .. }
+            | EffectDef::CopyResolvingSpell { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::RemoveCounters { .. }
             | EffectDef::ChangeTextBasicLandType { .. }

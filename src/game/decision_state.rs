@@ -56,6 +56,8 @@ pub(super) enum ResolvedEffectPayment {
     ChosenGenericMana,
     /// One matching permanent, returned to its owner's hand.
     ReturnPermanentMatching(ObjectPredicateDef),
+    /// One matching permanent, sacrificed.
+    SacrificePermanentMatching(ObjectPredicateDef),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -207,6 +209,9 @@ pub(super) enum DecisionContinuation {
         targets: Vec<Target>,
     },
     Fork {
+        /// Fork repaints what it copies; a card copying itself does not. The
+        /// colours travel with the decision so one continuation serves both.
+        colors: Option<ColorSet>,
         player: PlayerId,
         spell: StackObject,
         target_lists: Vec<Vec<TargetSelection>>,

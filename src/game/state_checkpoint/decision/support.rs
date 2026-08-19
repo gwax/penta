@@ -687,6 +687,9 @@ pub(super) fn resolved_effect_payment_snapshot(
         ResolvedEffectPayment::ReturnPermanentMatching(_) => {
             ResolvedEffectPaymentSnapshot::ReturnPermanentMatching
         }
+        ResolvedEffectPayment::SacrificePermanentMatching(_) => {
+            ResolvedEffectPaymentSnapshot::SacrificePermanentMatching
+        }
     }
 }
 

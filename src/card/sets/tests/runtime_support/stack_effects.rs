@@ -188,6 +188,9 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
                 && shared_partition(partition)
                 && shared_stack_effect_at_position(*partition.then, true)
         }
+        // A spell copying itself asks its chooser for targets, which is a
+        // decision window like any other.
+        EffectDef::CopyResolvingSpell { .. } => deferred_decision_allowed,
         EffectDef::AddMana(_) => shared_mana_effect(effect, false),
         EffectDef::DealDamage { recipient, .. }
         | EffectDef::DealDamageAndApply { recipient, .. }

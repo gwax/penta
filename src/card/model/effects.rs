@@ -212,6 +212,9 @@ pub enum EffectPaymentCostDef {
     /// {X}" during a resolution, where X is settled by the payment rather
     /// than by the cast that produced it.
     ChosenGenericMana,
+    /// Sacrifice one matching permanent the payer controls, named as part of
+    /// the payment. Chain of Vapor asks for a land of their choice.
+    SacrificePermanentMatching(ObjectPredicateDef),
     /// Return one matching permanent its payer controls to its owner's hand,
     /// named as part of the payment. Treva's Ruins asks for a land that is
     /// not another Lair, so a second copy cannot pay for the first.
@@ -503,6 +506,12 @@ pub enum EffectDef {
     Counter {
         object: EffectRecipientDef,
         zone: ZoneKind,
+    },
+    /// Copies the spell this effect belongs to, letting `chooser` retarget the
+    /// copy. Fork copies something else and repaints it; this is the shape a
+    /// card uses to copy itself, so the copy keeps its own colours.
+    CopyResolvingSpell {
+        chooser: PlayerRefDef,
     },
     /// Gives its controller an emblem, an object that sits outside every
     /// zone and does nothing but carry its abilities.

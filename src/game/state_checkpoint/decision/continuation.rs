@@ -174,7 +174,10 @@ fn parse_continuation(
             player: owner,
             spell,
             target_lists,
+            repainted,
         } => DecisionContinuation::Fork {
+            // The only repaint in the corpus is Fork's own.
+            colors: repainted.then_some(super::super::FORK_COPY_COLOR),
             player: player(*owner)?,
             spell: parse_detached_stack(spell, game)?,
             target_lists: target_lists

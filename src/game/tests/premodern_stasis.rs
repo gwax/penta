@@ -136,3 +136,101 @@ fn trevas_ruins_returns_a_land_or_sacrifices_itself() {
         "and the Island stayed put",
     );
 }
+
+/// Arcane Denial's gift is delayed a turn, which is the whole reason a
+/// control deck can afford to give it.
+#[test]
+fn arcane_denial_counters_now_and_pays_at_the_next_upkeep() {
+    let mut game = ready_game();
+    let bolt = card(10_001, cards::LIGHTNING_BOLT, PlayerId::Two);
+    let bolt_id = bolt.id;
+    game.players[PlayerId::Two.index()].hand.push(bolt);
+    game.players[PlayerId::Two.index()].mana_pool.red = 1;
+    game.priority = PlayerId::Two;
+    game.apply(
+        PlayerId::Two,
+        cast_action(bolt_id, vec![Target::Player(PlayerId::One)], Vec::new(), 0),
+    )
+    .expect("the Bolt is cast");
+    let spell = game.stack.last().expect("the Bolt is on the stack").id;
+
+    let denial = card(10_000, cards::ARCANE_DENIAL, PlayerId::One);
+    let denial_id = denial.id;
+    game.players[PlayerId::One.index()].hand.push(denial);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.blue = 1;
+    pool.colorless = 1;
+    game.priority = PlayerId::One;
+    let before = game.players[PlayerId::One.index()].hand.len();
+
+    game.apply(
+        PlayerId::One,
+        cast_action(denial_id, vec![Target::Spell(spell)], Vec::new(), 0),
+    )
+    .expect("the Denial answers it");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        20,
+        "the Bolt was countered",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        before - 1,
+        "and nothing is drawn yet",
+    );
+
+    game.turn += 1;
+    game.step = Step::Upkeep;
+    game.handle_upkeep_triggers();
+    drain_pending(&mut game);
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        before,
+        "the caster's own card arrives at the next upkeep",
+    );
+}
+
+/// Chain of Vapor hands the chain to the player it bounced: paying a land
+/// buys them the copy.
+#[test]
+fn chain_of_vapor_bounces_and_offers_the_chain_onward() {
+    let mut game = ready_game();
+    let vise = creature(10_001, cards::BLACK_VISE, PlayerId::Two);
+    let vise_id = vise.card.id;
+    game.battlefield.push(vise);
+    game.battlefield
+        .push(creature(10_002, cards::ISLAND, PlayerId::Two));
+
+    let chain = card(10_000, cards::CHAIN_OF_VAPOR, PlayerId::One);
+    let chain_id = chain.id;
+    game.players[PlayerId::One.index()].hand.push(chain);
+    game.players[PlayerId::One.index()].mana_pool.blue = 1;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(chain_id, vec![Target::Permanent(vise_id)], Vec::new(), 0),
+    )
+    .expect("the Chain can bounce a nonland permanent");
+    pass_until_decision(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == vise_id),
+        "the Vise went back to hand",
+    );
+    let decision = game
+        .observe(PlayerId::Two)
+        .decision
+        .expect("its controller is offered the land sacrifice");
+    assert!(
+        decision
+            .options
+            .iter()
+            .any(|option| option.label.starts_with("Sacrifice")),
+        "the sacrifice names the land it would spend",
+    );
+}

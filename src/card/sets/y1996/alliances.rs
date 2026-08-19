@@ -4,9 +4,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
     CardArt, CardRules, CardSet, CardSupertype, CardType, DividedTotal, EffectDef,
-    EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef, PlayerRelation,
-    SpellAdditionalCostDef, SpendModeDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef, ObjectRefDef,
+    PlayerRefDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -31,6 +31,81 @@ static PYROKINESIS_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
 static EXILE_A_RED_CARD: SpellAdditionalCostDef =
     SpellAdditionalCostDef::new(ObjectPredicateDef::Color(ManaColor::Red), ZoneKind::Hand, 1)
         .spent(SpendModeDef::Exile);
+
+/// "Up to two" is two questions rather than one number: take the first card,
+/// then decide about the second. The reachable answers -- none, one, or both
+/// -- are the ones the printed card offers.
+static DENIED_CONTROLLER: EffectRecipientDef = EffectRecipientDef::player(
+    PlayerRefDef::ControllerOf(ObjectRefDef::Target(TargetIndex::PRIMARY)),
+);
+
+static DENIAL_SECOND_DRAW: EffectDef = EffectDef::May {
+    player: DENIED_CONTROLLER,
+    effect: &EffectDef::DrawCards {
+        recipient: DENIED_CONTROLLER,
+        amount: ValueDef::Constant(1),
+    },
+};
+
+static DENIAL_FIRST_DRAW: EffectDef = EffectDef::May {
+    player: DENIED_CONTROLLER,
+    effect: &EffectDef::Sequence(&[
+        EffectDef::DrawCards {
+            recipient: DENIED_CONTROLLER,
+            amount: ValueDef::Constant(1),
+        },
+        DENIAL_SECOND_DRAW,
+    ]),
+};
+
+/// Both draws are delayed to the next upkeep, which is what makes the card a
+/// real counterspell rather than a gift: the two cards arrive a turn later,
+/// and by then the spell it answered is long gone.
+static DENIAL_DRAWS: EffectDef = EffectDef::Sequence(&[
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+        "At the beginning of the next turn's upkeep, that spell's controller may draw up to two cards.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::Any,
+        },
+        DENIAL_FIRST_DRAW,
+    ))),
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+        "At the beginning of the next turn's upkeep, draw a card.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::Any,
+        },
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    ))),
+]);
+
+// ALL 22a — Arcane Denial
+pub(in crate::card::sets) static ARCANE_DENIAL: CardRecord = CardRecord::new(
+    cards::ARCANE_DENIAL,
+    "Arcane Denial",
+    CardArt::new("b0c5728e-4a52-4d2f-9b04-3c1c7d3f5e6a", "Richard Kane Ferguson"),
+    CardSet::Alliances,
+    // Two mana to answer anything, and the cards it gives back arrive a turn
+    // too late to matter in a deck that is about to lock the game up.
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Counter target spell. Its controller may draw up to two cards at the beginning of the next turn's upkeep.\nYou draw a card at the beginning of the next turn's upkeep.",
+        &DENIAL_TARGET,
+        EffectDef::Sequence(&[
+            EffectDef::Counter {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Graveyard,
+            },
+            DENIAL_DRAWS,
+        ]),
+    )),
+);
+
+static DENIAL_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)];
 
 // ALL 78 — Pyrokinesis
 pub(in crate::card::sets) static PYROKINESIS: CardRecord = CardRecord::new(
@@ -118,6 +193,7 @@ pub(in crate::card::sets) static THAWING_GLACIERS: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&PYROKINESIS, &THAWING_GLACIERS];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&ARCANE_DENIAL, &PYROKINESIS, &THAWING_GLACIERS];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

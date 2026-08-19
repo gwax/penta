@@ -641,6 +641,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ReplaceNextDrawThisTurn { .. }
                     | EffectDef::IfFormat { .. }
                     | EffectDef::Counter { .. }
+                    | EffectDef::CopyResolvingSpell { .. }
                     | EffectDef::AddCounters { .. }
                     | EffectDef::RemoveCounters { .. }
                     | EffectDef::ChangeTextBasicLandType { .. }

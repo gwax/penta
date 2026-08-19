@@ -80,6 +80,9 @@ impl Game {
                     EffectPaymentCostDef::Life(amount) => ResolvedEffectPayment::Life(amount),
                     EffectPaymentCostDef::Mill(amount) => ResolvedEffectPayment::Mill(amount),
                     EffectPaymentCostDef::Discard(amount) => ResolvedEffectPayment::Discard(amount),
+                    EffectPaymentCostDef::SacrificePermanentMatching(predicate) => {
+                        ResolvedEffectPayment::SacrificePermanentMatching(predicate)
+                    }
                     EffectPaymentCostDef::ReturnPermanentMatching(predicate) => {
                         ResolvedEffectPayment::ReturnPermanentMatching(predicate)
                     }
@@ -596,6 +599,14 @@ impl Game {
                     .try_into()
                     .unwrap_or(u16::MAX);
                 self.add_unrestricted_mana(object.controller, color, amount);
+            }
+            EffectDef::CopyResolvingSpell { chooser } => {
+                if let Some(player) = self.player_reference(chooser, object, &context, scoped)
+                    && let Some(spell) =
+                        self.stack.iter().find(|item| item.id == object.id).cloned()
+                {
+                    self.queue_copy_decision(player, spell, None, "the copy");
+                }
             }
             EffectDef::Counter {
                 object: recipient,

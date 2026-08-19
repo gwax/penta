@@ -486,6 +486,7 @@ impl Game {
                 | EffectDef::CreateEmblem { .. }
                 | EffectDef::Transform { .. }
                 | EffectDef::Counter { .. }
+                | EffectDef::CopyResolvingSpell { .. }
                 | EffectDef::AddCounters { .. }
                 | EffectDef::RemoveCounters { .. }
                 | EffectDef::ChangeTextBasicLandType { .. }

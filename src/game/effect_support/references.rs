@@ -126,7 +126,7 @@ impl Game {
     }
 
 
-    fn player_reference(
+    pub(in crate::game) fn player_reference(
         &self,
         reference: PlayerRefDef,
         object: &StackObject,

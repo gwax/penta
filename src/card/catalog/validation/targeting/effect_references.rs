@@ -231,7 +231,10 @@ fn validate_effect_references(
         // The chosen player is recorded on the permanent, not read from a
         // target slot.
         // A prohibition names a card shape, never a target.
-        EffectDef::IncreaseMatchingAbilityCostBy { .. }
+        // The copy names nobody: it reuses whatever the spell already
+        // targeted unless its chooser retargets it as it is made.
+        EffectDef::CopyResolvingSpell { .. }
+        | EffectDef::IncreaseMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)

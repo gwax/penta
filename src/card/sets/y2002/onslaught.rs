@@ -4,9 +4,10 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType,
-    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, TurnStepDef, mana_cost};
 
@@ -60,6 +61,51 @@ static GOBLIN_PILEDRIVER_BONUS: ScaledValueDef = ScaledValueDef {
     value: ValueDef::CountMatchingObjects(&OTHER_ATTACKING_GOBLINS),
     factor: 2,
 };
+
+/// A land of their choice, sacrificed by whoever just had a permanent
+/// bounced. Paying buys the copy, which is what turns one Chain of Vapor into
+/// a board sweep in a deck holding the lands to spend.
+static CHAIN_OF_VAPOR_REBOUND: EffectDef = EffectDef::PayOr(PayOrDef::optional(
+    EffectPaymentDef {
+        payer: PlayerSetDef::One(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
+            TargetIndex::PRIMARY,
+        ))),
+        cost: EffectPaymentCostDef::SacrificePermanentMatching(ObjectPredicateDef::HasType(
+            CardType::Land,
+        )),
+    },
+    &EffectDef::CopyResolvingSpell {
+        chooser: PlayerRefDef::ControllerOf(ObjectRefDef::Target(TargetIndex::PRIMARY)),
+    },
+));
+
+static A_NONLAND_PERMANENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+)];
+
+// ONS 73 — Chain of Vapor
+pub(in crate::card::sets) static CHAIN_OF_VAPOR: CardRecord = CardRecord::new(
+    cards::CHAIN_OF_VAPOR,
+    "Chain of Vapor",
+    CardArt::new("30f6b4a2-4e64-4d0e-9dbb-2b6a5b8f5b1f", "Carl Critchlow"),
+    CardSet::Onslaught,
+    // One mana to undo anything, and the chain is the opponent's to continue
+    // or stop.
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Return target nonland permanent to its owner's hand. Then that permanent's controller may sacrifice a land of their choice. If the player does, they may copy this spell and may choose a new target for that copy.",
+        &A_NONLAND_PERMANENT,
+        EffectDef::Sequence(&[
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Hand,
+                controller: None,
+                placement: ZonePlacement::Top,
+                arrival_effect: None,
+            },
+            CHAIN_OF_VAPOR_REBOUND,
+        ]),
+    )),
+);
 
 // ONS 205 — Goblin Piledriver
 pub(in crate::card::sets) static GOBLIN_PILEDRIVER: CardRecord = CardRecord::new(
@@ -319,6 +365,7 @@ pub(in crate::card::sets) static WOODED_FOOTHILLS: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AKROMAS_VENGEANCE,
+    &CHAIN_OF_VAPOR,
     &GOBLIN_PILEDRIVER,
     &GOBLIN_PYROMANCER,
     &GOBLIN_SHARPSHOOTER,

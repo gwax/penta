@@ -1,9 +1,8 @@
 use super::{
     BalanceAction, BasicLandType, BasicLandTypeChange, BattlefieldArrival,
     BattlefieldExitCompletion, CardRuntime, CounterKind, DecisionContinuation, DecisionOption,
-    FORK_COPY_COLOR, Game, GameEvent, ManaCost, PendingProcedure, PileChoice, PileSplit, PlayerId,
-    ReplaceableEvent, Target, TargetSelection, TargetSlotId, ZoneKind, ZoneMoveCause,
-    ZonePlacement, remove_card,
+    Game, GameEvent, ManaCost, PendingProcedure, PileChoice, PileSplit, PlayerId, ReplaceableEvent,
+    Target, TargetSelection, TargetSlotId, ZoneKind, ZoneMoveCause, ZonePlacement, remove_card,
 };
 use crate::card::{BattlefieldEntryChoiceDestinationDef, ReplacementEffectDef};
 
@@ -328,6 +327,7 @@ impl Game {
                 }
             }
             DecisionContinuation::Fork {
+                colors,
                 player,
                 spell,
                 target_lists,
@@ -335,12 +335,7 @@ impl Game {
                 if let Some(option) = options.first().copied()
                     && let Some(targets) = target_lists.get(usize::try_from(option).unwrap_or(0))
                 {
-                    self.push_copy_with_colors(
-                        spell,
-                        player,
-                        targets.clone(),
-                        Some(FORK_COPY_COLOR),
-                    );
+                    self.push_copy_with_colors(spell, player, targets.clone(), colors);
                 }
             }
             DecisionContinuation::GrislySalvage { player, revealed } => {

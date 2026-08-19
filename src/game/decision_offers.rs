@@ -147,6 +147,21 @@ impl Game {
                 );
                 Some(0)
             }
+            ResolvedEffectPayment::SacrificePermanentMatching(predicate) => {
+                let permanent = options
+                    .iter()
+                    .find(|option| option.id == chosen)
+                    .and_then(|option| option.card)
+                    .map(|(permanent, _)| permanent)?;
+                if !self
+                    .matching_permanents_controlled(player, predicate)
+                    .contains(&permanent)
+                {
+                    return None;
+                }
+                self.move_permanents_to_graveyard(&[permanent]);
+                Some(0)
+            }
             ResolvedEffectPayment::DiscardMatching(predicate) => {
                 let card = options
                     .iter()
@@ -200,7 +215,8 @@ impl Game {
             ResolvedEffectPayment::ChosenGenericMana => {
                 self.can_pay_cost(player, ManaCost::new(1, 0), 0)
             }
-            ResolvedEffectPayment::ReturnPermanentMatching(predicate) => !self
+            ResolvedEffectPayment::ReturnPermanentMatching(predicate)
+            | ResolvedEffectPayment::SacrificePermanentMatching(predicate) => !self
                 .matching_permanents_controlled(player, predicate)
                 .is_empty(),
         }
@@ -292,7 +308,10 @@ impl Game {
                     });
                 }
             }
-            ResolvedEffectPayment::ReturnPermanentMatching(predicate) => {
+            ResolvedEffectPayment::ReturnPermanentMatching(predicate)
+            | ResolvedEffectPayment::SacrificePermanentMatching(predicate) => {
+                let returning =
+                    matches!(payment, ResolvedEffectPayment::ReturnPermanentMatching(_));
                 for (index, permanent) in self
                     .matching_permanents_controlled(player, predicate)
                     .into_iter()
@@ -303,7 +322,11 @@ impl Game {
                         .map_or_else(|| "a permanent".to_string(), ToOwned::to_owned);
                     options.push(DecisionOption {
                         id: u32::try_from(index + 1).unwrap_or(u32::MAX),
-                        label: format!("Return {name}"),
+                        label: if returning {
+                            format!("Return {name}")
+                        } else {
+                            format!("Sacrifice {name}")
+                        },
                         card: self
                             .battlefield
                             .iter()
@@ -378,7 +401,8 @@ impl Game {
             // means a caller lost that answer.
             ResolvedEffectPayment::DiscardMatching(_)
             | ResolvedEffectPayment::ChosenGenericMana
-            | ResolvedEffectPayment::ReturnPermanentMatching(_) => return false,
+            | ResolvedEffectPayment::ReturnPermanentMatching(_)
+            | ResolvedEffectPayment::SacrificePermanentMatching(_) => return false,
         }
         true
     }
@@ -419,6 +443,9 @@ impl Game {
             ResolvedEffectPayment::ChosenGenericMana => "Pay {X}".to_string(),
             ResolvedEffectPayment::ReturnPermanentMatching(_) => {
                 "Return a matching permanent".to_string()
+            }
+            ResolvedEffectPayment::SacrificePermanentMatching(_) => {
+                "Sacrifice a matching permanent".to_string()
             }
         }
     }
@@ -541,13 +568,26 @@ impl Game {
     }
 
     pub(super) fn queue_fork_decision(&mut self, player: PlayerId, spell: StackObject) {
+        self.queue_copy_decision(player, spell, Some(FORK_COPY_COLOR), "Fork's copy");
+    }
+
+    /// Offers a copy of `spell` under `player`, letting them retarget it. Fork
+    /// repaints what it copies and a card copying itself does not, so the
+    /// colours are the caller's to decide.
+    pub(super) fn queue_copy_decision(
+        &mut self,
+        player: PlayerId,
+        spell: StackObject,
+        colors: Option<ColorSet>,
+        described: &str,
+    ) {
         let target_lists = self.copy_target_choices(&spell, player);
         if spell
             .signature
             .as_ref()
             .is_some_and(|signature| signature.targets().is_empty())
         {
-            self.push_copy_with_colors(spell, player, Vec::new(), Some(FORK_COPY_COLOR));
+            self.push_copy_with_colors(spell, player, Vec::new(), colors);
             return;
         }
         let original_targets = spell.targets();
@@ -574,13 +614,14 @@ impl Game {
             .collect();
         self.queue_decision(
             player,
-            "Choose targets for Fork's copy",
+            format!("Choose targets for {described}"),
             DecisionVisibility::Private,
             DecisionPreference::Neutral,
             1..=1,
             false,
             options,
             DecisionContinuation::Fork {
+                colors,
                 player,
                 spell,
                 target_lists,

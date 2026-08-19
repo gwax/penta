@@ -35,6 +35,9 @@ fn resolved_effect_payment(
         EffectPaymentCostDef::ChosenGenericMana => {
             super::super::ResolvedEffectPayment::ChosenGenericMana
         }
+        EffectPaymentCostDef::SacrificePermanentMatching(predicate) => {
+            super::super::ResolvedEffectPayment::SacrificePermanentMatching(predicate)
+        }
         EffectPaymentCostDef::ReturnPermanentMatching(predicate) => {
             super::super::ResolvedEffectPayment::ReturnPermanentMatching(predicate)
         }

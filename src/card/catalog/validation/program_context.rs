@@ -473,6 +473,7 @@ fn validate_resolving_effect(
         | EffectDef::SearchZone { .. }
         | EffectDef::ChooseCards { .. }
         | EffectDef::Counter { .. }
+        | EffectDef::CopyResolvingSpell { .. }
         | EffectDef::DrainLife { .. }
         | EffectDef::AddManaEqualTo { .. }
         | EffectDef::AddCounters { .. }
@@ -837,7 +838,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::ChooseCards { .. } => "ChooseCards",
         EffectDef::ReplaceNextDrawThisTurn { .. } => "ReplaceNextDrawThisTurn",
         EffectDef::IfFormat { .. } => "IfFormat",
-        EffectDef::Counter { .. } => "Counter",
+        EffectDef::Counter { .. } | EffectDef::CopyResolvingSpell { .. } => "Counter",
         EffectDef::DrainLife { .. } => "DrainLife",
         EffectDef::AddManaEqualTo { .. } => "AddManaEqualTo",
         EffectDef::AddCounters { .. } => "AddCounters",

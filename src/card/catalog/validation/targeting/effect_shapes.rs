@@ -249,7 +249,10 @@ fn validate_effect_target_shapes(
             }
             Ok(())
         }
-        EffectDef::IncreaseMatchingAbilityCostBy { .. }
+        // The copy names nobody: it reuses whatever the spell already
+        // targeted unless its chooser retargets it as it is made.
+        EffectDef::CopyResolvingSpell { .. }
+        | EffectDef::IncreaseMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::None
         | EffectDef::AddMana(_)
