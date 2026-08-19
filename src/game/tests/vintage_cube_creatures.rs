@@ -816,3 +816,81 @@ fn ivora_makes_a_second_blood_only_when_she_connects_in_combat() {
 
     assert_eq!(bloods(&game), 1, "connecting in combat makes another Blood");
 }
+
+/// The Freebooter takes the answer rather than the threat: a creature card is
+/// never eligible, and neither is a land. And "until this creature leaves the
+/// battlefield" is one printed ability, so the return rides on the same
+/// resolution rather than on a second clause.
+#[test]
+fn the_freebooter_takes_a_noncreature_nonland_card_and_gives_it_back() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+    for (instance, definition) in [
+        (71_000, cards::LIGHTNING_BOLT),
+        (71_001, cards::ANCESTRAL_RECALL),
+        (71_002, cards::SERRA_ANGEL),
+        (71_003, cards::FOREST),
+    ] {
+        game.players[PlayerId::Two.index()]
+            .hand
+            .push(card(instance, definition, PlayerId::Two));
+    }
+
+    let freebooter = game
+        .put_onto_battlefield(PlayerId::One, cards::KITESAIL_FREEBOOTER)
+        .expect("cataloged");
+
+    let mut offered = Vec::new();
+    for _ in 0..8 {
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            let cards = decision
+                .options
+                .iter()
+                .filter_map(|option| option.card.map(|(_, definition)| definition))
+                .collect::<Vec<_>>();
+            if !cards.is_empty() {
+                offered = cards;
+            }
+            game.apply(
+                PlayerId::One,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: vec![decision.options[0].id],
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        assert!(
+            game.apply(player, Action::PassPriority).is_ok(),
+            "the enters trigger is waiting",
+        );
+    }
+    offered.sort_unstable();
+    let mut expected = vec![cards::LIGHTNING_BOLT, cards::ANCESTRAL_RECALL];
+    expected.sort_unstable();
+    assert_eq!(
+        offered, expected,
+        "the Angel is a creature and the Forest is a land",
+    );
+
+    assert_eq!(game.players[PlayerId::Two.index()].exile.len(), 1);
+    let held = game.players[PlayerId::Two.index()].exile[0].definition;
+
+    game.move_permanents_to_graveyard(&[freebooter]);
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[PlayerId::Two.index()]
+            .hand
+            .iter()
+            .any(|card| card.definition == held),
+        "the card comes back when the body goes",
+    );
+    assert!(game.players[PlayerId::Two.index()].exile.is_empty());
+}

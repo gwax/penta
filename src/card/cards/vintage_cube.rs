@@ -63,3 +63,4 @@ pub const TIDEHOLLOW_SCULLER: CardDefinitionId = CardDefinitionId(2145);
 pub const TIFA_LOCKHART: CardDefinitionId = CardDefinitionId(2146);
 pub const BLOOD_TOKEN: CardDefinitionId = CardDefinitionId(2147);
 pub const IVORA_INSATIABLE_HEIR: CardDefinitionId = CardDefinitionId(2148);
+pub const KITESAIL_FREEBOOTER: CardDefinitionId = CardDefinitionId(2149);

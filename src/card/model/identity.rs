@@ -54,6 +54,7 @@ pub enum CardSet {
     ThroneOfEldraine,
     ZendikarRising,
     ShardsOfAlara,
+    Ixalan,
     ScarsOfMirrodin,
     Magic2011,
     Innistrad,
