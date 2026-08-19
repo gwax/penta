@@ -283,6 +283,15 @@ impl Game {
         if value == ValueDef::AffectedManaValue {
             return i16::try_from(self.permanent_mana_value(permanent)).unwrap_or(i16::MAX);
         }
+        // These two are measured from the pile the source took as it
+        // entered, which is not on the board at all.
+        if matches!(
+            value,
+            ValueDef::TotalPowerOfLinkedExiles | ValueDef::TotalToughnessOfLinkedExiles
+        ) {
+            return self
+                .total_linked_exile_stat(source, value == ValueDef::TotalToughnessOfLinkedExiles);
+        }
         // Every other static amount is measured from its own source's
         // controller, not from whoever it is being applied to.
         let controller = self
@@ -579,5 +588,29 @@ impl Game {
                 || self.turns_started[permanent.controller.index()]
                     > permanent.entered_controller_turn
         })
+    }
+}
+
+impl Game {
+    /// The printed power, or toughness, of every card exiled with `source`,
+    /// added up. Exiled cards are read from the catalog: nothing continuous
+    /// applies outside the battlefield, so printed is what they are.
+    fn total_linked_exile_stat(&self, source: GameObjectId, toughness: bool) -> i16 {
+        self.linked_exiles
+            .iter()
+            .filter(|(linked_source, _)| *linked_source == source)
+            .filter_map(|(_, exiled)| {
+                self.card_in_nonbattlefield_zone(*exiled)
+                    .map(|(_, card)| card.definition)
+            })
+            .filter_map(|definition| self.catalog.get(definition))
+            .filter_map(|card| card.rules.creature_stats())
+            .fold(0_i16, |total, stats| {
+                total.saturating_add(if toughness {
+                    stats.toughness
+                } else {
+                    stats.power
+                })
+            })
     }
 }

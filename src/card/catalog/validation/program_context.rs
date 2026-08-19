@@ -684,7 +684,9 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         // the static power-and-toughness layer has in hand.
         ValueDef::Constant(_)
         | ValueDef::CardsInHandAbove { .. }
-        | ValueDef::AffectedManaValue => true,
+        | ValueDef::AffectedManaValue
+        | ValueDef::TotalPowerOfLinkedExiles
+        | ValueDef::TotalToughnessOfLinkedExiles => true,
         ValueDef::CountMatchingObjects(query)
         | ValueDef::AnyMatchingObject(query)
         | ValueDef::GreatestPowerAmong(query) => static_query_supported(*query),
@@ -735,6 +737,8 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
         | ValueDef::AffectedManaValue
+        | ValueDef::TotalPowerOfLinkedExiles
+        | ValueDef::TotalToughnessOfLinkedExiles
         | ValueDef::SourceToughness
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness

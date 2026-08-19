@@ -110,6 +110,14 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
         DecisionContinuation::SacrificeToTotalPower { object, .. } => {
             ids.push(object.id);
         }
+        DecisionContinuation::BattlefieldEntryExile {
+            entering,
+            candidates,
+            ..
+        } => {
+            ids.push(*entering);
+            ids.extend(candidates.iter().map(|(card, _)| *card));
+        }
         DecisionContinuation::SearchZone { .. }
         // Nothing in a name choice is an object id.
         | DecisionContinuation::CardNameChoice { .. }

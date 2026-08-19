@@ -11,6 +11,8 @@ use super::{
     ScopedEffect, StackObject, StackObjectKind, Target, TriggerContext, ZoneKind,
 };
 
+mod entry_exile;
+
 impl Game {
     pub(super) fn enqueue_battlefield_entry(&mut self, entry: PendingBattlefieldEntry) {
         self.pending_events.push_back(PendingEvent {
@@ -225,6 +227,24 @@ impl Game {
             } => self.offer_entry_copy(pending, object, added_types),
             // With two players every relation this appears on names exactly
             // one candidate, so the choice is recorded rather than asked.
+            // Any number of cards, so this one has to be asked rather than
+            // recorded: the entry waits behind the choice and resumes with
+            // the pile linked to the permanent that is arriving.
+            ReplacementEffectDef::Choose(ReplacementChoiceDef::ExileMatchingFromGraveyard(
+                predicate,
+            )) => {
+                let controller = Self::pending_event_controller(&pending);
+                let ReplaceableEvent::BattlefieldEntry(entry) = &pending.event;
+                let entering = entry.permanent.card.id;
+                let candidates = self.matching_graveyard_cards(controller, predicate, entering);
+                if candidates.is_empty() {
+                    return Some(pending);
+                }
+                let name = self.pending_entry_name(&pending);
+                self.pending_events.push_front(pending);
+                self.queue_entry_exile_choice(controller, &name, entering, &candidates);
+                None
+            }
             ReplacementEffectDef::Choose(ReplacementChoiceDef::Player(relation)) => {
                 let controller = Self::pending_event_controller(&pending);
                 let chosen = [PlayerId::One, PlayerId::Two].into_iter().find(|player| {
@@ -805,9 +825,21 @@ impl Game {
             self.commit_redirected_entry(entry, zone);
             return;
         }
+        let prospective = entry.permanent.card.id;
         if entry.completion != EntryCompletion::Setup {
             let (card, _zone_change) = self.zone_change_card(entry.permanent.card);
             entry.permanent.card = card;
+        }
+        // A permanent takes a fresh identity as it actually arrives, so
+        // anything linked to it while the entry was still prospective has to
+        // be re-pointed at the object that ended up on the battlefield.
+        if prospective != entry.permanent.card.id {
+            let arrived = entry.permanent.card.id;
+            for (source, _) in &mut self.linked_exiles {
+                if *source == prospective {
+                    *source = arrived;
+                }
+            }
         }
         entry.permanent.timestamp = self.allocate_continuous_effect_timestamp();
         let permanent_id = entry.permanent.card.id;
@@ -936,3 +968,4 @@ impl Game {
         );
     }
 }
+

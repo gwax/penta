@@ -268,6 +268,8 @@ fn validate_trigger_object_predicate(
                     | ValueDef::SourceCastX
                     | ValueDef::SourcePower
                     | ValueDef::AffectedManaValue
+                    | ValueDef::TotalPowerOfLinkedExiles
+                    | ValueDef::TotalToughnessOfLinkedExiles
                     | ValueDef::LifeTotal(_)
         | ValueDef::SourceToughness
                     | ValueDef::CountersOnSource(_)
@@ -747,6 +749,8 @@ fn validate_value_target_references(
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
         | ValueDef::AffectedManaValue
+        | ValueDef::TotalPowerOfLinkedExiles
+        | ValueDef::TotalToughnessOfLinkedExiles
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness
         | ValueDef::LifeTotal(_)

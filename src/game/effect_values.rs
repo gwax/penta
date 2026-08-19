@@ -30,7 +30,13 @@ impl Game {
             // Neither has an answer while an effect resolves: nothing is
             // being divided, and only the static power-and-toughness layer
             // has an affected object whose cost it could read.
-            ValueDef::DividedAmongTargets | ValueDef::AffectedManaValue => 0,
+            // None of these has an answer while an effect resolves: nothing
+            // is being divided, and only the static power-and-toughness
+            // layer has an affected object or a source pile to read.
+            ValueDef::DividedAmongTargets
+            | ValueDef::AffectedManaValue
+            | ValueDef::TotalPowerOfLinkedExiles
+            | ValueDef::TotalToughnessOfLinkedExiles => 0,
             ValueDef::SourceCastX => self
                 .battlefield
                 .iter()

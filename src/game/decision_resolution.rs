@@ -200,6 +200,13 @@ impl Game {
                     self.continue_pending_events();
                 }
             }
+            DecisionContinuation::BattlefieldEntryExile {
+                player,
+                entering,
+                candidates,
+            } => {
+                self.resume_entry_exile_choice(player, entering, &candidates, options);
+            }
             DecisionContinuation::BattlefieldEntryOptional { context, effect } => {
                 self.resume_optional_entry_replacement(context, effect, options);
             }

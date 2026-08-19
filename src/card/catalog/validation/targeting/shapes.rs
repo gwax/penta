@@ -287,6 +287,8 @@ fn validate_value_shape(
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
         | ValueDef::AffectedManaValue
+        | ValueDef::TotalPowerOfLinkedExiles
+        | ValueDef::TotalToughnessOfLinkedExiles
         | ValueDef::SourceToughness
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness

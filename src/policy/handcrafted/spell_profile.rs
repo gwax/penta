@@ -488,6 +488,8 @@ impl HandcraftedPolicy {
             ValueDef::SourceCastX
             | ValueDef::SourcePower
             | ValueDef::AffectedManaValue
+            | ValueDef::TotalPowerOfLinkedExiles
+            | ValueDef::TotalToughnessOfLinkedExiles
             | ValueDef::TriggeringObjectPower
             | ValueDef::TriggeringObjectToughness
             | ValueDef::SourceToughness

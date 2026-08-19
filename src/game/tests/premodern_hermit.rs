@@ -629,3 +629,77 @@ fn dragon_breath_returns_from_the_graveyard_attached() {
         "which is what the deck wants it for",
     );
 }
+
+/// Sutured Ghoul is the pile it ate: the creature cards it exiles as it
+/// enters are what its power and toughness are read from.
+#[test]
+fn sutured_ghoul_is_the_size_of_what_it_exiled() {
+    let mut game = ready_game();
+    // Serra Angel is 4/4 and Grizzly Bears 2/2, so together 6/6.
+    game.players[PlayerId::One.index()]
+        .graveyard
+        .push(card(10_010, cards::SERRA_ANGEL, PlayerId::One));
+    game.players[PlayerId::One.index()]
+        .graveyard
+        .push(card(10_011, cards::GRIZZLY_BEARS, PlayerId::One));
+    // A noncreature card in the same graveyard is not on offer.
+    game.players[PlayerId::One.index()]
+        .graveyard
+        .push(card(10_012, cards::LIGHTNING_BOLT, PlayerId::One));
+
+    let ghoul = card(10_000, cards::SUTURED_GHOUL, PlayerId::One);
+    let ghoul_id = ghoul.id;
+    game.players[PlayerId::One.index()].hand.push(ghoul);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.black = 3;
+    pool.colorless = 4;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(ghoul_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("seven mana casts it");
+    pass_until_decision(&mut game);
+
+    let choice = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the pile is chosen as it enters");
+    assert_eq!(
+        choice.options.len(),
+        2,
+        "only the creature cards are on offer",
+    );
+    let both = choice.options.iter().map(|option| option.id).collect();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: choice.id,
+            options: both,
+        },
+    )
+    .expect("any number includes all of them");
+    drain_pending(&mut game);
+
+    let ghoul = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SUTURED_GHOUL)
+        .expect("a six-power body survives the state-based check that a 0/0 does not");
+    let stats = game.creature_stats(ghoul).expect("it is a creature");
+    assert_eq!(
+        (stats.power, stats.toughness),
+        (6, 6),
+        "four plus two, read off the pile it took",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].exile.len(),
+        2,
+        "and the pile is in exile",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].graveyard.len(),
+        1,
+        "the Bolt stayed behind",
+    );
+}

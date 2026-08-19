@@ -207,6 +207,13 @@ pub(super) enum DecisionContinuation {
         context: EffectResolutionContext,
         if_paid: Option<ScopedEffect>,
     },
+    /// The pile an entering permanent takes with it, chosen while the entry
+    /// waits.
+    BattlefieldEntryExile {
+        player: PlayerId,
+        entering: GameObjectId,
+        candidates: Vec<(GameObjectId, CardDefinitionId)>,
+    },
     ChooseCards {
         controller: PlayerId,
         destination: ZoneKind,

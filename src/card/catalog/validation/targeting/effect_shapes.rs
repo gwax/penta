@@ -347,7 +347,10 @@ fn validate_replacement_effect_target_shapes(
         | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
-        | ReplacementEffectDef::Choose(ReplacementChoiceDef::Player(_))
+        | ReplacementEffectDef::Choose(
+            ReplacementChoiceDef::Player(_)
+            | ReplacementChoiceDef::ExileMatchingFromGraveyard(_),
+        )
         | ReplacementEffectDef::CopyEntering { .. } => Ok(()),
     }
 }

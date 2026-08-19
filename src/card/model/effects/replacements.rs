@@ -130,6 +130,11 @@ impl BattlefieldEntryScalarChoiceDef {
 pub enum ReplacementChoiceDef {
     Scalar(BattlefieldEntryScalarChoiceDef),
     Player(PlayerRelation),
+    /// Any number of matching cards in the entering permanent's controller's
+    /// graveyard, exiled and linked to it as it arrives. The link is the
+    /// point: Sutured Ghoul's body is read off the pile it took, so the two
+    /// have to stay tied together.
+    ExileMatchingFromGraveyard(ObjectPredicateDef),
 }
 
 /// Declarative operations performed by a replacement ability.

@@ -3,9 +3,11 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    AppliedEffectDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef,
-    EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    AppliedEffectDef, CardArt, CardRules, CardSet, CardType, CharacteristicOperationDef,
+    ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, ReplacementChoiceDef,
+    ReplacementEffectDef,
     ResolvedEffectDurationDef, SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef, ValueDef,
     ZoneKind, ZonePlacement, abilities, cards,
 };
@@ -148,6 +150,45 @@ static RECLAMATION_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_on
     AbilityTargetPredicate::Player(PlayerRelation::Any),
 )];
 
+/// A body assembled from the graveyard, read live off the pile rather than
+/// fixed as it entered: a characteristic-defining ability keeps answering.
+/// A body assembled from the graveyard, read live off the pile rather than
+/// fixed as it entered: a characteristic-defining ability keeps answering.
+/// This sets the base rather than adding to it, which is what a printed
+/// */* says.
+static GHOUL_BODY: AppliedEffectDef = AppliedEffectDef::Characteristic(
+    CharacteristicOperationDef::PowerToughness(PowerToughnessOperationDef::SetBase {
+        power: ValueDef::TotalPowerOfLinkedExiles,
+        toughness: ValueDef::TotalToughnessOfLinkedExiles,
+    }),
+);
+
+// JUD 73 — Sutured Ghoul
+pub(in crate::card::sets) static SUTURED_GHOUL: CardRecord = CardRecord::new(
+    cards::SUTURED_GHOUL,
+    "Sutured Ghoul",
+    CardArt::new("754a167b-19ac-4100-91b8-4c605efa5ff7", "Carl Critchlow"),
+    CardSet::Judgment,
+    // Seven mana for a creature the deck never pays for: it is reanimated
+    // onto a graveyard the Druid has already filled, and eats all of it.
+    CardRules::new_creature(mana_cost!("{4}{B}{B}{B}"), &["Zombie"], 0, 0).with_abilities(&[
+        abilities::trample(),
+        AbilityDef::as_enters(
+            "As this creature enters, exile any number of creature cards from your graveyard.",
+            ReplacementEffectDef::Choose(ReplacementChoiceDef::ExileMatchingFromGraveyard(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )),
+        ),
+        AbilityDef::static_ability(
+            "Sutured Ghoul's power is equal to the total power of the exiled cards and its toughness is equal to their total toughness.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: GHOUL_BODY,
+            },
+        ),
+    ]),
+);
+
 // JUD 122 — Krosan Reclamation
 pub(in crate::card::sets) static KROSAN_RECLAMATION: CardRecord = CardRecord::new(
     cards::KROSAN_RECLAMATION,
@@ -213,6 +254,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] =
 &[
     &FLASH_OF_INSIGHT,
     &CABAL_THERAPY,
+    &SUTURED_GHOUL,
     &KROSAN_RECLAMATION,
     &SYLVAN_SAFEKEEPER,
 ];

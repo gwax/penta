@@ -137,6 +137,12 @@ pub enum ValueDef {
     /// other enchantment a body its own cost decides, so the number is the
     /// affected object's and changes from one to the next.
     AffectedManaValue,
+    /// The printed power, or toughness, of every card exiled with the
+    /// ability's own source, added up. Sutured Ghoul is the body its own
+    /// entry assembled, so the number is read off that pile rather than off
+    /// the board.
+    TotalPowerOfLinkedExiles,
+    TotalToughnessOfLinkedExiles,
     SourcePower,
     SourceToughness,
     TriggerEventAmount,

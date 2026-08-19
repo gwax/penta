@@ -669,6 +669,9 @@ fn continuation_snapshot(
         // is paying for is relocatable, but how much is still owed is state
         // this format has no place for yet.
         DecisionContinuation::SacrificeToTotalPower { .. }
+        // An entry paused mid-flight carries a prospective permanent that
+        // this format has no place for yet.
+        | DecisionContinuation::BattlefieldEntryExile { .. }
         | DecisionContinuation::BattlefieldExitReplacement { .. } => return None,
     };
     Some(value)
