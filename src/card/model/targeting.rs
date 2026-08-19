@@ -92,6 +92,9 @@ pub enum ObjectPredicateDef {
     /// name is written out; "bands with other creatures named X" is the one
     /// place the rules ask for it without a source to compare against.
     Named(&'static str),
+    /// Bears the card name chosen earlier in this resolution, by
+    /// [`super::EffectDef::ChooseCardName`]. Nothing matches when no name was
+    /// chosen.
     /// Matches the scalar the ability's source chose as it entered: the card
     /// name Meddling Mage locked out, or the creature type Engineered Plague
     /// named. The axis is the same one the entry choice was recorded on, so

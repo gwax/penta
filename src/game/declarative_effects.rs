@@ -600,6 +600,30 @@ impl Game {
                     .unwrap_or(u16::MAX);
                 self.add_unrestricted_mana(object.controller, color, amount);
             }
+            EffectDef::ChooseCardName {
+                chooser,
+                nonland_only,
+                matched_in,
+                zone,
+                binding,
+                then,
+            } => {
+                if let Some(player) = self.player_reference(chooser, object, &context, scoped)
+                    && let Some(searched) =
+                        self.player_reference(matched_in, object, &context, scoped)
+                {
+                    self.queue_card_name_choice(
+                        player,
+                        nonland_only,
+                        searched,
+                        zone,
+                        binding,
+                        object.clone(),
+                        context,
+                        scoped.with_effect(*then),
+                    );
+                }
+            }
             EffectDef::CopyResolvingSpell { chooser, count } => {
                 let copies = self
                     .effect_value(count, object, &context, scoped)

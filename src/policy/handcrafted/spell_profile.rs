@@ -339,6 +339,9 @@ impl HandcraftedPolicy {
             EffectDef::Choose(choice) => {
                 Self::collect_spell_effect_profile(*choice.then, x, targets, profile);
             }
+            EffectDef::ChooseCardName { then, .. } => {
+                Self::collect_spell_effect_profile(*then, x, targets, profile);
+            }
             EffectDef::PayOr(payment) => {
                 for effect in payment.if_paid.iter().chain(payment.otherwise.iter()) {
                     Self::collect_spell_effect_profile(**effect, x, targets, profile);

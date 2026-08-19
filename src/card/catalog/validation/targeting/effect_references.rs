@@ -23,6 +23,20 @@ fn validate_effect_references(
             validate_recipient_target_references(player, target_count, scope)?;
             validate_effect_references(*then, target_count, scope)
         }
+        EffectDef::ChooseCardName {
+            chooser,
+            matched_in,
+            binding,
+            then,
+            ..
+        } => {
+            validate_player_reference(chooser, target_count, scope)?;
+            validate_player_reference(matched_in, target_count, scope)?;
+            // The cards of the chosen name are bound as it is answered, so
+            // the follow-up may name that set.
+            let nested = scope.with_object_set(binding)?;
+            validate_effect_references(*then, target_count, nested)
+        }
         EffectDef::Choose(choice) => {
             validate_player_reference(choice.chooser, target_count, scope)?;
             validate_recipient_target_references(

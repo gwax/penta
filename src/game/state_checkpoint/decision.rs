@@ -626,7 +626,11 @@ fn continuation_snapshot(
         DecisionContinuation::TetravusAssemble { source } => {
             DecisionContinuationSnapshot::TetravusAssemble { source: source.0 }
         }
-        DecisionContinuation::BattlefieldExitReplacement { .. } => return None,
+        // A name chosen mid-resolution is a string rather than a locator, so
+        // there is nothing stable to write down: a checkpoint taken while one
+        // is pending is one this format cannot carry.
+        DecisionContinuation::CardNameChoice { .. }
+        | DecisionContinuation::BattlefieldExitReplacement { .. } => return None,
     };
     Some(value)
 }

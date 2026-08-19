@@ -108,6 +108,8 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             ..
         } => extend_trigger_placement_ids(&mut ids, trigger, pending, remaining),
         DecisionContinuation::SearchZone { .. }
+        // Nothing in a name choice is an object id.
+        | DecisionContinuation::CardNameChoice { .. }
         | DecisionContinuation::ChooseCards { .. }
         | DecisionContinuation::DiscardForEffect { .. }
         | DecisionContinuation::BasicLandTypeTextChange { .. }

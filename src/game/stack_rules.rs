@@ -59,6 +59,9 @@ impl Game {
                     || Self::effect_applies_to_source(*otherwise, expected)
             }
             EffectDef::Choose(choice) => Self::effect_applies_to_source(*choice.then, expected),
+            EffectDef::ChooseCardName { then, .. } => {
+                Self::effect_applies_to_source(*then, expected)
+            }
             EffectDef::PayOr(payment) => payment
                 .if_paid
                 .iter()

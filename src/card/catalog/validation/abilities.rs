@@ -648,7 +648,9 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
             collect_ability_grants(*on_failure, grants);
         }
         EffectDef::Choose(choice) => collect_ability_grants(*choice.then, grants),
-        EffectDef::RevealAtRandomFromHand { then, .. } => collect_ability_grants(*then, grants),
+        EffectDef::RevealAtRandomFromHand { then, .. } | EffectDef::ChooseCardName { then, .. } => {
+            collect_ability_grants(*then, grants);
+        }
         EffectDef::PayOr(payment) => {
             for effect in payment.if_paid.iter().chain(payment.otherwise.iter()) {
                 collect_ability_grants(**effect, grants);
@@ -821,7 +823,9 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
             ..
         } => ability_grant_sites(*on_success).saturating_add(ability_grant_sites(*on_failure)),
         EffectDef::Choose(choice) => ability_grant_sites(*choice.then),
-        EffectDef::RevealAtRandomFromHand { then, .. } => ability_grant_sites(*then),
+        EffectDef::RevealAtRandomFromHand { then, .. } | EffectDef::ChooseCardName { then, .. } => {
+            ability_grant_sites(*then)
+        }
         EffectDef::PayOr(payment) => payment
             .if_paid
             .iter()

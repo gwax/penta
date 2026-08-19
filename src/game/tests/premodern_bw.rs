@@ -138,3 +138,66 @@ fn gerrards_verdict_gains_three_for_each_land_discarded() {
     assert_eq!(played(2), 26, "two lands discarded is six life");
     assert_eq!(played(0), 20, "no land discarded is none");
 }
+
+/// Cabal Therapy takes every copy of the name it guesses, and nothing else.
+#[test]
+fn cabal_therapy_takes_every_copy_of_the_named_card() {
+    let mut game = ready_game();
+    game.players[PlayerId::Two.index()].hand.clear();
+    for index in 0..2 {
+        let bolt = card(
+            10_010 + u32::try_from(index).expect("fits"),
+            cards::LIGHTNING_BOLT,
+            PlayerId::Two,
+        );
+        game.players[PlayerId::Two.index()].hand.push(bolt);
+    }
+    game.players[PlayerId::Two.index()]
+        .hand
+        .push(card(10_020, cards::COUNTERSPELL, PlayerId::Two));
+
+    let therapy = card(10_000, cards::CABAL_THERAPY, PlayerId::One);
+    let therapy_id = therapy.id;
+    game.players[PlayerId::One.index()].hand.push(therapy);
+    game.players[PlayerId::One.index()].mana_pool.black = 1;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            therapy_id,
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("the Therapy is cast");
+    pass_until_decision(&mut game);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the Therapy asks for a name");
+    let bolt = decision
+        .options
+        .iter()
+        .find(|option| option.label == "Lightning Bolt")
+        .expect("a spell is nameable")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![bolt],
+        },
+    )
+    .expect("naming is legal");
+    drain_pending(&mut game);
+
+    let hand = &game.players[PlayerId::Two.index()].hand;
+    assert_eq!(hand.len(), 1, "both Bolts went");
+    assert_eq!(
+        hand[0].definition,
+        cards::COUNTERSPELL,
+        "and the card that was not named stayed",
+    );
+}

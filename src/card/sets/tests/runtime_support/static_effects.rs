@@ -152,6 +152,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         EffectDef::GrantFlashToNextSorcery
         | EffectDef::Randomized { .. }
         | EffectDef::Choose(_)
+        | EffectDef::ChooseCardName { .. }
         | EffectDef::PayOr(_)
         | EffectDef::SplitIntoPiles(_)
         | EffectDef::PreventDamage { .. }

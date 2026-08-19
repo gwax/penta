@@ -186,6 +186,59 @@ impl Game {
         amount
     }
 
+    /// Asks `player` to name a card while an effect resolves, then continues
+    /// that effect with the answer. The catalog supplies the list, which is
+    /// the same one an entering permanent's naming choice offers.
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn queue_card_name_choice(
+        &mut self,
+        player: PlayerId,
+        nonland_only: bool,
+        searched: PlayerId,
+        zone: ZoneKind,
+        binding: crate::ObjectSetBindingIndex,
+        object: StackObject,
+        context: EffectResolutionContext,
+        effect: ScopedEffect,
+    ) {
+        let choice = if nonland_only {
+            crate::card::BattlefieldEntryScalarChoiceDef::NONLAND_CARD_NAME
+        } else {
+            crate::card::BattlefieldEntryScalarChoiceDef::CARD_NAME
+        };
+        let (prompt, choices) = self.entry_scalar_choices(player, choice);
+        let options = choices
+            .iter()
+            .enumerate()
+            .map(|(index, value)| DecisionOption {
+                id: u32::try_from(index).unwrap_or(u32::MAX),
+                label: value.clone(),
+                card: None,
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::None,
+            })
+            .collect();
+        self.queue_decision(
+            player,
+            prompt,
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::CardNameChoice {
+                choices,
+                searched,
+                zone,
+                binding,
+                object: Box::new(object),
+                context,
+                effect,
+            },
+        );
+    }
+
     pub(super) fn can_pay_effect_payment(
         &self,
         player: PlayerId,

@@ -602,6 +602,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     EffectDef::AddManaEqualTo { .. }
                     | EffectDef::Randomized { .. }
                     | EffectDef::Choose(_)
+                    | EffectDef::ChooseCardName { .. }
                     | EffectDef::PayOr(_)
                     | EffectDef::SplitIntoPiles(_)
                     | EffectDef::PreventDamage { .. }

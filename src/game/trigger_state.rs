@@ -45,6 +45,10 @@ pub(super) struct EffectResolutionContext {
     /// How many objects the previous step matched, for a follow-up that
     /// counts them: the land cards a discard actually took.
     pub(super) matched_count: Option<u16>,
+    /// A card name chosen while this effect resolves, which the rest of the
+    /// same resolution reads back. Cabal Therapy names one and then discards
+    /// every copy of it.
+    pub(super) chosen_name: Option<String>,
     single_objects: [Option<Target>; ObjectBindingIndex::COUNT],
     object_groups: [Vec<Target>; ObjectSetBindingIndex::COUNT],
 }
@@ -55,6 +59,7 @@ impl EffectResolutionContext {
             trigger,
             paid_amount: None,
             matched_count: None,
+            chosen_name: None,
             single_objects: [None; ObjectBindingIndex::COUNT],
             object_groups: std::array::from_fn(|_| Vec::new()),
         }
@@ -106,6 +111,7 @@ impl EffectResolutionContext {
             trigger,
             paid_amount: None,
             matched_count: None,
+            chosen_name: None,
             single_objects,
             object_groups,
         }

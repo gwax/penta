@@ -2,11 +2,13 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AlternativeCastKindDef, AppliedEffectDef,
-    CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef, SpellAdditionalCostDef,
-    SpendModeDef, TopCardSelectionDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
+    AppliedEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
+    ManaColor, ObjectPredicateDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    ResolvedEffectDurationDef, SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
+use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
 
 static SAFEKEEPER_SHROUD: AbilityDef = abilities::shroud();
@@ -64,6 +66,58 @@ pub(in crate::card::sets) static FLASH_OF_INSIGHT: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Everything of the named card in the target's hand, revealed first so the
+/// choice is answered honestly and then taken all at once.
+static THERAPY_TAKE: EffectDef = EffectDef::Sequence(&[
+    EffectDef::RevealHand {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::DiscardCards {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+    },
+]);
+
+static THERAPY_SACRIFICE: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ZoneKind::Battlefield,
+    1,
+);
+
+static THERAPY_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+// JUD 62 — Cabal Therapy
+pub(in crate::card::sets) static CABAL_THERAPY: CardRecord = CardRecord::new(
+    cards::CABAL_THERAPY,
+    "Cabal Therapy",
+    CardArt::new("0a5df970-6c2b-4e7f-9a3d-1b8e5c2f4d6a", "Ron Spencer"),
+    CardSet::Judgment,
+    // A guess for one mana, and the same guess again later for a creature
+    // that has already attacked.
+    CardRules::new_sorcery(mana_cost!("{B}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Choose a nonland card name. Target player reveals their hand and discards all cards with that name.",
+            &THERAPY_TARGET,
+            EffectDef::ChooseCardName {
+                chooser: PlayerRefDef::EffectController,
+                nonland_only: true,
+                matched_in: PlayerRefDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Hand,
+                binding: ObjectSetBindingIndex::PRIMARY,
+                then: &THERAPY_TAKE,
+            },
+        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::Flashback,
+            Some("Flashback—Sacrifice a creature."),
+            EffectDef::None,
+        )
+        .with_alternative_additional_cost(&THERAPY_SACRIFICE),
+    ]),
+);
+
 // JUD 133 — Sylvan Safekeeper
 pub(in crate::card::sets) static SYLVAN_SAFEKEEPER: CardRecord = CardRecord::new(
     cards::SYLVAN_SAFEKEEPER,
@@ -92,7 +146,8 @@ pub(in crate::card::sets) static SYLVAN_SAFEKEEPER: CardRecord = CardRecord::new
     ),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&FLASH_OF_INSIGHT, &SYLVAN_SAFEKEEPER];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&FLASH_OF_INSIGHT, &CABAL_THERAPY, &SYLVAN_SAFEKEEPER];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&crate::card::sets::y2012::dark_ascension::RAY_OF_REVELATION), // JUD 20

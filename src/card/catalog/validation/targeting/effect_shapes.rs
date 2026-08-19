@@ -23,6 +23,10 @@ fn validate_effect_target_shapes(
             validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
             validate_effect_target_shapes(*then, targets, triggering_object_zone)
         }
+        EffectDef::ChooseCardName { chooser, then, .. } => {
+            validate_player_reference_shape(chooser, targets)?;
+            validate_effect_target_shapes(*then, targets, None)
+        }
         EffectDef::Choose(choice) => {
             validate_player_reference_shape(choice.chooser, targets)?;
             validate_object_set_shape(choice.candidates, targets)?;

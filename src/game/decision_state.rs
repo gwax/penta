@@ -264,6 +264,18 @@ pub(super) enum DecisionContinuation {
         if_paid: Option<ScopedEffect>,
         otherwise: Option<ScopedEffect>,
     },
+    /// A card name chosen while an effect resolves, with the rest of that
+    /// effect waiting on the answer.
+    CardNameChoice {
+        choices: Vec<String>,
+        /// Whose cards the name is matched against, and where.
+        searched: PlayerId,
+        zone: ZoneKind,
+        binding: ObjectSetBindingIndex,
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
+        effect: ScopedEffect,
+    },
     /// The divider has selected the first pile. The chooser still has to
     /// choose between the two typed groups before the nested effect runs.
     SplitForEffect {

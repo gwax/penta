@@ -516,6 +516,22 @@ pub enum EffectDef {
         object: EffectRecipientDef,
         zone: ZoneKind,
     },
+    /// Names a card while this effect resolves, binds every card of that name
+    /// where it looks, and continues. "Discards all cards with that name" is
+    /// the follow-up naming that binding. Distinct from the entry choice a
+    /// permanent records, which outlives its resolution.
+    ChooseCardName {
+        chooser: PlayerRefDef,
+        nonland_only: bool,
+        /// Whose cards the name is matched against, and where.
+        matched_in: PlayerRefDef,
+        zone: ZoneKind,
+        /// Where the matching cards are saved for the rest of the effect.
+        /// Binding them as the name is chosen means the follow-up names a set
+        /// rather than re-deriving it from a name it cannot see.
+        binding: ObjectSetBindingIndex,
+        then: &'static EffectDef,
+    },
     /// Copies the spell this effect belongs to, letting `chooser` retarget the
     /// copy. Fork copies something else and repaints it; this is the shape a
     /// card uses to copy itself, so the copy keeps its own colours.

@@ -364,6 +364,7 @@ fn validate_resolving_effect(
     source_zones: &[ZoneKind],
 ) -> Result<(), &'static str> {
     match effect {
+        EffectDef::ChooseCardName { then, .. } => validate_resolving_effect(*then, source_zones),
         EffectDef::Sequence(effects) => {
             if effects.is_empty() {
                 return Err("empty Sequence");
@@ -801,7 +802,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::None => "None",
         EffectDef::Sequence(_) => "Sequence",
         EffectDef::Randomized { .. } => "Randomized",
-        EffectDef::Choose(_) => "Choose",
+        EffectDef::Choose(_) | EffectDef::ChooseCardName { .. } => "Choose",
         EffectDef::PayOr(_) => "PayOr",
         EffectDef::SplitIntoPiles(_) => "SplitIntoPiles",
         EffectDef::PreventDamage { .. } => "PreventDamage",

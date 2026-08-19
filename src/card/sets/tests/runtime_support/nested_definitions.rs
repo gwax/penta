@@ -317,7 +317,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         EffectDef::Choose(choice) => {
             assert_nested_definition_abilities(card_name, *choice.then);
         }
-        EffectDef::RevealAtRandomFromHand { then, .. } => {
+        EffectDef::RevealAtRandomFromHand { then, .. } | EffectDef::ChooseCardName { then, .. } => {
             assert_nested_definition_abilities(card_name, *then);
         }
         EffectDef::PayOr(payment) => {
