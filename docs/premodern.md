@@ -55,7 +55,16 @@ result and rebuild sampled Premodern positions from their observations.
   phased-out permanent is held apart from the battlefield rather than left
   on it behind a flag, so all hundred-odd walks over the battlefield are
   right without knowing phasing exists, and it phases in before its
-  controller untaps. A phased-out permanent now survives a
+  controller untaps. Angry Hermit is the one list still
+  staged, and one thing holds it: registering it puts Phyrexian Dreadnought
+  into the reconstruction sweeps, and the run of sacrifices its entry cost
+  asks for cannot be snapshotted. The continuation is asked while the
+  trigger that wants it is still resolving, and that trigger's own stack
+  object is retired as a card by then -- which
+  `object_reference_requires_hidden_rebinding` treats as a reference the
+  viewer cannot be given, so the whole decision is refused. Carrying it
+  needs either a rebinding for that object or a narrower notion of which
+  references are hidden. A phased-out permanent now survives a
   checkpoint: it is public information -- both players see it, and only the
   rules treat it as absent -- so it is shown behind a `phasedOut` flag and
   reconstruction routes it back to the phased-out list. Engine legality
