@@ -11,14 +11,14 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 16 of them not yet cataloged
+- 145 distinct cards across the tranche, 15 of them not yet cataloged
 - 5 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
   Drew Glauberg's Stasis, TentacleFan's Landstill, and Andy Dominguez's RG
   Goblins. Nothing in any of them is metadata-only or partial
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: BW Control 5, Replenish 11, Angry Hermit 8. A list is blocked only by uncataloged cards -- no staged deck
+together: BW Control 5, Replenish 11, Angry Hermit 7. A list is blocked only by uncataloged cards -- no staged deck
 contains a card that is cataloged but unplayable.
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -140,6 +140,7 @@ older unannotated definitions still require one):
 - `Jackal Pup` — complete
 - `Karplusan Forest` — complete
 - `Kor Haven` — complete
+- `Krosan Reclamation` — complete; the cards are picked out of the targeted graveyard on resolution
 - `Lightning Bolt`
 - `Llanowar Wastes` — complete
 - `Lotus Petal` — complete
@@ -215,7 +216,6 @@ Not yet cataloged:
 - [ ] `Frantic Search`
 - [ ] `Gilded Drake`
 - [ ] `Intuition`
-- [ ] `Krosan Reclamation`
 - [ ] `Opalescence`
 - [ ] `Parallax Wave`
 - [ ] `Phyrexian Dreadnought`

@@ -248,3 +248,76 @@ fn reflecting_pool_borrows_from_your_own_lands() {
         "a type, not a colour: {colors:?}",
     );
 }
+
+/// Krosan Reclamation puts back what its controller picks out of the target
+/// player's graveyard, and nothing else moves.
+#[test]
+fn krosan_reclamation_shuffles_back_the_chosen_cards() {
+    let mut game = ready_game();
+    game.players[PlayerId::Two.index()].library.clear();
+    for index in 0..3 {
+        game.players[PlayerId::Two.index()].graveyard.push(card(
+            10_010 + index,
+            cards::LIGHTNING_BOLT,
+            PlayerId::Two,
+        ));
+    }
+    // The controller's own graveyard is not the one being emptied.
+    game.players[PlayerId::One.index()]
+        .graveyard
+        .push(card(10_020, cards::COUNTERSPELL, PlayerId::One));
+
+    let reclamation = card(10_000, cards::KROSAN_RECLAMATION, PlayerId::One);
+    let reclamation_id = reclamation.id;
+    game.players[PlayerId::One.index()].hand.push(reclamation);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.green = 1;
+    pool.colorless = 1;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            reclamation_id,
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("two mana casts it");
+    pass_until_decision(&mut game);
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the caster picks which cards go back");
+    let options = decision
+        .options
+        .iter()
+        .take(2)
+        .map(|option| option.id)
+        .collect();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options,
+        },
+    )
+    .expect("two of the three is within the limit");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].library.len(),
+        2,
+        "two of the three chosen cards went back",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].graveyard.len(),
+        1,
+        "and the third stayed put",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].graveyard.len(),
+        2,
+        "the caster's own graveyard kept its card and gained the Reclamation",
+    );
+}

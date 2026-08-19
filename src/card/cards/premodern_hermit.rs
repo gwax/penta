@@ -6,3 +6,4 @@ pub const HERMIT_DRUID: CardDefinitionId = CardDefinitionId(2070);
 pub const STIFLE: CardDefinitionId = CardDefinitionId(2071);
 pub const SHALLOW_GRAVE: CardDefinitionId = CardDefinitionId(2072);
 pub const REFLECTING_POOL: CardDefinitionId = CardDefinitionId(2073);
+pub const KROSAN_RECLAMATION: CardDefinitionId = CardDefinitionId(2074);

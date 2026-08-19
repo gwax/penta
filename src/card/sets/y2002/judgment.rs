@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    AppliedEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
-    ManaColor, ObjectPredicateDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    AppliedEffectDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef,
+    EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
     ResolvedEffectDurationDef, SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef, ValueDef,
     ZoneKind, ZonePlacement, abilities, cards,
 };
@@ -118,6 +119,67 @@ pub(in crate::card::sets) static CABAL_THERAPY: CardRecord = CardRecord::new(
     ]),
 );
 
+/// The chosen cards, shuffled back in. The shuffle follows the move so the
+/// library the cards join is the one that gets randomized.
+static RECLAMATION_SHUFFLE: EffectDef = EffectDef::Sequence(&[
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+        zone: ZoneKind::Library,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        controller: None,
+    },
+    EffectDef::ShuffleLibrary {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+]);
+
+/// The graveyard the cards come out of belongs to the targeted player, which
+/// is what makes the choice a resolution choice here rather than a second
+/// target: the constraint is "from their graveyard", and choosing on
+/// resolution states it exactly.
+static RECLAMATION_CANDIDATES: ObjectQueryDef = ObjectQueryDef::owned_by(
+    ObjectPredicateDef::Any,
+    &[ZoneKind::Graveyard],
+    PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+);
+
+static RECLAMATION_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+// JUD 122 — Krosan Reclamation
+pub(in crate::card::sets) static KROSAN_RECLAMATION: CardRecord = CardRecord::new(
+    cards::KROSAN_RECLAMATION,
+    "Krosan Reclamation",
+    CardArt::new("2aa77608-8f0e-4b12-80e2-d1feabf7787d", "Gary Ruddell"),
+    CardSet::Judgment,
+    // Graveyard hate that answers a single card twice, which is what a
+    // combo deck holding one Sutured Ghoul actually needs.
+    CardRules::new_instant(mana_cost!("{1}{G}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Target player shuffles up to two target cards from their graveyard into their library.",
+            &RECLAMATION_TARGET,
+            EffectDef::Choose(ChooseDef {
+                binding: ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
+                chooser: PlayerRefDef::EffectController,
+                candidates: ObjectSetDef::Query(RECLAMATION_CANDIDATES),
+                exclude: None,
+                minimum: 0,
+                maximum: 2,
+                visibility: ChoiceVisibilityDef::Public,
+                then: &RECLAMATION_SHUFFLE,
+            }),
+        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{1}{G}"),
+            AlternativeCastKindDef::Flashback,
+            Some("Flashback {1}{G}"),
+            EffectDef::None,
+        ),
+    ]),
+);
+
 // JUD 133 — Sylvan Safekeeper
 pub(in crate::card::sets) static SYLVAN_SAFEKEEPER: CardRecord = CardRecord::new(
     cards::SYLVAN_SAFEKEEPER,
@@ -147,7 +209,12 @@ pub(in crate::card::sets) static SYLVAN_SAFEKEEPER: CardRecord = CardRecord::new
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&FLASH_OF_INSIGHT, &CABAL_THERAPY, &SYLVAN_SAFEKEEPER];
+&[
+    &FLASH_OF_INSIGHT,
+    &CABAL_THERAPY,
+    &KROSAN_RECLAMATION,
+    &SYLVAN_SAFEKEEPER,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&crate::card::sets::y2012::dark_ascension::RAY_OF_REVELATION), // JUD 20
