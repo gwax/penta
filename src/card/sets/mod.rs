@@ -383,6 +383,11 @@ const SET_MODULES: &[SetModule] = &[
         y2023::lord_of_the_rings::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::RavnicaClueEdition,
+        y2024::ravnica_clue_edition::CARDS,
+        y2024::ravnica_clue_edition::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::ModernHorizons3,
         y2024::modern_horizons_3::CARDS,
         y2024::modern_horizons_3::ADDITIONAL_PRINTINGS,

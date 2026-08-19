@@ -238,6 +238,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("eternal_masters.rs") => source(CardSet::EternalMasters, "EMA"),
         Some("kaladesh.rs") => source(CardSet::Kaladesh, "KLD"),
         Some("lord_of_the_rings.rs") => source(CardSet::LordOfTheRings, "LTR"),
+        Some("ravnica_clue_edition.rs") => source(CardSet::RavnicaClueEdition, "CLU"),
         Some("modern_horizons_3.rs") => source(CardSet::ModernHorizons3, "MH3"),
         Some("modern_horizons_3_commander.rs") => source(CardSet::ModernHorizons3Commander, "M3C"),
         Some("final_fantasy.rs") => source(CardSet::FinalFantasy, "FIN"),

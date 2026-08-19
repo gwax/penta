@@ -447,3 +447,120 @@ fn pyrogoyf_burns_on_arrival_for_as_much_as_it_is_worth() {
         "a 2/3 Lhurgoyf burns for two",
     );
 }
+
+/// The Krasis lends its own body: a 1/1 becomes a 4/4 while the Krasis is a
+/// 4/4, and a 7/7 while it is a 7/7. Setting a base rather than adding to one
+/// is what makes the small creature big rather than bigger.
+#[test]
+fn the_krasis_sets_another_creature_to_its_own_size() {
+    for (adapted, expected) in [(false, 4), (true, 7)] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let krasis = creature(64_000, cards::UNRULY_KRASIS, PlayerId::One);
+        let krasis_id = krasis.card.id;
+        game.battlefield.push(krasis);
+        let lions = creature(64_001, cards::SAVANNAH_LIONS, PlayerId::One);
+        let lions_id = lions.card.id;
+        game.battlefield.push(lions);
+
+        if adapted {
+            game.players[PlayerId::One.index()].mana_pool.green = 1;
+            game.players[PlayerId::One.index()].mana_pool.blue = 1;
+            game.players[PlayerId::One.index()].mana_pool.colorless = 3;
+            let adapt = game
+                .legal_actions(PlayerId::One)
+                .into_iter()
+                .find(|action| {
+                    matches!(action, Action::ActivateAbility { source, .. } if *source == krasis_id)
+                })
+                .expect("adapt is offered");
+            game.apply(PlayerId::One, adapt).expect("it activates");
+            drain_pending(&mut game);
+        }
+
+        game.step = Step::DeclareAttackers;
+        game.declare_attacker(krasis_id, AttackDefender::Player(PlayerId::Two));
+        game.finish_declaring_attackers();
+
+        // Two answers follow in order: which creature the trigger targets,
+        // and then whether to take the optional effect at all. The last
+        // option is the affirmative one in both.
+        for _ in 0..16 {
+            if let Some(decision) = game.observe(PlayerId::One).decision {
+                let accept = decision.options.last().expect("an option is offered").id;
+                game.apply(
+                    PlayerId::One,
+                    Action::ChooseDecision {
+                        decision: decision.id,
+                        options: vec![accept],
+                    },
+                )
+                .expect("the offered option is legal");
+                continue;
+            }
+            if game.stack.is_empty() && game.pending_triggers.is_empty() {
+                break;
+            }
+            let player = game.priority;
+            assert!(
+                game.apply(player, Action::PassPriority).is_ok(),
+                "the attack trigger is waiting",
+            );
+        }
+
+        let lions = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == lions_id)
+            .expect("still there");
+        assert_eq!(
+            (game.power(lions), game.toughness(lions)),
+            (Some(expected), Some(expected)),
+            "a 2/1 takes the Krasis's size (adapted: {adapted})",
+        );
+    }
+}
+
+/// Adapt is a conditional rather than a cost: the second activation resolves
+/// and simply finds counters already there.
+#[test]
+fn the_krasis_adapts_only_while_it_has_no_counters() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let krasis = creature(64_100, cards::UNRULY_KRASIS, PlayerId::One);
+    let krasis_id = krasis.card.id;
+    game.battlefield.push(krasis);
+
+    let activate = |game: &mut Game| {
+        game.players[PlayerId::One.index()].mana_pool.green = 1;
+        game.players[PlayerId::One.index()].mana_pool.blue = 1;
+        game.players[PlayerId::One.index()].mana_pool.colorless = 3;
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, .. } if *source == krasis_id)
+            })
+            .expect("adapt is always offered");
+        game.apply(PlayerId::One, action).expect("it activates");
+        drain_pending(game);
+    };
+
+    activate(&mut game);
+    let size = |game: &Game| {
+        let krasis = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == krasis_id)
+            .expect("still there");
+        (game.power(krasis), game.toughness(krasis))
+    };
+    assert_eq!(size(&game), (Some(7), Some(7)), "three counters arrive");
+
+    activate(&mut game);
+    assert_eq!(
+        size(&game),
+        (Some(7), Some(7)),
+        "and a second adapt adds nothing while they are still on it",
+    );
+}

@@ -72,6 +72,7 @@ pub enum CardSet {
     EternalMasters,
     Kaladesh,
     LordOfTheRings,
+    RavnicaClueEdition,
     ModernHorizons3,
     ModernHorizons3Commander,
     FinalFantasy,

@@ -58,3 +58,4 @@ pub const SPIREBLUFF_CANAL: CardDefinitionId = CardDefinitionId(2140);
 pub const PYROGOYF: CardDefinitionId = CardDefinitionId(2141);
 pub const MANA_CRYPT: CardDefinitionId = CardDefinitionId(2142);
 pub const CROP_ROTATION: CardDefinitionId = CardDefinitionId(2143);
+pub const UNRULY_KRASIS: CardDefinitionId = CardDefinitionId(2144);
