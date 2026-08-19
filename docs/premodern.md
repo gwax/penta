@@ -11,7 +11,7 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 10 of them not yet cataloged
+- 145 distinct cards across the tranche, 9 of them not yet cataloged
 - 6 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
   Drew Glauberg's Stasis, Chris Danis's BW Control, TentacleFan's Landstill,
   and Andy Dominguez's RG Goblins. Nothing in any of them is metadata-only or
@@ -19,7 +19,7 @@ correctly.
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: Replenish 6, Angry Hermit 6. BW Control is complete. A list is
+together: Replenish 5, Angry Hermit 6. BW Control is complete. A list is
 blocked only by uncataloged cards -- no staged deck contains a card that is
 cataloged but unplayable.
 
@@ -50,10 +50,14 @@ result and rebuild sampled Premodern positions from their observations.
   Unsupported clauses must be metadata-only rather than executable no-ops.
 - Implement reusable mechanics before card-local behavior. Cycling and
   typecycling, flashback, split cards, tutors, alternative costs that exile a
-  card from hand, and single-card reanimation are all in place. What the
-  remaining lists still need fading (Parallax Wave). Replenish itself needed
-  no new mechanic: returning every enchantment card at once is the ordinary
-  zone move over a query. Opalescence needed no rewrite either, only a
+  card from hand, and single-card reanimation are all in place, and every
+  named mechanic the staged lists ask for is now done. Fading landed with
+  Parallax Wave and needed only a counter kind: entering with counters, an
+  upkeep trigger reading its own counters, and exiles linked to a source
+  were all already there, so fading is the shape those pieces make rather
+  than a mechanic of its own. Replenish itself needed no new mechanic
+  either: returning every enchantment card at once is the ordinary zone
+  move over a query. Opalescence needed no rewrite either, only a
   static power-and-toughness amount read from the affected object rather
   than from the effect's source, and a slightly wider stratified vocabulary
   for an animation's own query -- still excluding the basic land subtypes,
@@ -168,6 +172,7 @@ older unannotated definitions still require one):
 - `Opalescence` — complete; each other enchantment is the size of its own cost
 - `Opt` — complete
 - `Overload` — complete
+- `Parallax Wave` — complete; fading spent on creatures, and all of them return
 - `Phyrexian Arena` — complete
 - `Phyrexian Furnace` — complete; the tap mode eats the oldest card
 - `Plains`
@@ -226,7 +231,6 @@ Not yet cataloged:
 - [ ] `Dragon Breath`
 - [ ] `Gilded Drake`
 - [ ] `Intuition`
-- [ ] `Parallax Wave`
 - [ ] `Phyrexian Dreadnought`
 - [ ] `Skycloud Expanse`
 - [ ] `Sutured Ghoul`

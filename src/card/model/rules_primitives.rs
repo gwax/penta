@@ -52,10 +52,14 @@ pub enum CounterKind {
     /// Powder Keg's counter, which is both its timer and its dial: how many
     /// have accumulated is exactly the mana value it goes off on.
     Fuse,
+    /// A fading permanent's counter. Fading counts down rather than up, and
+    /// the permanent is sacrificed on the upkeep it cannot pay one, so a
+    /// card with fading N lasts N of its controller's turns.
+    Fade,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 22;
+    pub const COUNT: usize = 23;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -80,6 +84,7 @@ impl CounterKind {
         Self::Storage,
         Self::Mining,
         Self::Fuse,
+        Self::Fade,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -109,7 +114,8 @@ impl CounterKind {
             | Self::Wind
             | Self::Storage
             | Self::Mining
-            | Self::Fuse => (0, 0),
+            | Self::Fuse
+            | Self::Fade => (0, 0),
         }
     }
 
@@ -138,6 +144,7 @@ impl CounterKind {
             Self::Storage => 19,
             Self::Mining => 20,
             Self::Fuse => 21,
+            Self::Fade => 22,
         }
     }
 
@@ -166,6 +173,7 @@ impl CounterKind {
             Self::Storage => "storage",
             Self::Mining => "mining",
             Self::Fuse => "fuse",
+            Self::Fade => "fade",
         }
     }
 }

@@ -3,13 +3,104 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
-    DamageEventMatcherDef, DamagePreventionDef, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PlayerRelation, ResolvedEffectDurationDef,
-    SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, ValueDef, ZoneKind, abilities,
-    cards,
+    BasicLandType, BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype,
+    CardType, ComparisonDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    PlayerRelation, ReplacementEffectDef, ResolvedEffectDurationDef, SpellAdditionalCostDef,
+    SpendModeDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
+
+/// Fading counts down rather than up: the upkeep that cannot pay a counter
+/// is the one that ends the permanent. Five counters is five of its
+/// controller's turns, and spending them faster is the whole point of the
+/// card -- each one exiles a creature instead.
+static WAVE_FADES: EffectDef = EffectDef::IfCondition {
+    condition: &TriggerConditionDef::SourceCounters {
+        kind: CounterKind::Fade,
+        comparison: ComparisonDef::GreaterOrEqual,
+        amount: 1,
+    },
+    then: &EffectDef::RemoveCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::Fade,
+        amount: ValueDef::Constant(1),
+    },
+};
+
+/// "If you can't, sacrifice it." Checked as its own clause because the
+/// removal above is what fails, and a permanent with no counters left has to
+/// go rather than simply skip a turn.
+static WAVE_EXPIRES: EffectDef = EffectDef::IfCondition {
+    condition: &TriggerConditionDef::SourceCounters {
+        kind: CounterKind::Fade,
+        comparison: ComparisonDef::LessOrEqual,
+        amount: 0,
+    },
+    then: &EffectDef::Sacrifice {
+        object: EffectRecipientDef::Source,
+    },
+};
+
+static WAVE_UPKEEP: EffectDef = EffectDef::Sequence(&[WAVE_EXPIRES, WAVE_FADES]);
+
+static WAVE_EXILE_COST: [AbilityCostDef; 1] = [AbilityCostDef::RemoveCountersFromSource {
+    kind: CounterKind::Fade,
+    amount: 1,
+}];
+
+// NEM 17 — Parallax Wave
+pub(in crate::card::sets) static PARALLAX_WAVE: CardRecord = CardRecord::new(
+    cards::PARALLAX_WAVE,
+    "Parallax Wave",
+    CardArt::new("fb552595-ca42-4b93-9a07-395e0b674a6f", "Greg Staples"),
+    CardSet::Nemesis,
+    // Five creatures answered at instant speed, and then all five come back:
+    // the deck playing it wants the board clear for one turn, not forever.
+    CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_abilities(&[
+        AbilityDef::as_enters(
+            "Fading 5 (This enchantment enters with five fade counters on it. At the beginning of your upkeep, remove a fade counter from it. If you can't, sacrifice it.)",
+            ReplacementEffectDef::ModifyBattlefieldEntry(
+                BattlefieldEntryModificationDef::AddCounters {
+                    kind: CounterKind::Fade,
+                    amount: 5,
+                },
+            ),
+        ),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, remove a fade counter from this enchantment. If you can't, sacrifice it.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            WAVE_UPKEEP,
+        ),
+        AbilityDef::activated_with_targets(
+            "Remove a fade counter from this enchantment: Exile target creature.",
+            &WAVE_EXILE_COST,
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::ExileLinkedToSource {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+        AbilityDef::triggered(
+            "When this enchantment leaves the battlefield, each player returns to the battlefield all cards they own exiled with it.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                Some(ZoneKind::Battlefield),
+                None,
+            ),
+            EffectDef::ReturnLinkedExiles {
+                zone: ZoneKind::Battlefield,
+                grant: None,
+                controller: None,
+            },
+        ),
+    ]),
+);
 
 // NEM 18 — Seal of Cleansing
 pub(in crate::card::sets) static SEAL_OF_CLEANSING: CardRecord = CardRecord::new(
@@ -189,6 +280,7 @@ pub(in crate::card::sets) static KOR_HAVEN: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &PARALLAX_WAVE,
     &SEAL_OF_CLEANSING,
     &DAZE,
     &MOGG_SALVAGE,

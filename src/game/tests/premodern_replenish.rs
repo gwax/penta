@@ -232,3 +232,119 @@ fn opalescence_animates_each_other_non_aura_enchantment() {
         "the Plague is an enchantment again and nothing more",
     );
 }
+
+/// Parallax Wave spends its own fading to answer creatures, and everything
+/// it took comes back the moment it goes.
+#[test]
+fn parallax_wave_exiles_with_its_fade_counters_and_gives_them_back() {
+    let mut game = ready_game();
+    let wave = card(10_000, cards::PARALLAX_WAVE, PlayerId::One);
+    let wave_id = wave.id;
+    game.players[PlayerId::One.index()].hand.push(wave);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.white = 2;
+    pool.colorless = 2;
+    game.battlefield
+        .push(creature(10_010, cards::GRIZZLY_BEARS, PlayerId::Two));
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(wave_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("four mana casts it");
+    drain_pending(&mut game);
+
+    let wave_id = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::PARALLAX_WAVE)
+        .expect("it resolved")
+        .card
+        .id;
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == wave_id)
+            .map(|permanent| permanent.counters(CounterKind::Fade)),
+        Some(5),
+        "fading 5 means five counters on arrival",
+    );
+
+    // Spend one to exile the Bears.
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+        .expect("the opponent's creature is there")
+        .card
+        .id;
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == wave_id))
+        .expect("a fade counter pays for it");
+    game.apply(PlayerId::One, activate).unwrap();
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != bears),
+        "the creature is exiled",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == wave_id)
+            .map(|permanent| permanent.counters(CounterKind::Fade)),
+        Some(4),
+        "and the counter is spent",
+    );
+
+    // The Wave leaving is what gives it back.
+    game.destroy_permanent(wave_id);
+    drain_pending(&mut game);
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS),
+        "everything it exiled comes back when it goes",
+    );
+}
+
+/// Fading is a countdown: the upkeep that cannot pay a counter is the one
+/// that ends the permanent, so fading N lasts N of its controller's turns.
+#[test]
+fn a_faded_parallax_wave_sacrifices_itself() {
+    let survives_upkeep = |counters: u16| {
+        let mut game = ready_game();
+        let mut wave = creature(10_000, cards::PARALLAX_WAVE, PlayerId::One);
+        wave.set_counters(CounterKind::Fade, counters);
+        game.battlefield.push(wave);
+        let wave_id = game.battlefield[0].card.id;
+
+        game.turn += 1;
+        game.step = Step::Upkeep;
+        game.handle_upkeep_triggers();
+        pass_until_decision(&mut game);
+        drain_pending(&mut game);
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == wave_id)
+            .map(|permanent| permanent.counters(CounterKind::Fade))
+    };
+
+    assert_eq!(
+        survives_upkeep(1),
+        Some(0),
+        "the last counter is spent, and the Wave stays for this turn",
+    );
+    assert_eq!(
+        survives_upkeep(0),
+        None,
+        "the upkeep it cannot pay is the one it goes on",
+    );
+}
