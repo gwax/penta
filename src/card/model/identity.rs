@@ -55,6 +55,7 @@ pub enum CardSet {
     ZendikarRising,
     ShardsOfAlara,
     Ixalan,
+    Battlebond,
     ScarsOfMirrodin,
     Magic2011,
     Innistrad,

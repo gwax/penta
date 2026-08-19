@@ -29,6 +29,7 @@ mod y2014;
 mod y2015;
 mod y2016;
 mod y2017;
+mod y2018;
 mod y2019;
 mod y2020;
 mod y2021;
@@ -353,6 +354,11 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::Ixalan,
         y2017::ixalan::CARDS,
         y2017::ixalan::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Battlebond,
+        y2018::battlebond::CARDS,
+        y2018::battlebond::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::ModernHorizons1,

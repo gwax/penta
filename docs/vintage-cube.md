@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 146 are cataloged and 388 are not
+- 534 cards in the pool, of which 147 are cataloged and 387 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -83,7 +83,7 @@ lands are legal in every format and are not listed.
 - `Winds of Abandon`
 - `Witch Enchanter`
 
-### Blue (55)
+### Blue (54)
 
 - `Abhorrent Oculus`
 - `Astrologian's Planisphere`
@@ -127,7 +127,6 @@ lands are legal in every format and are not listed.
 - `Remand`
 - `Show and Tell`
 - `Sink into Stupor`
-- `Spellseeker`
 - `Stock Up`
 - `Stormchaser's Talent`
 - `Subtlety`
@@ -447,7 +446,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 146 pool cards are in the catalog because an earlier format needed them.
+These 147 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -559,6 +558,7 @@ been played beside.
 - `Sol Ring`
 - `Spara's Headquarters`
 - `Spell Pierce`
+- `Spellseeker`
 - `Spirebluff Canal`
 - `Steam Vents`
 - `Stern Scolding`

@@ -382,3 +382,90 @@ fn crop_rotation_needs_a_land_to_give_up() {
         "the mana alone does not pay for it",
     );
 }
+
+/// Two bounds at once: an instant or a sorcery, and cheap. Demonic Tutor sits
+/// exactly on the line at two and is eligible; Wrath of God is the same card
+/// type and one too expensive.
+#[test]
+fn spellseeker_finds_a_cheap_instant_or_sorcery_and_nothing_else() {
+    let mut game = ready_game();
+    game.players[0].library.clear();
+    stack_library(
+        &mut game,
+        &[
+            (72_000, cards::LIGHTNING_BOLT),
+            (72_001, cards::DEMONIC_TUTOR),
+            (72_002, cards::WRATH_OF_GOD),
+            (72_003, cards::SERRA_ANGEL),
+            (72_004, cards::FOREST),
+        ],
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::SPELLSEEKER)
+        .expect("cataloged");
+
+    // The search is optional; the last option accepts it.
+    let offer = loop {
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            break decision;
+        }
+        let player = game.priority;
+        assert!(
+            game.apply(player, Action::PassPriority).is_ok(),
+            "the enters trigger is waiting",
+        );
+    };
+    let accept = offer.options.last().expect("accepting is offered").id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: offer.id,
+            options: vec![accept],
+        },
+    )
+    .expect("the search is accepted");
+
+    let search = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the library search follows");
+    let mut offered = search
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(_, definition)| definition))
+        .collect::<Vec<_>>();
+    offered.sort_unstable();
+    let mut expected = vec![cards::LIGHTNING_BOLT, cards::DEMONIC_TUTOR];
+    expected.sort_unstable();
+    assert_eq!(
+        offered, expected,
+        "a four-mana sorcery, a creature and a land are all out",
+    );
+
+    let tutor = search
+        .options
+        .iter()
+        .find(|option| {
+            option
+                .card
+                .is_some_and(|(_, id)| id == cards::DEMONIC_TUTOR)
+        })
+        .expect("offered")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: search.id,
+            options: vec![tutor],
+        },
+    )
+    .expect("the search is answered");
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::DEMONIC_TUTOR),
+        "the found card goes to hand",
+    );
+}
