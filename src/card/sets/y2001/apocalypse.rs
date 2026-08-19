@@ -2,12 +2,12 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardComposition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardType, DiscardFollowUpDef,
-    DiscardSelectionDef, DividedTotal, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, PlayOptionDef, PlayerRelation, ScaledValueDef, SpellForm,
-    TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardArt,
+    CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardType,
+    DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectRecipientDef,
+    ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation, ResolvedEffectDurationDef,
+    ScaledValueDef, SpellForm, TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{CardPartId, PlayOptionId, TargetIndex, mana_cost};
 
@@ -218,6 +218,106 @@ pub(in crate::card::sets) static FIRE_ICE: CardRecord = CardRecord::new(
 )
 .with_composition(fire_ice_composition);
 
+/// "They're still lands" is not flavour: adding the creature type rather
+/// than replacing the land one is what keeps them tapping for mana, and what
+/// makes a board wipe answer the whole mana base.
+static LIFE_ANIMATION: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::add_card_types(crate::card::CardTypeSet::single(CardType::Creature)),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+];
+
+const fn life_rules() -> CardRules {
+    CardRules::new_sorcery(mana_cost!("{G}")).with_ability(AbilityDef::spell(
+        "All lands you control become 1/1 creatures until end of turn. They're still lands.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Land),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::Composite(&LIFE_ANIMATION),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    ))
+}
+
+static DEATH_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        // Reanimate takes one from any graveyard; this half is narrower.
+        owner: Some(PlayerRelation::You),
+    },
+)];
+
+static DEATH_EFFECTS: [EffectDef; 2] = [
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        zone: ZoneKind::Battlefield,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        controller: Some(PlayerRelation::You),
+    },
+    EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
+    },
+];
+
+const fn death_rules() -> CardRules {
+    CardRules::new_sorcery(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Return target creature card from your graveyard to the battlefield. You lose life equal to its mana value.",
+        &DEATH_TARGETS,
+        EffectDef::Sequence(&DEATH_EFFECTS),
+    ))
+}
+
+fn life_death_composition() -> CardComposition {
+    let life = life_rules();
+    let death = death_rules();
+    CardComposition {
+        parts: vec![
+            CardPart::new(CardPartId::PRIMARY, "Life", life),
+            CardPart::new(CardPartId(1), "Death", death),
+        ],
+        structure: CardStructure::Split {
+            parts: vec![CardPartId::PRIMARY, CardPartId(1)],
+            fused: None,
+        },
+        play_options: vec![
+            PlayOptionDef::cast(
+                PlayOptionId::DEFAULT,
+                "Life",
+                SpellForm::Part(CardPartId::PRIMARY),
+                life.mana_cost().expect("Life has a printed mana cost"),
+                CardEffectStatus::Implemented,
+            ),
+            PlayOptionDef::cast(
+                PlayOptionId(1),
+                "Death",
+                SpellForm::Part(CardPartId(1)),
+                death.mana_cost().expect("Death has a printed mana cost"),
+                CardEffectStatus::Implemented,
+            ),
+        ],
+    }
+    .with_derived_spell_targets()
+}
+
+// APC 130 — Life // Death
+pub(in crate::card::sets) static LIFE_DEATH: CardRecord = CardRecord::new(
+    cards::LIFE_DEATH,
+    "Life // Death",
+    CardArt::new(
+        "7ab75cdb-93a1-4f78-b404-37566295c321",
+        "Anthony S. Waters & Edward P. Beard, Jr.",
+    ),
+    CardSet::Apocalypse,
+    life_rules(),
+)
+.with_composition(life_death_composition);
+
 // APC 140 — Caves of Koilos
 pub(in crate::card::sets) static CAVES_OF_KOILOS: CardRecord = CardRecord::new(
     cards::CAVES_OF_KOILOS,
@@ -260,6 +360,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GERRARDS_VERDICT,
     &VINDICATE,
     &FIRE_ICE,
+    &LIFE_DEATH,
     &CAVES_OF_KOILOS,
     &LLANOWAR_WASTES,
     &YAVIMAYA_COAST,

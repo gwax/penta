@@ -589,3 +589,125 @@ fn the_clamp_kills_a_one_toughness_creature_and_draws_two() {
         "the Clamp stays behind, ready for the next one",
     );
 }
+
+/// Life: the lands stay lands, which is the half of the sentence that matters.
+#[test]
+fn life_animates_your_lands_without_taking_their_land_type_away() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let forest = creature(53_000, cards::FOREST, PlayerId::One);
+    let forest_id = forest.card.id;
+    game.battlefield.push(forest);
+    // Someone else's land is not "you control".
+    let island = creature(53_001, cards::ISLAND, PlayerId::Two);
+    let island_id = island.card.id;
+    game.battlefield.push(island);
+
+    let life = card(53_002, cards::LIFE_DEATH, PlayerId::One);
+    let life_id = life.id;
+    game.players[PlayerId::One.index()].hand.push(life);
+    game.players[PlayerId::One.index()].mana_pool.green = 1;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == life_id && choices.play_option() == PlayOptionId::DEFAULT)
+        })
+        .expect("Life is the first half");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    drain_pending(&mut game);
+
+    let types = |id| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .and_then(|permanent| game.permanent_types(permanent))
+            .expect("the land is still there")
+    };
+    assert!(types(forest_id).contains(crate::card::CardType::Creature));
+    assert!(
+        types(forest_id).contains(crate::card::CardType::Land),
+        "they're still lands",
+    );
+    let forest = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == forest_id)
+        .expect("the Forest is still there");
+    assert_eq!(
+        (game.power(forest), game.toughness(forest)),
+        (Some(1), Some(1)),
+    );
+    assert!(
+        !types(island_id).contains(crate::card::CardType::Creature),
+        "only lands you control are animated",
+    );
+}
+
+/// Death: the other half of the same card, reaching only into your own
+/// graveyard and charging you the creature's mana value in life.
+#[test]
+fn death_reanimates_from_your_own_graveyard_for_its_mana_value_in_life() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        53_100,
+        cards::SERRA_ANGEL,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::Two.index()].graveyard.push(card(
+        53_101,
+        cards::GRIZZLY_BEARS,
+        PlayerId::Two,
+    ));
+
+    let death = card(53_102, cards::LIFE_DEATH, PlayerId::One);
+    let death_id = death.id;
+    game.players[PlayerId::One.index()].hand.push(death);
+    game.players[PlayerId::One.index()].mana_pool.black = 1;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    let life = game.players[PlayerId::One.index()].life;
+
+    let offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. }
+                if card == death_id && choices.play_option() == PlayOptionId(1) =>
+            {
+                Some(choices.targets().to_vec())
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        offered.len(),
+        1,
+        "only the creature in your own graveyard is a legal target",
+    );
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == death_id && choices.play_option() == PlayOptionId(1))
+        })
+        .expect("Death is the second half");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield.iter().any(|permanent| {
+            permanent.controller == PlayerId::One && permanent.card.definition == cards::SERRA_ANGEL
+        }),
+        "the angel comes back under your control",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life - 5,
+        "a five-drop costs five life",
+    );
+}
