@@ -50,6 +50,7 @@ pub enum CardSet {
     MirrodinBesieged,
     PlanarChaos,
     FutureSight,
+    Zendikar,
     Innistrad,
     DarkAscension,
     AvacynRestored,

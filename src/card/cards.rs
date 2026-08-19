@@ -69,6 +69,7 @@ mod triumphs;
 mod unblocked_attackers;
 mod unleash;
 mod untap_skips;
+mod vintage_cube;
 mod wards;
 pub use activation_timing::*;
 pub use additional_costs::*;
@@ -137,6 +138,7 @@ pub use triumphs::*;
 pub use unblocked_attackers::*;
 pub use unleash::*;
 pub use untap_skips::*;
+pub use vintage_cube::*;
 pub use wards::*;
 
 pub const ANKH_OF_MISHRA: CardDefinitionId = CardDefinitionId(1);

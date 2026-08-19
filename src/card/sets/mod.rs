@@ -19,6 +19,7 @@ mod y2002;
 mod y2003;
 mod y2004;
 mod y2007;
+mod y2009;
 mod y2011;
 mod y2012;
 mod y2013;
@@ -264,6 +265,11 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::MirrodinBesieged,
         y2011::mirrodin_besieged::CARDS,
         y2011::mirrodin_besieged::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Zendikar,
+        y2009::zendikar::CARDS,
+        y2009::zendikar::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::Innistrad,

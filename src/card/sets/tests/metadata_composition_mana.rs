@@ -236,6 +236,13 @@ fn every_builtin_land_without_mana_is_named_explicitly() {
             "Polluted Delta",
             "Windswept Heath",
             "Wooded Foothills",
+            // The enemy-coloured fetchland cycle, printed six years after
+            // the allied one above.
+            "Arid Mesa",
+            "Marsh Flats",
+            "Misty Rainforest",
+            "Scalding Tarn",
+            "Verdant Catacombs",
             "Evolving Wilds",
         ]
     );

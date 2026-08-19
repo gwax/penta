@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 89 are cataloged and 445 are not
+- 534 cards in the pool, of which 94 are cataloged and 440 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -434,10 +434,9 @@ lands are legal in every format and are not listed.
 - `Walking Ballista`
 - `Zuran Orb`
 
-### Lands (65)
+### Lands (60)
 
 - `Arena of Glory`
-- `Arid Mesa`
 - `Blackcleave Cliffs`
 - `Blazemire Verge`
 - `Bleachbone Verge`
@@ -464,9 +463,7 @@ lands are legal in every format and are not listed.
 - `Ketria Triome`
 - `Lush Portico`
 - `Mana Confluence`
-- `Marsh Flats`
 - `Meticulous Archive`
-- `Misty Rainforest`
 - `Multiversal Passage`
 - `Otawara, Soaring City`
 - `Prismatic Vista`
@@ -476,7 +473,6 @@ lands are legal in every format and are not listed.
 - `Razorverge Thicket`
 - `Riverpyre Verge`
 - `Savai Triome`
-- `Scalding Tarn`
 - `Seachrome Coast`
 - `Shadowy Backstreet`
 - `Shelldock Isle`
@@ -495,7 +491,6 @@ lands are legal in every format and are not listed.
 - `Undercity Sewers`
 - `Underground Mortuary`
 - `Urza's Saga`
-- `Verdant Catacombs`
 - `Wastewood Verge`
 - `Waterlogged Grove`
 - `Xander's Lounge`
@@ -504,13 +499,14 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 89 pool cards are in the catalog because an earlier format needed them.
+These 94 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
 
 - `Ancestral Recall`
 - `Ancient Tomb`
+- `Arid Mesa`
 - `Avacyn's Pilgrim`
 - `Badlands`
 - `Balance`
@@ -552,8 +548,10 @@ been played beside.
 - `Mana Drain`
 - `Mana Leak`
 - `Mana Vault`
+- `Marsh Flats`
 - `Mind Twist`
 - `Mishra's Workshop`
+- `Misty Rainforest`
 - `Mox Diamond`
 - `Mox Emerald`
 - `Mox Jet`
@@ -568,6 +566,7 @@ been played beside.
 - `Reanimate`
 - `Sacred Foundry`
 - `Savannah`
+- `Scalding Tarn`
 - `Scrubland`
 - `Shallow Grave`
 - `Snapcaster Mage`
@@ -589,6 +588,7 @@ been played beside.
 - `Underground Sea`
 - `Upheaval`
 - `Urborg, Tomb of Yawgmoth`
+- `Verdant Catacombs`
 - `Vindicate`
 - `Volcanic Island`
 - `Wasteland`
