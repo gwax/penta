@@ -69,6 +69,7 @@ pub enum CardSet {
     Ikoria,
     KamigawaNeonDynasty,
     StreetsOfNewCapenna,
+    EternalMasters,
     Kaladesh,
     LordOfTheRings,
     ModernHorizons3,

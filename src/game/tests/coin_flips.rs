@@ -270,3 +270,54 @@ fn both_identities_report_complete_coverage() {
         );
     }
 }
+
+/// Mana Crypt's flip is the price of the free mana. Both branches have to be
+/// reachable, because a Crypt that never bit would be a strictly better Sol
+/// Ring and would look fine in a short game.
+#[test]
+fn mana_crypt_charges_three_life_on_a_lost_flip_and_nothing_on_a_won_one() {
+    let (won, lost) = outcomes(|seed| {
+        let mut game = ready_game_with_seed(seed);
+        game.battlefield.clear();
+        game.battlefield
+            .push(creature(10_000, cards::MANA_CRYPT, PlayerId::One));
+        game.players[PlayerId::One.index()].life = 20;
+        game.active_player = PlayerId::One;
+        game.priority = PlayerId::One;
+        game.step = Step::Upkeep;
+        game.handle_upkeep_triggers();
+        drain_pending(&mut game);
+
+        let life = game.players[PlayerId::One.index()].life;
+        assert!(
+            life == 20 || life == 17,
+            "the upkeep either costs three or costs nothing, not {life}",
+        );
+        life == 20
+    });
+
+    assert!(won > 0, "the flip can be won");
+    assert!(lost > 0, "and it can be lost");
+}
+
+/// Whatever the coin says, the artifact makes two colourless.
+#[test]
+fn mana_crypt_taps_for_two_colorless() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let crypt = game
+        .put_onto_battlefield(PlayerId::One, cards::MANA_CRYPT)
+        .expect("cataloged");
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: crypt,
+            ability: mana_ability_for(&game, crypt, ManaColor::Colorless),
+            color: ManaColor::Colorless,
+            counters_removed: None,
+            cost_object: None,
+        },
+    )
+    .expect("it taps for mana");
+    assert_eq!(game.players[PlayerId::One.index()].mana_pool.colorless, 2);
+}

@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 139 are cataloged and 395 are not
+- 534 cards in the pool, of which 140 are cataloged and 394 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -361,7 +361,7 @@ lands are legal in every format and are not listed.
 - `Wrenn and Six`
 - `Zirda, the Dawnwaker`
 
-### Colorless (47)
+### Colorless (46)
 
 - `Aether Spellbomb`
 - `Agatha's Soul Cauldron`
@@ -382,7 +382,6 @@ lands are legal in every format and are not listed.
 - `Lavaspur Boots`
 - `Lightning Greaves`
 - `Lion's Eye Diamond`
-- `Mana Crypt`
 - `Manifold Key`
 - `Memory Jar`
 - `Mishra's Bauble`
@@ -454,7 +453,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 139 pool cards are in the catalog because an earlier format needed them.
+These 140 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -518,6 +517,7 @@ been played beside.
 - `Lingering Souls`
 - `Llanowar Elves`
 - `Lotus Petal`
+- `Mana Crypt`
 - `Mana Drain`
 - `Mana Leak`
 - `Mana Tithe`
