@@ -72,9 +72,7 @@ impl Game {
         let affected: Vec<Target> = self
             .battlefield
             .iter()
-            .filter(|permanent| {
-                self.effective_land_types(permanent)[from.index()]
-            })
+            .filter(|permanent| self.effective_land_types(permanent)[from.index()])
             .map(|permanent| Target::Permanent(permanent.card.id))
             .collect();
         if affected.is_empty() {

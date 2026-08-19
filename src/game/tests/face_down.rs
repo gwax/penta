@@ -138,7 +138,10 @@ fn exalted_angel_comes_down_face_down_and_stands_up_later() {
         (4, 5),
         "the Angel it always was",
     );
-    assert!(game.has_flying(permanent), "with its printed abilities back");
+    assert!(
+        game.has_flying(permanent),
+        "with its printed abilities back"
+    );
     assert_eq!(
         game.observe(PlayerId::Two).battlefield[0].definition,
         cards::EXALTED_ANGEL,

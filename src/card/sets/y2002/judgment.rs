@@ -7,9 +7,8 @@ use crate::card::{
     ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef, ManaColor,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, ReplacementChoiceDef,
-    ReplacementEffectDef,
-    ResolvedEffectDurationDef, SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    ReplacementEffectDef, ResolvedEffectDurationDef, SpellAdditionalCostDef, SpendModeDef,
+    TopCardSelectionDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -250,8 +249,7 @@ pub(in crate::card::sets) static SYLVAN_SAFEKEEPER: CardRecord = CardRecord::new
     ),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-&[
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FLASH_OF_INSIGHT,
     &CABAL_THERAPY,
     &SUTURED_GHOUL,

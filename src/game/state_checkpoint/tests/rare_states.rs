@@ -865,8 +865,11 @@ fn an_indefinite_text_change_reconstructs_while_choosing_and_after() {
 #[test]
 fn a_phased_out_permanent_reconstructs_as_phased_out() {
     let mut game = ready_game();
-    game.battlefield
-        .push(creature(10_000, crate::card::cards::BLACK_VISE, PlayerId::One));
+    game.battlefield.push(creature(
+        10_000,
+        crate::card::cards::BLACK_VISE,
+        PlayerId::One,
+    ));
     let vise = game.battlefield[0].card.id;
     game.phase_out(vise);
     assert!(game.battlefield.is_empty(), "it left the battlefield");

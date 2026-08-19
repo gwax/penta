@@ -7,18 +7,26 @@ use super::*;
 #[test]
 fn replenish_returns_every_enchantment_you_own() {
     let mut game = ready_game();
-    game.players[PlayerId::One.index()]
-        .graveyard
-        .push(card(10_010, cards::ENGINEERED_PLAGUE, PlayerId::One));
-    game.players[PlayerId::One.index()]
-        .graveyard
-        .push(card(10_011, cards::SEAL_OF_CLEANSING, PlayerId::One));
-    game.players[PlayerId::One.index()]
-        .graveyard
-        .push(card(10_012, cards::LIGHTNING_BOLT, PlayerId::One));
-    game.players[PlayerId::Two.index()]
-        .graveyard
-        .push(card(10_013, cards::ENGINEERED_PLAGUE, PlayerId::Two));
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        10_010,
+        cards::ENGINEERED_PLAGUE,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        10_011,
+        cards::SEAL_OF_CLEANSING,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        10_012,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::Two.index()].graveyard.push(card(
+        10_013,
+        cards::ENGINEERED_PLAGUE,
+        PlayerId::Two,
+    ));
 
     let replenish = card(10_000, cards::REPLENISH, PlayerId::One);
     let replenish_id = replenish.id;
@@ -140,7 +148,9 @@ fn attunement_returns_itself_and_fills_the_graveyard() {
     let activate = game
         .legal_actions(PlayerId::One)
         .into_iter()
-        .find(|action| matches!(action, Action::ActivateAbility { source: id, .. } if *id == source))
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source: id, .. } if *id == source),
+        )
         .expect("the cost is the enchantment itself, so it is always payable");
     game.apply(PlayerId::One, activate).unwrap();
     pass_until_decision(&mut game);
@@ -281,7 +291,9 @@ fn parallax_wave_exiles_with_its_fade_counters_and_gives_them_back() {
     let activate = game
         .legal_actions(PlayerId::One)
         .into_iter()
-        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == wave_id))
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == wave_id),
+        )
         .expect("a fade counter pays for it");
     game.apply(PlayerId::One, activate).unwrap();
     pass_until_decision(&mut game);
@@ -383,7 +395,11 @@ fn decree_of_silence_counters_until_its_third_depletion_counter() {
             Some(expected),
             "the spell is answered and the enchantment marked",
         );
-        assert_eq!(game.players[PlayerId::One.index()].life, 20, "no damage got through");
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            20,
+            "no damage got through"
+        );
     }
 
     // The third counter is the one it goes on.
@@ -508,9 +524,11 @@ fn abeyance_locks_a_player_out_for_the_turn() {
     // Something to activate, and something to cast.
     game.battlefield
         .push(creature(10_010, cards::CURSED_SCROLL, PlayerId::Two));
-    game.players[PlayerId::Two.index()]
-        .hand
-        .push(card(10_011, cards::LIGHTNING_BOLT, PlayerId::Two));
+    game.players[PlayerId::Two.index()].hand.push(card(
+        10_011,
+        cards::LIGHTNING_BOLT,
+        PlayerId::Two,
+    ));
     // A land, to show which activations survive: mana abilities are the
     // exemption the card names.
     game.battlefield

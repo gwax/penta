@@ -338,9 +338,8 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
                     && (!matches!(
                         triggered.source_zones,
                         [ZoneKind::Battlefield | ZoneKind::Graveyard]
-                    )
-                        || (triggered.event == crate::card::TriggerEventDef::StateCondition
-                            && triggered.condition.is_none())
+                    ) || (triggered.event == crate::card::TriggerEventDef::StateCondition
+                        && triggered.condition.is_none())
                         || (matches!(ability.definition, DeclarativeAbilityDef::TriggeredMana(_))
                             && (triggered.condition.is_some()
                                 || !matches!(
@@ -653,7 +652,9 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         EffectDef::Choose(choice) => collect_ability_grants(*choice.then, grants),
         EffectDef::RevealAtRandomFromHand { then, .. }
         | EffectDef::ChooseCardName { then, .. }
-        | EffectDef::SearchZone { then: Some(then), .. }
+        | EffectDef::SearchZone {
+            then: Some(then), ..
+        }
         | EffectDef::BindMatching { then, .. } => {
             collect_ability_grants(*then, grants);
         }
@@ -835,10 +836,10 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         EffectDef::Choose(choice) => ability_grant_sites(*choice.then),
         EffectDef::RevealAtRandomFromHand { then, .. }
         | EffectDef::ChooseCardName { then, .. }
-        | EffectDef::SearchZone { then: Some(then), .. }
-        | EffectDef::BindMatching { then, .. } => {
-            ability_grant_sites(*then)
+        | EffectDef::SearchZone {
+            then: Some(then), ..
         }
+        | EffectDef::BindMatching { then, .. } => ability_grant_sites(*then),
         EffectDef::PayOr(payment) => payment
             .if_paid
             .iter()

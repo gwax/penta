@@ -15,9 +15,8 @@ pub(in super::super) fn shared_static_non_apply_effect(
         // Both are read off the battlefield and neither carries anything
         // further to check: one names a land type, the other nothing at all.
         EffectDef::CannotBeForcedToSacrifice
-        | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. } | EffectDef::LandwalkCanBeBlocked(_) => {
-            battlefield_only(source_zones)
-        }
+        | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
+        | EffectDef::LandwalkCanBeBlocked(_) => battlefield_only(source_zones),
         // Read while attackers are declared, over the battlefield, so only
         // the object predicate is left to check.
         EffectDef::CannotAttackUnless(query) | EffectDef::CannotAttackIf(query) => {
@@ -271,8 +270,10 @@ pub(in super::super) fn shared_static_applied_effect(
         // stratified walk.
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
             SetOperationDef::Add(types),
-        )) => types == crate::card::CardTypeSet::single(CardType::Creature)
-            && shared_static_animation_query(recipient),
+        )) => {
+            types == crate::card::CardTypeSet::single(CardType::Creature)
+                && shared_static_animation_query(recipient)
+        }
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(
             SetOperationDef::Set(_),
         )) => shared_static_animation_query(recipient),

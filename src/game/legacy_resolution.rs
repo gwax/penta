@@ -287,12 +287,9 @@ impl Game {
         // matching found no match and buries everything it passed.
         match matched_card {
             Some(card) if matched_zone == ZoneKind::Graveyard => revealed.push(card),
-            Some(card) => self.place_revealed_remainder(
-                player,
-                vec![card],
-                matched_zone,
-                ZonePlacement::Top,
-            ),
+            Some(card) => {
+                self.place_revealed_remainder(player, vec![card], matched_zone, ZonePlacement::Top);
+            }
             None => {}
         }
         self.bury_cards(player, revealed);

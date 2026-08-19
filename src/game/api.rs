@@ -1,9 +1,9 @@
 use super::{
     AbilityDef, AbilityId, AbilityOrigin, Action, ActionError, CardBehavior, CardType,
     CharacteristicContext, CombatDamageStage, CounterKind, DecisionVisibility, EmblemObservation,
-    Game, GameEvent, GameObjectId, GameResult, KeywordAbility, ManaColor, PermanentObservation,
-    Permanent, PlayerId, PlayerObservation, Pregame, StackObservation, Step, WinReason, ZoneKind,
-    combinations, public_cards,
+    Game, GameEvent, GameObjectId, GameResult, KeywordAbility, ManaColor, Permanent,
+    PermanentObservation, PlayerId, PlayerObservation, Pregame, StackObservation, Step, WinReason,
+    ZoneKind, combinations, public_cards,
 };
 
 impl Game {
@@ -477,15 +477,14 @@ impl Game {
         // A face-down permanent is public information as a
         // 2/2 body and private information as a card: its
         // controller may look at it, and nobody else may.
-        let (definition, presented) =
-            if permanent.face_down && permanent.controller != viewer {
-                (
-                    crate::card::cards::FACE_DOWN_CREATURE,
-                    crate::CardPartId::PRIMARY,
-                )
-            } else {
-                (permanent.card.definition, permanent.presented)
-            };
+        let (definition, presented) = if permanent.face_down && permanent.controller != viewer {
+            (
+                crate::card::cards::FACE_DOWN_CREATURE,
+                crate::CardPartId::PRIMARY,
+            )
+        } else {
+            (permanent.card.definition, permanent.presented)
+        };
         PermanentObservation {
             id: permanent.card.id,
             definition,
@@ -514,8 +513,7 @@ impl Game {
             blocking_this_combat: permanent.is_blocking_this_combat(),
             attacking_band: permanent.attacking_band,
             flying,
-            can_attack: stats.is_some()
-                && self.can_attack_creature(permanent, moat_active, flying),
+            can_attack: stats.is_some() && self.can_attack_creature(permanent, moat_active, flying),
             entered_this_turn: self.turns_started[permanent.controller.index()]
                 == permanent.entered_controller_turn,
         }

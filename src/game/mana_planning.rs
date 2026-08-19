@@ -374,8 +374,8 @@ impl Game {
                         matches!(
                             cost,
                             AbilityCostDef::SacrificeSource
-                            | AbilityCostDef::ExileSource
-                            | AbilityCostDef::ReturnSourceToHand
+                                | AbilityCostDef::ExileSource
+                                | AbilityCostDef::ReturnSourceToHand
                         )
                     });
                     // An activation that itself costs mana is left to the

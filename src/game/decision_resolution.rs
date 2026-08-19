@@ -325,7 +325,9 @@ impl Game {
             } => {
                 // Creatures are named one at a time, so choosing to pay opens
                 // its own run of decisions rather than settling here.
-                if let super::ResolvedEffectPayment::SacrificeCreaturesWithTotalPower(total) = payment {
+                if let super::ResolvedEffectPayment::SacrificeCreaturesWithTotalPower(total) =
+                    payment
+                {
                     if options.iter().copied().any(|option| option != 0) {
                         self.queue_total_power_sacrifice(
                             player,

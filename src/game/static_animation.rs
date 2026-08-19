@@ -28,7 +28,6 @@ fn subtype_is_supplied_by_a_static_effect(name: &str) -> bool {
         .any(|land_type| land_type.subtype() == name)
 }
 
-
 impl Game {
     /// Whether a static characteristic transformation's recipient predicate
     /// stays inside the stratified vocabulary above.

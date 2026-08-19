@@ -7,8 +7,8 @@ use crate::card::{
     CardType, ComparisonDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef, EffectDef,
     EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
     PlayerRelation, ReplacementEffectDef, ResolvedEffectDurationDef, SpellAdditionalCostDef,
-    SpendModeDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    abilities, cards,
+    SpendModeDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
+    cards,
 };
 use crate::{TargetIndex, mana_cost};
 

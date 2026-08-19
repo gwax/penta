@@ -3,12 +3,11 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AlternativeCastKindDef,
-    AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType,
-    EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules,
+    CardSet, CardType, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, TurnStepDef, mana_cost};
 

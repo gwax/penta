@@ -294,11 +294,7 @@ impl Game {
                             shuffle,
                             binding,
                             then.map(|effect| {
-                                (
-                                    object.clone(),
-                                    context.clone(),
-                                    scoped.with_effect(*effect),
-                                )
+                                (object.clone(), context.clone(), scoped.with_effect(*effect))
                             }),
                             enters_tapped,
                             source,

@@ -321,8 +321,10 @@ fn static_object_applied_effect_supported(
         // stratified walk.
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
             SetOperationDef::Add(types),
-        )) => types == crate::card::CardTypeSet::single(CardType::Creature)
-            && static_animation_query_supported(recipient),
+        )) => {
+            types == crate::card::CardTypeSet::single(CardType::Creature)
+                && static_animation_query_supported(recipient)
+        }
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(
             SetOperationDef::Set(_),
         )) => static_animation_query_supported(recipient),
@@ -366,7 +368,9 @@ fn validate_resolving_effect(
 ) -> Result<(), &'static str> {
     match effect {
         EffectDef::ChooseCardName { then, .. }
-        | EffectDef::SearchZone { then: Some(then), .. }
+        | EffectDef::SearchZone {
+            then: Some(then), ..
+        }
         | EffectDef::BindMatching { then, .. } => validate_resolving_effect(*then, source_zones),
         EffectDef::Sequence(effects) => {
             if effects.is_empty() {
@@ -895,8 +899,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::May { .. } => "May",
         EffectDef::ExileLinkedToSource { .. } => "ExileLinkedToSource",
         EffectDef::ReturnLinkedExiles { .. } => "ReturnLinkedExiles",
-        EffectDef::GainControl { .. }
-        | EffectDef::ExchangeControl { .. } => "GainControl",
+        EffectDef::GainControl { .. } | EffectDef::ExchangeControl { .. } => "GainControl",
         EffectDef::IfCondition { .. } => "IfCondition",
         EffectDef::InstallTrigger(_) => "InstallTrigger",
         EffectDef::CannotBeForcedToSacrifice => "CannotBeForcedToSacrifice",

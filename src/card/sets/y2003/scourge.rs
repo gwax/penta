@@ -222,9 +222,9 @@ static DRAGON_BREATH_HASTE: AbilityDef = abilities::haste();
 /// attached to give it haste.
 static A_BIG_CREATURE_ENTERING: ObjectPredicateDef = ObjectPredicateDef::All(&[
     ObjectPredicateDef::HasType(CardType::Creature),
-    ObjectPredicateDef::Not(&ObjectPredicateDef::ManaValueAtMostValue(ValueDef::Constant(
-        5,
-    ))),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::ManaValueAtMostValue(
+        ValueDef::Constant(5),
+    )),
 ]);
 
 // SCG 86 — Dragon Breath

@@ -249,8 +249,8 @@ impl Game {
                         matches!(
                             cost,
                             AbilityCostDef::SacrificeSource
-                            | AbilityCostDef::ExileSource
-                            | AbilityCostDef::ReturnSourceToHand
+                                | AbilityCostDef::ExileSource
+                                | AbilityCostDef::ReturnSourceToHand
                         )
                     })
                     .count();

@@ -14,9 +14,11 @@ fn hermit_druid_takes_the_basic_and_buries_the_rest() {
         // Bottom to top: two spells, then a basic beneath nothing else when
         // the library has one at all.
         if basics {
-            game.players[PlayerId::One.index()]
-                .library
-                .push(card(10_010, cards::SWAMP, PlayerId::One));
+            game.players[PlayerId::One.index()].library.push(card(
+                10_010,
+                cards::SWAMP,
+                PlayerId::One,
+            ));
         }
         for index in 0..2 {
             game.players[PlayerId::One.index()].library.push(card(
@@ -39,7 +41,11 @@ fn hermit_druid_takes_the_basic_and_buries_the_rest() {
         game.apply(PlayerId::One, activate).unwrap();
         drain_pending(&mut game);
         let player = &game.players[PlayerId::One.index()];
-        (player.hand.len(), player.graveyard.len(), player.library.len())
+        (
+            player.hand.len(),
+            player.graveyard.len(),
+            player.library.len(),
+        )
     };
 
     let (hand, graveyard, library) = dug(true);
@@ -134,15 +140,21 @@ fn shallow_grave_returns_the_top_creature_and_exiles_it_at_end_of_turn() {
     let mut game = ready_game();
     // Oldest to newest: a Bolt between two creatures, so "the top creature
     // card" is the second creature rather than the last card.
-    game.players[PlayerId::One.index()]
-        .graveyard
-        .push(card(10_010, cards::GOBLIN_LACKEY, PlayerId::One));
-    game.players[PlayerId::One.index()]
-        .graveyard
-        .push(card(10_011, cards::PSYCHATOG, PlayerId::One));
-    game.players[PlayerId::One.index()]
-        .graveyard
-        .push(card(10_012, cards::LIGHTNING_BOLT, PlayerId::One));
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        10_010,
+        cards::GOBLIN_LACKEY,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        10_011,
+        cards::PSYCHATOG,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        10_012,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
 
     let grave = card(10_000, cards::SHALLOW_GRAVE, PlayerId::One);
     let grave_id = grave.id;
@@ -263,9 +275,11 @@ fn krosan_reclamation_shuffles_back_the_chosen_cards() {
         ));
     }
     // The controller's own graveyard is not the one being emptied.
-    game.players[PlayerId::One.index()]
-        .graveyard
-        .push(card(10_020, cards::COUNTERSPELL, PlayerId::One));
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        10_020,
+        cards::COUNTERSPELL,
+        PlayerId::One,
+    ));
 
     let reclamation = card(10_000, cards::KROSAN_RECLAMATION, PlayerId::One);
     let reclamation_id = reclamation.id;
@@ -559,9 +573,11 @@ fn phyrexian_dreadnought_can_be_paid_for_one_creature_at_a_time() {
 #[test]
 fn dragon_breath_returns_from_the_graveyard_attached() {
     let mut game = ready_game();
-    game.players[PlayerId::One.index()]
-        .graveyard
-        .push(card(10_000, cards::DRAGON_BREATH, PlayerId::One));
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        10_000,
+        cards::DRAGON_BREATH,
+        PlayerId::One,
+    ));
 
     // Serra Angel costs five, which is not enough to wake it.
     game.battlefield
@@ -636,16 +652,22 @@ fn dragon_breath_returns_from_the_graveyard_attached() {
 fn sutured_ghoul_is_the_size_of_what_it_exiled() {
     let mut game = ready_game();
     // Serra Angel is 4/4 and Grizzly Bears 2/2, so together 6/6.
-    game.players[PlayerId::One.index()]
-        .graveyard
-        .push(card(10_010, cards::SERRA_ANGEL, PlayerId::One));
-    game.players[PlayerId::One.index()]
-        .graveyard
-        .push(card(10_011, cards::GRIZZLY_BEARS, PlayerId::One));
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        10_010,
+        cards::SERRA_ANGEL,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        10_011,
+        cards::GRIZZLY_BEARS,
+        PlayerId::One,
+    ));
     // A noncreature card in the same graveyard is not on offer.
-    game.players[PlayerId::One.index()]
-        .graveyard
-        .push(card(10_012, cards::LIGHTNING_BOLT, PlayerId::One));
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        10_012,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
 
     let ghoul = card(10_000, cards::SUTURED_GHOUL, PlayerId::One);
     let ghoul_id = ghoul.id;
@@ -794,8 +816,7 @@ fn vision_charm_turns_one_land_type_into_another() {
     assert_eq!(
         game.battlefield
             .iter()
-            .filter(|permanent| game.effective_land_types(permanent)
-                [BasicLandType::Island.index()])
+            .filter(|permanent| game.effective_land_types(permanent)[BasicLandType::Island.index()])
             .count(),
         0,
         "and nothing is an Island: becoming a type replaces the old one",
@@ -803,8 +824,7 @@ fn vision_charm_turns_one_land_type_into_another() {
     assert_eq!(
         game.battlefield
             .iter()
-            .filter(|permanent| game.effective_land_types(permanent)
-                [BasicLandType::Forest.index()])
+            .filter(|permanent| game.effective_land_types(permanent)[BasicLandType::Forest.index()])
             .count(),
         1,
         "the Forest was never of the first type, so it is untouched",

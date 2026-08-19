@@ -6,11 +6,9 @@ use crate::card::{
     AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BattlefieldEntryModificationDef,
     CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef,
     ChooseDef, EffectDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementEffectDef,
-    ReplacementEventDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 use crate::{TargetIndex, mana_cost};

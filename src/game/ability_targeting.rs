@@ -6,8 +6,8 @@
 
 use super::{
     AbilityTargetPredicate, CardInstance, CardType, CharacteristicContext, Game, GameObjectId,
-    ObjectPredicateDef, PlayerId, StackObjectKind, StackTargetKindDef, Target,
-    TriggerContext, ZoneKind,
+    ObjectPredicateDef, PlayerId, StackObjectKind, StackTargetKindDef, Target, TriggerContext,
+    ZoneKind,
 };
 
 impl Game {

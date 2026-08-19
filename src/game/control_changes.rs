@@ -6,8 +6,8 @@
 //! turn-scoped form, state-based actions for the held one.
 
 use super::{
-    ControlDurationDef, EffectRecipientDef, EffectResolutionContext, Game, GameObjectId,
-    PlayerId, ScopedEffect, StackObject, Target,
+    ControlDurationDef, EffectRecipientDef, EffectResolutionContext, Game, GameObjectId, PlayerId,
+    ScopedEffect, StackObject, Target,
 };
 
 impl Game {

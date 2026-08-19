@@ -209,9 +209,11 @@ fn haunting_echoes_takes_every_copy_of_what_it_exiled() {
     let mut game = ready_game();
     // One Psychatog and one basic in the yard; two more Psychatogs and a
     // Swamp waiting in the library.
-    game.players[PlayerId::Two.index()]
-        .graveyard
-        .push(card(10_010, cards::PSYCHATOG, PlayerId::Two));
+    game.players[PlayerId::Two.index()].graveyard.push(card(
+        10_010,
+        cards::PSYCHATOG,
+        PlayerId::Two,
+    ));
     game.players[PlayerId::Two.index()]
         .graveyard
         .push(card(10_011, cards::SWAMP, PlayerId::Two));
@@ -236,7 +238,12 @@ fn haunting_echoes_takes_every_copy_of_what_it_exiled() {
 
     game.apply(
         PlayerId::One,
-        cast_action(echoes_id, vec![Target::Player(PlayerId::Two)], Vec::new(), 0),
+        cast_action(
+            echoes_id,
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            0,
+        ),
     )
     .expect("five mana casts it at the opponent");
     drain_pending(&mut game);

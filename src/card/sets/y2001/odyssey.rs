@@ -293,7 +293,10 @@ pub(in crate::card::sets) static SKYCLOUD_EXPANSE: CardRecord = CardRecord::new(
     CardRules::new_land(&[]).with_ability(AbilityDef::activated_mana(
         "{1}, {T}: Add {W}{U}.",
         &SKYCLOUD_COSTS,
-        EffectDef::AddMana(AddManaEffectDef::one_of_each(ManaColor::White, ManaColor::Blue)),
+        EffectDef::AddMana(AddManaEffectDef::one_of_each(
+            ManaColor::White,
+            ManaColor::Blue,
+        )),
     )),
 );
 

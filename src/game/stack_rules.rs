@@ -44,6 +44,10 @@ impl Game {
         })
     }
 
+    // Most of the length is the exhaustive list of effects that apply nothing
+    // to their own source. Listing them is the point: a new effect has to be
+    // classified here rather than silently answering "no".
+    #[allow(clippy::too_many_lines)]
     pub(super) fn effect_applies_to_source(effect: EffectDef, expected: AppliedEffectDef) -> bool {
         match effect {
             EffectDef::Sequence(effects) => effects
@@ -55,12 +59,16 @@ impl Game {
             } => Self::applied_effect_contains(effect, expected),
             EffectDef::IfFormat {
                 then, otherwise, ..
-            } => Self::effect_applies_to_source(*then, expected)
-                || Self::effect_applies_to_source(*otherwise, expected),
+            } => {
+                Self::effect_applies_to_source(*then, expected)
+                    || Self::effect_applies_to_source(*otherwise, expected)
+            }
             EffectDef::Choose(ChooseDef { then, .. })
             | EffectDef::SplitIntoPiles(SplitIntoPilesDef { then, .. })
             | EffectDef::ChooseCardName { then, .. }
-            | EffectDef::SearchZone { then: Some(then), .. }
+            | EffectDef::SearchZone {
+                then: Some(then), ..
+            }
             | EffectDef::BindMatching { then, .. } => {
                 Self::effect_applies_to_source(*then, expected)
             }
@@ -69,7 +77,8 @@ impl Game {
                 .iter()
                 .chain(payment.otherwise.iter())
                 .any(|effect| Self::effect_applies_to_source(**effect, expected)),
-            EffectDef::None | EffectDef::Randomized { .. }
+            EffectDef::None
+            | EffectDef::Randomized { .. }
             | EffectDef::PreventDamage { .. }
             | EffectDef::AddMana(_)
             | EffectDef::AddManaEqualTo { .. }
@@ -84,7 +93,8 @@ impl Game {
             | EffectDef::ShuffleLibrary { .. }
             | EffectDef::EmptyManaPool { .. }
             | EffectDef::LoseLife { .. }
-            | EffectDef::LoseTheGame { .. } | EffectDef::Regenerate { .. }
+            | EffectDef::LoseTheGame { .. }
+            | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
             | EffectDef::RemoveFromCombat { .. }
             | EffectDef::DestroyAtEndOfCombat { .. }

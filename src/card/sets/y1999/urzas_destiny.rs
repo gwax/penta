@@ -35,9 +35,9 @@ static OTHER_NON_AURA_ENCHANTMENTS: ObjectQueryDef = ObjectQueryDef::matching(
 /// decides: the number is read off each affected enchantment rather than off
 /// the Opalescence.
 static ANIMATE_AS_ITS_OWN_COST: AppliedEffectDef = AppliedEffectDef::Composite(&[
-    AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
-        SetOperationDef::Add(CardTypeSet::single(CardType::Creature)),
-    )),
+    AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(SetOperationDef::Add(
+        CardTypeSet::single(CardType::Creature),
+    ))),
     AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
         PowerToughnessOperationDef::SetBase {
             power: ValueDef::AffectedManaValue,
@@ -139,7 +139,6 @@ pub(in crate::card::sets) static POWDER_KEG: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&OPALESCENCE, &REPLENISH, &POWDER_KEG];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&OPALESCENCE, &REPLENISH, &POWDER_KEG];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

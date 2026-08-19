@@ -43,39 +43,34 @@ impl Game {
             follow_up,
         } = resolution;
         let selected = selected.to_vec();
-            // Bound before the cards move: what the follow-up speaks
-            // about is what this search found, and the identities it
-            // holds do not survive some of the zone changes below.
-            let follow_up = follow_up.map(|follow_up| {
-                let mut follow_up = *follow_up;
-                if let Some(binding) = binding {
-                    let found = selected
-                        .iter()
-                        .map(|(card, _)| Target::Card(*card))
-                        .collect::<Vec<_>>();
-                    follow_up.context.bind_object_group(binding, found);
-                }
-                follow_up
-            });
-            if reveal {
-                self.events
-                    .extend(selected.iter().map(|(card, definition)| {
-                        GameEvent::CardRevealed {
-                            player,
-                            card: *card,
-                            definition: *definition,
-                        }
-                    }));
+        // Bound before the cards move: what the follow-up speaks
+        // about is what this search found, and the identities it
+        // holds do not survive some of the zone changes below.
+        let follow_up = follow_up.map(|follow_up| {
+            let mut follow_up = *follow_up;
+            if let Some(binding) = binding {
+                let found = selected
+                    .iter()
+                    .map(|(card, _)| Target::Card(*card))
+                    .collect::<Vec<_>>();
+                follow_up.context.bind_object_group(binding, found);
             }
-
-            if destination == ZoneKind::Library {
-            self.return_search_results_to_library(
-                player,
-                &selected,
-                source,
-                placement,
-                shuffle,
+            follow_up
+        });
+        if reveal {
+            self.events.extend(
+                selected
+                    .iter()
+                    .map(|(card, definition)| GameEvent::CardRevealed {
+                        player,
+                        card: *card,
+                        definition: *definition,
+                    }),
             );
+        }
+
+        if destination == ZoneKind::Library {
+            self.return_search_results_to_library(player, &selected, source, placement, shuffle);
             if let Some(follow_up) = follow_up {
                 self.resolve_nested_effect_before_later(
                     follow_up.effect,
@@ -87,38 +82,37 @@ impl Game {
         }
 
         if source != destination {
-                for (card, _) in selected {
-                    let _ = self.move_card_from_nonbattlefield_zone(
-                        card,
-                        source,
-                        destination,
-                        ZoneMoveCause::Effect { controller },
-                        (destination == ZoneKind::Battlefield).then(|| {
-                            if enters_tapped {
-                                BattlefieldArrival::tapped_under(player)
-                            } else {
-                                BattlefieldArrival::under(player)
-                            }
-                        }),
-                    );
-                }
-            }
-            if shuffle {
-                // Putting a searched-for permanent onto the battlefield can
-                // suspend for an as-enters choice. Finish that prospective
-                // entry before carrying out the search's subsequent
-                // shuffle, but still precede any enclosing effect tail.
-                self.pending_procedures
-                    .push_front(PendingProcedure::ShuffleLibrary { player });
-            }
-            if let Some(follow_up) = follow_up {
-                self.resolve_nested_effect_before_later(
-                    follow_up.effect,
-                    &follow_up.object,
-                    follow_up.context,
+            for (card, _) in selected {
+                let _ = self.move_card_from_nonbattlefield_zone(
+                    card,
+                    source,
+                    destination,
+                    ZoneMoveCause::Effect { controller },
+                    (destination == ZoneKind::Battlefield).then(|| {
+                        if enters_tapped {
+                            BattlefieldArrival::tapped_under(player)
+                        } else {
+                            BattlefieldArrival::under(player)
+                        }
+                    }),
                 );
             }
-
+        }
+        if shuffle {
+            // Putting a searched-for permanent onto the battlefield can
+            // suspend for an as-enters choice. Finish that prospective
+            // entry before carrying out the search's subsequent
+            // shuffle, but still precede any enclosing effect tail.
+            self.pending_procedures
+                .push_front(PendingProcedure::ShuffleLibrary { player });
+        }
+        if let Some(follow_up) = follow_up {
+            self.resolve_nested_effect_before_later(
+                follow_up.effect,
+                &follow_up.object,
+                follow_up.context,
+            );
+        }
     }
 }
 
@@ -137,50 +131,43 @@ impl Game {
         placement: ZonePlacement,
         shuffle: bool,
     ) {
-
-            let mut held = Vec::new();
-            if source == ZoneKind::Library {
-                held.extend(selected.iter().filter_map(|(card, _)| {
-                    remove_card(&mut self.players[player.index()].library, *card)
-                        .map(|card| (card.owner, card))
-                }));
-            } else {
-                for (card, _) in selected {
-                    let Some((moved, actual_destination)) = self
-                        .move_card_from_nonbattlefield_zone(
-                            *card,
-                            source,
-                            ZoneKind::Library,
-                            ZoneMoveCause::Effect {
-                                    controller: player,
-                                },
-                            None,
-                        )
-                    else {
-                        continue;
-                    };
-                    if actual_destination == ZoneKind::Library
-                        && let Some(card) = remove_card(
-                            &mut self.players[moved.owner.index()].library,
-                            moved.id,
-                        )
-                    {
-                        held.push((moved.owner, card));
-                    }
+        let mut held = Vec::new();
+        if source == ZoneKind::Library {
+            held.extend(selected.iter().filter_map(|(card, _)| {
+                remove_card(&mut self.players[player.index()].library, *card)
+                    .map(|card| (card.owner, card))
+            }));
+        } else {
+            for (card, _) in selected {
+                let Some((moved, actual_destination)) = self.move_card_from_nonbattlefield_zone(
+                    *card,
+                    source,
+                    ZoneKind::Library,
+                    ZoneMoveCause::Effect { controller: player },
+                    None,
+                ) else {
+                    continue;
+                };
+                if actual_destination == ZoneKind::Library
+                    && let Some(card) =
+                        remove_card(&mut self.players[moved.owner.index()].library, moved.id)
+                {
+                    held.push((moved.owner, card));
                 }
             }
-            if shuffle {
-                self.rng.shuffle(&mut self.players[player.index()].library);
-            }
-            for (owner, card) in held {
-                match placement {
-                    ZonePlacement::Top => {
-                        self.players[owner.index()].library.push(card);
-                    }
-                    ZonePlacement::Bottom => {
-                        self.players[owner.index()].library.insert(0, card);
-                    }
+        }
+        if shuffle {
+            self.rng.shuffle(&mut self.players[player.index()].library);
+        }
+        for (owner, card) in held {
+            match placement {
+                ZonePlacement::Top => {
+                    self.players[owner.index()].library.push(card);
+                }
+                ZonePlacement::Bottom => {
+                    self.players[owner.index()].library.insert(0, card);
                 }
             }
+        }
     }
 }

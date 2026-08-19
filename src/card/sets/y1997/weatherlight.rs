@@ -6,9 +6,9 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardRules, CardSet,
     CardType, CounterKind, EffectDef, EffectPaymentDef, EffectRecipientDef, ObjectPredicateDef,
-    ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement,
 };
 use crate::{TargetIndex, mana_cost};
 

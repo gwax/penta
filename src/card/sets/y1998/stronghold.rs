@@ -90,7 +90,6 @@ pub(in crate::card::sets) static MOX_DIAMOND: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&MANA_LEAK, &HERMIT_DRUID, &MOX_DIAMOND];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&MANA_LEAK, &HERMIT_DRUID, &MOX_DIAMOND];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
