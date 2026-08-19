@@ -354,6 +354,11 @@ const SET_MODULES: &[SetModule] = &[
         y2019::modern_horizons::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::ThroneOfEldraine,
+        y2019::throne_of_eldraine::CARDS,
+        y2019::throne_of_eldraine::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Ikoria,
         y2020::ikoria::CARDS,
         y2020::ikoria::ADDITIONAL_PRINTINGS,

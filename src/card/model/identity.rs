@@ -51,6 +51,7 @@ pub enum CardSet {
     PlanarChaos,
     FutureSight,
     Zendikar,
+    ThroneOfEldraine,
     ShardsOfAlara,
     ScarsOfMirrodin,
     Magic2011,
