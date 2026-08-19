@@ -227,16 +227,28 @@ impl Game {
             .map_or(effect.amount, |override_| override_.amount)
     }
 
-    fn is_legacy_fellwar_stone_mana_ability(
+    /// Which "one mana of any type a land could produce" ability this is, if
+    /// either. Fellwar Stone reads the opponent's lands and Reflecting Pool
+    /// reads its controller's own; both compute their colours from the board
+    /// rather than declaring them.
+    fn borrowed_mana_ability_behavior(
         definition: ActivatedAbilityDef,
         ability: &AbilityDef,
-    ) -> bool {
-        definition.procedure == AbilityProcedureDef::Legacy
-            && matches!(
+    ) -> Option<CardBehavior> {
+        if definition.procedure != AbilityProcedureDef::Legacy
+            || !matches!(
                 ability.effect.definition,
                 AbilityProgramDef::Effects(EffectDef::Special(_))
             )
-            && ability.custom_behavior() == Some(CardBehavior::FellwarStone)
+        {
+            return None;
+        }
+        match ability.custom_behavior() {
+            Some(behavior @ (CardBehavior::FellwarStone | CardBehavior::ReflectingPool)) => {
+                Some(behavior)
+            }
+            _ => None,
+        }
     }
 
     /// The concrete activations one mana ability offers, which is one per
@@ -346,8 +358,13 @@ impl Game {
                     }
                 }
             }
-        } else if Self::is_legacy_fellwar_stone_mana_ability(definition, ability) {
-            activations.extend(self.fellwar_stone_activations(permanent, origin, definition.costs));
+        } else if let Some(behavior) = Self::borrowed_mana_ability_behavior(definition, ability) {
+            activations.extend(self.borrowed_mana_activations(
+                permanent,
+                behavior,
+                origin,
+                definition.costs,
+            ));
         }
 
         activations
@@ -356,14 +373,15 @@ impl Game {
     /// One activation per colour Fellwar Stone can currently produce. The
     /// set is read off the battlefield, so it has to be recomputed rather
     /// than frozen on the ability.
-    pub(super) fn fellwar_stone_activations(
+    pub(super) fn borrowed_mana_activations(
         &self,
         permanent: &Permanent,
+        behavior: CardBehavior,
         ability: AbilityOrigin,
         costs: crate::card::AbilityCostList,
     ) -> Vec<ManaAbilityActivation> {
         let mut visiting = Vec::new();
-        self.fellwar_stone_colors(permanent, &mut visiting)
+        self.borrowed_mana_colors(permanent, behavior, &mut visiting)
             .into_iter()
             .map(|color| ManaAbilityActivation {
                 source: permanent.card.id,
@@ -377,26 +395,36 @@ impl Game {
             .collect()
     }
 
-    pub(super) fn fellwar_stone_colors(
+    /// Every mana one of these abilities could presently make. Fellwar Stone
+    /// says "any color", so colourless is not one of the answers; Reflecting
+    /// Pool says "any type", so it is.
+    pub(super) fn borrowed_mana_colors(
         &self,
         permanent: &Permanent,
+        behavior: CardBehavior,
         visiting: &mut Vec<GameObjectId>,
     ) -> Vec<ManaColor> {
         if visiting.contains(&permanent.card.id) {
             return Vec::new();
         }
+        let own_lands = behavior == CardBehavior::ReflectingPool;
+        let lender = if own_lands {
+            permanent.controller
+        } else {
+            permanent.controller.opponent()
+        };
         visiting.push(permanent.card.id);
         let mut colors = self
             .battlefield
             .iter()
             .filter(|candidate| {
-                candidate.controller == permanent.controller.opponent()
+                candidate.controller == lender
                     && self
                         .permanent_types(candidate)
                         .is_some_and(|types| types.contains(CardType::Land))
             })
             .flat_map(|candidate| self.colors_permanent_could_produce(candidate, visiting))
-            .filter(|color| *color != ManaColor::Colorless)
+            .filter(|color| own_lands || *color != ManaColor::Colorless)
             .collect::<Vec<_>>();
         visiting.pop();
         colors.sort_unstable();
@@ -426,8 +454,10 @@ impl Game {
                     ManaSelectionDef::One(kind) => colors.push(kind),
                     ManaSelectionDef::Choice(kinds) => colors.extend_from_slice(kinds),
                 }
-            } else if Self::is_legacy_fellwar_stone_mana_ability(definition, &effective.ability) {
-                colors.extend(self.fellwar_stone_colors(permanent, visiting));
+            } else if let Some(behavior) =
+                Self::borrowed_mana_ability_behavior(definition, &effective.ability)
+            {
+                colors.extend(self.borrowed_mana_colors(permanent, behavior, visiting));
             }
         });
         colors.sort_unstable();

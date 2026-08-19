@@ -200,3 +200,51 @@ fn shallow_grave_returns_the_top_creature_and_exiles_it_at_end_of_turn() {
         "exiled rather than buried",
     );
 }
+
+/// Reflecting Pool reads the lands you control, not the opponent's, and a
+/// type is a type: colourless counts where Fellwar Stone's colours do not.
+#[test]
+fn reflecting_pool_borrows_from_your_own_lands() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::REFLECTING_POOL, PlayerId::One));
+    game.battlefield
+        .push(creature(10_001, cards::FOREST, PlayerId::One));
+    // An opponent's Island is not one of yours.
+    game.battlefield
+        .push(creature(10_002, cards::ISLAND, PlayerId::Two));
+    game.priority = PlayerId::One;
+
+    let pool_id = game.battlefield[0].card.id;
+    let colors: Vec<ManaColor> = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility { source, color, .. } if source == pool_id => Some(color),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        colors,
+        vec![ManaColor::Green],
+        "the Forest lends green and the opponent's Island lends nothing",
+    );
+
+    // Ancient Tomb makes colourless, which "any type" accepts.
+    game.battlefield
+        .push(creature(10_003, cards::ANCIENT_TOMB, PlayerId::One));
+    let mut colors: Vec<ManaColor> = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility { source, color, .. } if source == pool_id => Some(color),
+            _ => None,
+        })
+        .collect();
+    colors.sort_unstable();
+    colors.dedup();
+    assert!(
+        colors.contains(&ManaColor::Colorless),
+        "a type, not a colour: {colors:?}",
+    );
+}

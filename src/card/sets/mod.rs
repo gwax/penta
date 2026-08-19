@@ -392,6 +392,7 @@ pub(super) const fn rules(behavior: CardBehavior) -> &'static CardRules {
         CardBehavior::Fork => &y1993::alpha::FORK.rules,
         CardBehavior::GoblinGrenade => &y1994::fallen_empires::GOBLIN_GRENADE.rules,
         CardBehavior::FellwarStone => &y1994::the_dark::FELLWAR_STONE.rules,
+        CardBehavior::ReflectingPool => &y1997::tempest::REFLECTING_POOL.rules,
         CardBehavior::Balance => &y1993::alpha::BALANCE.rules,
         CardBehavior::Channel => &y1993::alpha::CHANNEL.rules,
         CardBehavior::EssenceScatter => &y2012::magic_2013::ESSENCE_SCATTER.rules,

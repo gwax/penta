@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, BattlefieldEntryModificationDef, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
+    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BattlefieldEntryModificationDef,
+    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef,
+    ChooseDef, EffectDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
     ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
     ReplacementEventDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
     abilities, cards,
@@ -266,6 +267,28 @@ pub(in crate::card::sets) static ANCIENT_TOMB: CardRecord = CardRecord::new(
     )),
 );
 
+// TMP 322 — Reflecting Pool
+pub(in crate::card::sets) static REFLECTING_POOL: CardRecord = CardRecord::new(
+    cards::REFLECTING_POOL,
+    "Reflecting Pool",
+    CardArt::new("4fc67298-6610-47d7-971b-baf5728d5349", "Adam Rex"),
+    CardSet::Tempest,
+    // Worth nothing on its own and everything beside four other lands, which
+    // is why a five-color deck plays it and nobody else does.
+    CardRules::new_land(&[]).with_ability(
+        AbilityDef::activated_mana(
+            "{T}: Add one mana of any type that a land you control could produce.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::Special("Add one mana of a type a land you control could produce"),
+        )
+        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::ReflectingPool))
+        .with_coverage(AbilityCoverageDef::explained_complete(
+            "The available types are computed dynamically from the lands you control.",
+        ))
+        .with_legacy_procedure(),
+    ),
+);
+
 // TMP 330 — Wasteland
 pub(in crate::card::sets) static WASTELAND: CardRecord = CardRecord::new(
     cards::WASTELAND,
@@ -299,6 +322,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CURSED_SCROLL,
     &LOTUS_PETAL,
     &ANCIENT_TOMB,
+    &REFLECTING_POOL,
     &WASTELAND,
 ];
 

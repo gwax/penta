@@ -21,6 +21,7 @@ pub enum CardBehavior {
     SedgeTroll,
     SylvanLibrary,
     FellwarStone,
+    ReflectingPool,
     SphinxsRevelation,
     /// Tetravus's first upkeep trigger: trade +1/+1 counters for Tetravites.
     TetravusDetach,
