@@ -59,9 +59,17 @@ result and rebuild sampled Premodern positions from their observations.
   refused for now -- such a permanent is absent from every observation, so
   there is nothing to rebuild it from, and carrying them is what Angry
   Hermit's registration will need first. Vision Charm's other mode still
-  needs a resolution choice of a land type and a basic land type, which the
-  scalar-choice vocabulary does not offer, and then an until-end-of-turn
-  type change across every land of the first type. Fading landed with
+  needs work, and the shape is known: Magical Hack already offers a choice
+  of an ordered pair of basic land types as one decision, so that option
+  encoding is reusable. What is missing is a continuation that applies the
+  answer -- setting the basic land type of every land of the first type to
+  the second until end of turn, with CR 305.7's consequences, which
+  `SetOperationDef::Set` already carries. The applied effect cannot go
+  through the ordinary `Apply` path because its recipient and operation are
+  chosen rather than authored, so it needs one static slice per basic land
+  type to name the result. Restricting the first choice to basic land types
+  narrows the printed "a land type", which nothing in this card pool
+  exercises: no land in the tranche carries a nonbasic land subtype. Fading landed with
   Parallax Wave and needed only a counter kind: entering with counters, an
   upkeep trigger reading its own counters, and exiles linked to a source
   were all already there, so fading is the shape those pieces make rather
