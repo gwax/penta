@@ -739,3 +739,70 @@ fn firebolt_burns_from_hand_and_once_more_from_the_graveyard() {
     );
     assert_eq!(game.players[0].exile.len(), 1);
 }
+
+/// The chain is the opponent's to continue. Unlike Chain of Vapor, passing it
+/// on costs nothing -- so what stops it is a player choosing to stop it, or
+/// running out of cards to lose.
+#[test]
+fn chain_of_smog_discards_two_and_offers_the_chain_back() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+    for (instance, definition) in [
+        (75_000, cards::LIGHTNING_BOLT),
+        (75_001, cards::SERRA_ANGEL),
+        (75_002, cards::FOREST),
+    ] {
+        game.players[PlayerId::Two.index()]
+            .hand
+            .push(card(instance, definition, PlayerId::Two));
+    }
+
+    let chain = card(75_100, cards::CHAIN_OF_SMOG, PlayerId::One);
+    let chain_id = chain.id;
+    game.players[PlayerId::One.index()].hand.push(chain);
+    game.players[PlayerId::One.index()].mana_pool.black = 1;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(chain_id, vec![Target::Player(PlayerId::Two)], Vec::new(), 0),
+    )
+    .expect("it can name a player");
+
+    // The discard is theirs to choose, so answer it for them.
+    for _ in 0..8 {
+        let Some(decision) = game.observe(PlayerId::Two).decision else {
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        };
+        if decision.prompt.contains("copy") {
+            // The chain offer: this is what the test came for.
+            assert_eq!(
+                game.players[PlayerId::Two.index()].hand.len(),
+                1,
+                "two cards went first",
+            );
+            assert_eq!(game.players[PlayerId::Two.index()].graveyard.len(), 2);
+            return;
+        }
+        let chosen = decision
+            .options
+            .iter()
+            .take(decision.minimum)
+            .map(|option| option.id)
+            .collect::<Vec<_>>();
+        game.apply(
+            PlayerId::Two,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: chosen,
+            },
+        )
+        .expect("the discard choice is legal");
+    }
+    panic!("the chain was never offered back to the player who was hit");
+}

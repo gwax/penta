@@ -4,10 +4,10 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules,
-    CardSet, CardType, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardSet, CardType, DiscardSelectionDef, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, ScaledValueDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, TurnStepDef, mana_cost};
 
@@ -135,6 +135,42 @@ pub(in crate::card::sets) static CHAIN_OF_VAPOR: CardRecord = CardRecord::new(
                 arrival_effect: None,
             },
             CHAIN_OF_VAPOR_REBOUND,
+        ]),
+    )),
+);
+
+static CHAIN_OF_SMOG_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+/// The copy costs nothing here, unlike Chain of Vapor's land. Whoever was
+/// just hit decides whether to pass it on, and picks the next target -- which
+/// is why the chain usually stops at whoever cannot afford to keep it going.
+static CHAIN_OF_SMOG_REBOUND: EffectDef = EffectDef::May {
+    player: EffectRecipientDef::player(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+    effect: &EffectDef::CopyResolvingSpell {
+        chooser: PlayerRefDef::Target(TargetIndex::PRIMARY),
+        count: ValueDef::Constant(1),
+    },
+};
+
+// ONS 132 — Chain of Smog
+pub(in crate::card::sets) static CHAIN_OF_SMOG: CardRecord = CardRecord::new(
+    cards::CHAIN_OF_SMOG,
+    "Chain of Smog",
+    CardArt::new("6bfe64f9-8b03-41f6-a47b-fade397ad9d1", "Greg Staples"),
+    CardSet::Onslaught,
+    CardRules::new_sorcery(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player discards two cards. That player may copy this spell and may choose a new target for that copy.",
+        &CHAIN_OF_SMOG_TARGET,
+        EffectDef::Sequence(&[
+            EffectDef::Discard {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(2),
+                selection: DiscardSelectionDef::RecipientChooses,
+                then: None,
+            },
+            CHAIN_OF_SMOG_REBOUND,
         ]),
     )),
 );
@@ -401,6 +437,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AKROMAS_VENGEANCE,
     &EXALTED_ANGEL,
     &CHAIN_OF_VAPOR,
+    &CHAIN_OF_SMOG,
     &GOBLIN_PILEDRIVER,
     &GOBLIN_PYROMANCER,
     &GOBLIN_SHARPSHOOTER,
