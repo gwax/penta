@@ -133,6 +133,22 @@ fn parse_continuation(
             player: player(*owner)?,
             revealed: parse_detached_cards(revealed, game)?,
         },
+        DecisionContinuationSnapshot::SacrificeToTotalPower {
+            player: payer,
+            remaining,
+            object,
+            context,
+            if_paid,
+        } => DecisionContinuation::SacrificeToTotalPower {
+            player: player(*payer)?,
+            remaining: *remaining,
+            object: Box::new(parse_detached_stack(object, game)?),
+            context: parse_effect_resolution_context(context.clone())?,
+            if_paid: match if_paid {
+                Some(snapshot) => Some(parse_effect_continuation(snapshot, game)?.effect),
+                None => None,
+            },
+        },
         DecisionContinuationSnapshot::CardNameChoice {
             choices,
             searched,

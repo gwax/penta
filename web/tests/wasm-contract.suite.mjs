@@ -369,6 +369,7 @@ test("every deck the picker offers is one the engine can build", async () => {
       "Landstill",
       "Stasis",
       "BW Control",
+      "Angry Hermit",
     ],
   };
 

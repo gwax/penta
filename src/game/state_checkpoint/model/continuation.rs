@@ -76,6 +76,22 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         player: usize,
         revealed: Vec<DetachedCardSnapshot>,
     },
+    SacrificeToTotalPower {
+        player: usize,
+        /// How much power is still owed. Zero or less means the payer may
+        /// stop, and the offer includes a way to.
+        remaining: i32,
+        /// Boxed for the same reason the live continuation boxes it: a stack
+        /// object beside a handful of numbers would otherwise set the size
+        /// of every variant here.
+        object: Box<DetachedStackSnapshot>,
+        context: EffectResolutionContextSnapshot,
+        /// The half a completed payment runs. Most printed forms have none:
+        /// "sacrifice it unless you sacrifice ..." buys only the absence of
+        /// the other branch, which is settled before this is asked.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        if_paid: Option<Box<EffectContinuationSnapshot>>,
+    },
     CardNameChoice {
         /// The names on offer. A card name is stable catalog data, so the
         /// list is written down rather than recomputed: which names were

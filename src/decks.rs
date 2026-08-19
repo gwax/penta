@@ -194,6 +194,12 @@ pub mod premodern {
         "replenish_bryan_gulotta.yaml",
         "Returns Bryan Gulotta's Replenish list from the Sacred Torch Showdown."
     );
+    deck!(
+        angry_hermit,
+        "premodern",
+        "angry_hermit_ryan_marvin.yaml",
+        "Returns Ryan Marvin's Angry Hermit list from the Sacred Torch Showdown."
+    );
 }
 
 /// Built-in Eternal Central Old School 93/94 decklists.
@@ -616,6 +622,7 @@ mod tests {
             super::premodern::stasis,
             super::premodern::bw_control,
             super::premodern::replenish,
+            super::premodern::angry_hermit,
         ] {
             let deck = build();
             // Sixty is the floor rather than the size: Drew Glauberg

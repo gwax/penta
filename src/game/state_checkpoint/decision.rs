@@ -665,13 +665,40 @@ fn continuation_snapshot(
                 visible_rebindings,
             )?,
         },
-        // A run of sacrifices carries a resolution mid-flight: the effect it
-        // is paying for is relocatable, but how much is still owed is state
-        // this format has no place for yet.
-        // The pair is not yet chosen, so what it would do to the board is
-        // not writable down either.
+        // A run of sacrifices is one resolution answered a creature at a
+        // time, so what it carries is the resolution plus how much is still
+        // owed.
+        DecisionContinuation::SacrificeToTotalPower {
+            player,
+            remaining,
+            object,
+            context,
+            if_paid,
+        } => DecisionContinuationSnapshot::SacrificeToTotalPower {
+            player: player.index(),
+            remaining: *remaining,
+            object: Box::new(detached_stack_snapshot_allowing(
+                game,
+                viewer,
+                object,
+                visible_rebindings,
+            )?),
+            context: effect_resolution_context_snapshot(context),
+            if_paid: match if_paid {
+                Some(effect) => Some(Box::new(effect_continuation_snapshot(
+                    game,
+                    viewer,
+                    object,
+                    context,
+                    *effect,
+                    visible_rebindings,
+                )?)),
+                None => None,
+            },
+        },
+        // The pair is not yet chosen, so what a land substitution would do
+        // to the board is not writable down either.
         DecisionContinuation::BasicLandTypeSubstitution { .. }
-        | DecisionContinuation::SacrificeToTotalPower { .. }
         // An entry paused mid-flight carries a prospective permanent that
         // this format has no place for yet.
         | DecisionContinuation::BattlefieldEntryExile { .. }

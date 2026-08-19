@@ -55,8 +55,8 @@ export const formatConfigs: Record<FormatId, FormatConfig> = {
     shortName: "PREMODERN · 4ED–SCG",
     cardBackMark: "PM",
     description: "Fourth Edition through Scourge · no mana burn · Sacred Torch Showdown lists",
-    // The staged Top 8 is promoted one list at a time, as every card in a
-    // list becomes playable, so this registry grows rather than arriving whole.
+    // The whole staged Top 8, promoted one list at a time as every card in
+    // each became playable.
     deckNotes: {
       Sligh: "1st · Neal Sacks · Mono-red aggro",
       GAT: "2nd · Daniel Sondike · Threshold tempo",
@@ -65,6 +65,7 @@ export const formatConfigs: Record<FormatId, FormatConfig> = {
       "BW Control": "5th · Chris Danis · White-black control",
       Landstill: "6th · TentacleFan · Blue-white control",
       "RG Goblins": "7th · Andy Dominguez · Red-green Goblins",
+      "Angry Hermit": "8th · Ryan Marvin · Hermit Druid combo",
     },
   },
 };

@@ -302,7 +302,7 @@ fn cast_choices(targets: Vec<Target>, x: u16) -> CastChoices {
     }
 }
 
-fn cast_action(
+pub(super) fn cast_action(
     card: GameObjectId,
     targets: Vec<Target>,
     sacrifices: Vec<GameObjectId>,
@@ -437,7 +437,7 @@ fn pass_priority_pair(game: &mut Game) {
 /// Passes priority, one player at a time, until the stack empties or a
 /// decision interrupts. Resolving a trigger that asks a question stops the
 /// round mid-way, which `pass_priority_pair` cannot express.
-fn pass_until_decision(game: &mut Game) {
+pub(super) fn pass_until_decision(game: &mut Game) {
     for _ in 0..8 {
         if !game.pending_decisions.is_empty() || game.stack.is_empty() {
             return;

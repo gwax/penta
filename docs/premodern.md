@@ -2,28 +2,26 @@
 
 Penta's first Premodern tranche is the Top 8 of the 109-player [Sacred Torch
 Showdown 2026][tournament], played on July 25, 2026. The submitted lists are
-staged under `decks/premodern/` and covered by a repository test, but they are
-not exposed as built-in playable decks yet. Publishing them before their cards
-have honest execution coverage would create legal actions that cannot resolve
-correctly.
+staged under `decks/premodern/`, and all eight are now exposed as built-in
+playable decks. Each was promoted only once every card in it resolved:
+publishing one earlier would have created legal actions the engine could not
+carry out.
 
 ## Snapshot
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
 - 145 distinct cards across the tranche, all of them cataloged
-- 7 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
-  Bryan Gulotta's Replenish, Drew Glauberg's Stasis, Chris Danis's BW Control,
-  TentacleFan's Landstill, and Andy Dominguez's RG Goblins. Nothing in any of
-  them is metadata-only or partial
+- All 8 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's
+  GAT, Bryan Gulotta's Replenish, Drew Glauberg's Stasis, Chris Danis's BW
+  Control, TentacleFan's Landstill, Andy Dominguez's RG Goblins, and Ryan
+  Marvin's Angry Hermit. Nothing in any of them is metadata-only or partial
 - per-card catalog and interaction-audit status tracked in the inventory below
 
-What each remaining list is waiting on, counting main deck and sideboard
-together: none -- every card in the tranche is cataloged. BW Control and Replenish are complete. A list is
-blocked only by uncataloged cards -- no staged deck contains a card that is
-cataloged but unplayable.
+Nothing is outstanding: every card in the tranche is cataloged, and every
+list is registered and playable.
 
-The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
+The eight decks, in finish order, are Neal Sacks's Sligh, Daniel
 Sondike's GAT, Bryan Gulotta's Replenish, Drew Glauberg's Stasis, Chris Danis's
 BW Control, TentacleFan's Landstill, Andy Dominguez's RG Goblins, and Ryan
 Marvin's Angry Hermit.
@@ -55,19 +53,9 @@ result and rebuild sampled Premodern positions from their observations.
   phased-out permanent is held apart from the battlefield rather than left
   on it behind a flag, so all hundred-odd walks over the battlefield are
   right without knowing phasing exists, and it phases in before its
-  controller untaps. Angry Hermit is the one list still
-  staged, and one thing holds it: registering it puts Phyrexian Dreadnought
-  into the reconstruction sweeps, and the run of sacrifices its entry cost
-  asks for cannot be snapshotted. The continuation is listed among the ones
-  `decision_snapshot` refuses outright, so no checkpoint can be taken while
-  it is pending. Instrumenting the refusal ruled out the two guards that
-  looked likely: neither the private-visibility check nor the
-  hidden-rebinding check fires for it, and a detached snapshot of its stack
-  object succeeds. What is left is simply to write the encoding -- player,
-  how much is still owed, the stack object, its context, and the optional
-  paid branch -- and take the continuation off the refusal list. Both halves
-  have to land together; leaving the refusal in place is what made two
-  earlier attempts look like the encoding was at fault. A phased-out permanent now survives a
+  controller untaps. A run of sacrifices survives a checkpoint too: it is one
+  resolution answered a creature at a time, so what it carries is that
+  resolution beside how much is still owed. A phased-out permanent now survives a
   checkpoint: it is public information -- both players see it, and only the
   rules treat it as absent -- so it is shown behind a `phasedOut` flag and
   reconstruction routes it back to the phased-out list. Engine legality

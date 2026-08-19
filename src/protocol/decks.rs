@@ -10,6 +10,7 @@ const PREMODERN_DECK_NAMES: &[&str] = &[
     "Stasis",
     "BW Control",
     "Replenish",
+    "Angry Hermit",
 ];
 
 const OLD_SCHOOL_DECK_NAMES: &[&str] = &[
@@ -163,6 +164,7 @@ pub fn deck_by_name_for_format(format: Format, name: &str) -> Option<Deck> {
             "stasis" => Some(decks::premodern::stasis()),
             "bw control" | "bw-control" => Some(decks::premodern::bw_control()),
             "replenish" => Some(decks::premodern::replenish()),
+            "angry hermit" | "angry-hermit" => Some(decks::premodern::angry_hermit()),
             _ => None,
         },
     }

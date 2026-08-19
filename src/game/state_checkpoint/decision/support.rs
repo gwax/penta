@@ -107,9 +107,9 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             remaining,
             ..
         } => extend_trigger_placement_ids(&mut ids, trigger, pending, remaining),
-        DecisionContinuation::SacrificeToTotalPower { object, .. }
-        | DecisionContinuation::BasicLandTypeSubstitution { object, .. } => {
-            ids.push(object.id);
+        DecisionContinuation::SacrificeToTotalPower { object, context, .. }
+        | DecisionContinuation::BasicLandTypeSubstitution { object, context, .. } => {
+            extend_stack_continuation_ids(&mut ids, object, context);
         }
         DecisionContinuation::BattlefieldEntryExile {
             entering,
