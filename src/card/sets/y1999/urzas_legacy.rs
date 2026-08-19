@@ -3,10 +3,12 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AppliedEffectDef, BattlefieldEntryChoiceDestinationDef,
-    BattlefieldEntryScalarChoiceDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ReplacementChoiceDef,
-    ReplacementEffectDef, ValueDef, ZoneKind, cards,
+    BattlefieldEntryScalarChoiceDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef,
+    ChooseDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    ReplacementChoiceDef, ReplacementEffectDef, ValueDef, ZoneKind, cards,
 };
+use crate::ids::ObjectSetBindingIndex;
 use crate::mana_cost;
 
 /// Creatures of whatever type the Plague named. The chosen type lives on the
@@ -16,6 +18,60 @@ static CREATURES_OF_THE_CHOSEN_TYPE: ObjectPredicateDef = ObjectPredicateDef::Al
     ObjectPredicateDef::HasType(CardType::Creature),
     ObjectPredicateDef::HasSourcesChosenScalar(BattlefieldEntryChoiceDestinationDef::CreatureType),
 ]);
+
+/// Any lands, not only your own: the printed clause names no controller,
+/// which is what lets it untap a land an opponent's effect left tapped.
+static ANY_LANDS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Land),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Any,
+);
+
+/// The untap follows the discard rather than preceding it, which is the
+/// printed order and the reason the card is free: the lands it untaps can
+/// pay for the spell it just found.
+static SEARCH_UNTAP: EffectDef = EffectDef::Untap {
+    object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+};
+
+static SEARCH_DISCARD_THEN_UNTAP: EffectDef = EffectDef::Sequence(&[
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+        selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
+    },
+    EffectDef::Choose(ChooseDef {
+        binding: ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
+        chooser: PlayerRefDef::EffectController,
+        candidates: ObjectSetDef::Query(ANY_LANDS),
+        exclude: None,
+        minimum: 0,
+        maximum: 3,
+        visibility: ChoiceVisibilityDef::Public,
+        then: &SEARCH_UNTAP,
+    }),
+]);
+
+// ULG 32 — Frantic Search
+pub(in crate::card::sets) static FRANTIC_SEARCH: CardRecord = CardRecord::new(
+    cards::FRANTIC_SEARCH,
+    "Frantic Search",
+    CardArt::new("6cec132b-939d-4730-9bbd-2760c63c3cb4", "Jeff Miracola"),
+    CardSet::UrzasLegacy,
+    // Free if three of the lands paying for it untap again, which is why a
+    // deck that wants to fill its graveyard plays it over a plain cantrip.
+    CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell(
+        "Draw two cards, then discard two cards. Untap up to three lands.",
+        EffectDef::Sequence(&[
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(2),
+            },
+            SEARCH_DISCARD_THEN_UNTAP,
+        ]),
+    )),
+);
 
 // ULG 51 — Engineered Plague
 pub(in crate::card::sets) static ENGINEERED_PLAGUE: CardRecord = CardRecord::new(
@@ -68,6 +124,7 @@ pub(in crate::card::sets) static DEFENSE_GRID: CardRecord = CardRecord::new(
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&ENGINEERED_PLAGUE, &DEFENSE_GRID];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&FRANTIC_SEARCH, &ENGINEERED_PLAGUE, &DEFENSE_GRID];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

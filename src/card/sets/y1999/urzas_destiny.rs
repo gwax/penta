@@ -4,9 +4,38 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, CardArt, CardRules, CardSet, CardType, CounterKind, EffectDef,
     EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, cards,
+    ZoneKind, ZonePlacement, cards,
 };
 use crate::mana_cost;
+
+/// Every enchantment card the graveyard holds, all at once. The printed
+/// reminder about Auras is the ordinary rule for an Aura arriving with
+/// nothing to enchant, not a clause of its own.
+static ENCHANTMENTS_IN_YOUR_GRAVEYARD: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::HasType(CardType::Enchantment),
+    &[ZoneKind::Graveyard],
+    PlayerRelation::You,
+);
+
+// UDS 15 — Replenish
+pub(in crate::card::sets) static REPLENISH: CardRecord = CardRecord::new(
+    cards::REPLENISH,
+    "Replenish",
+    CardArt::new("c922d401-7916-42d3-9185-9de6219f9c38", "Jim Nelson"),
+    CardSet::UrzasDestiny,
+    // The deck is built to fill its own graveyard first, so this is not
+    // recursion so much as the whole board arriving on one turn.
+    CardRules::new_sorcery(mana_cost!("{3}{W}")).with_ability(AbilityDef::spell(
+        "Return all enchantment cards from your graveyard to the battlefield.",
+        EffectDef::MoveToZone {
+            object: ENCHANTMENTS_IN_YOUR_GRAVEYARD,
+            zone: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            arrival_effect: None,
+            controller: None,
+        },
+    )),
+);
 
 /// Everything the fuse counters name. A Keg with no counters on it destroys
 /// every nothing-cost permanent, which is the mode that answers a board of
@@ -62,6 +91,6 @@ pub(in crate::card::sets) static POWDER_KEG: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&POWDER_KEG];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&REPLENISH, &POWDER_KEG];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

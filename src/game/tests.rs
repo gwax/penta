@@ -673,6 +673,7 @@ mod premodern_landstill;
 mod premodern_library_selection;
 mod premodern_permanents;
 mod premodern_pyrokinesis;
+mod premodern_replenish;
 mod premodern_sligh;
 mod premodern_split_and_lock;
 mod premodern_stasis;
