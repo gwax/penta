@@ -129,6 +129,13 @@ pub enum Action {
         /// has no X.
         x: u16,
     },
+    /// Turn a face-down permanent face up by paying its morph cost. A
+    /// special action rather than an ability: it uses no stack, nothing can
+    /// respond to it, and the permanent it names has no abilities to
+    /// activate while it is face down (CR 702.37b).
+    TurnFaceUp {
+        permanent: GameObjectId,
+    },
     DeclareAttacker {
         attacker: GameObjectId,
         defender: AttackDefender,

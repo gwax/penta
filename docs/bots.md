@@ -411,7 +411,14 @@ per legal casting choice), `ActivateAbility`, `ActivateManaAbility`, `PayLifeFor
 `DeclareAttacker`, `BandAttackers` (with `first` and `second`),
 `FinishDeclaringAttackers`, `DeclareBlocker`,
 `FinishDeclaringBlockers`, `AssignCombatDamage`, `DiscardCards`,
-`ChooseUntap`, `ChooseDecision`, `CancelDecision`, `PassPriority`.
+`ChooseUntap`, `ChooseDecision`, `CancelDecision`, `PassPriority`,
+`TurnFaceUp` (with `permanent`).
+
+The `type` vocabulary is **open**, and the safe fallback is the one every bot
+already uses: choose by `index`. A bot that does not recognize a `type` may
+simply not choose that entry, so a new action kind is additive and does not
+move the epoch. Never key required behaviour on the absence of a type you have
+not seen before.
 
 An index belongs only to the observation that contains it. Acting changes the
 state and rebuilds `legalActions`, so re-observe before choosing again; do not

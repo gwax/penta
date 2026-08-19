@@ -310,6 +310,31 @@ impl Game {
         self.complete_mana_ability(player, activation, produced_mana);
     }
 
+    /// Which alternative cast, if any, the chosen play option and paid costs
+    /// amount to. Read while the card is still in the zone it is cast from,
+    /// which is why it takes the player rather than the stack object.
+    fn cast_alternative_kind(
+        &self,
+        player: PlayerId,
+        card_id: GameObjectId,
+        signature: &CastSignature,
+    ) -> Option<AlternativeCastKindDef> {
+        self.players[player.index()]
+            .hand
+            .iter()
+            .chain(&self.players[player.index()].graveyard)
+            .find(|card| card.id == card_id)
+            .and_then(|card| self.catalog.get(card.definition))
+            .and_then(|definition| {
+                definition
+                    .play_option(signature.play_option())
+                    .map(|option| (definition, option))
+            })
+            .and_then(|(definition, option)| {
+                self.selected_alternative_kind(definition, option, card_id, signature.costs())
+            })
+    }
+
     pub(super) fn complete_mana_ability(
         &mut self,
         player: PlayerId,
@@ -582,21 +607,9 @@ impl Game {
             .expect("validated casting choices remain valid while paying costs");
         let targets = signature.iter_targets().copied().collect::<Vec<_>>();
         let x = signature.x();
-        let cast_via_flashback = self.players[player.index()]
-            .hand
-            .iter()
-            .chain(&self.players[player.index()].graveyard)
-            .find(|card| card.id == card_id)
-            .and_then(|card| self.catalog.get(card.definition))
-            .and_then(|definition| {
-                definition
-                    .play_option(signature.play_option())
-                    .map(|option| (definition, option))
-            })
-            .and_then(|(definition, option)| {
-                self.selected_alternative_kind(definition, option, card_id, signature.costs())
-            })
-            == Some(AlternativeCastKindDef::Flashback);
+        let alternative_kind = self.cast_alternative_kind(player, card_id, &signature);
+        let cast_via_flashback = alternative_kind == Some(AlternativeCastKindDef::Flashback);
+        let cast_face_down = alternative_kind == Some(AlternativeCastKindDef::FaceDown);
         let card = match source_zone {
             CastSourceZone::Hand => remove_card(&mut self.players[player.index()].hand, card_id),
             CastSourceZone::Graveyard => {
@@ -639,6 +652,7 @@ impl Game {
             text_changes: Vec::new(),
             colors: None,
             cast_via_flashback,
+            cast_face_down,
             is_copy: false,
         };
         let payment_purpose = ManaPaymentPurpose::Spell {

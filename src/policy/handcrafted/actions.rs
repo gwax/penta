@@ -127,6 +127,9 @@ impl HandcraftedPolicy {
                         .map(|definition| self.card_value(definition))
                         .sum::<i32>()
             }
+            // Worth doing when it is affordable: a 2/2 becoming the card it
+            // really is only improves the board.
+            Action::TurnFaceUp { .. } => 600,
             Action::ChooseDecision { options, .. } => {
                 let selected_value = observation.decision.as_ref().map_or(0, |decision| {
                     decision

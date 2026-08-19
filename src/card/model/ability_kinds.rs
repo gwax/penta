@@ -631,6 +631,11 @@ pub enum AlternativeCastKindDef {
     /// instructions -- which is what an alternative cast already is, so the
     /// mana cost here is the whole kicked total rather than the surcharge.
     Kicked,
+    /// Cast face down as a 2/2 creature with no name for {3} (CR 702.37a).
+    /// The spell's own clauses are not what it does while face down -- it
+    /// does nothing at all -- so this kind changes the object rather than
+    /// only its cost.
+    FaceDown,
 }
 
 /// How an alternative-casting ability determines the cost it supplies.
@@ -663,6 +668,7 @@ impl AlternativeCastKindDef {
             Self::Miracle => "Miracle",
             Self::Kicked => "Kicker",
             Self::AlternativeCost => "Alternative cost",
+            Self::FaceDown => "Morph",
         }
     }
 }
@@ -708,6 +714,12 @@ impl AlternativeCastAbilityDef {
             }
             // The card prints what is paid instead, so it supplies the text.
             (AlternativeCastKindDef::AlternativeCost, _) => "Alternative cost".into(),
+            // Morph is printed on the card that has it; casting face down is
+            // the rule that applies to every such card, and the cost of doing
+            // it is always {3}.
+            (AlternativeCastKindDef::FaceDown, _) => {
+                "You may cast this card face down as a 2/2 creature spell for {3}.".into()
+            }
         }
     }
 

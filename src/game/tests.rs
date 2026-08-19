@@ -375,6 +375,7 @@ fn spell(id: u32, definition: CardDefinitionId, controller: PlayerId, x: u16) ->
         text_changes: Vec::new(),
         colors: None,
         cast_via_flashback: false,
+        cast_face_down: false,
         is_copy: false,
     }
 }

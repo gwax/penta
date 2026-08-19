@@ -3,6 +3,7 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AlternativeCastKindDef,
     AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType,
     EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation,
@@ -83,6 +84,37 @@ static CHAIN_OF_VAPOR_REBOUND: EffectDef = EffectDef::PayOr(PayOrDef::optional(
 static A_NONLAND_PERMANENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
     ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
 )];
+
+// ONS 28 — Exalted Angel
+pub(in crate::card::sets) static EXALTED_ANGEL: CardRecord = CardRecord::new(
+    cards::EXALTED_ANGEL,
+    "Exalted Angel",
+    CardArt::new("d75cc975-0f7e-48e7-a693-453306e5a907", "Michael Sutfin"),
+    CardSet::Onslaught,
+    // Six mana is more than a control deck wants to pay on turn four, so it
+    // comes down face down on three and stands up on the next turn instead.
+    CardRules::new_creature(mana_cost!("{4}{W}{W}"), &["Angel"], 4, 5)
+        .with_morph(mana_cost!("{2}{W}{W}"))
+        .with_abilities(&[
+            abilities::flying(),
+            AbilityDef::triggered(
+                "Whenever this creature deals damage, you gain that much life.",
+                TriggerEventDef::damage_dealt_by(ObjectPredicateDef::Source),
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::TriggerEventAmount,
+                },
+            ),
+            AbilityDef::alternative_cast(
+                mana_cost!("{3}"),
+                AlternativeCastKindDef::FaceDown,
+                Some(
+                    "Morph {2}{W}{W} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)",
+                ),
+                EffectDef::None,
+            ),
+        ]),
+);
 
 // ONS 73 — Chain of Vapor
 pub(in crate::card::sets) static CHAIN_OF_VAPOR: CardRecord = CardRecord::new(
@@ -366,6 +398,7 @@ pub(in crate::card::sets) static WOODED_FOOTHILLS: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AKROMAS_VENGEANCE,
+    &EXALTED_ANGEL,
     &CHAIN_OF_VAPOR,
     &GOBLIN_PILEDRIVER,
     &GOBLIN_PYROMANCER,

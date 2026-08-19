@@ -75,6 +75,7 @@ mod effect_values;
 mod entry_replacements;
 mod error;
 mod event;
+mod face_down;
 mod land_type_layers;
 mod legacy_resolution;
 mod lifecycle;
@@ -536,6 +537,10 @@ struct StackObject {
     /// leaving the stack. This is frozen at cast time because the permission
     /// lived on the previous graveyard object.
     cast_via_flashback: bool,
+    /// Whether this spell was cast face down. The permanent it becomes
+    /// enters face down, and until it resolves only its controller may know
+    /// which card it is.
+    cast_face_down: bool,
     is_copy: bool,
 }
 

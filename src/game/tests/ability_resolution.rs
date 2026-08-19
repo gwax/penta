@@ -724,6 +724,7 @@ fn resolving_ability_masks_an_illegal_target_in_each_frozen_slot() {
         text_changes: Vec::new(),
         colors: None,
         cast_via_flashback: false,
+        cast_face_down: false,
         is_copy: false,
     });
 

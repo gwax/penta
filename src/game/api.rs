@@ -249,6 +249,7 @@ impl Game {
         self.add_land_actions(player, &mut actions);
         self.add_spell_actions(player, &mut actions);
         self.add_ability_actions(player, &mut actions);
+        self.add_face_up_actions(player, &mut actions);
         actions
     }
 
@@ -319,6 +320,7 @@ impl Game {
             }
             Action::CancelDecision { decision } => self.cancel_decision(decision),
             Action::ChooseUntap { permanents } => self.choose_untap(player, &permanents),
+            Action::TurnFaceUp { permanent } => self.turn_face_up(player, permanent),
             Action::PassPriority => self.pass_priority(player),
             Action::PlayLand { card, option } => self.play_land(player, card, option),
             Action::ActivateManaAbility {
@@ -561,7 +563,13 @@ impl Game {
                     source: object.source,
                     ability: object.ability_origin(),
                     ability_text: object.ability_text().map(str::to_owned),
-                    definition: object.presentation_definition(),
+                    // A spell cast face down is a 2/2 creature spell to
+                    // everyone; only its controller knows which card.
+                    definition: if object.cast_face_down && object.controller != viewer {
+                        crate::card::cards::FACE_DOWN_CREATURE
+                    } else {
+                        object.presentation_definition()
+                    },
                     controller: object.controller,
                     counterable: self.can_be_countered(object),
                     signature: object.signature.clone(),

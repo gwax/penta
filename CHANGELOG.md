@@ -142,6 +142,21 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Morph, and face-down permanents.** A card with morph may be cast face
+  down for {3} as a 2/2 colourless creature with no name and no abilities
+  (CR 708.2), and turned face up later by paying its morph cost. Turning it
+  up is the new `TurnFaceUp` action: a special action, so it uses no stack
+  and nothing responds to it. A permanent's own identity is unchanged
+  underneath -- it is not a token, and it is the card that goes to the
+  graveyard -- and only its controller's observation carries which card it
+  is. A permanent gained an optional `faceDown` member; a spell cast face
+  down reports the face-down body as its `definition` to everyone but its
+  controller.
+
+  The `legalActions` `type` vocabulary is **open** and its safe fallback is
+  the one every bot already uses, choosing by `index`, so a new action kind
+  is additive: the epoch does not move.
+
 - **Cycling and typecycling.** Cycling is an activated ability that exists
   only while its card is in hand: the discard is a cost, so the card is
   already in the graveyard when the draw resolves. Typecycling buys a library

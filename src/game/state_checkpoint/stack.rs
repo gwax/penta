@@ -559,6 +559,7 @@ pub(super) fn parse_stack(
             text_changes: parse_text_changes(&state.text_changes),
             colors: state.colors.map(color_set_from_flags),
             cast_via_flashback: state.cast_via_flashback,
+            cast_face_down: false,
             is_copy: state.is_copy,
         });
     }
@@ -620,6 +621,7 @@ pub(super) fn parse_detached_stack(
         text_changes: parse_text_changes(&state.text_changes),
         colors: state.colors.map(color_set_from_flags),
         cast_via_flashback: state.cast_via_flashback,
+        cast_face_down: false,
         is_copy: state.is_copy,
     })
 }

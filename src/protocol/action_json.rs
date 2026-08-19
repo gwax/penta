@@ -26,6 +26,9 @@ pub fn action_json(action: &Action) -> Value {
         Action::CancelDecision { decision } => {
             json!({ "type": "CancelDecision", "decision": decision })
         }
+        Action::TurnFaceUp { permanent } => {
+            json!({ "type": "TurnFaceUp", "permanent": permanent.0 })
+        }
         Action::ChooseUntap { permanents } => {
             json!({ "type": "ChooseUntap", "permanents": instances_json(permanents) })
         }

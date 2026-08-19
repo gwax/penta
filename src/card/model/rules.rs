@@ -94,6 +94,12 @@ pub struct CardRules {
     x_spend_restriction: Option<ManaColor>,
     /// "This spell costs {1} more to cast for each target beyond the first."
     additional_generic_per_extra_target: u16,
+    /// The printed morph cost, which is what turning this permanent face up
+    /// costs. It is read off the physical card rather than off the
+    /// permanent's presented rules: a face-down permanent has no abilities,
+    /// and turning it face up is a special action rather than one of them
+    /// (CR 702.37b).
+    pub(super) morph: Option<ManaCost>,
 }
 
 /// Whether any hybrid symbol in this cost can be paid with one colour.
@@ -142,7 +148,22 @@ impl CardRules {
             play_restriction: PlayRestriction::Normal,
             x_spend_restriction: None,
             additional_generic_per_extra_target: 0,
+            morph: None,
         }
+    }
+
+    /// Records a printed morph cost. The permission to cast the card face
+    /// down is a separate declared clause, so that a card carrying one
+    /// without the other fails catalog validation rather than half-working.
+    #[must_use]
+    pub const fn with_morph(mut self, cost: ManaCost) -> Self {
+        self.morph = Some(cost);
+        self
+    }
+
+    #[must_use]
+    pub const fn morph_cost(&self) -> Option<ManaCost> {
+        self.morph
     }
 
     #[must_use]

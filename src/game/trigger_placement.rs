@@ -287,6 +287,7 @@ impl Game {
             text_changes: Vec::new(),
             colors: None,
             cast_via_flashback: false,
+            cast_face_down: false,
             is_copy: false,
         });
         self.events.push(GameEvent::TriggeredAbilityPutOnStack {
