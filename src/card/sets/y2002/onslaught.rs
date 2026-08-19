@@ -76,6 +76,7 @@ static CHAIN_OF_VAPOR_REBOUND: EffectDef = EffectDef::PayOr(PayOrDef::optional(
     },
     &EffectDef::CopyResolvingSpell {
         chooser: PlayerRefDef::ControllerOf(ObjectRefDef::Target(TargetIndex::PRIMARY)),
+        count: ValueDef::Constant(1),
     },
 ));
 

@@ -176,6 +176,10 @@ pub enum ValueDef {
     Halved(&'static HalvedValueDef),
     /// How many counters of one kind sit on the ability's own source.
     CountersOnSource(CounterKind),
+    /// How many spells were cast before this one this turn, by anybody. The
+    /// spell carrying the ability is already counted when it is cast, so this
+    /// subtracts it: storm copies what came before, not itself.
+    SpellsCastBeforeThisTurn,
     /// What was actually paid for a [`super::EffectPaymentCostDef::ChosenGenericMana`]
     /// payment in this resolution. Zero anywhere else, so a branch that reads
     /// it without a payment behind it does nothing rather than guessing.

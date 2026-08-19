@@ -512,6 +512,9 @@ pub enum EffectDef {
     /// card uses to copy itself, so the copy keeps its own colours.
     CopyResolvingSpell {
         chooser: PlayerRefDef,
+        /// How many copies. Each is offered its own retarget choice, which is
+        /// what "you may choose new targets for the copies" asks for.
+        count: ValueDef,
     },
     /// Gives its controller an emblem, an object that sits outside every
     /// zone and does nothing but carry its abilities.

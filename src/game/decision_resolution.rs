@@ -328,6 +328,7 @@ impl Game {
             }
             DecisionContinuation::Fork {
                 colors,
+                remaining,
                 player,
                 spell,
                 target_lists,
@@ -335,7 +336,10 @@ impl Game {
                 if let Some(option) = options.first().copied()
                     && let Some(targets) = target_lists.get(usize::try_from(option).unwrap_or(0))
                 {
-                    self.push_copy_with_colors(spell, player, targets.clone(), colors);
+                    self.push_copy_with_colors(spell.clone(), player, targets.clone(), colors);
+                }
+                if remaining > 0 {
+                    self.queue_copy_decision_chain(player, spell, colors, "the copy", remaining);
                 }
             }
             DecisionContinuation::GrislySalvage { player, revealed } => {

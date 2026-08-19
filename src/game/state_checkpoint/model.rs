@@ -762,6 +762,9 @@ pub(super) enum DecisionContinuationSnapshot {
         /// Absent for a card copying itself, which keeps its own colours.
         #[serde(default)]
         repainted: bool,
+        /// Copies still to offer after this one, for storm.
+        #[serde(default)]
+        remaining: u16,
     },
     OptionalEffect {
         object: DetachedStackSnapshot,

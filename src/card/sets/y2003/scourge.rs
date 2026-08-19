@@ -4,8 +4,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, EffectDef, EffectPaymentCostDef,
-    EffectPaymentDef, EffectRecipientDef, ObjectPredicateDef, PayOrDef, PlayerRelation,
-    PlayerSetDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    EffectPaymentDef, EffectRecipientDef, ObjectPredicateDef, PayOrDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -86,6 +87,42 @@ pub(in crate::card::sets) static ETERNAL_DRAGON: CardRecord = CardRecord::new(
             "Plainscycling {2} ({2}, Discard this card: Search your library for a Plains card, reveal it, put it into your hand, then shuffle.)",
             mana_cost!("{2}"),
             ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
+        ),
+    ]),
+);
+
+/// Storm, as one clause: the copies are made when the spell is cast, and each
+/// is offered its own target because the printed reminder text says so.
+static BRAIN_FREEZE_STORM: EffectDef = EffectDef::CopyResolvingSpell {
+    chooser: PlayerRefDef::EffectController,
+    count: ValueDef::SpellsCastBeforeThisTurn,
+};
+
+static A_PLAYER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+// SCG 29 — Brain Freeze
+pub(in crate::card::sets) static BRAIN_FREEZE: CardRecord = CardRecord::new(
+    cards::BRAIN_FREEZE,
+    "Brain Freeze",
+    CardArt::new("59a43ef5-9f6a-4d3e-8e3f-9b3d8f6c1a2b", "Tim Hildebrandt"),
+    CardSet::Scourge,
+    // Three cards a copy, and a Stasis deck casting four cheap spells in a
+    // turn mills a dozen: the sideboard plan against another control deck.
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Target player mills three cards.",
+            &A_PLAYER,
+            EffectDef::Mill {
+                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(3),
+            },
+        ),
+        AbilityDef::triggered(
+            "Storm (When you cast this spell, copy it for each spell cast before it this turn. You may choose new targets for the copies.)",
+            TriggerEventDef::SpellCast(ObjectPredicateDef::Source),
+            BRAIN_FREEZE_STORM,
         ),
     ]),
 );
@@ -174,6 +211,7 @@ pub(in crate::card::sets) static SIEGE_GANG_COMMANDER: CardRecord = CardRecord::
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DECREE_OF_JUSTICE,
     &ETERNAL_DRAGON,
+    &BRAIN_FREEZE,
     &GOBLIN_WARCHIEF,
     &SIEGE_GANG_COMMANDER,
 ];

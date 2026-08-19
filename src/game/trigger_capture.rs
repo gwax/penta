@@ -178,6 +178,72 @@ impl Game {
         );
     }
 
+    /// A spell's own "when you cast this spell" clause, raised as it is put on
+    /// the stack. Storm is the case: the ability belongs to the spell rather
+    /// than to anything on the battlefield, so the ordinary listener scan
+    /// never sees it, and the spell it copies is still on the stack beneath
+    /// the trigger when that trigger resolves.
+    pub(super) fn capture_own_cast_triggers(&mut self, spell: GameObjectId) {
+        let Some(cast) = self.stack.iter().find(|object| object.id == spell).cloned() else {
+            return;
+        };
+        let Some(object) = self.stack_object_event_object(&cast) else {
+            return;
+        };
+        let card = cast.card.clone();
+        let Some(signature) = cast.signature.as_ref() else {
+            return;
+        };
+        let context = CharacteristicContext::Stack {
+            form: signature.form().clone(),
+        };
+        let mut listeners = Vec::new();
+        self.for_each_printed_card_ability(&card, &context, |effective| {
+            let ability = effective.ability;
+            let DeclarativeAbilityDef::Triggered(definition) = ability.definition else {
+                return;
+            };
+            if !ability.is_executable()
+                || definition.event != TriggerEventDef::SpellCast(ObjectPredicateDef::Source)
+                || definition.procedure != AbilityProcedureDef::Shared
+            {
+                return;
+            }
+            listeners.push(BattlefieldTriggerListener {
+                event: definition.event,
+                uses_stack: true,
+                installed: None,
+                capture: TriggerCapture {
+                    source: AbilitySourceRef {
+                        object: spell,
+                        ability: effective.origin,
+                    },
+                    definition: Self::ability_presentation_definition(
+                        effective.origin,
+                        card.definition,
+                    ),
+                    owner: card.owner,
+                    controller: cast.controller,
+                    text: ability.text,
+                    target_defs: definition.targets.to_vec(),
+                    targets: Vec::new(),
+                    effect: ability.declarative_effect().unwrap_or(EffectDef::None),
+                    resolver: Self::ability_resolver(effective.origin, &ability),
+                    context: TriggerContext::empty().into(),
+                    condition: definition.condition,
+                    x: 0,
+                },
+            });
+        });
+        if listeners.is_empty() {
+            return;
+        }
+        self.capture_battlefield_triggers_from_snapshot(
+            &listeners,
+            &CommittedTriggerEvent::SpellCast { object },
+        );
+    }
+
     pub(super) fn battlefield_trigger_listeners(&self) -> Vec<BattlefieldTriggerListener> {
         let mut listeners = Vec::new();
         for permanent in &self.battlefield {

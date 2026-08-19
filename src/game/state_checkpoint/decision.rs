@@ -290,11 +290,13 @@ fn continuation_snapshot(
         },
         DecisionContinuation::Fork {
             colors,
+            remaining,
             player,
             spell,
             target_lists,
         } => DecisionContinuationSnapshot::Fork {
             repainted: colors.is_some(),
+            remaining: *remaining,
             player: player.index(),
             spell: detached_stack_snapshot_allowing(game, viewer, spell, visible_rebindings)?,
             target_lists: target_lists

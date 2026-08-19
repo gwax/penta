@@ -581,13 +581,33 @@ impl Game {
         colors: Option<ColorSet>,
         described: &str,
     ) {
+        self.queue_copy_decision_chain(player, spell, colors, described, 1);
+    }
+
+    /// The same, several times over. Each copy is targeted before the next is
+    /// offered, which is what storm's "you may choose new targets for the
+    /// copies" means: the copies are separate objects with separate choices.
+    pub(super) fn queue_copy_decision_chain(
+        &mut self,
+        player: PlayerId,
+        spell: StackObject,
+        colors: Option<ColorSet>,
+        described: &str,
+        copies: u16,
+    ) {
+        if copies == 0 {
+            return;
+        }
+        let remaining = copies - 1;
         let target_lists = self.copy_target_choices(&spell, player);
         if spell
             .signature
             .as_ref()
             .is_some_and(|signature| signature.targets().is_empty())
         {
-            self.push_copy_with_colors(spell, player, Vec::new(), colors);
+            for _ in 0..copies {
+                self.push_copy_with_colors(spell.clone(), player, Vec::new(), colors);
+            }
             return;
         }
         let original_targets = spell.targets();
@@ -622,6 +642,7 @@ impl Game {
             options,
             DecisionContinuation::Fork {
                 colors,
+                remaining,
                 player,
                 spell,
                 target_lists,

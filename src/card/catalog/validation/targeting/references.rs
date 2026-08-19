@@ -271,6 +271,7 @@ fn validate_trigger_object_predicate(
         | ValueDef::SourceToughness
                     | ValueDef::CountersOnSource(_)
                     | ValueDef::PaidAmount
+                    | ValueDef::SpellsCastBeforeThisTurn
             ) {
                 Ok(())
             } else {
@@ -747,6 +748,7 @@ fn validate_value_target_references(
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
         | ValueDef::PaidAmount
+        | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::CreaturesDiedThisTurn
         // This reads the share assigned to the target currently being
         // affected; the surrounding recipient carries the slot reference.

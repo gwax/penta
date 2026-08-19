@@ -774,5 +774,7 @@ impl Game {
             targets,
         });
         self.capture_battlefield_triggers(&CommittedTriggerEvent::SpellCast { object: cast_event });
+        // The spell's own cast clause, which no battlefield listener carries.
+        self.capture_own_cast_triggers(stack_id);
     }
 }

@@ -600,12 +600,21 @@ impl Game {
                     .unwrap_or(u16::MAX);
                 self.add_unrestricted_mana(object.controller, color, amount);
             }
-            EffectDef::CopyResolvingSpell { chooser } => {
+            EffectDef::CopyResolvingSpell { chooser, count } => {
+                let copies = self
+                    .effect_value(count, object, &context, scoped)
+                    .max(0)
+                    .try_into()
+                    .unwrap_or(u16::MAX);
+                // A triggered ability copies the spell it belongs to, which is
+                // still on the stack beneath it; a spell copying itself is its
+                // own object.
+                let original = object.source.unwrap_or(object.id);
                 if let Some(player) = self.player_reference(chooser, object, &context, scoped)
-                    && let Some(spell) =
-                        self.stack.iter().find(|item| item.id == object.id).cloned()
+                    && let Some(spell) = self.stack.iter().find(|item| item.id == original).cloned()
+                    && copies > 0
                 {
-                    self.queue_copy_decision(player, spell, None, "the copy");
+                    self.queue_copy_decision_chain(player, spell, None, "the copy", copies);
                 }
             }
             EffectDef::Counter {

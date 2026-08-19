@@ -212,6 +212,8 @@ pub(super) enum DecisionContinuation {
         /// Fork repaints what it copies; a card copying itself does not. The
         /// colours travel with the decision so one continuation serves both.
         colors: Option<ColorSet>,
+        /// Copies still to offer after this one, for storm.
+        remaining: u16,
         player: PlayerId,
         spell: StackObject,
         target_lists: Vec<Vec<TargetSelection>>,

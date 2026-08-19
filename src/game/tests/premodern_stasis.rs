@@ -234,3 +234,56 @@ fn chain_of_vapor_bounces_and_offers_the_chain_onward() {
         "the sacrifice names the land it would spend",
     );
 }
+
+/// Storm counts what came before it, not itself. Each copy is targeted
+/// separately, so the total is what this checks rather than which library
+/// each one emptied.
+#[test]
+fn brain_freeze_copies_itself_once_per_earlier_spell() {
+    let mut game = ready_game();
+    // Two cheap spells first, so the Freeze arrives as the third.
+    for (index, definition) in [cards::OPT, cards::OPT].into_iter().enumerate() {
+        let id = 20_000 + u32::try_from(index).expect("two spells fit");
+        let spell = card(id, definition, PlayerId::One);
+        let spell_id = spell.id;
+        game.players[PlayerId::One.index()].hand.push(spell);
+        game.players[PlayerId::One.index()].mana_pool.blue = 1;
+        game.priority = PlayerId::One;
+        game.apply(
+            PlayerId::One,
+            cast_action(spell_id, Vec::new(), Vec::new(), 0),
+        )
+        .expect("a cantrip is castable");
+        drain_pending(&mut game);
+    }
+
+    let freeze = card(10_000, cards::BRAIN_FREEZE, PlayerId::One);
+    let freeze_id = freeze.id;
+    game.players[PlayerId::One.index()].hand.push(freeze);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.blue = 1;
+    pool.colorless = 1;
+    game.priority = PlayerId::One;
+    let library_before = game.players[PlayerId::Two.index()].library.len();
+    let own_before = game.players[PlayerId::One.index()].library.len();
+
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            freeze_id,
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("the Freeze is cast");
+    drain_pending(&mut game);
+
+    let theirs = library_before - game.players[PlayerId::Two.index()].library.len();
+    let mine = own_before - game.players[PlayerId::One.index()].library.len();
+    assert_eq!(
+        theirs + mine,
+        9,
+        "the original and its two copies milled three each (theirs {theirs}, mine {mine})",
+    );
+}

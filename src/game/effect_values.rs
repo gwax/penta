@@ -94,6 +94,15 @@ impl Game {
             // outside a chosen-amount payment does nothing rather than
             // guessing at a number.
             ValueDef::PaidAmount => i32::from(context.paid_amount.unwrap_or(0)),
+            // Everybody's spells, minus the one carrying the ability: it was
+            // counted as it was cast, and storm copies what came before it.
+            ValueDef::SpellsCastBeforeThisTurn => i32::from(
+                self.spells_cast_this_turn
+                    .iter()
+                    .copied()
+                    .fold(0_u16, u16::saturating_add)
+                    .saturating_sub(1),
+            ),
             ValueDef::CountersOnSource(kind) => object.source.map_or(0, |source| {
                 i32::from(self.current_or_last_known_counters(source, kind))
             }),
