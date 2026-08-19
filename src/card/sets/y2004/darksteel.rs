@@ -2,7 +2,8 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AddManaEffectDef, CardArt, CardRules, CardSet, EffectDef,
+    AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, CardArt, CardRules, CardSet,
+    EffectDef, EffectRecipientDef, ObjectPredicateDef, TriggerEventDef, ValueDef, ZoneKind,
     abilities, cards,
 };
 use crate::mana_cost;
@@ -23,6 +24,47 @@ pub(in crate::card::sets) static DARKSTEEL_INGOT: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&DARKSTEEL_INGOT];
+// DST 140 — Skullclamp
+pub(in crate::card::sets) static SKULLCLAMP: CardRecord = CardRecord::new(
+    cards::SKULLCLAMP,
+    "Skullclamp",
+    CardArt::new("55318397-de3c-47ea-a088-72a24df5c8fa", "Luca Zontini"),
+    CardSet::Darksteel,
+    CardRules::new_artifact(mana_cost!("{1}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            // The minus is the whole card: a one-toughness creature it is
+            // attached to dies to state-based actions rather than to anything
+            // the Clamp does on purpose, and the trigger below collects.
+            AbilityDef::static_ability(
+                "Equipped creature gets +1/-1.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(-1),
+                    ),
+                },
+            ),
+            AbilityDef::triggered(
+                "Whenever equipped creature dies, draw two cards.",
+                // The creature is already in the graveyard and the Clamp
+                // already unattached by the time this is collected, so the
+                // attachment it names is last-known information.
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::AttachedToSource,
+                    Some(ZoneKind::Battlefield),
+                    Some(ZoneKind::Graveyard),
+                ),
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(2),
+                },
+            ),
+            abilities::equip(mana_cost!("{1}"), "Equip {1}"),
+        ]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&DARKSTEEL_INGOT, &SKULLCLAMP];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

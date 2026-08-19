@@ -34,3 +34,4 @@ pub const MISCALCULATION: CardDefinitionId = CardDefinitionId(2116);
 pub const MIND_STONE: CardDefinitionId = CardDefinitionId(2117);
 pub const GRIM_MONOLITH: CardDefinitionId = CardDefinitionId(2118);
 pub const MOTHER_OF_RUNES: CardDefinitionId = CardDefinitionId(2119);
+pub const SKULLCLAMP: CardDefinitionId = CardDefinitionId(2120);

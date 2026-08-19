@@ -489,3 +489,103 @@ fn mother_of_runes_protects_a_creature_from_the_color_she_names() {
         "the protected creature is not an offered target",
     );
 }
+
+/// Equips `source` to `host`, then settles whatever that started.
+fn equip_to(game: &mut Game, source: GameObjectId, host: GameObjectId) {
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source: actual,
+                targets,
+                ..
+            } => {
+                *actual == source
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(host))
+            }
+            _ => false,
+        })
+        .expect("equip is offered for that creature");
+    game.apply(PlayerId::One, action)
+        .expect("the ability activates");
+    drain_pending(game);
+}
+
+/// The Clamp on something that survives it: bigger, frailer, still there.
+#[test]
+fn the_clamp_gives_plus_one_minus_one_to_what_it_equips() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let clamp = creature(51_000, cards::SKULLCLAMP, PlayerId::One);
+    let clamp_id = clamp.card.id;
+    game.battlefield.push(clamp);
+    let bears = creature(51_001, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    let before = game.players[PlayerId::One.index()].library.len();
+
+    equip_to(&mut game, clamp_id, bears_id);
+
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears_id)
+        .expect("a 2/2 survives losing a toughness");
+    assert_eq!(
+        (game.power(bears), game.toughness(bears)),
+        (Some(3), Some(1))
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        before,
+        "nothing is drawn while the creature is alive",
+    );
+}
+
+/// The Clamp on a one-toughness creature, which is the whole point of it: the
+/// minus kills what it equips through state-based actions, and the trigger
+/// still finds the creature it was attached to a moment ago.
+#[test]
+fn the_clamp_kills_a_one_toughness_creature_and_draws_two() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let clamp = creature(51_100, cards::SKULLCLAMP, PlayerId::One);
+    let clamp_id = clamp.card.id;
+    game.battlefield.push(clamp);
+    let lions = creature(51_101, cards::SAVANNAH_LIONS, PlayerId::One);
+    let lions_id = lions.card.id;
+    game.battlefield.push(lions);
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    let before = game.players[PlayerId::One.index()].library.len();
+
+    equip_to(&mut game, clamp_id, lions_id);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != lions_id),
+        "a 2/1 loses its last toughness and dies",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SAVANNAH_LIONS),
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        before - 2,
+        "the Clamp draws two off a creature that was gone before it triggered",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == clamp_id),
+        "the Clamp stays behind, ready for the next one",
+    );
+}

@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 118 are cataloged and 416 are not
+- 534 cards in the pool, of which 119 are cataloged and 415 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -370,7 +370,7 @@ lands are legal in every format and are not listed.
 - `Wrenn and Six`
 - `Zirda, the Dawnwaker`
 
-### Colorless (49)
+### Colorless (48)
 
 - `Aether Spellbomb`
 - `Agatha's Soul Cauldron`
@@ -403,7 +403,6 @@ lands are legal in every format and are not listed.
 - `Relic of Sauron`
 - `Retrofitter Foundry`
 - `Sensei's Divining Top`
-- `Skullclamp`
 - `Smuggler's Copter`
 - `Soul-Guide Lantern`
 - `Sowing Mycospawn`
@@ -475,7 +474,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 118 pool cards are in the catalog because an earlier format needed them.
+These 119 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -560,6 +559,7 @@ been played beside.
 - `Scalding Tarn`
 - `Scrubland`
 - `Shallow Grave`
+- `Skullclamp`
 - `Snapcaster Mage`
 - `Sol Ring`
 - `Spara's Headquarters`
