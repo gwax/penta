@@ -483,6 +483,7 @@ pub(super) fn parse_battlefield(
                         .get("chosenCardName")
                         .and_then(Value::as_str)
                         .map(str::to_owned),
+                    face_down: bool_field(shown, "faceDown").unwrap_or(false),
                 },
                 catalog,
             )
@@ -506,6 +507,7 @@ struct PermanentPresentation {
     activated_loyalty_this_turn: bool,
     chosen_creature_type: Option<String>,
     chosen_card_name: Option<String>,
+    face_down: bool,
 }
 
 #[allow(clippy::too_many_lines)]
@@ -568,6 +570,7 @@ fn parse_permanent(
     permanent.cast_x = state.cast_x;
     permanent.chosen_creature_type = shown.chosen_creature_type;
     permanent.chosen_card_name = shown.chosen_card_name;
+    permanent.face_down = shown.face_down;
     permanent.temporary_keywords = state
         .temporary_keywords
         .iter()
@@ -843,6 +846,7 @@ pub(super) fn parse_detached_permanent(
             activated_loyalty_this_turn: snapshot.activated_loyalty_this_turn,
             chosen_creature_type: snapshot.chosen_creature_type.clone(),
             chosen_card_name: snapshot.chosen_card_name.clone(),
+            face_down: snapshot.face_down,
         },
         catalog,
     )

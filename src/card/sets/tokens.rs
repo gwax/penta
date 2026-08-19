@@ -17,6 +17,19 @@ use crate::card::{
     abilities, cards,
 };
 
+/// Not a token: the body a face-down permanent presents while it is face
+/// down. It lives here because it needs the same thing a token needs -- a
+/// catalog definition no format allows -- and because nothing may ever put a
+/// card of it into a deck. A face-down permanent's own `card.definition`
+/// stays the card underneath, so it is never treated as a token.
+pub(in crate::card::sets) static FACE_DOWN_CREATURE: CardRecord = CardRecord::new(
+    cards::FACE_DOWN_CREATURE,
+    "Face-down creature",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&[], 2, 2),
+);
+
 pub(in crate::card::sets) static GERM_TOKEN_0_0_BLACK: CardRecord = CardRecord::new(
     cards::GERM_TOKEN_0_0_BLACK,
     "Phyrexian Germ",
@@ -492,6 +505,7 @@ pub(in crate::card::sets) static RAT_TOKEN_1_1_BLACK: CardRecord = CardRecord::n
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &FACE_DOWN_CREATURE,
     &GERM_TOKEN_0_0_BLACK,
     &BEAST_TOKEN_3_3_GREEN,
     &KNIGHT_TOKEN_2_2_WHITE,

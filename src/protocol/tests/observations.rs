@@ -26,6 +26,7 @@ fn observation_json_carries_interwave_state_and_presented_card_part() {
             definition: crate::card::cards::HUNTMASTER_OF_THE_FELLS,
             presented: crate::CardPartId(1),
             controller: PlayerId::One,
+            face_down: false,
             types: crate::CardTypeSet::single(crate::CardType::Creature),
             chosen_creature_type: Some("Werewolf".into()),
             chosen_card_name: None,

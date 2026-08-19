@@ -33,6 +33,13 @@ impl Game {
     }
 
     pub(super) fn effective_permanent_name<'a>(&'a self, permanent: &Permanent) -> Option<&'a str> {
+        // A face-down permanent has no name at all, so nothing that reads
+        // one -- naming a card, matching another object's name -- ever finds
+        // it. The catalog entry behind its body is legible for a client, not
+        // a name the rules can see.
+        if permanent.face_down {
+            return None;
+        }
         let (definition, part) = Self::effective_rules_source(permanent);
         self.catalog
             .get(definition)?
@@ -52,6 +59,12 @@ impl Game {
     }
 
     pub(super) fn effective_rules_source(permanent: &Permanent) -> (CardDefinitionId, CardPartId) {
+        // A face-down permanent presents the shared face-down body whatever
+        // the card under it says, and whatever it was copying: turning a
+        // permanent face down is not a copy effect, it hides one (CR 708.2).
+        if permanent.face_down {
+            return (crate::card::cards::FACE_DOWN_CREATURE, CardPartId::PRIMARY);
+        }
         permanent
             .copy_effect
             .as_ref()

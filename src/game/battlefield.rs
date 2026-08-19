@@ -73,8 +73,7 @@ impl Game {
         self.battlefield
             .iter()
             .find(|permanent| permanent.card.id == id)
-            .and_then(|permanent| self.catalog.get(Self::effective_rules_source(permanent).0))
-            .map(|card| card.name.as_str())
+            .and_then(|permanent| self.effective_permanent_name(permanent))
     }
 
     pub(super) fn permanent_controller(&self, id: GameObjectId) -> Option<PlayerId> {

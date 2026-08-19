@@ -291,6 +291,12 @@ struct Permanent {
     chosen_creature_type: Option<String>,
     /// The card name a permanent named as it entered, for Pithing Needle.
     chosen_card_name: Option<String>,
+    /// Whether this permanent is face down. A face-down permanent is a 2/2
+    /// colourless creature with no name, no card types beyond creature, and
+    /// no abilities (CR 708.2), whatever the card under it says. The physical
+    /// card is unchanged: `card.definition` still names it, which is what
+    /// lets it be turned face up and what it goes to the graveyard as.
+    face_down: bool,
     destroy_at_end: bool,
     temporary_keywords: Vec<KeywordAbility>,
     /// Resolved noncopiable characteristic changes and rules modifications,
@@ -435,6 +441,7 @@ impl Permanent {
             chosen_player: None,
             chosen_creature_type: None,
             chosen_card_name: None,
+            face_down: false,
             destroy_at_end: false,
             temporary_keywords: Vec::new(),
             resolved_continuous_effects: Vec::new(),

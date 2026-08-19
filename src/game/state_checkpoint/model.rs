@@ -447,6 +447,10 @@ pub(super) struct DetachedPermanentSnapshot {
     pub(super) activated_loyalty_this_turn: bool,
     pub(super) chosen_creature_type: Option<String>,
     pub(super) chosen_card_name: Option<String>,
+    /// Whether the permanent is face down. Absent from a payload written
+    /// before face-down permanents existed, which is the same as not one.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) face_down: bool,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]

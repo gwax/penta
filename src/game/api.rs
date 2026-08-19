@@ -2,7 +2,7 @@ use super::{
     AbilityDef, AbilityId, AbilityOrigin, Action, ActionError, CardBehavior, CardType,
     CharacteristicContext, CombatDamageStage, CounterKind, DecisionVisibility, EmblemObservation,
     Game, GameEvent, GameObjectId, GameResult, KeywordAbility, ManaColor, PermanentObservation,
-    PlayerId, PlayerObservation, Pregame, StackObservation, Step, WinReason, ZoneKind,
+    Permanent, PlayerId, PlayerObservation, Pregame, StackObservation, Step, WinReason, ZoneKind,
     combinations, public_cards,
 };
 
@@ -457,6 +457,64 @@ impl Game {
     }
 
     #[must_use]
+    /// One permanent as `viewer` sees it. Split out of `observe` because the
+    /// per-permanent view is long on its own and reads better beside the
+    /// hidden-information rule it enforces.
+    fn observe_permanent(
+        &self,
+        permanent: &Permanent,
+        viewer: PlayerId,
+        moat_active: bool,
+    ) -> PermanentObservation {
+        let types = self.permanent_types(permanent).unwrap_or_default();
+        let stats = self.creature_stats(permanent);
+        let (power, toughness) = stats.map_or((None, None), |stats| {
+            (Some(stats.power), Some(stats.toughness))
+        });
+        let flying = self.has_flying(permanent);
+        // A face-down permanent is public information as a
+        // 2/2 body and private information as a card: its
+        // controller may look at it, and nobody else may.
+        let (definition, presented) =
+            if permanent.face_down && permanent.controller != viewer {
+                (
+                    crate::card::cards::FACE_DOWN_CREATURE,
+                    crate::CardPartId::PRIMARY,
+                )
+            } else {
+                (permanent.card.definition, permanent.presented)
+            };
+        PermanentObservation {
+            id: permanent.card.id,
+            definition,
+            presented,
+            controller: permanent.controller,
+            types,
+            face_down: permanent.face_down,
+            chosen_creature_type: permanent.chosen_creature_type.clone(),
+            chosen_card_name: permanent.chosen_card_name.clone(),
+            tapped: permanent.tapped,
+            power,
+            toughness,
+            damage: permanent.damage,
+            loyalty: types
+                .contains(CardType::Planeswalker)
+                .then(|| permanent.counters(CounterKind::Loyalty)),
+            loyalty_ability_used_this_turn: permanent.activated_loyalty_this_turn,
+            attack_defender: permanent.attack_defender,
+            attacking: permanent.attacking,
+            blocked_this_combat: permanent.blocked,
+            blocking: permanent.blocking.clone(),
+            blocking_this_combat: permanent.is_blocking_this_combat(),
+            attacking_band: permanent.attacking_band,
+            flying,
+            can_attack: stats.is_some()
+                && self.can_attack_creature(permanent, moat_active, flying),
+            entered_this_turn: self.turns_started[permanent.controller.index()]
+                == permanent.entered_controller_turn,
+        }
+    }
+
     pub fn observe(&self, viewer: PlayerId) -> PlayerObservation {
         let player = &self.players[viewer.index()];
         let opponent = &self.players[viewer.opponent().index()];
@@ -491,42 +549,7 @@ impl Game {
             battlefield: self
                 .battlefield
                 .iter()
-                .map(|permanent| {
-                    let types = self.permanent_types(permanent).unwrap_or_default();
-                    let stats = self.creature_stats(permanent);
-                    let (power, toughness) = stats.map_or((None, None), |stats| {
-                        (Some(stats.power), Some(stats.toughness))
-                    });
-                    let flying = self.has_flying(permanent);
-                    PermanentObservation {
-                        id: permanent.card.id,
-                        definition: permanent.card.definition,
-                        presented: permanent.presented,
-                        controller: permanent.controller,
-                        types,
-                        chosen_creature_type: permanent.chosen_creature_type.clone(),
-                        chosen_card_name: permanent.chosen_card_name.clone(),
-                        tapped: permanent.tapped,
-                        power,
-                        toughness,
-                        damage: permanent.damage,
-                        loyalty: types
-                            .contains(CardType::Planeswalker)
-                            .then(|| permanent.counters(CounterKind::Loyalty)),
-                        loyalty_ability_used_this_turn: permanent.activated_loyalty_this_turn,
-                        attack_defender: permanent.attack_defender,
-                        attacking: permanent.attacking,
-                        blocked_this_combat: permanent.blocked,
-                        blocking: permanent.blocking.clone(),
-                        blocking_this_combat: permanent.is_blocking_this_combat(),
-                        attacking_band: permanent.attacking_band,
-                        flying,
-                        can_attack: stats.is_some()
-                            && self.can_attack_creature(permanent, moat_active, flying),
-                        entered_this_turn: self.turns_started[permanent.controller.index()]
-                            == permanent.entered_controller_turn,
-                    }
-                })
+                .map(|permanent| self.observe_permanent(permanent, viewer, moat_active))
                 .collect(),
             emblems: self.observed_emblems(),
             stack: self
