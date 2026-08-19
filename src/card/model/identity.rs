@@ -67,6 +67,7 @@ pub enum CardSet {
     DragonsMaze,
     Magic2014,
     Theros,
+    JourneyIntoNyx,
     KhansOfTarkir,
     DragonsOfTarkir,
     ModernHorizons1,

@@ -145,3 +145,63 @@ fn the_halflings_colorless_mana_is_ordinary() {
         "a nonlegendary creature can be cast on the colourless mana",
     );
 }
+
+/// The life is a cost, not a trigger. City of Brass pays when it becomes
+/// tapped, by anyone; the Confluence pays only when its own ability is
+/// activated, and cannot be activated at all with no life to spare.
+#[test]
+fn mana_confluence_charges_a_life_as_a_cost_of_its_own_ability() {
+    for color in [
+        ManaColor::White,
+        ManaColor::Blue,
+        ManaColor::Black,
+        ManaColor::Red,
+        ManaColor::Green,
+    ] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let land = game
+            .put_onto_battlefield(PlayerId::One, cards::MANA_CONFLUENCE)
+            .expect("cataloged");
+        game.players[PlayerId::One.index()].life = 20;
+
+        game.apply(
+            PlayerId::One,
+            Action::ActivateManaAbility {
+                source: land,
+                ability: mana_ability_for(&game, land, color),
+                color,
+                counters_removed: None,
+                cost_object: None,
+            },
+        )
+        .unwrap_or_else(|error| panic!("it makes {color:?}: {error}"));
+        assert_eq!(
+            game.players[PlayerId::One.index()].mana_pool.amount(color),
+            1
+        );
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            19,
+            "one life for one mana",
+        );
+    }
+}
+
+/// Tapped by something else, it costs nothing -- the difference from City of
+/// Brass, which would pay either way.
+#[test]
+fn mana_confluence_costs_nothing_when_something_else_taps_it() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let land = game
+        .put_onto_battlefield(PlayerId::One, cards::MANA_CONFLUENCE)
+        .expect("cataloged");
+    game.players[PlayerId::One.index()].life = 20;
+
+    game.tap_permanent(land);
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[PlayerId::One.index()].life, 20);
+    assert_eq!(game.players[PlayerId::One.index()].mana_pool.total(), 0);
+}

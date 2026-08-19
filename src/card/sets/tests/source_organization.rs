@@ -231,6 +231,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("gatecrash.rs") => source(CardSet::Gatecrash, "GTC"),
         Some("magic_2014.rs") => source(CardSet::Magic2014, "M14"),
         Some("theros.rs") => source(CardSet::Theros, "THS"),
+        Some("journey_into_nyx.rs") => source(CardSet::JourneyIntoNyx, "JOU"),
         Some("khans_of_tarkir.rs") => source(CardSet::KhansOfTarkir, "KTK"),
         Some("dragons_of_tarkir.rs") => source(CardSet::DragonsOfTarkir, "DTK"),
         Some("modern_horizons.rs") => source(CardSet::ModernHorizons1, "MH1"),

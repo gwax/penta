@@ -68,3 +68,4 @@ pub const SPELLSEEKER: CardDefinitionId = CardDefinitionId(2150);
 pub const SECURITRON_SQUADRON: CardDefinitionId = CardDefinitionId(2151);
 pub const FIREBOLT: CardDefinitionId = CardDefinitionId(2152);
 pub const DELIGHTED_HALFLING: CardDefinitionId = CardDefinitionId(2153);
+pub const MANA_CONFLUENCE: CardDefinitionId = CardDefinitionId(2154);
