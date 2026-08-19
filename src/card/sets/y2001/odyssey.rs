@@ -7,7 +7,7 @@ use crate::card::{
     DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
     ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
     ResolvedEffectDurationDef, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, cards,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -186,6 +186,31 @@ pub(in crate::card::sets) static SKELETAL_SCRYING: CardRecord = CardRecord::new(
     ),
 );
 
+static FIREBOLT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
+// ODY 193 — Firebolt
+pub(in crate::card::sets) static FIREBOLT: CardRecord = CardRecord::new(
+    cards::FIREBOLT,
+    "Firebolt",
+    CardArt::new("d5e45005-dd81-4d80-b043-02f719aca929", "Ron Spencer"),
+    CardSet::Odyssey,
+    // Two cards for six mana across two turns, which is why it is played in
+    // decks that would never pay five for two damage on its own.
+    CardRules::new_sorcery(mana_cost!("{R}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Firebolt deals 2 damage to any target.",
+            &FIREBOLT_TARGET,
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(2),
+            },
+        ),
+        abilities::flashback(mana_cost!("{4}{R}")),
+    ]),
+);
+
 // ODY 292 — Psychatog
 pub(in crate::card::sets) static PSYCHATOG: CardRecord = CardRecord::new(
     cards::PSYCHATOG,
@@ -336,6 +361,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ENTOMB,
     &HAUNTING_ECHOES,
     &SKELETAL_SCRYING,
+    &FIREBOLT,
     &PSYCHATOG,
     &BARBARIAN_RING,
     &CEPHALID_COLISEUM,

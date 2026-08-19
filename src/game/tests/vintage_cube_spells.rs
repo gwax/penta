@@ -677,3 +677,65 @@ fn force_of_vigor_destroys_both_kinds_at_once() {
         "the green card it spent was exiled, not discarded",
     );
 }
+
+/// Two damage, and then the same two again from the graveyard -- after which
+/// the card is exiled rather than left to be flashed back twice.
+#[test]
+fn firebolt_burns_from_hand_and_once_more_from_the_graveyard() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    let bolt = card(73_000, cards::FIREBOLT, PlayerId::One);
+    let bolt_id = bolt.id;
+    game.players[0].hand.push(bolt);
+    game.players[0].mana_pool.red = 1;
+    let start = game.players[PlayerId::Two.index()].life;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(bolt_id, vec![Target::Player(PlayerId::Two)], Vec::new(), 0),
+    )
+    .expect("it is cast from hand");
+    drain_pending(&mut game);
+    assert_eq!(game.players[PlayerId::Two.index()].life, start - 2);
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::FIREBOLT),
+        "and it lands in the graveyard, where the flashback lives",
+    );
+
+    let from_graveyard = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::FIREBOLT)
+        .expect("still there")
+        .id;
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 4;
+    let flashback = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+            if *card == from_graveyard
+                && choices.targets().iter().any(|selection| {
+                    selection.targets().contains(&Target::Player(PlayerId::Two))
+                }))
+        })
+        .expect("flashback is offered from the graveyard");
+    game.apply(PlayerId::One, flashback).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[PlayerId::Two.index()].life, start - 4);
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .all(|card| card.definition != cards::FIREBOLT),
+        "flashback exiles it rather than returning it",
+    );
+    assert_eq!(game.players[0].exile.len(), 1);
+}
