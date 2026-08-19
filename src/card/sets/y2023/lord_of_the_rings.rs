@@ -3,10 +3,34 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, EffectDef, ObjectPredicateDef, TriggerEventDef,
-    ValueDef, ZoneKind, abilities, cards,
+    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
+    ObjectPredicateDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::mana_cost;
+
+/// "Power or toughness 2 or less" is a disjunction, not a pair of bounds: a
+/// 5/1 is small enough and a 1/5 is too. Written as "less than 3" because
+/// that is the comparison the predicate offers.
+static STERN_SCOLDING_TARGET: AbilityTargetDef =
+    AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::PowerLessThan(ValueDef::Constant(3)),
+            ObjectPredicateDef::ToughnessLessThan(ValueDef::Constant(3)),
+        ]),
+    ]));
+
+// LTR 71 — Stern Scolding
+pub(in crate::card::sets) static STERN_SCOLDING: CardRecord = CardRecord::new(
+    cards::STERN_SCOLDING,
+    "Stern Scolding",
+    CardArt::new("3ca1e1de-b916-445f-b3b2-0f4d0cc7ceeb", "Valera Lutfullina"),
+    CardSet::LordOfTheRings,
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::counter_target(
+        "Counter target creature spell with power or toughness 2 or less.",
+        &STERN_SCOLDING_TARGET,
+    )),
+);
 
 // LTR 169 — Generous Ent
 pub(in crate::card::sets) static GENEROUS_ENT: CardRecord = CardRecord::new(
@@ -39,6 +63,6 @@ pub(in crate::card::sets) static GENEROUS_ENT: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&GENEROUS_ENT];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&STERN_SCOLDING, &GENEROUS_ENT];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

@@ -816,3 +816,84 @@ fn rancor_returns_itself_to_hand_from_the_graveyard() {
         );
     }
 }
+
+/// "Power or toughness 2 or less" is a disjunction. A 4/1 qualifies on
+/// toughness and a 2/3 on power; only a creature big in both directions is
+/// safe, and a noncreature spell was never in question.
+#[test]
+fn stern_scolding_answers_a_spell_small_in_either_direction() {
+    for (spell, counterable) in [
+        (cards::GRIZZLY_BEARS, true),
+        // A 4/1: too big to be caught by power, small enough by toughness.
+        (cards::PHANTASMAL_FORCES, true),
+        // A 2/3: the mirror of it.
+        (cards::ERG_RAIDERS, true),
+        (cards::SERRA_ANGEL, false),
+        // Not a creature spell at all.
+        (cards::LIGHTNING_BOLT, false),
+    ] {
+        // The active player casts the creature; the other one answers it.
+        let mut game = ready_game();
+        let cast = card(55_000, spell, PlayerId::One);
+        let cast_id = cast.id;
+        game.players[PlayerId::One.index()].hand.push(cast);
+        let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+        pool.white = 5;
+        pool.blue = 5;
+        pool.black = 5;
+        pool.red = 5;
+        pool.green = 5;
+        pool.colorless = 5;
+        let cast_action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == cast_id))
+            .unwrap_or_else(|| panic!("{spell:?} is castable"));
+        game.apply(PlayerId::One, cast_action).expect("it is cast");
+        let on_stack = game.stack.last().expect("it is on the stack").id;
+        game.apply(PlayerId::One, Action::PassPriority).unwrap();
+
+        let scolding = card(55_001, cards::STERN_SCOLDING, PlayerId::Two);
+        let scolding_id = scolding.id;
+        game.players[PlayerId::Two.index()].hand.push(scolding);
+        game.players[PlayerId::Two.index()].mana_pool.blue = 1;
+
+        let offered = |game: &Game| {
+            game.legal_actions(PlayerId::Two)
+                .into_iter()
+                .find(|action| {
+                    matches!(action, Action::CastSpell { card, choices, .. }
+                    if *card == scolding_id
+                        && choices.targets().iter().any(|selection| {
+                            selection.targets().contains(&Target::Spell(on_stack))
+                        }))
+                })
+        };
+        let action = offered(&game);
+        assert_eq!(
+            action.is_some(),
+            counterable,
+            "{spell:?} should{} be a legal target",
+            if counterable { "" } else { " not" },
+        );
+
+        let Some(action) = action else {
+            continue;
+        };
+        game.apply(PlayerId::Two, action).expect("it is cast");
+        drain_pending(&mut game);
+        assert!(
+            game.players[PlayerId::One.index()]
+                .graveyard
+                .iter()
+                .any(|card| card.definition == spell),
+            "{spell:?} is countered",
+        );
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| permanent.card.definition != spell),
+            "{spell:?} never reaches the battlefield",
+        );
+    }
+}
