@@ -431,6 +431,11 @@ const SET_MODULES: &[SetModule] = &[
         y2024::foundations_jumpstart::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::TarkirDragonstorm,
+        y2025::tarkir_dragonstorm::CARDS,
+        y2025::tarkir_dragonstorm::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::FinalFantasy,
         y2025::final_fantasy::CARDS,
         y2025::final_fantasy::ADDITIONAL_PRINTINGS,
