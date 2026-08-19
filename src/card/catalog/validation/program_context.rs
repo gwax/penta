@@ -805,7 +805,8 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::SourceIsTapped
         | TriggerConditionDef::SourceIsUntapped
-        | TriggerConditionDef::ControllerLifeAtMost(_) => true,
+        | TriggerConditionDef::ControllerLifeAtMost(_)
+        | TriggerConditionDef::ControllerLifeAtMostHalfStartingLife => true,
     }
 }
 

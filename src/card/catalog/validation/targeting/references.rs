@@ -665,7 +665,8 @@ fn validate_trigger_condition(
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::SourceIsTapped
         | TriggerConditionDef::SourceIsUntapped
-        | TriggerConditionDef::ControllerLifeAtMost(_) => Ok(()),
+        | TriggerConditionDef::ControllerLifeAtMost(_)
+        | TriggerConditionDef::ControllerLifeAtMostHalfStartingLife => Ok(()),
     }
 }
 

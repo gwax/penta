@@ -406,6 +406,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceIsTapped
         | TriggerConditionDef::SourceIsUntapped
         | TriggerConditionDef::ControllerLifeAtMost(_)
+        | TriggerConditionDef::ControllerLifeAtMostHalfStartingLife
         | TriggerConditionDef::SpellsCastThisTurn { .. }
         | TriggerConditionDef::SpellsCastLastTurn { .. } => true,
     }
@@ -443,6 +444,7 @@ fn shared_static_trigger_condition(condition: TriggerConditionDef) -> bool {
             // The controller's life is read from the same input, and a
             // fateful-hour clause switches off again when life goes back up.
             | TriggerConditionDef::ControllerLifeAtMost(_)
+            | TriggerConditionDef::ControllerLifeAtMostHalfStartingLife
     )
 }
 

@@ -227,3 +227,100 @@ fn the_titan_fetches_on_entering_and_again_on_attacking() {
         }
     }
 }
+
+/// Cecil's front half turns the damage it deals into life loss, and the same
+/// clause checks afterwards whether that loss has taken its controller low
+/// enough to turn the card over.
+#[test]
+fn cecil_transforms_once_his_own_damage_has_halved_your_life() {
+    for (starting_life, transforms) in [(20, false), (13, true)] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[PlayerId::One.index()].life = starting_life;
+        let cecil = creature(59_000, cards::CECIL_DARK_KNIGHT, PlayerId::One);
+        let cecil_id = cecil.card.id;
+        game.battlefield.push(cecil);
+        game.tap_permanent(cecil_id);
+
+        game.damage_target_from(Some(cecil_id), Some(Target::Player(PlayerId::Two)), 3);
+        drain_pending(&mut game);
+
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            starting_life - 3,
+            "the damage Cecil dealt is repaid in life",
+        );
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == cecil_id)
+            .expect("he is still here");
+        assert_eq!(
+            permanent.presented == CardPartId(1),
+            transforms,
+            "at {starting_life} life, three damage should{} turn him over",
+            if transforms { "" } else { " not" },
+        );
+        if transforms {
+            assert!(!permanent.tapped, "and untap him on the way");
+            assert_eq!(
+                (game.power(permanent), game.toughness(permanent)),
+                (Some(4), Some(4)),
+                "the back half is the bigger one",
+            );
+        }
+    }
+}
+
+/// The back half protects the rest of the attack, and not itself: "other
+/// attacking creatures" is the whole clause.
+#[test]
+fn the_redeemed_paladin_covers_the_other_attackers() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].life = 5;
+    let cecil = creature(59_100, cards::CECIL_DARK_KNIGHT, PlayerId::One);
+    let cecil_id = cecil.card.id;
+    game.battlefield.push(cecil);
+    // Halve his controller's life with his own damage to get the back face.
+    game.damage_target_from(Some(cecil_id), Some(Target::Player(PlayerId::Two)), 1);
+    drain_pending(&mut game);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == cecil_id)
+            .expect("still here")
+            .presented,
+        CardPartId(1),
+        "the Paladin side is up",
+    );
+
+    let friend = creature(59_101, cards::GRIZZLY_BEARS, PlayerId::One);
+    let friend_id = friend.card.id;
+    game.battlefield.push(friend);
+    let bystander = creature(59_102, cards::SAVANNAH_LIONS, PlayerId::One);
+    let bystander_id = bystander.card.id;
+    game.battlefield.push(bystander);
+
+    game.step = Step::DeclareAttackers;
+    game.declare_attacker(cecil_id, AttackDefender::Player(PlayerId::Two));
+    game.declare_attacker(friend_id, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    drain_pending(&mut game);
+
+    let indestructible = |id| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .is_some_and(|permanent| game.has_indestructible(permanent))
+    };
+    assert!(indestructible(friend_id), "the other attacker is covered");
+    assert!(
+        !indestructible(bystander_id),
+        "a creature that stayed home is not attacking",
+    );
+    assert!(
+        !indestructible(cecil_id),
+        "and \"other\" excludes Cecil himself",
+    );
+}

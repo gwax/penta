@@ -32,6 +32,7 @@ mod y2021;
 mod y2022;
 mod y2023;
 mod y2024;
+mod y2025;
 
 use super::record::{CardAbilityBinding, CardRecord, PrintingRecord};
 use crate::AbilityOrigin;
@@ -369,6 +370,11 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::ModernHorizons3,
         y2024::modern_horizons_3::CARDS,
         y2024::modern_horizons_3::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::FinalFantasy,
+        y2025::final_fantasy::CARDS,
+        y2025::final_fantasy::ADDITIONAL_PRINTINGS,
     ),
 ];
 

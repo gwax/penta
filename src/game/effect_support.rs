@@ -827,6 +827,13 @@ impl Game {
                 TriggerConditionDef::ControllerLifeAtMost(threshold) => {
                     i32::from(self.players[controller.index()].life) <= i32::from(*threshold)
                 }
+                // Rounded up, as every "half your starting life total" clause
+                // is: at twenty the boundary is ten, and at an odd total it
+                // is the higher half.
+                TriggerConditionDef::ControllerLifeAtMostHalfStartingLife => {
+                    let starting = i32::from(self.format.rules().starting_life);
+                    i32::from(self.players[controller.index()].life) <= starting.div_euclid(2)
+                }
                 TriggerConditionDef::ObjectCount { .. } => {
                     unreachable!("the object-count arm is destructured above")
                 }

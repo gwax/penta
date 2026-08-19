@@ -236,6 +236,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("streets_of_new_capenna.rs") => source(CardSet::StreetsOfNewCapenna, "SNC"),
         Some("lord_of_the_rings.rs") => source(CardSet::LordOfTheRings, "LTR"),
         Some("modern_horizons_3.rs") => source(CardSet::ModernHorizons3, "MH3"),
+        Some("final_fantasy.rs") => source(CardSet::FinalFantasy, "FIN"),
         Some(name) => panic!(
             "{}: add {name} to the official set-code map",
             path.display()

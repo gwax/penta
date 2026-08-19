@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 126 are cataloged and 408 are not
+- 534 cards in the pool, of which 127 are cataloged and 407 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -305,7 +305,7 @@ lands are legal in every format and are not listed.
 - `Woodfall Primus`
 - `Worldspine Wurm`
 
-### Multicolor (56)
+### Multicolor (55)
 
 - `Ajani, Nacatl Pariah`
 - `Arwen, Mortal Queen`
@@ -315,7 +315,6 @@ lands are legal in every format and are not listed.
 - `Bloodtithe Harvester`
 - `Brightglass Gearhulk`
 - `Carnage Interpreter`
-- `Cecil, Dark Knight`
 - `Dack Fayden`
 - `Ertai Resurrected`
 - `Etali, Primal Conqueror`
@@ -467,7 +466,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 126 pool cards are in the catalog because an earlier format needed them.
+These 127 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -488,6 +487,7 @@ been played beside.
 - `Brain Freeze`
 - `Breeding Pool`
 - `Candelabra of Tawnos`
+- `Cecil, Dark Knight`
 - `Chain Lightning`
 - `Channel`
 - `Counterspell`

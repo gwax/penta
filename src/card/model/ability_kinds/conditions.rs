@@ -94,6 +94,11 @@ pub enum TriggerConditionDef {
     /// switches on and off as life moves rather than being fixed when the
     /// permanent arrived.
     ControllerLifeAtMost(u16),
+    /// Whether the ability's controller is at or below half their starting
+    /// life total. Printed that way rather than as a number, so it is read
+    /// from the format rather than fixed at ten -- the fateful-hour cards
+    /// print the literal instead and use [`Self::ControllerLifeAtMost`].
+    ControllerLifeAtMostHalfStartingLife,
     /// Whether this ability's controller controls a creature whose power is
     /// at least every other creature's, which is what "the greatest power or
     /// tied for the greatest power" asks. False when no creature is on the

@@ -408,6 +408,7 @@ fn validate_trigger_condition_shape(
         | TriggerConditionDef::SourceIsTapped
         | TriggerConditionDef::SourceIsUntapped
         | TriggerConditionDef::ControllerLifeAtMost(_)
+        | TriggerConditionDef::ControllerLifeAtMostHalfStartingLife
         | TriggerConditionDef::ControlsGreatestPowerCreature
         | TriggerConditionDef::SourceCounters { .. } => Ok(()),
     }
