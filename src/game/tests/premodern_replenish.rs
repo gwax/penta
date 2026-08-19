@@ -348,3 +348,55 @@ fn a_faded_parallax_wave_sacrifices_itself() {
         "the upkeep it cannot pay is the one it goes on",
     );
 }
+
+/// Decree of Silence answers each opponent spell and marks itself for it,
+/// and the third mark is the one it goes on.
+#[test]
+fn decree_of_silence_counters_until_its_third_depletion_counter() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::DECREE_OF_SILENCE, PlayerId::One));
+    let decree = game.battlefield[0].card.id;
+
+    let cast_a_bolt = |game: &mut Game, id: u32| {
+        let bolt = card(id, cards::LIGHTNING_BOLT, PlayerId::Two);
+        let bolt_id = bolt.id;
+        game.players[PlayerId::Two.index()].hand.push(bolt);
+        game.players[PlayerId::Two.index()].mana_pool.red = 1;
+        game.priority = PlayerId::Two;
+        game.apply(
+            PlayerId::Two,
+            cast_action(bolt_id, vec![Target::Player(PlayerId::One)], Vec::new(), 0),
+        )
+        .expect("one red casts it");
+        pass_until_decision(game);
+        drain_pending(game);
+    };
+
+    for (index, expected) in [(0_u32, 1_u16), (1, 2)] {
+        cast_a_bolt(&mut game, 10_010 + index);
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == decree)
+                .map(|permanent| permanent.counters(CounterKind::Depletion)),
+            Some(expected),
+            "the spell is answered and the enchantment marked",
+        );
+        assert_eq!(game.players[PlayerId::One.index()].life, 20, "no damage got through");
+    }
+
+    // The third counter is the one it goes on.
+    cast_a_bolt(&mut game, 10_012);
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != decree),
+        "three depletion counters is as many as it gets",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        20,
+        "and the third spell was still countered",
+    );
+}

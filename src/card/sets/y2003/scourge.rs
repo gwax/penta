@@ -5,7 +5,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, EffectDef, EffectPaymentCostDef,
     EffectPaymentDef, EffectRecipientDef, ObjectPredicateDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, StackTargetKindDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    ComparisonDef, CounterKind, PlayerRelation, PlayerSetDef, StackTargetKindDef,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
     cards,
 };
 use crate::ids::TargetIndex;
@@ -127,6 +128,67 @@ pub(in crate::card::sets) static BRAIN_FREEZE: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Counter the spell, mark the enchantment, and go when the third mark
+/// lands. The sacrifice is checked in the same resolution rather than as a
+/// state trigger, which is what the printed clause says.
+static DECREE_OF_SILENCE_ANSWER: EffectDef = EffectDef::Sequence(&[
+    EffectDef::Counter {
+        object: EffectRecipientDef::TriggeringObject,
+        zone: ZoneKind::Graveyard,
+    },
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::Depletion,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::IfCondition {
+        condition: &TriggerConditionDef::SourceCounters {
+            kind: CounterKind::Depletion,
+            comparison: ComparisonDef::GreaterOrEqual,
+            amount: 3,
+        },
+        then: &EffectDef::Sacrifice {
+            object: EffectRecipientDef::Source,
+        },
+    },
+]);
+
+static AN_OPPONENTS_SPELL: ObjectPredicateDef =
+    ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent);
+
+// SCG 32 — Decree of Silence
+pub(in crate::card::sets) static DECREE_OF_SILENCE: CardRecord = CardRecord::new(
+    cards::DECREE_OF_SILENCE,
+    "Decree of Silence",
+    CardArt::new("064fcd41-176d-460d-8e63-8437cfa9b4b1", "Adam Rex"),
+    CardSet::Scourge,
+    // Eight mana is not what the deck pays: it cycles this to counter one
+    // spell, and Replenish puts it onto the battlefield afterwards.
+    CardRules::new_enchantment(mana_cost!("{6}{U}{U}")).with_abilities(&[
+        AbilityDef::triggered(
+            "Whenever an opponent casts a spell, counter that spell and put a depletion counter on this enchantment. If there are three or more depletion counters on this enchantment, sacrifice it.",
+            TriggerEventDef::SpellCast(AN_OPPONENTS_SPELL),
+            DECREE_OF_SILENCE_ANSWER,
+        ),
+        abilities::cycling(
+            "Cycling {4}{U}{U} ({4}{U}{U}, Discard this card: Draw a card.)",
+            mana_cost!("{4}{U}{U}"),
+        ),
+        AbilityDef::triggered_with_targets(
+            "When you cycle this card, you may counter target spell.",
+            TriggerEventDef::Cycled,
+            &[AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)],
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::Counter {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    zone: ZoneKind::Graveyard,
+                },
+            },
+        ),
+    ]),
+);
+
 static STIFLE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::StackObject {
         object: ObjectPredicateDef::Any,
@@ -238,6 +300,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DECREE_OF_JUSTICE,
     &ETERNAL_DRAGON,
     &BRAIN_FREEZE,
+    &DECREE_OF_SILENCE,
     &STIFLE,
     &GOBLIN_WARCHIEF,
     &SIEGE_GANG_COMMANDER,

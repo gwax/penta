@@ -52,6 +52,10 @@ pub enum CounterKind {
     /// Powder Keg's counter, which is both its timer and its dial: how many
     /// have accumulated is exactly the mana value it goes off on.
     Fuse,
+    /// Decree of Silence's counter, one per spell it has answered. Three is
+    /// as many as it gets: the counters are the enchantment's own clock
+    /// rather than a resource anyone spends.
+    Depletion,
     /// A fading permanent's counter. Fading counts down rather than up, and
     /// the permanent is sacrificed on the upkeep it cannot pay one, so a
     /// card with fading N lasts N of its controller's turns.
@@ -59,7 +63,7 @@ pub enum CounterKind {
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 23;
+    pub const COUNT: usize = 24;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -85,6 +89,7 @@ impl CounterKind {
         Self::Mining,
         Self::Fuse,
         Self::Fade,
+        Self::Depletion,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -115,7 +120,8 @@ impl CounterKind {
             | Self::Storage
             | Self::Mining
             | Self::Fuse
-            | Self::Fade => (0, 0),
+            | Self::Fade
+            | Self::Depletion => (0, 0),
         }
     }
 
@@ -145,6 +151,7 @@ impl CounterKind {
             Self::Mining => 20,
             Self::Fuse => 21,
             Self::Fade => 22,
+            Self::Depletion => 23,
         }
     }
 
@@ -174,6 +181,7 @@ impl CounterKind {
             Self::Mining => "mining",
             Self::Fuse => "fuse",
             Self::Fade => "fade",
+            Self::Depletion => "depletion",
         }
     }
 }
