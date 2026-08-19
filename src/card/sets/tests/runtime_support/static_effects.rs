@@ -38,6 +38,9 @@ pub(in super::super) fn shared_static_non_apply_effect(
                     crate::card::PlayerRelation::Any
                         | crate::card::PlayerRelation::You
                         | crate::card::PlayerRelation::Opponent
+                        // "Except during its controller's turn", which the
+                        // relation matcher answers off the active player.
+                        | crate::card::PlayerRelation::NonactivePlayer
                 )
         }
         // Read off a permanent rather than the card in hand, so the spell

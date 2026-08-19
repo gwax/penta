@@ -5,8 +5,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, CardArt, CardRules, CardSet, ComparisonDef, DiscardSelectionDef, EffectDef,
     EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    PlayerSetDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement, cards,
+    PlayerSetDef, ResolvedEffectDurationDef, SpellAdditionalCostDef, SpendModeDef,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -67,6 +67,40 @@ static ATOG_PUMP: EffectDef = EffectDef::Apply {
     effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
     duration: ResolvedEffectDurationDef::UntilEndOfTurn,
 };
+
+/// X cards from your own graveyard, exiled as the spell is cast. The count is
+/// the X it is cast for, so a big Scrying costs the graveyard that fed it.
+static EXILE_X_FROM_YOUR_GRAVEYARD: SpellAdditionalCostDef =
+    SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Graveyard, 0)
+        .counted_in_x()
+        .spent(SpendModeDef::Exile);
+
+// ODY 161 — Skeletal Scrying
+pub(in crate::card::sets) static SKELETAL_SCRYING: CardRecord = CardRecord::new(
+    cards::SKELETAL_SCRYING,
+    "Skeletal Scrying",
+    CardArt::new("ee49bae4-6b1a-4c3f-8b2e-1d5a7c9e3f2b", "Bob Petillo"),
+    CardSet::Odyssey,
+    // Cards for life, paid for with the graveyard: a control deck that has
+    // already spent its removal has the fuel and can afford the life.
+    CardRules::new_instant(mana_cost!("{X}{B}")).with_ability(
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, exile X cards from your graveyard.\nYou draw X cards and you lose X life.",
+            &[],
+            EXILE_X_FROM_YOUR_GRAVEYARD,
+            EffectDef::Sequence(&[
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::ChosenX,
+                },
+                EffectDef::LoseLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::ChosenX,
+                },
+            ]),
+        ),
+    ),
+);
 
 // ODY 292 — Psychatog
 pub(in crate::card::sets) static PSYCHATOG: CardRecord = CardRecord::new(
@@ -190,6 +224,7 @@ pub(in crate::card::sets) static CEPHALID_COLISEUM: CardRecord = CardRecord::new
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STANDSTILL,
     &UPHEAVAL,
+    &SKELETAL_SCRYING,
     &PSYCHATOG,
     &BARBARIAN_RING,
     &CEPHALID_COLISEUM,

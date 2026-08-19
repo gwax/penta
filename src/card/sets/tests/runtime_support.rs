@@ -443,7 +443,9 @@ fn shared_spell_additional_cost(cost: Option<SpellAdditionalCostDef>) -> bool {
     let Some(cost) = cost else {
         return true;
     };
-    cost.count >= 1
+    // A cost counted in X has no printed number to check; what makes it
+    // payable is the X the spell is cast for.
+    (cost.count_is_x || cost.count >= 1)
         && matches!(
             cost.zone,
             ZoneKind::Battlefield | ZoneKind::Graveyard | ZoneKind::Hand

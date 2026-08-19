@@ -657,6 +657,7 @@ mod populate;
 mod populate_cards;
 mod power_blocking;
 mod power_blocking_restrictions;
+mod premodern_bw;
 mod premodern_cards;
 mod premodern_cycling;
 mod premodern_free_spells;

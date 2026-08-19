@@ -50,6 +50,24 @@ pub(in crate::card::sets) static ENGINEERED_PLAGUE: CardRecord = CardRecord::new
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&ENGINEERED_PLAGUE];
+// ULG 125 — Defense Grid
+pub(in crate::card::sets) static DEFENSE_GRID: CardRecord = CardRecord::new(
+    cards::DEFENSE_GRID,
+    "Defense Grid",
+    CardArt::new("5c2592c9-3f8c-4b7e-9e0a-4a6f2c1d8b3e", "Mark Tedin"),
+    CardSet::UrzasLegacy,
+    // "Except during its controller's turn" is the nonactive player: the tax
+    // lands on the instant held up and not on the sorcery cast on time.
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::static_ability(
+        "Each spell costs {3} more to cast except during its controller's turn.",
+        EffectDef::IncreaseMatchingSpellCostBy {
+            spell: ObjectPredicateDef::Any,
+            caster: PlayerRelation::NonactivePlayer,
+            amount: mana_cost!("{3}"),
+        },
+    )),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&ENGINEERED_PLAGUE, &DEFENSE_GRID];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
