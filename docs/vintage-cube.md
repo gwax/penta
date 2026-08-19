@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 127 are cataloged and 407 are not
+- 534 cards in the pool, of which 128 are cataloged and 406 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -83,7 +83,7 @@ lands are legal in every format and are not listed.
 - `Winds of Abandon`
 - `Witch Enchanter`
 
-### Blue (56)
+### Blue (55)
 
 - `Abhorrent Oculus`
 - `Astrologian's Planisphere`
@@ -122,7 +122,6 @@ lands are legal in every format and are not listed.
 - `Phyrexian Metamorph`
 - `Plagon, Lord of the Beach`
 - `Ponder`
-- `Preordain`
 - `Proft's Eidetic Memory`
 - `Quantum Riddler`
 - `Remand`
@@ -466,7 +465,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 127 pool cards are in the catalog because an earlier format needed them.
+These 128 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -546,6 +545,7 @@ been played beside.
 - `Parallax Wave`
 - `Plateau`
 - `Polluted Delta`
+- `Preordain`
 - `Primeval Titan`
 - `Pyrokinesis`
 - `Raffine's Tower`

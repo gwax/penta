@@ -815,3 +815,134 @@ fn force_of_vigor_destroys_both_kinds_at_once() {
         "the green card it spent was exiled, not discarded",
     );
 }
+
+/// Scry 2 with both cards kept is an arrangement, not just a filter: the two
+/// go back on top in the order they were chosen, and the draw that follows
+/// takes whichever was put there first.
+#[test]
+fn preordain_scries_two_and_lets_you_order_what_stays() {
+    let mut game = ready_game();
+    game.players[0].library.clear();
+    stack_library(
+        &mut game,
+        &[
+            (60_000, cards::LIGHTNING_BOLT),
+            (60_001, cards::SERRA_ANGEL),
+            (60_002, cards::SAVANNAH_LIONS),
+        ],
+    );
+    let preordain = card(60_003, cards::PREORDAIN, PlayerId::One);
+    let preordain_id = preordain.id;
+    game.players[0].hand.push(preordain);
+    game.players[0].mana_pool.blue = 1;
+    game.apply(
+        PlayerId::One,
+        cast_action(preordain_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("it is cast");
+    pass_priority_pair(&mut game);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the scry looks at two");
+    assert_eq!(
+        decision
+            .options
+            .iter()
+            .map(|option| option.label.clone())
+            .collect::<Vec<_>>(),
+        vec!["Lightning Bolt".to_owned(), "Serra Angel".to_owned()],
+        "only the top two are looked at",
+    );
+
+    // Keep both, naming the Angel first so it ends up on top of the Bolt.
+    let angel = decision
+        .options
+        .iter()
+        .find(|option| option.label == "Serra Angel")
+        .expect("offered")
+        .id;
+    let bolt = decision
+        .options
+        .iter()
+        .find(|option| option.label == "Lightning Bolt")
+        .expect("offered")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![angel, bolt],
+        },
+    )
+    .expect("both may stay on top");
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "the draw takes the card put on top first",
+    );
+    assert_eq!(
+        game.players[0]
+            .library
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::SAVANNAH_LIONS, cards::LIGHTNING_BOLT],
+        "and the other stays above what was never looked at",
+    );
+}
+
+/// Sending both to the bottom is the other end of the same choice.
+#[test]
+fn preordain_can_bury_both_cards_it_looked_at() {
+    let mut game = ready_game();
+    game.players[0].library.clear();
+    stack_library(
+        &mut game,
+        &[
+            (60_100, cards::LIGHTNING_BOLT),
+            (60_101, cards::SERRA_ANGEL),
+            (60_102, cards::SAVANNAH_LIONS),
+        ],
+    );
+    let preordain = card(60_103, cards::PREORDAIN, PlayerId::One);
+    let preordain_id = preordain.id;
+    game.players[0].hand.push(preordain);
+    game.players[0].mana_pool.blue = 1;
+    game.apply(
+        PlayerId::One,
+        cast_action(preordain_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("it is cast");
+    pass_priority_pair(&mut game);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the scry looks at two");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: Vec::new(),
+        },
+    )
+    .expect("keeping nothing is allowed");
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::SAVANNAH_LIONS),
+        "the draw reaches past both buried cards",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        2,
+        "and both are still in the library, at the bottom",
+    );
+}

@@ -44,3 +44,4 @@ pub const NETTLECYST: CardDefinitionId = CardDefinitionId(2126);
 pub const FORCE_OF_VIGOR: CardDefinitionId = CardDefinitionId(2127);
 pub const PRIMEVAL_TITAN: CardDefinitionId = CardDefinitionId(2128);
 pub const CECIL_DARK_KNIGHT: CardDefinitionId = CardDefinitionId(2129);
+pub const PREORDAIN: CardDefinitionId = CardDefinitionId(2130);
