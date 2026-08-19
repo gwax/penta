@@ -650,6 +650,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         EffectDef::Choose(choice) => collect_ability_grants(*choice.then, grants),
         EffectDef::RevealAtRandomFromHand { then, .. }
         | EffectDef::ChooseCardName { then, .. }
+        | EffectDef::SearchZone { then: Some(then), .. }
         | EffectDef::BindMatching { then, .. } => {
             collect_ability_grants(*then, grants);
         }
@@ -828,6 +829,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         EffectDef::Choose(choice) => ability_grant_sites(*choice.then),
         EffectDef::RevealAtRandomFromHand { then, .. }
         | EffectDef::ChooseCardName { then, .. }
+        | EffectDef::SearchZone { then: Some(then), .. }
         | EffectDef::BindMatching { then, .. } => {
             ability_grant_sites(*then)
         }

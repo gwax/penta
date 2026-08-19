@@ -919,6 +919,7 @@ mod circle_of_protection {
         game.resolve_effect_def(
             ScopedEffect::primary(EffectDef::Choose(ChooseDef {
                 binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+                unchosen: None,
                 chooser: PlayerRefDef::EffectController,
                 candidates: ObjectSetDef::Query(ObjectQueryDef::new(
                     ObjectPredicateDef::Color(ManaColor::Red),

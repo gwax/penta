@@ -869,6 +869,7 @@ fn a_thoughtseize_shaped_sequence_loses_life_after_the_generic_hand_choice() {
     };
     static CHOOSE_NONLAND: EffectDef = EffectDef::Choose(ChooseDef {
         binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        unchosen: None,
         chooser: PlayerRefDef::EffectController,
         candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
             ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),

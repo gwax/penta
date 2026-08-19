@@ -15,6 +15,7 @@ fn non_targeting_choice_references_are_lexically_scoped() {
 
     let rebound: &'static EffectDef = Box::leak(Box::new(EffectDef::Choose(ChooseDef {
         binding: ObjectChoiceBindingDef::Object(binding),
+        unchosen: None,
         chooser: PlayerRefDef::EffectController,
         candidates: ObjectSetDef::Query(ObjectQueryDef::new(
             ObjectPredicateDef::Any,
@@ -28,6 +29,7 @@ fn non_targeting_choice_references_are_lexically_scoped() {
     })));
     let nested_rebinding = EffectDef::Choose(ChooseDef {
         binding: ObjectChoiceBindingDef::Object(binding),
+        unchosen: None,
         chooser: PlayerRefDef::EffectController,
         candidates: ObjectSetDef::Query(ObjectQueryDef::new(
             ObjectPredicateDef::Any,
@@ -48,6 +50,7 @@ fn non_targeting_choice_references_are_lexically_scoped() {
         &[],
         EffectDef::Choose(ChooseDef {
             binding: ObjectChoiceBindingDef::Object(binding),
+            unchosen: None,
             chooser: PlayerRefDef::EffectController,
             candidates: ObjectSetDef::Query(ObjectQueryDef::new(
                 ObjectPredicateDef::Any,
@@ -83,6 +86,7 @@ fn non_targeting_choice_references_are_lexically_scoped() {
         &[],
         EffectDef::Choose(ChooseDef {
             binding: ObjectChoiceBindingDef::Object(binding),
+            unchosen: None,
             chooser: PlayerRefDef::EffectController,
             candidates: ObjectSetDef::Query(ObjectQueryDef::new(
                 ObjectPredicateDef::Any,
@@ -113,6 +117,7 @@ fn non_targeting_choice_references_are_lexically_scoped() {
     let choose_set = |then: &'static EffectDef| {
         EffectDef::Choose(ChooseDef {
             binding: ObjectChoiceBindingDef::Objects(set_binding),
+            unchosen: None,
             chooser: PlayerRefDef::EffectController,
             candidates: ObjectSetDef::Query(ObjectQueryDef::new(
                 ObjectPredicateDef::Any,
@@ -156,6 +161,7 @@ fn generic_object_choices_validate_their_cardinality() {
     for (binding, minimum, maximum) in cases {
         let effect = EffectDef::Choose(ChooseDef {
             binding,
+            unchosen: None,
             chooser: PlayerRefDef::EffectController,
             candidates: ObjectSetDef::Query(ObjectQueryDef::new(
                 ObjectPredicateDef::Any,

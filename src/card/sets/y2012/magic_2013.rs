@@ -1653,6 +1653,8 @@ pub(in crate::card::sets) static DIABOLIC_REVELATION: CardRecord = CardRecord::n
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
+            binding: None,
+            then: None,
         },
     )),
 );
@@ -1737,6 +1739,7 @@ pub(in crate::card::sets) static DURESS: CardRecord = CardRecord::new(
             },
             EffectDef::Choose(ChooseDef {
                 binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+                unchosen: None,
                 chooser: PlayerRefDef::EffectController,
                 candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
                     ObjectPredicateDef::All(&[
@@ -1902,6 +1905,8 @@ pub(in crate::card::sets) static LILIANAS_SHADE: CardRecord = CardRecord::new(
                     placement: ZonePlacement::Top,
                     shuffle: true,
                     enters_tapped: false,
+                    binding: None,
+                    then: None,
                 },
             },
         ),
@@ -3034,6 +3039,8 @@ pub(in crate::card::sets) static BOUNDLESS_REALMS: CardRecord = CardRecord::new(
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: true,
+            binding: None,
+            then: None,
         },
     )),
 );
@@ -3186,6 +3193,8 @@ pub(in crate::card::sets) static FARSEEK: CardRecord = CardRecord::new(
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: true,
+            binding: None,
+            then: None,
         },
     )),
 );
@@ -3329,6 +3338,8 @@ pub(in crate::card::sets) static MWONVULI_BEAST_TRACKER: CardRecord = CardRecord
                 placement: ZonePlacement::Top,
                 shuffle: true,
                 enters_tapped: false,
+                binding: None,
+                then: None,
             },
         ),
     ),
@@ -3429,6 +3440,8 @@ pub(in crate::card::sets) static RANGERS_PATH: CardRecord = CardRecord::new(
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: true,
+            binding: None,
+            then: None,
         },
     )),
 );

@@ -1169,6 +1169,8 @@ pub(in crate::card::sets) static DIABOLIC_TUTOR: CardRecord = CardRecord::new(
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
+            binding: None,
+            then: None,
         },
     )),
 );
@@ -1242,6 +1244,7 @@ static LIFEBANE_EFFECTS: [EffectDef; 2] = [
     },
     EffectDef::Choose(ChooseDef {
         binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        unchosen: None,
         chooser: PlayerRefDef::EffectController,
         candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
             ObjectPredicateDef::All(&[
@@ -2397,6 +2400,8 @@ pub(in crate::card::sets) static LAY_OF_THE_LAND: CardRecord = CardRecord::new(
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
+            binding: None,
+            then: None,
         },
     )),
 );

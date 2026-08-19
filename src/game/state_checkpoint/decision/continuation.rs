@@ -33,6 +33,8 @@ fn parse_continuation(
             reveal,
             shuffle,
             enters_tapped,
+            binding,
+            follow_up,
         } => DecisionContinuation::SearchZone {
             controller: player(*controller)?,
             source: parse_zone_kind(*source),
@@ -41,6 +43,28 @@ fn parse_continuation(
             reveal: *reveal,
             shuffle: *shuffle,
             enters_tapped: *enters_tapped,
+            binding: binding
+                .map(|index| {
+                    u8::try_from(index)
+                        .ok()
+                        .filter(|index| {
+                            usize::from(*index) < crate::ids::ObjectSetBindingIndex::COUNT
+                        })
+                        .map(crate::ids::ObjectSetBindingIndex::new)
+                        .ok_or("search binding is out of range")
+                })
+                .transpose()?,
+            follow_up: follow_up
+                .as_ref()
+                .map(|snapshot| {
+                    let continuation = parse_effect_continuation(snapshot, game)?;
+                    Ok::<_, String>(Box::new(super::super::SearchFollowUp {
+                        object: *continuation.object,
+                        context: continuation.context,
+                        effect: continuation.effect,
+                    }))
+                })
+                .transpose()?,
         },
         DecisionContinuationSnapshot::ChooseCards {
             controller,

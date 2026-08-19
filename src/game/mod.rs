@@ -68,6 +68,7 @@ mod decision_permanent_choice;
 mod decision_piles;
 mod decision_resolution;
 mod decision_search;
+mod decision_search_resolution;
 mod decision_state;
 mod declarative_effects;
 mod effect_support;
@@ -145,7 +146,7 @@ use decision_state::{
     ApplicableBeginTurnReplacement, BalanceAction, BalancePhase, BalanceTask, CounteredSpellZone,
     DecisionContinuation, DeferredBeginTurnEffect, DiscardFollowUp, FORK_COPY_COLOR,
     PendingDecision, Pregame, ResolvedEffectPayment, SacrificeDeclined, SacrificeFollowup,
-    ZoneMoveCause,
+    SearchFollowUp, ZoneMoveCause,
 };
 use mana_state::{
     AppliedStackEffect, FlexibleManaSource, ManaAbilityActivation, ManaPaymentPurpose,

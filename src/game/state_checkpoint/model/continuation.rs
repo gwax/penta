@@ -43,6 +43,14 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         /// no flag and reconstructs as an untapped arrival.
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         enters_tapped: bool,
+        /// Where the results are saved for the follow-up. Absent from a
+        /// payload written before any search had one.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        binding: Option<usize>,
+        /// What the search runs once it is answered, relocated in the
+        /// catalog rather than carried as executable state.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        follow_up: Option<EffectContinuationSnapshot>,
     },
     ChooseCards {
         controller: usize,

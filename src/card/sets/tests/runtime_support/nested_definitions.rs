@@ -319,6 +319,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         }
         EffectDef::RevealAtRandomFromHand { then, .. }
         | EffectDef::ChooseCardName { then, .. }
+        | EffectDef::SearchZone { then: Some(then), .. }
         | EffectDef::BindMatching { then, .. } => {
             assert_nested_definition_abilities(card_name, *then);
         }

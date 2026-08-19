@@ -162,6 +162,7 @@ pub(in crate::card::sets) static KROSAN_RECLAMATION: CardRecord = CardRecord::ne
             &RECLAMATION_TARGET,
             EffectDef::Choose(ChooseDef {
                 binding: ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
+                unchosen: None,
                 chooser: PlayerRefDef::EffectController,
                 candidates: ObjectSetDef::Query(RECLAMATION_CANDIDATES),
                 exclude: None,

@@ -248,6 +248,8 @@ fn decision_effects_suspend_inside_shared_stack_sequences() {
         placement: ZonePlacement::Top,
         shuffle: true,
         enters_tapped: false,
+        binding: None,
+        then: None,
     };
     static SEQUENCE_WITH_EARLY_SEARCH: [EffectDef; 2] = [SEARCH, UNTAP];
     static SEQUENCE_WITH_TERMINAL_SEARCH: [EffectDef; 2] = [TAP, SEARCH];
@@ -320,6 +322,8 @@ fn zone_search_boundary_rejects_ambiguous_or_incoherent_shapes() {
         placement: ZonePlacement::Top,
         shuffle,
         enters_tapped: false,
+        binding: None,
+        then: None,
     };
 
     assert!(shared_stack_effect(search(

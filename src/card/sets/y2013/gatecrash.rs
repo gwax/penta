@@ -736,6 +736,7 @@ static KEYMASTER_ROGUE_BOUNCE: EffectDef = EffectDef::MoveToZone {
 
 static KEYMASTER_ROGUE_CHOICE: EffectDef = EffectDef::Choose(ChooseDef {
     binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+    unchosen: None,
     chooser: PlayerRefDef::EffectController,
     candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
         ObjectPredicateDef::HasType(CardType::Creature),
@@ -3218,6 +3219,8 @@ static FRENZIED_TILLING_PROGRAM: [EffectDef; 2] = [
         placement: ZonePlacement::Top,
         shuffle: true,
         enters_tapped: true,
+        binding: None,
+        then: None,
     },
 ];
 

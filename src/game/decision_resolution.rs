@@ -1,3 +1,4 @@
+use super::decision_search_resolution::SearchResolution;
 use super::{
     BalanceAction, BasicLandType, BasicLandTypeChange, BattlefieldArrival,
     BattlefieldExitCompletion, CardRuntime, CounterKind, DecisionContinuation, DecisionOption,
@@ -379,7 +380,7 @@ impl Game {
                 }
             }
             DecisionContinuation::ChooseForEffect {
-                definition: _,
+                definition,
                 binding,
                 object,
                 mut context,
@@ -394,7 +395,20 @@ impl Game {
                     .filter_map(|option| usize::try_from(option.id).ok())
                     .filter_map(|index| candidates.get(index))
                     .copied()
-                    .collect();
+                    .collect::<Vec<_>>();
+                // "The rest" is whatever was offered and not taken, bound
+                // before the chosen half so the two are one partition of the
+                // same candidates.
+                if let crate::card::EffectDef::Choose(choice) = definition.effect
+                    && let Some(unchosen) = choice.unchosen
+                {
+                    let rest = candidates
+                        .iter()
+                        .filter(|candidate| !selected.contains(candidate))
+                        .copied()
+                        .collect();
+                    context.bind_object_group(unchosen, rest);
+                }
                 Self::bind_effect_choice(&mut context, binding, selected);
                 self.resolve_nested_effect_before_later(effect, &object, context);
             }
@@ -546,105 +560,25 @@ impl Game {
                 reveal,
                 shuffle,
                 enters_tapped,
+                binding,
+                follow_up,
             } => {
-                let selected = options
-                    .iter()
-                    .filter_map(|selected| {
-                        pending
-                            .observation
-                            .options
-                            .iter()
-                            .find(|option| option.id == *selected)
-                            .and_then(|option| option.card)
-                    })
-                    .collect::<Vec<_>>();
-                if reveal {
-                    self.events
-                        .extend(selected.iter().map(|(card, definition)| {
-                            GameEvent::CardRevealed {
-                                player,
-                                card: *card,
-                                definition: *definition,
-                            }
-                        }));
-                }
-
-                // Cards put into a library with an explicit placement belong
-                // there only after the shuffle. A card excluded from its own
-                // library's shuffle never changed zones, so preserve its
-                // object identity; cards arriving from another zone do make
-                // the ordinary zone change before being held aside.
-                if destination == ZoneKind::Library {
-                    let mut held = Vec::new();
-                    if source == ZoneKind::Library {
-                        held.extend(selected.iter().filter_map(|(card, _)| {
-                            remove_card(&mut self.players[player.index()].library, *card)
-                                .map(|card| (card.owner, card))
-                        }));
-                    } else {
-                        for (card, _) in selected {
-                            let Some((moved, actual_destination)) = self
-                                .move_card_from_nonbattlefield_zone(
-                                    card,
-                                    source,
-                                    destination,
-                                    ZoneMoveCause::Effect { controller },
-                                    None,
-                                )
-                            else {
-                                continue;
-                            };
-                            if actual_destination == ZoneKind::Library
-                                && let Some(card) = remove_card(
-                                    &mut self.players[moved.owner.index()].library,
-                                    moved.id,
-                                )
-                            {
-                                held.push((moved.owner, card));
-                            }
-                        }
-                    }
-                    if shuffle {
-                        self.rng.shuffle(&mut self.players[player.index()].library);
-                    }
-                    for (owner, card) in held {
-                        match placement {
-                            ZonePlacement::Top => {
-                                self.players[owner.index()].library.push(card);
-                            }
-                            ZonePlacement::Bottom => {
-                                self.players[owner.index()].library.insert(0, card);
-                            }
-                        }
-                    }
-                    return;
-                }
-
-                if source != destination {
-                    for (card, _) in selected {
-                        let _ = self.move_card_from_nonbattlefield_zone(
-                            card,
-                            source,
-                            destination,
-                            ZoneMoveCause::Effect { controller },
-                            (destination == ZoneKind::Battlefield).then(|| {
-                                if enters_tapped {
-                                    BattlefieldArrival::tapped_under(player)
-                                } else {
-                                    BattlefieldArrival::under(player)
-                                }
-                            }),
-                        );
-                    }
-                }
-                if shuffle {
-                    // Putting a searched-for permanent onto the battlefield can
-                    // suspend for an as-enters choice. Finish that prospective
-                    // entry before carrying out the search's subsequent
-                    // shuffle, but still precede any enclosing effect tail.
-                    self.pending_procedures
-                        .push_front(PendingProcedure::ShuffleLibrary { player });
-                }
+                let selected = selected_cards(&pending.observation.options, options);
+                self.resolve_completed_search(
+                    player,
+                    &selected,
+                    SearchResolution {
+                        controller,
+                        source,
+                        destination,
+                        placement,
+                        reveal,
+                        shuffle,
+                        enters_tapped,
+                        binding,
+                        follow_up,
+                    },
+                );
             }
             DecisionContinuation::ChooseCards {
                 controller,
@@ -986,4 +920,21 @@ impl Game {
         self.resolve_effect_def(effect, object, context);
         self.pending_procedures.append(&mut later_procedures);
     }
+}
+
+/// The cards an answered search selected, in the order the options offered
+/// them.
+fn selected_cards(
+    offered: &[super::DecisionOption],
+    options: &[u32],
+) -> Vec<(super::GameObjectId, super::CardDefinitionId)> {
+    options
+        .iter()
+        .filter_map(|selected| {
+            offered
+                .iter()
+                .find(|option| option.id == *selected)
+                .and_then(|option| option.card)
+        })
+        .collect()
 }

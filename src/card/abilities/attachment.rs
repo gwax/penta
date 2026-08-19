@@ -76,6 +76,7 @@ static SOULBOND_PAIR: EffectDef = EffectDef::PairWithSource {
 /// number to choose, which is how "you may" is expressed.
 static SOULBOND_CHOICE: EffectDef = EffectDef::Choose(ChooseDef {
     binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+    unchosen: None,
     chooser: PlayerRefDef::EffectController,
     candidates: SOULBOND_PARTNER,
     exclude: Some(ObjectRefDef::Source),

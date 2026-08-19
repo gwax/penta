@@ -87,6 +87,7 @@ static A_CARD_IN_YOUR_HAND: ObjectQueryDef = ObjectQueryDef::owned_by(
 
 static CITY_EXILE_AND_UNTAP: EffectDef = EffectDef::Choose(ChooseDef {
     binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+    unchosen: None,
     chooser: PlayerRefDef::EffectController,
     candidates: ObjectSetDef::Query(A_CARD_IN_YOUR_HAND),
     exclude: None,

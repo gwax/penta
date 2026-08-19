@@ -1269,6 +1269,8 @@ static INCREASING_AMBITION_ABILITIES: [AbilityDef; 2] = [
                 placement: ZonePlacement::Top,
                 shuffle: true,
                 enters_tapped: false,
+                binding: None,
+                then: None,
             },
         )
         .with_coverage(AbilityCoverageDef::partial(
@@ -2054,6 +2056,8 @@ static FETCH_A_BASIC_TAPPED: EffectDef = EffectDef::SearchZone {
     placement: ZonePlacement::Top,
     shuffle: true,
     enters_tapped: true,
+    binding: None,
+    then: None,
 };
 
 // DKA 111 — Dawntreader Elk

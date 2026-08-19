@@ -168,6 +168,8 @@ static GLACIERS_FETCH: EffectDef = EffectDef::Sequence(&[
         placement: ZonePlacement::Top,
         shuffle: true,
         enters_tapped: true,
+        binding: None,
+        then: None,
     },
     GLACIERS_RETURN,
 ]);

@@ -1,6 +1,7 @@
 use super::{
     CardChoiceSourceDef, CardInstance, DecisionContinuation, DecisionOption, DecisionPreference,
-    DecisionVisibility, DecisionZone, Game, GameObjectId, ObjectPredicateDef, PlayerId, ZoneKind,
+    DecisionVisibility, DecisionZone, EffectResolutionContext, Game, GameObjectId,
+    ObjectPredicateDef, PlayerId, ScopedEffect, SearchFollowUp, StackObject, ZoneKind,
     ZonePlacement,
 };
 
@@ -19,6 +20,8 @@ impl Game {
         destination: ZoneKind,
         placement: ZonePlacement,
         shuffle: bool,
+        binding: Option<crate::ids::ObjectSetBindingIndex>,
+        follow_up: Option<(StackObject, EffectResolutionContext, ScopedEffect)>,
         enters_tapped: bool,
         source: GameObjectId,
         controller: PlayerId,
@@ -87,6 +90,14 @@ impl Game {
                 reveal,
                 shuffle,
                 enters_tapped,
+                binding,
+                follow_up: follow_up.map(|(object, context, effect)| {
+                    Box::new(SearchFollowUp {
+                        object,
+                        context,
+                        effect,
+                    })
+                }),
             },
         );
     }

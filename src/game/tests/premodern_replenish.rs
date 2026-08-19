@@ -400,3 +400,102 @@ fn decree_of_silence_counters_until_its_third_depletion_counter() {
         "and the third spell was still countered",
     );
 }
+
+/// Intuition hands the opponent the choice: one of the three the search
+/// found goes to hand, and the other two go to the graveyard.
+#[test]
+fn intuition_gives_the_opponent_the_pick_of_three() {
+    let mut game = ready_game();
+    game.players[PlayerId::One.index()].library.clear();
+    for index in 0..3 {
+        game.players[PlayerId::One.index()].library.push(card(
+            10_010 + index,
+            cards::COUNTERSPELL,
+            PlayerId::One,
+        ));
+    }
+    game.players[PlayerId::One.index()]
+        .library
+        .push(card(10_020, cards::ISLAND, PlayerId::One));
+
+    let intuition = card(10_000, cards::INTUITION, PlayerId::One);
+    let intuition_id = intuition.id;
+    game.players[PlayerId::One.index()].hand.push(intuition);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.blue = 1;
+    pool.colorless = 2;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            intuition_id,
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("three mana casts it");
+
+    // The caster searches out three, and then the opponent picks.
+    pass_until_decision(&mut game);
+    let search = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the caster searches");
+    let three = search
+        .options
+        .iter()
+        .filter(|option| option.label == "Counterspell")
+        .take(3)
+        .map(|option| option.id)
+        .collect();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: search.id,
+            options: three,
+        },
+    )
+    .expect("three is what the card asks for");
+    pass_until_decision(&mut game);
+
+    let pick = game
+        .observe(PlayerId::Two)
+        .decision
+        .expect("the opponent chooses one of them");
+    assert_eq!(
+        pick.options.len(),
+        3,
+        "out of the three found, not out of the library",
+    );
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: pick.id,
+            options: vec![pick.options[0].id],
+        },
+    )
+    .expect("one of the three");
+    drain_pending(&mut game);
+
+    let player = &game.players[PlayerId::One.index()];
+    assert_eq!(
+        player
+            .hand
+            .iter()
+            .filter(|card| card.definition == cards::COUNTERSPELL)
+            .count(),
+        1,
+        "the one the opponent gave up",
+    );
+    assert_eq!(
+        player
+            .graveyard
+            .iter()
+            .filter(|card| card.definition == cards::COUNTERSPELL)
+            .count(),
+        2,
+        "and the rest went to the graveyard",
+    );
+    assert_eq!(player.library.len(), 1, "the Island stayed where it was");
+}

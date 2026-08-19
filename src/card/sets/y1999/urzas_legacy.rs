@@ -43,6 +43,7 @@ static SEARCH_DISCARD_THEN_UNTAP: EffectDef = EffectDef::Sequence(&[
     },
     EffectDef::Choose(ChooseDef {
         binding: ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
+        unchosen: None,
         chooser: PlayerRefDef::EffectController,
         candidates: ObjectSetDef::Query(ANY_LANDS),
         exclude: None,

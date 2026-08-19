@@ -502,6 +502,7 @@ static POPULATE_COPY: EffectDef = EffectDef::CreateTokenCopyOf {
 pub const fn populate() -> EffectDef {
     EffectDef::Choose(ChooseDef {
         binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        unchosen: None,
         chooser: PlayerRefDef::EffectController,
         candidates: ObjectSetDef::Query(ObjectQueryDef::controlled_by(
             ObjectPredicateDef::All(&POPULATE_CANDIDATE),
@@ -657,6 +658,8 @@ pub const fn typecycling(
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
+            binding: None,
+            then: None,
         },
     )
     .with_source_zones(&[ZoneKind::Hand])
@@ -692,6 +695,7 @@ pub const fn circle_of_protection(
         costs,
         EffectDef::Choose(ChooseDef {
             binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+            unchosen: None,
             chooser: PlayerRefDef::EffectController,
             candidates: ObjectSetDef::Query(ObjectQueryDef::new(
                 source,
@@ -727,6 +731,7 @@ pub const fn shield_against_a_chosen_source(
 ) -> EffectDef {
     EffectDef::Choose(ChooseDef {
         binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        unchosen: None,
         chooser: PlayerRefDef::EffectController,
         candidates: ObjectSetDef::Query(ObjectQueryDef::new(
             source,

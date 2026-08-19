@@ -32,6 +32,8 @@ pub(in crate::card::sets) static ENLIGHTENED_TUTOR: CardRecord = CardRecord::new
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
+            binding: None,
+            then: None,
         },
     )),
 );
@@ -164,6 +166,8 @@ pub(in crate::card::sets) static WORLDLY_TUTOR: CardRecord = CardRecord::new(
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
+            binding: None,
+            then: None,
         },
     )),
 );

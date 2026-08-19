@@ -186,6 +186,8 @@ fn continuation_snapshot(
             reveal,
             shuffle,
             enters_tapped,
+            binding,
+            follow_up,
         } => DecisionContinuationSnapshot::SearchZone {
             controller: controller.index(),
             source: zone_kind_snapshot(*source),
@@ -194,6 +196,21 @@ fn continuation_snapshot(
             reveal: *reveal,
             shuffle: *shuffle,
             enters_tapped: *enters_tapped,
+            binding: binding.map(crate::ids::ObjectSetBindingIndex::index),
+            follow_up: match follow_up {
+                // A search whose follow-up cannot be relocated is one this
+                // format cannot carry, rather than one written down without
+                // the half that matters.
+                Some(follow_up) => Some(effect_continuation_snapshot(
+                    game,
+                    viewer,
+                    &follow_up.object,
+                    &follow_up.context,
+                    follow_up.effect,
+                    visible_rebindings,
+                )?),
+                None => None,
+            },
         },
         DecisionContinuation::ChooseCards {
             controller,

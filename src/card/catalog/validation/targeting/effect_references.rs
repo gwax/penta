@@ -80,6 +80,13 @@ fn validate_effect_references(
                     scope.with_object_set(binding)?
                 }
             };
+            // Both halves of the partition are in scope for the follow-up:
+            // a clause that says what happens to the rest has to be able to
+            // name the rest.
+            let nested = match choice.unchosen {
+                Some(binding) => nested.with_object_set(binding)?,
+                None => nested,
+            };
             validate_effect_references(*choice.then, target_count, nested)
         }
         EffectDef::PayOr(payment) => {
@@ -175,8 +182,26 @@ fn validate_effect_references(
             }
             Ok(())
         }
+        EffectDef::SearchZone {
+            player,
+            binding,
+            then,
+            ..
+        } => {
+            validate_recipient_target_references(player, target_count, scope)?;
+            let Some(then) = then else {
+                return Ok(());
+            };
+            // The cards a search found are in scope for its own follow-up,
+            // the same way every other binding is scoped to the effect that
+            // introduces it.
+            let nested = match binding {
+                Some(binding) => scope.with_object_set(binding)?,
+                None => scope,
+            };
+            validate_effect_references(*then, target_count, nested)
+        }
         EffectDef::MillUntil { player, .. }
-        |         EffectDef::SearchZone { player, .. }
         | EffectDef::ChooseCards { player, .. }
         | EffectDef::TakeExtraTurn { player }
         | EffectDef::LookAtHand { player }

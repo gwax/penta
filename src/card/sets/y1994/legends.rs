@@ -2087,6 +2087,7 @@ pub(in crate::card::sets) static THE_ABYSS: CardRecord = CardRecord::new(
             },
             EffectDef::Choose(ChooseDef {
                 binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+                unchosen: None,
                 chooser: PlayerRefDef::EventPlayer,
                 candidates: ObjectSetDef::Query(ObjectQueryDef::controlled_by(
                     ObjectPredicateDef::All(&[
@@ -3724,6 +3725,8 @@ pub(in crate::card::sets) static UNTAMED_WILDS: CardRecord = CardRecord::new(
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
+            binding: None,
+            then: None,
         },
     )),
 );

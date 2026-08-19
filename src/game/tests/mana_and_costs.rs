@@ -338,6 +338,7 @@ fn nested_choice_payment_preserves_its_binding_and_outer_sequence_tail() {
     ));
     static CHOOSE_CREATURE: EffectDef = EffectDef::Choose(ChooseDef {
         binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        unchosen: None,
         chooser: PlayerRefDef::EffectController,
         candidates: ObjectSetDef::Query(ObjectQueryDef::controlled_by(
             ObjectPredicateDef::HasType(CardType::Creature),

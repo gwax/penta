@@ -3192,6 +3192,8 @@ pub(in crate::card::sets) static BORDERLAND_RANGER: CardRecord = CardRecord::new
                 placement: ZonePlacement::Top,
                 shuffle: true,
                 enters_tapped: false,
+                binding: None,
+                then: None,
             },
         },
     )),

@@ -270,6 +270,8 @@ impl Game {
                 placement,
                 shuffle,
                 enters_tapped,
+                binding,
+                then,
             } => {
                 let source = object.source.unwrap_or(object.id);
                 // Sized once, before the search is offered: "up to X, where X
@@ -290,6 +292,14 @@ impl Game {
                             destination,
                             placement,
                             shuffle,
+                            binding,
+                            then.map(|effect| {
+                                (
+                                    object.clone(),
+                                    context.clone(),
+                                    scoped.with_effect(*effect),
+                                )
+                            }),
                             enters_tapped,
                             source,
                             object.controller,

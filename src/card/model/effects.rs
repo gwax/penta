@@ -168,6 +168,11 @@ pub enum ObjectChoiceBindingDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ChooseDef {
     pub binding: ObjectChoiceBindingDef,
+    /// Where the candidates that were *not* chosen are saved, when the
+    /// printed clause goes on to say what happens to them. "Put that card
+    /// into your hand and the rest into your graveyard" names both halves of
+    /// one partition, so both have to be nameable.
+    pub unchosen: Option<ObjectSetBindingIndex>,
     pub chooser: PlayerRefDef,
     pub candidates: ObjectSetDef,
     pub exclude: Option<ObjectRefDef>,
@@ -765,6 +770,16 @@ pub enum EffectDef {
         /// Whether a permanent this search puts onto the battlefield arrives
         /// tapped.
         enters_tapped: bool,
+        /// Where the cards this search found are saved, for the follow-up
+        /// below to speak about. Scoped to `then` exactly the way every
+        /// other binding is scoped to the effect it introduces.
+        binding: Option<ObjectSetBindingIndex>,
+        /// What happens once the search is answered. Intuition's opponent
+        /// chooses among the three that were found, so the choice has to be
+        /// inside the search rather than after it: a sequence step following
+        /// a search runs from a context captured before the search was
+        /// answered, and would see nothing.
+        then: Option<&'static EffectDef>,
     },
     Sequence(&'static [EffectDef]),
     /// Randomizes each recipient player's library. Effects that shuffle

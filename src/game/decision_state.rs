@@ -186,6 +186,12 @@ pub(super) enum DecisionContinuation {
         /// top card does not: the rest of the library was never disturbed.
         shuffle: bool,
         enters_tapped: bool,
+        /// Where the cards found are saved for the follow-up below.
+        binding: Option<ObjectSetBindingIndex>,
+        /// What runs once the search is answered, with the found cards
+        /// bound. Boxed because most searches have none and the variant
+        /// would otherwise carry a stack object for all of them.
+        follow_up: Option<Box<SearchFollowUp>>,
     },
     ChooseCards {
         controller: PlayerId,
@@ -419,4 +425,12 @@ pub(super) enum DecisionContinuation {
         remaining: Vec<TriggerPlacementBatch>,
         candidates: Vec<Target>,
     },
+}
+
+/// What a search runs once it is answered, and the resolution it belongs to.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) struct SearchFollowUp {
+    pub(super) object: StackObject,
+    pub(super) context: EffectResolutionContext,
+    pub(super) effect: ScopedEffect,
 }

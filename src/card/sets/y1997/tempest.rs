@@ -7,11 +7,12 @@ use crate::card::{
     CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef,
     ChooseDef, EffectDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef,
     ReplacementEventDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
     abilities, cards,
 };
-use crate::ids::ObjectBindingIndex;
+use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 use crate::{TargetIndex, mana_cost};
 
 /// Everything at once, in one static effect: the abilities go in layer 6 and
@@ -76,6 +77,77 @@ pub(in crate::card::sets) static CHILL: CardRecord = CardRecord::new(
             spell: ObjectPredicateDef::Color(ManaColor::Red),
             caster: PlayerRelation::Any,
             amount: mana_cost!("{2}"),
+        },
+    )),
+);
+
+/// The one the opponent hands over, and the two they keep back. Both halves
+/// are one partition of the three that were found, which is why the choice
+/// names the rest as well as the pick.
+static INTUITION_DISTRIBUTE: EffectDef = EffectDef::Sequence(&[
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+        zone: ZoneKind::Hand,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        controller: None,
+    },
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+        zone: ZoneKind::Graveyard,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        controller: None,
+    },
+]);
+
+/// The opponent picks which of the three is worth giving up, out of the
+/// cards the search found rather than out of the library it found them in.
+static INTUITION_CHOICE: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+    unchosen: Some(ObjectSetBindingIndex::PRIMARY),
+    chooser: PlayerRefDef::Target(TargetIndex::PRIMARY),
+    candidates: ObjectSetDef::Binding(INTUITION_FOUND),
+    exclude: None,
+    minimum: 1,
+    maximum: 1,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &INTUITION_DISTRIBUTE,
+});
+
+/// The three the search turned up, kept apart from the partition bindings so
+/// that "the rest" is measured against them rather than against itself.
+static INTUITION_FOUND: ObjectSetBindingIndex = ObjectSetBindingIndex::new(1);
+
+static INTUITION_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+)];
+
+// TMP 70 — Intuition
+pub(in crate::card::sets) static INTUITION: CardRecord = CardRecord::new(
+    cards::INTUITION,
+    "Intuition",
+    CardArt::new("19eae4ac-10a4-4860-bcc2-0c9816f8bcdd", "April Lee"),
+    CardSet::Tempest,
+    // Naming three copies of one card makes the opponent's choice no choice
+    // at all; naming three different ones is how a graveyard deck fills its
+    // graveyard and keeps the piece it needs.
+    CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Search your library for three cards and reveal them. Target opponent chooses one. Put that card into your hand and the rest into your graveyard. Then shuffle.",
+        &INTUITION_TARGET,
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::Any,
+            minimum: 3,
+            maximum: ValueDef::Constant(3),
+            reveal: true,
+            destination: ZoneKind::Library,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+            binding: Some(INTUITION_FOUND),
+            then: Some(&INTUITION_CHOICE),
         },
     )),
 );
@@ -222,6 +294,7 @@ pub(in crate::card::sets) static CURSED_SCROLL: CardRecord = CardRecord::new(
         &SCROLL_TARGET,
         EffectDef::Choose(ChooseDef {
             binding: ObjectChoiceBindingDef::Object(NAMED_CARD),
+            unchosen: None,
             chooser: PlayerRefDef::EffectController,
             candidates: ObjectSetDef::Query(CARDS_IN_YOUR_HAND),
             exclude: None,
@@ -315,6 +388,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HUMILITY,
     &WARMTH,
     &CHILL,
+    &INTUITION,
     &REANIMATE,
     &JACKAL_PUP,
     &MOGG_FANATIC,

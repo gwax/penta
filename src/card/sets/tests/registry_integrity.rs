@@ -166,6 +166,8 @@ fn tutors_and_fetch_lands_use_declarative_zone_searches() {
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
+            binding: None,
+            then: None,
         })
     );
 
@@ -219,6 +221,8 @@ fn tutors_and_fetch_lands_use_declarative_zone_searches() {
                 placement: ZonePlacement::Top,
                 shuffle: true,
                 enters_tapped: false,
+                binding: None,
+                then: None,
             }),
             "{} has the wrong search parameters",
             fetch.name
@@ -246,6 +250,8 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
+            binding: None,
+            then: None,
         }
     );
 
@@ -268,6 +274,8 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
+            binding: None,
+            then: None,
         })
     );
 
@@ -290,6 +298,8 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: true,
+            binding: None,
+            then: None,
         })
     );
 
@@ -307,6 +317,8 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: true,
+            binding: None,
+            then: None,
         })
     );
 }

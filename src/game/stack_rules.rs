@@ -55,13 +55,12 @@ impl Game {
             } => Self::applied_effect_contains(effect, expected),
             EffectDef::IfFormat {
                 then, otherwise, ..
-            } => {
-                Self::effect_applies_to_source(*then, expected)
-                    || Self::effect_applies_to_source(*otherwise, expected)
-            }
+            } => Self::effect_applies_to_source(*then, expected)
+                || Self::effect_applies_to_source(*otherwise, expected),
             EffectDef::Choose(ChooseDef { then, .. })
             | EffectDef::SplitIntoPiles(SplitIntoPilesDef { then, .. })
             | EffectDef::ChooseCardName { then, .. }
+            | EffectDef::SearchZone { then: Some(then), .. }
             | EffectDef::BindMatching { then, .. } => {
                 Self::effect_applies_to_source(*then, expected)
             }
@@ -102,11 +101,11 @@ impl Game {
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::Mill { .. }
             | EffectDef::MillUntil { .. }
+            | EffectDef::SearchZone { then: None, .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }
             | EffectDef::RevealHand { .. }
-            | EffectDef::SearchZone { .. }
             | EffectDef::ChooseCards { .. }
             | EffectDef::ReplaceNextDrawThisTurn { .. }
             | EffectDef::Counter { .. }

@@ -1744,6 +1744,7 @@ static SIN_COLLECTOR_EFFECTS: [EffectDef; 2] = [
     },
     EffectDef::Choose(ChooseDef {
         binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        unchosen: None,
         chooser: PlayerRefDef::EffectController,
         candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
             ObjectPredicateDef::AnyOf(&[

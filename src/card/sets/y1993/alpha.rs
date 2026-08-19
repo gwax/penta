@@ -1920,6 +1920,8 @@ pub(in crate::card::sets) static DEMONIC_TUTOR: CardRecord = CardRecord::new(
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
+            binding: None,
+            then: None,
         },
     )]),
 );
@@ -4467,6 +4469,7 @@ pub(in crate::card::sets) static CHAOS_ORB: CardRecord = CardRecord::new(
                     AbilityCostDef::TapSource,
                 ], EffectDef::Choose(ChooseDef {
                     binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+                    unchosen: None,
                     chooser: PlayerRefDef::EffectController,
                     candidates: ObjectSetDef::Query(ObjectQueryDef::new(
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Token),

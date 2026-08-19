@@ -19,7 +19,12 @@ fn validate_effect_target_shapes(
             validate_effect_target_shapes(*on_success, targets, triggering_object_zone)?;
             validate_effect_target_shapes(*on_failure, targets, triggering_object_zone)
         }
-        EffectDef::RevealAtRandomFromHand { player, then, .. } => {
+        EffectDef::SearchZone {
+            player,
+            then: Some(then),
+            ..
+        }
+        | EffectDef::RevealAtRandomFromHand { player, then, .. } => {
             validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
             validate_effect_target_shapes(*then, targets, triggering_object_zone)
         }
@@ -93,7 +98,9 @@ fn validate_effect_target_shapes(
         |         EffectDef::ShuffleLibrary { player }
         | EffectDef::EmptyManaPool { player }
         | EffectDef::LoseTheGame { player }
-        | EffectDef::SearchZone { player, .. }
+        | EffectDef::SearchZone {
+            player, then: None, ..
+        }
         | EffectDef::ChooseCards { player, .. }
         | EffectDef::TakeExtraTurn { player }
         | EffectDef::LookAtHand { player }

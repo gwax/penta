@@ -366,6 +366,7 @@ fn validate_resolving_effect(
 ) -> Result<(), &'static str> {
     match effect {
         EffectDef::ChooseCardName { then, .. }
+        | EffectDef::SearchZone { then: Some(then), .. }
         | EffectDef::BindMatching { then, .. } => validate_resolving_effect(*then, source_zones),
         EffectDef::Sequence(effects) => {
             if effects.is_empty() {
