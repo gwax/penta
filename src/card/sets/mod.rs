@@ -28,6 +28,7 @@ mod y2015;
 mod y2020;
 mod y2021;
 mod y2022;
+mod y2023;
 mod y2024;
 
 use super::record::{CardAbilityBinding, CardRecord, PrintingRecord};
@@ -346,6 +347,11 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::StreetsOfNewCapenna,
         y2022::streets_of_new_capenna::CARDS,
         y2022::streets_of_new_capenna::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::LordOfTheRings,
+        y2023::lord_of_the_rings::CARDS,
+        y2023::lord_of_the_rings::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::ModernHorizons3,

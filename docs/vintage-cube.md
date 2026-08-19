@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 119 are cataloged and 415 are not
+- 534 cards in the pool, of which 120 are cataloged and 414 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -255,7 +255,7 @@ lands are legal in every format and are not listed.
 - `Unholy Heat`
 - `Voldaren Epicure`
 
-### Green (52)
+### Green (51)
 
 - `Baloth Prime`
 - `Bristly Bill, Spine Sower`
@@ -271,7 +271,6 @@ lands are legal in every format and are not listed.
 - `Fanatic of Rhonas`
 - `Fastbond`
 - `Force of Vigor`
-- `Generous Ent`
 - `Green Sun's Zenith`
 - `Hexdrinker`
 - `Icetill Explorer`
@@ -474,7 +473,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 119 pool cards are in the catalog because an earlier format needed them.
+These 120 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -510,6 +509,7 @@ been played beside.
 - `Flooded Strand`
 - `Frantic Search`
 - `Gaea's Cradle`
+- `Generous Ent`
 - `Goblin Bombardment`
 - `Godless Shrine`
 - `Grim Monolith`

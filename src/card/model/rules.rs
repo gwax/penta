@@ -251,6 +251,19 @@ impl CardRules {
         )
     }
 
+    /// An artifact with no mana cost, which is what a noncreature artifact
+    /// token is. Its subtypes carry the artifact type a card can name -- a
+    /// Food is sacrificed by things that look for one.
+    #[must_use]
+    pub const fn new_artifact_without_mana_cost(subtypes: &'static [&'static str]) -> Self {
+        let mut rules = Self::base(
+            CardTypeSet::single(CardType::Artifact),
+            PrintedManaCost::None,
+        );
+        rules.subtypes = subtypes;
+        rules
+    }
+
     #[must_use]
     pub const fn new_enchantment(mana_cost: ManaCost) -> Self {
         Self::base(

@@ -66,6 +66,7 @@ pub enum CardSet {
     Ikoria,
     KamigawaNeonDynasty,
     StreetsOfNewCapenna,
+    LordOfTheRings,
     ModernHorizons3,
     /// Tokens are game objects rather than printed cards. They live in the
     /// catalog so a client can look one up by definition, and belong to no

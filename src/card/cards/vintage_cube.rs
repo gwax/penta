@@ -35,3 +35,5 @@ pub const MIND_STONE: CardDefinitionId = CardDefinitionId(2117);
 pub const GRIM_MONOLITH: CardDefinitionId = CardDefinitionId(2118);
 pub const MOTHER_OF_RUNES: CardDefinitionId = CardDefinitionId(2119);
 pub const SKULLCLAMP: CardDefinitionId = CardDefinitionId(2120);
+pub const FOOD_TOKEN: CardDefinitionId = CardDefinitionId(2121);
+pub const GENEROUS_ENT: CardDefinitionId = CardDefinitionId(2122);

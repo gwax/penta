@@ -11,11 +11,12 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AppliedEffectDef, AppliedRuleDef, BandingQuality, CardArt,
-    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind,
-    abilities, cards,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AppliedEffectDef, AppliedRuleDef,
+    BandingQuality, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef,
+    TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
+use crate::mana_cost;
 
 /// Not a token: the body a face-down permanent presents while it is face
 /// down. It lives here because it needs the same thing a token needs -- a
@@ -504,6 +505,28 @@ pub(in crate::card::sets) static RAT_TOKEN_1_1_BLACK: CardRecord = CardRecord::n
     CardRules::new_creature_without_mana_cost(&["Rat"], 1, 1).printed_colors(&[ManaColor::Black]),
 );
 
+/// The first token here that is not a creature. Food is an artifact type
+/// rather than a creature type, and the token is nothing but the ability
+/// printed in its own reminder text.
+pub(in crate::card::sets) static FOOD_TOKEN: CardRecord = CardRecord::new(
+    cards::FOOD_TOKEN,
+    "Food",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_artifact_without_mana_cost(&["Food"]).with_ability(AbilityDef::activated(
+        "{2}, {T}, Sacrifice this token: You gain 3 life.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{2}")),
+            AbilityCostDef::TapSource,
+            AbilityCostDef::SacrificeSource,
+        ],
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(3),
+        },
+    )),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FACE_DOWN_CREATURE,
     &GERM_TOKEN_0_0_BLACK,
@@ -548,6 +571,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SNAKE_TOKEN_1_1_POISONOUS,
     &WURM_TOKEN_6_6_GREEN,
     &RAT_TOKEN_1_1_BLACK,
+    &FOOD_TOKEN,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
