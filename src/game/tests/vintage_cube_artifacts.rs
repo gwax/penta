@@ -1,0 +1,295 @@
+//! Artifacts and Equipment cataloged for the Vintage Cube pool.
+
+use super::*;
+
+/// Resolves whatever is on the stack, answering nothing.
+fn resolve(game: &mut Game) {
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+}
+
+/// The one activation offered for `source`, if there is one.
+fn activation(game: &Game, source: GameObjectId) -> Option<Action> {
+    game.legal_actions(PlayerId::One).into_iter().find(
+        |action| matches!(action, Action::ActivateAbility { source: id, .. } if *id == source),
+    )
+}
+
+/// Equips `source` to `host`, then settles whatever that started.
+fn equip_to(game: &mut Game, source: GameObjectId, host: GameObjectId) {
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source: actual,
+                targets,
+                ..
+            } => {
+                *actual == source
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(host))
+            }
+            _ => false,
+        })
+        .expect("equip is offered for that creature");
+    game.apply(PlayerId::One, action)
+        .expect("the ability activates");
+    drain_pending(game);
+}
+
+#[test]
+fn the_orb_eats_a_land_for_two_life_and_nothing_else() {
+    let mut game = ready_game();
+    game.players[PlayerId::One.index()].life = 10;
+    let orb = game
+        .put_onto_battlefield(PlayerId::One, cards::ZURAN_ORB)
+        .expect("cataloged");
+    assert!(
+        activation(&game, orb).is_none(),
+        "with no land to sacrifice there is nothing to activate",
+    );
+
+    game.battlefield
+        .push(creature(50_000, cards::FOREST, PlayerId::One));
+    let action = activation(&game, orb).expect("a land is available to sacrifice");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::FOREST),
+        "the land is sacrificed as a cost",
+    );
+    resolve(&mut game);
+    assert_eq!(game.players[PlayerId::One.index()].life, 12);
+}
+
+#[test]
+fn the_monolith_makes_three_and_stays_tapped_until_it_is_bought_back() {
+    let mut game = ready_game();
+    let monolith = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIM_MONOLITH)
+        .expect("cataloged");
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: monolith,
+            ability: mana_ability_for(&game, monolith, ManaColor::Colorless),
+            color: ManaColor::Colorless,
+            counters_removed: None,
+            cost_object: None,
+        },
+    )
+    .expect("it taps for mana");
+    assert_eq!(game.players[PlayerId::One.index()].mana_pool.colorless, 3);
+
+    // Four of that mana buys the untap back; three does not.
+    game.players[PlayerId::One.index()].mana_pool.colorless = 3;
+    assert!(
+        activation(&game, monolith).is_none(),
+        "three mana does not pay the untap",
+    );
+    game.players[PlayerId::One.index()].mana_pool.colorless = 4;
+    let untap = activation(&game, monolith).expect("four mana pays it");
+    game.apply(PlayerId::One, untap).expect("it is activated");
+    resolve(&mut game);
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == monolith)
+            .expect("still on the battlefield")
+            .tapped,
+    );
+}
+
+#[test]
+fn the_mind_stone_trades_itself_for_a_card() {
+    let mut game = ready_game();
+    let stone = game
+        .put_onto_battlefield(PlayerId::One, cards::MIND_STONE)
+        .expect("cataloged");
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    let before = game.players[PlayerId::One.index()].library.len();
+
+    let action = activation(&game, stone).expect("the draw ability is offered");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != stone),
+        "the sacrifice is a cost",
+    );
+    resolve(&mut game);
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        before - 1
+    );
+}
+
+/// The Clamp on something that survives it: bigger, frailer, still there.
+#[test]
+fn the_clamp_gives_plus_one_minus_one_to_what_it_equips() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let clamp = creature(51_000, cards::SKULLCLAMP, PlayerId::One);
+    let clamp_id = clamp.card.id;
+    game.battlefield.push(clamp);
+    let bears = creature(51_001, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    let before = game.players[PlayerId::One.index()].library.len();
+
+    equip_to(&mut game, clamp_id, bears_id);
+
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears_id)
+        .expect("a 2/2 survives losing a toughness");
+    assert_eq!(
+        (game.power(bears), game.toughness(bears)),
+        (Some(3), Some(1))
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        before,
+        "nothing is drawn while the creature is alive",
+    );
+}
+
+/// The Clamp on a one-toughness creature, which is the whole point of it: the
+/// minus kills what it equips through state-based actions, and the trigger
+/// still finds the creature it was attached to a moment ago.
+#[test]
+fn the_clamp_kills_a_one_toughness_creature_and_draws_two() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let clamp = creature(51_100, cards::SKULLCLAMP, PlayerId::One);
+    let clamp_id = clamp.card.id;
+    game.battlefield.push(clamp);
+    let lions = creature(51_101, cards::SAVANNAH_LIONS, PlayerId::One);
+    let lions_id = lions.card.id;
+    game.battlefield.push(lions);
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    let before = game.players[PlayerId::One.index()].library.len();
+
+    equip_to(&mut game, clamp_id, lions_id);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != lions_id),
+        "a 2/1 loses its last toughness and dies",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SAVANNAH_LIONS),
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        before - 2,
+        "the Clamp draws two off a creature that was gone before it triggered",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == clamp_id),
+        "the Clamp stays behind, ready for the next one",
+    );
+}
+
+/// Living weapon on a count that includes the Equipment itself. A Nettlecyst
+/// arriving alone makes a 0/0 and immediately makes it a 1/1, so the Germ
+/// survives the state-based actions that would otherwise bury it.
+#[test]
+fn nettlecyst_arrives_with_a_germ_that_it_alone_keeps_alive() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.put_onto_battlefield(PlayerId::One, cards::NETTLECYST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    let germ = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GERM_TOKEN_0_0_BLACK)
+        .expect("living weapon made a Germ and the Germ survived");
+    assert_eq!(
+        (game.power(germ), game.toughness(germ)),
+        (Some(1), Some(1)),
+        "the Equipment counts itself and nothing else counts the Germ",
+    );
+
+    // Each further artifact or enchantment is another point in both
+    // directions.
+    game.battlefield
+        .push(creature(56_000, cards::BLACK_LOTUS, PlayerId::One));
+    game.battlefield
+        .push(creature(56_001, cards::PHYREXIAN_ARENA, PlayerId::One));
+    let germ = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GERM_TOKEN_0_0_BLACK)
+        .expect("still there");
+    assert_eq!((game.power(germ), game.toughness(germ)), (Some(3), Some(3)));
+
+    // An opponent's artifact is not one you control.
+    game.battlefield
+        .push(creature(56_002, cards::MOX_JET, PlayerId::Two));
+    let germ = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GERM_TOKEN_0_0_BLACK)
+        .expect("still there");
+    assert_eq!((game.power(germ), game.toughness(germ)), (Some(3), Some(3)));
+}
+
+/// Moved onto a real creature, the same count applies there instead, and the
+/// Germ it leaves behind is a 0/0 again.
+#[test]
+fn moving_nettlecyst_takes_the_bonus_with_it() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let nettlecyst = game
+        .put_onto_battlefield(PlayerId::One, cards::NETTLECYST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+    let bears = creature(56_100, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    game.players[PlayerId::One.index()].mana_pool.colorless = 2;
+
+    equip_to(&mut game, nettlecyst, bears_id);
+    game.check_state_based_actions();
+
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears_id)
+        .expect("the creature is still there");
+    assert_eq!(
+        (game.power(bears), game.toughness(bears)),
+        (Some(3), Some(3))
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::GERM_TOKEN_0_0_BLACK),
+        "the Germ is a 0/0 once the Equipment leaves it",
+    );
+}

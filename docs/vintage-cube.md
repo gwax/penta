@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 123 are cataloged and 411 are not
+- 534 cards in the pool, of which 124 are cataloged and 410 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -366,7 +366,7 @@ lands are legal in every format and are not listed.
 - `Wrenn and Six`
 - `Zirda, the Dawnwaker`
 
-### Colorless (48)
+### Colorless (47)
 
 - `Aether Spellbomb`
 - `Agatha's Soul Cauldron`
@@ -393,7 +393,6 @@ lands are legal in every format and are not listed.
 - `Mishra's Bauble`
 - `Mox Opal`
 - `Myr Battlesphere`
-- `Nettlecyst`
 - `Pentad Prism`
 - `Portal to Phyrexia`
 - `Relic of Sauron`
@@ -470,7 +469,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 123 pool cards are in the catalog because an earlier format needed them.
+These 124 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -543,6 +542,7 @@ been played beside.
 - `Mox Ruby`
 - `Mox Sapphire`
 - `Mystical Tutor`
+- `Nettlecyst`
 - `Overgrown Tomb`
 - `Parallax Wave`
 - `Plateau`

@@ -40,3 +40,4 @@ pub const GENEROUS_ENT: CardDefinitionId = CardDefinitionId(2122);
 pub const LIFE_DEATH: CardDefinitionId = CardDefinitionId(2123);
 pub const RANCOR: CardDefinitionId = CardDefinitionId(2124);
 pub const STERN_SCOLDING: CardDefinitionId = CardDefinitionId(2125);
+pub const NETTLECYST: CardDefinitionId = CardDefinitionId(2126);
