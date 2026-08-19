@@ -88,6 +88,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::FutureSight => "future-sight",
         CardSet::Zendikar => "zendikar",
         CardSet::ThroneOfEldraine => "throne-of-eldraine",
+        CardSet::ZendikarRising => "zendikar-rising",
         CardSet::ShardsOfAlara => "shards-of-alara",
         CardSet::ScarsOfMirrodin => "scars-of-mirrodin",
         CardSet::Magic2011 => "magic-2011",
