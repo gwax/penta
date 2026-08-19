@@ -229,7 +229,9 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("khans_of_tarkir.rs") => source(CardSet::KhansOfTarkir, "KTK"),
         Some("dragons_of_tarkir.rs") => source(CardSet::DragonsOfTarkir, "DTK"),
         Some("modern_horizons_2.rs") => source(CardSet::ModernHorizons2, "MH2"),
+        Some("ikoria.rs") => source(CardSet::Ikoria, "IKO"),
         Some("kamigawa_neon_dynasty.rs") => source(CardSet::KamigawaNeonDynasty, "NEO"),
+        Some("streets_of_new_capenna.rs") => source(CardSet::StreetsOfNewCapenna, "SNC"),
         Some("modern_horizons_3.rs") => source(CardSet::ModernHorizons3, "MH3"),
         Some(name) => panic!(
             "{}: add {name} to the official set-code map",

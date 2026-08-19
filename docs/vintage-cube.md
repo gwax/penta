@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 94 are cataloged and 440 are not
+- 534 cards in the pool, of which 104 are cataloged and 430 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -434,7 +434,7 @@ lands are legal in every format and are not listed.
 - `Walking Ballista`
 - `Zuran Orb`
 
-### Lands (60)
+### Lands (50)
 
 - `Arena of Glory`
 - `Blackcleave Cliffs`
@@ -457,28 +457,21 @@ lands are legal in every format and are not listed.
 - `Gaea's Cradle`
 - `Hedge Maze`
 - `Horizon Canopy`
-- `Indatha Triome`
 - `Inspiring Vantage`
-- `Jetmir's Garden`
-- `Ketria Triome`
 - `Lush Portico`
 - `Mana Confluence`
 - `Meticulous Archive`
 - `Multiversal Passage`
 - `Otawara, Soaring City`
 - `Prismatic Vista`
-- `Raffine's Tower`
 - `Raucous Theater`
-- `Raugrin Triome`
 - `Razorverge Thicket`
 - `Riverpyre Verge`
-- `Savai Triome`
 - `Seachrome Coast`
 - `Shadowy Backstreet`
 - `Shelldock Isle`
 - `Sheltering Landscape`
 - `Shifting Woodland`
-- `Spara's Headquarters`
 - `Spirebluff Canal`
 - `Starting Town`
 - `Sunbaked Canyon`
@@ -493,13 +486,10 @@ lands are legal in every format and are not listed.
 - `Urza's Saga`
 - `Wastewood Verge`
 - `Waterlogged Grove`
-- `Xander's Lounge`
-- `Zagoth Triome`
-- `Ziatora's Proving Ground`
 
 ## Already cataloged
 
-These 94 pool cards are in the catalog because an earlier format needed them.
+These 104 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -538,7 +528,10 @@ been played beside.
 - `Gush`
 - `Hallowed Fountain`
 - `Hymn to Tourach`
+- `Indatha Triome`
+- `Jetmir's Garden`
 - `Karakas`
+- `Ketria Triome`
 - `Library of Alexandria`
 - `Lightning Bolt`
 - `Liliana of the Veil`
@@ -563,14 +556,18 @@ been played beside.
 - `Plateau`
 - `Polluted Delta`
 - `Pyrokinesis`
+- `Raffine's Tower`
+- `Raugrin Triome`
 - `Reanimate`
 - `Sacred Foundry`
+- `Savai Triome`
 - `Savannah`
 - `Scalding Tarn`
 - `Scrubland`
 - `Shallow Grave`
 - `Snapcaster Mage`
 - `Sol Ring`
+- `Spara's Headquarters`
 - `Steam Vents`
 - `Stomping Ground`
 - `Strip Mine`
@@ -597,4 +594,7 @@ been played beside.
 - `Windswept Heath`
 - `Wooded Foothills`
 - `Wrath of God`
+- `Xander's Lounge`
 - `Yavimaya, Cradle of Growth`
+- `Zagoth Triome`
+- `Ziatora's Proving Ground`

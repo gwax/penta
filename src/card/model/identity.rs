@@ -63,7 +63,9 @@ pub enum CardSet {
     KhansOfTarkir,
     DragonsOfTarkir,
     ModernHorizons2,
+    Ikoria,
     KamigawaNeonDynasty,
+    StreetsOfNewCapenna,
     ModernHorizons3,
     /// Tokens are game objects rather than printed cards. They live in the
     /// catalog so a client can look one up by definition, and belong to no

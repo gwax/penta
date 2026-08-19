@@ -25,6 +25,7 @@ mod y2012;
 mod y2013;
 mod y2014;
 mod y2015;
+mod y2020;
 mod y2021;
 mod y2022;
 mod y2024;
@@ -327,6 +328,11 @@ const SET_MODULES: &[SetModule] = &[
         y2015::dragons_of_tarkir::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Ikoria,
+        y2020::ikoria::CARDS,
+        y2020::ikoria::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::ModernHorizons2,
         y2021::modern_horizons_2::CARDS,
         y2021::modern_horizons_2::ADDITIONAL_PRINTINGS,
@@ -335,6 +341,11 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::KamigawaNeonDynasty,
         y2022::kamigawa_neon_dynasty::CARDS,
         y2022::kamigawa_neon_dynasty::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::StreetsOfNewCapenna,
+        y2022::streets_of_new_capenna::CARDS,
+        y2022::streets_of_new_capenna::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::ModernHorizons3,

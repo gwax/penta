@@ -741,6 +741,7 @@ mod untap_skips;
 mod until_end_of_combat;
 mod urza_lands;
 mod venarian_gold;
+mod vintage_cube_lands;
 mod wards;
 mod while_source_tapped;
 mod word_of_binding;

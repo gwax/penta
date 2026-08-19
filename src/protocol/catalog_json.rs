@@ -99,7 +99,9 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::KhansOfTarkir => "khans-of-tarkir",
         CardSet::DragonsOfTarkir => "dragons-of-tarkir",
         CardSet::ModernHorizons2 => "modern-horizons-2",
+        CardSet::Ikoria => "ikoria",
         CardSet::KamigawaNeonDynasty => "kamigawa-neon-dynasty",
+        CardSet::StreetsOfNewCapenna => "streets-of-new-capenna",
         CardSet::ModernHorizons3 => "modern-horizons-3",
         CardSet::Token => "token",
     }
