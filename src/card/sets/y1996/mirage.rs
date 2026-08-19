@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, AppliedRuleDef, CardArt,
-    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    PlayerRelation, ValueDef, ZoneKind, ZonePlacement, cards,
+    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -31,6 +32,53 @@ pub(in crate::card::sets) static ENLIGHTENED_TUTOR: CardRecord = CardRecord::new
             placement: ZonePlacement::Top,
             shuffle: true,
             enters_tapped: false,
+        },
+    )),
+);
+
+static GRAVE_HASTE: AbilityDef = abilities::haste();
+
+/// The creature exiles itself rather than being named by a delayed trigger:
+/// it is the object that arrived, and it carries the clause with it.
+static GRAVE_EXILE_AT_END: AbilityDef = AbilityDef::triggered(
+    "At the beginning of the next end step, exile this creature.",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+    },
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::Source,
+        zone: ZoneKind::Exile,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        controller: None,
+    },
+);
+
+static GRAVE_ARRIVAL: AppliedEffectDef = AppliedEffectDef::Composite(&[
+    AppliedEffectDef::add_ability(&GRAVE_HASTE),
+    AppliedEffectDef::add_ability(&GRAVE_EXILE_AT_END),
+]);
+
+// MIR 141 — Shallow Grave
+pub(in crate::card::sets) static SHALLOW_GRAVE: CardRecord = CardRecord::new(
+    cards::SHALLOW_GRAVE,
+    "Shallow Grave",
+    CardArt::new("8932e789-1d1c-4750-837e-e0b45a81c1c7", "John Coulthart"),
+    CardSet::Mirage,
+    // One turn with the creature, at instant speed, for two mana. The deck
+    // that wants it is the one whose creature only has to attack once.
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell(
+        "Return the top creature card of your graveyard to the battlefield. That creature gains haste until end of turn. Exile it at the beginning of the next end step.",
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::objects(ObjectSetDef::TopOfGraveyardMatching {
+                player: PlayerRefDef::EffectController,
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+            }),
+            zone: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            arrival_effect: Some(&GRAVE_ARRIVAL),
+            controller: None,
         },
     )),
 );
@@ -146,6 +194,7 @@ pub(in crate::card::sets) static CURSED_TOTEM: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ENLIGHTENED_TUTOR,
+    &SHALLOW_GRAVE,
     &GOBLIN_TINKERER,
     &TRANQUIL_DOMAIN,
     &WORLDLY_TUTOR,

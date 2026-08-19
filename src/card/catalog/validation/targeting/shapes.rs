@@ -204,7 +204,8 @@ fn validate_object_set_shape(
         }
         ObjectSetDef::Binding(_)
         | ObjectSetDef::BottomOfGraveyard(_)
-        | ObjectSetDef::SharingNameWithBinding { .. } => Ok(()),
+        | ObjectSetDef::SharingNameWithBinding { .. }
+        | ObjectSetDef::TopOfGraveyardMatching { .. } => Ok(()),
     }
 }
 
@@ -477,8 +478,9 @@ fn recipient_may_name_nonbattlefield_object(
             ObjectSetDef::One(ObjectRefDef::Binding(_))
             | ObjectSetDef::Binding(_)
             // A graveyard is not the battlefield, which is the whole point of
-            // naming its bottom card.
-            | ObjectSetDef::BottomOfGraveyard(_),
+            // naming a card at either end of it.
+            | ObjectSetDef::BottomOfGraveyard(_)
+            | ObjectSetDef::TopOfGraveyardMatching { .. },
         ) => true,
         EffectRecipientSetDef::Objects(ObjectSetDef::SharingNameWithBinding { zone, .. }) => {
             zone != ZoneKind::Battlefield
@@ -532,7 +534,8 @@ fn recipient_nonbattlefield_zones_support_flashback(
             ObjectSetDef::One(ObjectRefDef::Binding(_))
             | ObjectSetDef::Binding(_)
             | ObjectSetDef::BottomOfGraveyard(_)
-            | ObjectSetDef::SharingNameWithBinding { .. },
+            | ObjectSetDef::SharingNameWithBinding { .. }
+            | ObjectSetDef::TopOfGraveyardMatching { .. },
         ) => false,
         EffectRecipientSetDef::Objects(
             ObjectSetDef::One(

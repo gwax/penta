@@ -554,7 +554,8 @@ fn static_object_set_supported(objects: ObjectSetDef) -> bool {
         | ObjectSetDef::Binding(_)
         | ObjectSetDef::BottomOfGraveyard(_)
         | ObjectSetDef::SharingNameWith(_)
-        | ObjectSetDef::SharingNameWithBinding { .. } => false,
+        | ObjectSetDef::SharingNameWithBinding { .. }
+        | ObjectSetDef::TopOfGraveyardMatching { .. } => false,
     }
 }
 

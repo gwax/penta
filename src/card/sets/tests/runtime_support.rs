@@ -98,7 +98,8 @@ pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
             | ObjectSetDef::BottomOfGraveyard(_)
             | ObjectSetDef::LegalTargets(_)
             | ObjectSetDef::SharingNameWith(_)
-            | ObjectSetDef::SharingNameWithBinding { .. },
+            | ObjectSetDef::SharingNameWithBinding { .. }
+            | ObjectSetDef::TopOfGraveyardMatching { .. },
         )
         | EffectRecipientSetDef::Players(_) => true,
     }

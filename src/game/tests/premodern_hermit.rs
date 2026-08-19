@@ -126,3 +126,77 @@ fn stifle_counters_the_druids_dig() {
     assert_eq!(player.library.len(), 3, "the dig never happened");
     assert_eq!(player.hand.len(), 0, "and nothing was found");
 }
+
+/// Shallow Grave takes the newest creature card, not the oldest, and the
+/// creature it returns leaves again at the end of the turn.
+#[test]
+fn shallow_grave_returns_the_top_creature_and_exiles_it_at_end_of_turn() {
+    let mut game = ready_game();
+    // Oldest to newest: a Bolt between two creatures, so "the top creature
+    // card" is the second creature rather than the last card.
+    game.players[PlayerId::One.index()]
+        .graveyard
+        .push(card(10_010, cards::GOBLIN_LACKEY, PlayerId::One));
+    game.players[PlayerId::One.index()]
+        .graveyard
+        .push(card(10_011, cards::PSYCHATOG, PlayerId::One));
+    game.players[PlayerId::One.index()]
+        .graveyard
+        .push(card(10_012, cards::LIGHTNING_BOLT, PlayerId::One));
+
+    let grave = card(10_000, cards::SHALLOW_GRAVE, PlayerId::One);
+    let grave_id = grave.id;
+    game.players[PlayerId::One.index()].hand.push(grave);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.black = 1;
+    pool.colorless = 1;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(grave_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("two mana casts it");
+    drain_pending(&mut game);
+
+    let returned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::PSYCHATOG)
+        .expect("the newest creature card came back");
+    assert!(
+        game.permanent_has_executable_keyword(returned, KeywordAbility::Haste),
+        "it can attack the turn it arrives",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::GOBLIN_LACKEY),
+        "the older creature stayed in the graveyard",
+    );
+
+    // Reaching the end step is what fires the delayed clause; setting the
+    // field would skip the step beginning.
+    for _ in 0..8 {
+        if game.step == Step::End {
+            break;
+        }
+        game.advance_step();
+    }
+    assert_eq!(game.step, Step::End, "the turn reached its end step");
+    // Driving steps directly skips the procedure that puts captured triggers
+    // on the stack, so run it before letting the stack resolve.
+    game.finish_rules_procedure();
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::PSYCHATOG),
+        "and it is exiled at the beginning of the end step",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].exile.len(),
+        1,
+        "exiled rather than buried",
+    );
+}

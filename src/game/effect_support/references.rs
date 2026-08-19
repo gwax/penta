@@ -349,6 +349,28 @@ impl Game {
                 }
                 found
             }
+            // The back of the vector is the newest card, which is the one on
+            // top of the pile.
+            ObjectSetDef::TopOfGraveyardMatching {
+                player,
+                object: predicate,
+            } => {
+                let Some(player) = self.player_reference(player, object, context, scoped)
+                else {
+                    return Vec::new();
+                };
+                let source = object.source.unwrap_or(object.id);
+                self.players[player.index()]
+                    .graveyard
+                    .iter()
+                    .rev()
+                    .find(|card| {
+                        self.card_object_matches(predicate, card, ZoneKind::Graveyard, source)
+                    })
+                    .map(|card| Target::Card(card.id))
+                    .into_iter()
+                    .collect()
+            }
             // The front of the vector is the oldest card, which is the one at
             // the bottom of the pile.
             ObjectSetDef::BottomOfGraveyard(player) => self

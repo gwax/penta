@@ -683,7 +683,8 @@ fn validate_recipient_target_references(
         }
         EffectRecipientSetDef::Objects(
             ObjectSetDef::BottomOfGraveyard(player)
-            | ObjectSetDef::SharingNameWithBinding { player, .. },
+            | ObjectSetDef::SharingNameWithBinding { player, .. }
+            | ObjectSetDef::TopOfGraveyardMatching { player, .. },
         ) => validate_player_reference(player, target_count, scope),
         EffectRecipientSetDef::Players(players) => {
             validate_player_set(players, target_count, scope)

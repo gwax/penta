@@ -62,6 +62,13 @@ pub enum ObjectSetDef {
     /// Every battlefield permanent sharing the referenced object's effective
     /// name, including the referenced object itself.
     SharingNameWith(ObjectRefDef),
+    /// The newest matching card in one player's graveyard. A graveyard is a
+    /// pile, so "the top creature card" is the last creature card put there
+    /// rather than a choice among them.
+    TopOfGraveyardMatching {
+        player: PlayerRefDef,
+        object: ObjectPredicateDef,
+    },
     /// Every card in one player's zone whose name matches something in a
     /// bound set. "Search that player's library for all cards with the same
     /// name" reads the set the graveyard gave up.
@@ -153,7 +160,8 @@ impl EffectRecipientDef {
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::Query(_)
                 | ObjectSetDef::SharingNameWith(_)
-                | ObjectSetDef::SharingNameWithBinding { .. },
+                | ObjectSetDef::SharingNameWithBinding { .. }
+                | ObjectSetDef::TopOfGraveyardMatching { .. },
             )
             | EffectRecipientSetDef::Players(_) => None,
         }
@@ -170,7 +178,8 @@ impl EffectRecipientDef {
                 | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::SharingNameWith(_)
-                | ObjectSetDef::SharingNameWithBinding { .. },
+                | ObjectSetDef::SharingNameWithBinding { .. }
+                | ObjectSetDef::TopOfGraveyardMatching { .. },
             )
             | EffectRecipientSetDef::Players(_) => None,
         }
