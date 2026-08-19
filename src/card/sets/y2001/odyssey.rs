@@ -3,11 +3,13 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, CardArt, CardRules, CardSet, ComparisonDef, DiscardSelectionDef, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    PlayerSetDef, ResolvedEffectDurationDef, SpellAdditionalCostDef, SpendModeDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, cards,
+    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
+    DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ResolvedEffectDurationDef, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, cards,
 };
+use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
 
 /// Everyone who is not the caster draws, so casting into it is what makes it
@@ -67,6 +69,63 @@ static ATOG_PUMP: EffectDef = EffectDef::Apply {
     effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
     duration: ResolvedEffectDurationDef::UntilEndOfTurn,
 };
+
+/// Exile the yard, then hunt the library for every copy of what was taken.
+/// The library search reads the bound set after the graveyard has emptied,
+/// which is why the set is bound rather than queried twice.
+static ECHOES_EXILE: EffectDef = EffectDef::Sequence(&[
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+        zone: ZoneKind::Exile,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        controller: None,
+    },
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::objects(ObjectSetDef::SharingNameWithBinding {
+            binding: ObjectSetBindingIndex::PRIMARY,
+            player: PlayerRefDef::Target(TargetIndex::PRIMARY),
+            zone: ZoneKind::Library,
+        }),
+        zone: ZoneKind::Exile,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        controller: None,
+    },
+    EffectDef::ShuffleLibrary {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+]);
+
+static ECHOES_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+// ODY 142 — Haunting Echoes
+pub(in crate::card::sets) static HAUNTING_ECHOES: CardRecord = CardRecord::new(
+    cards::HAUNTING_ECHOES,
+    "Haunting Echoes",
+    CardArt::new("3f051d37-e5ad-4975-839e-2da5538685f2", "Arnie Swekel"),
+    CardSet::Odyssey,
+    // Against a deck that wins with four copies of one card, taking the one
+    // in the graveyard takes the other three as well.
+    CardRules::new_sorcery(mana_cost!("{3}{B}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Exile all cards from target player's graveyard other than basic land cards. For each card exiled this way, search that player's library for all cards with the same name as that card and exile them. Then that player shuffles.",
+        &ECHOES_TARGET,
+        EffectDef::BindMatching {
+            objects: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+                ObjectPredicateDef::Not(&ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::Supertype(CardSupertype::Basic),
+                    ObjectPredicateDef::HasType(CardType::Land),
+                ])),
+                &[ZoneKind::Graveyard],
+                PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+            )),
+            binding: ObjectSetBindingIndex::PRIMARY,
+            then: &ECHOES_EXILE,
+        },
+    )),
+);
 
 /// X cards from your own graveyard, exiled as the spell is cast. The count is
 /// the X it is cast for, so a big Scrying costs the graveyard that fed it.
@@ -225,6 +284,7 @@ pub(in crate::card::sets) static CEPHALID_COLISEUM: CardRecord = CardRecord::new
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STANDSTILL,
     &UPHEAVAL,
+    &HAUNTING_ECHOES,
     &SKELETAL_SCRYING,
     &PSYCHATOG,
     &BARBARIAN_RING,

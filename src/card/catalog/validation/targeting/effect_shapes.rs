@@ -23,6 +23,14 @@ fn validate_effect_target_shapes(
             validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
             validate_effect_target_shapes(*then, targets, triggering_object_zone)
         }
+        EffectDef::BindMatching { objects, then, .. } => {
+            validate_recipient_shape(
+                EffectRecipientDef::objects(objects),
+                targets,
+                RecipientExpectation::Object,
+            )?;
+            validate_effect_target_shapes(*then, targets, triggering_object_zone)
+        }
         EffectDef::ChooseCardName { chooser, then, .. } => {
             validate_player_reference_shape(chooser, targets)?;
             validate_effect_target_shapes(*then, targets, None)

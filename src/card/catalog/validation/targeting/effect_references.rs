@@ -23,6 +23,19 @@ fn validate_effect_references(
             validate_recipient_target_references(player, target_count, scope)?;
             validate_effect_references(*then, target_count, scope)
         }
+        EffectDef::BindMatching {
+            objects,
+            binding,
+            then,
+        } => {
+            validate_recipient_target_references(
+                EffectRecipientDef::objects(objects),
+                target_count,
+                scope,
+            )?;
+            let nested = scope.with_object_set(binding)?;
+            validate_effect_references(*then, target_count, nested)
+        }
         EffectDef::ChooseCardName {
             chooser,
             matched_in,

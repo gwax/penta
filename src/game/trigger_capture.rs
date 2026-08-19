@@ -435,6 +435,7 @@ impl Game {
             | EffectDef::Randomized { .. }
             | EffectDef::Choose(_)
             | EffectDef::ChooseCardName { .. }
+            | EffectDef::BindMatching { .. }
             | EffectDef::PayOr(_)
             | EffectDef::SplitIntoPiles(_)
             | EffectDef::PreventDamage { .. }

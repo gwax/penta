@@ -321,6 +321,34 @@ impl Game {
             ObjectSetDef::SharingNameWith(reference) => {
                 self.objects_sharing_name_with_reference(reference, object, context, scoped)
             }
+            ObjectSetDef::SharingNameWithBinding {
+                binding,
+                player,
+                zone,
+            } => {
+                let Some(player) = self.player_reference(player, object, context, scoped) else {
+                    return Vec::new();
+                };
+                let names: Vec<&str> = context
+                    .object_group(binding)
+                    .iter()
+                    .filter_map(|bound| match bound {
+                        Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => {
+                            self.object_card_name(*id)
+                        }
+                        Target::Player(_) => None,
+                    })
+                    .collect();
+                let mut found = Vec::new();
+                for name in names {
+                    for card in self.cards_named_in_zone(player, zone, name) {
+                        if !found.contains(&card) {
+                            found.push(card);
+                        }
+                    }
+                }
+                found
+            }
             // The front of the vector is the oldest card, which is the one at
             // the bottom of the pile.
             ObjectSetDef::BottomOfGraveyard(player) => self

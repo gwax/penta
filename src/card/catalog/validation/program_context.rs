@@ -364,7 +364,8 @@ fn validate_resolving_effect(
     source_zones: &[ZoneKind],
 ) -> Result<(), &'static str> {
     match effect {
-        EffectDef::ChooseCardName { then, .. } => validate_resolving_effect(*then, source_zones),
+        EffectDef::ChooseCardName { then, .. }
+        | EffectDef::BindMatching { then, .. } => validate_resolving_effect(*then, source_zones),
         EffectDef::Sequence(effects) => {
             if effects.is_empty() {
                 return Err("empty Sequence");
@@ -552,7 +553,8 @@ fn static_object_set_supported(objects: ObjectSetDef) -> bool {
         )
         | ObjectSetDef::Binding(_)
         | ObjectSetDef::BottomOfGraveyard(_)
-        | ObjectSetDef::SharingNameWith(_) => false,
+        | ObjectSetDef::SharingNameWith(_)
+        | ObjectSetDef::SharingNameWithBinding { .. } => false,
     }
 }
 
@@ -803,6 +805,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::Sequence(_) => "Sequence",
         EffectDef::Randomized { .. } => "Randomized",
         EffectDef::Choose(_) | EffectDef::ChooseCardName { .. } => "Choose",
+        EffectDef::BindMatching { .. } => "BindMatching",
         EffectDef::PayOr(_) => "PayOr",
         EffectDef::SplitIntoPiles(_) => "SplitIntoPiles",
         EffectDef::PreventDamage { .. } => "PreventDamage",

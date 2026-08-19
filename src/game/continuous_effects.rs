@@ -449,6 +449,7 @@ impl Game {
                 | EffectDef::Randomized { .. }
                 | EffectDef::Choose(_)
                 | EffectDef::ChooseCardName { .. }
+                | EffectDef::BindMatching { .. }
                 | EffectDef::PayOr(_)
                 | EffectDef::SplitIntoPiles(_)
                 | EffectDef::PreventDamage { .. }
@@ -804,7 +805,8 @@ impl Game {
                 | ObjectSetDef::Binding(_)
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::BottomOfGraveyard(_)
-                | ObjectSetDef::SharingNameWith(_),
+                | ObjectSetDef::SharingNameWith(_)
+                | ObjectSetDef::SharingNameWithBinding { .. },
             )
             | EffectRecipientSetDef::Players(_) => false,
         }

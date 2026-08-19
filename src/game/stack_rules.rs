@@ -3,6 +3,7 @@ use super::{
     DeclarativeAbilityDef, EffectDef, EffectRecipientDef, Game, GameObjectId, StackObject,
     StackObjectKind, Target, ZoneKind, applicable_part_ids,
 };
+use crate::card::{ChooseDef, SplitIntoPilesDef};
 
 impl Game {
     /// True when a spell had targets and every one of them is now illegal.
@@ -58,8 +59,10 @@ impl Game {
                 Self::effect_applies_to_source(*then, expected)
                     || Self::effect_applies_to_source(*otherwise, expected)
             }
-            EffectDef::Choose(choice) => Self::effect_applies_to_source(*choice.then, expected),
-            EffectDef::ChooseCardName { then, .. } => {
+            EffectDef::Choose(ChooseDef { then, .. })
+            | EffectDef::SplitIntoPiles(SplitIntoPilesDef { then, .. })
+            | EffectDef::ChooseCardName { then, .. }
+            | EffectDef::BindMatching { then, .. } => {
                 Self::effect_applies_to_source(*then, expected)
             }
             EffectDef::PayOr(payment) => payment
@@ -67,9 +70,6 @@ impl Game {
                 .iter()
                 .chain(payment.otherwise.iter())
                 .any(|effect| Self::effect_applies_to_source(**effect, expected)),
-            EffectDef::SplitIntoPiles(partition) => {
-                Self::effect_applies_to_source(*partition.then, expected)
-            }
             EffectDef::None
             | EffectDef::Randomized { .. }
             | EffectDef::PreventDamage { .. }

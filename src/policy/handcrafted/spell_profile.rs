@@ -339,7 +339,8 @@ impl HandcraftedPolicy {
             EffectDef::Choose(choice) => {
                 Self::collect_spell_effect_profile(*choice.then, x, targets, profile);
             }
-            EffectDef::ChooseCardName { then, .. } => {
+            EffectDef::ChooseCardName { then, .. }
+            | EffectDef::BindMatching { then, .. } => {
                 Self::collect_spell_effect_profile(*then, x, targets, profile);
             }
             EffectDef::PayOr(payment) => {

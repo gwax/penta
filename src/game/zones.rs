@@ -7,11 +7,6 @@ use super::{
 };
 
 impl Game {
-    /// Moves one object to a zone. Only the moves a supported card actually
-    /// makes are handled; the rest stay seams rather than guesses.
-    /// Returns the battlefield object the card became, when it arrived on
-    /// the battlefield. A permanent that enters is a new object with a new
-    /// identity, so this is the only handle a later effect has on it.
     /// Every card of this name in one player's zone, as targets. Cabal
     /// Therapy names one and takes them all.
     pub(super) fn cards_named_in_zone(
@@ -38,6 +33,11 @@ impl Game {
             .collect()
     }
 
+    /// Moves one object to a zone. Only the moves a supported card actually
+    /// makes are handled; the rest stay seams rather than guesses.
+    /// Returns the battlefield object the card became, when it arrived on
+    /// the battlefield. A permanent that enters is a new object with a new
+    /// identity, so this is the only handle a later effect has on it.
     pub(super) fn move_target_to_zone(
         &mut self,
         target: Target,

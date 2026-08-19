@@ -202,7 +202,9 @@ fn validate_object_set_shape(
         ObjectSetDef::LegalTargets(target) => {
             validate_target_projection(target, targets, RecipientExpectation::Object)
         }
-        ObjectSetDef::Binding(_) | ObjectSetDef::BottomOfGraveyard(_) => Ok(()),
+        ObjectSetDef::Binding(_)
+        | ObjectSetDef::BottomOfGraveyard(_)
+        | ObjectSetDef::SharingNameWithBinding { .. } => Ok(()),
     }
 }
 
@@ -478,6 +480,9 @@ fn recipient_may_name_nonbattlefield_object(
             // naming its bottom card.
             | ObjectSetDef::BottomOfGraveyard(_),
         ) => true,
+        EffectRecipientSetDef::Objects(ObjectSetDef::SharingNameWithBinding { zone, .. }) => {
+            zone != ZoneKind::Battlefield
+        }
         EffectRecipientSetDef::Objects(ObjectSetDef::One(ObjectRefDef::TriggeringObject)) => {
             triggering_object_zone != Some(ZoneKind::Battlefield)
         }
@@ -526,7 +531,8 @@ fn recipient_nonbattlefield_zones_support_flashback(
         EffectRecipientSetDef::Objects(
             ObjectSetDef::One(ObjectRefDef::Binding(_))
             | ObjectSetDef::Binding(_)
-            | ObjectSetDef::BottomOfGraveyard(_),
+            | ObjectSetDef::BottomOfGraveyard(_)
+            | ObjectSetDef::SharingNameWithBinding { .. },
         ) => false,
         EffectRecipientSetDef::Objects(
             ObjectSetDef::One(

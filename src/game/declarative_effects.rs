@@ -600,6 +600,16 @@ impl Game {
                     .unwrap_or(u16::MAX);
                 self.add_unrestricted_mana(object.controller, color, amount);
             }
+            EffectDef::BindMatching {
+                objects,
+                binding,
+                then,
+            } => {
+                let bound = self.effect_objects(objects, object, &context, scoped);
+                let mut context = context;
+                context.bind_object_group(binding, bound);
+                self.resolve_effect_def(scoped.with_effect(*then), object, context);
+            }
             EffectDef::ChooseCardName {
                 chooser,
                 nonland_only,

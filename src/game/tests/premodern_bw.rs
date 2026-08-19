@@ -201,3 +201,60 @@ fn cabal_therapy_takes_every_copy_of_the_named_card() {
         "and the card that was not named stayed",
     );
 }
+
+/// Haunting Echoes takes the copies still in the library, and leaves the
+/// basic lands where they are.
+#[test]
+fn haunting_echoes_takes_every_copy_of_what_it_exiled() {
+    let mut game = ready_game();
+    // One Psychatog and one basic in the yard; two more Psychatogs and a
+    // Swamp waiting in the library.
+    game.players[PlayerId::Two.index()]
+        .graveyard
+        .push(card(10_010, cards::PSYCHATOG, PlayerId::Two));
+    game.players[PlayerId::Two.index()]
+        .graveyard
+        .push(card(10_011, cards::SWAMP, PlayerId::Two));
+    game.players[PlayerId::Two.index()].library.clear();
+    game.players[PlayerId::Two.index()]
+        .library
+        .push(card(10_012, cards::PSYCHATOG, PlayerId::Two));
+    game.players[PlayerId::Two.index()]
+        .library
+        .push(card(10_013, cards::PSYCHATOG, PlayerId::Two));
+    game.players[PlayerId::Two.index()]
+        .library
+        .push(card(10_014, cards::SWAMP, PlayerId::Two));
+
+    let echoes = card(10_000, cards::HAUNTING_ECHOES, PlayerId::One);
+    let echoes_id = echoes.id;
+    game.players[PlayerId::One.index()].hand.push(echoes);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.black = 2;
+    pool.colorless = 3;
+    game.priority = PlayerId::One;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(echoes_id, vec![Target::Player(PlayerId::Two)], Vec::new(), 0),
+    )
+    .expect("five mana casts it at the opponent");
+    drain_pending(&mut game);
+
+    let opponent = &game.players[PlayerId::Two.index()];
+    assert_eq!(
+        opponent.graveyard.len(),
+        1,
+        "the basic land stays; the Psychatog goes",
+    );
+    assert_eq!(
+        opponent.library.len(),
+        1,
+        "both library Psychatogs follow it, and the Swamp does not",
+    );
+    assert_eq!(
+        opponent.exile.len(),
+        3,
+        "one from the graveyard and its two copies",
+    );
+}

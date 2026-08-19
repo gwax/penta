@@ -62,6 +62,14 @@ pub enum ObjectSetDef {
     /// Every battlefield permanent sharing the referenced object's effective
     /// name, including the referenced object itself.
     SharingNameWith(ObjectRefDef),
+    /// Every card in one player's zone whose name matches something in a
+    /// bound set. "Search that player's library for all cards with the same
+    /// name" reads the set the graveyard gave up.
+    SharingNameWithBinding {
+        binding: ObjectSetBindingIndex,
+        player: PlayerRefDef,
+        zone: ZoneKind,
+    },
     /// The oldest card in a player's graveyard, which is what "the bottom
     /// card of target player's graveyard" names. Nothing is chosen: a
     /// graveyard has one bottom card, and an empty one has none.
@@ -144,7 +152,8 @@ impl EffectRecipientDef {
                 | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::Query(_)
-                | ObjectSetDef::SharingNameWith(_),
+                | ObjectSetDef::SharingNameWith(_)
+                | ObjectSetDef::SharingNameWithBinding { .. },
             )
             | EffectRecipientSetDef::Players(_) => None,
         }
@@ -160,7 +169,8 @@ impl EffectRecipientDef {
                 | ObjectSetDef::Binding(_)
                 | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::LegalTargets(_)
-                | ObjectSetDef::SharingNameWith(_),
+                | ObjectSetDef::SharingNameWith(_)
+                | ObjectSetDef::SharingNameWithBinding { .. },
             )
             | EffectRecipientSetDef::Players(_) => None,
         }

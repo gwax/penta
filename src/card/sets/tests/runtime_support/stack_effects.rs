@@ -193,7 +193,8 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         EffectDef::CopyResolvingSpell { .. } => deferred_decision_allowed,
         // Naming a card is a decision window, and what follows it is bound by
         // the same rule as anything after one.
-        EffectDef::ChooseCardName { then, .. } => {
+        EffectDef::ChooseCardName { then, .. }
+        | EffectDef::BindMatching { then, .. } => {
             deferred_decision_allowed && shared_stack_effect_at_position(*then, true)
         }
         EffectDef::AddMana(_) => shared_mana_effect(effect, false),

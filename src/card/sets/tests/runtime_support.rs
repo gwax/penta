@@ -97,7 +97,8 @@ pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
             | ObjectSetDef::Binding(_)
             | ObjectSetDef::BottomOfGraveyard(_)
             | ObjectSetDef::LegalTargets(_)
-            | ObjectSetDef::SharingNameWith(_),
+            | ObjectSetDef::SharingNameWith(_)
+            | ObjectSetDef::SharingNameWithBinding { .. },
         )
         | EffectRecipientSetDef::Players(_) => true,
     }
@@ -603,6 +604,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Randomized { .. }
                     | EffectDef::Choose(_)
                     | EffectDef::ChooseCardName { .. }
+                    | EffectDef::BindMatching { .. }
                     | EffectDef::PayOr(_)
                     | EffectDef::SplitIntoPiles(_)
                     | EffectDef::PreventDamage { .. }

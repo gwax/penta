@@ -122,7 +122,8 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                     | ObjectSetDef::Binding(_)
                     | ObjectSetDef::BottomOfGraveyard(_)
                     | ObjectSetDef::LegalTargets(_)
-                    | ObjectSetDef::SharingNameWith(_),
+                    | ObjectSetDef::SharingNameWith(_)
+                    | ObjectSetDef::SharingNameWithBinding { .. },
                 )
                 | EffectRecipientSetDef::Players(
                     PlayerSetDef::LegalTargets(_)
@@ -153,6 +154,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Randomized { .. }
         | EffectDef::Choose(_)
         | EffectDef::ChooseCardName { .. }
+        | EffectDef::BindMatching { .. }
         | EffectDef::PayOr(_)
         | EffectDef::SplitIntoPiles(_)
         | EffectDef::PreventDamage { .. }

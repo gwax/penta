@@ -11,14 +11,14 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 25 of them not yet cataloged
+- 145 distinct cards across the tranche, 20 of them not yet cataloged
 - 5 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
   Drew Glauberg's Stasis, TentacleFan's Landstill, and Andy Dominguez's RG
   Goblins. Nothing in any of them is metadata-only or partial
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: BW Control 10, Replenish 11, Angry Hermit 12. A list is blocked only by uncataloged cards -- no staged deck
+together: BW Control 5, Replenish 11, Angry Hermit 12. A list is blocked only by uncataloged cards -- no staged deck
 contains a card that is cataloged but unplayable.
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -86,6 +86,7 @@ older unannotated definitions still require one):
 - `Black Vise`
 - `Blue Elemental Blast`
 - `Brain Freeze` — complete; storm copies what came before it
+- `Cabal Therapy` — complete; the guess takes every copy of the name
 - `Caves of Koilos` — complete
 - `Cephalid Coliseum` — complete
 - `Chain of Vapor` — complete; the chain is the opponent's to continue
@@ -99,6 +100,7 @@ older unannotated definitions still require one):
 - `Cursed Totem` — complete
 - `Daze` — complete
 - `Decree of Justice` — complete; cycling buys Soldiers by the mana
+- `Defense Grid` — complete; the tax falls on the seat holding up an answer
 - `Disenchant`
 - `Duress`
 - `Dust Bowl` — complete
@@ -115,6 +117,7 @@ older unannotated definitions still require one):
 - `Forsaken City` — complete
 - `Gempalm Incinerator` — complete
 - `Gemstone Mine` — complete
+- `Gerrard's Verdict` — complete; the life is counted after the discard
 - `Goblin Lackey` — complete
 - `Goblin Matron` — complete
 - `Goblin Patrol` — complete
@@ -127,6 +130,7 @@ older unannotated definitions still require one):
 - `Goblin Warchief` — complete
 - `Grim Lavamancer` — complete
 - `Gush` — complete
+- `Haunting Echoes` — complete; the library copies follow what the graveyard lost
 - `Humility` — complete
 - `Hydroblast` — complete
 - `Impulse` — complete
@@ -162,22 +166,23 @@ older unannotated definitions still require one):
 - `Pyrokinesis` — complete
 - `Quirion Dryad` — complete
 - `Ray of Revelation`
-- `Red Elemental Blast`
 - `Reanimate` — complete
+- `Red Elemental Blast`
 - `Rishadan Port` — complete
 - `Root Maze` — complete
 - `Seal of Cleansing` — complete
 - `Seal of Fire` — complete
 - `Secluded Steppe` — complete
 - `Siege-Gang Commander` — complete
+- `Skeletal Scrying` — complete; the graveyard pays for the cards
 - `Skirk Prospector` — complete
 - `Sleight of Hand` — complete
 - `Standstill` — complete
 - `Stasis` — complete
 - `Swamp`
 - `Swords to Plowshares`
-- `Syncopate`
 - `Sylvan Safekeeper` — complete
+- `Syncopate`
 - `Teferi's Response` — complete; the countered ability's source dies with it
 - `Thawing Glaciers` — complete; the return is a cleanup-step trigger
 - `Thwart` — complete
@@ -200,15 +205,11 @@ Not yet cataloged:
 
 - [ ] `Abeyance`
 - [ ] `Attunement`
-- [ ] `Cabal Therapy`
 - [ ] `Decree of Silence`
-- [ ] `Defense Grid`
 - [ ] `Dragon Breath`
 - [ ] `Exalted Angel`
 - [ ] `Frantic Search`
-- [ ] `Gerrard's Verdict`
 - [ ] `Gilded Drake`
-- [ ] `Haunting Echoes`
 - [ ] `Hermit Druid`
 - [ ] `Intuition`
 - [ ] `Krosan Reclamation`
@@ -218,7 +219,6 @@ Not yet cataloged:
 - [ ] `Reflecting Pool`
 - [ ] `Replenish`
 - [ ] `Shallow Grave`
-- [ ] `Skeletal Scrying`
 - [ ] `Skycloud Expanse`
 - [ ] `Stifle`
 - [ ] `Sutured Ghoul`

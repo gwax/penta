@@ -125,7 +125,8 @@ impl Game {
                     | ObjectSetDef::LegalTargets(_)
                     | ObjectSetDef::Query(_)
                     | ObjectSetDef::BottomOfGraveyard(_)
-                    | ObjectSetDef::SharingNameWith(_),
+                    | ObjectSetDef::SharingNameWith(_)
+                    | ObjectSetDef::SharingNameWithBinding { .. },
                 ) => false,
                 EffectRecipientSetDef::Players(players) => {
                     let Target::Player(recipient) = recipient else {

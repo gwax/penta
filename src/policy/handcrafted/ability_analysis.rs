@@ -476,7 +476,8 @@ impl HandcraftedPolicy {
             | crate::card::ObjectSetDef::Binding(_)
             | crate::card::ObjectSetDef::BottomOfGraveyard(_)
             | crate::card::ObjectSetDef::LegalTargets(_)
-            | crate::card::ObjectSetDef::SharingNameWith(_) => None,
+            | crate::card::ObjectSetDef::SharingNameWith(_)
+            | crate::card::ObjectSetDef::SharingNameWithBinding { .. } => None,
         }
     }
 

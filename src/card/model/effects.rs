@@ -347,6 +347,15 @@ pub enum EffectDef {
         object: EffectRecipientDef,
         zone: ZoneKind,
     },
+    /// Saves a set of objects for the rest of this resolution and continues.
+    /// Nothing is asked and nothing moves: Haunting Echoes needs to know
+    /// which cards it exiled from a graveyard *before* it empties one, so
+    /// that what it then hunts through the library is the set it took.
+    BindMatching {
+        objects: ObjectSetDef,
+        binding: ObjectSetBindingIndex,
+        then: &'static EffectDef,
+    },
     /// Names a card while this effect resolves, binds every card of that name
     /// where it looks, and continues. "Discards all cards with that name" is
     /// the follow-up naming that binding. Distinct from the entry choice a

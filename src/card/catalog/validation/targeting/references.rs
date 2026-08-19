@@ -681,9 +681,10 @@ fn validate_recipient_target_references(
         EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => {
             validate_query(query, target_count, scope)
         }
-        EffectRecipientSetDef::Objects(ObjectSetDef::BottomOfGraveyard(player)) => {
-            validate_player_reference(player, target_count, scope)
-        }
+        EffectRecipientSetDef::Objects(
+            ObjectSetDef::BottomOfGraveyard(player)
+            | ObjectSetDef::SharingNameWithBinding { player, .. },
+        ) => validate_player_reference(player, target_count, scope),
         EffectRecipientSetDef::Players(players) => {
             validate_player_set(players, target_count, scope)
         }
