@@ -132,6 +132,11 @@ pub enum ValueDef {
     /// battlefield. An enters trigger is a new object, so [`Self::ChosenX`]
     /// reads nothing there; this reads it off the permanent instead.
     SourceCastX,
+    /// The mana value of the permanent a static effect is being applied to,
+    /// rather than of the permanent applying it. Opalescence gives each
+    /// other enchantment a body its own cost decides, so the number is the
+    /// affected object's and changes from one to the next.
+    AffectedManaValue,
     SourcePower,
     SourceToughness,
     TriggerEventAmount,

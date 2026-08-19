@@ -267,6 +267,7 @@ fn validate_trigger_object_predicate(
                     | ValueDef::ChosenX
                     | ValueDef::SourceCastX
                     | ValueDef::SourcePower
+                    | ValueDef::AffectedManaValue
                     | ValueDef::LifeTotal(_)
         | ValueDef::SourceToughness
                     | ValueDef::CountersOnSource(_)
@@ -742,6 +743,7 @@ fn validate_value_target_references(
         | ValueDef::ChosenX
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
+        | ValueDef::AffectedManaValue
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness
         | ValueDef::LifeTotal(_)

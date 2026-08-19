@@ -183,3 +183,52 @@ fn attunement_returns_itself_and_fills_the_graveyard() {
         "and it is back in hand to be cast again",
     );
 }
+
+/// Opalescence stands the other enchantments up at the size of their own
+/// costs, leaves itself and any Aura alone, and stops when it leaves.
+#[test]
+fn opalescence_animates_each_other_non_aura_enchantment() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::OPALESCENCE, PlayerId::One));
+    // Engineered Plague costs {2}{B}, so three.
+    game.battlefield
+        .push(creature(10_001, cards::ENGINEERED_PLAGUE, PlayerId::One));
+    // An Aura is left out of it, and so is a plain artifact.
+    game.battlefield
+        .push(creature(10_002, cards::BLACK_VISE, PlayerId::One));
+
+    let stats = |game: &Game, definition| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == definition)
+            .and_then(|permanent| game.creature_stats(permanent))
+            .map(|stats| (stats.power, stats.toughness))
+    };
+
+    assert_eq!(
+        stats(&game, cards::ENGINEERED_PLAGUE),
+        Some((3, 3)),
+        "a three-mana enchantment is a 3/3",
+    );
+    assert_eq!(
+        stats(&game, cards::OPALESCENCE),
+        None,
+        "\"each other\" leaves the Opalescence itself out",
+    );
+    assert_eq!(
+        stats(&game, cards::BLACK_VISE),
+        None,
+        "and an artifact is not an enchantment",
+    );
+
+    // The animation is the Opalescence's, so it ends with the Opalescence.
+    let opalescence = game.battlefield[0].card.id;
+    game.destroy_permanent(opalescence);
+    drain_pending(&mut game);
+    assert_eq!(
+        stats(&game, cards::ENGINEERED_PLAGUE),
+        None,
+        "the Plague is an enchantment again and nothing more",
+    );
+}

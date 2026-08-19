@@ -266,7 +266,8 @@ pub(in super::super) fn shared_static_applied_effect(
         // stratified walk.
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
             SetOperationDef::Add(types),
-        )) => types.contains(CardType::Creature) && shared_static_animation_query(recipient),
+        )) => types == crate::card::CardTypeSet::single(CardType::Creature)
+            && shared_static_animation_query(recipient),
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(
             SetOperationDef::Set(_),
         )) => shared_static_animation_query(recipient),
@@ -358,7 +359,10 @@ fn static_stat_value(value: crate::card::ValueDef) -> bool {
         // Read live from the static effect's own controller, the same way a
         // battlefield count is.
         | crate::card::ValueDef::CardsInHandAbove { .. }
-        | crate::card::ValueDef::CountMatchingObjects(_) => true,
+        | crate::card::ValueDef::CountMatchingObjects(_)
+        // Read from the affected object rather than from the effect's own
+        // source, which the static power-and-toughness layer has in hand.
+        | crate::card::ValueDef::AffectedManaValue => true,
         crate::card::ValueDef::Scaled(scaled) => static_stat_value(scaled.value),
         crate::card::ValueDef::Halved(halved) => static_stat_value(halved.value),
         _ => false,

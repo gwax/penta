@@ -321,7 +321,8 @@ fn static_object_applied_effect_supported(
         // stratified walk.
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
             SetOperationDef::Add(types),
-        )) => types.contains(CardType::Creature) && static_animation_query_supported(recipient),
+        )) => types == crate::card::CardTypeSet::single(CardType::Creature)
+            && static_animation_query_supported(recipient),
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(
             SetOperationDef::Set(_),
         )) => static_animation_query_supported(recipient),
@@ -576,11 +577,27 @@ fn static_animation_query_supported(recipient: EffectRecipientDef) -> bool {
     })
 }
 
+/// Which predicates a static animation's own query may read.
+///
+/// The rule is stratification, not a list of favourites: a static animation
+/// adds the creature card type and may repaint colour, so its query may not
+/// ask about either. Everything below is something no static animation
+/// supplies -- another card type, a non-land subtype, or which object is the
+/// source -- so reading it cannot feed back into the walk. A basic land
+/// subtype is the exception: the layer-4 operations do supply those.
+/// `Game::static_animation_predicate_is_supported` is the runtime's copy of
+/// this list; the two are meant to say the same thing.
 fn static_animation_predicate_supported(predicate: ObjectPredicateDef) -> bool {
     match predicate {
+        ObjectPredicateDef::Subtype(name) => !crate::card::BasicLandType::ALL
+            .iter()
+            .any(|land_type| land_type.subtype() == name),
         ObjectPredicateDef::Any
+        | ObjectPredicateDef::Source
         | ObjectPredicateDef::HasAnyBasicLandType(_)
-        | ObjectPredicateDef::HasType(CardType::Land) => true,
+        | ObjectPredicateDef::HasType(
+            CardType::Land | CardType::Enchantment | CardType::Artifact,
+        ) => true,
         ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => predicates
             .iter()
             .copied()
@@ -658,9 +675,13 @@ fn static_source_value_supported(value: ValueDef) -> bool {
 
 fn static_power_toughness_value_supported(value: ValueDef) -> bool {
     match value {
-        // Both are read live from the static effect's own controller: a
-        // battlefield count, or the size of that player's hand.
-        ValueDef::Constant(_) | ValueDef::CardsInHandAbove { .. } => true,
+        // The first two are read live from the static effect's own
+        // controller: a battlefield count, or the size of that player's
+        // hand. The third is read from the affected object instead, which
+        // the static power-and-toughness layer has in hand.
+        ValueDef::Constant(_)
+        | ValueDef::CardsInHandAbove { .. }
+        | ValueDef::AffectedManaValue => true,
         ValueDef::CountMatchingObjects(query)
         | ValueDef::AnyMatchingObject(query)
         | ValueDef::GreatestPowerAmong(query) => static_query_supported(*query),
@@ -710,6 +731,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::ChosenX
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
+        | ValueDef::AffectedManaValue
         | ValueDef::SourceToughness
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness

@@ -11,7 +11,7 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 11 of them not yet cataloged
+- 145 distinct cards across the tranche, 10 of them not yet cataloged
 - 6 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
   Drew Glauberg's Stasis, Chris Danis's BW Control, TentacleFan's Landstill,
   and Andy Dominguez's RG Goblins. Nothing in any of them is metadata-only or
@@ -19,7 +19,7 @@ correctly.
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: Replenish 7, Angry Hermit 6. BW Control is complete. A list is
+together: Replenish 6, Angry Hermit 6. BW Control is complete. A list is
 blocked only by uncataloged cards -- no staged deck contains a card that is
 cataloged but unplayable.
 
@@ -51,9 +51,13 @@ result and rebuild sampled Premodern positions from their observations.
 - Implement reusable mechanics before card-local behavior. Cycling and
   typecycling, flashback, split cards, tutors, alternative costs that exile a
   card from hand, and single-card reanimation are all in place. What the
-  remaining lists still need fading (Parallax Wave) and the layer rewrite
-  Opalescence asks for. Replenish itself needed no new mechanic: returning
-  every enchantment card at once is the ordinary zone move over a query. Morph landed with Exalted Angel: a permanent can be
+  remaining lists still need fading (Parallax Wave). Replenish itself needed
+  no new mechanic: returning every enchantment card at once is the ordinary
+  zone move over a query. Opalescence needed no rewrite either, only a
+  static power-and-toughness amount read from the affected object rather
+  than from the effect's source, and a slightly wider stratified vocabulary
+  for an animation's own query -- still excluding the basic land subtypes,
+  which a static effect can itself supply. Morph landed with Exalted Angel: a permanent can be
   face down, presenting a shared 2/2 body with no name, and the special
   action that turns it up reads the morph cost off the physical card. Storm landed with Brain Freeze, along with a
   spell's own cast trigger and a copy chain; countering an ability landed
@@ -161,6 +165,7 @@ older unannotated definitions still require one):
 - `Mountain`
 - `Mox Diamond` — complete; an unpaid entry is replaced, not undone
 - `Naturalize` — complete
+- `Opalescence` — complete; each other enchantment is the size of its own cost
 - `Opt` — complete
 - `Overload` — complete
 - `Phyrexian Arena` — complete
@@ -221,7 +226,6 @@ Not yet cataloged:
 - [ ] `Dragon Breath`
 - [ ] `Gilded Drake`
 - [ ] `Intuition`
-- [ ] `Opalescence`
 - [ ] `Parallax Wave`
 - [ ] `Phyrexian Dreadnought`
 - [ ] `Skycloud Expanse`

@@ -27,7 +27,10 @@ impl Game {
             ValueDef::TriggerEventAmount => context.trigger.amount.unwrap_or(0),
             // Resolved per target by the divided-damage path; anything else
             // reading it has no target in hand and so no share.
-            ValueDef::DividedAmongTargets => 0,
+            // Neither has an answer while an effect resolves: nothing is
+            // being divided, and only the static power-and-toughness layer
+            // has an affected object whose cost it could read.
+            ValueDef::DividedAmongTargets | ValueDef::AffectedManaValue => 0,
             ValueDef::SourceCastX => self
                 .battlefield
                 .iter()

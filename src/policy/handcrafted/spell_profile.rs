@@ -484,6 +484,7 @@ impl HandcraftedPolicy {
             // alone, so the caller falls back to its own heuristics.
             ValueDef::SourceCastX
             | ValueDef::SourcePower
+            | ValueDef::AffectedManaValue
             | ValueDef::TriggeringObjectPower
             | ValueDef::TriggeringObjectToughness
             | ValueDef::SourceToughness

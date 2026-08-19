@@ -286,6 +286,7 @@ fn validate_value_shape(
         | ValueDef::ChosenX
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
+        | ValueDef::AffectedManaValue
         | ValueDef::SourceToughness
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness

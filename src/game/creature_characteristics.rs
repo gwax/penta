@@ -277,8 +277,14 @@ impl Game {
         source: GameObjectId,
         value: ValueDef,
     ) -> i16 {
-        // A static amount is measured from its own source's controller, not
-        // from whoever it is being applied to.
+        // The one amount measured from the affected object rather than from
+        // the effect's source: Opalescence gives each enchantment a body its
+        // own cost decides.
+        if value == ValueDef::AffectedManaValue {
+            return i16::try_from(self.permanent_mana_value(permanent)).unwrap_or(i16::MAX);
+        }
+        // Every other static amount is measured from its own source's
+        // controller, not from whoever it is being applied to.
         let controller = self
             .controller_of_object(source)
             .unwrap_or(permanent.controller);

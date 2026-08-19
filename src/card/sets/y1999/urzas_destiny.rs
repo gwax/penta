@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, CardArt, CardRules, CardSet, CardType, CounterKind, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, cards,
+    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
+    CardTypeSet, CharacteristicOperationDef, CounterKind, EffectDef, EffectRecipientDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRelation, PowerToughnessOperationDef,
+    SetOperationDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, cards,
 };
 use crate::mana_cost;
 
@@ -15,6 +16,53 @@ static ENCHANTMENTS_IN_YOUR_GRAVEYARD: EffectRecipientDef = EffectRecipientDef::
     ObjectPredicateDef::HasType(CardType::Enchantment),
     &[ZoneKind::Graveyard],
     PlayerRelation::You,
+);
+
+/// Every other non-Aura enchantment. An Aura is left alone because a
+/// creature Aura would fall off whatever it was attached to, and the
+/// enchantment doing the animating is not one of the things it animates.
+static OTHER_NON_AURA_ENCHANTMENTS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Enchantment),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Aura")),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Any,
+);
+
+/// A creature in addition to its other types, with a body its own cost
+/// decides: the number is read off each affected enchantment rather than off
+/// the Opalescence.
+static ANIMATE_AS_ITS_OWN_COST: AppliedEffectDef = AppliedEffectDef::Composite(&[
+    AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
+        SetOperationDef::Add(CardTypeSet::single(CardType::Creature)),
+    )),
+    AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+        PowerToughnessOperationDef::SetBase {
+            power: ValueDef::AffectedManaValue,
+            toughness: ValueDef::AffectedManaValue,
+        },
+    )),
+]);
+
+// UDS 13 — Opalescence
+pub(in crate::card::sets) static OPALESCENCE: CardRecord = CardRecord::new(
+    cards::OPALESCENCE,
+    "Opalescence",
+    CardArt::new("c8b66a4d-4ee1-40ba-993a-a56a5cbd2c3c", "John Avon"),
+    CardSet::UrzasDestiny,
+    // The deck's whole win condition: the enchantments it already wanted to
+    // resolve stand up and attack.
+    CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_ability(AbilityDef::static_ability(
+        "Each other non-Aura enchantment is a creature in addition to its other types and has base power and base toughness each equal to its mana value.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
+                OTHER_NON_AURA_ENCHANTMENTS,
+            )),
+            effect: ANIMATE_AS_ITS_OWN_COST,
+        },
+    )),
 );
 
 // UDS 15 — Replenish
@@ -91,6 +139,7 @@ pub(in crate::card::sets) static POWDER_KEG: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&REPLENISH, &POWDER_KEG];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&OPALESCENCE, &REPLENISH, &POWDER_KEG];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
