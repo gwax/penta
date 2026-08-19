@@ -703,3 +703,36 @@ fn sutured_ghoul_is_the_size_of_what_it_exiled() {
         "the Bolt stayed behind",
     );
 }
+
+/// A phased-out permanent is treated as though it does not exist, and comes
+/// back before its controller untaps.
+#[test]
+fn a_phased_out_permanent_is_gone_until_its_controller_untaps() {
+    let mut game = ready_game();
+    let mut vise = creature(10_000, cards::BLACK_VISE, PlayerId::Two);
+    vise.tapped = true;
+    game.battlefield.push(vise);
+    let vise_id = game.battlefield[0].card.id;
+
+    game.phase_out(vise_id);
+    assert!(
+        game.battlefield.is_empty(),
+        "nothing on the battlefield sees it",
+    );
+    assert!(
+        game.permanent_controller(vise_id).is_none(),
+        "and neither does anything asking after it",
+    );
+
+    // Its controller's untap step brings it back, before the untap itself.
+    game.commit_next_turn(PlayerId::Two, Vec::new());
+    let returned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == vise_id)
+        .expect("it phased in");
+    assert!(
+        !returned.tapped,
+        "and it untapped with everything else, having come back first",
+    );
+}

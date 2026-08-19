@@ -15,6 +15,9 @@ impl Game {
         context: &EffectResolutionContext,
     ) {
         match scoped.effect {
+            EffectDef::PhaseOut { object: recipient } => {
+                self.phase_out_recipients(recipient, object, context, scoped);
+            }
             EffectDef::DestroyAtEndOfCombat { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     let Target::Permanent(id) = target else {

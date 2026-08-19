@@ -520,7 +520,8 @@ impl Game {
             pending_triggers,
             pending_procedures,
             decision_state,
-            has_deferred_state: has_unlocated_temporary_ability_grant
+            has_deferred_state: !self.phased_out.is_empty()
+                || has_unlocated_temporary_ability_grant
                 || has_unlocated_installed_trigger
                 || has_unsupported_decision
                 || has_unsupported_event
@@ -739,6 +740,7 @@ impl Game {
             physical_cards: Vec::new(),
             players,
             battlefield: Vec::new(),
+            phased_out: Vec::new(),
             stack: GameStack::default(),
             retired_objects: BTreeMap::new(),
             temporary_ability_grants,

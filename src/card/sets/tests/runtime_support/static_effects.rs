@@ -190,6 +190,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
         | EffectDef::Attach { .. }
+        | EffectDef::PhaseOut { .. }
         | EffectDef::ReturnAttached { .. }
         | EffectDef::Reconfigure { .. }
         | EffectDef::PairWithSource { .. }

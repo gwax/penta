@@ -161,6 +161,7 @@ impl Game {
             physical_cards,
             players,
             battlefield: Vec::new(),
+            phased_out: Vec::new(),
             stack: GameStack::default(),
             retired_objects: BTreeMap::new(),
             temporary_ability_grants: Vec::new(),

@@ -85,6 +85,7 @@ mod mana_planning;
 mod mana_runtime;
 mod mana_state;
 mod observation;
+mod phasing;
 mod prevention_state;
 mod procedure_state;
 mod prospective_x;
@@ -825,6 +826,19 @@ pub struct Game {
     physical_cards: Vec<PhysicalCard>,
     players: [PlayerState; 2],
     battlefield: Vec<Permanent>,
+    /// Permanents that are phased out. A phased-out permanent is treated as
+    /// though it does not exist (CR 702.25), so it is held here rather than
+    /// left on the battlefield behind a flag: every walk over the
+    /// battlefield is then correct without knowing about phasing at all.
+    /// Phasing is not a zone change, so nothing about the object is
+    /// disturbed while it waits.
+    ///
+    /// A checkpoint taken while anything is phased out is refused: a
+    /// phased-out permanent is absent from every observation, so the
+    /// reconstruction has nothing to rebuild it from. No registered deck can
+    /// phase anything today, and carrying these is what the deck that can
+    /// will need first.
+    phased_out: Vec<Permanent>,
     stack: GameStack,
     retired_objects: BTreeMap<GameObjectId, RetiredObject>,
     /// Abilities granted to non-battlefield object incarnations until cleanup.

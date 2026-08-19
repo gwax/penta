@@ -717,6 +717,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::Untap { .. }
         | EffectDef::PreventDamage { .. }
         | EffectDef::Attach { .. }
+        | EffectDef::PhaseOut { .. }
         | EffectDef::ReturnAttached { .. }
         | EffectDef::Reconfigure { .. }
         | EffectDef::PairWithSource { .. }
@@ -887,6 +888,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::Untap { .. }
         | EffectDef::PreventDamage { .. }
         | EffectDef::Attach { .. }
+        | EffectDef::PhaseOut { .. }
         | EffectDef::ReturnAttached { .. }
         | EffectDef::Reconfigure { .. }
         | EffectDef::PairWithSource { .. }

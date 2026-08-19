@@ -637,6 +637,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::RemoveAllCounters { .. }
                     | EffectDef::Untap { .. }
                     | EffectDef::Attach { .. }
+                    | EffectDef::PhaseOut { .. }
                     | EffectDef::ReturnAttached { .. }
                     | EffectDef::Reconfigure { .. }
                     | EffectDef::CreateToken { .. }

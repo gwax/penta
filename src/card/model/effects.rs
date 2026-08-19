@@ -284,6 +284,13 @@ pub enum EffectDef {
     Attach {
         object: EffectRecipientDef,
     },
+    /// Phase the recipient out. It is treated as though it does not exist
+    /// until it phases in, which happens before its controller untaps during
+    /// their next untap step (CR 702.25). Phasing is not a zone change:
+    /// nothing enters or leaves, and the permanent keeps everything it had.
+    PhaseOut {
+        object: EffectRecipientDef,
+    },
     /// Put an Aura onto the battlefield from another zone, already attached
     /// to a host. One effect rather than a move followed by an attach: the
     /// card that arrives is a new object, so nothing an ordinary attach

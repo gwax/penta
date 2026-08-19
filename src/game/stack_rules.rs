@@ -69,8 +69,7 @@ impl Game {
                 .iter()
                 .chain(payment.otherwise.iter())
                 .any(|effect| Self::effect_applies_to_source(**effect, expected)),
-            EffectDef::None
-            | EffectDef::Randomized { .. }
+            EffectDef::None | EffectDef::Randomized { .. }
             | EffectDef::PreventDamage { .. }
             | EffectDef::AddMana(_)
             | EffectDef::AddManaEqualTo { .. }
@@ -96,6 +95,7 @@ impl Game {
             | EffectDef::Attach { .. }
             | EffectDef::ReturnAttached { .. }
             | EffectDef::Reconfigure { .. }
+            | EffectDef::PhaseOut { .. }
             | EffectDef::PairWithSource { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }

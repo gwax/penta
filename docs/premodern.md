@@ -51,15 +51,17 @@ result and rebuild sampled Premodern positions from their observations.
 - Implement reusable mechanics before card-local behavior. Cycling and
   typecycling, flashback, split cards, tutors, alternative costs that exile a
   card from hand, and single-card reanimation are all in place. One named
-  mechanic is left, and it is the last card too: Vision Charm needs phasing
-  for one mode, and a mass land-type change driven by two chosen types for
-  another. Neither exists. Phasing looks contained -- a phased-out permanent
-  is "treated as though it doesn't exist", so holding it aside rather than
-  filtering every battlefield walk should do it, and it phases in before its
-  controller's next untap step. The land-type mode needs a resolution choice
-  of a land type and a basic land type, which the scalar-choice vocabulary
-  does not offer, and then a until-end-of-turn type change across every land
-  of the first type. Fading landed with
+  mechanic is left, and it is the last card too. Phasing landed: a
+  phased-out permanent is held apart from the battlefield rather than left
+  on it behind a flag, so all hundred-odd walks over the battlefield are
+  right without knowing phasing exists, and it phases in before its
+  controller untaps. A checkpoint taken while anything is phased out is
+  refused for now -- such a permanent is absent from every observation, so
+  there is nothing to rebuild it from, and carrying them is what Angry
+  Hermit's registration will need first. Vision Charm's other mode still
+  needs a resolution choice of a land type and a basic land type, which the
+  scalar-choice vocabulary does not offer, and then an until-end-of-turn
+  type change across every land of the first type. Fading landed with
   Parallax Wave and needed only a counter kind: entering with counters, an
   upkeep trigger reading its own counters, and exiles linked to a source
   were all already there, so fading is the shape those pieces make rather

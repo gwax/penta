@@ -462,6 +462,7 @@ fn validate_resolving_effect(
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }
         | EffectDef::Attach { .. }
+        | EffectDef::PhaseOut { .. }
         | EffectDef::ReturnAttached { .. }
         | EffectDef::Reconfigure { .. }
         | EffectDef::PairWithSource { .. }
@@ -859,6 +860,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::CreateAttachedToken { .. } => "CreateAttachedToken",
         EffectDef::CreateTokenCopyOf { .. } => "CreateTokenCopyOf",
         EffectDef::Attach { .. }
+        | EffectDef::PhaseOut { .. }
         | EffectDef::ReturnAttached { .. } => "Attach",
         EffectDef::Reconfigure { .. } => "Reconfigure",
         EffectDef::PairWithSource { .. } => "PairWithSource",

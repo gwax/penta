@@ -505,6 +505,7 @@ impl Game {
             | EffectDef::CannotAttackIf(_)
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
+            | EffectDef::PhaseOut { .. }
             | EffectDef::ReturnAttached { .. }
             | EffectDef::Reconfigure { .. }
             | EffectDef::PairWithSource { .. }

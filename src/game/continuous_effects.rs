@@ -513,6 +513,7 @@ impl Game {
                 | EffectDef::CannotAttackUnless(_)
                 | EffectDef::MoveToZone { .. }
                 | EffectDef::Attach { .. }
+                | EffectDef::PhaseOut { .. }
                 | EffectDef::CreateToken { .. }
                 | EffectDef::CreateTokenCopyOf { .. }
                 | EffectDef::StaticApply { .. }

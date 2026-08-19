@@ -452,6 +452,10 @@ impl Game {
         // combat did.
         self.damage_taken_this_turn = [0; 2];
         self.damage_taken_by_group_this_turn = [[0; crate::card::DamageSourceGroupDef::COUNT]; 2];
+        // "It phases in before its controller untaps": ahead of the untap
+        // itself, so a permanent that comes back this turn untaps with the
+        // rest of them.
+        self.phase_in_for(self.active_player);
         // Everything a cap covers waits for the player to choose; everything
         // else untaps now.
         let capped: Vec<GameObjectId> = self
