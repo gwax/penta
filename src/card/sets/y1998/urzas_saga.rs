@@ -3,8 +3,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardChoiceSourceDef, CardRules, CardSet,
-    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardType, DiscardSelectionDef, EffectDef, EffectRecipientDef, ObjectPredicateDef,
+    PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -69,6 +69,32 @@ static GOBLIN_LACKEY_TRIGGER: EffectDef = EffectDef::ChooseCards {
     destination: ZoneKind::Battlefield,
     placement: ZonePlacement::Top,
 };
+
+// USG 61 — Attunement
+pub(in crate::card::sets) static ATTUNEMENT: CardRecord = CardRecord::new(
+    cards::ATTUNEMENT,
+    "Attunement",
+    CardArt::new("b752a0d5-61f8-4f16-9d61-341464c9b2a2", "Randy Gallegos"),
+    CardSet::UrzasSaga,
+    // A net card down every time, and that is the point: the deck wants the
+    // graveyard, and the enchantment comes back to do it again.
+    CardRules::new_enchantment(mana_cost!("{2}{U}")).with_ability(AbilityDef::activated(
+        "Return this enchantment to its owner's hand: Draw three cards, then discard four cards.",
+        &[AbilityCostDef::ReturnSourceToHand],
+        EffectDef::Sequence(&[
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(3),
+            },
+            EffectDef::Discard {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(4),
+                selection: DiscardSelectionDef::RecipientChooses,
+                then: None,
+            },
+        ]),
+    )),
+);
 
 // USG 190 — Goblin Lackey
 pub(in crate::card::sets) static GOBLIN_LACKEY: CardRecord = CardRecord::new(
@@ -161,6 +187,7 @@ pub(in crate::card::sets) static CLAWS_OF_GIX: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MONK_REALIST,
     &ANNUL,
+    &ATTUNEMENT,
     &GOBLIN_LACKEY,
     &GOBLIN_MATRON,
     &GOBLIN_PATROL,

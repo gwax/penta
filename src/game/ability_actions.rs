@@ -176,7 +176,9 @@ impl Game {
                 let leaves_source = definition.costs.iter().any(|cost| {
                     matches!(
                         cost,
-                        AbilityCostDef::SacrificeSource | AbilityCostDef::ExileSource
+                        AbilityCostDef::SacrificeSource
+                            | AbilityCostDef::ExileSource
+                            | AbilityCostDef::ReturnSourceToHand
                     )
                 });
                 // The same purpose the payment will use, so an ability that
@@ -219,6 +221,7 @@ impl Game {
                         | AbilityCostDef::RemoveCountersFromSource { .. }
                         | AbilityCostDef::TapSource
                         | AbilityCostDef::SacrificeSource
+                        | AbilityCostDef::ReturnSourceToHand
                         | AbilityCostDef::ExileSource
                         | AbilityCostDef::SacrificePermanent { .. }
                         | AbilityCostDef::TapPermanent { .. }
@@ -240,7 +243,9 @@ impl Game {
                     .filter(|cost| {
                         matches!(
                             cost,
-                            AbilityCostDef::SacrificeSource | AbilityCostDef::ExileSource
+                            AbilityCostDef::SacrificeSource
+                            | AbilityCostDef::ExileSource
+                            | AbilityCostDef::ReturnSourceToHand
                         )
                     })
                     .count();
@@ -526,6 +531,7 @@ impl Game {
                         AbilityCostDef::TapSource
                         | AbilityCostDef::UntapSource
                         | AbilityCostDef::SacrificeSource
+                        | AbilityCostDef::ReturnSourceToHand
                         | AbilityCostDef::RemoveCountersFromSource { .. }
                         | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                         | AbilityCostDef::PayLife(_)
@@ -613,6 +619,7 @@ impl Game {
                             AbilityCostDef::TapSource
                             | AbilityCostDef::UntapSource
                             | AbilityCostDef::SacrificeSource
+                            | AbilityCostDef::ReturnSourceToHand
                             | AbilityCostDef::RemoveCountersFromSource { .. }
                             | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                             | AbilityCostDef::PayLife(_)

@@ -248,6 +248,7 @@ impl Game {
                 // exile are deferred to the batch below, so that a Goblin
                 // sacrificing itself leaves the battlefield once.
                 AbilityCostDef::SacrificeSource
+                | AbilityCostDef::ReturnSourceToHand
                 | AbilityCostDef::ExileSource
                 | AbilityCostDef::SacrificePermanent { .. }
                 | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_) => {}

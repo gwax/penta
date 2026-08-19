@@ -25,7 +25,9 @@ impl Game {
                 .filter(|cost| {
                     matches!(
                         cost,
-                        AbilityCostDef::SacrificeSource | AbilityCostDef::ExileSource
+                        AbilityCostDef::SacrificeSource
+                            | AbilityCostDef::ExileSource
+                            | AbilityCostDef::ReturnSourceToHand
                     )
                 })
                 .count()
@@ -46,6 +48,7 @@ impl Game {
                 | AbilityCostDef::TapSource
                 | AbilityCostDef::UntapSource
                 | AbilityCostDef::SacrificeSource
+                | AbilityCostDef::ReturnSourceToHand
                 | AbilityCostDef::DiscardSource
                 | AbilityCostDef::DiscardCards(_)
                 | AbilityCostDef::DiscardCardMatching(_)
@@ -84,6 +87,7 @@ impl Game {
         match cost {
             AbilityCostDef::TapSource
             | AbilityCostDef::SacrificeSource
+            | AbilityCostDef::ReturnSourceToHand
             | AbilityCostDef::ExileSource
             | AbilityCostDef::RemoveCountersFromSource { .. }
             | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
@@ -101,6 +105,7 @@ impl Game {
                             cost,
                             AbilityCostDef::TapSource
                                 | AbilityCostDef::SacrificeSource
+                                | AbilityCostDef::ReturnSourceToHand
                                 | AbilityCostDef::ExileSource
                                 | AbilityCostDef::SacrificePermanent { .. }
                         )

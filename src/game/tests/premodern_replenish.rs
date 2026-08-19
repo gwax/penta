@@ -112,3 +112,74 @@ fn frantic_search_untaps_three_of_the_lands_that_paid_for_it() {
         .count();
     assert_eq!(untapped, 3, "three of the four Islands came back up");
 }
+
+/// Attunement pays with itself and gets itself back: the enchantment leaves
+/// the battlefield for its owner's hand, and the graveyard takes the four.
+#[test]
+fn attunement_returns_itself_and_fills_the_graveyard() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::ATTUNEMENT, PlayerId::One));
+    for index in 0..3 {
+        game.players[PlayerId::One.index()].hand.push(card(
+            10_010 + index,
+            cards::COUNTERSPELL,
+            PlayerId::One,
+        ));
+    }
+    for index in 0..5 {
+        game.players[PlayerId::One.index()].library.push(card(
+            10_020 + index,
+            cards::ISLAND,
+            PlayerId::One,
+        ));
+    }
+    game.priority = PlayerId::One;
+
+    let source = game.battlefield[0].card.id;
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source: id, .. } if *id == source))
+        .expect("the cost is the enchantment itself, so it is always payable");
+    game.apply(PlayerId::One, activate).unwrap();
+    pass_until_decision(&mut game);
+    // Three drawn onto a hand of three, then four of those six discarded.
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("which four cards go");
+    // The Attunement is in hand by now and could be discarded like anything
+    // else; keeping it is what shows it came back.
+    let options: Vec<u32> = decision
+        .options
+        .iter()
+        .filter(|option| option.label != "Attunement")
+        .take(4)
+        .map(|option| option.id)
+        .collect();
+    assert_eq!(options.len(), 4, "four cards other than the Attunement");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options,
+        },
+    )
+    .expect("four is what the card asks for");
+    drain_pending(&mut game);
+
+    let player = &game.players[PlayerId::One.index()];
+    assert_eq!(player.graveyard.len(), 4, "four cards fed the graveyard");
+    assert!(
+        game.battlefield.is_empty(),
+        "the enchantment left the battlefield to pay",
+    );
+    assert!(
+        player
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::ATTUNEMENT),
+        "and it is back in hand to be cast again",
+    );
+}

@@ -140,7 +140,9 @@ impl Game {
             let leaves_source = definition.costs.iter().any(|cost| {
                 matches!(
                     cost,
-                    AbilityCostDef::SacrificeSource | AbilityCostDef::ExileSource
+                    AbilityCostDef::SacrificeSource
+                        | AbilityCostDef::ExileSource
+                        | AbilityCostDef::ReturnSourceToHand
                 )
             });
             return cost.map(|cost| {
@@ -371,7 +373,9 @@ impl Game {
                     ) || !activation.costs.iter().any(|cost| {
                         matches!(
                             cost,
-                            AbilityCostDef::SacrificeSource | AbilityCostDef::ExileSource
+                            AbilityCostDef::SacrificeSource
+                            | AbilityCostDef::ExileSource
+                            | AbilityCostDef::ReturnSourceToHand
                         )
                     });
                     // An activation that itself costs mana is left to the

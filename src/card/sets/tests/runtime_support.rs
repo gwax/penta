@@ -329,7 +329,9 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
         .filter(|cost| {
             matches!(
                 cost,
-                AbilityCostDef::SacrificeSource | AbilityCostDef::ExileSource
+                AbilityCostDef::SacrificeSource
+                    | AbilityCostDef::ExileSource
+                    | AbilityCostDef::ReturnSourceToHand
             )
         })
         .count();
@@ -357,6 +359,9 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
             AbilityCostDef::ExileSource => battlefield || graveyard,
             AbilityCostDef::TapSource
             | AbilityCostDef::SacrificeSource
+            // The source leaves the battlefield to pay either way; only
+            // where it lands differs.
+            | AbilityCostDef::ReturnSourceToHand
             | AbilityCostDef::RemoveCountersFromSource { .. }
             // Open-ended only in the declaration: one activation per size is
             // built by the mana path, which is why the caller also requires

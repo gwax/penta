@@ -46,6 +46,11 @@ pub enum CostDef {
         controller: PlayerRelation,
     },
     ExileSource,
+    /// Return the permanent carrying this ability to its owner's hand. Like
+    /// a sacrifice the source leaves the battlefield to pay, but unlike one
+    /// it comes back to be cast again, which is the whole shape of
+    /// Attunement: the card is the cost and the card is reusable.
+    ReturnSourceToHand,
     /// Discard a matching card from the payer's own hand, chosen as the
     /// ability is activated. Unlike [`Self::DiscardCards`] the card travels
     /// with the activation rather than being counted, which is what "discard

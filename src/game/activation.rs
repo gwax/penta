@@ -106,6 +106,7 @@ impl Game {
                 AbilityCostDef::TapSource
                 | AbilityCostDef::UntapSource
                 | AbilityCostDef::SacrificeSource
+                | AbilityCostDef::ReturnSourceToHand
                 | AbilityCostDef::RemoveCountersFromSource { .. }
                 | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                 | AbilityCostDef::PayLife(_)
@@ -223,6 +224,7 @@ impl Game {
                     AbilityCostDef::TapSource
                     | AbilityCostDef::UntapSource
                     | AbilityCostDef::SacrificeSource
+                    | AbilityCostDef::ReturnSourceToHand
                     | AbilityCostDef::RemoveCountersFromSource { .. }
                     | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                     | AbilityCostDef::PayLife(_)
@@ -375,6 +377,7 @@ impl Game {
                     AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                     | AbilityCostDef::TapPermanent { .. }
                     | AbilityCostDef::SacrificeSource
+                    | AbilityCostDef::ReturnSourceToHand
                     | AbilityCostDef::ExileSource
                     | AbilityCostDef::SacrificePermanent { .. } => {
                         // A tap of a chosen permanent was paid above, ahead of
@@ -453,6 +456,14 @@ impl Game {
             }
             if definition.costs.contains(&AbilityCostDef::ExileSource) {
                 self.exile_permanent(source);
+            } else if definition
+                .costs
+                .contains(&AbilityCostDef::ReturnSourceToHand)
+            {
+                // The source leaves the battlefield to pay, the way a
+                // sacrifice does, but it goes somewhere it can be cast from
+                // again.
+                self.return_permanent_to_hand(source);
             } else if definition.costs.contains(&AbilityCostDef::SacrificeSource)
                 || sacrifice_choice_is_source
             {
