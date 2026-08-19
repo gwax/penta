@@ -858,3 +858,31 @@ fn an_indefinite_text_change_reconstructs_while_choosing_and_after() {
     );
     assert_reconstructs(&game, "a permanent carrying an indefinite text change");
 }
+
+/// A phased-out permanent is public information, so it survives a checkpoint
+/// the same way anything else on the board does -- and comes back phased
+/// out rather than as an ordinary permanent.
+#[test]
+fn a_phased_out_permanent_reconstructs_as_phased_out() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, crate::card::cards::BLACK_VISE, PlayerId::One));
+    let vise = game.battlefield[0].card.id;
+    game.phase_out(vise);
+    assert!(game.battlefield.is_empty(), "it left the battlefield");
+
+    let (_wire, rebuilt) = super::super::tests::rebuild_current_checkpoint(&game, PlayerId::One, 7);
+    assert!(
+        rebuilt.battlefield.is_empty(),
+        "and the rebuilt game does not have it on the battlefield either",
+    );
+    assert_eq!(
+        rebuilt
+            .phased_out
+            .iter()
+            .map(|permanent| permanent.card.definition)
+            .collect::<Vec<_>>(),
+        vec![crate::card::cards::BLACK_VISE],
+        "it came back waiting to phase in",
+    );
+}

@@ -154,6 +154,7 @@ fn permanent_observation_json(
         "name": card_part_name(catalog, permanent.definition, permanent.presented),
         "controller": seat_name(permanent.controller),
         "faceDown": permanent.face_down,
+        "phasedOut": permanent.phased_out,
         "chosenCardName": permanent.chosen_card_name.as_deref(),
         "chosenCreatureType": permanent.chosen_creature_type.as_deref(),
         "tapped": permanent.tapped,

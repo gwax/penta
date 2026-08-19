@@ -60,6 +60,10 @@ pub struct PermanentObservation {
     /// characteristics. Changing faces does not change `id`.
     pub presented: CardPartId,
     pub controller: PlayerId,
+    /// Whether this permanent is phased out. It is public information --
+    /// both players can see it -- and the rules merely treat it as though it
+    /// does not exist, so it is shown and flagged rather than hidden.
+    pub phased_out: bool,
     /// Whether this permanent is face down. Everyone sees that much; only
     /// its controller's observation carries the definition underneath.
     pub face_down: bool,

@@ -27,6 +27,7 @@ fn observation_json_carries_interwave_state_and_presented_card_part() {
             presented: crate::CardPartId(1),
             controller: PlayerId::One,
             face_down: false,
+            phased_out: false,
             types: crate::CardTypeSet::single(crate::CardType::Creature),
             chosen_creature_type: Some("Werewolf".into()),
             chosen_card_name: None,

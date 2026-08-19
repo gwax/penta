@@ -74,6 +74,7 @@ fn permanent(
         presented: CardPartId::PRIMARY,
         controller,
         face_down: false,
+        phased_out: false,
         types: penta::CardTypeSet::empty(),
         chosen_creature_type: None,
         chosen_card_name: None,

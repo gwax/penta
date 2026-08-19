@@ -493,6 +493,10 @@ impl Game {
             controller: permanent.controller,
             types,
             face_down: permanent.face_down,
+            phased_out: self
+                .phased_out
+                .iter()
+                .any(|phased| phased.card.id == permanent.card.id),
             chosen_creature_type: permanent.chosen_creature_type.clone(),
             chosen_card_name: permanent.chosen_card_name.clone(),
             tapped: permanent.tapped,
@@ -548,9 +552,13 @@ impl Game {
                 public_cards(&self.players[0].exile),
                 public_cards(&self.players[1].exile),
             ],
+            // Phased-out permanents come last and carry a flag: they are
+            // visible to both players, and only the rules treat them as
+            // absent. Reconstruction relies on this order.
             battlefield: self
                 .battlefield
                 .iter()
+                .chain(self.phased_out.iter())
                 .map(|permanent| self.observe_permanent(permanent, viewer, moat_active))
                 .collect(),
             emblems: self.observed_emblems(),

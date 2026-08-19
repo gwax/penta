@@ -55,16 +55,12 @@ result and rebuild sampled Premodern positions from their observations.
   phased-out permanent is held apart from the battlefield rather than left
   on it behind a flag, so all hundred-odd walks over the battlefield are
   right without knowing phasing exists, and it phases in before its
-  controller untaps. A checkpoint taken while anything is phased out is
-  refused, which is the one thing standing between Angry Hermit and
-  registration: the sweeps treat a refusal as a failure. A phased-out
-  permanent is absent from every observation, so reconstruction has nothing
-  to rebuild it from. The likely fix is to show it after all -- a phased-out
-  permanent is public information, visible to both players and merely
-  treated as nonexistent by the rules -- carrying a `phasedOut` flag so
-  reconstruction can route it to the phased-out list and consumers can skip
-  it. Engine legality already reads the battlefield, which excludes it, so
-  nothing illegal follows from showing it. Vision Charm's other mode still
+  controller untaps. A phased-out permanent now survives a
+  checkpoint: it is public information -- both players see it, and only the
+  rules treat it as absent -- so it is shown behind a `phasedOut` flag and
+  reconstruction routes it back to the phased-out list. Engine legality
+  reads the battlefield, which excludes it, so nothing illegal follows from
+  showing it. Vision Charm's other mode still
   needs work, and the shape is known: Magical Hack already offers a choice
   of an ordered pair of basic land types as one decision, so that option
   encoding is reusable. What is missing is a continuation that applies the

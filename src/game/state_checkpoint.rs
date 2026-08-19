@@ -355,9 +355,12 @@ impl Game {
             .collect::<Vec<_>>();
         let has_unlocated_play_restriction =
             resolved_play_restrictions.len() != self.resolved_play_restrictions.len();
+        // Phased-out permanents follow the battlefield in the observation,
+        // so they follow it here too: the two lists are zipped by position.
         let battlefield = self
             .battlefield
             .iter()
+            .chain(self.phased_out.iter())
             .map(|permanent| permanent_snapshot(&self.catalog, permanent))
             .collect::<Vec<_>>();
         let has_unlocated_battlefield_characteristics = battlefield
@@ -520,8 +523,7 @@ impl Game {
             pending_triggers,
             pending_procedures,
             decision_state,
-            has_deferred_state: !self.phased_out.is_empty()
-                || has_unlocated_temporary_ability_grant
+            has_deferred_state: has_unlocated_temporary_ability_grant
                 || has_unlocated_installed_trigger
                 || has_unsupported_decision
                 || has_unsupported_event
@@ -808,7 +810,10 @@ impl Game {
             result: None,
             events: vec![GameEvent::GameStarted { seed: rollout_seed }],
         };
-        game.battlefield = parse_battlefield(observation, &checkpoint.battlefield, &game.catalog)?;
+        let (battlefield, phased_out) =
+            parse_battlefield(observation, &checkpoint.battlefield, &game.catalog)?;
+        game.battlefield = battlefield;
+        game.phased_out = phased_out;
         game.emblems = parse_emblems(observation, &checkpoint.emblems, &game)?;
         game.retired_objects = parse_retired_objects(&checkpoint.retired_objects, &game)?;
         game.successors = checkpoint

@@ -422,11 +422,15 @@ pub(super) fn parse_combat_stage(value: &CombatDamageStageSnapshot) -> CombatDam
     }
 }
 
+/// Rebuilds the battlefield, and the permanents that are phased out beside
+/// it. Both come from the observation's battlefield list, which carries the
+/// phased-out ones last behind a flag: they are public information, so they
+/// are shown rather than hidden, and only the rules treat them as absent.
 pub(super) fn parse_battlefield(
     observation: &Value,
     snapshots: &[PermanentSnapshot],
     catalog: &CardCatalog,
-) -> Result<Vec<Permanent>, String> {
+) -> Result<(Vec<Permanent>, Vec<Permanent>), String> {
     let visible = array(field(observation, "battlefield")?)?;
     if visible.len() != snapshots.len() {
         return Err("checkpoint battlefield does not match observation".into());
@@ -487,8 +491,21 @@ pub(super) fn parse_battlefield(
                 },
                 catalog,
             )
+            .map(|permanent| (bool_field(shown, "phasedOut").unwrap_or(false), permanent))
         })
-        .collect()
+        .collect::<Result<Vec<_>, _>>()
+        .map(|permanents| {
+            let mut battlefield = Vec::new();
+            let mut phased_out = Vec::new();
+            for (phased, permanent) in permanents {
+                if phased {
+                    phased_out.push(permanent);
+                } else {
+                    battlefield.push(permanent);
+                }
+            }
+            (battlefield, phased_out)
+        })
 }
 
 #[allow(clippy::struct_excessive_bools)]
