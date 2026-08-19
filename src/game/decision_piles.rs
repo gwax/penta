@@ -1,10 +1,11 @@
 use super::{
     BalancePhase, BalanceTask, BattlefieldExitCompletion, CardInstance, CardRuntime,
     CommittedTriggerEvent, CounterKind, DecisionContinuation, DecisionOption, DecisionPreference,
-    DecisionVisibility, DecisionZone, DeclarativeAbilityDef, EffectDef, EffectResolutionContext,
-    Game, GameEvent, GameObjectId, ObjectPredicateDef, Permanent, PileChoice, PileChosen,
-    PileSplit, PilesSeparated, PlayerId, SacrificeDeclined, SacrificeFollowup, SacrificedAmountDef,
-    ScopedEffect, StackObject, Step, TopCardSelectionDef, ZoneKind, ZoneMoveCause,
+    DecisionVisibility, DecisionZone, DeclarativeAbilityDef, DiscardFollowUp, EffectDef,
+    EffectResolutionContext, Game, GameEvent, GameObjectId, ObjectPredicateDef, Permanent,
+    PileChoice, PileChosen, PileSplit, PilesSeparated, PlayerId, SacrificeDeclined,
+    SacrificeFollowup, SacrificedAmountDef, ScopedEffect, StackObject, Step, TopCardSelectionDef,
+    ZoneKind, ZoneMoveCause,
 };
 
 impl Game {
@@ -345,9 +346,22 @@ impl Game {
     /// Freezes every affected player's choice before any selected cards move.
     pub(super) fn queue_effect_discards(
         &mut self,
+        players: Vec<PlayerId>,
+        amount: i32,
+        cause: ZoneMoveCause,
+    ) {
+        self.queue_effect_discards_then(players, amount, cause, None);
+    }
+
+    /// The same, with something to do once the cards are gone. The follow-up
+    /// reads how many of them matched, which is not knowable until the player
+    /// has chosen.
+    pub(super) fn queue_effect_discards_then(
+        &mut self,
         mut players: Vec<PlayerId>,
         amount: i32,
         cause: ZoneMoveCause,
+        follow_up: Option<DiscardFollowUp>,
     ) {
         let amount = usize::try_from(amount).unwrap_or(0);
         if amount == 0 || players.is_empty() {
@@ -356,6 +370,7 @@ impl Game {
         players.sort_by_key(|player| (*player != self.active_player, player.index()));
         players.dedup();
         let first = players.remove(0);
+        self.pending_discard_follow_up = follow_up;
         self.queue_next_effect_discard(first, amount, players, Vec::new(), cause);
     }
 
@@ -403,9 +418,42 @@ impl Game {
         chosen: Vec<(PlayerId, Vec<GameObjectId>)>,
         cause: ZoneMoveCause,
     ) {
+        // Counted before the cards move: "each land card discarded this way"
+        // asks what went, and by the time they are in a graveyard they are
+        // indistinguishable from what was already there.
+        let follow_up = self.pending_discard_follow_up.take();
+        let matched = follow_up.as_ref().map_or(0, |follow_up| {
+            chosen
+                .iter()
+                .flat_map(|(player, cards)| cards.iter().map(move |card| (*player, *card)))
+                .filter(|(player, card)| {
+                    self.discarded_card_matches(follow_up.counted, *player, *card)
+                })
+                .count()
+        });
         for (player, cards) in chosen {
             self.discard_cards_with_cause(player, &cards, cause);
         }
+        if let Some(follow_up) = follow_up {
+            let mut context = follow_up.context;
+            context.matched_count = u16::try_from(matched).ok();
+            let object = *follow_up.object;
+            self.resolve_effect_def(follow_up.effect, &object, context);
+        }
+    }
+
+    /// Whether a card about to be discarded matches what a follow-up counts.
+    fn discarded_card_matches(
+        &self,
+        predicate: ObjectPredicateDef,
+        player: PlayerId,
+        card: GameObjectId,
+    ) -> bool {
+        self.players[player.index()]
+            .hand
+            .iter()
+            .find(|held| held.id == card)
+            .is_some_and(|held| self.card_object_matches(predicate, held, ZoneKind::Hand, held.id))
     }
 
     /// Whether a spell or ability an opponent of `player` controls can make

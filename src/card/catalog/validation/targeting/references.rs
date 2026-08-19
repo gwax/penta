@@ -271,6 +271,7 @@ fn validate_trigger_object_predicate(
         | ValueDef::SourceToughness
                     | ValueDef::CountersOnSource(_)
                     | ValueDef::PaidAmount
+                    | ValueDef::MatchedCount
                     | ValueDef::SpellsCastBeforeThisTurn
             ) {
                 Ok(())
@@ -748,6 +749,7 @@ fn validate_value_target_references(
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
         | ValueDef::PaidAmount
+        | ValueDef::MatchedCount
         | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::CreaturesDiedThisTurn
         // This reads the share assigned to the target currently being

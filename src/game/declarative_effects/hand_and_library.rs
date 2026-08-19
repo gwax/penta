@@ -56,6 +56,7 @@ impl Game {
                 recipient,
                 amount,
                 selection: DiscardSelectionDef::RecipientChooses,
+                then,
             } => {
                 let amount = self.effect_value(amount, object, context, scoped).max(0);
                 let cause = ZoneMoveCause::Effect {
@@ -69,12 +70,19 @@ impl Game {
                         Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
                     })
                     .collect();
-                self.queue_effect_discards(players, amount, cause);
+                let follow_up = then.map(|follow_up| crate::game::DiscardFollowUp {
+                    counted: follow_up.counted,
+                    effect: scoped.with_effect(*follow_up.effect),
+                    object: Box::new(object.clone()),
+                    context: context.clone(),
+                });
+                self.queue_effect_discards_then(players, amount, cause, follow_up);
             }
             EffectDef::Discard {
                 recipient,
                 amount,
                 selection: DiscardSelectionDef::Random,
+                then: None,
             } => {
                 let amount = self
                     .effect_value(amount, object, context, scoped)
@@ -94,6 +102,7 @@ impl Game {
                 recipient,
                 amount,
                 selection: DiscardSelectionDef::RandomMatching(predicate),
+                then: None,
             } => {
                 let amount = self
                     .effect_value(amount, object, context, scoped)

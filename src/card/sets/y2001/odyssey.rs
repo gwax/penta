@@ -186,6 +186,7 @@ static COLISEUM_DIG: EffectDef = EffectDef::Sequence(&[
         recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         amount: ValueDef::Constant(3),
         selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
     },
 ]);
 

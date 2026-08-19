@@ -191,6 +191,7 @@ pub(super) fn shared_mana_effect(effect: EffectDef, choices_are_supported: bool)
             amount,
             ValueDef::CountersOnSource(_)
                 | ValueDef::PaidAmount
+                | ValueDef::MatchedCount
                 | ValueDef::SpellsCastBeforeThisTurn
                 | ValueDef::CountMatchingObjects(_)
         );

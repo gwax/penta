@@ -1142,6 +1142,7 @@ pub(in crate::card::sets) static JALUM_TOME: CardRecord = CardRecord::new(
                     recipient: EffectRecipientDef::Controller,
                     amount: ValueDef::Constant(1),
                     selection: DiscardSelectionDef::RecipientChooses,
+                    then: None,
                 },
             ]),
         )]),

@@ -2931,6 +2931,7 @@ pub(in crate::card::sets) static DINROVA_HORROR: CardRecord = CardRecord::new(
                     recipient: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
                     amount: ValueDef::Constant(1),
                     selection: DiscardSelectionDef::RecipientChooses,
+                    then: None,
                 },
             ]),
         ),

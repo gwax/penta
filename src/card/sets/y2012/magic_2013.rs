@@ -1966,6 +1966,7 @@ pub(in crate::card::sets) static MIND_ROT: CardRecord = CardRecord::new(
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::Constant(2),
             selection: DiscardSelectionDef::RecipientChooses,
+            then: None,
         },
     )),
 );
@@ -2036,6 +2037,7 @@ pub(in crate::card::sets) static RAVENOUS_RATS: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(1),
                 selection: DiscardSelectionDef::RecipientChooses,
+                then: None,
             },
         ),
     ),
@@ -2205,6 +2207,7 @@ pub(in crate::card::sets) static WITS_END: CardRecord = CardRecord::new(
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::Constant(i32::MAX),
             selection: DiscardSelectionDef::RecipientChooses,
+            then: None,
         },
     )),
 );

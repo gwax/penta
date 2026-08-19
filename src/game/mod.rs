@@ -142,8 +142,9 @@ use continuous_state::{
 };
 use decision_state::{
     ApplicableBeginTurnReplacement, BalanceAction, BalancePhase, BalanceTask, CounteredSpellZone,
-    DecisionContinuation, DeferredBeginTurnEffect, FORK_COPY_COLOR, PendingDecision, Pregame,
-    ResolvedEffectPayment, SacrificeDeclined, SacrificeFollowup, ZoneMoveCause,
+    DecisionContinuation, DeferredBeginTurnEffect, DiscardFollowUp, FORK_COPY_COLOR,
+    PendingDecision, Pregame, ResolvedEffectPayment, SacrificeDeclined, SacrificeFollowup,
+    ZoneMoveCause,
 };
 use mana_state::{
     AppliedStackEffect, FlexibleManaSource, ManaAbilityActivation, ManaPaymentPurpose,
@@ -893,6 +894,9 @@ pub struct Game {
     mulligans: [u8; 2],
     cleanup_pending: bool,
     pending_decisions: Vec<PendingDecision>,
+    /// What to run when the discard now being answered finishes. One discard
+    /// effect is in flight at a time, so this is a slot rather than a queue.
+    pending_discard_follow_up: Option<DiscardFollowUp>,
     next_decision_id: u32,
     pending_events: VecDeque<PendingEvent>,
     pending_procedures: VecDeque<PendingProcedure>,

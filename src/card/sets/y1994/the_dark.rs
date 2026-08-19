@@ -917,6 +917,7 @@ static RAG_MAN_STRIKE: [EffectDef; 2] = [
         recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         amount: ValueDef::Constant(1),
         selection: DiscardSelectionDef::RandomMatching(&RAG_MAN_CREATURE_CARD),
+        then: None,
     },
 ];
 

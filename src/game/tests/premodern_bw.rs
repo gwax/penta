@@ -89,3 +89,52 @@ fn skeletal_scrying_exiles_as_many_as_it_draws() {
         "two exiled from four, and the Scrying itself arrived",
     );
 }
+
+/// Gerrard's Verdict pays for the lands it took, which cannot be known until
+/// the opponent has chosen what to lose.
+#[test]
+fn gerrards_verdict_gains_three_for_each_land_discarded() {
+    let played = |lands: usize| {
+        let mut game = ready_game();
+        game.players[PlayerId::Two.index()].hand.clear();
+        for index in 0..lands {
+            let land = card(
+                10_010 + u32::try_from(index).expect("fits"),
+                cards::SWAMP,
+                PlayerId::Two,
+            );
+            game.players[PlayerId::Two.index()].hand.push(land);
+        }
+        for index in lands..2 {
+            let spell = card(
+                10_020 + u32::try_from(index).expect("fits"),
+                cards::LIGHTNING_BOLT,
+                PlayerId::Two,
+            );
+            game.players[PlayerId::Two.index()].hand.push(spell);
+        }
+
+        let verdict = card(10_000, cards::GERRARDS_VERDICT, PlayerId::One);
+        let verdict_id = verdict.id;
+        game.players[PlayerId::One.index()].hand.push(verdict);
+        let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+        pool.white = 1;
+        pool.black = 1;
+        game.priority = PlayerId::One;
+        game.apply(
+            PlayerId::One,
+            cast_action(
+                verdict_id,
+                vec![Target::Player(PlayerId::Two)],
+                Vec::new(),
+                0,
+            ),
+        )
+        .expect("the Verdict is cast");
+        drain_pending(&mut game);
+        game.players[PlayerId::One.index()].life
+    };
+
+    assert_eq!(played(2), 26, "two lands discarded is six life");
+    assert_eq!(played(0), 20, "no land discarded is none");
+}

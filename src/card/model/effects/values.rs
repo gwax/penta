@@ -180,6 +180,9 @@ pub enum ValueDef {
     /// spell carrying the ability is already counted when it is cast, so this
     /// subtracts it: storm copies what came before, not itself.
     SpellsCastBeforeThisTurn,
+    /// How many objects the step before this one matched: the land cards a
+    /// discard actually took. Zero without such a step behind it.
+    MatchedCount,
     /// What was actually paid for a [`super::EffectPaymentCostDef::ChosenGenericMana`]
     /// payment in this resolution. Zero anywhere else, so a branch that reads
     /// it without a payment behind it does nothing rather than guessing.

@@ -491,6 +491,7 @@ impl HandcraftedPolicy {
             | ValueDef::AnyMatchingObject(_)
             | ValueDef::CountersOnSource(_)
             | ValueDef::PaidAmount
+            | ValueDef::MatchedCount
             | ValueDef::SpellsCastBeforeThisTurn
             | ValueDef::DividedAmongTargets
             | ValueDef::TargetPower(_)

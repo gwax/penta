@@ -1796,6 +1796,7 @@ pub(in crate::card::sets) static SIRE_OF_INSANITY: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::EachPlayer,
                 amount: ValueDef::Constant(i32::MAX),
                 selection: DiscardSelectionDef::RecipientChooses,
+                then: None,
             },
         ),
     ),
@@ -2125,6 +2126,7 @@ const fn down_rules() -> CardRules {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::Constant(2),
             selection: DiscardSelectionDef::RecipientChooses,
+            then: None,
         },
     ))
 }

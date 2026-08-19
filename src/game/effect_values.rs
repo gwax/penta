@@ -94,6 +94,9 @@ impl Game {
             // outside a chosen-amount payment does nothing rather than
             // guessing at a number.
             ValueDef::PaidAmount => i32::from(context.paid_amount.unwrap_or(0)),
+            // What the step before this one matched -- the land cards a
+            // discard took. Zero without such a step behind it.
+            ValueDef::MatchedCount => i32::from(context.matched_count.unwrap_or(0)),
             // Everybody's spells, minus the one carrying the ability: it was
             // counted as it was cast, and storm copies what came before it.
             ValueDef::SpellsCastBeforeThisTurn => i32::from(

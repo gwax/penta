@@ -4114,6 +4114,7 @@ pub(in crate::card::sets) static GWENDLYN_DI_CORCI: CardRecord = CardRecord::new
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     amount: ValueDef::Constant(1),
                     selection: DiscardSelectionDef::Random,
+                    then: None,
                 },
             )
             .with_activation_timing(ActivationTimingDef::YourTurn),
@@ -4388,6 +4389,7 @@ pub(in crate::card::sets) static NICOL_BOLAS: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::EventPlayer,
                 amount: NICOL_BOLAS_ENTIRE_HAND,
                 selection: DiscardSelectionDef::RecipientChooses,
+                then: None,
             },
         ),
     ]),

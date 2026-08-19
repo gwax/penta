@@ -833,6 +833,7 @@ pub(in crate::card::sets) static HYMN_TO_TOURACH: CardRecord = CardRecord::new(
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::Constant(2),
             selection: DiscardSelectionDef::Random,
+            then: None,
         },
     )]),
 );
@@ -848,6 +849,7 @@ static MINDSTAB_THRULL_STRIKE: [EffectDef; 2] = [
         recipient: EffectRecipientDef::Opponent,
         amount: ValueDef::Constant(3),
         selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
     },
 ];
 
@@ -1955,6 +1957,7 @@ pub(in crate::card::sets) static RING_OF_RENEWAL: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),
                 selection: DiscardSelectionDef::Random,
+                then: None,
             },
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,

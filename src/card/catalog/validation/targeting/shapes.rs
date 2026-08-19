@@ -291,6 +291,7 @@ fn validate_value_shape(
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
         | ValueDef::PaidAmount
+        | ValueDef::MatchedCount
         | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::DividedAmongTargets => Ok(()),
     }

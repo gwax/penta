@@ -1293,6 +1293,7 @@ static LILIANAS_REAVER_STRIKE: [EffectDef; 2] = [
         recipient: EffectRecipientDef::EventPlayer,
         amount: ValueDef::Constant(1),
         selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
     },
     TAPPED_ZOMBIE,
 ];

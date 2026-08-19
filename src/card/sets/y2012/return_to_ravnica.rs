@@ -1337,6 +1337,7 @@ pub(in crate::card::sets) static ASSASSINS_STRIKE: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(1),
                 selection: DiscardSelectionDef::RecipientChooses,
+                then: None,
             },
         ]),
     )),
@@ -1503,6 +1504,7 @@ static DRAINPIPE_VERMIN_DISCARD: EffectDef = EffectDef::Discard {
     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
     amount: ValueDef::Constant(1),
     selection: DiscardSelectionDef::RecipientChooses,
+    then: None,
 };
 
 // RTR 66 — Drainpipe Vermin
@@ -3678,6 +3680,7 @@ pub(in crate::card::sets) static IZZET_CHARM: CardRecord = CardRecord::new(
                             recipient: EffectRecipientDef::Controller,
                             amount: ValueDef::Constant(2),
                             selection: DiscardSelectionDef::RecipientChooses,
+                            then: None,
                         },
                     ]),
                 ),
@@ -3944,6 +3947,7 @@ pub(in crate::card::sets) static RAKDOS_RINGLEADER: CardRecord = CardRecord::new
                 recipient: EffectRecipientDef::EventPlayer,
                 amount: ValueDef::Constant(1),
                 selection: DiscardSelectionDef::Random,
+                then: None,
             },
         ),
         abilities::regenerate_self(
@@ -4090,6 +4094,7 @@ pub(in crate::card::sets) static SKULL_REND: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::Opponent,
                 amount: ValueDef::Constant(2),
                 selection: DiscardSelectionDef::Random,
+                then: None,
             },
         ]),
     )),
@@ -4272,6 +4277,7 @@ pub(in crate::card::sets) static THOUGHTFLARE: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(2),
                 selection: DiscardSelectionDef::RecipientChooses,
+                then: None,
             },
         ]),
     )),
@@ -4947,6 +4953,7 @@ static IZZET_KEYRUNE_LOOT: EffectDef = EffectDef::Sequence(&[
         recipient: EffectRecipientDef::Controller,
         amount: ValueDef::Constant(1),
         selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
     },
 ]);
 

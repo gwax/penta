@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardComposition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, DividedTotal, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardType, DiscardFollowUpDef,
+    DiscardSelectionDef, DividedTotal, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, PlayOptionDef, PlayerRelation, ScaledValueDef, SpellForm,
     TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
     abilities, cards,
 };
@@ -77,6 +78,46 @@ pub(in crate::card::sets) static GOBLIN_RINGLEADER: CardRecord = CardRecord::new
             },
         ),
     ]),
+);
+
+/// Three life a land, counted among the two cards that actually went. The
+/// discard is the opponent's choice, so the payoff cannot be known until
+/// they have made it.
+static VERDICT_LIFE: EffectDef = EffectDef::GainLife {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::Scaled(&VERDICT_PER_LAND),
+};
+
+static VERDICT_PER_LAND: ScaledValueDef = ScaledValueDef {
+    value: ValueDef::MatchedCount,
+    factor: 3,
+};
+
+static VERDICT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+// APC 102 — Gerrard's Verdict
+pub(in crate::card::sets) static GERRARDS_VERDICT: CardRecord = CardRecord::new(
+    cards::GERRARDS_VERDICT,
+    "Gerrard's Verdict",
+    CardArt::new("583740c0-8b3d-4f2a-9e1c-6b5d8a3f2c7e", "Carl Critchlow"),
+    CardSet::Apocalypse,
+    // Two cards for two mana, and the life is what makes it a fine turn-two
+    // play against a deck full of lands.
+    CardRules::new_sorcery(mana_cost!("{W}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player discards two cards. You gain 3 life for each land card discarded this way.",
+        &VERDICT_TARGET,
+        EffectDef::Discard {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(2),
+            selection: DiscardSelectionDef::RecipientChooses,
+            then: Some(DiscardFollowUpDef {
+                counted: ObjectPredicateDef::HasType(CardType::Land),
+                effect: &VERDICT_LIFE,
+            }),
+        },
+    )),
 );
 
 // APC 126 — Vindicate
@@ -216,6 +257,7 @@ pub(in crate::card::sets) static YAVIMAYA_COAST: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PHYREXIAN_ARENA,
     &GOBLIN_RINGLEADER,
+    &GERRARDS_VERDICT,
     &VINDICATE,
     &FIRE_ICE,
     &CAVES_OF_KOILOS,

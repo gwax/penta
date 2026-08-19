@@ -42,6 +42,9 @@ pub(super) struct EffectResolutionContext {
     /// branch that reads it back. "You may pay {X}" settles X here rather
     /// than at the cast, which is where an ordinary X lives.
     pub(super) paid_amount: Option<u16>,
+    /// How many objects the previous step matched, for a follow-up that
+    /// counts them: the land cards a discard actually took.
+    pub(super) matched_count: Option<u16>,
     single_objects: [Option<Target>; ObjectBindingIndex::COUNT],
     object_groups: [Vec<Target>; ObjectSetBindingIndex::COUNT],
 }
@@ -51,6 +54,7 @@ impl EffectResolutionContext {
         Self {
             trigger,
             paid_amount: None,
+            matched_count: None,
             single_objects: [None; ObjectBindingIndex::COUNT],
             object_groups: std::array::from_fn(|_| Vec::new()),
         }
@@ -101,6 +105,7 @@ impl EffectResolutionContext {
         Self {
             trigger,
             paid_amount: None,
+            matched_count: None,
             single_objects,
             object_groups,
         }

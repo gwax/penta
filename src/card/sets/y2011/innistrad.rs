@@ -1422,6 +1422,7 @@ pub(in crate::card::sets) static MURDER_OF_CROWS: CardRecord = CardRecord::new(
                         recipient: EffectRecipientDef::Controller,
                         amount: ValueDef::Constant(1),
                         selection: DiscardSelectionDef::RecipientChooses,
+                        then: None,
                     },
                 ]),
             },
@@ -2187,6 +2188,7 @@ pub(in crate::card::sets) static LILIANA_OF_THE_VEIL: CardRecord = CardRecord::n
                     recipient: EffectRecipientDef::EachPlayer,
                     amount: ValueDef::Constant(1),
                     selection: DiscardSelectionDef::RecipientChooses,
+                    then: None,
                 },
             ),
             AbilityDef::activated_with_targets(
@@ -2807,6 +2809,7 @@ pub(in crate::card::sets) static DESPERATE_RAVINGS: CardRecord = CardRecord::new
                     recipient: EffectRecipientDef::Controller,
                     amount: ValueDef::Constant(1),
                     selection: DiscardSelectionDef::Random,
+                    then: None,
                 },
             ]),
         ),

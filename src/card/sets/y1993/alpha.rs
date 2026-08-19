@@ -2111,6 +2111,7 @@ pub(in crate::card::sets) static HYPNOTIC_SPECTER: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::EventPlayer,
                 amount: ValueDef::Constant(1),
                 selection: DiscardSelectionDef::Random,
+                then: None,
             },
         ),
     ]),
@@ -2139,6 +2140,7 @@ pub(in crate::card::sets) static MIND_TWIST: CardRecord = CardRecord::new(
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::ChosenX,
             selection: DiscardSelectionDef::Random,
+            then: None,
         },
     )]),
 );
@@ -3461,6 +3463,7 @@ pub(in crate::card::sets) static WHEEL_OF_FORTUNE: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::EachPlayer,
                 amount: ENTIRE_HAND,
                 selection: DiscardSelectionDef::RecipientChooses,
+                then: None,
             },
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::EachPlayer,
@@ -4587,6 +4590,7 @@ pub(in crate::card::sets) static DISRUPTING_SCEPTER: CardRecord = CardRecord::ne
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(1),
                 selection: DiscardSelectionDef::RecipientChooses,
+                then: None,
             },
         )
         .with_activation_timing(ActivationTimingDef::YourTurn),

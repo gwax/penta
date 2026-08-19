@@ -60,6 +60,18 @@ pub(super) enum ResolvedEffectPayment {
     SacrificePermanentMatching(ObjectPredicateDef),
 }
 
+/// What runs once a discard finishes, and what it counts among the cards
+/// that went. Held beside the pending discard rather than inside its
+/// continuation: one discard effect produces one follow-up, and a decision
+/// per player in between.
+#[derive(Clone, Debug)]
+pub(super) struct DiscardFollowUp {
+    pub(super) counted: ObjectPredicateDef,
+    pub(super) effect: ScopedEffect,
+    pub(super) object: Box<StackObject>,
+    pub(super) context: EffectResolutionContext,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum Pregame {
     Mulligan(PlayerId),

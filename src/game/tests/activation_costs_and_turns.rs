@@ -575,6 +575,7 @@ fn wheel_and_timetwister_resolve_as_shared_declarative_spells() {
                 recipient: EffectRecipientDef::EachPlayer,
                 amount: ValueDef::Constant(i32::MAX),
                 selection: DiscardSelectionDef::RecipientChooses,
+                then: None,
             },
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::EachPlayer,

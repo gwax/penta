@@ -89,6 +89,15 @@ pub enum ConditionDef {
     All(&'static [ConditionDef]),
 }
 
+/// What follows a discard, and what it counts among the cards that went.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct DiscardFollowUpDef {
+    /// Which discarded cards the follow-up counts, read back with
+    /// [`ValueDef::MatchedCount`].
+    pub counted: ObjectPredicateDef,
+    pub effect: &'static EffectDef,
+}
+
 /// How cards are selected for a discard effect.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum DiscardSelectionDef {
@@ -580,6 +589,11 @@ pub enum EffectDef {
         recipient: EffectRecipientDef,
         amount: ValueDef,
         selection: DiscardSelectionDef,
+        /// What to do once the cards are gone, and what to count among them.
+        /// "You gain 3 life for each land card discarded this way" reads the
+        /// discard's own result, which is not knowable before the player has
+        /// chosen.
+        then: Option<DiscardFollowUpDef>,
     },
     /// Discard the named card objects from their owners' hands. Selection is
     /// expressed separately (usually with [`Self::Choose`]); this leaf is the

@@ -1391,6 +1391,7 @@ pub(in crate::card::sets) static BAZAAR_OF_BAGHDAD: CardRecord = CardRecord::new
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(3),
                 selection: DiscardSelectionDef::RecipientChooses,
+                then: None,
             },
         ]),
     )]),
