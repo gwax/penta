@@ -2,9 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, BasicLandType, CardArt, CardRules, CardSet, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, ValueDef, ZoneKind, ZonePlacement, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, BasicLandType, CardArt, CardRules, CardSet,
+    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
+use crate::mana_cost;
 
 /// The five allied fetchlands of Onslaught got an enemy-coloured cycle here,
 /// with the same text. One helper states it once; only the two land types and
@@ -33,6 +35,21 @@ const fn fetch_land(text: &'static str, land_types: &'static [BasicLandType]) ->
         },
     ))
 }
+
+// ZEN 67 — Spell Pierce
+pub(in crate::card::sets) static SPELL_PIERCE: CardRecord = CardRecord::new(
+    cards::SPELL_PIERCE,
+    "Spell Pierce",
+    CardArt::new("cb3d3901-e4a6-45ab-a7b5-c65d91e1875e", "Vance Kovacs"),
+    CardSet::Zendikar,
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Counter target noncreature spell unless its controller pays {2}.",
+        &[AbilityTargetDef::exactly_one_spell(
+            ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+        )],
+        abilities::counter_target_unless_paid(ValueDef::Constant(2)),
+    )),
+);
 
 // ZEN 211 — Arid Mesa
 pub(in crate::card::sets) static ARID_MESA: CardRecord = CardRecord::new(
@@ -95,6 +112,7 @@ pub(in crate::card::sets) static VERDANT_CATACOMBS: CardRecord = CardRecord::new
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &SPELL_PIERCE,
     &ARID_MESA,
     &MARSH_FLATS,
     &MISTY_RAINFOREST,

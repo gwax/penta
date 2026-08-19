@@ -5,10 +5,10 @@ use crate::card::cards;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardRules, CardSet,
-    CardType, CounterKind, EffectDef, EffectPaymentDef, EffectRecipientDef, ObjectPredicateDef,
-    ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement,
+    CardType, CounterKind, EffectDef, EffectPaymentDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -173,6 +173,33 @@ static FURNACE_EXILE_AND_DRAW: EffectDef = EffectDef::Sequence(&[
     },
 ]);
 
+// WTH 153 — Mind Stone
+pub(in crate::card::sets) static MIND_STONE: CardRecord = CardRecord::new(
+    cards::MIND_STONE,
+    "Mind Stone",
+    CardArt::new("162e81d3-6cd4-4cb8-8ed8-cfbd8d34ca71", "Adam Rex"),
+    CardSet::Weatherlight,
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {C}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+        ),
+        AbilityDef::activated(
+            "{1}, {T}, Sacrifice this artifact: Draw a card.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}")),
+                AbilityCostDef::TapSource,
+                AbilityCostDef::SacrificeSource,
+            ],
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
+
 // WTH 155 — Phyrexian Furnace
 pub(in crate::card::sets) static PHYREXIAN_FURNACE: CardRecord = CardRecord::new(
     cards::PHYREXIAN_FURNACE,
@@ -248,6 +275,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ABEYANCE,
     &AURA_OF_SILENCE,
     &GOBLIN_VANDAL,
+    &MIND_STONE,
     &PHYREXIAN_FURNACE,
     &GEMSTONE_MINE,
 ];

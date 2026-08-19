@@ -2,14 +2,16 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, BattlefieldEntryChoiceDestinationDef,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, AppliedRuleDef, BattlefieldEntryChoiceDestinationDef,
     BattlefieldEntryScalarChoiceDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef,
-    ChooseDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    ReplacementChoiceDef, ReplacementEffectDef, ValueDef, ZoneKind, cards,
+    ChooseDef, ColorChoiceOperationDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
+    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, ReplacementChoiceDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::ObjectSetBindingIndex;
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 /// Creatures of whatever type the Plague named. The chosen type lives on the
 /// enchantment, so the predicate reads it from the ability's source rather
@@ -54,6 +56,35 @@ static SEARCH_DISCARD_THEN_UNTAP: EffectDef = EffectDef::Sequence(&[
     }),
 ]);
 
+// ULG 14 — Mother of Runes
+pub(in crate::card::sets) static MOTHER_OF_RUNES: CardRecord = CardRecord::new(
+    cards::MOTHER_OF_RUNES,
+    "Mother of Runes",
+    CardArt::new("0b1a46ab-95cb-4c24-924f-fc2afd4fcac7", "Scott M. Fischer"),
+    CardSet::UrzasLegacy,
+    CardRules::new_creature(mana_cost!("{W}"), &["Human", "Cleric"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: Target creature you control gains protection from the color of your choice until end of turn.",
+            &[AbilityCostDef::TapSource],
+            &MOTHER_OF_RUNES_TARGET,
+            EffectDef::ChooseColor {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                operation: ColorChoiceOperationDef::ProtectionFromChosenColor,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
+
+static MOTHER_OF_RUNES_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
 // ULG 32 — Frantic Search
 pub(in crate::card::sets) static FRANTIC_SEARCH: CardRecord = CardRecord::new(
     cards::FRANTIC_SEARCH,
@@ -72,6 +103,25 @@ pub(in crate::card::sets) static FRANTIC_SEARCH: CardRecord = CardRecord::new(
             SEARCH_DISCARD_THEN_UNTAP,
         ]),
     )),
+);
+
+// ULG 36 — Miscalculation
+pub(in crate::card::sets) static MISCALCULATION: CardRecord = CardRecord::new(
+    cards::MISCALCULATION,
+    "Miscalculation",
+    CardArt::new("4b4956a2-9a39-4152-9c98-70e4b2acfa26", "Jeff Laubenstein"),
+    CardSet::UrzasLegacy,
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Counter target spell unless its controller pays {2}.",
+            &[AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)],
+            abilities::counter_target_unless_paid(ValueDef::Constant(2)),
+        ),
+        abilities::cycling(
+            "Cycling {2} ({2}, Discard this card: Draw a card.)",
+            mana_cost!("{2}"),
+        ),
+    ]),
 );
 
 // ULG 51 — Engineered Plague
@@ -125,7 +175,42 @@ pub(in crate::card::sets) static DEFENSE_GRID: CardRecord = CardRecord::new(
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&FRANTIC_SEARCH, &ENGINEERED_PLAGUE, &DEFENSE_GRID];
+// ULG 126 — Grim Monolith
+pub(in crate::card::sets) static GRIM_MONOLITH: CardRecord = CardRecord::new(
+    cards::GRIM_MONOLITH,
+    "Grim Monolith",
+    CardArt::new("9ddc9fe1-17c8-4e1d-aeb8-c4214e881280", "Chippy"),
+    CardSet::UrzasLegacy,
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        AbilityDef::static_ability(
+            "This artifact doesn't untap during your untap step.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {C}{C}{C}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless).with_amount(3)),
+        ),
+        AbilityDef::activated(
+            "{4}: Untap this artifact.",
+            &[AbilityCostDef::Mana(mana_cost!("{4}"))],
+            EffectDef::Untap {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+    ]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &MOTHER_OF_RUNES,
+    &FRANTIC_SEARCH,
+    &MISCALCULATION,
+    &ENGINEERED_PLAGUE,
+    &DEFENSE_GRID,
+    &GRIM_MONOLITH,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

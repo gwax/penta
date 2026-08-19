@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 112 are cataloged and 422 are not
+- 534 cards in the pool, of which 118 are cataloged and 416 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -33,7 +33,7 @@ leaves empty so nothing reads it as a set window by accident.
 Grouped by color so a tranche can be scoped to one part of the pool. Basic
 lands are legal in every format and are not listed.
 
-### White (49)
+### White (47)
 
 - `Adeline, Resplendent Cathar`
 - `Cathar Commando`
@@ -57,8 +57,6 @@ lands are legal in every format and are not listed.
 - `Lion Sash`
 - `Loran of the Third Path`
 - `Luminarch Aspirant`
-- `Mana Tithe`
-- `Mother of Runes`
 - `Ocelot Pride`
 - `Oust`
 - `Overlord of the Mistmoors`
@@ -85,7 +83,7 @@ lands are legal in every format and are not listed.
 - `Winds of Abandon`
 - `Witch Enchanter`
 
-### Blue (59)
+### Blue (57)
 
 - `Abhorrent Oculus`
 - `Astrologian's Planisphere`
@@ -116,7 +114,6 @@ lands are legal in every format and are not listed.
 - `Lórien Revealed`
 - `Malcolm, Alluring Scoundrel`
 - `Memory Lapse`
-- `Miscalculation`
 - `Mystic Confluence`
 - `Narset, Parter of Veils`
 - `Occult Epiphany`
@@ -131,7 +128,6 @@ lands are legal in every format and are not listed.
 - `Remand`
 - `Show and Tell`
 - `Sink into Stupor`
-- `Spell Pierce`
 - `Spellseeker`
 - `Stern Scolding`
 - `Stock Up`
@@ -374,7 +370,7 @@ lands are legal in every format and are not listed.
 - `Wrenn and Six`
 - `Zirda, the Dawnwaker`
 
-### Colorless (51)
+### Colorless (49)
 
 - `Aether Spellbomb`
 - `Agatha's Soul Cauldron`
@@ -389,7 +385,6 @@ lands are legal in every format and are not listed.
 - `Everflowing Chalice`
 - `Expedition Map`
 - `Ghost Vacuum`
-- `Grim Monolith`
 - `Haywire Mite`
 - `Kaldra Compleat`
 - `Karn, Scion of Urza`
@@ -399,7 +394,6 @@ lands are legal in every format and are not listed.
 - `Mana Crypt`
 - `Manifold Key`
 - `Memory Jar`
-- `Mind Stone`
 - `Mishra's Bauble`
 - `Mox Opal`
 - `Myr Battlesphere`
@@ -481,7 +475,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 112 pool cards are in the catalog because an earlier format needed them.
+These 118 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -519,6 +513,7 @@ been played beside.
 - `Gaea's Cradle`
 - `Goblin Bombardment`
 - `Godless Shrine`
+- `Grim Monolith`
 - `Griselbrand`
 - `Gush`
 - `Hallowed Fountain`
@@ -535,11 +530,15 @@ been played beside.
 - `Lotus Petal`
 - `Mana Drain`
 - `Mana Leak`
+- `Mana Tithe`
 - `Mana Vault`
 - `Marsh Flats`
+- `Mind Stone`
 - `Mind Twist`
+- `Miscalculation`
 - `Mishra's Workshop`
 - `Misty Rainforest`
+- `Mother of Runes`
 - `Mox Diamond`
 - `Mox Emerald`
 - `Mox Jet`
@@ -564,6 +563,7 @@ been played beside.
 - `Snapcaster Mage`
 - `Sol Ring`
 - `Spara's Headquarters`
+- `Spell Pierce`
 - `Steam Vents`
 - `Stomping Ground`
 - `Strip Mine`

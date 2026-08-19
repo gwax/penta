@@ -27,3 +27,10 @@ pub const GOBLIN_BOMBARDMENT: CardDefinitionId = CardDefinitionId(2110);
 pub const GAEAS_CRADLE: CardDefinitionId = CardDefinitionId(2111);
 pub const TOLARIAN_ACADEMY: CardDefinitionId = CardDefinitionId(2112);
 pub const ENTOMB: CardDefinitionId = CardDefinitionId(2113);
+
+pub const MANA_TITHE: CardDefinitionId = CardDefinitionId(2114);
+pub const SPELL_PIERCE: CardDefinitionId = CardDefinitionId(2115);
+pub const MISCALCULATION: CardDefinitionId = CardDefinitionId(2116);
+pub const MIND_STONE: CardDefinitionId = CardDefinitionId(2117);
+pub const GRIM_MONOLITH: CardDefinitionId = CardDefinitionId(2118);
+pub const MOTHER_OF_RUNES: CardDefinitionId = CardDefinitionId(2119);

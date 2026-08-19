@@ -298,3 +298,194 @@ fn time_warp_hands_the_extra_turn_to_the_player_it_targets() {
         "the extra turn belongs to the player it targeted, not its caster",
     );
 }
+
+#[test]
+fn the_soft_counters_ask_for_their_own_amount() {
+    for (definition, color, tax) in [
+        (cards::MANA_TITHE, ManaColor::White, 1),
+        (cards::SPELL_PIERCE, ManaColor::Blue, 2),
+        (cards::MISCALCULATION, ManaColor::Blue, 2),
+    ] {
+        let mut game = ready_game();
+        let bolt = card(50_800, cards::LIGHTNING_BOLT, PlayerId::Two);
+        let bolt_id = bolt.id;
+        game.players[PlayerId::Two.index()].hand.push(bolt);
+        game.players[PlayerId::Two.index()].mana_pool.red = 1;
+        // Enough left over to pay the tax, so the choice is a real one.
+        game.players[PlayerId::Two.index()].mana_pool.colorless = tax;
+        game.priority = PlayerId::Two;
+        game.apply(
+            PlayerId::Two,
+            cast_action(bolt_id, vec![Target::Player(PlayerId::One)], Vec::new(), 0),
+        )
+        .expect("the opponent casts something to counter");
+        let on_stack = game.stack.last().expect("the spell is on the stack").id;
+        game.apply(PlayerId::Two, Action::PassPriority).unwrap();
+
+        let counter = card(50_801, definition, PlayerId::One);
+        let counter_id = counter.id;
+        game.players[PlayerId::One.index()].hand.push(counter);
+        let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+        pool.add_color(color, 1);
+        pool.colorless += 1;
+        game.apply(
+            PlayerId::One,
+            cast_action(counter_id, vec![Target::Spell(on_stack)], Vec::new(), 0),
+        )
+        .unwrap_or_else(|error| panic!("{definition:?} answers a spell: {error}"));
+        pass_priority_pair(&mut game);
+
+        // Declining the tax is what counters the spell.
+        let decision = game
+            .observe(PlayerId::Two)
+            .decision
+            .unwrap_or_else(|| panic!("{definition:?} asks its controller to pay {tax}"));
+        let decline = decision
+            .options
+            .iter()
+            .find(|option| option.label != "Pay the cost")
+            .unwrap_or_else(|| panic!("{definition:?} offers declining"))
+            .id;
+        game.apply(
+            PlayerId::Two,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![decline],
+            },
+        )
+        .expect("declining is allowed");
+        assert!(
+            game.players[PlayerId::Two.index()]
+                .graveyard
+                .iter()
+                .any(|card| card.definition == cards::LIGHTNING_BOLT),
+            "{definition:?} counters what went unpaid",
+        );
+    }
+}
+
+#[test]
+fn the_monolith_makes_three_and_stays_tapped_until_it_is_bought_back() {
+    let mut game = ready_game();
+    let monolith = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIM_MONOLITH)
+        .expect("cataloged");
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: monolith,
+            ability: mana_ability_for(&game, monolith, ManaColor::Colorless),
+            color: ManaColor::Colorless,
+            counters_removed: None,
+            cost_object: None,
+        },
+    )
+    .expect("it taps for mana");
+    assert_eq!(game.players[PlayerId::One.index()].mana_pool.colorless, 3);
+
+    // Four of that mana buys the untap back; three does not.
+    game.players[PlayerId::One.index()].mana_pool.colorless = 3;
+    assert!(
+        activation(&game, monolith).is_none(),
+        "three mana does not pay the untap",
+    );
+    game.players[PlayerId::One.index()].mana_pool.colorless = 4;
+    let untap = activation(&game, monolith).expect("four mana pays it");
+    game.apply(PlayerId::One, untap).expect("it is activated");
+    resolve(&mut game);
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == monolith)
+            .expect("still on the battlefield")
+            .tapped,
+    );
+}
+
+#[test]
+fn the_mind_stone_trades_itself_for_a_card() {
+    let mut game = ready_game();
+    let stone = game
+        .put_onto_battlefield(PlayerId::One, cards::MIND_STONE)
+        .expect("cataloged");
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    let before = game.players[PlayerId::One.index()].library.len();
+
+    let action = activation(&game, stone).expect("the draw ability is offered");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != stone),
+        "the sacrifice is a cost",
+    );
+    resolve(&mut game);
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        before - 1
+    );
+}
+
+#[test]
+fn mother_of_runes_protects_a_creature_from_the_color_she_names() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    // She has been here since before this turn, so her tap ability is live.
+    let mother_permanent = creature(50_899, cards::MOTHER_OF_RUNES, PlayerId::One);
+    let mother = mother_permanent.card.id;
+    game.battlefield.push(mother_permanent);
+    let bears = creature(50_900, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, targets, .. }
+            if *source == mother
+                && targets.iter().any(|selection| {
+                    selection.targets().contains(&Target::Permanent(bears_id))
+                }))
+        })
+        .expect("she can target another creature you control");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    pass_priority_pair(&mut game);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the color is chosen on resolution");
+    let red = decision
+        .options
+        .iter()
+        .find(|option| option.label.eq_ignore_ascii_case("red"))
+        .expect("red is one of the colors")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![red],
+        },
+    )
+    .expect("the color is chosen");
+
+    // A red spell can no longer touch what she named.
+    let bolt = card(50_901, cards::LIGHTNING_BOLT, PlayerId::Two);
+    let bolt_id = bolt.id;
+    game.players[PlayerId::Two.index()].hand.push(bolt);
+    game.players[PlayerId::Two.index()].mana_pool.red = 1;
+    game.priority = PlayerId::Two;
+    assert!(
+        !game.legal_actions(PlayerId::Two).iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+            if *card == bolt_id
+                && choices.targets().iter().any(|selection| {
+                    selection.targets().contains(&Target::Permanent(bears_id))
+                }))
+        }),
+        "the protected creature is not an offered target",
+    );
+}

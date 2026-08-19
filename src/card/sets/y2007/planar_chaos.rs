@@ -2,9 +2,24 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ZoneKind, cards,
+    AbilityDef, AbilityTargetDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    ValueDef, ZoneKind, abilities, cards,
 };
+use crate::mana_cost;
+
+// PLC 25 — Mana Tithe
+pub(in crate::card::sets) static MANA_TITHE: CardRecord = CardRecord::new(
+    cards::MANA_TITHE,
+    "Mana Tithe",
+    CardArt::new("7d48d622-f397-4f31-b1a5-0c23f60aa71c", "Martina Pilcerova"),
+    CardSet::PlanarChaos,
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Counter target spell unless its controller pays {1}.",
+        &[AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)],
+        abilities::counter_target_unless_paid(ValueDef::Constant(1)),
+    )),
+);
 
 // PLC 165 — Urborg, Tomb of Yawgmoth
 pub(in crate::card::sets) static URBORG_TOMB_OF_YAWGMOTH: CardRecord = CardRecord::new(
@@ -27,6 +42,6 @@ pub(in crate::card::sets) static URBORG_TOMB_OF_YAWGMOTH: CardRecord = CardRecor
         )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&URBORG_TOMB_OF_YAWGMOTH];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&MANA_TITHE, &URBORG_TOMB_OF_YAWGMOTH];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
