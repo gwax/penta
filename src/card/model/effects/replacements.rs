@@ -18,6 +18,11 @@ pub enum ReplacementEventDef {
     ObjectEntersBattlefield {
         object: ObjectPredicateDef,
         controller: PlayerRelation,
+        /// Whether the object has to have been cast, when the clause cares.
+        /// A permanent spell that resolves enters from the stack and nothing
+        /// else does, so this is read off the zone it is arriving from --
+        /// which is why a creature cast from a graveyard still counts as cast.
+        cast: Option<bool>,
     },
     /// This ability's source would move between the named zones for the
     /// specified reason. Matching happens before the object leaves `from`.

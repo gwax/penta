@@ -346,6 +346,11 @@ const SET_MODULES: &[SetModule] = &[
         y2014::journey_into_nyx::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Commander2014,
+        y2014::commander_2014::CARDS,
+        y2014::commander_2014::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::KhansOfTarkir,
         y2014::khans_of_tarkir::CARDS,
         y2014::khans_of_tarkir::ADDITIONAL_PRINTINGS,

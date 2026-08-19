@@ -327,6 +327,7 @@ pub(in crate::card::sets) static IMPOSING_SOVEREIGN: CardRecord = CardRecord::ne
             ReplacementEventDef::ObjectEntersBattlefield {
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 controller: PlayerRelation::Opponent,
+                cast: None,
             },
             ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
         ),

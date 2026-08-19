@@ -278,6 +278,7 @@ pub(in crate::card::sets) static ROOT_MAZE: CardRecord = CardRecord::new(
                 ObjectPredicateDef::HasType(CardType::Land),
             ]),
             controller: PlayerRelation::Any,
+            cast: None,
         },
         ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
     )),

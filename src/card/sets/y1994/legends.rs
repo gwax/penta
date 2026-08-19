@@ -532,6 +532,7 @@ pub(in crate::card::sets) static KISMET: CardRecord = CardRecord::new(
                 ObjectPredicateDef::HasType(CardType::Land),
             ]),
             controller: PlayerRelation::Opponent,
+            cast: None,
         },
         ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
     )),

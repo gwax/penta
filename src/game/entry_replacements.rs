@@ -762,11 +762,19 @@ impl Game {
                     {
                         return ControlFlow::Continue(());
                     }
-                    let ReplacementEventDef::ObjectEntersBattlefield { object, controller } =
-                        definition.event
+                    let ReplacementEventDef::ObjectEntersBattlefield {
+                        object,
+                        controller,
+                        cast,
+                    } = definition.event
                     else {
                         return ControlFlow::Continue(());
                     };
+                    // A permanent spell that resolves arrives from the stack,
+                    // and nothing else does, so that is what "was cast" reads.
+                    if cast.is_some_and(|expected| (entry.from == ZoneKind::Stack) != expected) {
+                        return ControlFlow::Continue(());
+                    }
                     if !self.trigger_object_matches(
                         object,
                         &entering_object,

@@ -32,6 +32,7 @@ static TEST_OPPONENT_LANDS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] = [AbilityDef::
     ReplacementEventDef::ObjectEntersBattlefield {
         object: ObjectPredicateDef::HasType(CardType::Land),
         controller: PlayerRelation::Opponent,
+        cast: None,
     },
     ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
 )];
@@ -49,6 +50,7 @@ static TEST_EXTERNAL_CONTEXT_ABILITY: [AbilityDef; 1] = [AbilityDef::replacement
     ReplacementEventDef::ObjectEntersBattlefield {
         object: ObjectPredicateDef::HasType(CardType::Land),
         controller: PlayerRelation::Opponent,
+        cast: None,
     },
     ReplacementEffectDef::Conditional {
         condition: ConditionDef::Exists(ObjectQueryDef::matching(
@@ -81,6 +83,7 @@ static TEST_PLAINS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] = [AbilityDef::replacem
     ReplacementEventDef::ObjectEntersBattlefield {
         object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
         controller: PlayerRelation::Opponent,
+        cast: None,
     },
     ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
 )];
@@ -90,6 +93,7 @@ static TEST_OPPONENT_ENCHANTMENTS_ENTER_TAPPED_ABILITY: [AbilityDef; 1] =
         ReplacementEventDef::ObjectEntersBattlefield {
             object: ObjectPredicateDef::HasType(CardType::Enchantment),
             controller: PlayerRelation::Opponent,
+            cast: None,
         },
         ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
     )];

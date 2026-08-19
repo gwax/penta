@@ -107,6 +107,7 @@ pub(in crate::card::sets) static BLIND_OBEDIENCE: CardRecord = CardRecord::new(
                     ObjectPredicateDef::HasType(CardType::Creature),
                 ]),
                 controller: PlayerRelation::Opponent,
+                cast: None,
             },
             ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
         ),
