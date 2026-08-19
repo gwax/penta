@@ -202,6 +202,10 @@ pub enum ValueDef {
     /// died this turn". Counted as they die rather than read off a zone,
     /// because a graveyard is not a record of this turn.
     CreaturesDiedThisTurn,
+    /// How many distinct card types appear among the cards in every
+    /// graveyard. Types, not cards: ten artifact cards and ten creature cards
+    /// are still two. What a Lhurgoyf is worth.
+    CardTypesAmongGraveyards,
     /// The morbid condition. Held by reference so that `ValueDef` stays one
     /// word wide; a second inline value would grow everything embedding it.
     IfCreatureDiedThisTurn(&'static ConditionalValueDef),

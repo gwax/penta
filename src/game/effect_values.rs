@@ -1,6 +1,6 @@
 use super::{
-    EffectResolutionContext, Game, GameObjectId, ObjectPredicateDef, PlayerId, RetiredObject,
-    ScopedEffect, StackObject, Target, ValueDef,
+    CardType, CardTypeSet, EffectResolutionContext, Game, GameObjectId, ObjectPredicateDef,
+    PlayerId, RetiredObject, ScopedEffect, StackObject, Target, ValueDef,
 };
 
 impl Game {
@@ -15,6 +15,7 @@ impl Game {
         match value {
             ValueDef::Constant(value) => value,
             ValueDef::CreaturesDiedThisTurn => i32::from(self.creatures_died_this_turn),
+            ValueDef::CardTypesAmongGraveyards => self.card_types_among_graveyards(),
             ValueDef::ChosenX => i32::from(object.x()),
             ValueDef::SourcePower => object
                 .source
@@ -298,5 +299,31 @@ impl Game {
             // The caller only routes conditional values here.
             _ => 0,
         }
+    }
+}
+
+impl Game {
+    /// How many distinct card types appear among the cards in every
+    /// graveyard.
+    ///
+    /// Types rather than cards, and the union across both players: a single
+    /// artifact creature card is worth two, and twenty cards split between
+    /// artifacts and creatures are worth the same two.
+    pub(super) fn card_types_among_graveyards(&self) -> i32 {
+        let mut seen = CardTypeSet::empty();
+        for player in &self.players {
+            for card in &player.graveyard {
+                if let Some(definition) = self.catalog.get(card.definition) {
+                    seen = seen.union(definition.rules.types());
+                }
+            }
+        }
+        i32::try_from(
+            CardType::ALL
+                .into_iter()
+                .filter(|card_type| seen.contains(*card_type))
+                .count(),
+        )
+        .unwrap_or(0)
     }
 }

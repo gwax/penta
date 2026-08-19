@@ -519,7 +519,8 @@ impl HandcraftedPolicy {
             | ValueDef::Scaled(_)
             | ValueDef::Halved(_)
             | ValueDef::Sum(_)
-            | ValueDef::CreaturesDiedThisTurn => None,
+            | ValueDef::CreaturesDiedThisTurn
+            | ValueDef::CardTypesAmongGraveyards => None,
         }
     }
 }

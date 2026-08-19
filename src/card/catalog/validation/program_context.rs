@@ -692,7 +692,10 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::AffectedManaValue
         | ValueDef::TotalPowerOfLinkedExiles
-        | ValueDef::TotalToughnessOfLinkedExiles => true,
+        | ValueDef::TotalToughnessOfLinkedExiles
+        // Read live from every graveyard, which the static layer can see the
+        // same way it sees a battlefield count.
+        | ValueDef::CardTypesAmongGraveyards => true,
         ValueDef::CountMatchingObjects(query)
         | ValueDef::AnyMatchingObject(query)
         | ValueDef::GreatestPowerAmong(query) => static_query_supported(*query),
@@ -738,6 +741,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
                 && static_cost_reduction_value_supported(sum.right)
         }
         ValueDef::CreaturesDiedThisTurn
+        | ValueDef::CardTypesAmongGraveyards
         | ValueDef::GreatestPowerAmong(_)
         | ValueDef::ChosenX
         | ValueDef::SourceCastX

@@ -288,6 +288,7 @@ fn validate_value_shape(
             validate_target_shape(target, targets, RecipientExpectation::Object, true)
         }
         ValueDef::CreaturesDiedThisTurn
+        | ValueDef::CardTypesAmongGraveyards
         | ValueDef::LifeTotal(_)
         | ValueDef::Constant(_)
         | ValueDef::ChosenX

@@ -55,3 +55,4 @@ pub const BOTANICAL_SANCTUM: CardDefinitionId = CardDefinitionId(2137);
 pub const CONCEALED_COURTYARD: CardDefinitionId = CardDefinitionId(2138);
 pub const INSPIRING_VANTAGE: CardDefinitionId = CardDefinitionId(2139);
 pub const SPIREBLUFF_CANAL: CardDefinitionId = CardDefinitionId(2140);
+pub const PYROGOYF: CardDefinitionId = CardDefinitionId(2141);

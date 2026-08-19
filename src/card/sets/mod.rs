@@ -383,6 +383,11 @@ const SET_MODULES: &[SetModule] = &[
         y2024::modern_horizons_3::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::ModernHorizons3Commander,
+        y2024::modern_horizons_3_commander::CARDS,
+        y2024::modern_horizons_3_commander::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::FinalFantasy,
         y2025::final_fantasy::CARDS,
         y2025::final_fantasy::ADDITIONAL_PRINTINGS,

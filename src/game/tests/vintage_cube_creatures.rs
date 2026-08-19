@@ -324,3 +324,126 @@ fn the_redeemed_paladin_covers_the_other_attackers() {
         "and \"other\" excludes Cecil himself",
     );
 }
+
+/// A Lhurgoyf counts card types, not cards: a graveyard of ten creatures is
+/// worth the same as a graveyard of one.
+#[test]
+fn pyrogoyf_grows_with_the_types_in_every_graveyard_not_the_cards() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].graveyard.clear();
+    game.players[PlayerId::Two.index()].graveyard.clear();
+    let goyf = game
+        .put_onto_battlefield(PlayerId::One, cards::PYROGOYF)
+        .expect("cataloged");
+    let stats = |game: &Game| {
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == goyf)
+            .expect("still there");
+        (game.power(permanent), game.toughness(permanent))
+    };
+    assert_eq!(
+        stats(&game),
+        (Some(0), Some(1)),
+        "an empty graveyard is 0/1"
+    );
+
+    // Three creature cards are still one type.
+    for instance in 0..3 {
+        game.players[PlayerId::One.index()].graveyard.push(card(
+            62_000 + instance,
+            cards::GRIZZLY_BEARS,
+            PlayerId::One,
+        ));
+    }
+    assert_eq!(
+        stats(&game),
+        (Some(1), Some(2)),
+        "one type among three cards"
+    );
+
+    // An instant in the same graveyard is a second type.
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        62_100,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
+    assert_eq!(stats(&game), (Some(2), Some(3)));
+
+    // "All graveyards" reaches across the table.
+    game.players[PlayerId::Two.index()]
+        .graveyard
+        .push(card(62_200, cards::FOREST, PlayerId::Two));
+    assert_eq!(
+        stats(&game),
+        (Some(3), Some(4)),
+        "the opponent's land counts"
+    );
+
+    // A second instant adds nothing, because the type is already there.
+    game.players[PlayerId::Two.index()].graveyard.push(card(
+        62_300,
+        cards::ANCESTRAL_RECALL,
+        PlayerId::Two,
+    ));
+    assert_eq!(stats(&game), (Some(3), Some(4)));
+}
+
+/// Its own arrival is what usually triggers it, and the damage is read from
+/// the creature that entered.
+#[test]
+fn pyrogoyf_burns_on_arrival_for_as_much_as_it_is_worth() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].graveyard.clear();
+    game.players[PlayerId::Two.index()].graveyard.clear();
+    // Two types in the graveyard: a 2/3 arriving.
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        62_400,
+        cards::GRIZZLY_BEARS,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        62_401,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
+    let before = game.players[PlayerId::Two.index()].life;
+
+    game.put_onto_battlefield(PlayerId::One, cards::PYROGOYF)
+        .expect("cataloged");
+
+    let decision = loop {
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            break decision;
+        }
+        let player = game.priority;
+        assert!(
+            game.apply(player, Action::PassPriority).is_ok(),
+            "the enters trigger should be waiting on a target",
+        );
+    };
+    let opponent = decision
+        .options
+        .iter()
+        .find(|option| option.label == "your opponent")
+        .expect("the opponent is one of the offered targets")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![opponent],
+        },
+    )
+    .expect("a target is chosen");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        before - game.players[PlayerId::Two.index()].life,
+        2,
+        "a 2/3 Lhurgoyf burns for two",
+    );
+}

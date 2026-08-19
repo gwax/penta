@@ -372,7 +372,10 @@ fn static_stat_value(value: crate::card::ValueDef) -> bool {
         // Read from the pile the source exiled as it entered, which the
         // static power-and-toughness layer can reach from that source.
         | crate::card::ValueDef::TotalPowerOfLinkedExiles
-        | crate::card::ValueDef::TotalToughnessOfLinkedExiles => true,
+        | crate::card::ValueDef::TotalToughnessOfLinkedExiles
+        // Read live from every graveyard, which the layer walk can reach
+        // without a resolving spell in hand.
+        | crate::card::ValueDef::CardTypesAmongGraveyards => true,
         crate::card::ValueDef::Scaled(scaled) => static_stat_value(scaled.value),
         crate::card::ValueDef::Halved(halved) => static_stat_value(halved.value),
         _ => false,

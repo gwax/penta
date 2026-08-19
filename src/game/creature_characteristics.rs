@@ -238,6 +238,9 @@ impl Game {
                 )
                 .unwrap_or(i32::MAX)
             }
+            // Read from every graveyard rather than from the board, so a
+            // Lhurgoyf resizes as cards arrive there.
+            ValueDef::CardTypesAmongGraveyards => self.card_types_among_graveyards(),
             _ => 0,
         }
     }
