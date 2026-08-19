@@ -15,6 +15,9 @@ impl Game {
         context: &EffectResolutionContext,
     ) {
         match scoped.effect {
+            EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { chooser } => {
+                self.queue_basic_land_type_substitution(object, context, scoped, chooser);
+            }
             EffectDef::PhaseOut { object: recipient } => {
                 self.phase_out_recipients(recipient, object, context, scoped);
             }

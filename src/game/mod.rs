@@ -78,6 +78,7 @@ mod error;
 mod event;
 mod face_down;
 mod land_type_layers;
+mod land_type_substitution;
 mod legacy_resolution;
 mod lifecycle;
 mod mana;

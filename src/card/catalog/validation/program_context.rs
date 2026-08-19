@@ -487,6 +487,7 @@ fn validate_resolving_effect(
         | EffectDef::RemoveAllCounters { .. }
         | EffectDef::SkipNextUntapSteps { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
+        | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::ChooseColor { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::GrantFlashToNextSorcery
@@ -899,6 +900,9 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::IfCondition { .. } => "IfCondition",
         EffectDef::InstallTrigger(_) => "InstallTrigger",
         EffectDef::CannotBeForcedToSacrifice => "CannotBeForcedToSacrifice",
+        EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. } => {
+            "SubstituteBasicLandTypeUntilEndOfTurn"
+        }
         EffectDef::ReduceGenericCostBy(_) => "ReduceGenericCostBy",
         EffectDef::IncreaseMatchingAbilityCostBy { .. } => "IncreaseMatchingAbilityCostBy",
         EffectDef::IncreaseMatchingSpellCostBy { .. } => "IncreaseMatchingSpellCostBy",

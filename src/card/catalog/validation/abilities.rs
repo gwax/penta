@@ -741,6 +741,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::ChooseColor { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::CannotBeForcedToSacrifice
+        | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)
@@ -912,6 +913,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::ChooseColor { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::CannotBeForcedToSacrifice
+        | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)

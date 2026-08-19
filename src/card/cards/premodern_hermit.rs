@@ -17,3 +17,4 @@ pub const GILDED_DRAKE: CardDefinitionId = CardDefinitionId(2083);
 pub const PHYREXIAN_DREADNOUGHT: CardDefinitionId = CardDefinitionId(2085);
 pub const DRAGON_BREATH: CardDefinitionId = CardDefinitionId(2088);
 pub const SUTURED_GHOUL: CardDefinitionId = CardDefinitionId(2089);
+pub const VISION_CHARM: CardDefinitionId = CardDefinitionId(2090);

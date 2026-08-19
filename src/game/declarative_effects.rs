@@ -202,7 +202,7 @@ impl Game {
             }
             EffectDef::DestroyAtEndOfCombat { .. }
             | EffectDef::RemoveAllCounters { .. }
-            | EffectDef::PhaseOut { .. }
+            | EffectDef::PhaseOut { .. } | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
             | EffectDef::SkipNextUntapSteps { .. } => {
                 self.resolve_permanent_state_effect(scoped, object, &context);
             }

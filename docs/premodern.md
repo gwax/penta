@@ -11,7 +11,7 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 1 of them not yet cataloged
+- 145 distinct cards across the tranche, all of them cataloged
 - 7 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
   Bryan Gulotta's Replenish, Drew Glauberg's Stasis, Chris Danis's BW Control,
   TentacleFan's Landstill, and Andy Dominguez's RG Goblins. Nothing in any of
@@ -19,7 +19,7 @@ correctly.
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: Angry Hermit 1. BW Control and Replenish are complete. A list is
+together: none -- every card in the tranche is cataloged. BW Control and Replenish are complete. A list is
 blocked only by uncataloged cards -- no staged deck contains a card that is
 cataloged but unplayable.
 
@@ -242,6 +242,7 @@ older unannotated definitions still require one):
 - `Underground River` — complete
 - `Upheaval` — complete
 - `Vindicate` — complete
+- `Vision Charm` — complete; all three modes, including phasing
 - `Volcanic Hammer` — complete
 - `Warmth` — complete
 - `Wasteland` — complete
@@ -250,9 +251,7 @@ older unannotated definitions still require one):
 - `Wrath of God`
 - `Yavimaya Coast` — complete
 
-Not yet cataloged:
-
-- [ ] `Vision Charm`
+Not yet cataloged: none.
 
 [tournament]: https://melee.gg/Tournament/View/441083
 [rules]: https://premodernmagic.com/

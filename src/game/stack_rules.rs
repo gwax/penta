@@ -84,8 +84,7 @@ impl Game {
             | EffectDef::ShuffleLibrary { .. }
             | EffectDef::EmptyManaPool { .. }
             | EffectDef::LoseLife { .. }
-            | EffectDef::LoseTheGame { .. }
-            | EffectDef::Regenerate { .. }
+            | EffectDef::LoseTheGame { .. } | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
             | EffectDef::RemoveFromCombat { .. }
             | EffectDef::DestroyAtEndOfCombat { .. }
@@ -118,6 +117,7 @@ impl Game {
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::May { .. }
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
             | EffectDef::ScheduleTurnPhases(_)

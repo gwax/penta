@@ -80,6 +80,15 @@ impl Game {
                     &object, &context, scoped, &targets, operation, duration, index,
                 );
             }
+            DecisionContinuation::BasicLandTypeSubstitution {
+                object,
+                context,
+                effect,
+            } => {
+                if let Some(option) = options.first().copied() {
+                    self.resolve_basic_land_type_substitution(&object, &context, effect, option);
+                }
+            }
             DecisionContinuation::BasicLandTypeTextChange { target } => {
                 let Some(option) = options.first().copied() else {
                     return;

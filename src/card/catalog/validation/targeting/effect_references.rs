@@ -301,6 +301,7 @@ fn validate_effect_references(
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::CannotBeForcedToSacrifice
+        | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::Special(_) => Ok(()),

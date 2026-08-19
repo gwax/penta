@@ -664,6 +664,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ChooseColor { .. }
                     | EffectDef::BecomeCopyOf { .. }
                     | EffectDef::CannotBeForcedToSacrifice
+                    | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
                     | EffectDef::CreateEmblem { .. }
                     | EffectDef::Transform { .. }
                     | EffectDef::ScheduleTurnPhases(_)

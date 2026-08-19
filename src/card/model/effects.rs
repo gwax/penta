@@ -347,6 +347,13 @@ pub enum EffectDef {
     ChangeTextBasicLandType {
         object: EffectRecipientDef,
     },
+    /// Choose two basic land types, and make every land of the first the
+    /// second until end of turn. Both types are chosen as this resolves, so
+    /// neither the lands it affects nor the type it gives them can be
+    /// written down in advance.
+    SubstituteBasicLandTypeUntilEndOfTurn {
+        chooser: PlayerRefDef,
+    },
     Choose(ChooseDef),
     /// Choose owned cards from one or more places without performing the
     /// keyword action "search." Ring of Ma'rûf uses this for outside-game

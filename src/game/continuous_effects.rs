@@ -505,6 +505,7 @@ impl Game {
                 | EffectDef::IfCondition { .. }
                 | EffectDef::InstallTrigger(_)
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::IncreaseMatchingAbilityCostBy { .. }
                 | EffectDef::IncreaseMatchingSpellCostBy { .. }

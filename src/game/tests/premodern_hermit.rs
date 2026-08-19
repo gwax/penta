@@ -736,3 +736,77 @@ fn a_phased_out_permanent_is_gone_until_its_controller_untaps() {
         "and it untapped with everything else, having come back first",
     );
 }
+
+/// Vision Charm's land mode turns every land of one basic type into
+/// another for the turn, which is what strands an opponent's colours.
+#[test]
+fn vision_charm_turns_one_land_type_into_another() {
+    let mut game = ready_game();
+    for index in 0..2 {
+        game.battlefield
+            .push(creature(10_010 + index, cards::ISLAND, PlayerId::Two));
+    }
+    game.battlefield
+        .push(creature(10_020, cards::FOREST, PlayerId::Two));
+
+    let charm = card(10_000, cards::VISION_CHARM, PlayerId::One);
+    let charm_id = charm.id;
+    game.players[PlayerId::One.index()].hand.push(charm);
+    game.players[PlayerId::One.index()].mana_pool.blue = 1;
+    game.priority = PlayerId::One;
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == charm_id && choices.modes() == [ModeId(1)])
+        })
+        .expect("the land mode is one of the three on offer");
+    game.apply(PlayerId::One, cast).unwrap();
+    pass_until_decision(&mut game);
+
+    let choice = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the pair of types is chosen as it resolves");
+    let island_to_swamp = choice
+        .options
+        .iter()
+        .find(|option| option.label == "Island → Swamp")
+        .expect("every ordered pair is offered")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: choice.id,
+            options: vec![island_to_swamp],
+        },
+    )
+    .expect("naming a pair is legal");
+    drain_pending(&mut game);
+
+    let swamps = game
+        .battlefield
+        .iter()
+        .filter(|permanent| game.effective_land_types(permanent)[BasicLandType::Swamp.index()])
+        .count();
+    assert_eq!(swamps, 2, "both Islands are Swamps now");
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| game.effective_land_types(permanent)
+                [BasicLandType::Island.index()])
+            .count(),
+        0,
+        "and nothing is an Island: becoming a type replaces the old one",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| game.effective_land_types(permanent)
+                [BasicLandType::Forest.index()])
+            .count(),
+        1,
+        "the Forest was never of the first type, so it is untouched",
+    );
+}

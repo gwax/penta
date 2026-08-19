@@ -484,6 +484,7 @@ impl Game {
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::May { .. }
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }
             | EffectDef::ScheduleTurnPhases(_)

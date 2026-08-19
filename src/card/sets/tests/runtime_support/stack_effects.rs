@@ -341,7 +341,10 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         // Neither needs a recipient: both concern the resolving controller.
         // The amount is computed when the effect resolves, so nothing has
         // to read it ahead of time the way a mana ability does.
-        EffectDef::AddManaEqualTo { .. }
+        // Both of a land substitution's types are chosen as it resolves, so
+        // it has no recipient to check either.
+        EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
+        | EffectDef::AddManaEqualTo { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::CreateEmblem { .. }

@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, BasicLandType,
-    CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef, ValueDef, ZoneKind, ZonePlacement,
-    cards,
+    CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
+    PlayerRefDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef,
+    ValueDef, ZoneKind, ZonePlacement, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -55,6 +55,59 @@ static FIREBLAST_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::AnyTarget,
 )];
 
+static VISION_CHARM_PLAYER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+static VISION_CHARM_ARTIFACT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+)];
+
+/// The printed first choice is "a land type", which includes the nonbasic
+/// ones. Nothing in this card pool carries a nonbasic land subtype, so the
+/// choice offered is over the basic types alone.
+static VISION_CHARM_MODES: [AbilityDef; 3] = [
+    AbilityDef::spell_with_targets(
+        "Target player mills four cards.",
+        &VISION_CHARM_PLAYER,
+        EffectDef::Mill {
+            player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(4),
+        },
+    ),
+    AbilityDef::spell(
+        "Choose a land type and a basic land type. Each land of the first chosen type becomes the second chosen type until end of turn.",
+        EffectDef::SubstituteBasicLandTypeUntilEndOfTurn {
+            chooser: PlayerRefDef::EffectController,
+        },
+    ),
+    AbilityDef::spell_with_targets(
+        "Target artifact phases out.",
+        &VISION_CHARM_ARTIFACT,
+        EffectDef::PhaseOut {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    ),
+];
+
+// VIS 49 — Vision Charm
+pub(in crate::card::sets) static VISION_CHARM: CardRecord = CardRecord::new(
+    cards::VISION_CHARM,
+    "Vision Charm",
+    CardArt::new("0efaa72c-8f65-4488-ad66-80dc877166cc", "Greg Spalenka"),
+    CardSet::Visions,
+    // One blue for whichever of three the turn calls for. The deck wants the
+    // land mode to strand an opponent's colours, and the phase-out to answer
+    // an artifact at instant speed.
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::modal_spell(
+        "Choose one —\n• Target player mills four cards.\n• Choose a land type and a basic land type. Each land of the first chosen type becomes the second chosen type until end of turn.\n• Target artifact phases out.",
+        &VISION_CHARM_MODES,
+        1,
+        1,
+        false,
+    )),
+);
+
 // VIS 79 — Fireblast
 pub(in crate::card::sets) static FIREBLAST: CardRecord = CardRecord::new(
     cards::FIREBLAST,
@@ -80,6 +133,6 @@ pub(in crate::card::sets) static FIREBLAST: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&IMPULSE, &FIREBLAST];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&IMPULSE, &VISION_CHARM, &FIREBLAST];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

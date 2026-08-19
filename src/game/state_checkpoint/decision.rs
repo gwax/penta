@@ -668,7 +668,10 @@ fn continuation_snapshot(
         // A run of sacrifices carries a resolution mid-flight: the effect it
         // is paying for is relocatable, but how much is still owed is state
         // this format has no place for yet.
-        DecisionContinuation::SacrificeToTotalPower { .. }
+        // The pair is not yet chosen, so what it would do to the board is
+        // not writable down either.
+        DecisionContinuation::BasicLandTypeSubstitution { .. }
+        | DecisionContinuation::SacrificeToTotalPower { .. }
         // An entry paused mid-flight carries a prospective permanent that
         // this format has no place for yet.
         | DecisionContinuation::BattlefieldEntryExile { .. }

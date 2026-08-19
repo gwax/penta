@@ -214,6 +214,13 @@ pub(super) enum DecisionContinuation {
         entering: GameObjectId,
         candidates: Vec<(GameObjectId, CardDefinitionId)>,
     },
+    /// The pair of basic land types a substitution was answered with, and
+    /// the resolution that asked.
+    BasicLandTypeSubstitution {
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
+        effect: ScopedEffect,
+    },
     ChooseCards {
         controller: PlayerId,
         destination: ZoneKind,
