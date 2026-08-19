@@ -185,6 +185,12 @@ pub(super) enum CommittedTriggerEvent {
         player: PlayerId,
         amount: u16,
     },
+    /// One card left a hand for a graveyard. The card itself is already in
+    /// the graveyard, and nothing in the supported pool reads it, so only the
+    /// player who discarded is carried.
+    Discarded {
+        player: PlayerId,
+    },
     Attacks {
         object: TriggerEventObject,
         declaration_size: u8,
@@ -296,7 +302,8 @@ impl CommittedTriggerEvent {
                 event_player: Some(object.controller),
                 amount: None,
             },
-            Self::StepBegins { player, .. } => TriggerContext {
+            // Both name only the player, and carry no amount with it.
+            Self::StepBegins { player, .. } | Self::Discarded { player } => TriggerContext {
                 object: None,
                 object_controller: None,
                 event_player: Some(*player),

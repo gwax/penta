@@ -868,7 +868,9 @@ impl Game {
                 TriggerEventDef::DamageDealt(matcher),
                 damage @ CommittedTriggerEvent::DamageDealt { .. },
             ) => self.damage_trigger_matches(matcher, damage, source, controller),
-            (
+            // Both name only the player the event happened to.
+            (TriggerEventDef::Discarded(relation), CommittedTriggerEvent::Discarded { player })
+            | (
                 TriggerEventDef::LifeGained(relation),
                 CommittedTriggerEvent::LifeGained { player, .. },
             ) => {

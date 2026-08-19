@@ -83,6 +83,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         TriggerEventDef::Cycled
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
+        | TriggerEventDef::Discarded(_)
         | TriggerEventDef::StateCondition => true,
         TriggerEventDef::DamageDealt(matcher) => {
             let source = match matcher.source {

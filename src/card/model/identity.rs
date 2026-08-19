@@ -76,6 +76,7 @@ pub enum CardSet {
     RavnicaClueEdition,
     ModernHorizons3,
     ModernHorizons3Commander,
+    FoundationsJumpstart,
     FinalFantasy,
     /// Tokens are game objects rather than printed cards. They live in the
     /// catalog so a client can look one up by definition, and belong to no

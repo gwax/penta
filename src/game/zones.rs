@@ -1,9 +1,10 @@
 use super::{
     BattlefieldArrival, CardDefinitionId, CardInstance, CardPartId, CharacteristicContext,
-    CharacteristicSource, CounterKind, DeclarativeAbilityDef, EntryCompletion, Game, GameEvent,
-    GameObjectId, KeywordAbility, ObjectBacking, PendingBattlefieldEntry, Permanent, PlayerId,
-    PublicCard, ReplacementEffectDef, ReplacementEventDef, Target, TriggerContext, ZoneCard,
-    ZoneError, ZoneKind, ZoneMoveCause, ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
+    CharacteristicSource, CommittedTriggerEvent, CounterKind, DeclarativeAbilityDef,
+    EntryCompletion, Game, GameEvent, GameObjectId, KeywordAbility, ObjectBacking,
+    PendingBattlefieldEntry, Permanent, PlayerId, PublicCard, ReplacementEffectDef,
+    ReplacementEventDef, Target, TriggerContext, ZoneCard, ZoneError, ZoneKind, ZoneMoveCause,
+    ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
 };
 
 impl Game {
@@ -526,10 +527,17 @@ impl Game {
             discarded.push((card.id, definition));
         }
         if !discarded.is_empty() {
+            let count = discarded.len();
             self.events.push(GameEvent::CardsDiscarded {
                 player,
                 cards: discarded,
             });
+            // One event per card: "whenever you discard a card" fires twice
+            // for a discard of two. Raised after the cards have moved, so
+            // anything the triggers read sees the finished hand.
+            for _ in 0..count {
+                self.capture_battlefield_triggers(&CommittedTriggerEvent::Discarded { player });
+            }
         }
     }
 }

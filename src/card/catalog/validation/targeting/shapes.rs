@@ -40,7 +40,10 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::DamageDealt(_)
         | TriggerEventDef::StateCondition
-        | TriggerEventDef::LifeGained(_) => None,
+        | TriggerEventDef::LifeGained(_)
+        // The card is already in a graveyard and nothing reads it, so the
+        // event names no object at all.
+        | TriggerEventDef::Discarded(_) => None,
     }
 }
 

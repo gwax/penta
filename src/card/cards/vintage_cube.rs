@@ -61,3 +61,5 @@ pub const CROP_ROTATION: CardDefinitionId = CardDefinitionId(2143);
 pub const UNRULY_KRASIS: CardDefinitionId = CardDefinitionId(2144);
 pub const TIDEHOLLOW_SCULLER: CardDefinitionId = CardDefinitionId(2145);
 pub const TIFA_LOCKHART: CardDefinitionId = CardDefinitionId(2146);
+pub const BLOOD_TOKEN: CardDefinitionId = CardDefinitionId(2147);
+pub const IVORA_INSATIABLE_HEIR: CardDefinitionId = CardDefinitionId(2148);

@@ -527,6 +527,28 @@ pub(in crate::card::sets) static FOOD_TOKEN: CardRecord = CardRecord::new(
     )),
 );
 
+/// The other noncreature token here, and the one whose ability spends a card
+/// to find a better one.
+pub(in crate::card::sets) static BLOOD_TOKEN: CardRecord = CardRecord::new(
+    cards::BLOOD_TOKEN,
+    "Blood",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_artifact_without_mana_cost(&["Blood"]).with_ability(AbilityDef::activated(
+        "{1}, {T}, Discard a card, Sacrifice this token: Draw a card.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{1}")),
+            AbilityCostDef::TapSource,
+            AbilityCostDef::DiscardCardMatching(ObjectPredicateDef::Any),
+            AbilityCostDef::SacrificeSource,
+        ],
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    )),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FACE_DOWN_CREATURE,
     &GERM_TOKEN_0_0_BLACK,
@@ -572,6 +594,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WURM_TOKEN_6_6_GREEN,
     &RAT_TOKEN_1_1_BLACK,
     &FOOD_TOKEN,
+    &BLOOD_TOKEN,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
