@@ -32,6 +32,9 @@ pub(in crate::card::sets) static STERN_SCOLDING: CardRecord = CardRecord::new(
     )),
 );
 
+// LTR 103 — Orcish Bowmasters
+// Audit: blocked — Needs two things. A trigger on an opponent drawing a card, which no event here raises, and which this card qualifies further: every draw except the first one in each of that player's draw steps, so the count has to be kept per player per turn. And amass, which is a conditional token creation followed by a chosen Army taking counters and gaining a creature type.
+
 // LTR 169 — Generous Ent
 pub(in crate::card::sets) static GENEROUS_ENT: CardRecord = CardRecord::new(
     cards::GENEROUS_ENT,
