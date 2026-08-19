@@ -56,6 +56,7 @@ pub fn parse_format_slug(slug: &str) -> Result<Format, String> {
             Ok(Format::IsdDgmStandard)
         }
         "premodern" => Ok(Format::Premodern),
+        "vintage-cube" | "vintage_cube" => Ok(Format::VintageCube),
         _ => Err(format!("unknown format: {slug}")),
     }
 }
@@ -67,6 +68,9 @@ pub fn deck_names_for_format(format: Format) -> Vec<&'static str> {
         Format::OldSchool9394 => OLD_SCHOOL_DECK_NAMES.to_vec(),
         Format::IsdDgmStandard => ISD_DGM_STANDARD_DECK_NAMES.to_vec(),
         Format::Premodern => PREMODERN_DECK_NAMES.to_vec(),
+        // The pool is still being cataloged, so there is nothing to offer
+        // yet. A cube is drafted rather than picked from a menu in any case.
+        Format::VintageCube => Vec::new(),
     }
 }
 
@@ -75,6 +79,7 @@ pub fn deck_names_for_format(format: Format) -> Vec<&'static str> {
 pub fn deck_by_name_for_format(format: Format, name: &str) -> Option<Deck> {
     let name = name.trim().to_ascii_lowercase();
     match format {
+        Format::VintageCube => None,
         Format::OldSchool9394 => match name.as_str() {
             "goblins" => Some(decks::old_school_93_94::goblins()),
             "sligh" => Some(decks::old_school_93_94::sligh()),

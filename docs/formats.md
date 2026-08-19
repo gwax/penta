@@ -7,7 +7,7 @@ authoritative machine-readable account of card legality and coverage.
 
 ## Supported formats
 
-Penta currently ships two explicit format profiles:
+Penta currently ships three explicit format profiles:
 
 - **Eternal Central Old School 93/94**: the original card pool, EC banned and
   restricted lists, phase-boundary mana burn, and fifteen powered archetypes.
@@ -15,10 +15,13 @@ Penta currently ships two explicit format profiles:
   Avacyn Restored, Magic 2013, Return to Ravnica, Gatecrash, Dragon's Maze,
   and Magic 2014; no banned or restricted cards; modern mana-pool emptying with
   no mana burn; and ten built-in decks from SCG events and testing in 2013.
+- **Premodern**: Fourth Edition through Scourge, the format's own ban list, no
+  restricted list, modern mana rules, and the eight decks of the July 2026
+  Sacred Torch Showdown Top 8.
 
-Both use 20 starting life, 60-card minimum decks, sideboards of up to 15 cards,
-and a four-copy limit except for basic lands. Both currently use London
-mulligans.
+All three use 20 starting life, 60-card minimum decks, sideboards of up to 15
+cards, and a four-copy limit except for basic lands. All three currently use
+London mulligans.
 
 The selected format is stored on each game. Format-specific construction and
 mana rules live in one profile rather than as global switches, so adding a
@@ -26,10 +29,14 @@ format does not change existing games.
 
 ## Planned formats
 
-Premodern is staged as the next format expansion. The exact Top 8 decklists
-from the July 2026 Sacred Torch Showdown and the card-by-card implementation
-backlog are tracked in the [Premodern roadmap](premodern.md). These lists are
-not advertised as playable until their catalog and rules coverage are honest.
+The Vintage Cube is staged as the next expansion, and is the first format here
+whose legality is a fixed card list rather than a set window: `FormatRules`
+carries the pool, and a card is legal because the cube names it. The pool, its
+singleton forty-card profile, and the card-by-card backlog are tracked in the
+[Vintage Cube roadmap](vintage-cube.md). Most of the pool is not cataloged yet,
+so no decks are registered and the format is not offered in the web client.
+Drafting is deferred; the first goal is a pool complete enough to play fixed
+lists from.
 
 ### Old School 93/94
 
@@ -42,6 +49,13 @@ burn. Ring of Ma'rûf follows Eternal Central's card-specific wording here: its
 next-draw replacement may choose an owned card from exile or the sideboard,
 instead of Oracle's outside-the-game-only source. Paper-only reprint policies
 have no meaning in the simulator.
+
+### Premodern
+
+The profile is the twenty-nine-set window from Fourth Edition through Scourge
+with the format's own thirty-three-card ban list, taken from the Premodern
+rules page. Its decks and per-card coverage are tracked in the
+[Premodern roadmap](premodern.md).
 
 ### ISD–DGM Standard
 

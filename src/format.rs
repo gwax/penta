@@ -4,6 +4,8 @@ use std::fmt;
 
 use crate::card::{CardDefinition, CardSet};
 
+pub mod vintage_cube;
+
 /// A supported constructed format.
 ///
 /// Keep this value in a [`crate::Game`] rather than consulting global rules:
@@ -18,6 +20,9 @@ pub enum Format {
     /// Premodern, the community format spanning Fourth Edition through
     /// Scourge.
     Premodern,
+    /// The MTGO Vintage Cube, played from a fixed singleton list rather than
+    /// from a set window.
+    VintageCube,
 }
 
 /// The construction and game-start values shared by every game in a format.
@@ -35,6 +40,10 @@ pub struct FormatRules {
     pub mana_burn: bool,
     pub banned_cards: &'static [&'static str],
     pub restricted_cards: &'static [&'static str],
+    /// A fixed card list this format is played from, when it has one. A cube
+    /// is not a set window: legality is membership in the list, so a format
+    /// carrying one ignores `allowed_sets` entirely.
+    pub card_pool: Option<&'static [&'static str]>,
 }
 
 pub const OLD_SCHOOL_BANNED_CARDS: &[&str] = &[
@@ -192,6 +201,26 @@ const PREMODERN_RULES: FormatRules = FormatRules {
     mana_burn: false,
     banned_cards: PREMODERN_BANNED_CARDS,
     restricted_cards: PREMODERN_RESTRICTED_CARDS,
+    card_pool: None,
+};
+
+/// Forty cards and one of each: a cube is drafted, and the list it is drafted
+/// from is singleton. Nothing is banned or restricted -- a card is either in
+/// the pool or it is not.
+const VINTAGE_CUBE_RULES: FormatRules = FormatRules {
+    starting_life: 20,
+    opening_hand_size: 7,
+    minimum_main_deck_size: 40,
+    maximum_sideboard_size: 15,
+    maximum_copies: 1,
+    // Unused while a pool is present, and empty so that nothing reads it as
+    // a set window by accident.
+    allowed_sets: &[],
+    mana_empties_at_end_of_step: true,
+    mana_burn: false,
+    banned_cards: &[],
+    restricted_cards: &[],
+    card_pool: Some(vintage_cube::VINTAGE_CUBE_POOL),
 };
 
 const OLD_SCHOOL_RULES: FormatRules = FormatRules {
@@ -205,6 +234,7 @@ const OLD_SCHOOL_RULES: FormatRules = FormatRules {
     mana_burn: true,
     banned_cards: OLD_SCHOOL_BANNED_CARDS,
     restricted_cards: OLD_SCHOOL_RESTRICTED_CARDS,
+    card_pool: None,
 };
 
 #[deprecated(note = "use ISD_DGM_STANDARD_BANNED_CARDS")]
@@ -225,6 +255,7 @@ const ISD_DGM_STANDARD_RULES: FormatRules = FormatRules {
     mana_burn: false,
     banned_cards: ISD_DGM_STANDARD_BANNED_CARDS,
     restricted_cards: ISD_DGM_STANDARD_RESTRICTED_CARDS,
+    card_pool: None,
 };
 
 impl Format {
@@ -233,12 +264,21 @@ impl Format {
     #[deprecated(note = "use Format::IsdDgmStandard")]
     pub const IsdRtrStandard: Self = Self::IsdDgmStandard;
 
+    /// Every supported format, in the order they were added.
+    pub const ALL: &'static [Self] = &[
+        Self::OldSchool9394,
+        Self::IsdDgmStandard,
+        Self::Premodern,
+        Self::VintageCube,
+    ];
+
     #[must_use]
     pub const fn rules(self) -> &'static FormatRules {
         match self {
             Self::OldSchool9394 => &OLD_SCHOOL_RULES,
             Self::IsdDgmStandard => &ISD_DGM_STANDARD_RULES,
             Self::Premodern => &PREMODERN_RULES,
+            Self::VintageCube => &VINTAGE_CUBE_RULES,
         }
     }
 
@@ -248,6 +288,7 @@ impl Format {
             Self::OldSchool9394 => "old-school-93-94",
             Self::IsdDgmStandard => "isd-dgm-standard",
             Self::Premodern => "premodern",
+            Self::VintageCube => "vintage-cube",
         }
     }
 
@@ -257,6 +298,7 @@ impl Format {
             Self::OldSchool9394 => "Old School 93/94",
             Self::IsdDgmStandard => "ISD-DGM Standard",
             Self::Premodern => "Premodern",
+            Self::VintageCube => "Vintage Cube",
         }
     }
 
@@ -268,16 +310,24 @@ impl Format {
 
     /// Whether this card identity can be used to construct a deck.
     ///
-    /// Basic lands are shared by every supported format. Other cards are legal
-    /// when at least one known printing belongs to an allowed set; the physical
-    /// printing selected for a deck does not change that identity's legality.
+    /// Basic lands are shared by every supported format. In a format built on
+    /// a fixed pool, every other card is legal exactly when the pool names it.
+    /// Otherwise a card is legal when at least one known printing belongs to an
+    /// allowed set; the physical printing selected for a deck does not change
+    /// that identity's legality.
     #[must_use]
     pub fn allows_card(self, card: &CardDefinition) -> bool {
-        card.is_basic_land()
-            || card
-                .printings
-                .iter()
-                .any(|printing| self.allows_set(printing.id.set))
+        if card.is_basic_land() {
+            return true;
+        }
+        // A pool says which cards exist in the format outright, so where one
+        // is given the set a card was printed in has nothing to do with it.
+        if let Some(pool) = self.rules().card_pool {
+            return contains_name(pool, &card.name);
+        }
+        card.printings
+            .iter()
+            .any(|printing| self.allows_set(printing.id.set))
     }
 
     #[must_use]
@@ -308,18 +358,76 @@ fn contains_name(names: &[&str], candidate: &str) -> bool {
 mod tests {
     use std::collections::HashSet;
 
-    use super::Format;
+    use super::{Format, VINTAGE_CUBE_RULES};
     use crate::CardDefinitionId;
     use crate::card::{CardBehavior, CardDefinition, CardPrinting, CardSet};
 
+    /// The sets `format` is played from, or `None` when it is played from a
+    /// fixed pool instead and has no set window to check.
+    fn set_window(format: Format) -> Option<&'static [CardSet]> {
+        let rules = format.rules();
+        if rules.card_pool.is_some() {
+            return None;
+        }
+        Some(rules.allowed_sets)
+    }
+
+    #[test]
+    fn vintage_cube_is_a_singleton_pool_rather_than_a_set_window() {
+        assert_eq!(VINTAGE_CUBE_RULES.maximum_copies, 1);
+        assert_eq!(VINTAGE_CUBE_RULES.minimum_main_deck_size, 40);
+        assert!(
+            VINTAGE_CUBE_RULES.allowed_sets.is_empty(),
+            "a pool format must not also claim a set window"
+        );
+        assert!(VINTAGE_CUBE_RULES.banned_cards.is_empty());
+        assert!(VINTAGE_CUBE_RULES.restricted_cards.is_empty());
+    }
+
+    #[test]
+    fn vintage_cube_pool_is_sorted_and_free_of_duplicates() {
+        let pool = VINTAGE_CUBE_RULES
+            .card_pool
+            .expect("the cube is played from a pool");
+        assert!(!pool.is_empty());
+        for pair in pool.windows(2) {
+            assert!(
+                pair[0] < pair[1],
+                "the pool is kept sorted for diffability: {} then {}",
+                pair[0],
+                pair[1]
+            );
+        }
+    }
+
+    #[test]
+    fn pool_membership_decides_legality_regardless_of_printing() {
+        // Two cards from the same set, one in the pool and one not: only
+        // membership separates them.
+        let inside = CardDefinition::new(
+            CardDefinitionId(1),
+            "Ancestral Recall",
+            CardSet::Alpha,
+            false,
+            CardBehavior::Unsupported,
+        );
+        let outside = CardDefinition::new(
+            CardDefinitionId(2),
+            "Sorrow's Path",
+            CardSet::Alpha,
+            false,
+            CardBehavior::Unsupported,
+        );
+        assert!(Format::VintageCube.allows_card(&inside));
+        assert!(!Format::VintageCube.allows_card(&outside));
+    }
+
     #[test]
     fn format_set_windows_are_nonempty_unique_and_exclude_tokens() {
-        for format in [
-            Format::OldSchool9394,
-            Format::IsdDgmStandard,
-            Format::Premodern,
-        ] {
-            let sets = format.rules().allowed_sets;
+        for &format in Format::ALL {
+            let Some(sets) = set_window(format) else {
+                continue;
+            };
             assert!(!sets.is_empty(), "{format} needs an allowed set window");
             assert!(
                 !sets.contains(&CardSet::Token),
