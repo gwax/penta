@@ -38,3 +38,4 @@ pub const SKULLCLAMP: CardDefinitionId = CardDefinitionId(2120);
 pub const FOOD_TOKEN: CardDefinitionId = CardDefinitionId(2121);
 pub const GENEROUS_ENT: CardDefinitionId = CardDefinitionId(2122);
 pub const LIFE_DEATH: CardDefinitionId = CardDefinitionId(2123);
+pub const RANCOR: CardDefinitionId = CardDefinitionId(2124);

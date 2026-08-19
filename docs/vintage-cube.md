@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 121 are cataloged and 413 are not
+- 534 cards in the pool, of which 122 are cataloged and 412 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -255,7 +255,7 @@ lands are legal in every format and are not listed.
 - `Unholy Heat`
 - `Voldaren Epicure`
 
-### Green (51)
+### Green (50)
 
 - `Baloth Prime`
 - `Bristly Bill, Spine Sower`
@@ -291,7 +291,6 @@ lands are legal in every format and are not listed.
 - `Pest Infestation`
 - `Primeval Titan`
 - `Questing Beast`
-- `Rancor`
 - `Scythecat Cub`
 - `Sentinel of the Nameless City`
 - `Six`
@@ -472,7 +471,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 121 pool cards are in the catalog because an earlier format needed them.
+These 122 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -551,6 +550,7 @@ been played beside.
 - `Polluted Delta`
 - `Pyrokinesis`
 - `Raffine's Tower`
+- `Rancor`
 - `Raugrin Triome`
 - `Reanimate`
 - `Sacred Foundry`

@@ -8,7 +8,8 @@ use crate::card::{
     ChooseDef, ColorChoiceOperationDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
     ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
     PlayerRefDef, PlayerRelation, ReplacementChoiceDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, ValueDef, ZoneKind, abilities, cards,
+    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    cards,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -157,6 +158,52 @@ pub(in crate::card::sets) static ENGINEERED_PLAGUE: CardRecord = CardRecord::new
     ]),
 );
 
+static RANCOR_GRANT: AbilityDef = abilities::trample();
+
+// ULG 110 — Rancor
+pub(in crate::card::sets) static RANCOR: CardRecord = CardRecord::new(
+    cards::RANCOR,
+    "Rancor",
+    CardArt::new("59e256c2-38df-4012-9308-ce17dd889e5f", "Kev Walker"),
+    CardSet::UrzasLegacy,
+    CardRules::new_enchantment(mana_cost!("{G}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +2/+0 and has trample.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&RANCOR_BONUS),
+                },
+            ),
+            // An Aura that dies with its host still goes to the graveyard, so
+            // this fires whether the creature was answered or the Aura was.
+            // It is the same trigger either way, and the card that comes back
+            // is the one already in the graveyard.
+            AbilityDef::triggered(
+                "When this Aura is put into a graveyard from the battlefield, return it to its owner's hand.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    Some(ZoneKind::Battlefield),
+                    Some(ZoneKind::Graveyard),
+                ),
+                EffectDef::MoveToZone {
+                    object: EffectRecipientDef::TriggeringObject,
+                    zone: ZoneKind::Hand,
+                    placement: ZonePlacement::Top,
+                    arrival_effect: None,
+                    controller: None,
+                },
+            ),
+        ]),
+);
+
+static RANCOR_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(0)),
+    AppliedEffectDef::add_ability(&RANCOR_GRANT),
+];
+
 // ULG 125 — Defense Grid
 pub(in crate::card::sets) static DEFENSE_GRID: CardRecord = CardRecord::new(
     cards::DEFENSE_GRID,
@@ -209,6 +256,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FRANTIC_SEARCH,
     &MISCALCULATION,
     &ENGINEERED_PLAGUE,
+    &RANCOR,
     &DEFENSE_GRID,
     &GRIM_MONOLITH,
 ];

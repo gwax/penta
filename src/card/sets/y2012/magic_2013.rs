@@ -2,7 +2,8 @@
 
 use super::{CardRecord, PrintingRecord, avacyn_restored, dark_ascension};
 use crate::card::sets::{
-    y1993::alpha, y1994::the_dark, y2001::planeshift, y2002::onslaught, y2011::innistrad,
+    y1993::alpha, y1994::the_dark, y1999::urzas_legacy, y2001::planeshift, y2002::onslaught,
+    y2011::innistrad,
 };
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
@@ -3418,9 +3419,6 @@ pub(in crate::card::sets) static PRIMAL_HUNTBEAST: CardRecord = CardRecord::new(
 // M13 183 — Primordial Hydra
 // Audit: blocked — Needs X entry counters, counter doubling each upkeep, and a counter-threshold trample grant.
 
-// M13 185 — Rancor
-// Audit: blocked — A leave-the-battlefield trigger cannot address its source card after it becomes a new graveyard object.
-
 // M13 186 — Ranger's Path
 pub(in crate::card::sets) static RANGERS_PATH: CardRecord = CardRecord::new(
     cards::RANGERS_PATH,
@@ -4459,6 +4457,7 @@ pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&onslaught::NATURALIZE),         // M13 178
     PrintingRecord::reprint(&innistrad::PREY_UPON),          // M13 181
     PrintingRecord::reprint(&planeshift::QUIRION_DRYAD),     // M13 184
+    PrintingRecord::reprint(&urzas_legacy::RANCOR),          // M13 185
     PrintingRecord::reprint(&alpha::JAYEMDAE_TOME),          // M13 207
     PrintingRecord::reprint(&the_dark::TORMODS_CRYPT),       // M13 219
     PrintingRecord::reprint(&alpha::PLAINS),                 // M13 230
