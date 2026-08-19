@@ -188,6 +188,12 @@ pub mod premodern {
         "bw_control_chris_danis.yaml",
         "Returns Chris Danis's BW Control list from the Sacred Torch Showdown."
     );
+    deck!(
+        replenish,
+        "premodern",
+        "replenish_bryan_gulotta.yaml",
+        "Returns Bryan Gulotta's Replenish list from the Sacred Torch Showdown."
+    );
 }
 
 /// Built-in Eternal Central Old School 93/94 decklists.
@@ -609,6 +615,7 @@ mod tests {
             super::premodern::landstill,
             super::premodern::stasis,
             super::premodern::bw_control,
+            super::premodern::replenish,
         ] {
             let deck = build();
             // Sixty is the floor rather than the size: Drew Glauberg

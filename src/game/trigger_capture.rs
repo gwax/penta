@@ -525,6 +525,7 @@ impl Game {
     ) {
         let AddManaEffectDef {
             mana: ManaSelectionDef::One(kind),
+            also: None,
             amount,
             restrictions,
             spend_effects,

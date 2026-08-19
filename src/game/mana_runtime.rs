@@ -494,6 +494,9 @@ impl Game {
     pub(super) fn mana_production(activation: ManaAbilityActivation) -> ManaPool {
         let mut pool = ManaPool::default();
         pool.add_color(activation.color, activation.effect.amount);
+        if let Some(also) = activation.effect.also {
+            pool.add_color(also, 1);
+        }
         pool
     }
 
@@ -507,7 +510,21 @@ impl Game {
             activation.effect.restrictions,
             activation.effect.spend_effects,
         );
-        vec![mana; usize::from(activation.effect.amount)]
+        let mut produced = vec![mana; usize::from(activation.effect.amount)];
+        // The second colour carries the same source and riders: it is the
+        // same activation, not a second one.
+        if let Some(also) = activation.effect.also {
+            produced.push(Mana::from_ability(
+                also,
+                ManaSource {
+                    object: activation.source,
+                    ability: activation.ability,
+                },
+                activation.effect.restrictions,
+                activation.effect.spend_effects,
+            ));
+        }
+        produced
     }
 
     pub(super) fn add_mana(&mut self, player: PlayerId, mana: impl IntoIterator<Item = Mana>) {

@@ -281,6 +281,27 @@ pub(in crate::card::sets) static CEPHALID_COLISEUM: CardRecord = CardRecord::new
     ]),
 );
 
+// ODY 327 — Skycloud Expanse
+pub(in crate::card::sets) static SKYCLOUD_EXPANSE: CardRecord = CardRecord::new(
+    cards::SKYCLOUD_EXPANSE,
+    "Skycloud Expanse",
+    CardArt::new("35c527b6-4004-41f7-b70c-1ac1a49dce1f", "Rob Alexander"),
+    CardSet::Odyssey,
+    // Two mana for two, which is only worth a land slot to a deck that
+    // needs both colours on the same turn and is happy to spend a land drop
+    // on fixing rather than on the count.
+    CardRules::new_land(&[]).with_ability(AbilityDef::activated_mana(
+        "{1}, {T}: Add {W}{U}.",
+        &SKYCLOUD_COSTS,
+        EffectDef::AddMana(AddManaEffectDef::one_of_each(ManaColor::White, ManaColor::Blue)),
+    )),
+);
+
+static SKYCLOUD_COSTS: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{1}")),
+    AbilityCostDef::TapSource,
+];
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STANDSTILL,
     &UPHEAVAL,
@@ -289,6 +310,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PSYCHATOG,
     &BARBARIAN_RING,
     &CEPHALID_COLISEUM,
+    &SKYCLOUD_EXPANSE,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[

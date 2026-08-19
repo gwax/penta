@@ -253,6 +253,11 @@ pub enum ManaSpendEffectDef {
 pub struct AddManaEffectDef {
     pub mana: ManaSelectionDef,
     pub amount: u16,
+    /// One further mana of a second colour, produced by the same activation.
+    /// "Add {W}{U}" is one ability making two unlike mana, which `mana` and
+    /// `amount` between them cannot say: they describe a run of identical
+    /// units.
+    pub also: Option<ManaColor>,
     pub restrictions: &'static [ManaRestrictionDef],
     pub spend_effects: &'static [ManaSpendEffectDef],
     /// Damage the source deals to its controller as this mana ability
@@ -294,6 +299,7 @@ impl AddManaEffectDef {
         Self {
             mana: ManaSelectionDef::One(mana),
             amount: 1,
+            also: None,
             restrictions: &[],
             spend_effects: &[],
             damage_to_controller: 0,
@@ -304,11 +310,21 @@ impl AddManaEffectDef {
         }
     }
 
+    /// One mana of each of two colours, from one activation. The filter
+    /// lands print exactly this and nothing else does.
+    #[must_use]
+    pub const fn one_of_each(first: ManaColor, second: ManaColor) -> Self {
+        let mut effect = Self::one(first);
+        effect.also = Some(second);
+        effect
+    }
+
     #[must_use]
     pub const fn choice(mana: &'static [ManaColor]) -> Self {
         Self {
             mana: ManaSelectionDef::Choice(mana),
             amount: 1,
+            also: None,
             restrictions: &[],
             spend_effects: &[],
             damage_to_controller: 0,

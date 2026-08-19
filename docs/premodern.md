@@ -11,15 +11,15 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 4 of them not yet cataloged
-- 6 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
-  Drew Glauberg's Stasis, Chris Danis's BW Control, TentacleFan's Landstill,
-  and Andy Dominguez's RG Goblins. Nothing in any of them is metadata-only or
-  partial
+- 145 distinct cards across the tranche, 3 of them not yet cataloged
+- 7 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
+  Bryan Gulotta's Replenish, Drew Glauberg's Stasis, Chris Danis's BW Control,
+  TentacleFan's Landstill, and Andy Dominguez's RG Goblins. Nothing in any of
+  them is metadata-only or partial
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: Replenish 1, Angry Hermit 3. BW Control is complete. A list is
+together: Angry Hermit 3. BW Control and Replenish are complete. A list is
 blocked only by uncataloged cards -- no staged deck contains a card that is
 cataloged but unplayable.
 
@@ -203,6 +203,7 @@ older unannotated definitions still require one):
 - `Siege-Gang Commander` — complete
 - `Skeletal Scrying` — complete; the graveyard pays for the cards
 - `Skirk Prospector` — complete
+- `Skycloud Expanse` — complete; two unlike mana from one activation
 - `Sleight of Hand` — complete
 - `Standstill` — complete
 - `Stasis` — complete
@@ -232,7 +233,6 @@ older unannotated definitions still require one):
 Not yet cataloged:
 
 - [ ] `Dragon Breath`
-- [ ] `Skycloud Expanse`
 - [ ] `Sutured Ghoul`
 - [ ] `Vision Charm`
 

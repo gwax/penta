@@ -114,6 +114,9 @@ impl Game {
             }
             EffectDef::AddMana(AddManaEffectDef {
                 mana: ManaSelectionDef::One(kind),
+                // A second colour is offered by the mana runtime, which is
+                // where an ability making two unlike mana is enumerated.
+                also: _,
                 amount,
                 restrictions,
                 spend_effects,

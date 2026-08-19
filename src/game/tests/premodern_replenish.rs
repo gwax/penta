@@ -576,3 +576,77 @@ fn abeyance_locks_a_player_out_for_the_turn() {
         "and it replaced itself",
     );
 }
+
+/// Skycloud Expanse makes two unlike mana from one activation, and the
+/// planner will spend it on a cost that needs both.
+#[test]
+fn skycloud_expanse_makes_one_of_each_colour() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SKYCLOUD_EXPANSE, PlayerId::One));
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    game.priority = PlayerId::One;
+
+    let expanse = game.battlefield[0].card.id;
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateManaAbility { source, .. } if *source == expanse)
+        })
+        .expect("one generic pays for it");
+    game.apply(PlayerId::One, activate).unwrap();
+    drain_pending(&mut game);
+
+    let pool = game.players[PlayerId::One.index()].mana_pool;
+    assert_eq!(pool.white, 1, "one white");
+    assert_eq!(pool.blue, 1, "and one blue, from the same activation");
+    assert_eq!(pool.colorless, 0, "the generic went to pay for it");
+}
+
+/// And the planner can find both halves when a cost needs them, which is
+/// the whole reason the land is played.
+#[test]
+fn skycloud_expanse_pays_a_two_colour_cost() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_000, cards::SKYCLOUD_EXPANSE, PlayerId::One));
+    let expanse = game.battlefield[0].card.id;
+    // The Island pays the Expanse's own {1}, and the Expanse supplies both
+    // halves of a {W}{U} cost -- a plan the planner has to find in two steps.
+    game.battlefield
+        .push(creature(10_010, cards::ISLAND, PlayerId::One));
+    let mage = card(10_020, cards::MEDDLING_MAGE, PlayerId::One);
+    let mage_id = mage.id;
+    game.players[PlayerId::One.index()].hand.push(mage);
+    game.priority = PlayerId::One;
+
+    // The Expanse's own {1} has to be on the table before its ability is
+    // offered: mana-ability enumeration reads the pool as it is rather than
+    // planning a chain of activations. So the Island goes first.
+    let island = game.battlefield[1].card.id;
+    let tap_island = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateManaAbility { source, .. } if *source == island)
+        })
+        .expect("the Island taps for blue");
+    game.apply(PlayerId::One, tap_island).unwrap();
+    let tap_expanse = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateManaAbility { source, .. } if *source == expanse)
+        })
+        .expect("with one blue on the table the Expanse is affordable");
+    game.apply(PlayerId::One, tap_expanse).unwrap();
+    drain_pending(&mut game);
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == mage_id)),
+        "and its two colours cast a spell that needs both",
+    );
+}

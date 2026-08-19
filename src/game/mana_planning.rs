@@ -400,8 +400,11 @@ impl Game {
                 let benefits_payment = Self::mana_for_activation(*activation)
                     .first()
                     .is_some_and(|mana| Self::mana_has_spend_effect_for(*mana, purpose));
-                let pays_colored_symbol = mana_cost_amount(cost, activation.color) > 0
-                    || hybrid_pays_with(cost, activation.color);
+                let production = Self::mana_production(*activation);
+                let pays_colored_symbol = colored_mana().into_iter().any(|color| {
+                    production.amount(color) > 0
+                        && (mana_cost_amount(cost, color) > 0 || hybrid_pays_with(cost, color))
+                });
                 (!benefits_payment, !pays_colored_symbol)
             });
             let outputs = Self::planned_outputs(&activations, purpose);
@@ -459,7 +462,10 @@ impl Game {
                 let index = available
                     .iter()
                     .enumerate()
-                    .filter(|(_, activation)| activation.color == color)
+                    // Read from what the activation makes rather than from
+                    // the colour that labels it: an ability making two
+                    // unlike mana pays for either.
+                    .filter(|(_, activation)| activation.production.amount(color) > 0)
                     .min_by_key(|(_, activation)| {
                         (
                             Some(activation.source) == avoid,
@@ -485,7 +491,11 @@ impl Game {
                 let index = available
                     .iter()
                     .enumerate()
-                    .filter(|(_, activation)| pair.contains(activation.color))
+                    .filter(|(_, activation)| {
+                        colored_mana().into_iter().any(|color| {
+                            pair.contains(color) && activation.production.amount(color) > 0
+                        })
+                    })
                     .min_by_key(|(_, activation)| {
                         (
                             Some(activation.source) == avoid,
@@ -513,7 +523,7 @@ impl Game {
                     (
                         Some(activation.source) == avoid,
                         !activation.benefits_payment,
-                        activation.color != ManaColor::Colorless,
+                        activation.production.amount(ManaColor::Colorless) == 0,
                         activation.production.total(),
                         activation.order,
                     )
