@@ -499,3 +499,80 @@ fn intuition_gives_the_opponent_the_pick_of_three() {
     );
     assert_eq!(player.library.len(), 1, "the Island stayed where it was");
 }
+
+/// Abeyance shuts the target out of instants, sorceries, and activations for
+/// the turn, and leaves their lands and creatures alone.
+#[test]
+fn abeyance_locks_a_player_out_for_the_turn() {
+    let mut game = ready_game();
+    // Something to activate, and something to cast.
+    game.battlefield
+        .push(creature(10_010, cards::CURSED_SCROLL, PlayerId::Two));
+    game.players[PlayerId::Two.index()]
+        .hand
+        .push(card(10_011, cards::LIGHTNING_BOLT, PlayerId::Two));
+    // A land, to show which activations survive: mana abilities are the
+    // exemption the card names.
+    game.battlefield
+        .push(creature(10_012, cards::ISLAND, PlayerId::Two));
+    let pool = &mut game.players[PlayerId::Two.index()].mana_pool;
+    pool.red = 1;
+    pool.green = 1;
+    pool.colorless = 4;
+
+    let abeyance = card(10_000, cards::ABEYANCE, PlayerId::One);
+    let abeyance_id = abeyance.id;
+    game.players[PlayerId::One.index()].hand.push(abeyance);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.white = 1;
+    pool.colorless = 1;
+    // Legal actions are enumerated for whoever holds priority, so each side
+    // is asked while it does.
+    game.priority = PlayerId::Two;
+    let before = game.legal_actions(PlayerId::Two);
+    assert!(
+        before
+            .iter()
+            .any(|action| matches!(action, Action::ActivateAbility { .. })),
+        "the Scroll is activatable to begin with",
+    );
+
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            abeyance_id,
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("two mana casts it");
+    drain_pending(&mut game);
+
+    game.priority = PlayerId::Two;
+    let after = game.legal_actions(PlayerId::Two);
+    assert!(
+        !after
+            .iter()
+            .any(|action| matches!(action, Action::ActivateAbility { .. })),
+        "no activation but a mana ability",
+    );
+    assert!(
+        !after
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { .. })),
+        "and the Bolt in hand is shut out too",
+    );
+    assert!(
+        after
+            .iter()
+            .any(|action| matches!(action, Action::ActivateManaAbility { .. })),
+        "but a mana ability is the exemption the card names",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        1,
+        "and it replaced itself",
+    );
+}

@@ -6,8 +6,9 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardRules, CardSet,
     CardType, CounterKind, EffectDef, EffectPaymentDef, EffectRecipientDef, ObjectPredicateDef,
-    ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -16,6 +17,51 @@ static OPPONENTS_ARTIFACTS_AND_ENCHANTMENTS: ObjectPredicateDef = ObjectPredicat
     ObjectPredicateDef::HasType(CardType::Artifact),
     ObjectPredicateDef::HasType(CardType::Enchantment),
 ]);
+
+/// Both halves of the same lock, applied to the same player for the same
+/// turn: no instants or sorceries, and no activations but mana abilities.
+static ABEYANCE_LOCK: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(PlayRestrictionDef::new(
+        PlayActionMatcherDef::CastSpell,
+        ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Instant),
+            ObjectPredicateDef::HasType(CardType::Sorcery),
+        ]),
+    ))),
+    AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(PlayRestrictionDef::new(
+        PlayActionMatcherDef::ActivateNonManaAbility,
+        ObjectPredicateDef::Any,
+    ))),
+];
+
+// WTH 1 — Abeyance
+pub(in crate::card::sets) static ABEYANCE: CardRecord = CardRecord::new(
+    cards::ABEYANCE,
+    "Abeyance",
+    CardArt::new("efb452f0-c019-4409-bfb1-600a97d58fdd", "Thomas Gianni"),
+    CardSet::Weatherlight,
+    // A counterspell that replaces itself and stops the next one too: the
+    // deck holding it is buying one turn without interaction.
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Until end of turn, target player can't cast instant or sorcery spells, and that player can't activate abilities that aren't mana abilities.\nDraw a card.",
+        &ABEYANCE_TARGET,
+        EffectDef::Sequence(&[
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::target_players(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Composite(&ABEYANCE_LOCK),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ]),
+    )),
+);
+
+static ABEYANCE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
 
 // WTH 7 — Aura of Silence
 pub(in crate::card::sets) static AURA_OF_SILENCE: CardRecord = CardRecord::new(
@@ -199,6 +245,7 @@ static GEMSTONE_MINE_COSTS: [AbilityCostDef; 2] = [
 ];
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &ABEYANCE,
     &AURA_OF_SILENCE,
     &GOBLIN_VANDAL,
     &PHYREXIAN_FURNACE,

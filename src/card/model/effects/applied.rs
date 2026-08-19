@@ -237,11 +237,21 @@ pub enum PlayActionMatcherDef {
     Any,
     CastSpell,
     PlayLand,
+    /// Activating an ability that is not a mana ability. Not a play action
+    /// at all -- which is why [`Self::matches`] never admits it -- but the
+    /// same prohibition machinery answers it, because a rule barring one is
+    /// aimed at a player exactly the way a rule barring a cast is.
+    ActivateNonManaAbility,
 }
 
 impl PlayActionMatcherDef {
     #[must_use]
     pub const fn matches(self, action: PlayActionKind) -> bool {
+        // `Any` is any *play* action; an activation is asked about
+        // separately because it is not one.
+        if matches!(self, Self::ActivateNonManaAbility) {
+            return false;
+        }
         matches!(self, Self::Any)
             || matches!(
                 (self, action),

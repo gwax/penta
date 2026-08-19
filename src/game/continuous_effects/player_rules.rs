@@ -334,3 +334,21 @@ impl Game {
         }
     }
 }
+
+impl Game {
+    /// Whether a player is presently barred from activating anything but a
+    /// mana ability. Abeyance is the printed form, and it lasts a turn.
+    pub(in crate::game) fn cannot_activate_nonmana_abilities(&self, player: PlayerId) -> bool {
+        self.visit_play_restrictions(player, |applied| {
+            if matches!(
+                applied.restriction.action,
+                crate::card::PlayActionMatcherDef::ActivateNonManaAbility
+            ) {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .is_break()
+    }
+}

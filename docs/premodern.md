@@ -11,7 +11,7 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 5 of them not yet cataloged
+- 145 distinct cards across the tranche, 4 of them not yet cataloged
 - 6 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
   Drew Glauberg's Stasis, Chris Danis's BW Control, TentacleFan's Landstill,
   and Andy Dominguez's RG Goblins. Nothing in any of them is metadata-only or
@@ -19,7 +19,7 @@ correctly.
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: Replenish 2, Angry Hermit 3. BW Control is complete. A list is
+together: Replenish 1, Angry Hermit 3. BW Control is complete. A list is
 blocked only by uncataloged cards -- no staged deck contains a card that is
 cataloged but unplayable.
 
@@ -87,6 +87,7 @@ result and rebuild sampled Premodern positions from their observations.
 Already cataloged (status annotations record the completed interaction audits;
 older unannotated definitions still require one):
 
+- `Abeyance` — complete; the lock spares mana abilities and nothing else
 - `Adarkar Wastes` — complete
 - `Akroma's Vengeance` — complete
 - `Ancient Tomb` — complete
@@ -230,7 +231,6 @@ older unannotated definitions still require one):
 
 Not yet cataloged:
 
-- [ ] `Abeyance`
 - [ ] `Dragon Breath`
 - [ ] `Skycloud Expanse`
 - [ ] `Sutured Ghoul`

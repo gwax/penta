@@ -95,6 +95,11 @@ impl Game {
 
     #[allow(clippy::too_many_lines)]
     pub(super) fn add_ability_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
+        // Mana abilities are enumerated elsewhere, so a prohibition on
+        // activating anything else takes this whole walk with it.
+        if self.cannot_activate_nonmana_abilities(player) {
+            return;
+        }
         for permanent in self.battlefield.iter().filter(|permanent| {
             // A permanent somebody else controls contributes only the
             // abilities printed as open to everyone.
