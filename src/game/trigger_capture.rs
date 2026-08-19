@@ -752,6 +752,11 @@ impl Game {
         controller: Option<PlayerId>,
     ) -> bool {
         match (definition, event) {
+            // One printed ability, several ways in. Each alternative is asked
+            // the same question the single-event forms are.
+            (TriggerEventDef::AnyOf(events), _) => events.iter().any(|alternative| {
+                self.trigger_event_matches_for_controller(*alternative, event, source, controller)
+            }),
             (
                 TriggerEventDef::ZoneChanged(matcher),
                 CommittedTriggerEvent::ZoneChanged {

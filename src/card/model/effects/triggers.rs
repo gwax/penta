@@ -11,6 +11,11 @@ use super::{
 /// The committed event observed by a triggered ability.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TriggerEventDef {
+    /// Any one of several events, for a printed ability that names more than
+    /// one -- "whenever this creature enters or attacks". Splitting such a
+    /// card into two abilities would misreport what it prints and would count
+    /// as two triggered abilities where the card has one.
+    AnyOf(&'static [TriggerEventDef]),
     ZoneChanged(ZoneChangeEventMatcherDef),
     /// A permanent changed from untapped to tapped. The matcher can narrow
     /// this to a tap that paid for that permanent's mana ability.

@@ -17,6 +17,8 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
 #[allow(clippy::too_many_lines)]
 pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
     match event {
+        // One ability, so it is only runnable if every way into it is.
+        TriggerEventDef::AnyOf(events) => events.iter().copied().all(shared_trigger_event),
         TriggerEventDef::ZoneChanged(matcher) => {
             const COMMITTED_TRANSITIONS: [(ZoneKind, ZoneKind); 9] = [
                 (ZoneKind::Library, ZoneKind::Battlefield),

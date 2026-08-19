@@ -42,3 +42,4 @@ pub const RANCOR: CardDefinitionId = CardDefinitionId(2124);
 pub const STERN_SCOLDING: CardDefinitionId = CardDefinitionId(2125);
 pub const NETTLECYST: CardDefinitionId = CardDefinitionId(2126);
 pub const FORCE_OF_VIGOR: CardDefinitionId = CardDefinitionId(2127);
+pub const PRIMEVAL_TITAN: CardDefinitionId = CardDefinitionId(2128);

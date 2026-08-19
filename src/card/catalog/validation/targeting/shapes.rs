@@ -16,6 +16,13 @@ fn validate_program_target_shapes(
 
 fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
     match event {
+        // Every alternative has to agree, or the ability's targets would read
+        // an object from one zone on one path and another zone on the next.
+        TriggerEventDef::AnyOf(events) => {
+            let mut zones = events.iter().map(|event| trigger_event_object_zone(*event));
+            let first = zones.next()?;
+            zones.all(|zone| zone == first).then_some(first)?
+        }
         TriggerEventDef::ZoneChanged(matcher) => matcher.to,
         TriggerEventDef::Tapped(_)
         | TriggerEventDef::Attacks(_)

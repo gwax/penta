@@ -758,3 +758,80 @@ fn simultaneous_exit_predicates_use_source_and_object_lki() {
         );
     }
 }
+
+/// One printed ability that names several events fires on each of them and on
+/// nothing else. Splitting such a card into one ability per event would make
+/// it two triggered abilities where the card prints one, so the alternatives
+/// are held inside a single event definition instead.
+#[test]
+fn an_any_of_event_fires_on_each_alternative_and_no_others() {
+    static ALTERNATIVES: [TriggerEventDef; 2] = [
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        TriggerEventDef::attacks(ObjectPredicateDef::Source),
+    ];
+    static ABILITIES: [AbilityDef; 1] = [AbilityDef::triggered(
+        "Whenever this creature enters or attacks, trigger.",
+        TriggerEventDef::AnyOf(&ALTERNATIVES),
+        EffectDef::None,
+    )];
+    let definition = CardDefinitionId(10_400);
+    let mut game = ready_game();
+    add_definition(
+        &mut game,
+        trigger_creature_definition(definition, "Atomic two-way watcher", &ABILITIES),
+    );
+    let watcher = creature(10_400, definition, PlayerId::One);
+    let watcher_id = watcher.card.id;
+    game.battlefield.push(watcher);
+
+    let listener = game
+        .battlefield_trigger_listeners()
+        .into_iter()
+        .find(|listener| listener.capture.source.object == watcher_id)
+        .expect("the ability is one listener, not two");
+    let snapshot = game.trigger_event_object(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == watcher_id)
+            .expect("it is there"),
+    );
+    let matches = |event: &CommittedTriggerEvent| {
+        game.trigger_event_matches_for_controller(
+            listener.event,
+            event,
+            watcher_id,
+            Some(PlayerId::One),
+        )
+    };
+
+    assert!(
+        matches(&CommittedTriggerEvent::ZoneChanged {
+            object: snapshot.clone(),
+            from: ZoneKind::Hand,
+            to: ZoneKind::Battlefield,
+            damage_sources: Vec::new(),
+        }),
+        "the entry half matches",
+    );
+    assert!(
+        matches(&CommittedTriggerEvent::Attacks {
+            object: snapshot.clone(),
+            declaration_size: 1,
+            attack_number: 1,
+        }),
+        "and so does the attack half",
+    );
+    assert!(
+        !matches(&CommittedTriggerEvent::ZoneChanged {
+            object: snapshot,
+            from: ZoneKind::Battlefield,
+            to: ZoneKind::Graveyard,
+            damage_sources: Vec::new(),
+        }),
+        "a third event is still no match",
+    );
+}

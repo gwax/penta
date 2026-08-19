@@ -87,6 +87,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::PlanarChaos => "planar-chaos",
         CardSet::FutureSight => "future-sight",
         CardSet::Zendikar => "zendikar",
+        CardSet::Magic2011 => "magic-2011",
         CardSet::Innistrad => "innistrad",
         CardSet::DarkAscension => "dark-ascension",
         CardSet::AvacynRestored => "avacyn-restored",

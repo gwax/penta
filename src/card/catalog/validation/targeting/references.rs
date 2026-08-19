@@ -483,6 +483,11 @@ fn validate_trigger_event_references(
     scope: BindingScope,
 ) -> Result<(), GrantedAbilityValidationError> {
     match event {
+        // The ability is one ability, so every way into it has to be
+        // independently valid.
+        TriggerEventDef::AnyOf(events) => events.iter().try_for_each(|event| {
+            validate_trigger_event_references(*event, target_count, scope)
+        }),
         TriggerEventDef::ZoneChanged(matcher) => {
             const COMMITTED_TRANSITIONS: [(ZoneKind, ZoneKind); 9] = [
                 (ZoneKind::Library, ZoneKind::Battlefield),

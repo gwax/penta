@@ -20,6 +20,7 @@ mod y2003;
 mod y2004;
 mod y2007;
 mod y2009;
+mod y2010;
 mod y2011;
 mod y2012;
 mod y2013;
@@ -273,6 +274,11 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::Zendikar,
         y2009::zendikar::CARDS,
         y2009::zendikar::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Magic2011,
+        y2010::magic_2011::CARDS,
+        y2010::magic_2011::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::Innistrad,
