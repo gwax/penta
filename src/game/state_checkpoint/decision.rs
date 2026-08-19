@@ -665,7 +665,11 @@ fn continuation_snapshot(
                 visible_rebindings,
             )?,
         },
-        DecisionContinuation::BattlefieldExitReplacement { .. } => return None,
+        // A run of sacrifices carries a resolution mid-flight: the effect it
+        // is paying for is relocatable, but how much is still owed is state
+        // this format has no place for yet.
+        DecisionContinuation::SacrificeToTotalPower { .. }
+        | DecisionContinuation::BattlefieldExitReplacement { .. } => return None,
     };
     Some(value)
 }

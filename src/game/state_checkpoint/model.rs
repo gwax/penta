@@ -504,6 +504,7 @@ pub(super) enum ResolvedEffectPaymentSnapshot {
     ReturnPermanentMatching,
     /// The same, for the one it sacrifices.
     SacrificePermanentMatching,
+    SacrificeCreaturesWithTotalPower(u16),
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

@@ -268,6 +268,11 @@ impl Game {
             ResolvedEffectPayment::ChosenGenericMana => {
                 self.can_pay_cost(player, ManaCost::new(1, 0), 0)
             }
+            // Payable only when the creatures on the board could add up to
+            // it at all, so a player who cannot pay is never asked.
+            ResolvedEffectPayment::SacrificeCreaturesWithTotalPower(total) => {
+                self.total_creature_power_controlled(player) >= i32::from(total)
+            }
             ResolvedEffectPayment::ReturnPermanentMatching(predicate)
             | ResolvedEffectPayment::SacrificePermanentMatching(predicate) => !self
                 .matching_permanents_controlled(player, predicate)
@@ -455,7 +460,10 @@ impl Game {
             ResolvedEffectPayment::DiscardMatching(_)
             | ResolvedEffectPayment::ChosenGenericMana
             | ResolvedEffectPayment::ReturnPermanentMatching(_)
-            | ResolvedEffectPayment::SacrificePermanentMatching(_) => return false,
+            | ResolvedEffectPayment::SacrificePermanentMatching(_)
+            // Named one creature at a time by its own decision, which is
+            // queued once the payer has already chosen to pay.
+            | ResolvedEffectPayment::SacrificeCreaturesWithTotalPower(_) => return false,
         }
         true
     }
@@ -499,6 +507,9 @@ impl Game {
             }
             ResolvedEffectPayment::SacrificePermanentMatching(_) => {
                 "Sacrifice a matching permanent".to_string()
+            }
+            ResolvedEffectPayment::SacrificeCreaturesWithTotalPower(total) => {
+                format!("Sacrifice creatures with total power {total} or greater")
             }
         }
     }

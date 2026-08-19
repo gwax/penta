@@ -107,6 +107,9 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             remaining,
             ..
         } => extend_trigger_placement_ids(&mut ids, trigger, pending, remaining),
+        DecisionContinuation::SacrificeToTotalPower { object, .. } => {
+            ids.push(object.id);
+        }
         DecisionContinuation::SearchZone { .. }
         // Nothing in a name choice is an object id.
         | DecisionContinuation::CardNameChoice { .. }
@@ -688,6 +691,9 @@ pub(super) fn resolved_effect_payment_snapshot(
         }
         ResolvedEffectPayment::ReturnPermanentMatching(_) => {
             ResolvedEffectPaymentSnapshot::ReturnPermanentMatching
+        }
+        ResolvedEffectPayment::SacrificeCreaturesWithTotalPower(total) => {
+            ResolvedEffectPaymentSnapshot::SacrificeCreaturesWithTotalPower(total)
         }
         ResolvedEffectPayment::SacrificePermanentMatching(_) => {
             ResolvedEffectPaymentSnapshot::SacrificePermanentMatching

@@ -3,9 +3,10 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, AppliedRuleDef, CardArt,
-    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    CardRules, CardSet, CardType, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
+    EffectRecipientDef, ObjectPredicateDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -196,6 +197,42 @@ pub(in crate::card::sets) static CURSED_TOTEM: CardRecord = CardRecord::new(
     )),
 );
 
+/// Twelve power, paid in creatures. A board that cannot reach it is never
+/// asked, which is the ordinary case: the deck plays this to be answered by
+/// its own Stifle, not to be paid for.
+static DREADNOUGHT_COST: PayOrDef = PayOrDef::unless(
+    EffectPaymentDef {
+        payer: PlayerSetDef::One(PlayerRefDef::EffectController),
+        cost: EffectPaymentCostDef::SacrificeCreaturesWithTotalPower(12),
+    },
+    &EffectDef::Sacrifice {
+        object: EffectRecipientDef::Source,
+    },
+);
+
+// MIR 315 — Phyrexian Dreadnought
+pub(in crate::card::sets) static PHYREXIAN_DREADNOUGHT: CardRecord = CardRecord::new(
+    cards::PHYREXIAN_DREADNOUGHT,
+    "Phyrexian Dreadnought",
+    CardArt::new("57fc0c2b-42b6-4d89-845c-6c08587f330e", "Pete Venters"),
+    CardSet::Mirage,
+    // A 12/12 for one mana whose drawback nobody intends to pay: the deck
+    // answers its own trigger and keeps the body.
+    CardRules::new_artifact_creature(mana_cost!("{1}"), &["Phyrexian", "Dreadnought"], 12, 12)
+        .with_abilities(&[
+            abilities::trample(),
+            AbilityDef::triggered(
+                "When this creature enters, sacrifice it unless you sacrifice any number of creatures with total power 12 or greater.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                EffectDef::PayOr(DREADNOUGHT_COST),
+            ),
+        ]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ENLIGHTENED_TUTOR,
     &SHALLOW_GRAVE,
@@ -203,6 +240,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TRANQUIL_DOMAIN,
     &WORLDLY_TUTOR,
     &CURSED_TOTEM,
+    &PHYREXIAN_DREADNOUGHT,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

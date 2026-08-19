@@ -11,7 +11,7 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 6 of them not yet cataloged
+- 145 distinct cards across the tranche, 5 of them not yet cataloged
 - 6 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
   Drew Glauberg's Stasis, Chris Danis's BW Control, TentacleFan's Landstill,
   and Andy Dominguez's RG Goblins. Nothing in any of them is metadata-only or
@@ -19,7 +19,7 @@ correctly.
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: Replenish 2, Angry Hermit 4. BW Control is complete. A list is
+together: Replenish 2, Angry Hermit 3. BW Control is complete. A list is
 blocked only by uncataloged cards -- no staged deck contains a card that is
 cataloged but unplayable.
 
@@ -177,6 +177,7 @@ older unannotated definitions still require one):
 - `Overload` — complete
 - `Parallax Wave` — complete; fading spent on creatures, and all of them return
 - `Phyrexian Arena` — complete
+- `Phyrexian Dreadnought` — complete; twelve power fed one creature at a time
 - `Phyrexian Furnace` — complete; the tap mode eats the oldest card
 - `Plains`
 - `Portent` — complete; the arrangement is the order the cards are named
@@ -231,7 +232,6 @@ Not yet cataloged:
 
 - [ ] `Abeyance`
 - [ ] `Dragon Breath`
-- [ ] `Phyrexian Dreadnought`
 - [ ] `Skycloud Expanse`
 - [ ] `Sutured Ghoul`
 - [ ] `Vision Charm`

@@ -402,6 +402,9 @@ impl Game {
             EffectPaymentCostDef::SacrificePermanentMatching(predicate) => {
                 ResolvedEffectPayment::SacrificePermanentMatching(predicate)
             }
+            EffectPaymentCostDef::SacrificeCreaturesWithTotalPower(total) => {
+                ResolvedEffectPayment::SacrificeCreaturesWithTotalPower(total)
+            }
             EffectPaymentCostDef::ReturnPermanentMatching(predicate) => {
                 ResolvedEffectPayment::ReturnPermanentMatching(predicate)
             }

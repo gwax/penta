@@ -307,6 +307,22 @@ impl Game {
                 if_paid,
                 otherwise,
             } => {
+                // Creatures are named one at a time, so choosing to pay opens
+                // its own run of decisions rather than settling here.
+                if let super::ResolvedEffectPayment::SacrificeCreaturesWithTotalPower(total) = payment {
+                    if options.iter().copied().any(|option| option != 0) {
+                        self.queue_total_power_sacrifice(
+                            player,
+                            i32::from(total),
+                            &object,
+                            context,
+                            if_paid,
+                        );
+                    } else if let Some(effect) = otherwise {
+                        self.resolve_nested_effect_before_later(effect, &object, context);
+                    }
+                    return;
+                }
                 let paid = self.settle_payment_decision(player, payment, options, &pending_options);
                 let branch = if paid.is_some() { if_paid } else { otherwise };
                 if let Some(effect) = branch {
@@ -316,6 +332,28 @@ impl Game {
                     context.paid_amount = paid;
                     self.resolve_nested_effect_before_later(effect, &object, context);
                 }
+            }
+            DecisionContinuation::SacrificeToTotalPower {
+                player,
+                remaining,
+                object,
+                context,
+                if_paid,
+            } => {
+                let chosen = options
+                    .iter()
+                    .copied()
+                    .find(|option| *option != 0)
+                    .and_then(|chosen| {
+                        pending_options
+                            .iter()
+                            .find(|option| option.id == chosen)
+                            .and_then(|option| option.card)
+                    })
+                    .map(|(permanent, _)| permanent);
+                self.continue_total_power_sacrifice(
+                    player, remaining, chosen, &object, context, if_paid,
+                );
             }
             DecisionContinuation::ChainLightning {
                 player,

@@ -430,3 +430,126 @@ fn gilded_drake_sacrifices_itself_with_nothing_to_exchange() {
         "and it is in its owner's graveyard",
     );
 }
+
+/// With nothing to feed it, the Dreadnought sacrifices itself and the payer
+/// is never asked.
+#[test]
+fn phyrexian_dreadnought_eats_itself_on_an_empty_board() {
+    let mut game = ready_game();
+    let dreadnought = card(10_000, cards::PHYREXIAN_DREADNOUGHT, PlayerId::One);
+    let dreadnought_id = dreadnought.id;
+    game.players[PlayerId::One.index()].hand.push(dreadnought);
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(dreadnought_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("one mana casts it");
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield.is_empty(),
+        "twelve power is unreachable, so it goes",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].graveyard.len(),
+        1,
+        "and it is in the graveyard",
+    );
+}
+
+/// Given enough creatures, the payer feeds it one at a time and keeps it.
+#[test]
+fn phyrexian_dreadnought_can_be_paid_for_one_creature_at_a_time() {
+    let mut game = ready_game();
+    // Two Serra Angels are eight power; a third makes twelve.
+    for index in 0..3 {
+        game.battlefield
+            .push(creature(10_010 + index, cards::SERRA_ANGEL, PlayerId::One));
+    }
+    let dreadnought = card(10_000, cards::PHYREXIAN_DREADNOUGHT, PlayerId::One);
+    let dreadnought_id = dreadnought.id;
+    game.players[PlayerId::One.index()].hand.push(dreadnought);
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(dreadnought_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("one mana casts it");
+    pass_until_decision(&mut game);
+
+    // Accept the cost, then feed it Angels until it is satisfied.
+    let offer = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the payer is asked whether to pay");
+    let pay = offer
+        .options
+        .iter()
+        .find(|option| option.id != 0)
+        .expect("paying is on offer")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: offer.id,
+            options: vec![pay],
+        },
+    )
+    .expect("paying is legal");
+
+    for _ in 0..3 {
+        let Some(step) = game.observe(PlayerId::One).decision else {
+            break;
+        };
+        let Some(angel) = step.options.iter().find(|option| option.id != 0) else {
+            break;
+        };
+        let angel = angel.id;
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: step.id,
+                options: vec![angel],
+            },
+        )
+        .expect("each Angel is a legal way to pay");
+    }
+    // Twelve is a floor rather than a quota, so once it is met the payer is
+    // offered the chance to stop.
+    let stop = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the total is met, and stopping is on offer");
+    assert!(
+        stop.options.iter().any(|option| option.label == "Stop"),
+        "reaching the total offers a way out of paying more",
+    );
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: stop.id,
+            options: vec![0],
+        },
+    )
+    .expect("stopping is legal once the total is met");
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::PHYREXIAN_DREADNOUGHT),
+        "the cost was paid, so it stays",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::SERRA_ANGEL)
+            .count(),
+        0,
+        "and three Angels went to pay for it",
+    );
+}

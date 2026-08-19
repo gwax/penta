@@ -44,6 +44,14 @@ pub enum EffectPaymentCostDef {
     /// Sacrifice one matching permanent the payer controls, named as part of
     /// the payment. Chain of Vapor asks for a land of their choice.
     SacrificePermanentMatching(ObjectPredicateDef),
+    /// Sacrifice creatures until their power adds up to at least this much.
+    /// The creatures are named one at a time, and the payer may stop as soon
+    /// as the total is reached -- or keep going, which is worth doing for a
+    /// deck that wants creature cards in its graveyard.
+    ///
+    /// Offered only when the payer's creatures could reach the total at all,
+    /// so a board that cannot pay takes the other branch without being asked.
+    SacrificeCreaturesWithTotalPower(u16),
     /// Return one matching permanent its payer controls to its owner's hand,
     /// named as part of the payment. Treva's Ruins asks for a land that is
     /// not another Lair, so a second copy cannot pay for the first.

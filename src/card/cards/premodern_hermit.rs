@@ -14,3 +14,4 @@ pub const KROSAN_RECLAMATION: CardDefinitionId = CardDefinitionId(2074);
 /// nothing ever owns this one.
 pub const FACE_DOWN_CREATURE: CardDefinitionId = CardDefinitionId(2075);
 pub const GILDED_DRAKE: CardDefinitionId = CardDefinitionId(2083);
+pub const PHYREXIAN_DREADNOUGHT: CardDefinitionId = CardDefinitionId(2085);

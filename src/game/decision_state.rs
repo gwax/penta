@@ -58,6 +58,9 @@ pub(super) enum ResolvedEffectPayment {
     ReturnPermanentMatching(ObjectPredicateDef),
     /// One matching permanent, sacrificed.
     SacrificePermanentMatching(ObjectPredicateDef),
+    /// Creatures sacrificed one at a time until their power reaches this
+    /// total.
+    SacrificeCreaturesWithTotalPower(u16),
 }
 
 /// What runs once a discard finishes, and what it counts among the cards
@@ -192,6 +195,17 @@ pub(super) enum DecisionContinuation {
         /// bound. Boxed because most searches have none and the variant
         /// would otherwise carry a stack object for all of them.
         follow_up: Option<Box<SearchFollowUp>>,
+    },
+    /// A cost paid by sacrificing creatures until their power reaches a
+    /// total, asked one creature at a time.
+    SacrificeToTotalPower {
+        player: PlayerId,
+        /// How much power is still owed. Zero or less means the payer may
+        /// stop, and the offer includes a way to.
+        remaining: i32,
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
+        if_paid: Option<ScopedEffect>,
     },
     ChooseCards {
         controller: PlayerId,
