@@ -384,6 +384,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         TriggerConditionDef::All(conditions) => {
             conditions.iter().copied().all(shared_trigger_condition)
         }
+        TriggerConditionDef::Not(condition) => shared_trigger_condition(*condition),
         TriggerConditionDef::ObjectCount { query, .. } => shared_object_predicate(query.object),
         TriggerConditionDef::TargetMatches { object, .. }
         | TriggerConditionDef::SourceMatches { object }
@@ -670,6 +671,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ReturnLinkedExiles { .. }
                     | EffectDef::Detain { .. }
                     | EffectDef::GainControl { .. }
+                    | EffectDef::ExchangeControl { .. }
                     | EffectDef::InstallTrigger(_)
                     | EffectDef::IfCondition { .. }
                     | EffectDef::ReduceGenericCostBy(_)

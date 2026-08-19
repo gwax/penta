@@ -165,6 +165,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::Detain { .. }
         | EffectDef::GainControl { .. }
+        | EffectDef::ExchangeControl { .. }
         | EffectDef::InstallTrigger(_)
         | EffectDef::None
         | EffectDef::AddMana(_)

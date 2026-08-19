@@ -744,6 +744,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::Detain { .. }
         | EffectDef::GainControl { .. }
+        | EffectDef::ExchangeControl { .. }
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::IncreaseMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
@@ -911,6 +912,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::Detain { .. }
         | EffectDef::GainControl { .. }
+        | EffectDef::ExchangeControl { .. }
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::IncreaseMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }

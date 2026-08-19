@@ -13,3 +13,4 @@ pub const KROSAN_RECLAMATION: CardDefinitionId = CardDefinitionId(2074);
 /// an identity -- the physical card underneath keeps its own definition -- so
 /// nothing ever owns this one.
 pub const FACE_DOWN_CREATURE: CardDefinitionId = CardDefinitionId(2075);
+pub const GILDED_DRAKE: CardDefinitionId = CardDefinitionId(2083);

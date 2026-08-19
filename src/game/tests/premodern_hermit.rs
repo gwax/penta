@@ -321,3 +321,112 @@ fn krosan_reclamation_shuffles_back_the_chosen_cards() {
         "the caster's own graveyard kept its card and gained the Reclamation",
     );
 }
+
+/// Gilded Drake trades itself for the best thing on the other side, and the
+/// exchange is not something the turn ending undoes.
+#[test]
+fn gilded_drake_exchanges_itself_for_a_creature() {
+    let mut game = ready_game();
+    game.battlefield
+        .push(creature(10_010, cards::SERRA_ANGEL, PlayerId::Two));
+    let angel = game.battlefield[0].card.id;
+
+    let drake = card(10_000, cards::GILDED_DRAKE, PlayerId::One);
+    let drake_id = drake.id;
+    game.players[PlayerId::One.index()].hand.push(drake);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.blue = 1;
+    pool.colorless = 1;
+    game.priority = PlayerId::One;
+    // The exchange belongs to the enters trigger, so its target is chosen
+    // when the trigger goes on the stack rather than as the Drake is cast.
+    game.apply(
+        PlayerId::One,
+        cast_action(drake_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("two mana casts it");
+    pass_until_decision(&mut game);
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the trigger asks which creature to take");
+    let angel_option = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(card, _)| card == angel))
+        .expect("the Angel is the only creature an opponent controls")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![angel_option],
+        },
+    )
+    .expect("naming it is legal");
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    let controller = |game: &Game, definition| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == definition)
+            .map(|permanent| permanent.controller)
+    };
+    assert_eq!(
+        controller(&game, cards::SERRA_ANGEL),
+        Some(PlayerId::One),
+        "the Angel changed hands",
+    );
+    assert_eq!(
+        controller(&game, cards::GILDED_DRAKE),
+        Some(PlayerId::Two),
+        "and the Drake went the other way",
+    );
+
+    // An exchange lasts indefinitely, so cleanup gives nothing back.
+    for _ in 0..8 {
+        if game.step == Step::End {
+            break;
+        }
+        game.advance_step();
+    }
+    game.finish_rules_procedure();
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+    assert_eq!(
+        controller(&game, cards::SERRA_ANGEL),
+        Some(PlayerId::One),
+        "the turn ending does not undo an exchange",
+    );
+}
+
+/// With nothing to take, the Drake goes instead of staying for free.
+#[test]
+fn gilded_drake_sacrifices_itself_with_nothing_to_exchange() {
+    let mut game = ready_game();
+    let drake = card(10_000, cards::GILDED_DRAKE, PlayerId::One);
+    let drake_id = drake.id;
+    game.players[PlayerId::One.index()].hand.push(drake);
+    let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+    pool.blue = 1;
+    pool.colorless = 1;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(drake_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("an empty board still lets it be cast");
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield.is_empty(),
+        "no exchange was made, so it sacrifices itself",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].graveyard.len(),
+        1,
+        "and it is in its owner's graveyard",
+    );
+}

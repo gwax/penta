@@ -606,6 +606,9 @@ impl Game {
                         condition, source, controller, context, ability, object,
                     )
                 }),
+                TriggerConditionDef::Not(condition) => !self.trigger_condition_holds(
+                    condition, source, controller, context, ability, object,
+                ),
                 TriggerConditionDef::SourceOnBattlefield => self
                     .battlefield
                     .iter()

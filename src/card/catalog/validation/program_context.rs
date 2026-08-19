@@ -490,6 +490,7 @@ fn validate_resolving_effect(
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::GainControl { .. }
+        | EffectDef::ExchangeControl { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
         | EffectDef::CreateEmblem { .. }
@@ -765,6 +766,7 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
             .iter()
             .copied()
             .all(static_trigger_condition_supported),
+        TriggerConditionDef::Not(condition) => static_trigger_condition_supported(*condition),
         TriggerConditionDef::ObjectCount { query, .. } => static_query_supported(query),
         TriggerConditionDef::ActivePlayer(relation)
         | TriggerConditionDef::SpellsCastThisTurn {
@@ -883,7 +885,8 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::May { .. } => "May",
         EffectDef::ExileLinkedToSource { .. } => "ExileLinkedToSource",
         EffectDef::ReturnLinkedExiles { .. } => "ReturnLinkedExiles",
-        EffectDef::GainControl { .. } => "GainControl",
+        EffectDef::GainControl { .. }
+        | EffectDef::ExchangeControl { .. } => "GainControl",
         EffectDef::IfCondition { .. } => "IfCondition",
         EffectDef::InstallTrigger(_) => "InstallTrigger",
         EffectDef::CannotBeForcedToSacrifice => "CannotBeForcedToSacrifice",

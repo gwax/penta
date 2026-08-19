@@ -456,6 +456,7 @@ impl HandcraftedPolicy {
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::Detain { .. }
             | EffectDef::GainControl { .. }
+            | EffectDef::ExchangeControl { .. }
             | EffectDef::InstallTrigger(_)
             | EffectDef::IfCondition { .. }
             | EffectDef::ReduceGenericCostBy(_)

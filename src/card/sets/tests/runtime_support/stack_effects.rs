@@ -321,6 +321,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::ExileLinkedToSource { object }
         | EffectDef::Detain { object }
         | EffectDef::GainControl { object, .. }
+        | EffectDef::ExchangeControl { first: object, .. }
         | EffectDef::AddCounters { object, .. }
         | EffectDef::RemoveCounters { object, .. }
         | EffectDef::Attach { object }

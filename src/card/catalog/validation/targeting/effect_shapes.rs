@@ -181,6 +181,7 @@ fn validate_effect_target_shapes(
         | EffectDef::BecomeCopyOf { object, .. }
         | EffectDef::ExileLinkedToSource { object }
         | EffectDef::GainControl { object, .. }
+        | EffectDef::ExchangeControl { first: object, .. }
         | EffectDef::Transform { object }
         | EffectDef::MoveToZone { object, .. }
         | EffectDef::Counter { object, .. }

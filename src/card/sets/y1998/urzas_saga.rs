@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardChoiceSourceDef, CardRules, CardSet,
-    CardType, DiscardSelectionDef, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt,
+    CardChoiceSourceDef, CardRules, CardSet, CardType, DiscardSelectionDef, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerConditionDef, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -94,6 +95,72 @@ pub(in crate::card::sets) static ATTUNEMENT: CardRecord = CardRecord::new(
             },
         ]),
     )),
+);
+
+/// One effect rather than two control changes: both controllers are read
+/// before either permanent moves, which is the only way "exchange" can mean
+/// what it says.
+static DRAKE_EXCHANGE: EffectDef = EffectDef::ExchangeControl {
+    first: EffectRecipientDef::Source,
+    second: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+};
+
+/// "If you don't or can't make an exchange, sacrifice this creature." The two
+/// halves are complementary conditions on the same fact rather than an
+/// effect with two branches, so each reads the way its own clause does.
+static DRAKE_ENTERS: EffectDef = EffectDef::Sequence(&[
+    EffectDef::IfCondition {
+        condition: &TriggerConditionDef::TargetMatches {
+            slot: TargetIndex::PRIMARY,
+            object: ObjectPredicateDef::Any,
+        },
+        then: &DRAKE_EXCHANGE,
+    },
+    EffectDef::IfCondition {
+        condition: &TriggerConditionDef::Not(&TriggerConditionDef::TargetMatches {
+            slot: TargetIndex::PRIMARY,
+            object: ObjectPredicateDef::Any,
+        }),
+        then: &EffectDef::Sacrifice {
+            object: EffectRecipientDef::Source,
+        },
+    },
+]);
+
+static A_CREATURE_AN_OPPONENT_CONTROLS: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+]);
+
+// USG 76 — Gilded Drake
+pub(in crate::card::sets) static GILDED_DRAKE: CardRecord = CardRecord::new(
+    cards::GILDED_DRAKE,
+    "Gilded Drake",
+    CardArt::new("9ada76ca-ae9d-40e8-a3ff-71e6fc581b79", "Bob Eggleton"),
+    CardSet::UrzasSaga,
+    // Two mana to take the best creature on the board and hand back a 3/3
+    // flier. Against a board with nothing worth taking it simply dies.
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Drake"], 3, 3).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, exchange control of this creature and up to one target creature an opponent controls. If you don't or can't make an exchange, sacrifice this creature.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &[AbilityTargetDef::up_to(
+                AbilityTargetPredicate::Object {
+                    object: A_CREATURE_AN_OPPONENT_CONTROLS,
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::Opponent),
+                    owner: None,
+                },
+                1,
+            )],
+            DRAKE_ENTERS,
+        ),
+    ]),
 );
 
 // USG 190 — Goblin Lackey
@@ -188,6 +255,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MONK_REALIST,
     &ANNUL,
     &ATTUNEMENT,
+    &GILDED_DRAKE,
     &GOBLIN_LACKEY,
     &GOBLIN_MATRON,
     &GOBLIN_PATROL,

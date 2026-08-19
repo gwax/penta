@@ -11,7 +11,7 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 8 of them not yet cataloged
+- 145 distinct cards across the tranche, 7 of them not yet cataloged
 - 6 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
   Drew Glauberg's Stasis, Chris Danis's BW Control, TentacleFan's Landstill,
   and Andy Dominguez's RG Goblins. Nothing in any of them is metadata-only or
@@ -19,7 +19,7 @@ correctly.
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: Replenish 4, Angry Hermit 6. BW Control is complete. A list is
+together: Replenish 4, Angry Hermit 5. BW Control is complete. A list is
 blocked only by uncataloged cards -- no staged deck contains a card that is
 cataloged but unplayable.
 
@@ -134,6 +134,7 @@ older unannotated definitions still require one):
 - `Gempalm Incinerator` — complete
 - `Gemstone Mine` — complete
 - `Gerrard's Verdict` — complete; the life is counted after the discard
+- `Gilded Drake` — complete; the exchange reads both seats before either moves
 - `Goblin Lackey` — complete
 - `Goblin Matron` — complete
 - `Goblin Patrol` — complete
@@ -229,7 +230,6 @@ Not yet cataloged:
 
 - [ ] `Abeyance`
 - [ ] `Dragon Breath`
-- [ ] `Gilded Drake`
 - [ ] `Intuition`
 - [ ] `Phyrexian Dreadnought`
 - [ ] `Skycloud Expanse`

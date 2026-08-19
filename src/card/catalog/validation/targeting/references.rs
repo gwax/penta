@@ -631,6 +631,9 @@ fn validate_trigger_condition(
             .iter()
             .copied()
             .try_for_each(|condition| validate_trigger_condition(condition, target_count, scope)),
+        TriggerConditionDef::Not(condition) => {
+            validate_trigger_condition(*condition, target_count, scope)
+        }
         TriggerConditionDef::ObjectCount { query, .. } => {
             validate_query(query, target_count, scope)
         }

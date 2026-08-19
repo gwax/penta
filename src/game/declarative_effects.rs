@@ -515,7 +515,17 @@ impl Game {
                 object: recipient,
                 duration,
             } => {
-                self.take_control_of(recipient, object, &context, scoped, duration);
+                self.take_control_of(
+                    recipient,
+                    object,
+                    &context,
+                    scoped,
+                    duration,
+                    object.controller,
+                );
+            }
+            EffectDef::ExchangeControl { first, second } => {
+                self.exchange_control_of(first, second, object, &context, scoped);
             }
             EffectDef::IfCondition { condition, then } => {
                 if self.trigger_condition_holds(

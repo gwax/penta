@@ -486,6 +486,14 @@ pub enum EffectDef {
         object: EffectRecipientDef,
         duration: ControlDurationDef,
     },
+    /// Swap who controls two permanents, reading both controllers before
+    /// either moves. Two ordinary control changes cannot say this: whichever
+    /// ran first would change the answer the second one needs, so an
+    /// exchange is one effect rather than a pair.
+    ExchangeControl {
+        first: EffectRecipientDef,
+        second: EffectRecipientDef,
+    },
     GainLife {
         recipient: EffectRecipientDef,
         amount: ValueDef,

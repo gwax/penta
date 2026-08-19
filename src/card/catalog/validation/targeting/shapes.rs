@@ -372,6 +372,9 @@ fn validate_trigger_condition_shape(
             .iter()
             .copied()
             .try_for_each(|condition| validate_trigger_condition_shape(condition, targets)),
+        TriggerConditionDef::Not(condition) => {
+            validate_trigger_condition_shape(*condition, targets)
+        }
         TriggerConditionDef::ObjectCount { query, .. } => validate_query_shape(query, targets),
         TriggerConditionDef::SourceMatches { object }
         | TriggerConditionDef::AttachedPermanentMatches { object } => {

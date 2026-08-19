@@ -299,6 +299,11 @@ pub enum ResolvedEffectDurationDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ControlDurationDef {
     UntilEndOfTurn,
+    /// For as long as nothing changes it back. A control-change effect with
+    /// no stated duration lasts indefinitely (CR 611.2b), which is what an
+    /// exchange of control means: nothing is holding it and no cleanup ends
+    /// it.
+    Indefinitely,
     WhileSourceRemains {
         /// Whether the source also has to remain tapped.
         while_tapped: bool,

@@ -490,6 +490,7 @@ impl Game {
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::Detain { .. }
             | EffectDef::GainControl { .. }
+            | EffectDef::ExchangeControl { .. }
             | EffectDef::IfCondition { .. }
             | EffectDef::InstallTrigger(_)
             | EffectDef::ReduceGenericCostBy(_)
