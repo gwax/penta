@@ -19,6 +19,9 @@ static ARTIFACTS_AND_ENCHANTMENTS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::
     PlayerRelation::You,
 );
 
+// MH2 202 — Grist, the Hunger Tide
+// Audit: blocked — Needs three capabilities at once: a resolution loop that repeats a step while reading what the previous iteration milled, a reflexive triggered ability that chooses its target when the optional sacrifice is actually made rather than on activation, and characteristics that apply in every zone except the battlefield.
+
 // MH2 231 — Nettlecyst
 pub(in crate::card::sets) static NETTLECYST: CardRecord = CardRecord::new(
     cards::NETTLECYST,
