@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 149 are cataloged and 385 are not
+- 534 cards in the pool, of which 150 are cataloged and 384 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -247,13 +247,12 @@ lands are legal in every format and are not listed.
 - `Unholy Heat`
 - `Voldaren Epicure`
 
-### Green (46)
+### Green (45)
 
 - `Baloth Prime`
 - `Bristly Bill, Spine Sower`
 - `Cankerbloom`
 - `Courser of Kruphix`
-- `Delighted Halfling`
 - `Elvish Reclaimer`
 - `Endurance`
 - `Esika's Chariot`
@@ -444,7 +443,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 149 pool cards are in the catalog because an earlier format needed them.
+These 150 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -479,6 +478,7 @@ been played beside.
 - `Darkslick Shores`
 - `Daze`
 - `Deathrite Shaman`
+- `Delighted Halfling`
 - `Demonic Tutor`
 - `Duress`
 - `Elvish Mystic`

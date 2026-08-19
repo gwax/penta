@@ -3,8 +3,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    ObjectPredicateDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef,
+    AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef, ManaColor,
+    ManaRestrictionDef, ManaSpendEffectDef, ObjectPredicateDef, TriggerEventDef, ValueDef,
+    ZoneKind, abilities, cards,
 };
 use crate::mana_cost;
 
@@ -34,6 +36,37 @@ pub(in crate::card::sets) static STERN_SCOLDING: CardRecord = CardRecord::new(
 
 // LTR 103 — Orcish Bowmasters
 // Audit: blocked — Needs two things. A trigger on an opponent drawing a card, which no event here raises, and which this card qualifies further: every draw except the first one in each of that player's draw steps, so the count has to be kept per player per turn. And amass, which is a conditional token creation followed by a chosen Army taking counters and gaining a creature type.
+
+static HALFLING_MANA_RESTRICTIONS: [ManaRestrictionDef; 1] = [ManaRestrictionDef::CastSpell(
+    ObjectPredicateDef::Supertype(CardSupertype::Legendary),
+)];
+
+/// The rider is the reason the card is played: uncounterable is not a
+/// property of the Halfling but of whatever its mana paid for.
+static HALFLING_MANA_SPEND_EFFECTS: [ManaSpendEffectDef; 1] =
+    [ManaSpendEffectDef::ApplyToPaidSpell(
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
+    )];
+
+// LTR 158 — Delighted Halfling
+pub(in crate::card::sets) static DELIGHTED_HALFLING: CardRecord = CardRecord::new(
+    cards::DELIGHTED_HALFLING,
+    "Delighted Halfling",
+    CardArt::new("71384418-173a-4f77-adab-56e52fa23692", "Inka Schulz"),
+    CardSet::LordOfTheRings,
+    CardRules::new_creature(mana_cost!("{G}"), &["Halfling", "Citizen"], 1, 2).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated_mana(
+            "{T}: Add one mana of any color. Spend this mana only to cast a legendary spell, and that spell can't be countered.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(
+                AddManaEffectDef::any_color()
+                    .with_restrictions(&HALFLING_MANA_RESTRICTIONS)
+                    .with_spend_effects(&HALFLING_MANA_SPEND_EFFECTS),
+            ),
+        ),
+    ]),
+);
 
 // LTR 169 — Generous Ent
 pub(in crate::card::sets) static GENEROUS_ENT: CardRecord = CardRecord::new(
@@ -66,6 +99,7 @@ pub(in crate::card::sets) static GENEROUS_ENT: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&STERN_SCOLDING, &GENEROUS_ENT];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&STERN_SCOLDING, &DELIGHTED_HALFLING, &GENEROUS_ENT];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
