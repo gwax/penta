@@ -58,13 +58,16 @@ result and rebuild sampled Premodern positions from their observations.
   controller untaps. Angry Hermit is the one list still
   staged, and one thing holds it: registering it puts Phyrexian Dreadnought
   into the reconstruction sweeps, and the run of sacrifices its entry cost
-  asks for cannot be snapshotted. The continuation is asked while the
-  trigger that wants it is still resolving, and that trigger's own stack
-  object is retired as a card by then -- which
-  `object_reference_requires_hidden_rebinding` treats as a reference the
-  viewer cannot be given, so the whole decision is refused. Carrying it
-  needs either a rebinding for that object or a narrower notion of which
-  references are hidden. A phased-out permanent now survives a
+  asks for cannot be snapshotted. The continuation is listed among the ones
+  `decision_snapshot` refuses outright, so no checkpoint can be taken while
+  it is pending. Instrumenting the refusal ruled out the two guards that
+  looked likely: neither the private-visibility check nor the
+  hidden-rebinding check fires for it, and a detached snapshot of its stack
+  object succeeds. What is left is simply to write the encoding -- player,
+  how much is still owed, the stack object, its context, and the optional
+  paid branch -- and take the continuation off the refusal list. Both halves
+  have to land together; leaving the refusal in place is what made two
+  earlier attempts look like the encoding was at fault. A phased-out permanent now survives a
   checkpoint: it is public information -- both players see it, and only the
   rules treat it as absent -- so it is shown behind a `phasedOut` flag and
   reconstruction routes it back to the phased-out list. Engine legality
