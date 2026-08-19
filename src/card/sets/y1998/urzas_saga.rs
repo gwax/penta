@@ -167,4 +167,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CLAWS_OF_GIX,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
+    PrintingRecord::reprint(&crate::card::sets::y1994::legends::PRESENCE_OF_THE_MASTER), // USG 32
+];

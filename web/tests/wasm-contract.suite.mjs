@@ -361,7 +361,7 @@ test("every deck the picker offers is one the engine can build", async () => {
       "Arch U/W Flash", "Kuenzinger Junk Reanimator",
       "Anderson Omnidoor Thragfire", "Braun-Duin Naya Midrange",
     ],
-    premodern: ["Sligh", "RG Goblins", "GAT", "Landstill", "Stasis"],
+    premodern: ["Sligh", "RG Goblins", "GAT", "Landstill", "Stasis", "BW Control"],
   };
 
   for (const [format, names] of Object.entries(decksByFormat)) {

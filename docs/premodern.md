@@ -11,15 +11,17 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 15 of them not yet cataloged
-- 5 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
-  Drew Glauberg's Stasis, TentacleFan's Landstill, and Andy Dominguez's RG
-  Goblins. Nothing in any of them is metadata-only or partial
+- 145 distinct cards across the tranche, 14 of them not yet cataloged
+- 6 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
+  Drew Glauberg's Stasis, Chris Danis's BW Control, TentacleFan's Landstill,
+  and Andy Dominguez's RG Goblins. Nothing in any of them is metadata-only or
+  partial
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: BW Control 5, Replenish 11, Angry Hermit 7. A list is blocked only by uncataloged cards -- no staged deck
-contains a card that is cataloged but unplayable.
+together: Replenish 10, Angry Hermit 6. BW Control is complete. A list is
+blocked only by uncataloged cards -- no staged deck contains a card that is
+cataloged but unplayable.
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
 Sondike's GAT, Bryan Gulotta's Replenish, Drew Glauberg's Stasis, Chris Danis's
@@ -49,9 +51,11 @@ result and rebuild sampled Premodern positions from their observations.
 - Implement reusable mechanics before card-local behavior. Cycling and
   typecycling, flashback, split cards, tutors, alternative costs that exile a
   card from hand, and single-card reanimation are all in place. What the
-  remaining lists still need: fading (Parallax Wave); morph (Exalted Angel);
-  and a mass graveyard-to-battlefield return (Replenish), plus the layer
-  rewrite Opalescence asks for. Storm landed with Brain Freeze, along with a
+  remaining lists still need: fading (Parallax Wave) and a mass
+  graveyard-to-battlefield return (Replenish), plus the layer rewrite
+  Opalescence asks for. Morph landed with Exalted Angel: a permanent can be
+  face down, presenting a shared 2/2 body with no name, and the special
+  action that turns it up reads the morph cost off the physical card. Storm landed with Brain Freeze, along with a
   spell's own cast trigger and a copy chain; countering an ability landed
   with Teferi's Response and Stifle followed it; and the
   Stasis tranche added payments that return or sacrifice a named permanent
@@ -108,6 +112,7 @@ older unannotated definitions still require one):
 - `Engineered Plague` — complete
 - `Enlightened Tutor` — complete
 - `Eternal Dragon` — complete
+- `Exalted Angel` — complete; face down for three, face up for its morph cost
 - `Fact or Fiction` — complete
 - `Fire // Ice` — complete
 - `Fireblast` — complete
@@ -212,7 +217,6 @@ Not yet cataloged:
 - [ ] `Attunement`
 - [ ] `Decree of Silence`
 - [ ] `Dragon Breath`
-- [ ] `Exalted Angel`
 - [ ] `Frantic Search`
 - [ ] `Gilded Drake`
 - [ ] `Intuition`

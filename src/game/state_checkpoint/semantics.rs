@@ -557,6 +557,14 @@ pub(super) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         EffectDef::LookAtTopAndSelect { selection, .. } => {
             selection.then.into_iter().copied().collect()
         }
+        EffectDef::ChooseCardName { then, .. } | EffectDef::BindMatching { then, .. } => {
+            vec![*then]
+        }
+        EffectDef::Discard {
+            then: Some(follow_up),
+            ..
+        } => vec![*follow_up.effect],
+        EffectDef::RevealAtRandomFromHand { then, .. } => vec![*then],
         _ => Vec::new(),
     }
 }

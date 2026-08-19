@@ -61,6 +61,7 @@ export const formatConfigs: Record<FormatId, FormatConfig> = {
       Sligh: "1st · Neal Sacks · Mono-red aggro",
       GAT: "2nd · Daniel Sondike · Threshold tempo",
       Stasis: "4th · Drew Glauberg · Stasis prison",
+      "BW Control": "5th · Chris Danis · White-black control",
       Landstill: "6th · TentacleFan · Blue-white control",
       "RG Goblins": "7th · Andy Dominguez · Red-green Goblins",
     },

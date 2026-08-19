@@ -182,6 +182,12 @@ pub mod premodern {
         "stasis_drew_glauberg.yaml",
         "Returns Drew Glauberg's Stasis list from the Sacred Torch Showdown."
     );
+    deck!(
+        bw_control,
+        "premodern",
+        "bw_control_chris_danis.yaml",
+        "Returns Chris Danis's BW Control list from the Sacred Torch Showdown."
+    );
 }
 
 /// Built-in Eternal Central Old School 93/94 decklists.
@@ -602,6 +608,7 @@ mod tests {
             super::premodern::gat,
             super::premodern::landstill,
             super::premodern::stasis,
+            super::premodern::bw_control,
         ] {
             let deck = build();
             // Sixty is the floor rather than the size: Drew Glauberg

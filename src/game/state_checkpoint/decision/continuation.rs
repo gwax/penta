@@ -109,6 +109,31 @@ fn parse_continuation(
             player: player(*owner)?,
             revealed: parse_detached_cards(revealed, game)?,
         },
+        DecisionContinuationSnapshot::CardNameChoice {
+            choices,
+            searched,
+            zone,
+            binding,
+            continuation,
+        } => {
+            // The located effect is the follow-up the chosen name feeds,
+            // not the choice itself: the choice is the pending question, and
+            // what it continues into is what has to be found again.
+            let continuation = parse_effect_continuation(continuation, game)?;
+            DecisionContinuation::CardNameChoice {
+                choices: choices.clone(),
+                searched: player(*searched)?,
+                zone: parse_zone_kind(*zone),
+                binding: u8::try_from(*binding)
+                    .ok()
+                    .filter(|index| usize::from(*index) < crate::ids::ObjectSetBindingIndex::COUNT)
+                    .map(crate::ids::ObjectSetBindingIndex::new)
+                    .ok_or("card-name choice binding is out of range")?,
+                object: continuation.object,
+                context: continuation.context,
+                effect: continuation.effect,
+            }
+        }
         DecisionContinuationSnapshot::TopCardSelection {
             player: owner,
             revealed,
