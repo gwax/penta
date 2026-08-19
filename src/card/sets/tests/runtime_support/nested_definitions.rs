@@ -147,6 +147,10 @@ fn shared_entry_replacement_condition(condition: ConditionDef) -> bool {
         ConditionDef::Exists(query) => {
             query.zones == [ZoneKind::Battlefield] && shared_object_predicate(query.object)
         }
+        ConditionDef::ObjectCount(counting) => {
+            counting.query.zones == [ZoneKind::Battlefield]
+                && shared_object_predicate(counting.query.object)
+        }
         ConditionDef::All(conditions) => conditions
             .iter()
             .copied()

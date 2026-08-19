@@ -3,8 +3,8 @@ use super::{
     AddManaEffectDef, AppliedStackEffect, CardBehavior, CardType, CharacteristicContext,
     ConditionDef, CounterKind, DeclarativeAbilityDef, EffectDef, Game, GameObjectId, Mana,
     ManaAbilityActivation, ManaColor, ManaCost, ManaPaymentPurpose, ManaPool, ManaRestrictionDef,
-    ManaSelectionDef, ManaSource, ManaSpendEffectDef, Permanent, PlayerId, RetiredObject,
-    StackObject, TriggerContext, TriggerEventObject, ZoneKind, fold_restricted_x,
+    ManaSelectionDef, ManaSource, ManaSpendEffectDef, ObjectCountConditionDef, Permanent, PlayerId,
+    RetiredObject, StackObject, TriggerContext, TriggerEventObject, ZoneKind, fold_restricted_x,
     pay_cost_with_orders,
 };
 use crate::AbilityProgramDef;
@@ -211,6 +211,27 @@ impl Game {
             ConditionDef::All(conditions) => conditions
                 .iter()
                 .all(|condition| self.static_condition_holds(*condition, controller, source)),
+            ConditionDef::ObjectCount(counting) => {
+                let ObjectCountConditionDef {
+                    query,
+                    comparison,
+                    amount,
+                } = *counting;
+                let mut count = 0_usize;
+                let _ = self.visit_objects_matching_query_with_prospective(
+                    query,
+                    controller,
+                    source,
+                    TriggerContext::empty(),
+                    None,
+                    None,
+                    |_| {
+                        count += 1;
+                        std::ops::ControlFlow::Continue(())
+                    },
+                );
+                crate::game::effect_support::compare(&count, comparison, &usize::from(amount))
+            }
         }
     }
 

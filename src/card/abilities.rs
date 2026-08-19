@@ -7,14 +7,14 @@ use super::model::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef,
     AppliedRuleDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef, CardType,
-    ChoiceVisibilityDef, ChooseDef, ConditionDef, CounterKind, DamageEventMatcherDef,
-    DamagePreventionDef, DamageRecipientMatcherDef, EffectDef, EffectPaymentDef,
-    EffectRecipientDef, KeywordAbility, ManaColor, ManaCost, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ProtectedCreatureType, ReplacementAbilityDef,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef,
-    SplitIntoPilesDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement,
+    ChoiceVisibilityDef, ChooseDef, ComparisonDef, ConditionDef, CounterKind,
+    DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef, EffectDef,
+    EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaCost,
+    ObjectChoiceBindingDef, ObjectCountConditionDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ProtectedCreatureType, ReplacementAbilityDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef, SplitIntoPilesDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -869,6 +869,36 @@ pub const fn enters_tapped_unless_you_control(
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             )),
+            if_true: &[],
+            if_false: &ENTER_TAPPED,
+        },
+    )
+}
+
+static TWO_OR_FEWER_OTHER_LANDS: ObjectCountConditionDef = ObjectCountConditionDef {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Land),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    comparison: ComparisonDef::LessOrEqual,
+    amount: 2,
+};
+
+/// "This land enters tapped unless you control two or fewer other lands."
+///
+/// The bound is on the lands already there, so the land entering is excluded
+/// from its own count -- which is what makes the clause read the board as it
+/// was rather than as it is about to be.
+#[must_use]
+pub const fn fast_land_enters(text: &'static str) -> AbilityDef {
+    AbilityDef::as_enters(
+        text,
+        ReplacementEffectDef::Conditional {
+            condition: ConditionDef::ObjectCount(&TWO_OR_FEWER_OTHER_LANDS),
             if_true: &[],
             if_false: &ENTER_TAPPED,
         },

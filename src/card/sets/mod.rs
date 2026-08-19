@@ -26,6 +26,7 @@ mod y2012;
 mod y2013;
 mod y2014;
 mod y2015;
+mod y2016;
 mod y2019;
 mod y2020;
 mod y2021;
@@ -277,6 +278,11 @@ const SET_MODULES: &[SetModule] = &[
         y2009::zendikar::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::ScarsOfMirrodin,
+        y2010::scars_of_mirrodin::CARDS,
+        y2010::scars_of_mirrodin::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Magic2011,
         y2010::magic_2011::CARDS,
         y2010::magic_2011::ADDITIONAL_PRINTINGS,
@@ -360,6 +366,11 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::StreetsOfNewCapenna,
         y2022::streets_of_new_capenna::CARDS,
         y2022::streets_of_new_capenna::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Kaladesh,
+        y2016::kaladesh::CARDS,
+        y2016::kaladesh::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::LordOfTheRings,

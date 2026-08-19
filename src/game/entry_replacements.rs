@@ -4,11 +4,12 @@ use super::{
     ColorChoiceOperationDef, CommittedTriggerEvent, ConditionDef, ControlFlow,
     DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
     DeclarativeAbilityDef, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
-    EffectResolutionContext, EntryCompletion, Game, GameEvent, ManaColor, ObjectPredicateDef,
-    PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent, PlayerId,
-    ReplaceableEvent, ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectContext,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ResolvedEffectPayment,
-    ScopedEffect, StackObject, StackObjectKind, Target, TriggerContext, ZoneKind,
+    EffectResolutionContext, EntryCompletion, Game, GameEvent, ManaColor, ObjectCountConditionDef,
+    ObjectPredicateDef, PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent,
+    PlayerId, ReplaceableEvent, ReplacementChoiceDef, ReplacementConditionDef,
+    ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    ResolvedEffectPayment, ScopedEffect, StackObject, StackObjectKind, Target, TriggerContext,
+    ZoneKind,
 };
 
 mod entry_exile;
@@ -480,6 +481,27 @@ impl Game {
                 Self::pending_event_context(pending),
                 Some(&entry.permanent),
             ),
+            ConditionDef::ObjectCount(counting) => {
+                let ObjectCountConditionDef {
+                    query,
+                    comparison,
+                    amount,
+                } = *counting;
+                let mut count = 0_usize;
+                let _ = self.visit_objects_matching_query_with_prospective(
+                    query,
+                    context.controller,
+                    context.source.object,
+                    Self::pending_event_context(pending),
+                    Some(&entry.permanent),
+                    None,
+                    |_| {
+                        count += 1;
+                        std::ops::ControlFlow::Continue(())
+                    },
+                );
+                crate::game::effect_support::compare(&count, comparison, &usize::from(amount))
+            }
         }
     }
 

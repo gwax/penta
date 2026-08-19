@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 128 are cataloged and 406 are not
+- 534 cards in the pool, of which 138 are cataloged and 396 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -412,29 +412,22 @@ lands are legal in every format and are not listed.
 - `Urza's Bauble`
 - `Walking Ballista`
 
-### Lands (48)
+### Lands (38)
 
 - `Arena of Glory`
-- `Blackcleave Cliffs`
 - `Blazemire Verge`
 - `Bleachbone Verge`
-- `Blooming Marsh`
 - `Boseiju, Who Endures`
-- `Botanical Sanctum`
 - `Bountiful Landscape`
 - `Celestial Colonnade`
 - `City of Traitors`
 - `Commercial District`
-- `Concealed Courtyard`
-- `Copperline Gorge`
 - `Creeping Tar Pit`
 - `Dark Depths`
-- `Darkslick Shores`
 - `Fabled Passage`
 - `Field of the Dead`
 - `Hedge Maze`
 - `Horizon Canopy`
-- `Inspiring Vantage`
 - `Lush Portico`
 - `Mana Confluence`
 - `Meticulous Archive`
@@ -442,14 +435,11 @@ lands are legal in every format and are not listed.
 - `Otawara, Soaring City`
 - `Prismatic Vista`
 - `Raucous Theater`
-- `Razorverge Thicket`
 - `Riverpyre Verge`
-- `Seachrome Coast`
 - `Shadowy Backstreet`
 - `Shelldock Isle`
 - `Sheltering Landscape`
 - `Shifting Woodland`
-- `Spirebluff Canal`
 - `Starting Town`
 - `Sunbaked Canyon`
 - `Sunbillow Verge`
@@ -465,7 +455,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 128 pool cards are in the catalog because an earlier format needed them.
+These 138 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -481,16 +471,22 @@ been played beside.
 - `Berserk`
 - `Birds of Paradise`
 - `Black Lotus`
+- `Blackcleave Cliffs`
 - `Blood Crypt`
 - `Bloodstained Mire`
+- `Blooming Marsh`
+- `Botanical Sanctum`
 - `Brain Freeze`
 - `Breeding Pool`
 - `Candelabra of Tawnos`
 - `Cecil, Dark Knight`
 - `Chain Lightning`
 - `Channel`
+- `Concealed Courtyard`
+- `Copperline Gorge`
 - `Counterspell`
 - `Dark Ritual`
+- `Darkslick Shores`
 - `Daze`
 - `Deathrite Shaman`
 - `Demonic Tutor`
@@ -512,6 +508,7 @@ been played beside.
 - `Hallowed Fountain`
 - `Hymn to Tourach`
 - `Indatha Triome`
+- `Inspiring Vantage`
 - `Jetmir's Garden`
 - `Karakas`
 - `Ketria Triome`
@@ -551,18 +548,21 @@ been played beside.
 - `Raffine's Tower`
 - `Rancor`
 - `Raugrin Triome`
+- `Razorverge Thicket`
 - `Reanimate`
 - `Sacred Foundry`
 - `Savai Triome`
 - `Savannah`
 - `Scalding Tarn`
 - `Scrubland`
+- `Seachrome Coast`
 - `Shallow Grave`
 - `Skullclamp`
 - `Snapcaster Mage`
 - `Sol Ring`
 - `Spara's Headquarters`
 - `Spell Pierce`
+- `Spirebluff Canal`
 - `Steam Vents`
 - `Stern Scolding`
 - `Stomping Ground`

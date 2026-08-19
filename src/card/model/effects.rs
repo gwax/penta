@@ -13,7 +13,7 @@ use crate::Format;
 use crate::ids::{CardDefinitionId, ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
 use super::{
-    AbilityDef, AddManaEffectDef, BasicLandType, CardTypeSet, ColorSet, CounterKind,
+    AbilityDef, AddManaEffectDef, BasicLandType, CardTypeSet, ColorSet, ComparisonDef, CounterKind,
     KeywordAbility, ManaColor, ManaCost, ObjectPredicateDef, PlayActionKind, PlayerRelation,
     TriggerConditionDef, ZoneKind, ZonePlacement,
 };
@@ -88,6 +88,22 @@ pub enum ConditionDef {
     /// is what makes it safe to build one from a card's own list of named
     /// permanents without a special case for the shortest one.
     All(&'static [ConditionDef]),
+    /// How many objects the query matches, against a printed number. The
+    /// counting form of [`Self::Exists`], for the clauses that name a bound
+    /// rather than asking whether anything is there at all.
+    ///
+    /// Held behind a reference so that adding it does not widen every
+    /// condition, and with it the mana-ability activation this sits inside.
+    ObjectCount(&'static ObjectCountConditionDef),
+}
+
+/// The parts of a counting condition. Split out of [`ConditionDef`] so the
+/// enum stays the width of its smallest useful variant.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ObjectCountConditionDef {
+    pub query: ObjectQueryDef,
+    pub comparison: ComparisonDef,
+    pub amount: u8,
 }
 
 /// What follows a discard, and what it counts among the cards that went.

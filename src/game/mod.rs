@@ -20,14 +20,15 @@ use crate::card::{
     DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef, DeclarativeAbilityDef,
     DiscardSelectionDef, DividedTotal, DoubleFacedKind, EffectDef, EffectPaymentCostDef,
     EffectPaymentDef, EffectRecipientDef, EffectRecipientSetDef, HybridPair, KeywordAbility,
-    ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayActionKind, PlayOptionDef, PlayRestriction,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, ProtectedCreatureType,
-    QuantifierDef, ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, SetOperationDef,
-    StackTargetKindDef, TapPurposeDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef,
-    ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, applicable_part_ids,
+    ManaCost, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ObjectCountConditionDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayActionKind, PlayOptionDef,
+    PlayRestriction, PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef,
+    ProtectedCreatureType, QuantifierDef, ReplacementChoiceDef, ReplacementConditionDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    SetOperationDef, StackTargetKindDef, TapPurposeDef, TargetPredicate, TargetSlotDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnPhaseDef,
+    TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities,
+    applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::Deck;

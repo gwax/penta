@@ -138,3 +138,90 @@ fn a_triome_cycles_from_hand_for_three_generic() {
         "and the draw is what resolved",
     );
 }
+
+/// Every fastland, with the two colours its printed clause names.
+const FAST_LANDS: [(CardDefinitionId, [ManaColor; 2]); 10] = [
+    (
+        cards::BLACKCLEAVE_CLIFFS,
+        [ManaColor::Black, ManaColor::Red],
+    ),
+    (cards::COPPERLINE_GORGE, [ManaColor::Red, ManaColor::Green]),
+    (cards::DARKSLICK_SHORES, [ManaColor::Blue, ManaColor::Black]),
+    (
+        cards::RAZORVERGE_THICKET,
+        [ManaColor::Green, ManaColor::White],
+    ),
+    (cards::SEACHROME_COAST, [ManaColor::White, ManaColor::Blue]),
+    (cards::BLOOMING_MARSH, [ManaColor::Black, ManaColor::Green]),
+    (
+        cards::BOTANICAL_SANCTUM,
+        [ManaColor::Green, ManaColor::Blue],
+    ),
+    (
+        cards::CONCEALED_COURTYARD,
+        [ManaColor::White, ManaColor::Black],
+    ),
+    (cards::INSPIRING_VANTAGE, [ManaColor::Red, ManaColor::White]),
+    (cards::SPIREBLUFF_CANAL, [ManaColor::Blue, ManaColor::Red]),
+];
+
+/// The clause counts the lands already there, so the boundary sits between a
+/// second and a third: a fastland is the fourth land you play, and that is
+/// the one that arrives tapped.
+#[test]
+fn a_fastland_enters_untapped_only_while_the_board_is_small() {
+    for (definition, _) in FAST_LANDS {
+        for (existing, tapped) in [(0, false), (2, false), (3, true)] {
+            let mut game = ready_game();
+            game.battlefield.clear();
+            for index in 0..existing {
+                game.battlefield
+                    .push(creature(61_000 + index, cards::FOREST, PlayerId::One));
+            }
+            // Someone else's lands are not lands you control.
+            game.battlefield
+                .push(creature(61_100, cards::ISLAND, PlayerId::Two));
+
+            let land = game
+                .put_onto_battlefield(PlayerId::One, definition)
+                .expect("cataloged");
+            assert_eq!(
+                game.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == land)
+                    .expect("it entered")
+                    .tapped,
+                tapped,
+                "{definition:?} with {existing} other lands",
+            );
+        }
+    }
+}
+
+#[test]
+fn every_fastland_taps_for_both_of_its_colors() {
+    for (definition, colors) in FAST_LANDS {
+        for color in colors {
+            let mut game = ready_game();
+            game.battlefield.clear();
+            let land = game
+                .put_onto_battlefield(PlayerId::One, definition)
+                .expect("cataloged");
+            game.apply(
+                PlayerId::One,
+                Action::ActivateManaAbility {
+                    source: land,
+                    ability: mana_ability_for(&game, land, color),
+                    color,
+                    counters_removed: None,
+                    cost_object: None,
+                },
+            )
+            .unwrap_or_else(|error| panic!("{definition:?} makes {color:?}: {error}"));
+            assert_eq!(
+                game.players[PlayerId::One.index()].mana_pool.amount(color),
+                1,
+            );
+        }
+    }
+}
