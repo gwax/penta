@@ -708,3 +708,110 @@ fn stern_scolding_answers_a_spell_small_in_either_direction() {
         );
     }
 }
+
+/// The free cast is gated on whose turn it is, and the printed one is not.
+/// A green card in hand pays for it only while someone else is the active
+/// player.
+#[test]
+fn force_of_vigor_is_free_only_on_someone_elses_turn() {
+    let free_cast_offered = |active: PlayerId| {
+        let mut game = ready_game();
+        game.active_player = active;
+        let force = card(57_000, cards::FORCE_OF_VIGOR, PlayerId::One);
+        let force_id = force.id;
+        game.players[PlayerId::One.index()].hand.push(force);
+        game.players[PlayerId::One.index()].hand.push(card(
+            57_001,
+            cards::BIRDS_OF_PARADISE,
+            PlayerId::One,
+        ));
+        game.battlefield
+            .push(creature(57_002, cards::BLACK_LOTUS, PlayerId::Two));
+        game.legal_actions(PlayerId::One).into_iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if card == force_id && choices.costs().alternative().is_some())
+        })
+    };
+
+    assert!(
+        !free_cast_offered(PlayerId::One),
+        "on your own turn there is no free cast, whatever is in hand",
+    );
+    assert!(
+        free_cast_offered(PlayerId::Two),
+        "on someone else's turn a green card pays for it",
+    );
+}
+
+/// "Up to two" means the spell can take one, and "artifacts and/or
+/// enchantments" means it does not care which.
+#[test]
+fn force_of_vigor_destroys_both_kinds_at_once() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.active_player = PlayerId::Two;
+    let lotus = creature(57_100, cards::BLACK_LOTUS, PlayerId::Two);
+    let lotus_id = lotus.card.id;
+    game.battlefield.push(lotus);
+    let arena = creature(57_101, cards::PHYREXIAN_ARENA, PlayerId::Two);
+    let arena_id = arena.card.id;
+    game.battlefield.push(arena);
+    // Not an artifact or an enchantment, so never a legal target.
+    let bears = creature(57_102, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+
+    let force = card(57_103, cards::FORCE_OF_VIGOR, PlayerId::One);
+    let force_id = force.id;
+    game.players[PlayerId::One.index()].hand.push(force);
+    game.players[PlayerId::One.index()].hand.push(card(
+        57_104,
+        cards::BIRDS_OF_PARADISE,
+        PlayerId::One,
+    ));
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+            if *card == force_id
+                && choices.targets().iter().any(|selection| {
+                    selection.targets().contains(&Target::Permanent(bears_id))
+                }))
+        }),
+        "a creature is not an artifact or an enchantment",
+    );
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+            if *card == force_id
+                && choices.costs().alternative().is_some()
+                && choices.targets().iter().any(|selection| {
+                    selection.targets().contains(&Target::Permanent(lotus_id))
+                        && selection.targets().contains(&Target::Permanent(arena_id))
+                }))
+        })
+        .expect("both halves of the board can go at once");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != lotus_id && permanent.card.id != arena_id),
+        "the artifact and the enchantment are both destroyed",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears_id),
+        "and the creature is untouched",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].exile.len(),
+        1,
+        "the green card it spent was exiled, not discarded",
+    );
+}

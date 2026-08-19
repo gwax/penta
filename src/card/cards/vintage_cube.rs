@@ -41,3 +41,4 @@ pub const LIFE_DEATH: CardDefinitionId = CardDefinitionId(2123);
 pub const RANCOR: CardDefinitionId = CardDefinitionId(2124);
 pub const STERN_SCOLDING: CardDefinitionId = CardDefinitionId(2125);
 pub const NETTLECYST: CardDefinitionId = CardDefinitionId(2126);
+pub const FORCE_OF_VIGOR: CardDefinitionId = CardDefinitionId(2127);

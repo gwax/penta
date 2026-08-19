@@ -62,6 +62,7 @@ pub enum CardSet {
     Theros,
     KhansOfTarkir,
     DragonsOfTarkir,
+    ModernHorizons1,
     ModernHorizons2,
     Ikoria,
     KamigawaNeonDynasty,

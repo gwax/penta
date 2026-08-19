@@ -25,6 +25,7 @@ mod y2012;
 mod y2013;
 mod y2014;
 mod y2015;
+mod y2019;
 mod y2020;
 mod y2021;
 mod y2022;
@@ -327,6 +328,11 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::DragonsOfTarkir,
         y2015::dragons_of_tarkir::CARDS,
         y2015::dragons_of_tarkir::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::ModernHorizons1,
+        y2019::modern_horizons::CARDS,
+        y2019::modern_horizons::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::Ikoria,
