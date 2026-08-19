@@ -663,6 +663,7 @@ mod premodern_cycling;
 mod premodern_free_spells;
 mod premodern_gat;
 mod premodern_goblins;
+mod premodern_hermit;
 mod premodern_hosers;
 mod premodern_kicker;
 mod premodern_lands;

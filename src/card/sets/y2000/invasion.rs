@@ -5,7 +5,7 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardType, EffectDef,
     EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef, PlayerRelation,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    StackTargetKindDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
     abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
@@ -178,6 +178,7 @@ static RESPONSE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::StackObject {
         object: ObjectPredicateDef::TargetsObjectMatching(&A_LAND_YOU_CONTROL),
         controller: Some(PlayerRelation::Opponent),
+        kind: StackTargetKindDef::SpellOrAbility,
     },
 )];
 

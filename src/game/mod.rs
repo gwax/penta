@@ -25,7 +25,7 @@ use crate::card::{
     PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, ProtectedCreatureType,
     QuantifierDef, ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectDef,
     ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, SetOperationDef,
-    TapPurposeDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef, TriggerConditionDef,
+    StackTargetKindDef, TapPurposeDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef, TriggerConditionDef,
     TriggerEventDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
     ZonePlacement, abilities, applicable_part_ids,
 };

@@ -194,6 +194,10 @@ pub enum AbilityTargetPredicate {
     StackObject {
         object: ObjectPredicateDef,
         controller: Option<PlayerRelation>,
+        /// Which stack objects are eligible. Mana abilities never use the
+        /// stack, so "mana abilities can't be targeted" needs no clause of
+        /// its own.
+        kind: StackTargetKindDef,
     },
     Object {
         object: ObjectPredicateDef,
@@ -204,6 +208,15 @@ pub enum AbilityTargetPredicate {
         /// relation for private zones such as a graveyard.
         owner: Option<PlayerRelation>,
     },
+}
+
+/// Which objects on the stack a target may name.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum StackTargetKindDef {
+    /// A spell or an ability, which is what "target spell or ability" says.
+    SpellOrAbility,
+    /// An ability only. Stifle cannot answer a spell.
+    AbilityOnly,
 }
 
 /// A const-friendly target declaration kept beside a printed ability.

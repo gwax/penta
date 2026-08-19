@@ -55,7 +55,7 @@ pub use model::{
     ReplacementEventDef, ResolvedEffectDurationDef, RoundingDef, SacrificedAmountDef,
     ScalarChoiceListDef, ScaledValueDef, SetOperationDef, SpecialActionDef, SpellAbilityDef,
     SpellAdditionalCostDef, SpellForm, SpellResolutionDestinationDef, SpendModeDef,
-    SplitIntoPilesDef, StaticAbilityDef, SumValueDef, TapEventMatcherDef, TapPurposeDef,
+    SplitIntoPilesDef, StackTargetKindDef, StaticAbilityDef, SumValueDef, TapEventMatcherDef, TapPurposeDef,
     TargetConditionDef, TargetPredicate, TargetSlotDef, TopCardSelectionDef, TriggerConditionDef,
     TriggerEventDef, TriggeredAbilityDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef,
     ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement,

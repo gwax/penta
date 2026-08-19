@@ -6,7 +6,8 @@
 
 use super::{
     AbilityTargetPredicate, CardInstance, CardType, CharacteristicContext, Game, GameObjectId,
-    ObjectPredicateDef, PlayerId, StackObjectKind, Target, TriggerContext, ZoneKind,
+    ObjectPredicateDef, PlayerId, StackObjectKind, StackTargetKindDef, Target,
+    TriggerContext, ZoneKind,
 };
 
 impl Game {
@@ -89,10 +90,16 @@ impl Game {
             AbilityTargetPredicate::StackObject {
                 object,
                 controller: controller_relation,
+                kind,
             } => self
                 .stack
                 .iter()
                 .filter_map(|stack_object| {
+                    if kind == StackTargetKindDef::AbilityOnly
+                        && stack_object.kind == StackObjectKind::Spell
+                    {
+                        return None;
+                    }
                     let characteristics = self.stack_object_event_object(stack_object)?;
                     (controller_relation.is_none_or(|relation| {
                         self.player_relation_matches(

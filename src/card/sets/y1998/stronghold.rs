@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, CardArt, CardRules, CardSet,
-    CardType, EffectDef, EffectPaymentCostDef, EffectPaymentDef, ObjectPredicateDef,
-    PlayerRelation, PlayerSetDef, ReplacementEffectDef, ValueDef, ZoneKind, abilities, cards,
+    CardSupertype, CardType, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
+    ObjectPredicateDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
 use crate::mana_cost;
 
@@ -36,6 +37,38 @@ static MOX_DIAMOND_ENTRY: ReplacementEffectDef = ReplacementEffectDef::PayOr {
     if_declined: &[ReplacementEffectDef::MoveToZone(ZoneKind::Graveyard)],
 };
 
+/// Basic lands only, which is why the Druid empties a library that holds
+/// none: what it does not find, it passes over into the graveyard.
+static A_BASIC_LAND_CARD: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Supertype(CardSupertype::Basic),
+    ObjectPredicateDef::HasType(CardType::Land),
+]);
+
+// STH 108 — Hermit Druid
+pub(in crate::card::sets) static HERMIT_DRUID: CardRecord = CardRecord::new(
+    cards::HERMIT_DRUID,
+    "Hermit Druid",
+    CardArt::new("a912f57d-9622-453d-826d-ef3d83644850", "Heather Hudson"),
+    CardSet::Stronghold,
+    // Printed as land smoothing. A deck with no basic lands at all reads the
+    // same ability as "put your library into your graveyard", which is the
+    // only reason anyone plays it.
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Human", "Druid"], 1, 1).with_ability(
+        AbilityDef::activated(
+            "{G}, {T}: Reveal cards from the top of your library until you reveal a basic land card. Put that card into your hand and all other cards revealed this way into your graveyard.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{G}")),
+                AbilityCostDef::TapSource,
+            ],
+            EffectDef::MillUntil {
+                player: EffectRecipientDef::Controller,
+                object: A_BASIC_LAND_CARD,
+                matched_zone: ZoneKind::Hand,
+            },
+        ),
+    ),
+);
+
 // STH 138 — Mox Diamond
 pub(in crate::card::sets) static MOX_DIAMOND: CardRecord = CardRecord::new(
     cards::MOX_DIAMOND,
@@ -57,6 +90,7 @@ pub(in crate::card::sets) static MOX_DIAMOND: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&MANA_LEAK, &MOX_DIAMOND];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&MANA_LEAK, &HERMIT_DRUID, &MOX_DIAMOND];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

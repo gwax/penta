@@ -11,14 +11,14 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 20 of them not yet cataloged
+- 145 distinct cards across the tranche, 18 of them not yet cataloged
 - 5 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
   Drew Glauberg's Stasis, TentacleFan's Landstill, and Andy Dominguez's RG
   Goblins. Nothing in any of them is metadata-only or partial
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: BW Control 5, Replenish 11, Angry Hermit 12. A list is blocked only by uncataloged cards -- no staged deck
+together: BW Control 5, Replenish 11, Angry Hermit 10. A list is blocked only by uncataloged cards -- no staged deck
 contains a card that is cataloged but unplayable.
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -53,7 +53,7 @@ result and rebuild sampled Premodern positions from their observations.
   and a mass graveyard-to-battlefield return (Replenish), plus the layer
   rewrite Opalescence asks for. Storm landed with Brain Freeze, along with a
   spell's own cast trigger and a copy chain; countering an ability landed
-  with Teferi's Response, so Stifle needs only its own authoring; and the
+  with Teferi's Response and Stifle followed it; and the
   Stasis tranche added payments that return or sacrifice a named permanent
   and an additional cost counted in X. Naming a card and reading the name back,
   arranging the top of a library, spending a land's counters, and a payment
@@ -131,6 +131,7 @@ older unannotated definitions still require one):
 - `Grim Lavamancer` — complete
 - `Gush` — complete
 - `Haunting Echoes` — complete; the library copies follow what the graveyard lost
+- `Hermit Druid` — complete; a library with no basic land empties
 - `Humility` — complete
 - `Hydroblast` — complete
 - `Impulse` — complete
@@ -179,6 +180,7 @@ older unannotated definitions still require one):
 - `Sleight of Hand` — complete
 - `Standstill` — complete
 - `Stasis` — complete
+- `Stifle` — complete; an ability only, never a spell
 - `Swamp`
 - `Swords to Plowshares`
 - `Sylvan Safekeeper` — complete
@@ -210,7 +212,6 @@ Not yet cataloged:
 - [ ] `Exalted Angel`
 - [ ] `Frantic Search`
 - [ ] `Gilded Drake`
-- [ ] `Hermit Druid`
 - [ ] `Intuition`
 - [ ] `Krosan Reclamation`
 - [ ] `Opalescence`
@@ -220,7 +221,6 @@ Not yet cataloged:
 - [ ] `Replenish`
 - [ ] `Shallow Grave`
 - [ ] `Skycloud Expanse`
-- [ ] `Stifle`
 - [ ] `Sutured Ghoul`
 - [ ] `Vision Charm`
 

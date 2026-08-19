@@ -1077,6 +1077,7 @@ pub(in crate::card::sets) static WAY_OF_THE_THIEF: CardRecord = CardRecord::new(
 static MILL_TO_THE_FIRST_LAND: EffectDef = EffectDef::MillUntil {
     player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
     object: ObjectPredicateDef::HasType(CardType::Land),
+    matched_zone: ZoneKind::Graveyard,
 };
 
 // GTC 57 — Balustrade Spy

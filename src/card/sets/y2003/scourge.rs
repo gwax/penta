@@ -5,7 +5,7 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, EffectDef, EffectPaymentCostDef,
     EffectPaymentDef, EffectRecipientDef, ObjectPredicateDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    PlayerRelation, PlayerSetDef, StackTargetKindDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
     cards,
 };
 use crate::ids::TargetIndex;
@@ -127,6 +127,32 @@ pub(in crate::card::sets) static BRAIN_FREEZE: CardRecord = CardRecord::new(
     ]),
 );
 
+static STIFLE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::StackObject {
+        object: ObjectPredicateDef::Any,
+        controller: None,
+        kind: StackTargetKindDef::AbilityOnly,
+    },
+)];
+
+// SCG 52 — Stifle
+pub(in crate::card::sets) static STIFLE: CardRecord = CardRecord::new(
+    cards::STIFLE,
+    "Stifle",
+    CardArt::new("b3adbbdc-9747-4745-95f1-fda5617529f2", "Dany Orizio"),
+    CardSet::Scourge,
+    // One mana that answers a fetchland, a Dreadnought's own drawback, or
+    // whatever the opponent built their turn around.
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Counter target activated or triggered ability.",
+        &STIFLE_TARGET,
+        EffectDef::Counter {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            zone: ZoneKind::Graveyard,
+        },
+    )),
+);
+
 // SCG 97 — Goblin Warchief
 pub(in crate::card::sets) static GOBLIN_WARCHIEF: CardRecord = CardRecord::new(
     cards::GOBLIN_WARCHIEF,
@@ -212,6 +238,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DECREE_OF_JUSTICE,
     &ETERNAL_DRAGON,
     &BRAIN_FREEZE,
+    &STIFLE,
     &GOBLIN_WARCHIEF,
     &SIEGE_GANG_COMMANDER,
 ];

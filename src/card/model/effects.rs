@@ -547,10 +547,10 @@ pub enum EffectDef {
         player: EffectRecipientDef,
         effect: &'static EffectDef,
     },
-    /// Put that many cards from the top of a library into its owner's
-    /// graveyard.
-    /// Reveal from the top of a library until a matching card turns up, then
-    /// put everything revealed -- the match included -- into the graveyard.
+    /// Reveal from the top of a library until a matching card turns up. What
+    /// was passed over goes to the graveyard; the match itself goes where
+    /// `matched_zone` says, which is the graveyard for a plain dig and the
+    /// hand for Hermit Druid.
     ///
     /// Distinct from [`Self::Mill`], whose count is known before it starts:
     /// how deep this goes is whatever the library says, and a library with
@@ -558,7 +558,10 @@ pub enum EffectDef {
     MillUntil {
         player: EffectRecipientDef,
         object: ObjectPredicateDef,
+        matched_zone: ZoneKind,
     },
+    /// Put that many cards from the top of a library into its owner's
+    /// graveyard.
     Mill {
         player: EffectRecipientDef,
         amount: ValueDef,

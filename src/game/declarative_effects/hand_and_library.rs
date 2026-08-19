@@ -149,11 +149,12 @@ impl Game {
             EffectDef::MillUntil {
                 player: recipient,
                 object: predicate,
+                matched_zone,
             } => {
                 let source = object.source.unwrap_or(object.id);
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Player(player) = target {
-                        self.mill_until_matching(player, predicate, source);
+                        self.mill_until_matching(player, predicate, matched_zone, source);
                     }
                 }
             }

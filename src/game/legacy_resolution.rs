@@ -271,15 +271,29 @@ impl Game {
         &mut self,
         player: PlayerId,
         predicate: ObjectPredicateDef,
+        matched_zone: ZoneKind,
         source: GameObjectId,
     ) {
         let mut revealed = Vec::new();
+        let mut matched_card = None;
         while let Some(card) = self.players[player.index()].library.pop() {
-            let matched = self.card_object_matches(predicate, &card, ZoneKind::Library, source);
-            revealed.push(card);
-            if matched {
+            if self.card_object_matches(predicate, &card, ZoneKind::Library, source) {
+                matched_card = Some(card);
                 break;
             }
+            revealed.push(card);
+        }
+        // The match keeps its own destination; a library with nothing
+        // matching found no match and buries everything it passed.
+        match matched_card {
+            Some(card) if matched_zone == ZoneKind::Graveyard => revealed.push(card),
+            Some(card) => self.place_revealed_remainder(
+                player,
+                vec![card],
+                matched_zone,
+                ZonePlacement::Top,
+            ),
+            None => {}
         }
         self.bury_cards(player, revealed);
     }
