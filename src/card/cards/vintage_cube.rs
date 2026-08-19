@@ -18,3 +18,12 @@ pub const RAFFINES_TOWER: CardDefinitionId = CardDefinitionId(2102);
 pub const SPARAS_HEADQUARTERS: CardDefinitionId = CardDefinitionId(2103);
 pub const XANDERS_LOUNGE: CardDefinitionId = CardDefinitionId(2104);
 pub const ZIATORAS_PROVING_GROUND: CardDefinitionId = CardDefinitionId(2105);
+
+pub const ZURAN_ORB: CardDefinitionId = CardDefinitionId(2106);
+pub const MYSTICAL_TUTOR: CardDefinitionId = CardDefinitionId(2107);
+pub const VAMPIRIC_TUTOR: CardDefinitionId = CardDefinitionId(2108);
+pub const TIME_WARP: CardDefinitionId = CardDefinitionId(2109);
+pub const GOBLIN_BOMBARDMENT: CardDefinitionId = CardDefinitionId(2110);
+pub const GAEAS_CRADLE: CardDefinitionId = CardDefinitionId(2111);
+pub const TOLARIAN_ACADEMY: CardDefinitionId = CardDefinitionId(2112);
+pub const ENTOMB: CardDefinitionId = CardDefinitionId(2113);

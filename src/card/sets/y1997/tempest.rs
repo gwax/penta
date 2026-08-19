@@ -150,6 +150,25 @@ pub(in crate::card::sets) static INTUITION: CardRecord = CardRecord::new(
     )),
 );
 
+static TIME_WARP_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+// TMP 97 — Time Warp
+pub(in crate::card::sets) static TIME_WARP: CardRecord = CardRecord::new(
+    cards::TIME_WARP,
+    "Time Warp",
+    CardArt::new("3447aeaf-3b26-442a-99d4-0a7ee76c8e76", "Pete Venters"),
+    CardSet::Tempest,
+    CardRules::new_sorcery(mana_cost!("{3}{U}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player takes an extra turn after this one.",
+        &TIME_WARP_TARGET,
+        EffectDef::TakeExtraTurn {
+            player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    )),
+);
+
 // TMP 151 — Reanimate
 pub(in crate::card::sets) static REANIMATE: CardRecord = CardRecord::new(
     cards::REANIMATE,
@@ -178,6 +197,32 @@ pub(in crate::card::sets) static REANIMATE: CardRecord = CardRecord::new(
             },
         ]),
     )),
+);
+
+static GOBLIN_BOMBARDMENT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
+// TMP 179 — Goblin Bombardment
+pub(in crate::card::sets) static GOBLIN_BOMBARDMENT: CardRecord = CardRecord::new(
+    cards::GOBLIN_BOMBARDMENT,
+    "Goblin Bombardment",
+    CardArt::new("179e954f-1d90-4ef4-b800-25845cc338e2", "Brian Snoddy"),
+    CardSet::Tempest,
+    CardRules::new_enchantment(mana_cost!("{1}{R}")).with_ability(
+        AbilityDef::activated_with_targets(
+            "Sacrifice a creature: This enchantment deals 1 damage to any target.",
+            &[AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                controller: PlayerRelation::You,
+            }],
+            &GOBLIN_BOMBARDMENT_TARGET,
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ),
 );
 
 // TMP 183 — Jackal Pup
@@ -387,7 +432,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WARMTH,
     &CHILL,
     &INTUITION,
+    &TIME_WARP,
     &REANIMATE,
+    &GOBLIN_BOMBARDMENT,
     &JACKAL_PUP,
     &MOGG_FANATIC,
     &ROOT_MAZE,

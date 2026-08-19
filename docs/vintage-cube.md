@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 104 are cataloged and 430 are not
+- 534 cards in the pool, of which 112 are cataloged and 422 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -85,7 +85,7 @@ lands are legal in every format and are not listed.
 - `Winds of Abandon`
 - `Witch Enchanter`
 
-### Blue (61)
+### Blue (59)
 
 - `Abhorrent Oculus`
 - `Astrologian's Planisphere`
@@ -118,7 +118,6 @@ lands are legal in every format and are not listed.
 - `Memory Lapse`
 - `Miscalculation`
 - `Mystic Confluence`
-- `Mystical Tutor`
 - `Narset, Parter of Veils`
 - `Occult Epiphany`
 - `Paradoxical Outcome`
@@ -142,14 +141,13 @@ lands are legal in every format and are not listed.
 - `Thieving Skydiver`
 - `Thundertrap Trainer`
 - `Time Spiral`
-- `Time Warp`
 - `Tinker`
 - `Tishana's Tidebinder`
 - `Treasure Cruise`
 - `Trinket Mage`
 - `Urza, Lord High Artificer`
 
-### Black (54)
+### Black (52)
 
 - `Animate Dead`
 - `Archon of Cruelty`
@@ -174,7 +172,6 @@ lands are legal in every format and are not listed.
 - `Dismember`
 - `Doomsday`
 - `Emperor of Bones`
-- `Entomb`
 - `Exhume`
 - `Fatal Push`
 - `Grave Titan`
@@ -202,11 +199,10 @@ lands are legal in every format and are not listed.
 - `Troll of Khazad-dûm`
 - `Unearth`
 - `Vampire Hexmage`
-- `Vampiric Tutor`
 - `Wishclaw Talisman`
 - `Yawgmoth's Will`
 
-### Red (55)
+### Red (54)
 
 - `Abrade`
 - `Amped Raptor`
@@ -233,7 +229,6 @@ lands are legal in every format and are not listed.
 - `Gau, Feral Youth`
 - `Generous Plunderer`
 - `Glorybringer`
-- `Goblin Bombardment`
 - `Goblin Rabblemaster`
 - `Goldspan Dragon`
 - `Gut, True Soul Zealot`
@@ -379,7 +374,7 @@ lands are legal in every format and are not listed.
 - `Wrenn and Six`
 - `Zirda, the Dawnwaker`
 
-### Colorless (52)
+### Colorless (51)
 
 - `Aether Spellbomb`
 - `Agatha's Soul Cauldron`
@@ -432,9 +427,8 @@ lands are legal in every format and are not listed.
 - `Umezawa's Jitte`
 - `Urza's Bauble`
 - `Walking Ballista`
-- `Zuran Orb`
 
-### Lands (50)
+### Lands (48)
 
 - `Arena of Glory`
 - `Blackcleave Cliffs`
@@ -454,7 +448,6 @@ lands are legal in every format and are not listed.
 - `Darkslick Shores`
 - `Fabled Passage`
 - `Field of the Dead`
-- `Gaea's Cradle`
 - `Hedge Maze`
 - `Horizon Canopy`
 - `Inspiring Vantage`
@@ -479,7 +472,6 @@ lands are legal in every format and are not listed.
 - `Talon Gates of Madara`
 - `Thornspire Verge`
 - `Thundering Falls`
-- `Tolarian Academy`
 - `Twisted Landscape`
 - `Undercity Sewers`
 - `Underground Mortuary`
@@ -489,7 +481,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 104 pool cards are in the catalog because an earlier format needed them.
+These 112 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -519,10 +511,13 @@ been played beside.
 - `Demonic Tutor`
 - `Duress`
 - `Elvish Mystic`
+- `Entomb`
 - `Faithless Looting`
 - `Fireblast`
 - `Flooded Strand`
 - `Frantic Search`
+- `Gaea's Cradle`
+- `Goblin Bombardment`
 - `Godless Shrine`
 - `Griselbrand`
 - `Gush`
@@ -551,6 +546,7 @@ been played beside.
 - `Mox Pearl`
 - `Mox Ruby`
 - `Mox Sapphire`
+- `Mystical Tutor`
 - `Overgrown Tomb`
 - `Parallax Wave`
 - `Plateau`
@@ -579,12 +575,15 @@ been played beside.
 - `Thespian's Stage`
 - `Thought Scour`
 - `Time Walk`
+- `Time Warp`
 - `Timetwister`
+- `Tolarian Academy`
 - `Tropical Island`
 - `Tundra`
 - `Underground Sea`
 - `Upheaval`
 - `Urborg, Tomb of Yawgmoth`
+- `Vampiric Tutor`
 - `Verdant Catacombs`
 - `Vindicate`
 - `Volcanic Island`
@@ -598,3 +597,4 @@ been played beside.
 - `Yavimaya, Cradle of Growth`
 - `Zagoth Triome`
 - `Ziatora's Proving Ground`
+- `Zuran Orb`

@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
-    CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
-    ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef, TopCardSelectionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
+    AppliedRuleDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
+    InstalledTriggerDef, ManaColor, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
+    TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -141,6 +142,25 @@ pub(in crate::card::sets) static PYROBLAST: CardRecord = CardRecord::new(
     )),
 );
 
+// ICE 350 — Zuran Orb
+pub(in crate::card::sets) static ZURAN_ORB: CardRecord = CardRecord::new(
+    cards::ZURAN_ORB,
+    "Zuran Orb",
+    CardArt::new("3a9d1082-a862-45d4-9e5e-392e879fead6", "Sandra Everingham"),
+    CardSet::IceAge,
+    CardRules::new_artifact(mana_cost!("{0}")).with_ability(AbilityDef::activated(
+        "Sacrifice a land: You gain 2 life.",
+        &[AbilityCostDef::SacrificePermanent {
+            object: ObjectPredicateDef::HasType(CardType::Land),
+            controller: PlayerRelation::You,
+        }],
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(2),
+        },
+    )),
+);
+
 // ICE 351 — Adarkar Wastes
 pub(in crate::card::sets) static ADARKAR_WASTES: CardRecord = CardRecord::new(
     cards::ADARKAR_WASTES,
@@ -182,6 +202,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PORTENT,
     &INCINERATE,
     &PYROBLAST,
+    &ZURAN_ORB,
     &ADARKAR_WASTES,
     &KARPLUSAN_FOREST,
     &UNDERGROUND_RIVER,

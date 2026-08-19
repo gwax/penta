@@ -108,6 +108,39 @@ pub(in crate::card::sets) static VISION_CHARM: CardRecord = CardRecord::new(
     )),
 );
 
+// VIS 72 — Vampiric Tutor
+pub(in crate::card::sets) static VAMPIRIC_TUTOR: CardRecord = CardRecord::new(
+    cards::VAMPIRIC_TUTOR,
+    "Vampiric Tutor",
+    CardArt::new("0a07cba3-2e8d-48ec-a6f8-4d2edfcd833d", "Gary Leach"),
+    CardSet::Visions,
+    CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell(
+        "Search your library for a card, then shuffle and put that card on top. You lose 2 life.",
+        EffectDef::Sequence(&VAMPIRIC_TUTOR_EFFECT),
+    )),
+);
+
+static VAMPIRIC_TUTOR_EFFECT: [EffectDef; 2] = [
+    EffectDef::SearchZone {
+        player: EffectRecipientDef::Controller,
+        source: ZoneKind::Library,
+        object: ObjectPredicateDef::Any,
+        minimum: 0,
+        maximum: ValueDef::Constant(1),
+        reveal: false,
+        destination: ZoneKind::Library,
+        placement: ZonePlacement::Top,
+        shuffle: true,
+        enters_tapped: false,
+        binding: None,
+        then: None,
+    },
+    EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+];
+
 // VIS 79 — Fireblast
 pub(in crate::card::sets) static FIREBLAST: CardRecord = CardRecord::new(
     cards::FIREBLAST,
@@ -133,6 +166,7 @@ pub(in crate::card::sets) static FIREBLAST: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&IMPULSE, &VISION_CHARM, &FIREBLAST];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&IMPULSE, &VISION_CHARM, &VAMPIRIC_TUTOR, &FIREBLAST];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

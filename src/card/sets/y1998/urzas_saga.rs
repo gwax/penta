@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt,
-    CardChoiceSourceDef, CardRules, CardSet, CardType, DiscardSelectionDef, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerConditionDef, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, DiscardSelectionDef,
+    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -253,6 +253,54 @@ pub(in crate::card::sets) static CLAWS_OF_GIX: CardRecord = CardRecord::new(
     )),
 );
 
+static CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+// USG 321 — Gaea's Cradle
+pub(in crate::card::sets) static GAEAS_CRADLE: CardRecord = CardRecord::new(
+    cards::GAEAS_CRADLE,
+    "Gaea's Cradle",
+    CardArt::new("25b0b816-0583-44aa-9dc5-f3ff48993a51", "Mark Zug"),
+    CardSet::UrzasSaga,
+    CardRules::new_land(&[])
+        .with_supertype(CardSupertype::Legendary)
+        .with_ability(AbilityDef::activated_mana(
+            "{T}: Add {G} for each creature you control.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddManaEqualTo {
+                color: ManaColor::Green,
+                amount: ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL),
+            },
+        )),
+);
+
+static ARTIFACTS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+// USG 330 — Tolarian Academy
+pub(in crate::card::sets) static TOLARIAN_ACADEMY: CardRecord = CardRecord::new(
+    cards::TOLARIAN_ACADEMY,
+    "Tolarian Academy",
+    CardArt::new("ad7ac9a5-340f-4509-826c-7b9416d47887", "Stephen Daniele"),
+    CardSet::UrzasSaga,
+    CardRules::new_land(&[])
+        .with_supertype(CardSupertype::Legendary)
+        .with_ability(AbilityDef::activated_mana(
+            "{T}: Add {U} for each artifact you control.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddManaEqualTo {
+                color: ManaColor::Blue,
+                amount: ValueDef::CountMatchingObjects(&ARTIFACTS_YOU_CONTROL),
+            },
+        )),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MONK_REALIST,
     &ANNUL,
@@ -262,6 +310,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GOBLIN_MATRON,
     &GOBLIN_PATROL,
     &CLAWS_OF_GIX,
+    &GAEAS_CRADLE,
+    &TOLARIAN_ACADEMY,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[

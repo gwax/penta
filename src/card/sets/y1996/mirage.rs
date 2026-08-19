@@ -63,6 +63,34 @@ static GRAVE_ARRIVAL: AppliedEffectDef = AppliedEffectDef::Composite(&[
     AppliedEffectDef::add_ability(&GRAVE_EXILE_AT_END),
 ]);
 
+// MIR 80 — Mystical Tutor
+pub(in crate::card::sets) static MYSTICAL_TUTOR: CardRecord = CardRecord::new(
+    cards::MYSTICAL_TUTOR,
+    "Mystical Tutor",
+    CardArt::new("5d98101f-e32a-4a4a-a649-faa920d111ee", "David O'Connor"),
+    CardSet::Mirage,
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell(
+        "Search your library for an instant or sorcery card, reveal it, then shuffle and put that card on top.",
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Instant),
+                ObjectPredicateDef::HasType(CardType::Sorcery),
+            ]),
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: true,
+            destination: ZoneKind::Library,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+            binding: None,
+            then: None,
+        },
+    )),
+);
+
 // MIR 141 — Shallow Grave
 pub(in crate::card::sets) static SHALLOW_GRAVE: CardRecord = CardRecord::new(
     cards::SHALLOW_GRAVE,
@@ -235,6 +263,7 @@ pub(in crate::card::sets) static PHYREXIAN_DREADNOUGHT: CardRecord = CardRecord:
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ENLIGHTENED_TUTOR,
+    &MYSTICAL_TUTOR,
     &SHALLOW_GRAVE,
     &GOBLIN_TINKERER,
     &TRANQUIL_DOMAIN,

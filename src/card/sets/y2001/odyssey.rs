@@ -101,6 +101,31 @@ static ECHOES_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::Player(PlayerRelation::Any),
 )];
 
+// ODY 132 — Entomb
+pub(in crate::card::sets) static ENTOMB: CardRecord = CardRecord::new(
+    cards::ENTOMB,
+    "Entomb",
+    CardArt::new("f60a2091-fb97-4f04-911b-fce9b6351044", "Ron Spears"),
+    CardSet::Odyssey,
+    CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell(
+        "Search your library for a card, put that card into your graveyard, then shuffle.",
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::Any,
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: false,
+            destination: ZoneKind::Graveyard,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+            binding: None,
+            then: None,
+        },
+    )),
+);
+
 // ODY 142 — Haunting Echoes
 pub(in crate::card::sets) static HAUNTING_ECHOES: CardRecord = CardRecord::new(
     cards::HAUNTING_ECHOES,
@@ -308,6 +333,7 @@ static SKYCLOUD_COSTS: [AbilityCostDef; 2] = [
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STANDSTILL,
     &UPHEAVAL,
+    &ENTOMB,
     &HAUNTING_ECHOES,
     &SKELETAL_SCRYING,
     &PSYCHATOG,
