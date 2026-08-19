@@ -47,6 +47,7 @@ static SACRIFICE_TWO_MOUNTAINS: SpellAdditionalCostDef = SpellAdditionalCostDef 
     object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
     zone: ZoneKind::Battlefield,
     count: 2,
+    count_is_x: false,
     spend: SpendModeDef::ByZone,
 };
 

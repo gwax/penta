@@ -176,6 +176,12 @@ pub mod premodern {
         "landstill_tentaclefan.yaml",
         "Returns the sixth-place Landstill list from the Sacred Torch Showdown."
     );
+    deck!(
+        stasis,
+        "premodern",
+        "stasis_drew_glauberg.yaml",
+        "Returns Drew Glauberg's Stasis list from the Sacred Torch Showdown."
+    );
 }
 
 /// Built-in Eternal Central Old School 93/94 decklists.
@@ -595,9 +601,13 @@ mod tests {
             super::premodern::sligh,
             super::premodern::gat,
             super::premodern::landstill,
+            super::premodern::stasis,
         ] {
             let deck = build();
-            assert_eq!(deck.main.len(), 60);
+            // Sixty is the floor rather than the size: Drew Glauberg
+            // registered sixty-one, and a list is transcribed as it was
+            // submitted rather than trimmed to a round number.
+            assert!(deck.main.len() >= 60, "a legal main deck is at least 60");
             assert_eq!(deck.sideboard.len(), 15);
             deck.clone()
                 .validate_for_format(&catalog, Format::Premodern)

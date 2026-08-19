@@ -2873,6 +2873,7 @@ static DISCARD_A_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::Any,
     zone: ZoneKind::Hand,
     count: 1,
+    count_is_x: false,
     spend: SpendModeDef::ByZone,
 };
 

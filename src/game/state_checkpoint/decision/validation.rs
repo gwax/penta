@@ -1,3 +1,18 @@
+/// The payment an authored cost describes, without asking who pays it. The
+/// payer is settled when the decision is queued; this is what the payment
+/// itself is, for a checkpoint restoring one whose payer has since moved.
+pub(super) fn resolved_effect_payment_for_payer(
+    game: &Game,
+    payment: EffectPaymentDef,
+    object: &super::super::StackObject,
+    context: &super::super::EffectResolutionContext,
+    scoped: ScopedEffect,
+) -> Option<super::super::ResolvedEffectPayment> {
+    let mut payment = payment;
+    payment.payer = crate::card::PlayerSetDef::One(crate::card::PlayerRefDef::EffectController);
+    resolved_effect_payment(game, payment, object, context, scoped).map(|(_, payment)| payment)
+}
+
 fn resolved_effect_payment(
     game: &Game,
     payment: EffectPaymentDef,

@@ -1654,6 +1654,7 @@ static SACRIFICE_A_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Battlefield,
     count: 1,
+    count_is_x: false,
     spend: SpendModeDef::ByZone,
 };
 

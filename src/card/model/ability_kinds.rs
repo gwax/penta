@@ -50,6 +50,10 @@ pub struct SpellAdditionalCostDef {
     pub object: ObjectPredicateDef,
     pub zone: ZoneKind,
     pub count: u8,
+    /// The count is X rather than the fixed number above. Flash of Insight's
+    /// flashback exiles as many blue cards as the X it is cast for, so the
+    /// cost cannot be known until that X is chosen.
+    pub count_is_x: bool,
     pub spend: SpendModeDef,
 }
 
@@ -76,8 +80,16 @@ impl SpellAdditionalCostDef {
             object,
             zone,
             count,
+            count_is_x: false,
             spend: SpendModeDef::ByZone,
         }
+    }
+
+    /// The same cost, counted in X rather than in a printed number.
+    #[must_use]
+    pub const fn counted_in_x(mut self) -> Self {
+        self.count_is_x = true;
+        self
     }
 
     #[must_use]

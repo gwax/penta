@@ -2,7 +2,7 @@ use crate::{Deck, Format, decks};
 
 /// Premodern lists are registered one at a time, as every card in each
 /// becomes playable.
-const PREMODERN_DECK_NAMES: &[&str] = &["RG Goblins", "Sligh", "GAT", "Landstill"];
+const PREMODERN_DECK_NAMES: &[&str] = &["RG Goblins", "Sligh", "GAT", "Landstill", "Stasis"];
 
 const OLD_SCHOOL_DECK_NAMES: &[&str] = &[
     "Goblins",
@@ -152,6 +152,7 @@ pub fn deck_by_name_for_format(format: Format, name: &str) -> Option<Deck> {
             "sligh" => Some(decks::premodern::sligh()),
             "gat" => Some(decks::premodern::gat()),
             "landstill" => Some(decks::premodern::landstill()),
+            "stasis" => Some(decks::premodern::stasis()),
             _ => None,
         },
     }

@@ -269,15 +269,34 @@ fn parse_continuation(
             let EffectDef::PayOr(authored) = scoped.effect else {
                 return Err("pay-or locator does not identify an optional payment".into());
             };
-            let (expected_payer, payment) =
-                resolved_effect_payment(game, authored.payment, &object, &context, scoped)
-                    .ok_or("pay-or authored payment no longer has exactly one payer")?;
+            // The payer was settled when the decision was queued, and the
+            // state it was read from can have moved since: Chain of Vapor
+            // asks the controller of a permanent it has already returned to
+            // hand. So a payer that can no longer be derived is the recorded
+            // one, while a payer that derives to somebody else is a
+            // disagreement worth refusing.
+            let authored_payment =
+                resolved_effect_payment(game, authored.payment, &object, &context, scoped);
+            let payment = match authored_payment {
+                Some((expected_payer, payment)) if expected_payer == payer => payment,
+                Some(_) => {
+                    return Err(
+                        "pay-or payer or payment disagrees with its authored effect".into()
+                    );
+                }
+                None => resolved_effect_payment_for_payer(
+                    game,
+                    authored.payment,
+                    &object,
+                    &context,
+                    scoped,
+                )
+                .ok_or("pay-or authored payment cannot be rebuilt")?,
+            };
             // Compared as snapshots, and kept as the authored value: a
             // payment that names a predicate cannot be rebuilt from the
             // checkpoint alone, and the authored effect is what defines it.
-            if expected_payer != payer
-                || resolved_effect_payment_snapshot(payment) != *payment_snapshot
-            {
+            if resolved_effect_payment_snapshot(payment) != *payment_snapshot {
                 return Err("pay-or payer or payment disagrees with its authored effect".into());
             }
             let can_pay = game.can_pay_effect_payment(payer, payment);

@@ -11,14 +11,14 @@ correctly.
 
 - 8 complete submitted main decks and 15-card sideboards captured (seven have
   60 cards; Drew Glauberg's Stasis list has 61)
-- 145 distinct cards across the tranche, 31 of them not yet cataloged
-- 4 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
-  TentacleFan's Landstill, and Andy Dominguez's RG Goblins. Nothing in any of
-  them is metadata-only or partial
+- 145 distinct cards across the tranche, 25 of them not yet cataloged
+- 5 lists registered and playable: Neal Sacks's Sligh, Daniel Sondike's GAT,
+  Drew Glauberg's Stasis, TentacleFan's Landstill, and Andy Dominguez's RG
+  Goblins. Nothing in any of them is metadata-only or partial
 - per-card catalog and interaction-audit status tracked in the inventory below
 
 What each remaining list is waiting on, counting main deck and sideboard
-together: Stasis 7, BW Control 10, Replenish 11, Angry Hermit 12. A list is blocked only by uncataloged cards -- no staged deck
+together: BW Control 10, Replenish 11, Angry Hermit 12. A list is blocked only by uncataloged cards -- no staged deck
 contains a card that is cataloged but unplayable.
 
 The eight staged decks, in finish order, are Neal Sacks's Sligh, Daniel
@@ -50,12 +50,12 @@ result and rebuild sampled Premodern positions from their observations.
   typecycling, flashback, split cards, tutors, alternative costs that exile a
   card from hand, and single-card reanimation are all in place. What the
   remaining lists still need: fading (Parallax Wave); morph (Exalted Angel);
-  storm (Brain Freeze); and a mass graveyard-to-battlefield return
-  (Replenish), plus the layer rewrite Opalescence asks for. Countering an
-  ability landed with Teferi's Response, so Stifle needs only its own
-  authoring; a payment whose amount the payer chooses, a cleanup-step
-  trigger, and a predicate reading what a stack object targets all landed
-  with the Landstill tranche. Naming a card and reading the name back,
+  and a mass graveyard-to-battlefield return (Replenish), plus the layer
+  rewrite Opalescence asks for. Storm landed with Brain Freeze, along with a
+  spell's own cast trigger and a copy chain; countering an ability landed
+  with Teferi's Response, so Stifle needs only its own authoring; and the
+  Stasis tranche added payments that return or sacrifice a named permanent
+  and an additional cost counted in X. Naming a card and reading the name back,
   arranging the top of a library, spending a land's counters, and a payment
   that discards a card matching a predicate all landed with the GAT tranche.
 - Audit the existing definitions against their Premodern Oracle text and
@@ -65,7 +65,7 @@ result and rebuild sampled Premodern positions from their observations.
   Goblins, and Sligh are registered; the other five lists remain staged.
   Registration is also what first checks a list against the format's set
   window: promoting GAT found seven of its cards cataloged only from
-  printings outside it, and Landstill four more.
+  printings outside it, Landstill four more, and Stasis three.
 - Keep the web deck notes in step with the registry as lists are promoted;
   `web/app/game-config.ts` and the deck names in `src/protocol/decks.rs` are
   checked against each other by the browser contract suite.
@@ -79,13 +79,16 @@ older unannotated definitions still require one):
 - `Akroma's Vengeance` — complete
 - `Ancient Tomb` — complete
 - `Annul` — complete
+- `Arcane Denial` — complete; both draws wait a turn
 - `Armageddon`
 - `Aura of Silence` — complete
 - `Barbarian Ring` — complete
 - `Black Vise`
 - `Blue Elemental Blast`
+- `Brain Freeze` — complete; storm copies what came before it
 - `Caves of Koilos` — complete
 - `Cephalid Coliseum` — complete
+- `Chain of Vapor` — complete; the chain is the opponent's to continue
 - `Chill` — complete
 - `Circle of Protection: Red` — complete; Fourth Edition brings it inside the window
 - `City of Brass`
@@ -106,8 +109,10 @@ older unannotated definitions still require one):
 - `Fact or Fiction` — complete
 - `Fire // Ice` — complete
 - `Fireblast` — complete
+- `Flash of Insight` — complete; the flashback exiles X blue cards
 - `Flooded Strand` — complete
 - `Forest`
+- `Forsaken City` — complete
 - `Gempalm Incinerator` — complete
 - `Gemstone Mine` — complete
 - `Goblin Lackey` — complete
@@ -178,6 +183,7 @@ older unannotated definitions still require one):
 - `Thwart` — complete
 - `Tormod's Crypt` — complete
 - `Tranquil Domain` — complete
+- `Treva's Ruins` — complete
 - `Tsabo's Web` — complete
 - `Underground River` — complete
 - `Upheaval` — complete
@@ -193,17 +199,12 @@ older unannotated definitions still require one):
 Not yet cataloged:
 
 - [ ] `Abeyance`
-- [ ] `Arcane Denial`
 - [ ] `Attunement`
-- [ ] `Brain Freeze`
 - [ ] `Cabal Therapy`
-- [ ] `Chain of Vapor`
 - [ ] `Decree of Silence`
 - [ ] `Defense Grid`
 - [ ] `Dragon Breath`
 - [ ] `Exalted Angel`
-- [ ] `Flash of Insight`
-- [ ] `Forsaken City`
 - [ ] `Frantic Search`
 - [ ] `Gerrard's Verdict`
 - [ ] `Gilded Drake`
@@ -221,7 +222,6 @@ Not yet cataloged:
 - [ ] `Skycloud Expanse`
 - [ ] `Stifle`
 - [ ] `Sutured Ghoul`
-- [ ] `Treva's Ruins`
 - [ ] `Vision Charm`
 
 [tournament]: https://melee.gg/Tournament/View/441083

@@ -1353,6 +1353,7 @@ static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Graveyard,
     count: 1,
+    count_is_x: false,
     spend: SpendModeDef::ByZone,
 };
 
@@ -1520,6 +1521,7 @@ static EXILE_TWO_CREATURE_CARDS: SpellAdditionalCostDef = SpellAdditionalCostDef
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Graveyard,
     count: 2,
+    count_is_x: false,
     spend: SpendModeDef::ByZone,
 };
 
@@ -1758,6 +1760,7 @@ static SACRIFICE_A_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Battlefield,
     count: 1,
+    count_is_x: false,
     spend: SpendModeDef::ByZone,
 };
 

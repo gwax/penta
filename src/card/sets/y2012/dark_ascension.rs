@@ -798,6 +798,7 @@ static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Graveyard,
     count: 1,
+    count_is_x: false,
     spend: SpendModeDef::ByZone,
 };
 

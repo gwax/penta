@@ -22,6 +22,7 @@ impl Game {
         costs: &CostConfiguration,
         card: &CardInstance,
         player: PlayerId,
+        x: u16,
     ) -> Vec<Vec<GameObjectId>> {
         // A cost paid instead of the mana cost replaces the spell's own
         // additional cost rather than stacking with it: "rather than pay this
@@ -88,7 +89,12 @@ impl Game {
         // object enumerates combinations rather than candidates. Order does
         // not matter -- exiling A then B is the same payment as B then A --
         // so each combination appears once, in candidate order.
-        Self::object_combinations(&candidates, usize::from(cost.count))
+        let required = if cost.count_is_x {
+            usize::from(x)
+        } else {
+            usize::from(cost.count)
+        };
+        Self::object_combinations(&candidates, required)
     }
 
     /// Every `size`-element combination of `candidates`, in candidate order.
@@ -322,7 +328,7 @@ impl Game {
                                             .collect()
                                     } else {
                                         self.additional_cost_choices(
-                                            definition, option, &costs, card, player,
+                                            definition, option, &costs, card, player, x,
                                         )
                                     };
                                     for sacrifices in sacrifice_choices {

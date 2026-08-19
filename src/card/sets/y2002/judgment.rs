@@ -2,13 +2,67 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet,
-    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    ResolvedEffectDurationDef, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AlternativeCastKindDef, AppliedEffectDef,
+    CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef, SpellAdditionalCostDef,
+    SpendModeDef, TopCardSelectionDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
 static SAFEKEEPER_SHROUD: AbilityDef = abilities::shroud();
+
+/// X blue cards from your own graveyard, exiled to pay. The count is the same
+/// X the spell is cast for, which is what makes the flashback expensive
+/// exactly when it is worth casting big.
+static EXILE_X_BLUE_CARDS: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::Color(ManaColor::Blue),
+    ZoneKind::Graveyard,
+    0,
+)
+.counted_in_x()
+.spent(SpendModeDef::Exile);
+
+static FLASH_OF_INSIGHT_LOOK: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::ChosenX,
+    object: None,
+    minimum: 1,
+    maximum: 1,
+    select_all_matching: false,
+    reveal_selected: false,
+    selected_zone: ZoneKind::Hand,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Bottom,
+    selected_order_follows_choice: false,
+    then: None,
+};
+
+// JUD 40 — Flash of Insight
+pub(in crate::card::sets) static FLASH_OF_INSIGHT: CardRecord = CardRecord::new(
+    cards::FLASH_OF_INSIGHT,
+    "Flash of Insight",
+    CardArt::new("ffaab905-8b2f-4a5c-9b1f-3c8e5d2b7a41", "Ben Thompson"),
+    CardSet::Judgment,
+    // Cast small early, flashed back huge late: the graveyard a control deck
+    // fills is the second casting's mana.
+    CardRules::new_instant(mana_cost!("{X}{1}{U}")).with_abilities(&[
+        AbilityDef::spell(
+            "Look at the top X cards of your library. Put one of them into your hand and the rest on the bottom of your library in any order.",
+            EffectDef::LookAtTopAndSelect {
+                player: EffectRecipientDef::Controller,
+                looker: EffectRecipientDef::Controller,
+                selection: &FLASH_OF_INSIGHT_LOOK,
+            },
+        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{1}{U}"),
+            AlternativeCastKindDef::Flashback,
+            Some("Flashback—{1}{U}, Exile X blue cards from your graveyard."),
+            EffectDef::None,
+        )
+        .with_alternative_additional_cost(&EXILE_X_BLUE_CARDS),
+    ]),
+);
 
 // JUD 133 — Sylvan Safekeeper
 pub(in crate::card::sets) static SYLVAN_SAFEKEEPER: CardRecord = CardRecord::new(
@@ -38,7 +92,7 @@ pub(in crate::card::sets) static SYLVAN_SAFEKEEPER: CardRecord = CardRecord::new
     ),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&SYLVAN_SAFEKEEPER];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&FLASH_OF_INSIGHT, &SYLVAN_SAFEKEEPER];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&crate::card::sets::y2012::dark_ascension::RAY_OF_REVELATION), // JUD 20
