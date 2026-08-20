@@ -90,3 +90,4 @@ pub const NISSA_WHO_SHAKES_THE_WORLD: CardDefinitionId = CardDefinitionId(2172);
 pub const NISSA_WHO_SHAKES_THE_WORLD_EMBLEM: CardDefinitionId = CardDefinitionId(2173);
 pub const FORCE_OF_WILL: CardDefinitionId = CardDefinitionId(2174);
 pub const COUNCILS_JUDGMENT: CardDefinitionId = CardDefinitionId(2175);
+pub const SOWING_MYCOSPAWN: CardDefinitionId = CardDefinitionId(2176);

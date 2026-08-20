@@ -760,11 +760,17 @@ impl Game {
                     .is_some_and(|permanent| {
                         compare(&permanent.counters(*kind), *comparison, &u16::from(*amount))
                     }),
-                TriggerConditionDef::SourceCastWith(kind) => self
-                    .battlefield
-                    .iter()
-                    .find(|permanent| permanent.card.id == source)
-                    .is_some_and(|permanent| permanent.cast_alternative == Some(*kind)),
+                // A permanent remembers how it was cast; a spell still on the
+                // stack carries the cast signature itself, which is where a
+                // "when you cast this spell, if it was kicked" trigger has to
+                // read it -- the permanent does not exist yet.
+                TriggerConditionDef::SourceCastWith(kind) => {
+                    self.battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == source)
+                        .is_some_and(|permanent| permanent.cast_alternative == Some(*kind))
+                        || self.stack_object_cast_with(source) == Some(*kind)
+                }
                 TriggerConditionDef::SourceLoyalty { comparison, amount } => self
                     .battlefield
                     .iter()

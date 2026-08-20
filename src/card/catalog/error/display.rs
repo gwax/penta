@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-use super::CatalogError;
+use super::{CatalogError, MismatchedAlternativeCost};
 
 impl fmt::Display for CatalogError {
     #[allow(clippy::too_many_lines)]
@@ -693,20 +693,23 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "alternative-cast ability {ability:?} on part {part:?} of card definition {definition:?} references missing cost {cost:?}"
             ),
-            Self::MismatchedAlternativeCostForAbility {
-                definition,
-                part,
-                ability,
-                option,
-                cost,
-                expected_label,
-                actual_label,
-                expected_mana_cost,
-                actual_mana_cost,
-            } => write!(
-                formatter,
-                "alternative cost {cost:?} on play option {option:?}, projected from ability {ability:?} on part {part:?} of card definition {definition:?}, must be labeled {expected_label:?} with mana cost {expected_mana_cost}, but is labeled {actual_label:?} with mana cost {actual_mana_cost}"
-            ),
+            Self::MismatchedAlternativeCostForAbility(mismatch) => {
+                let MismatchedAlternativeCost {
+                    definition,
+                    part,
+                    ability,
+                    option,
+                    cost,
+                    expected_label,
+                    actual_label,
+                    expected_mana_cost,
+                    actual_mana_cost,
+                } = mismatch.as_ref();
+                write!(
+                    formatter,
+                    "alternative cost {cost:?} on play option {option:?}, projected from ability {ability:?} on part {part:?} of card definition {definition:?}, must be labeled {expected_label:?} with mana cost {expected_mana_cost}, but is labeled {actual_label:?} with mana cost {actual_mana_cost}"
+                )
+            }
             Self::DuplicateAdditionalCostId { definition, cost } => write!(
                 formatter,
                 "card definition {definition:?} defines additional cost {cost:?} more than once"

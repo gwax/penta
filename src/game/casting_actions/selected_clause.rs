@@ -135,6 +135,10 @@ impl Game {
                 ability,
                 AlternativeCastKindDef::Overload | AlternativeCastKindDef::Kicked,
             )) = Self::alternative_cast_ability(definition, option, selected)
+            // A kicker that only costs more resolves the printed spell, so
+            // it falls through to the base clause below rather than being
+            // resolved in its place.
+            && ability.declarative_effect() != Some(crate::card::EffectDef::None)
         {
             let DeclarativeAbilityDef::AlternativeCast(alternative_cast) = ability.definition
             else {

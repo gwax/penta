@@ -325,6 +325,20 @@ impl Game {
     /// Which alternative cast, if any, the chosen play option and paid costs
     /// amount to. Read while the card is still in the zone it is cast from,
     /// which is why it takes the player rather than the stack object.
+    /// How a spell still on the stack was cast, if it was cast some
+    /// alternative way. Read off the signature rather than from a permanent,
+    /// because a spell that has not resolved has no permanent yet.
+    pub(super) fn stack_object_cast_with(
+        &self,
+        object: GameObjectId,
+    ) -> Option<AlternativeCastKindDef> {
+        let stack_object = self.stack.iter().find(|candidate| candidate.id == object)?;
+        let signature = stack_object.signature.as_ref()?;
+        let definition = self.catalog.get(stack_object.card.definition)?;
+        let option = definition.play_option(signature.play_option())?;
+        self.selected_alternative_kind(definition, option, object, signature.costs())
+    }
+
     fn cast_alternative_kind(
         &self,
         player: PlayerId,

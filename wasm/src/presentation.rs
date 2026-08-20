@@ -21,6 +21,7 @@ pub(super) fn hand_mana_cost_value(card: Option<&penta::CardDefinition>) -> Valu
                 "black": cost.black,
                 "red": cost.red,
                 "green": cost.green,
+                "colorless": cost.colorless,
                 "hybrid": penta::HybridPair::ALL
                     .into_iter()
                     .filter(|pair| cost.hybrid[pair.index()] > 0)

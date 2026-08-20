@@ -159,6 +159,14 @@ pub const fn hexproof() -> AbilityDef {
     keyword("Hexproof", KeywordAbility::Hexproof)
 }
 
+/// Devoid (CR 702.114): "This card has no color." A characteristic-defining
+/// ability rather than a behaviour, so the colourlessness comes from the
+/// card's empty printed colour set and this clause is what names it.
+#[must_use]
+pub const fn devoid() -> AbilityDef {
+    keyword("Devoid (This card has no color.)", KeywordAbility::Devoid)
+}
+
 #[must_use]
 pub const fn shroud() -> AbilityDef {
     keyword("Shroud", KeywordAbility::Shroud)

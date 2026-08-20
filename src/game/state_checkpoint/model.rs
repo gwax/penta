@@ -9,7 +9,7 @@ fn is_zero_u8(value: &u8) -> bool {
 /// Taken by reference because that is the signature serde's
 /// `skip_serializing_if` requires.
 #[allow(clippy::trivially_copy_pass_by_ref)]
-fn is_zero_u16(value: &u16) -> bool {
+pub(super) fn is_zero_u16(value: &u16) -> bool {
     *value == 0
 }
 

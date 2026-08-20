@@ -102,6 +102,11 @@ pub enum KeywordAbility {
     /// Protection from the card type, which is one quality rather than a
     /// family of them and so carries no parameter at all.
     ProtectionFromCreatures,
+    /// CR 702.114. Devoid is a characteristic-defining ability rather than
+    /// a behaviour: the object simply has no color. That is expressed by the
+    /// card's printed color set being empty, so what this variant adds is
+    /// the printed keyword itself -- the name and its reminder text.
+    Devoid,
     /// Protection from every object of two or more colors. Not the union of
     /// the five color qualities: a monocolored source gets through, and a
     /// two-color one is stopped even where neither of its colors alone would
@@ -169,6 +174,7 @@ impl KeywordAbility {
             Self::Landwalk(BasicLandType::Mountain) => 23,
             Self::Landwalk(BasicLandType::Forest) => 24,
             Self::LegendaryLandwalk => 25,
+            Self::Devoid => 28,
             Self::ProtectionFrom(_)
             | Self::ProtectionFromCreatureType(_)
             | Self::BandsWithOther(_) => return None,

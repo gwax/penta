@@ -412,7 +412,7 @@ fn symbolic_mana_costs_reject_invalid_or_unsupported_notation() {
         ("2GG", ManaCostParseErrorKind::ExpectedOpeningBrace),
         ("{2", ManaCostParseErrorKind::UnterminatedSymbol),
         ("{}", ManaCostParseErrorKind::EmptySymbol),
-        ("{C}", ManaCostParseErrorKind::InvalidSymbol),
+        ("{S}", ManaCostParseErrorKind::InvalidSymbol),
         ("{2}{3}", ManaCostParseErrorKind::DuplicateGenericSymbol),
         ("{65536}", ManaCostParseErrorKind::Overflow),
     ] {

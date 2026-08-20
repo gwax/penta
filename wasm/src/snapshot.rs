@@ -151,6 +151,7 @@ impl WebGame {
                         "black": cost.black,
                         "red": cost.red,
                         "green": cost.green,
+                        "colorless": cost.colorless,
                         "hybrid": penta::HybridPair::ALL
                             .into_iter()
                             .filter(|pair| cost.hybrid[pair.index()] > 0)
@@ -295,6 +296,7 @@ impl WebGame {
                         "black": cost.black,
                         "red": cost.red,
                         "green": cost.green,
+                        "colorless": cost.colorless,
                         "hybrid": penta::HybridPair::ALL
                             .into_iter()
                             .filter(|pair| cost.hybrid[pair.index()] > 0)

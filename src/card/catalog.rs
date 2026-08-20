@@ -10,7 +10,9 @@ use self::validation::validate_composition;
 use super::{CardDefinition, CardPrinting, CardPrintingId, CardSet};
 use crate::{CardDefinitionId, Format};
 
-pub use self::error::{CatalogError, EffectSubjectKind, GrantedAbilityValidationError};
+pub use self::error::{
+    CatalogError, EffectSubjectKind, GrantedAbilityValidationError, MismatchedAlternativeCost,
+};
 
 #[cfg(test)]
 use self::validation::{

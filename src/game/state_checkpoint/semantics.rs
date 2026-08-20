@@ -718,6 +718,7 @@ fn collect_applied_abilities(effect: AppliedEffectDef, abilities: &mut Vec<&'sta
 
 pub(super) const fn keyword_snapshot(keyword: KeywordAbility) -> KeywordSnapshot {
     match keyword {
+        KeywordAbility::Devoid => KeywordSnapshot::Devoid,
         KeywordAbility::Flying => KeywordSnapshot::Flying,
         KeywordAbility::Trample => KeywordSnapshot::Trample,
         KeywordAbility::Haste => KeywordSnapshot::Haste,
@@ -774,6 +775,7 @@ pub(super) const fn keyword_snapshot(keyword: KeywordAbility) -> KeywordSnapshot
 
 pub(super) const fn parse_keyword(value: KeywordSnapshot) -> KeywordAbility {
     match value {
+        KeywordSnapshot::Devoid => KeywordAbility::Devoid,
         KeywordSnapshot::Flying => KeywordAbility::Flying,
         KeywordSnapshot::Trample => KeywordAbility::Trample,
         KeywordSnapshot::Haste => KeywordAbility::Haste,

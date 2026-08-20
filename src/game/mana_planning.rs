@@ -721,6 +721,7 @@ pub(super) fn can_pay(pool: ManaPool, cost: ManaCost, x: u16) -> bool {
         && pool.black >= cost.black
         && pool.red >= cost.red
         && pool.green >= cost.green
+        && pool.colorless >= cost.colorless
         && HybridPair::ALL
             .into_iter()
             .all(|pair| available_hybrid(pool, cost, pair) >= cost.hybrid[pair.index()])
@@ -859,6 +860,7 @@ pub(super) fn add_mana_cost(mut cost: ManaCost, additional: ManaCost) -> ManaCos
     cost.black = cost.black.saturating_add(additional.black);
     cost.red = cost.red.saturating_add(additional.red);
     cost.green = cost.green.saturating_add(additional.green);
+    cost.colorless = cost.colorless.saturating_add(additional.colorless);
     for index in 0..HybridPair::COUNT {
         cost.hybrid[index] = cost.hybrid[index].saturating_add(additional.hybrid[index]);
     }
@@ -942,12 +944,22 @@ pub(super) const fn mana_cost_amount(cost: ManaCost, color: ManaColor) -> u16 {
         ManaColor::Black => cost.black,
         ManaColor::Red => cost.red,
         ManaColor::Green => cost.green,
-        ManaColor::Colorless => 0,
+        // `{C}` is a requirement like any coloured symbol: only colorless
+        // mana pays it. Generic is the part any mana pays, and is separate.
+        ManaColor::Colorless => cost.colorless,
     }
 }
 
+/// Every symbol that has to be paid with particular mana rather than with
+/// whatever is around: the five colours, `{C}`, and the hybrids.
 pub(super) const fn colored_cost_total(cost: ManaCost) -> u16 {
-    cost.white + cost.blue + cost.black + cost.red + cost.green + cost.hybrid_total()
+    cost.white
+        + cost.blue
+        + cost.black
+        + cost.red
+        + cost.green
+        + cost.colorless
+        + cost.hybrid_total()
 }
 
 pub(super) const fn mana_cost_value(cost: ManaCost) -> u16 {

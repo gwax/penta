@@ -18,6 +18,7 @@ fn mana_cost_json(cost: &ManaCost) -> Value {
         "black": cost.black,
         "red": cost.red,
         "green": cost.green,
+        "colorless": cost.colorless,
         // One entry per pair the cost actually carries, so a client renders
         // the printed symbols without knowing every pair in the game.
         "hybrid": HybridPair::ALL

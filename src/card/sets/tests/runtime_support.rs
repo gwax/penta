@@ -151,6 +151,9 @@ pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
             | KeywordAbility::ProtectionFromCreatureType(_)
             | KeywordAbility::ProtectionFromCreatures
             | KeywordAbility::ProtectionFromMulticolored
+            // The colourlessness is the card's printed colour set, so the
+            // keyword itself has nothing left to execute.
+            | KeywordAbility::Devoid
     )
 }
 
@@ -798,10 +801,14 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             | AlternativeCastKindDef::Miracle
             | AlternativeCastKindDef::AlternativeCost
             | AlternativeCastKindDef::FaceDown => effect == EffectDef::None,
-            // Both carry the instructions the modified spell resolves with,
-            // so both have to be effects the shared runtime can execute.
-            AlternativeCastKindDef::Overload | AlternativeCastKindDef::Kicked => {
-                shared_stack_effect(effect)
+            // Overload carries the instructions the modified spell resolves
+            // with, so it has to be an effect the shared runtime can execute.
+            AlternativeCastKindDef::Overload => shared_stack_effect(effect),
+            // A kicker either replaces the instructions or does not. When it
+            // does not, the spell resolves exactly as printed and being
+            // kicked is only a fact its other clauses can read.
+            AlternativeCastKindDef::Kicked => {
+                effect == EffectDef::None || shared_stack_effect(effect)
             }
         },
         DeclarativeAbilityDef::Keyword(keyword) => shared_keyword(keyword),

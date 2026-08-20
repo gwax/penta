@@ -685,6 +685,7 @@ pub(super) fn mana_cost_snapshot(cost: ManaCost) -> ManaCostSnapshot {
         black: cost.black,
         red: cost.red,
         green: cost.green,
+        colorless: cost.colorless,
         hybrid: cost.hybrid.to_vec(),
         variable_x: cost.variable_x,
         x_multiplier: cost.x_multiplier,

@@ -339,6 +339,11 @@ impl Game {
         let DeclarativeAbilityDef::AlternativeCast(alternative) = ability.definition else {
             unreachable!("alternative_cast_ability returns an alternative-cast clause")
         };
+        // A kicker that only costs more leaves the printed spell's targets
+        // alone, so there is nothing here to read instead of them.
+        if ability.declarative_effect() == Some(crate::card::EffectDef::None) {
+            return None;
+        }
         Some(alternative.targets)
     }
 

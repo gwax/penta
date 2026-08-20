@@ -153,6 +153,21 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **`{C}`, devoid, and a kicker that only costs more.** Sowing Mycospawn
+  needed all three. A mana cost can now carry `{C}` symbols, which unlike
+  generic can only be paid with colorless mana. Devoid is a
+  characteristic-defining ability rather than a behaviour, so it is the
+  card's empty printed color set and the keyword names it. And a kicker no
+  longer has to replace what the spell does: one that carries no
+  instructions of its own leaves the printed spell to resolve, and being
+  kicked becomes a fact its other clauses read -- which is what "when you
+  cast this spell, if it was kicked" needs. A spell still on the stack now
+  answers that question from its own cast signature, since the permanent it
+  will become does not exist yet.
+
+  A mana cost object on the wire gained a `colorless` member. It is
+  additive, so the epoch does not move.
+
 - **Voting (CR 701.34).** "Will of the council" asks each player in turn,
   starting with the resolving controller, and then acts on what got the most
   votes -- including everything tied for most. The ballot is read once,

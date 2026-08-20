@@ -12,6 +12,9 @@ pub struct ManaCost {
     pub black: u16,
     pub red: u16,
     pub green: u16,
+    /// How many `{C}` symbols this cost carries. Unlike `generic`, which any
+    /// mana pays, these can only be paid with colorless mana.
+    pub colorless: u16,
     /// How many hybrid symbols of each colour pair this cost carries, indexed
     /// by [`HybridPair::index`].
     pub hybrid: [u16; HybridPair::COUNT],
@@ -98,6 +101,7 @@ impl ManaCost {
             black: 0,
             red: 0,
             green: 0,
+            colorless: 0,
             hybrid: [0; HybridPair::COUNT],
             variable_x: false,
             x_multiplier: 0,
@@ -138,6 +142,7 @@ impl ManaCost {
                     b'B' => Self::checked_increment(cost.black),
                     b'R' => Self::checked_increment(cost.red),
                     b'G' => Self::checked_increment(cost.green),
+                    b'C' => Self::checked_increment(cost.colorless),
                     b'X' => Self::checked_increment(cost.x_multiplier),
                     b'0'..=b'9' => {
                         if saw_generic {
@@ -161,6 +166,7 @@ impl ManaCost {
                     b'B' => cost.black = value,
                     b'R' => cost.red = value,
                     b'G' => cost.green = value,
+                    b'C' => cost.colorless = value,
                     b'X' => {
                         cost.variable_x = true;
                         cost.x_multiplier = value;
@@ -266,6 +272,7 @@ impl ManaCost {
             black: 0,
             red,
             green: 0,
+            colorless: 0,
             hybrid: [0; HybridPair::COUNT],
             variable_x: false,
             x_multiplier: 0,
@@ -288,6 +295,7 @@ impl ManaCost {
             black,
             red,
             green,
+            colorless: 0,
             hybrid: [0; HybridPair::COUNT],
             variable_x: false,
             x_multiplier: 0,
@@ -317,6 +325,7 @@ impl ManaCost {
             black: 0,
             red,
             green: 0,
+            colorless: 0,
             hybrid: [0; HybridPair::COUNT],
             variable_x: true,
             x_multiplier: 1,
@@ -332,6 +341,7 @@ impl ManaCost {
             black,
             red,
             green,
+            colorless: 0,
             hybrid: [0; HybridPair::COUNT],
             variable_x: true,
             x_multiplier: 1,
@@ -355,6 +365,7 @@ impl ManaCost {
             black,
             red,
             green,
+            colorless: 0,
             hybrid: [0; HybridPair::COUNT],
             variable_x: true,
             x_multiplier,
@@ -382,6 +393,7 @@ impl ManaCost {
             black: 0,
             red: 0,
             green: 0,
+            colorless: 0,
             hybrid: {
                 let mut hybrid = [0; HybridPair::COUNT];
                 hybrid[pair.index()] = count;

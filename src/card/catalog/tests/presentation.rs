@@ -1,4 +1,5 @@
 use super::*;
+use crate::card::catalog::MismatchedAlternativeCost;
 
 #[test]
 fn every_structure_family_rejects_undefined_or_repeated_parts() {
@@ -272,7 +273,7 @@ fn alternative_cast_ability_requires_its_derived_cost_projection() {
     mismatched_label.play_options[0].alternative_costs[0].label = "Overload".into();
     assert_eq!(
         error(mismatched_label),
-        CatalogError::MismatchedAlternativeCostForAbility {
+        CatalogError::MismatchedAlternativeCostForAbility(Box::new(MismatchedAlternativeCost {
             definition: CardDefinitionId(1),
             part: CardPartId::PRIMARY,
             ability: AbilityId(1),
@@ -282,14 +283,14 @@ fn alternative_cast_ability_requires_its_derived_cost_projection() {
             actual_label: "Overload".into(),
             expected_mana_cost: flashback_cost,
             actual_mana_cost: flashback_cost,
-        }
+        }))
     );
 
     let mut mismatched_mana = projected;
     mismatched_mana.play_options[0].alternative_costs[0].mana_cost = ManaCost::default();
     assert_eq!(
         error(mismatched_mana),
-        CatalogError::MismatchedAlternativeCostForAbility {
+        CatalogError::MismatchedAlternativeCostForAbility(Box::new(MismatchedAlternativeCost {
             definition: CardDefinitionId(1),
             part: CardPartId::PRIMARY,
             ability: AbilityId(1),
@@ -299,7 +300,7 @@ fn alternative_cast_ability_requires_its_derived_cost_projection() {
             actual_label: "Flashback".into(),
             expected_mana_cost: flashback_cost,
             actual_mana_cost: ManaCost::default(),
-        }
+        }))
     );
 }
 

@@ -112,6 +112,10 @@ pub(in crate::game::state_checkpoint) struct ManaCostSnapshot {
     pub(in crate::game::state_checkpoint) black: u16,
     pub(in crate::game::state_checkpoint) red: u16,
     pub(in crate::game::state_checkpoint) green: u16,
+    /// Additive: a checkpoint written before `{C}` existed restores as zero,
+    /// which is what every cost without one carries anyway.
+    #[serde(default, skip_serializing_if = "super::is_zero_u16")]
+    pub(in crate::game::state_checkpoint) colorless: u16,
     pub(in crate::game::state_checkpoint) hybrid: Vec<u16>,
     pub(in crate::game::state_checkpoint) variable_x: bool,
     pub(in crate::game::state_checkpoint) x_multiplier: u16,
