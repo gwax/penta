@@ -5,10 +5,10 @@ use crate::card::PlayOptionDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AlternateSpellKind, BattlefieldEntryModificationDef, CardArt, CardComposition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, ControlDurationDef, CounterKind,
-    EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRefDef, ReplacementEffectDef,
-    SpellForm, SpellResolutionDestinationDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    cards,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardType, ControlDurationDef,
+    CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRefDef,
+    ReplacementEffectDef, SpellForm, SpellResolutionDestinationDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, cards,
 };
 use crate::{CardPartId, PlayOptionId, TargetIndex, mana_cost};
 
@@ -167,9 +167,86 @@ pub(in crate::card::sets) static BONECRUSHER_GIANT: CardRecord = CardRecord::new
 )
 .with_composition(bonecrusher_composition);
 
+static BATTLE_DISPLAY_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+)];
+
+/// The adventure half. Answering an artifact for one red leaves the body
+/// waiting in exile, which is the whole bargain of the mechanic.
+fn battle_display_rules() -> CardRules {
+    CardRules::new_sorcery(mana_cost!("{R}"))
+        .with_subtypes(&["Adventure"])
+        .with_ability(
+            AbilityDef::spell_with_targets(
+                "Destroy target artifact.",
+                &BATTLE_DISPLAY_TARGET,
+                EffectDef::Destroy {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    can_regenerate: true,
+                },
+            )
+            .with_resolution_destination(SpellResolutionDestinationDef::ExileOnAdventure),
+        )
+}
+
+const fn embereth_shieldbreaker_rules() -> CardRules {
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Knight"], 2, 1)
+}
+
+fn embereth_shieldbreaker_composition() -> CardComposition {
+    let knight = embereth_shieldbreaker_rules();
+    let display = battle_display_rules();
+    CardComposition {
+        parts: vec![
+            CardPart::new(CardPartId::PRIMARY, "Embereth Shieldbreaker", knight),
+            CardPart::new(CardPartId(1), "Battle Display", display),
+        ],
+        structure: CardStructure::AlternateSpell {
+            main: CardPartId::PRIMARY,
+            alternate: CardPartId(1),
+            kind: AlternateSpellKind::Adventure,
+        },
+        play_options: vec![
+            PlayOptionDef::cast(
+                PlayOptionId::DEFAULT,
+                "Embereth Shieldbreaker",
+                SpellForm::Part(CardPartId::PRIMARY),
+                knight
+                    .mana_cost()
+                    .expect("the Knight has a printed mana cost"),
+                CardEffectStatus::Implemented,
+            ),
+            PlayOptionDef::cast(
+                PlayOptionId(1),
+                "Battle Display",
+                SpellForm::Part(CardPartId(1)),
+                display
+                    .mana_cost()
+                    .expect("Battle Display has a printed mana cost"),
+                CardEffectStatus::Implemented,
+            ),
+        ],
+    }
+    .with_derived_spell_targets()
+}
+
+// ELD 122 — Embereth Shieldbreaker
+pub(in crate::card::sets) static EMBERETH_SHIELDBREAKER: CardRecord = CardRecord::new(
+    cards::EMBERETH_SHIELDBREAKER,
+    "Embereth Shieldbreaker",
+    CardArt::new("6cc73d16-5ed7-4104-91f6-0997a2080e2e", "Randy Vargas"),
+    CardSet::ThroneOfEldraine,
+    embereth_shieldbreaker_rules(),
+)
+.with_composition(embereth_shieldbreaker_composition);
+
 // ELD 138 — Robber of the Rich
 // Audit: blocked — Needs three things. An intervening-if that compares two players' hand sizes rather than a count against a printed number; a permission to cast one exiled card that survives its source leaving the battlefield and is gated on having attacked with a Rogue that turn; and spending mana as though it were mana of any color, which already blocks North Star in Legends.
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&WISHCLAW_TALISMAN, &BONECRUSHER_GIANT];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &WISHCLAW_TALISMAN,
+    &BONECRUSHER_GIANT,
+    &EMBERETH_SHIELDBREAKER,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
