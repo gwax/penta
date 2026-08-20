@@ -536,6 +536,18 @@ pub(in crate::card::sets) static FOOD_TOKEN: CardRecord = CardRecord::new(
     )),
 );
 
+/// The body Gut makes out of anything else you were done with. Menace is
+/// what makes a 4/1 that arrives already attacking hard to answer.
+pub(in crate::card::sets) static SKELETON_TOKEN_4_1_BLACK: CardRecord = CardRecord::new(
+    cards::SKELETON_TOKEN_4_1_BLACK,
+    "Skeleton",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Skeleton"], 4, 1)
+        .printed_colors(&[ManaColor::Black])
+        .with_ability(abilities::menace()),
+);
+
 /// What investigating makes. Unlike Food it does not tap to be spent, so a
 /// Clue made this turn is already a card.
 pub(in crate::card::sets) static CLUE_TOKEN: CardRecord = CardRecord::new(
@@ -649,6 +661,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RAT_TOKEN_1_1_BLACK,
     &FOOD_TOKEN,
     &CLUE_TOKEN,
+    &SKELETON_TOKEN_4_1_BLACK,
     &BLOOD_TOKEN,
 ];
 

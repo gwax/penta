@@ -848,6 +848,16 @@ pub(super) fn parse_completion(
         EntryCompletionSnapshot::AttachSource { source } => Ok(EntryCompletion::AttachSource {
             source: GameObjectId(source),
         }),
+        EntryCompletionSnapshot::Attacking { defender } => Ok(EntryCompletion::Attacking {
+            defender: match defender {
+                AttackDefenderSnapshot::Player { seat } => {
+                    AttackDefender::Player(player_from_index(seat)?)
+                }
+                AttackDefenderSnapshot::Planeswalker { object_id } => {
+                    AttackDefender::Planeswalker(GameObjectId(object_id))
+                }
+            },
+        }),
         EntryCompletionSnapshot::Setup => Ok(EntryCompletion::Setup),
         EntryCompletionSnapshot::None => Ok(EntryCompletion::None),
     }

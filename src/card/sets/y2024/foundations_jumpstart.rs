@@ -29,6 +29,7 @@ static IVORA_ABILITIES: [AbilityDef; 3] = [
             token: cards::BLOOD_TOKEN,
             count: ValueDef::Constant(1),
             tapped: false,
+            attacking: false,
         },
     ),
     // Any discard, including one paid as a cost -- which is how her own Blood

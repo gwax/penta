@@ -170,6 +170,12 @@ pub(super) enum EntryCompletion {
     AttachSource {
         source: GameObjectId,
     },
+    /// "Create a token that's tapped and attacking." The attack is declared
+    /// as the token enters rather than afterwards, because what enters is a
+    /// new object and the declaration step is long over.
+    Attacking {
+        defender: crate::AttackDefender,
+    },
     /// The development setup surface minted this object's battlefield
     /// identity directly, so committing it must not reincarnate it again.
     Setup,

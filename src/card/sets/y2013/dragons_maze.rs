@@ -226,6 +226,7 @@ pub(in crate::card::sets) static SUNSPIRE_GATEKEEPERS: CardRecord = CardRecord::
                 token: cards::KNIGHT_TOKEN_2_2_WHITE,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
     ),
@@ -965,6 +966,7 @@ pub(in crate::card::sets) static ADVENT_OF_THE_WURM: CardRecord = CardRecord::ne
             token: cards::WURM_TOKEN_5_5_GREEN,
             count: ValueDef::Constant(1),
             tapped: false,
+            attacking: false,
         },
     )),
 );
@@ -1896,16 +1898,19 @@ pub(in crate::card::sets) static TROSTANIS_SUMMONER: CardRecord = CardRecord::ne
                     token: cards::KNIGHT_TOKEN_2_2_WHITE,
                     count: ValueDef::Constant(1),
                     tapped: false,
+                    attacking: false,
                 },
                 EffectDef::CreateToken {
                     token: cards::CENTAUR_TOKEN_3_3_GREEN,
                     count: ValueDef::Constant(1),
                     tapped: false,
+                    attacking: false,
                 },
                 EffectDef::CreateToken {
                     token: cards::RHINO_TOKEN_4_4_GREEN,
                     count: ValueDef::Constant(1),
                     tapped: false,
+                    attacking: false,
                 },
             ]),
         ),
@@ -1990,6 +1995,7 @@ static VOICE_OF_RESURGENCE_TOKEN: EffectDef = EffectDef::CreateToken {
     token: cards::ELEMENTAL_TOKEN_GREEN_WHITE,
     count: ValueDef::Constant(1),
     tapped: false,
+    attacking: false,
 };
 
 // DGM 114 — Voice of Resurgence

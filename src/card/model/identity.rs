@@ -88,6 +88,7 @@ pub enum CardSet {
     Ikoria,
     KamigawaNeonDynasty,
     StreetsOfNewCapenna,
+    CommanderLegendsBattleForBaldursGate,
     DominariaUnited,
     EternalMasters,
     ConspiracyTakeTheCrown,

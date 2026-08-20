@@ -610,6 +610,7 @@ pub(super) enum EntryCompletionSnapshot {
     LandPlayed { seat: usize },
     SpellResolved { card: u32, definition: u16 },
     AttachSource { source: u32 },
+    Attacking { defender: AttackDefenderSnapshot },
     Setup,
     None,
 }

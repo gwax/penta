@@ -124,3 +124,5 @@ pub const FORENSIC_GADGETEER: CardDefinitionId = CardDefinitionId(2206);
 pub const MANIFOLD_KEY: CardDefinitionId = CardDefinitionId(2207);
 pub const EMBERETH_SHIELDBREAKER: CardDefinitionId = CardDefinitionId(2208);
 pub const LORIEN_REVEALED: CardDefinitionId = CardDefinitionId(2209);
+pub const SKELETON_TOKEN_4_1_BLACK: CardDefinitionId = CardDefinitionId(2210);
+pub const GUT_TRUE_SOUL_ZEALOT: CardDefinitionId = CardDefinitionId(2211);

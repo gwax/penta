@@ -36,6 +36,7 @@ pub(in crate::card::sets) static FORENSIC_GADGETEER: CardRecord = CardRecord::ne
                     token: cards::CLUE_TOKEN,
                     count: ValueDef::Constant(1),
                     tapped: false,
+                    attacking: false,
                 },
             ),
             AbilityDef::static_ability(

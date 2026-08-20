@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 203 are cataloged and 331 are not
+- 534 cards in the pool, of which 204 are cataloged and 330 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -163,7 +163,7 @@ lands are legal in every format and are not listed.
 - `Vampire Hexmage`
 - `Yawgmoth's Will`
 
-### Red (45)
+### Red (44)
 
 - `Abrade`
 - `Amped Raptor`
@@ -187,7 +187,6 @@ lands are legal in every format and are not listed.
 - `Glorybringer`
 - `Goblin Rabblemaster`
 - `Goldspan Dragon`
-- `Gut, True Soul Zealot`
 - `Headliner Scarlett`
 - `Inti, Seneschal of the Sun`
 - `Kari Zev, Skyship Raider`
@@ -390,7 +389,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 203 pool cards are in the catalog because an earlier format needed them.
+These 204 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -468,6 +467,7 @@ been played beside.
 - `Grim Monolith`
 - `Griselbrand`
 - `Gush`
+- `Gut, True Soul Zealot`
 - `Hallowed Fountain`
 - `Hymn to Tourach`
 - `Indatha Triome`

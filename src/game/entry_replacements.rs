@@ -760,6 +760,20 @@ impl Game {
             self.try_attach(source, permanent_id);
         }
 
+        if let EntryCompletion::Attacking { defender } = entry.completion
+            && let Some(permanent) = self
+                .battlefield
+                .iter_mut()
+                .find(|permanent| permanent.card.id == permanent_id)
+        {
+            // It was never declared, so it does not count as having been
+            // declared -- but everything else about it is an attacker.
+            permanent.attacking = true;
+            permanent.attack_defender = Some(defender);
+            permanent.attacked_this_turn = true;
+            permanent.attacks_this_turn = permanent.attacks_this_turn.saturating_add(1);
+        }
+
         if let EntryCompletion::LandPlayed { player } = entry.completion {
             self.events.push(GameEvent::LandPlayed {
                 player,

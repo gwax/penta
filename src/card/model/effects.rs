@@ -368,6 +368,10 @@ pub enum EffectDef {
         count: ValueDef,
         /// Whether the created token arrives tapped.
         tapped: bool,
+        /// Whether it also arrives attacking. It was never declared as an
+        /// attacker, so nothing that watches a declaration sees it, but it
+        /// is an attacking creature in every other respect.
+        attacking: bool,
     },
     /// Creates one token, then attaches the resolving permanent to that
     /// exact battlefield incarnation before state-based actions run. This is

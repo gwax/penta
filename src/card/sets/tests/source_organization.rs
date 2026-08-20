@@ -258,6 +258,9 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("ikoria.rs") => source(CardSet::Ikoria, "IKO"),
         Some("kamigawa_neon_dynasty.rs") => source(CardSet::KamigawaNeonDynasty, "NEO"),
         Some("streets_of_new_capenna.rs") => source(CardSet::StreetsOfNewCapenna, "SNC"),
+        Some("commander_legends_baldurs_gate.rs") => {
+            source(CardSet::CommanderLegendsBattleForBaldursGate, "CLB")
+        }
         Some("dominaria_united.rs") => source(CardSet::DominariaUnited, "DMU"),
         Some("eternal_masters.rs") => source(CardSet::EternalMasters, "EMA"),
         Some("conspiracy_take_the_crown.rs") => source(CardSet::ConspiracyTakeTheCrown, "CN2"),

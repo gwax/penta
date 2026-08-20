@@ -3455,6 +3455,7 @@ pub(in crate::card::sets) static MASTER_OF_THE_HUNT: CardRecord = CardRecord::ne
                 token: cards::WOLVES_OF_THE_HUNT_TOKEN_1_1_GREEN,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
     ),
@@ -4016,6 +4017,7 @@ pub(in crate::card::sets) static BORIS_DEVILBOON: CardRecord = CardRecord::new(
                 token: cards::MINOR_DEMON_TOKEN_1_1_BLACK_RED,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         )),
 );
@@ -5302,6 +5304,7 @@ pub(in crate::card::sets) static SERPENT_GENERATOR: CardRecord = CardRecord::new
             token: cards::SNAKE_TOKEN_1_1_POISONOUS,
             count: ValueDef::Constant(1),
             tapped: false,
+            attacking: false,
         },
     )),
 );

@@ -312,6 +312,7 @@ pub(in crate::card::sets) static HIVE_STIRRINGS: CardRecord = CardRecord::new(
             token: cards::SLIVER_TOKEN_1_1_COLORLESS,
             count: ValueDef::Constant(2),
             tapped: false,
+            attacking: false,
         },
     )),
 );
@@ -1295,6 +1296,7 @@ static TAPPED_ZOMBIE: EffectDef = EffectDef::CreateToken {
     token: cards::ZOMBIE_TOKEN_2_2_BLACK,
     count: ValueDef::Constant(1),
     tapped: true,
+    attacking: false,
 };
 
 static LILIANAS_REAVER_STRIKE: [EffectDef; 2] = [
@@ -1803,6 +1805,7 @@ pub(in crate::card::sets) static DRAGON_EGG: CardRecord = CardRecord::new(
                 token: cards::DRAGON_TOKEN_2_2_RED,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
     ]),
@@ -2177,6 +2180,7 @@ pub(in crate::card::sets) static YOUNG_PYROMANCER: CardRecord = CardRecord::new(
                 token: cards::ELEMENTAL_TOKEN_1_1_RED,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
     ),
@@ -2325,6 +2329,7 @@ pub(in crate::card::sets) static HOWL_OF_THE_NIGHT_PACK: CardRecord = CardRecord
             token: cards::WOLF_TOKEN_2_2_GREEN,
             count: ValueDef::CountMatchingObjects(&M14_FORESTS_YOU_CONTROL),
             tapped: false,
+            attacking: false,
         },
     )),
 );
@@ -2541,6 +2546,7 @@ pub(in crate::card::sets) static PRIMEVAL_BOUNTY: CardRecord = CardRecord::new(
                 token: cards::BEAST_TOKEN_3_3_GREEN,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
         AbilityDef::triggered_with_targets("Whenever you cast a noncreature spell, put three +1/+1 counters on target creature you control.", TriggerEventDef::SpellCast(ObjectPredicateDef::All(&[
@@ -2677,6 +2683,7 @@ pub(in crate::card::sets) static SPOREMOUND: CardRecord = CardRecord::new(
                 token: cards::SAPROLING_TOKEN_1_1_GREEN,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
     ),

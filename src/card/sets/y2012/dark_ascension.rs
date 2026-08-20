@@ -187,6 +187,7 @@ pub(in crate::card::sets) static ELGAUD_INQUISITOR: CardRecord = CardRecord::new
                 token: cards::SPIRIT_TOKEN_1_1_WHITE,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
     ]),
@@ -213,6 +214,7 @@ pub(in crate::card::sets) static GATHER_THE_TOWNSFOLK: CardRecord = CardRecord::
             token: cards::HUMAN_TOKEN_1_1_WHITE,
             count: ValueDef::IfControllerLifeAtMost(&GATHER_THE_TOWNSFOLK_COUNT),
             tapped: false,
+            attacking: false,
         },
     )),
 );
@@ -268,6 +270,7 @@ pub(in crate::card::sets) static LINGERING_SOULS: CardRecord = CardRecord::new(
                 token: cards::SPIRIT_TOKEN_1_1_WHITE,
                 count: ValueDef::Constant(2),
                 tapped: false,
+                attacking: false,
             },
         ),
         abilities::flashback(mana_cost!("{1}{B}")),
@@ -399,6 +402,7 @@ pub(in crate::card::sets) static REQUIEM_ANGEL: CardRecord = CardRecord::new(
                 token: cards::SPIRIT_TOKEN_1_1_WHITE,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
     ]),
@@ -514,6 +518,7 @@ pub(in crate::card::sets) static THRABEN_DOOMSAYER: CardRecord = CardRecord::new
                 token: cards::HUMAN_TOKEN_1_1_WHITE,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
         AbilityDef::static_ability(
@@ -781,6 +786,7 @@ pub(in crate::card::sets) static HAVENGUL_RUNEBINDER: CardRecord = CardRecord::n
                     token: cards::ZOMBIE_TOKEN_2_2_BLACK,
                     count: ValueDef::Constant(1),
                     tapped: false,
+                    attacking: false,
                 },
                 EffectDef::AddCounters {
                     object: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
@@ -1330,6 +1336,7 @@ pub(in crate::card::sets) static REAP_THE_SEAGRAF: CardRecord = CardRecord::new(
                 token: cards::ZOMBIE_TOKEN_2_2_BLACK,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
         abilities::flashback(mana_cost!("{4}{U}")),
@@ -1479,6 +1486,7 @@ pub(in crate::card::sets) static WAKEDANCER: CardRecord = CardRecord::new(
                 token: cards::ZOMBIE_TOKEN_2_2_BLACK,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
     ),
@@ -2125,6 +2133,7 @@ static FEED_THE_PACK_PAYOFF: EffectDef = EffectDef::CreateToken {
     token: cards::WOLF_TOKEN_2_2_GREEN,
     count: ValueDef::TriggerEventAmount,
     tapped: false,
+    attacking: false,
 };
 
 // DKA 114 — Feed the Pack
@@ -2596,6 +2605,7 @@ static HUNTMASTER_WOLF_AND_LIFE: EffectDef = EffectDef::Sequence(&[
         token: cards::WOLF_TOKEN_2_2_GREEN,
         count: ValueDef::Constant(1),
         tapped: false,
+        attacking: false,
     },
     EffectDef::GainLife {
         recipient: EffectRecipientDef::Controller,

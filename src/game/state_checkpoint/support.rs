@@ -24,6 +24,16 @@ const fn completion_snapshot(completion: EntryCompletion) -> EntryCompletionSnap
         EntryCompletion::AttachSource { source } => EntryCompletionSnapshot::AttachSource {
             source: source.0,
         },
+        EntryCompletion::Attacking { defender } => EntryCompletionSnapshot::Attacking {
+            defender: match defender {
+                crate::AttackDefender::Player(player) => AttackDefenderSnapshot::Player {
+                    seat: player.index(),
+                },
+                crate::AttackDefender::Planeswalker(object) => {
+                    AttackDefenderSnapshot::Planeswalker { object_id: object.0 }
+                }
+            },
+        },
         EntryCompletion::Setup => EntryCompletionSnapshot::Setup,
         EntryCompletion::None => EntryCompletionSnapshot::None,
     }

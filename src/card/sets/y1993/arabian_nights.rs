@@ -819,6 +819,7 @@ pub(in crate::card::sets) static RUKH_EGG: CardRecord = CardRecord::new(
                     token: cards::BIRD_TOKEN_4_4_RED,
                     count: ValueDef::Constant(1),
                     tapped: false,
+                    attacking: false,
                 },
             ))),
         ),
@@ -1135,6 +1136,7 @@ static BOTTLE_OF_SULEIMAN_WON: EffectDef = EffectDef::CreateToken {
     token: cards::DJINN_TOKEN_5_5_COLORLESS,
     count: ValueDef::Constant(1),
     tapped: false,
+    attacking: false,
 };
 
 static BOTTLE_OF_SULEIMAN_LOST: EffectDef = EffectDef::DealDamage {

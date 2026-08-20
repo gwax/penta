@@ -262,9 +262,14 @@ impl Game {
                 token,
                 count,
                 tapped,
+                attacking,
             } => {
+                // Two players, so the one opponent is the only thing an
+                // arriving attacker could be attacking (CR 506.3d).
+                let defender =
+                    attacking.then(|| crate::AttackDefender::Player(object.controller.opponent()));
                 for _ in 0..self.effect_value(count, object, &context, scoped).max(0) {
-                    self.create_token_arriving(object.controller, token, None, tapped);
+                    self.create_token_arriving(object.controller, token, None, tapped, defender);
                 }
             }
             EffectDef::CreateAttachedToken { token } => {

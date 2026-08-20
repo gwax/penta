@@ -243,6 +243,7 @@ static AJANI_MAKES_A_CAT_AND_MAY_BURN: [EffectDef; 2] = [
         token: cards::CAT_WARRIOR_TOKEN_2_1_WHITE,
         count: ValueDef::Constant(1),
         tapped: false,
+        attacking: false,
     },
     EffectDef::IfCondition {
         condition: &A_RED_PERMANENT_BESIDES_AJANI,
@@ -286,6 +287,7 @@ static AJANI_PARIAH_ABILITIES: [AbilityDef; 2] = [
             token: cards::CAT_WARRIOR_TOKEN_2_1_WHITE,
             count: ValueDef::Constant(1),
             tapped: false,
+            attacking: false,
         },
     ),
     // One trigger per Cat rather than one per batch. Several Cats dying at

@@ -36,7 +36,7 @@ impl Game {
         token: CardDefinitionId,
         creator: Option<GameObjectId>,
     ) {
-        self.create_token_arriving(controller, token, creator, false);
+        self.create_token_arriving(controller, token, creator, false, None);
     }
 
     /// Creates one token whose committed battlefield incarnation becomes the
@@ -75,6 +75,7 @@ impl Game {
         token: CardDefinitionId,
         creator: Option<GameObjectId>,
         tapped: bool,
+        attacking: Option<crate::AttackDefender>,
     ) {
         let Some(definition) = self.catalog.get(token) else {
             return;
@@ -96,7 +97,10 @@ impl Game {
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from: ZoneKind::Stack,
-            completion: EntryCompletion::None,
+            completion: match attacking {
+                Some(defender) => EntryCompletion::Attacking { defender },
+                None => EntryCompletion::None,
+            },
             redirected_to: None,
         });
     }

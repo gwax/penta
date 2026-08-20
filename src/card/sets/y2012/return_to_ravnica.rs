@@ -308,6 +308,7 @@ static EYES_IN_THE_SKIES_EFFECTS: [EffectDef; 2] = [
         token: cards::BIRD_TOKEN_1_1_WHITE,
         count: ValueDef::Constant(1),
         tapped: false,
+        attacking: false,
     },
     abilities::populate(),
 ];
@@ -387,6 +388,7 @@ pub(in crate::card::sets) static KNIGHTLY_VALOR: CardRecord = CardRecord::new(
                     token: cards::KNIGHT_TOKEN_2_2_WHITE,
                     count: ValueDef::Constant(1),
                     tapped: false,
+                    attacking: false,
                 },
             ),
             AbilityDef::static_ability(
@@ -485,6 +487,7 @@ pub(in crate::card::sets) static PRECINCT_CAPTAIN: CardRecord = CardRecord::new(
                     token: cards::SOLDIER_TOKEN_1_1_WHITE,
                     count: ValueDef::Constant(1),
                     tapped: false,
+                    attacking: false,
                 },
             ),
         ]),
@@ -592,6 +595,7 @@ pub(in crate::card::sets) static SELLER_OF_SONGBIRDS: CardRecord = CardRecord::n
                 token: cards::BIRD_TOKEN_1_1_WHITE,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
     ),
@@ -2100,6 +2104,7 @@ pub(in crate::card::sets) static GOBLIN_RALLY: CardRecord = CardRecord::new(
             token: cards::GOBLIN_TOKEN_1_1_RED,
             count: ValueDef::Constant(4),
             tapped: false,
+            attacking: false,
         },
     )),
 );
@@ -2408,6 +2413,7 @@ pub(in crate::card::sets) static SURVEY_THE_WRECKAGE: CardRecord = CardRecord::n
                 token: cards::GOBLIN_TOKEN_1_1_RED,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ]),
     )),
@@ -2478,6 +2484,7 @@ pub(in crate::card::sets) static UTVARA_HELLKITE: CardRecord = CardRecord::new(
                 token: cards::DRAGON_TOKEN_6_6_RED,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
     ]),
@@ -2617,6 +2624,7 @@ pub(in crate::card::sets) static CENTAURS_HERALD: CardRecord = CardRecord::new(
                 token: cards::CENTAUR_TOKEN_3_3_GREEN,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
     ),
@@ -2840,6 +2848,7 @@ static HORNCALLERS_CHANT_EFFECTS: [EffectDef; 2] = [
         token: cards::RHINO_TOKEN_4_4_GREEN,
         count: ValueDef::Constant(1),
         tapped: false,
+        attacking: false,
     },
     abilities::populate(),
 ];
@@ -3070,6 +3079,7 @@ pub(in crate::card::sets) static ARMADA_WURM: CardRecord = CardRecord::new(
                 token: cards::WURM_TOKEN_5_5_GREEN,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
     ]),
@@ -3150,6 +3160,7 @@ pub(in crate::card::sets) static CALL_OF_THE_CONCLAVE: CardRecord = CardRecord::
             token: cards::CENTAUR_TOKEN_3_3_GREEN,
             count: ValueDef::Constant(1),
             tapped: false,
+            attacking: false,
         },
     )),
 );
@@ -3337,6 +3348,7 @@ static COURSERS_ACCORD_EFFECTS: [EffectDef; 2] = [
         token: cards::CENTAUR_TOKEN_3_3_GREEN,
         count: ValueDef::Constant(1),
         tapped: false,
+        attacking: false,
     },
     abilities::populate(),
 ];
@@ -3743,6 +3755,7 @@ static KOROZDA_GUILDMAGE_PAYOFF: EffectDef = EffectDef::CreateToken {
     token: cards::SAPROLING_TOKEN_1_1_GREEN,
     count: ValueDef::TriggerEventAmount,
     tapped: false,
+    attacking: false,
 };
 
 // RTR 176 — Korozda Guildmage
@@ -4089,6 +4102,7 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
                     token: cards::KNIGHT_TOKEN_2_2_WHITE,
                     count: ValueDef::Constant(1),
                     tapped: false,
+                    attacking: false,
                 },
             ),
         ],
@@ -4418,6 +4432,7 @@ pub(in crate::card::sets) static VITU_GHAZI_GUILDMAGE: CardRecord = CardRecord::
                 token: cards::CENTAUR_TOKEN_3_3_GREEN,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
         AbilityDef::activated(
@@ -4466,6 +4481,7 @@ static VRASKA_ABILITIES: [AbilityDef; 3] = [
             token: cards::ASSASSIN_TOKEN_1_1_BLACK,
             count: ValueDef::Constant(3),
             tapped: false,
+            attacking: false,
         },
     ),
 ];

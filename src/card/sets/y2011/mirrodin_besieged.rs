@@ -22,6 +22,7 @@ pub(in crate::card::sets) static WHITE_SUNS_ZENITH: CardRecord = CardRecord::new
                 token: cards::CAT_TOKEN_2_2_WHITE,
                 count: ValueDef::ChosenX,
                 tapped: false,
+                attacking: false,
             },
         )
         .with_resolution_destination(SpellResolutionDestinationDef::LibraryShuffled),

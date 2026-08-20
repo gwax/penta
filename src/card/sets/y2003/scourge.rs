@@ -20,6 +20,7 @@ static DECREE_SOLDIERS: EffectDef = EffectDef::CreateToken {
     token: cards::SOLDIER_TOKEN_1_1_WHITE,
     count: ValueDef::PaidAmount,
     tapped: false,
+    attacking: false,
 };
 
 static DECREE_CYCLING_TRIGGER: EffectDef = EffectDef::PayOr(PayOrDef::optional(
@@ -46,6 +47,7 @@ pub(in crate::card::sets) static DECREE_OF_JUSTICE: CardRecord = CardRecord::new
                 token: cards::ANGEL_TOKEN_4_4_WHITE,
                 count: ValueDef::ChosenX,
                 tapped: false,
+                attacking: false,
             },
         ),
         abilities::cycling(
@@ -337,6 +339,7 @@ pub(in crate::card::sets) static SIEGE_GANG_COMMANDER: CardRecord = CardRecord::
                 token: cards::GOBLIN_TOKEN_1_1_RED,
                 count: ValueDef::Constant(3),
                 tapped: false,
+                attacking: false,
             },
         ),
         AbilityDef::activated_with_targets(

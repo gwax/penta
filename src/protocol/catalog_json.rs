@@ -128,6 +128,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::Ikoria => "ikoria",
         CardSet::KamigawaNeonDynasty => "kamigawa-neon-dynasty",
         CardSet::StreetsOfNewCapenna => "streets-of-new-capenna",
+        CardSet::CommanderLegendsBattleForBaldursGate => "commander-legends-baldurs-gate",
         CardSet::DominariaUnited => "dominaria-united",
         CardSet::EternalMasters => "eternal-masters",
         CardSet::ConspiracyTakeTheCrown => "conspiracy-take-the-crown",

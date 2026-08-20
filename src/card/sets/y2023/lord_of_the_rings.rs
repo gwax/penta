@@ -143,6 +143,7 @@ pub(in crate::card::sets) static GENEROUS_ENT: CardRecord = CardRecord::new(
                 token: cards::FOOD_TOKEN,
                 count: ValueDef::Constant(1),
                 tapped: false,
+                attacking: false,
             },
         ),
         // Six mana is not what this card is for. Forestcycling is: one mana
