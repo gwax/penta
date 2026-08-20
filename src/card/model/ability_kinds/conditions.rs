@@ -79,6 +79,10 @@ pub enum TriggerConditionDef {
     /// "If you cast it any time a sorcery couldn't have been cast." Recorded
     /// as the spell was cast, because nothing afterwards can tell.
     SourceCastAtInstantSpeed,
+    /// Whether the ability's controller has the city's blessing (CR 702.131a).
+    /// Once gained it is never lost, so this asks what has already happened
+    /// rather than what is on the battlefield now.
+    ControllerHasCitysBlessing,
     /// "If you cast it from your hand." Recorded as the spell was cast for
     /// the same reason, and false for anything that was never a spell: a
     /// permanent put onto the battlefield was not cast from anywhere.
@@ -120,6 +124,10 @@ pub enum TriggerConditionDef {
     /// tied for the greatest power" asks. False when no creature is on the
     /// battlefield at all.
     ControlsGreatestPowerCreature,
+    /// Whether the ability's controller has gained life this turn, by any
+    /// means and any amount. Counted as it happens: the life total afterwards
+    /// cannot tell a gain from a loss that undid it.
+    ControllerGainedLifeThisTurn,
     /// Whether a creature has gone to a graveyard this turn. The condition
     /// form of the morbid value, for the intervening-ifs that ask rather than
     /// pick an amount.

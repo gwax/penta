@@ -121,6 +121,12 @@ pub enum AppliedRuleDef {
     /// never asks them to discard. A player rule rather than an object one:
     /// it is found by walking the battlefield for statics naming that player.
     NoMaximumHandSize,
+    /// Ascend (CR 702.131b). A permanent with it gives its controller the
+    /// city's blessing while they control ten or more permanents. Written as
+    /// a rule applied to the player rather than a keyword: nothing about
+    /// combat or characteristics reads it, and what it produces is a state
+    /// change rather than a continuous effect.
+    Ascend,
     /// "If you would draw a card while your library has no cards in it, you
     /// win the game instead." A player rule rather than a permanent's,
     /// because the draw it replaces belongs to the player.

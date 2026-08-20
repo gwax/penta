@@ -3,12 +3,12 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    AppliedEffectDef, CardArt, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet,
-    CardStructure, CardSupertype, CardType, ComparisonDef, CounterKind, DoubleFacedKind, EffectDef,
-    EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PayOrDef, PlayOptionDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, SpellForm, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AppliedEffectDef, AppliedRuleDef, CardArt, CardComposition, CardEffectStatus, CardPart,
+    CardRules, CardSet, CardStructure, CardSupertype, CardType, ComparisonDef, CounterKind,
+    DoubleFacedKind, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
+    InstalledTriggerDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PayOrDef,
+    PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, SpellForm, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId};
 use crate::{TargetIndex, mana_cost};
@@ -16,6 +16,72 @@ use crate::{TargetIndex, mana_cost};
 /// "Until this enchantment leaves the battlefield" is one printed ability,
 /// so the return rides on the same resolution as a delayed trigger rather
 /// than appearing as a second clause the card does not print.
+/// "For each token you control that entered this turn." The Cat the clause
+/// just made is one of them, which is what makes the doubling compound.
+static YOUR_NEW_TOKENS: ObjectQueryDef = ObjectQueryDef::controlled_by(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Token,
+        ObjectPredicateDef::CameUnderControlThisTurn,
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerSetDef::Related(PlayerRelation::You),
+);
+
+static OCELOT_DOUBLES_THEM: EffectDef = EffectDef::CreateTokenCopyOf {
+    object: EffectRecipientDef::objects(ObjectSetDef::Query(YOUR_NEW_TOKENS)),
+};
+
+static OCELOT_END_STEP: [EffectDef; 2] = [
+    EffectDef::CreateToken {
+        token: cards::CAT_TOKEN_1_1_WHITE,
+        count: ValueDef::Constant(1),
+        tapped: false,
+        attacking: false,
+    },
+    // The blessing half is checked as this resolves rather than as it
+    // triggers, so ascending in response still doubles.
+    EffectDef::IfCondition {
+        condition: &TriggerConditionDef::ControllerHasCitysBlessing,
+        then: &OCELOT_DOUBLES_THEM,
+    },
+];
+
+static OCELOT_PRIDE_ABILITIES: [AbilityDef; 4] = [
+    abilities::first_strike(),
+    abilities::lifelink(),
+    AbilityDef::static_ability(
+        "Ascend (If you control ten or more permanents, you get the city's blessing for the rest \
+         of the game.)",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::You)),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::Ascend),
+        },
+    ),
+    AbilityDef::triggered_if(
+        "At the beginning of your end step, if you gained life this turn, create a 1/1 white Cat \
+         creature token. Then if you have the city's blessing, for each token you control that \
+         entered this turn, create a token that's a copy of it.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::You,
+        },
+        &TriggerConditionDef::ControllerGainedLifeThisTurn,
+        EffectDef::Sequence(&OCELOT_END_STEP),
+    ),
+];
+
+// MH3 38 — Ocelot Pride
+pub(in crate::card::sets) static OCELOT_PRIDE: CardRecord = CardRecord::new(
+    cards::OCELOT_PRIDE,
+    "Ocelot Pride",
+    CardArt::new("89cf6f57-230f-497e-a14e-ad1e8737fd42", "Chris Seaman"),
+    CardSet::ModernHorizons3,
+    // Its own lifelink turns the trigger on, and once the board is wide
+    // enough to ascend every Cat it ever made comes back doubled.
+    CardRules::new_creature(mana_cost!("{W}"), &["Cat"], 1, 1)
+        .with_abilities(&OCELOT_PRIDE_ABILITIES),
+);
+
 static PRISON_RETURNS_IT: AbilityDef = AbilityDef::triggered(
     "When this enchantment leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
     TriggerEventDef::zone_changed(
@@ -443,6 +509,7 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::n
 .with_composition(ajani_composition);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &OCELOT_PRIDE,
     &STATIC_PRISON,
     &AMPED_RAPTOR,
     &COLOSSAL_DREADMASK,

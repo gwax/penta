@@ -138,3 +138,5 @@ pub const SWORD_OF_THE_MEEK: CardDefinitionId = CardDefinitionId(2220);
 pub const AMPED_RAPTOR: CardDefinitionId = CardDefinitionId(2221);
 pub const ENDURING_INNOCENCE: CardDefinitionId = CardDefinitionId(2222);
 pub const TENDRILS_OF_AGONY: CardDefinitionId = CardDefinitionId(2223);
+pub const CAT_TOKEN_1_1_WHITE: CardDefinitionId = CardDefinitionId(2224);
+pub const OCELOT_PRIDE: CardDefinitionId = CardDefinitionId(2225);

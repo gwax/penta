@@ -170,6 +170,15 @@ impl Game {
         )
     }
 
+    /// Whether any live static ability applies this rule to this player.
+    pub(in crate::game) fn player_rule_applies(
+        &self,
+        player: PlayerId,
+        rule: AppliedRuleDef,
+    ) -> bool {
+        self.player_static_rule_applies(player, AppliedEffectDef::Rule(rule))
+    }
+
     /// Whether any live static ability applies `wanted` to this player.
     fn player_static_rule_applies(
         &self,

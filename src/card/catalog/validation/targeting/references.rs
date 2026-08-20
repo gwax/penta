@@ -670,7 +670,9 @@ fn validate_trigger_condition(
         TriggerConditionDef::TargetMatches { slot, .. } => {
             validate_target_index(slot, target_count)
         }
-        TriggerConditionDef::CreatureDiedThisTurn
+        TriggerConditionDef::ControllerHasCitysBlessing
+        | TriggerConditionDef::ControllerGainedLifeThisTurn
+        | TriggerConditionDef::CreatureDiedThisTurn
         | TriggerConditionDef::BoundObjectsShareName { .. }
         | TriggerConditionDef::SourceArrivedSinceControllersLastUpkeep
         | TriggerConditionDef::SourceOnBattlefield

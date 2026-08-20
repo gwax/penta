@@ -625,6 +625,13 @@ pub struct Game {
     /// Cards exiled by an object that promises to bring them back, paired
     /// with whatever exiled them. Oblivion Ring is the shape.
     linked_exiles: Vec<(GameObjectId, GameObjectId)>,
+    /// Which players have the city's blessing (CR 702.131a). It is gained for
+    /// the rest of the game, so this only ever turns on.
+    citys_blessing: [bool; 2],
+    /// How much life each player has gained this turn. "If you gained life
+    /// this turn" is a fact about what happened rather than about the life
+    /// total, which a loss in between would hide.
+    life_gained_this_turn: [u16; 2],
     /// The monarch, if anyone is (CR 720). There is at most one, they draw
     /// a card at the beginning of their end step, and a creature that deals
     /// combat damage to them hands the crown to its controller.

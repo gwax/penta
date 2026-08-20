@@ -7,13 +7,40 @@ use super::{
 /// format changes it.
 const LETHAL_POISON: u16 = 10;
 
+/// CR 702.131b. Ten, like the poison total above, is a rules constant.
+const ASCEND_THRESHOLD: usize = 10;
+
 impl Game {
+    /// Ascend (CR 702.131b): a player controlling a permanent with ascend and
+    /// ten or more permanents gets the city's blessing. It is checked here
+    /// rather than raised as a trigger because nothing may be done about it
+    /// in between -- and once given it is never taken back, so dropping to
+    /// nine afterwards changes nothing.
+    fn grant_the_citys_blessing(&mut self) {
+        for player in [PlayerId::One, PlayerId::Two] {
+            if self.citys_blessing[player.index()] {
+                continue;
+            }
+            let permanents = self
+                .battlefield
+                .iter()
+                .filter(|permanent| permanent.controller == player)
+                .count();
+            if permanents >= ASCEND_THRESHOLD
+                && self.player_rule_applies(player, AppliedRuleDef::Ascend)
+            {
+                self.citys_blessing[player.index()] = true;
+            }
+        }
+    }
+
     pub(super) fn check_state_based_actions(&mut self) {
         self.close_stale_miracle_window();
         self.end_expired_control_changes();
         if self.check_player_loss_conditions() {
             return;
         }
+        self.grant_the_citys_blessing();
         self.annihilate_opposing_counters();
         self.unattach_illegal_non_aura_attachments();
         loop {

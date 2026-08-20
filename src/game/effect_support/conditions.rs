@@ -190,6 +190,12 @@ impl Game {
                 }
                 // Follows the attachment rather than being frozen when the
                 // Equipment moved, so the answer is about where it is now.
+                TriggerConditionDef::ControllerHasCitysBlessing => {
+                    self.citys_blessing[controller.index()]
+                }
+                TriggerConditionDef::ControllerGainedLifeThisTurn => {
+                    self.life_gained_this_turn[controller.index()] > 0
+                }
                 TriggerConditionDef::CreatureDiedThisTurn => self.creature_died_this_turn,
                 // A dies-trigger asks about the permanent that died, which
                 // is no longer there to look at. "If it was a creature" has

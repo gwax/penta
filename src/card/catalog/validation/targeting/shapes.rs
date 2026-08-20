@@ -416,7 +416,9 @@ fn validate_trigger_condition_shape(
             validate_target_shape(slot, targets, RecipientExpectation::Object, false)?;
             validate_object_predicate_shape(object, targets)
         }
-        TriggerConditionDef::CreatureDiedThisTurn
+        TriggerConditionDef::ControllerHasCitysBlessing
+        | TriggerConditionDef::ControllerGainedLifeThisTurn
+        | TriggerConditionDef::CreatureDiedThisTurn
         | TriggerConditionDef::BoundObjectsShareName { .. }
         | TriggerConditionDef::SourceArrivedSinceControllersLastUpkeep
         | TriggerConditionDef::SourceOnBattlefield
@@ -637,9 +639,10 @@ fn validate_applied_effect_shapes(
             }
             Ok(())
         }
-        // Both name a player and carry nothing else.
+        // Each names a player and carries nothing else.
         AppliedEffectDef::Rule(
-            AppliedRuleDef::NoMaximumHandSize
+            AppliedRuleDef::Ascend
+            | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary,
         ) => validate_recipient_shape(recipient, targets, RecipientExpectation::Player),
         // The cap names the players it applies to; the predicate picks out

@@ -167,6 +167,8 @@ impl Game {
         self.players[player.index()].life = self.players[player.index()]
             .life
             .saturating_add(i16::try_from(amount).unwrap_or(i16::MAX));
+        let gained = &mut self.life_gained_this_turn[player.index()];
+        *gained = gained.saturating_add(amount);
         self.capture_battlefield_triggers(&CommittedTriggerEvent::LifeGained { player, amount });
     }
 
@@ -431,6 +433,7 @@ impl Game {
         self.spells_cast_last_turn = self.spells_cast_this_turn;
         self.spells_cast_this_turn = [0; 2];
         self.cards_drawn_this_turn = [0; 2];
+        self.life_gained_this_turn = [0; 2];
         self.drawn_this_turn = [Vec::new(), Vec::new()];
         self.miracle_window = None;
         self.step = Step::Upkeep;

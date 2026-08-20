@@ -275,7 +275,8 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
         }
         // Read by the cleanup step, by the same walk and for the same reason.
         AppliedEffectDef::Rule(
-            AppliedRuleDef::NoMaximumHandSize
+            AppliedRuleDef::Ascend
+            | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary,
         ) => true,
         AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
@@ -362,6 +363,8 @@ fn static_object_applied_effect_supported(
         )
         | AppliedEffectDef::Rule(
             AppliedRuleDef::CannotBeCountered
+            // Ascend belongs to a player, so nothing about an object reads it.
+            | AppliedRuleDef::Ascend
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary
             | AppliedRuleDef::CannotPlay(_)
@@ -746,7 +749,9 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::AttachedPermanentMatches { object } => {
             static_object_predicate_supported(object)
         }
-        TriggerConditionDef::CreatureDiedThisTurn
+        TriggerConditionDef::ControllerHasCitysBlessing
+        | TriggerConditionDef::ControllerGainedLifeThisTurn
+        | TriggerConditionDef::CreatureDiedThisTurn
         | TriggerConditionDef::BoundObjectsShareName { .. }
         | TriggerConditionDef::SourceArrivedSinceControllersLastUpkeep
         | TriggerConditionDef::SourceOnBattlefield
