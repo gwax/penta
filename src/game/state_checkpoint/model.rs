@@ -94,6 +94,7 @@ pub(super) struct GameSnapshot {
     pub(super) spells_cast_last_turn: [u16; 2],
     pub(super) cards_drawn_this_turn: [u16; 2],
     pub(super) citys_blessing: [bool; 2],
+    pub(super) permanent_left_battlefield_this_turn: [bool; 2],
     pub(super) life_gained_this_turn: [u16; 2],
     pub(super) draw_step_draw_taken: [bool; 2],
     pub(super) drawn_this_turn: [Vec<u32>; 2],

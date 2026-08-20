@@ -147,3 +147,4 @@ pub const MYSTIC_CONFLUENCE: CardDefinitionId = CardDefinitionId(2229);
 pub const SUNBAKED_CANYON: CardDefinitionId = CardDefinitionId(2230);
 pub const OTTER_TOKEN_1_1_BLUE_RED: CardDefinitionId = CardDefinitionId(2231);
 pub const STORMCHASERS_TALENT: CardDefinitionId = CardDefinitionId(2232);
+pub const FATAL_PUSH: CardDefinitionId = CardDefinitionId(2233);

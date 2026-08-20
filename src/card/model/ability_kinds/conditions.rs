@@ -128,6 +128,11 @@ pub enum TriggerConditionDef {
     /// means and any amount. Counted as it happens: the life total afterwards
     /// cannot tell a gain from a loss that undid it.
     ControllerGainedLifeThisTurn,
+    /// Revolt (CR 702.121a): whether a permanent left the battlefield from
+    /// under this ability's controller this turn. Counted as it happens, for
+    /// the same reason the life gain above is: the board afterwards cannot
+    /// tell a permanent that left from one that was never there.
+    ControllerHadPermanentLeaveThisTurn,
     /// Whether a creature has gone to a graveyard this turn. The condition
     /// form of the morbid value, for the intervening-ifs that ask rather than
     /// pick an amount.

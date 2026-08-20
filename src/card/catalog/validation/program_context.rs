@@ -750,7 +750,8 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::AttachedPermanentMatches { object } => {
             static_object_predicate_supported(object)
         }
-        TriggerConditionDef::ControllerHasCitysBlessing
+        TriggerConditionDef::ControllerHadPermanentLeaveThisTurn
+        | TriggerConditionDef::ControllerHasCitysBlessing
         | TriggerConditionDef::ControllerGainedLifeThisTurn
         | TriggerConditionDef::CreatureDiedThisTurn
         | TriggerConditionDef::BoundObjectsShareName { .. }

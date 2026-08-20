@@ -95,6 +95,7 @@ pub enum CardSet {
     EternalMasters,
     ConspiracyTakeTheCrown,
     Kaladesh,
+    AetherRevolt,
     LordOfTheRings,
     LostCavernsOfIxalan,
     MurdersAtKarlovManor,

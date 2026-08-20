@@ -419,7 +419,8 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::AttachedPermanentMatches { object } => {
             shared_object_predicate(object)
         }
-        TriggerConditionDef::ControllerHasCitysBlessing
+        TriggerConditionDef::ControllerHadPermanentLeaveThisTurn
+        | TriggerConditionDef::ControllerHasCitysBlessing
         | TriggerConditionDef::ControllerGainedLifeThisTurn
         | TriggerConditionDef::CreatureDiedThisTurn
         | TriggerConditionDef::BoundObjectsShareName { .. }

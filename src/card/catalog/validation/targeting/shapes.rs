@@ -417,7 +417,8 @@ fn validate_trigger_condition_shape(
             validate_target_shape(slot, targets, RecipientExpectation::Object, false)?;
             validate_object_predicate_shape(object, targets)
         }
-        TriggerConditionDef::ControllerHasCitysBlessing
+        TriggerConditionDef::ControllerHadPermanentLeaveThisTurn
+        | TriggerConditionDef::ControllerHasCitysBlessing
         | TriggerConditionDef::ControllerGainedLifeThisTurn
         | TriggerConditionDef::CreatureDiedThisTurn
         | TriggerConditionDef::BoundObjectsShareName { .. }

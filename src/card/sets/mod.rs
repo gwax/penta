@@ -502,6 +502,11 @@ const SET_MODULES: &[SetModule] = &[
         y2016::kaladesh::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::AetherRevolt,
+        y2017::aether_revolt::CARDS,
+        y2017::aether_revolt::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::LordOfTheRings,
         y2023::lord_of_the_rings::CARDS,
         y2023::lord_of_the_rings::ADDITIONAL_PRINTINGS,

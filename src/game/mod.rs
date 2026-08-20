@@ -625,6 +625,11 @@ pub struct Game {
     /// Cards exiled by an object that promises to bring them back, paired
     /// with whatever exiled them. Oblivion Ring is the shape.
     linked_exiles: Vec<(GameObjectId, GameObjectId)>,
+    /// Which players have had a permanent leave the battlefield from under
+    /// their control this turn, which is what revolt asks (CR 702.121a). The
+    /// board afterwards cannot tell: a permanent that left and was replaced
+    /// leaves a battlefield that looks untouched.
+    permanent_left_battlefield_this_turn: [bool; 2],
     /// Which players have the city's blessing (CR 702.131a). It is gained for
     /// the rest of the game, so this only ever turns on.
     citys_blessing: [bool; 2],
