@@ -49,6 +49,7 @@ impl Game {
             | ObjectPredicateDef::PowerLessThan(_)
             | ObjectPredicateDef::ToughnessGreaterThan(_)
             | ObjectPredicateDef::ControlledBy(_)
+            | ObjectPredicateDef::OwnedBy(_)
             | ObjectPredicateDef::Supertype(_)
             | ObjectPredicateDef::DebutSet(_)
             | ObjectPredicateDef::SharesNameWithSource

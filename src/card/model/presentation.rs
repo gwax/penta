@@ -111,6 +111,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
+        | ObjectPredicateDef::OwnedBy(_)
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource

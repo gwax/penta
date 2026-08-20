@@ -309,6 +309,34 @@ impl Game {
         }
     }
 
+    /// Whether one member of a binding matches a predicate, wherever it is.
+    /// A binding can hold battlefield permanents as readily as cards in a
+    /// graveyard, so both are looked for.
+    fn bound_object_matches(
+        &self,
+        bound: Target,
+        predicate: ObjectPredicateDef,
+        source: GameObjectId,
+    ) -> bool {
+        let (Target::Card(id) | Target::Permanent(id) | Target::Spell(id)) = bound else {
+            return false;
+        };
+        if let Some(permanent) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+        {
+            return self.trigger_object_matches(
+                predicate,
+                &self.trigger_event_object(permanent),
+                source,
+                false,
+            );
+        }
+        self.card_in_nonbattlefield_zone(id)
+            .is_some_and(|(zone, card)| self.card_object_matches(predicate, card, zone, source))
+    }
+
     /// The permanents a stack object has chosen as targets.
     ///
     /// The spell that triggered an ability is still on the stack while that
@@ -368,15 +396,7 @@ impl Game {
                 .object_group(binding)
                 .iter()
                 .copied()
-                .filter(|bound| {
-                    let (Target::Card(id) | Target::Permanent(id) | Target::Spell(id)) = bound
-                    else {
-                        return false;
-                    };
-                    self.card_in_nonbattlefield_zone(*id).is_some_and(|(zone, card)| {
-                        self.card_object_matches(predicate, card, zone, object.id)
-                    })
-                })
+                .filter(|bound| self.bound_object_matches(*bound, predicate, object.id))
                 .collect(),
             ObjectSetDef::PermanentsTargetedBy(reference) => self
                 .object_reference_target(reference, object, context, scoped)

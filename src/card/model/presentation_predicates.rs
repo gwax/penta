@@ -66,6 +66,7 @@ pub(super) fn object_predicate_implies(
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
+        | ObjectPredicateDef::OwnedBy(_)
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
@@ -123,6 +124,7 @@ pub(super) fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
+        | ObjectPredicateDef::OwnedBy(_)
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
@@ -183,6 +185,7 @@ pub(super) fn predicate_color_count(predicate: ObjectPredicateDef) -> Option<u8>
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
+        | ObjectPredicateDef::OwnedBy(_)
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
@@ -243,6 +246,7 @@ pub(super) fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'stati
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
+        | ObjectPredicateDef::OwnedBy(_)
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
@@ -308,6 +312,7 @@ pub(super) fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
+        | ObjectPredicateDef::OwnedBy(_)
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
@@ -370,6 +375,7 @@ pub(super) fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<
         | ObjectPredicateDef::ManaValueAtMostValue(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
+        | ObjectPredicateDef::OwnedBy(_)
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
@@ -431,6 +437,7 @@ pub(super) fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Opt
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
+        | ObjectPredicateDef::OwnedBy(_)
         | ObjectPredicateDef::Supertype(_)
         | ObjectPredicateDef::DebutSet(_)
         | ObjectPredicateDef::SharesNameWithSource
@@ -452,7 +459,9 @@ pub(super) fn predicate_controller(predicate: ObjectPredicateDef) -> Option<Play
         ObjectPredicateDef::All(predicates) => {
             predicates.iter().copied().find_map(predicate_controller)
         }
-        ObjectPredicateDef::Any
+        // Owning a card is not controlling it, so it names no controller.
+        ObjectPredicateDef::OwnedBy(_)
+        | ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Token
         | ObjectPredicateDef::Tapped

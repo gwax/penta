@@ -809,6 +809,7 @@ mod vintage_cube_ocelot_pride;
 mod vintage_cube_oracle;
 mod vintage_cube_orcish_bowmasters;
 mod vintage_cube_overlord;
+mod vintage_cube_paradoxical_outcome;
 mod vintage_cube_path;
 mod vintage_cube_phlage;
 mod vintage_cube_ponder;

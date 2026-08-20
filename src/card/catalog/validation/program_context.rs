@@ -677,7 +677,9 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
         ObjectPredicateDef::Not(predicate) | ObjectPredicateDef::AttachedTo(predicate) => {
             static_object_predicate_supported(*predicate)
         }
-        ObjectPredicateDef::ControlledBy(relation) => static_player_relation_supported(relation),
+        ObjectPredicateDef::ControlledBy(relation) | ObjectPredicateDef::OwnedBy(relation) => {
+            static_player_relation_supported(relation)
+        }
         ObjectPredicateDef::ManaValueEqualTo(value)
         | ObjectPredicateDef::ManaValueAtMostValue(value)
         | ObjectPredicateDef::ToughnessLessThan(value)

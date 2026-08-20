@@ -1,4 +1,28 @@
 impl Game {
+    /// Whether a card's owner stands in this relation to the asker. Owning is
+    /// not controlling: a stolen permanent goes back to the hand of whoever
+    /// it came from, so the owner is looked up wherever the card presently is
+    /// rather than read off whoever has it.
+    fn object_owner_matches(
+        &self,
+        object: GameObjectId,
+        relation: PlayerRelation,
+        controller: Option<PlayerId>,
+    ) -> bool {
+        let owner = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == object)
+            .map(|permanent| permanent.card.owner)
+            .or_else(|| {
+                self.card_in_nonbattlefield_zone(object)
+                    .map(|(_, card)| card.owner)
+            });
+        owner.zip(controller).is_some_and(|(owner, controller)| {
+            self.player_relation_matches(owner, relation, controller, TriggerContext::empty())
+        })
+    }
+
     /// Whether `object` satisfies `predicate`. `source` is the ability's own
     /// object, which is what a controller relation is measured against.
     /// The predicates comparing a stat against a value read off the ability's
@@ -293,6 +317,10 @@ impl Game {
         }
     }
 
+    // Long because the predicate vocabulary is wide, not because the
+    // function does several things: every arm reads one property of one
+    // object. It is a table, and a table only grows.
+    #[allow(clippy::too_many_lines)]
     pub(in crate::game) fn trigger_object_matches_for_controller(
         &self,
         predicate: ObjectPredicateDef,
@@ -371,6 +399,9 @@ impl Game {
             // computed the way a keyword or a stat could.
             ObjectPredicateDef::HasCounter(kind) => {
                 self.current_or_last_known_counters(object.id, kind) > 0
+            }
+            ObjectPredicateDef::OwnedBy(relation) => {
+                self.object_owner_matches(object.id, relation, controller)
             }
             ObjectPredicateDef::ControlledBy(relation) => controller.is_some_and(|controller| {
                 self.player_relation_matches(

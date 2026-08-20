@@ -81,6 +81,10 @@ pub enum ObjectPredicateDef {
     /// Controlled by a player in this relation to the ability's controller,
     /// for "a creature you control" and "whenever you cast".
     ControlledBy(PlayerRelation),
+    /// Who owns the physical card, which is not who controls it. "Returned
+    /// to your hand" asks this: a permanent you control but do not own goes
+    /// back to somebody else's hand.
+    OwnedBy(PlayerRelation),
     /// Carries this supertype. Negate it for "nonbasic".
     Supertype(CardSupertype),
     /// "With a name originally printed in the <set> expansion", which reads

@@ -2,11 +2,87 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ValueDef, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectSetDef, PlayerRelation, ValueDef, ZoneKind, ZonePlacement, abilities,
+    cards,
 };
+use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
+
+/// A permanent that is neither a land nor a token. The slot names the
+/// controller, so the predicate only has to say what kind of thing it is.
+static A_NONLAND_NONTOKEN_PERMANENT: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+]);
+
+static OUTCOME_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
+    predicate: AbilityTargetPredicate::Object {
+        object: A_NONLAND_NONTOKEN_PERMANENT,
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+    minimum: 0,
+    maximum: AbilityTargetDef::UNLIMITED,
+    divided_total: None,
+}];
+
+static OUTCOME_OWNED_BY_YOU: ObjectSetBindingIndex = ObjectSetBindingIndex::new(1);
+
+/// The draw counts what reached your hand, which is not always what left the
+/// battlefield: a permanent you control but do not own goes back to somebody
+/// else's hand and pays you nothing. The count is taken before the move,
+/// because afterwards the cards have new identities.
+static OUTCOME_RETURN_AND_DRAW: [EffectDef; 2] = [
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+        zone: ZoneKind::Hand,
+        placement: ZonePlacement::Top,
+        controller: None,
+        arrival_effect: None,
+        attachment: None,
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::BoundObjectCount(OUTCOME_OWNED_BY_YOU),
+    },
+];
+
+static OUTCOME_COUNT_YOURS: EffectDef = EffectDef::BindMatching {
+    objects: ObjectSetDef::MatchingBinding {
+        binding: ObjectSetBindingIndex::PRIMARY,
+        object: ObjectPredicateDef::OwnedBy(PlayerRelation::You),
+    },
+    binding: OUTCOME_OWNED_BY_YOU,
+    then: &EffectDef::Sequence(&OUTCOME_RETURN_AND_DRAW),
+};
+
+/// Only the targets still legal as this resolves are returned, which is what
+/// "each card returned this way" counts.
+static OUTCOME_EFFECT: EffectDef = EffectDef::BindMatching {
+    objects: ObjectSetDef::LegalTargets(TargetIndex::PRIMARY),
+    binding: ObjectSetBindingIndex::PRIMARY,
+    then: &OUTCOME_COUNT_YOURS,
+};
+
+// KLD 60 — Paradoxical Outcome
+pub(in crate::card::sets) static PARADOXICAL_OUTCOME: CardRecord = CardRecord::new(
+    cards::PARADOXICAL_OUTCOME,
+    "Paradoxical Outcome",
+    CardArt::new("17e50157-bf49-4c5f-9b8a-bf73484e63a5", "Nils Hamm"),
+    CardSet::Kaladesh,
+    // Four mana and a fistful of Moxen back, which is a bad rate for a deck
+    // that has to pay for them again and a broken one for a deck that does
+    // not.
+    CardRules::new_instant(mana_cost!("{3}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Return any number of target nonland, nontoken permanents you control to their owners' \
+         hands. Draw a card for each card returned to your hand this way.",
+        &OUTCOME_TARGETS,
+        OUTCOME_EFFECT,
+    )),
+);
 
 /// "If you don't" is the whole of the first ability's tension: the exile
 /// happens either way, and the card is either spent now at its own cost or
@@ -179,6 +255,7 @@ pub(in crate::card::sets) static SPIREBLUFF_CANAL: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &PARADOXICAL_OUTCOME,
     &CHANDRA_TORCH_OF_DEFIANCE,
     &BLOOMING_MARSH,
     &BOTANICAL_SANCTUM,
