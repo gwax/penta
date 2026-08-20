@@ -49,6 +49,22 @@ impl Game {
             }) {
                 return;
             }
+            // And so does "activate only if you control a Swamp or a
+            // Forest". A false condition means there is no legal activation
+            // at all, which for a mana ability means the land does not
+            // produce that colour and nothing can be planned around it.
+            if definition.condition.is_some_and(|condition| {
+                !self.trigger_condition_holds(
+                    condition,
+                    permanent.card.id,
+                    permanent.controller,
+                    TriggerContext::empty(),
+                    Some(effective.origin),
+                    None,
+                )
+            }) {
+                return;
+            }
             activations.extend(self.mana_activations_for(
                 permanent,
                 effective.origin,
@@ -395,6 +411,22 @@ impl Game {
             else {
                 return;
             };
+            // "Could produce" is asked to decide whether a cost can be paid,
+            // so an ability whose printed condition is false produces
+            // nothing: planning around it would build a payment that cannot
+            // actually be made.
+            if definition.condition.is_some_and(|condition| {
+                !self.trigger_condition_holds(
+                    condition,
+                    permanent.card.id,
+                    permanent.controller,
+                    TriggerContext::empty(),
+                    Some(effective.origin),
+                    None,
+                )
+            }) {
+                return;
+            }
             if let Some(effect) = Self::shared_add_mana_effect(definition, &effective.ability) {
                 match effect.mana {
                     ManaSelectionDef::One(kind) => colors.push(kind),

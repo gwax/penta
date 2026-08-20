@@ -648,6 +648,12 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     })
                     .count()
                     <= 1
+                // "Activate only if you control a Swamp or a Forest" is read
+                // where the activation is offered, so its shape has to be
+                // one the runtime can actually evaluate.
+                && definition
+                    .condition
+                    .is_none_or(|condition| shared_trigger_condition(*condition))
                 && shared_mana_effect(effect, true)
         }
         DeclarativeAbilityDef::TriggeredMana(definition) => {
@@ -789,6 +795,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                         .targets
                         .iter()
                         .all(|slot| slot.divided_total.is_none())
+                    && definition
+                        .condition
+                        .is_none_or(|condition| shared_trigger_condition(*condition))
                     && definition.modes.is_none_or(|modal| {
                         modal.modes.iter().all(|mode| {
                             mode.declarative_effect().is_none() || shared_definition_ability(mode)

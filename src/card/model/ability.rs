@@ -191,6 +191,25 @@ impl AbilityDef {
         )
     }
 
+    /// "{T}: Add {B}. Activate only if you control a Swamp or a Forest."
+    /// The condition is read where the activation is offered, so a land
+    /// whose condition is false simply does not produce that colour.
+    #[must_use]
+    pub const fn activated_mana_if(
+        text: &'static str,
+        costs: &'static [AbilityCostDef],
+        condition: &'static TriggerConditionDef,
+        effect: EffectDef,
+    ) -> Self {
+        Self::defined(
+            text,
+            DeclarativeAbilityDef::ActivatedMana(
+                ActivatedAbilityDef::new(costs).only_if(condition),
+            ),
+            effect,
+        )
+    }
+
     #[must_use]
     pub const fn triggered_mana(
         text: &'static str,

@@ -784,6 +784,7 @@ mod vintage_cube_static_prison;
 mod vintage_cube_stoneforge;
 mod vintage_cube_tamiyo;
 mod vintage_cube_ursine;
+mod vintage_cube_verge;
 mod vintage_cube_vote;
 mod wards;
 mod while_source_tapped;
