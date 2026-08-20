@@ -316,6 +316,7 @@ fn validate_value_shape(
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
+        | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount
         | ValueDef::BoundObjectCount(_)

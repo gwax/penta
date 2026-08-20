@@ -121,6 +121,7 @@ pub(super) fn detached_stack_snapshot_allowing(
             })
             .collect(),
         colors: object.colors.map(ColorSet::to_flags),
+        colors_of_mana_spent: object.colors_of_mana_spent.to_flags(),
         cast_via_flashback: object.cast_via_flashback,
         is_copy: object.is_copy,
     })
@@ -558,6 +559,7 @@ pub(super) fn parse_stack(
             applied_effects: parse_applied_stack_effects(&state.applied_effects, game)?,
             text_changes: parse_text_changes(&state.text_changes),
             colors: state.colors.map(color_set_from_flags),
+            colors_of_mana_spent: color_set_from_flags(state.colors_of_mana_spent),
             cast_via_flashback: state.cast_via_flashback,
             cast_face_down: false,
             is_copy: state.is_copy,
@@ -620,6 +622,7 @@ pub(super) fn parse_detached_stack(
         applied_effects: parse_applied_stack_effects(&state.applied_effects, game)?,
         text_changes: parse_text_changes(&state.text_changes),
         colors: state.colors.map(color_set_from_flags),
+        colors_of_mana_spent: color_set_from_flags(state.colors_of_mana_spent),
         cast_via_flashback: state.cast_via_flashback,
         cast_face_down: false,
         is_copy: state.is_copy,

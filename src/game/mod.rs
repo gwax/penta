@@ -179,7 +179,7 @@ use trigger_state::{
 use lifecycle::backing_cards;
 use mana_planning::{
     add_generic, add_mana_cost, configured_mana_cost, fold_restricted_x, mana_cost_value,
-    pay_cost_with_orders, reduce_generic,
+    pay_cost_with_generic_strategy, reduce_generic,
 };
 #[cfg(test)]
 use mana_planning::{can_pay, pay_cost};
@@ -558,6 +558,11 @@ struct StackObject {
     /// enters face down, and until it resolves only its controller may know
     /// which card it is.
     cast_face_down: bool,
+    /// Which colours of mana actually paid for this spell, for the clauses
+    /// that count them (CR 702.86a, converge). Payment-derived rather than
+    /// part of the cast signature: a copy is never cast, so no mana was ever
+    /// spent on it and its count is zero however the original was paid for.
+    colors_of_mana_spent: ColorSet,
     is_copy: bool,
 }
 
@@ -633,70 +638,6 @@ impl ScopedEffect {
     }
 }
 
-/// Ordered stack-zone storage. The top is the final element, while removal by
-/// index permits effects such as a counterspell to remove any targeted stack
-/// object without disturbing the relative order of objects above or below it.
-/// Stack order is therefore structural and never inferred from object IDs.
-#[derive(Clone, Debug, Default)]
-struct GameStack {
-    objects: Vec<StackObject>,
-}
-
-impl GameStack {
-    fn push(&mut self, object: StackObject) {
-        self.objects.push(object);
-    }
-
-    fn pop(&mut self) -> Option<StackObject> {
-        self.objects.pop()
-    }
-
-    fn remove(&mut self, index: usize) -> StackObject {
-        self.objects.remove(index)
-    }
-
-    #[cfg(test)]
-    fn clear(&mut self) {
-        self.objects.clear();
-    }
-
-    fn is_empty(&self) -> bool {
-        self.objects.is_empty()
-    }
-
-    #[cfg(test)]
-    fn len(&self) -> usize {
-        self.objects.len()
-    }
-
-    #[cfg(test)]
-    fn last(&self) -> Option<&StackObject> {
-        self.objects.last()
-    }
-
-    fn iter(&self) -> std::slice::Iter<'_, StackObject> {
-        self.objects.iter()
-    }
-
-    fn iter_mut(&mut self) -> std::slice::IterMut<'_, StackObject> {
-        self.objects.iter_mut()
-    }
-}
-
-impl std::ops::Index<usize> for GameStack {
-    type Output = StackObject;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.objects[index]
-    }
-}
-
-impl std::ops::IndexMut<usize> for GameStack {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.objects[index]
-    }
-}
-
 impl StackObject {
     fn iter_targets(&self) -> impl Iterator<Item = &Target> {
         self.signature
@@ -765,6 +706,18 @@ impl StackObject {
             || self.ability.as_ref().map_or(0, |ability| ability.x),
             CastSignature::x,
         )
+    }
+
+    /// How many colours paid for this object, which is zero for everything
+    /// that was never cast.
+    fn colors_spent_count(&self) -> u8 {
+        self.colors_of_mana_spent
+            .to_flags()
+            .iter()
+            .filter(|spent| **spent)
+            .count()
+            .try_into()
+            .unwrap_or(u8::MAX)
     }
 }
 
@@ -977,6 +930,8 @@ pub struct Game {
     result: Option<GameResult>,
     events: Vec<GameEvent>,
 }
+
+include!("game_stack.rs");
 
 #[cfg(test)]
 mod planeswalker_combat_tests;

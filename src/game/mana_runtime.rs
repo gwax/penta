@@ -5,7 +5,7 @@ use super::{
     ManaAbilityActivation, ManaActivationChoices, ManaColor, ManaCost, ManaPaymentPurpose,
     ManaPool, ManaRestrictionDef, ManaSelectionDef, ManaSource, ManaSpendEffectDef,
     ObjectCountConditionDef, Permanent, PlayerId, RetiredObject, StackObject, TriggerContext,
-    TriggerEventObject, ZoneKind, fold_restricted_x, pay_cost_with_orders,
+    TriggerEventObject, ZoneKind, fold_restricted_x, pay_cost_with_generic_strategy,
 };
 use crate::AbilityProgramDef;
 use crate::card::{AbilityCostList, ManaSplit};
@@ -774,7 +774,28 @@ impl Game {
             ManaColor::Blue,
         ];
         generic_order.sort_by_key(|color| !has_eligible_spend_effect(*color));
-        pay_cost_with_orders(&mut after, cost, x, &hybrid_preference, &generic_order);
+        let spread_generic_colors = self.payment_counts_colors_spent(purpose);
+        if spread_generic_colors {
+            // Converge counts colours, so the generic portion reaches first
+            // for a colour the coloured symbols have not already spent, and
+            // reaches for colourless last of all: it is a mana type rather
+            // than a colour and adds nothing to the count.
+            generic_order.sort_by_key(|color| {
+                (
+                    *color == ManaColor::Colorless,
+                    super::mana_planning::mana_cost_amount(cost, *color) > 0,
+                    !has_eligible_spend_effect(*color),
+                )
+            });
+        }
+        pay_cost_with_generic_strategy(
+            &mut after,
+            cost,
+            x,
+            &hybrid_preference,
+            &generic_order,
+            spread_generic_colors,
+        );
         let mut spent = Vec::new();
         for color in [
             ManaColor::White,
@@ -809,6 +830,18 @@ impl Game {
             }
         }
         spent
+    }
+
+    /// Whether the spell being paid for reads how many colours paid for it.
+    /// Only converge asks, and only converge changes how the generic portion
+    /// is spread.
+    fn payment_counts_colors_spent(&self, purpose: &ManaPaymentPurpose) -> bool {
+        let ManaPaymentPurpose::Spell { definition, .. } = purpose else {
+            return false;
+        };
+        self.catalog
+            .get(*definition)
+            .is_some_and(|card| card.rules.counts_colors_of_mana_spent())
     }
 
     pub(super) fn pay_player_cost(

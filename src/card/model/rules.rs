@@ -92,6 +92,12 @@ pub struct CardRules {
     /// "Spend only black mana on X." The X portion of the cost stops being
     /// generic and has to come from this colour.
     x_spend_restriction: Option<ManaColor>,
+    /// Whether this spell's own text counts the colours of mana spent to
+    /// cast it -- the converge ability word. It changes nothing about what
+    /// the spell costs; what it changes is how the generic portion is paid,
+    /// because a payment that drains one colour before touching the next
+    /// would count one colour where the caster plainly meant several.
+    counts_colors_of_mana_spent: bool,
     /// "This spell costs {1} more to cast for each target beyond the first."
     additional_generic_per_extra_target: u16,
     /// The printed morph cost, which is what turning this permanent face up
@@ -147,6 +153,7 @@ impl CardRules {
             colors,
             play_restriction: PlayRestriction::Normal,
             x_spend_restriction: None,
+            counts_colors_of_mana_spent: false,
             additional_generic_per_extra_target: 0,
             morph: None,
         }
@@ -657,6 +664,18 @@ impl CardRules {
     #[must_use]
     pub const fn x_spend_restriction(&self) -> Option<ManaColor> {
         self.x_spend_restriction
+    }
+
+    /// "Converge --": this spell reads how many colours paid for it.
+    #[must_use]
+    pub const fn with_converge(mut self) -> Self {
+        self.counts_colors_of_mana_spent = true;
+        self
+    }
+
+    #[must_use]
+    pub const fn counts_colors_of_mana_spent(&self) -> bool {
+        self.counts_colors_of_mana_spent
     }
 
     /// "This spell costs `amount` more to cast for each target beyond the

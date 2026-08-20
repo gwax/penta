@@ -211,6 +211,7 @@ fn a_private_effect_choice_is_not_serialized_for_the_other_seat() {
         colors: None,
         cast_via_flashback: false,
         cast_face_down: false,
+        colors_of_mana_spent: crate::card::ColorSet::empty(),
         is_copy: false,
     };
     let mut context = EffectResolutionContext::empty();
@@ -310,6 +311,7 @@ fn a_public_effect_choice_cannot_retain_an_unexposed_hidden_object_id() {
         colors: None,
         cast_via_flashback: false,
         cast_face_down: false,
+        colors_of_mana_spent: crate::card::ColorSet::empty(),
         is_copy: false,
     };
     let mut context = EffectResolutionContext::empty();
@@ -486,6 +488,7 @@ fn retained_trigger_state_never_serializes_unrebindable_hidden_object_ids() {
         colors: None,
         cast_via_flashback: false,
         cast_face_down: false,
+        colors_of_mana_spent: crate::card::ColorSet::empty(),
         is_copy: false,
     });
 

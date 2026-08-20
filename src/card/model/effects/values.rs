@@ -211,6 +211,11 @@ pub enum ValueDef {
     /// What was actually paid for a [`super::EffectPaymentCostDef::ChosenGenericMana`]
     /// payment in this resolution. Zero anywhere else, so a branch that reads
     /// it without a payment behind it does nothing rather than guessing.
+    /// "The number of colors of mana spent to cast this spell" (CR 702.86a,
+    /// converge). Colorless is a mana type rather than a color and never
+    /// counts. A copy of a spell was never cast, so nothing was spent on it
+    /// and this reads zero however the original was paid for.
+    ColorsOfManaSpent,
     PaidAmount,
     /// How many creatures have died this turn, for "for each creature that
     /// died this turn". Counted as they die rather than read off a zone,

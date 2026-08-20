@@ -125,6 +125,7 @@ impl Game {
             colors: None,
             cast_via_flashback: false,
             cast_face_down: false,
+            colors_of_mana_spent: crate::card::ColorSet::empty(),
             is_copy: false,
         });
         self.events.push(GameEvent::AbilityActivated {

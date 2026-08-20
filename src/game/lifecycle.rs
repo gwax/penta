@@ -465,6 +465,20 @@ impl Game {
                 // creature with power X or less" has to be answered before
                 // it gets one.
                 .or_else(|| self.prospective_x.get().map(i32::from)),
+            // Converge, reached the same way and for the same reason: the
+            // spell is its own source, and it has left the stack by the time
+            // its effect asks what paid for it.
+            ValueDef::ColorsOfManaSpent => self
+                .stack
+                .iter()
+                .find(|object| object.id == source)
+                .map(|object| i32::from(object.colors_spent_count()))
+                .or_else(|| match self.retired_objects.get(&source) {
+                    Some(RetiredObject::Stack(object)) => {
+                        Some(i32::from(object.colors_spent_count()))
+                    }
+                    Some(RetiredObject::Card(_) | RetiredObject::Permanent { .. }) | None => None,
+                }),
             // Pumping the source widens the predicate while it is live. If
             // source and triggering object leave simultaneously, use the
             // same last-known power frozen for the rest of the trigger.

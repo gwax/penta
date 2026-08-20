@@ -107,3 +107,4 @@ pub const PATH_TO_EXILE: CardDefinitionId = CardDefinitionId(2189);
 pub const THROUGH_THE_BREACH: CardDefinitionId = CardDefinitionId(2190);
 pub const STONEFORGE_MYSTIC: CardDefinitionId = CardDefinitionId(2191);
 pub const DAMN: CardDefinitionId = CardDefinitionId(2192);
+pub const PRISMATIC_ENDING: CardDefinitionId = CardDefinitionId(2193);

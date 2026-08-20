@@ -393,6 +393,7 @@ fn spell(id: u32, definition: CardDefinitionId, controller: PlayerId, x: u16) ->
         colors: None,
         cast_via_flashback: false,
         cast_face_down: false,
+        colors_of_mana_spent: ColorSet::empty(),
         is_copy: false,
     }
 }
@@ -777,6 +778,7 @@ mod vintage_cube_more_spells;
 mod vintage_cube_ninjutsu;
 mod vintage_cube_nissa;
 mod vintage_cube_path;
+mod vintage_cube_prismatic_ending;
 mod vintage_cube_spells;
 mod vintage_cube_stoneforge;
 mod vintage_cube_tamiyo;

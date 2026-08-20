@@ -747,6 +747,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::IfTargetMatches(_)
         | ValueDef::IfMatchingObjectCount(_)
         | ValueDef::CountersOnSource(_)
+        | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount
         | ValueDef::BoundObjectCount(_)
@@ -793,6 +794,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::IfTargetMatches(_)
         | ValueDef::IfMatchingObjectCount(_)
         | ValueDef::CountersOnSource(_)
+        | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount
         | ValueDef::BoundObjectCount(_)

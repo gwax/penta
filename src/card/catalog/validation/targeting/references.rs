@@ -277,7 +277,8 @@ fn validate_trigger_object_predicate(
                     | ValueDef::LifeTotal(_)
         | ValueDef::SourceToughness
                     | ValueDef::CountersOnSource(_)
-                    | ValueDef::PaidAmount
+                    | ValueDef::ColorsOfManaSpent
+        | ValueDef::PaidAmount
                     | ValueDef::MatchedCount
         | ValueDef::BoundObjectCount(_)
                     | ValueDef::SpellsCastBeforeThisTurn
@@ -782,6 +783,7 @@ fn validate_value_target_references(
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
+        | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount
         | ValueDef::BoundObjectCount(_)

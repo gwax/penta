@@ -115,6 +115,10 @@ impl Game {
             // outside a chosen-amount payment does nothing rather than
             // guessing at a number.
             ValueDef::PaidAmount => i32::from(context.paid_amount.unwrap_or(0)),
+            // Read off the object that was cast. An ability, a token, or a
+            // copy has nothing spent on it and counts zero, which is what
+            // converge on a copied spell means.
+            ValueDef::ColorsOfManaSpent => i32::from(object.colors_spent_count()),
             // What the step before this one matched -- the land cards a
             // discard took. Zero without such a step behind it.
             ValueDef::MatchedCount => i32::from(context.matched_count.unwrap_or(0)),

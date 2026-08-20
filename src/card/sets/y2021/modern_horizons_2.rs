@@ -5,8 +5,8 @@ use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, AppliedEffectDef,
     BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, DividedTotal, EffectDef,
     EffectRecipientDef, GraveyardTypeConditionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    PlayerRelation, SpellAdditionalCostDef, SpendModeDef, TriggerEventDef, ValueDef, ZoneKind,
-    abilities, cards,
+    PlayerRelation, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -90,6 +90,45 @@ static BONE_SHARDS_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_on
         ObjectPredicateDef::HasType(CardType::Planeswalker),
     ]),
 )];
+
+/// A nonland permanent of any size may be targeted; whether it is actually
+/// exiled is settled on resolution, against what paid for the spell.
+static ENDING_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+)];
+
+static ENDING_SMALL_ENOUGH: TriggerConditionDef = TriggerConditionDef::TargetMatches {
+    slot: TargetIndex::PRIMARY,
+    object: ObjectPredicateDef::ManaValueAtMostValue(ValueDef::ColorsOfManaSpent),
+};
+
+static ENDING_EXILE: EffectDef = EffectDef::MoveToZone {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    zone: ZoneKind::Exile,
+    placement: ZonePlacement::Top,
+    controller: None,
+    arrival_effect: None,
+};
+
+// MH2 25 — Prismatic Ending
+pub(in crate::card::sets) static PRISMATIC_ENDING: CardRecord = CardRecord::new(
+    cards::PRISMATIC_ENDING,
+    "Prismatic Ending",
+    CardArt::new("825969b9-3c70-4fca-8cab-696e9ca7cdb2", "John Stanko"),
+    CardSet::ModernHorizons2,
+    // X buys nothing by itself: it is a sink for the extra colours, and how
+    // many different ones went in is the only thing the spell reads.
+    CardRules::new_sorcery(mana_cost!("{X}{W}"))
+        .with_converge()
+        .with_ability(AbilityDef::spell_with_targets(
+            "Converge — Exile target nonland permanent if its mana value is less than or equal to the number of colors of mana spent to cast this spell.",
+            &ENDING_TARGET,
+            EffectDef::IfCondition {
+                condition: &ENDING_SMALL_ENOUGH,
+                then: &ENDING_EXILE,
+            },
+        )),
+);
 
 static DAMN_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
     ObjectPredicateDef::HasType(CardType::Creature),
@@ -247,6 +286,7 @@ pub(in crate::card::sets) static YAVIMAYA_CRADLE_OF_GROWTH: CardRecord = CardRec
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &PRISMATIC_ENDING,
     &BONE_SHARDS,
     &DAMN,
     &FURY,

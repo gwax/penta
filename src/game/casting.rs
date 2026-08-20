@@ -760,6 +760,7 @@ impl Game {
             colors: None,
             cast_via_flashback,
             cast_face_down,
+            colors_of_mana_spent: crate::card::ColorSet::empty(),
             is_copy: false,
         };
         let payment_purpose = ManaPaymentPurpose::Spell {
@@ -794,6 +795,15 @@ impl Game {
         self.activate_mana_for_cost_avoiding_for(player, cost, x, None, &payment_purpose);
         let spent_mana = self.pay_player_cost_for(player, cost, x, &payment_purpose);
         Self::apply_spent_mana_to_spell(&mut stack_object, &spent_mana);
+        // Recorded whether or not this spell counts them: what paid for a
+        // spell is a fact about the cast, and a clause that asks later has
+        // nothing else to read it from.
+        for mana in &spent_mana {
+            if mana.color != ManaColor::Colorless {
+                stack_object.colors_of_mana_spent =
+                    stack_object.colors_of_mana_spent.with(mana.color);
+            }
+        }
         self.continue_spell_cast(stack_object, targets, sacrifices.to_vec());
     }
 

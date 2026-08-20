@@ -22,6 +22,11 @@ pub(in crate::game::state_checkpoint) struct StackSnapshot {
     pub(in crate::game::state_checkpoint) applied_effects: Vec<AppliedStackEffectSnapshot>,
     pub(in crate::game::state_checkpoint) text_changes: Vec<BasicLandTypeChangeSnapshot>,
     pub(in crate::game::state_checkpoint) colors: Option<[bool; 5]>,
+    /// Which colours paid for this spell, for converge. Additive: a payload
+    /// written before converge existed carries none, and reconstructs as a
+    /// spell nothing was spent on.
+    #[serde(default, skip_serializing_if = "no_colors_spent")]
+    pub(in crate::game::state_checkpoint) colors_of_mana_spent: [bool; 5],
     pub(in crate::game::state_checkpoint) cast_via_flashback: bool,
     pub(in crate::game::state_checkpoint) is_copy: bool,
 }
@@ -61,6 +66,11 @@ pub(in crate::game::state_checkpoint) struct DetachedStackSnapshot {
     pub(in crate::game::state_checkpoint) applied_effects: Vec<AppliedStackEffectSnapshot>,
     pub(in crate::game::state_checkpoint) text_changes: Vec<BasicLandTypeChangeSnapshot>,
     pub(in crate::game::state_checkpoint) colors: Option<[bool; 5]>,
+    /// Which colours paid for this spell, for converge. Additive: a payload
+    /// written before converge existed carries none, and reconstructs as a
+    /// spell nothing was spent on.
+    #[serde(default, skip_serializing_if = "no_colors_spent")]
+    pub(in crate::game::state_checkpoint) colors_of_mana_spent: [bool; 5],
     pub(in crate::game::state_checkpoint) cast_via_flashback: bool,
     pub(in crate::game::state_checkpoint) is_copy: bool,
 }
@@ -126,4 +136,13 @@ pub(in crate::game::state_checkpoint) struct ManaCostSnapshot {
 pub(in crate::game::state_checkpoint) struct ScopedEffectSnapshot {
     pub(in crate::game::state_checkpoint) path: Vec<usize>,
     pub(in crate::game::state_checkpoint) target_base: usize,
+}
+
+/// Elides the common case: nothing but a converge spell records what paid
+/// for it, so every other stack object writes no field at all.
+// serde hands this a reference, and clippy would rather it were a value;
+// the wrapper is the cheapest way to satisfy both.
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn no_colors_spent(colors: &[bool; 5]) -> bool {
+    colors.iter().all(|spent| !*spent)
 }
