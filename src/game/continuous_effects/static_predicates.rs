@@ -148,6 +148,7 @@ impl Game {
             | ObjectPredicateDef::PowerAtLeast(_)
             | ObjectPredicateDef::PowerExactly(_)
             | ObjectPredicateDef::ToughnessExactly(_)
+        | ObjectPredicateDef::TotalPowerAndToughnessAtMost(_)
             | ObjectPredicateDef::ToughnessLessThan(_)
             | ObjectPredicateDef::PowerGreaterThan(_)
             | ObjectPredicateDef::ToughnessGreaterThan(_)

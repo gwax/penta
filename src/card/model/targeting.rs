@@ -56,6 +56,12 @@ pub enum ObjectPredicateDef {
     PowerExactly(i16),
     /// Toughness exactly this much, read the same way.
     ToughnessExactly(i16),
+    /// Power and toughness adding up to no more than this, for "total power
+    /// and toughness 5 or less". Read live like the two halves are, so a
+    /// creature anything has pumped past the sum stops qualifying. A
+    /// creature missing either stat -- which no creature on the battlefield
+    /// is -- does not qualify.
+    TotalPowerAndToughnessAtMost(i16),
     /// Toughness strictly below a value computed from the ability's own
     /// source, for "toughness less than this creature's power".
     ToughnessLessThan(ValueDef),

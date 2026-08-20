@@ -3,6 +3,25 @@ impl Game {
     /// object, which is what a controller relation is measured against.
     /// The predicates comparing a stat against a value read off the ability's
     /// own source. They share a shape, so they share a body.
+    /// The stat comparisons whose limit is a printed number rather than a
+    /// value read off the ability's source. Every one of them reads the
+    /// object live, so anything that pumps a creature moves it in or out of
+    /// range as it goes.
+    fn printed_stat_matches(predicate: ObjectPredicateDef, object: &TriggerEventObject) -> bool {
+        match predicate {
+            ObjectPredicateDef::PowerAtLeast(minimum) => {
+                object.power.is_some_and(|power| power >= minimum)
+            }
+            ObjectPredicateDef::PowerExactly(exact) => object.power == Some(exact),
+            ObjectPredicateDef::ToughnessExactly(exact) => object.toughness == Some(exact),
+            ObjectPredicateDef::TotalPowerAndToughnessAtMost(limit) => object
+                .power
+                .zip(object.toughness)
+                .is_some_and(|(power, toughness)| power.saturating_add(toughness) <= limit),
+            _ => false,
+        }
+    }
+
     fn computed_stat_matches(
         &self,
         predicate: ObjectPredicateDef,
@@ -311,11 +330,12 @@ impl Game {
             ObjectPredicateDef::ManaValueAtMostValue(value) => self
                 .value_from_source(value, source)
                 .is_some_and(|value| i32::from(object.mana_value) <= value),
-            ObjectPredicateDef::PowerAtLeast(minimum) => {
-                object.power.is_some_and(|power| power >= minimum)
+            ObjectPredicateDef::PowerAtLeast(_)
+            | ObjectPredicateDef::PowerExactly(_)
+            | ObjectPredicateDef::ToughnessExactly(_)
+            | ObjectPredicateDef::TotalPowerAndToughnessAtMost(_) => {
+                Self::printed_stat_matches(predicate, object)
             }
-            ObjectPredicateDef::PowerExactly(exact) => object.power == Some(exact),
-            ObjectPredicateDef::ToughnessExactly(exact) => object.toughness == Some(exact),
             ObjectPredicateDef::ToughnessLessThan(_)
             | ObjectPredicateDef::PowerGreaterThan(_)
             | ObjectPredicateDef::PowerLessThan(_)

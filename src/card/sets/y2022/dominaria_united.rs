@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardSupertype, EffectDef, EffectRecipientDef,
-    PlayerRelation, TriggerEventDef, ValueDef, abilities, cards,
+    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, abilities,
+    cards,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 /// Two clauses rather than one symmetrical one, because they are not
 /// symmetrical: yours gains and theirs loses, and a card that made both
@@ -30,6 +31,33 @@ static SHEOLDRED_ABILITIES: [AbilityDef; 3] = [
     ),
 ];
 
+/// "Total power and toughness 5 or less" is read live, so a creature that
+/// was in range stops being a legal target the moment anything pumps it.
+static CUT_DOWN_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::TotalPowerAndToughnessAtMost(5),
+    ]),
+)];
+
+// DMU 89 — Cut Down
+pub(in crate::card::sets) static CUT_DOWN: CardRecord = CardRecord::new(
+    cards::CUT_DOWN,
+    "Cut Down",
+    CardArt::new("753db072-5d6a-4f37-8f7d-255572ecd3bd", "Dominik Mayer"),
+    CardSet::DominariaUnited,
+    // One black mana answers most of what an aggressive deck plays and
+    // nothing of what a big one does, which is the whole design.
+    CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target creature with total power and toughness 5 or less.",
+        &CUT_DOWN_TARGET,
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            can_regenerate: true,
+        },
+    )),
+);
+
 // DMU 107 — Sheoldred, the Apocalypse
 pub(in crate::card::sets) static SHEOLDRED_THE_APOCALYPSE: CardRecord = CardRecord::new(
     cards::SHEOLDRED_THE_APOCALYPSE,
@@ -44,6 +72,6 @@ pub(in crate::card::sets) static SHEOLDRED_THE_APOCALYPSE: CardRecord = CardReco
         .with_abilities(&SHEOLDRED_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&SHEOLDRED_THE_APOCALYPSE];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&CUT_DOWN, &SHEOLDRED_THE_APOCALYPSE];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

@@ -104,6 +104,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::PowerExactly(_)
         | ObjectPredicateDef::ToughnessExactly(_)
+        | ObjectPredicateDef::TotalPowerAndToughnessAtMost(_)
         | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::PowerGreaterThan(_)
         | ObjectPredicateDef::PowerLessThan(_)
