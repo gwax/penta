@@ -80,6 +80,7 @@ pub(in crate::card::sets) static REPLENISH: CardRecord = CardRecord::new(
             zone: ZoneKind::Battlefield,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
             controller: None,
         },
     )),

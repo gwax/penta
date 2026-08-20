@@ -15,6 +15,24 @@ mod permanent_state;
 mod prevention;
 mod tapping;
 
+/// How a permanent this effect moves arrives, when it arrives at all.
+/// "Under your control" and "attach this to it" both belong to the arrival:
+/// what enters is a new object, so neither can wait for a later step.
+fn battlefield_arrival(
+    object: &StackObject,
+    arriving_controller: Option<crate::PlayerId>,
+    attach_source: bool,
+) -> Option<BattlefieldArrival> {
+    if arriving_controller.is_none() && !attach_source {
+        return None;
+    }
+    let arrival = BattlefieldArrival::under(arriving_controller.unwrap_or(object.controller));
+    Some(match object.source.filter(|_| attach_source) {
+        Some(source) => arrival.attaching(source),
+        None => arrival,
+    })
+}
+
 impl Game {
     #[allow(clippy::too_many_lines)]
     pub(super) fn resolve_effect_def(
@@ -804,6 +822,7 @@ impl Game {
                 controller,
                 placement,
                 arrival_effect,
+                attach_source,
             } => {
                 let arriving_controller = controller.map(|relation| {
                     if self.player_relation_matches(
@@ -824,7 +843,10 @@ impl Game {
                         ZoneMoveCause::Effect {
                             controller: object.controller,
                         },
-                        arriving_controller.map(BattlefieldArrival::under),
+                        // "Under your control" and "attach this to it" both
+                        // belong to the arrival: a permanent that enters is
+                        // a new object, so neither can wait for a later step.
+                        battlefield_arrival(object, arriving_controller, attach_source),
                         placement,
                     );
                     // Applied as the move happens: the identity a permanent

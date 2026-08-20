@@ -238,6 +238,7 @@ fn loyalty_activations_require_sorcery_timing_sufficient_loyalty_and_once_per_tu
         is_copy: false,
         text_changes: Vec::new(),
         cast_via_flashback: false,
+        cast_at_instant_speed: false,
         cast_face_down: false,
     });
     assert!(!has_loyalty_action(&game, walker_id, 0));

@@ -108,6 +108,7 @@ static ENDING_EXILE: EffectDef = EffectDef::MoveToZone {
     placement: ZonePlacement::Top,
     controller: None,
     arrival_effect: None,
+    attach_source: false,
 };
 
 // MH2 25 — Prismatic Ending

@@ -259,6 +259,15 @@ struct Permanent {
     /// reads it here, because the spell object is gone by the time the
     /// permanent's own triggers resolve.
     cast_alternative: Option<AlternativeCastKindDef>,
+    /// Whether the spell this permanent came from was cast at a time a
+    /// sorcery could not have been. Necromancy's own drawback asks, and the
+    /// spell object is gone by the time the permanent's triggers resolve.
+    cast_at_instant_speed: bool,
+    /// Whether this permanent has become an Aura. Necromancy is not one as
+    /// it enters -- its own trigger makes it one, in the same resolution
+    /// that attaches it -- so the window between entering and reanimating
+    /// must not be read as an Aura attached to nothing.
+    became_aura: bool,
     attacking: bool,
     attack_defender: Option<crate::AttackDefender>,
     /// Which attacking band this creature belongs to, as an index shared by
@@ -448,6 +457,8 @@ impl Permanent {
             damage: 0,
             cast_x: 0,
             cast_alternative: None,
+            cast_at_instant_speed: false,
+            became_aura: false,
             attacking: false,
             attack_defender: None,
             attacking_band: None,
@@ -530,6 +541,7 @@ enum RetiredObject {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[allow(clippy::struct_excessive_bools)]
 struct StackObject {
     id: GameObjectId,
     kind: StackObjectKind,
@@ -561,6 +573,9 @@ struct StackObject {
     /// leaving the stack. This is frozen at cast time because the permission
     /// lived on the previous graveyard object.
     cast_via_flashback: bool,
+    /// Whether this spell was cast at a time a sorcery could not have been.
+    /// Recorded as the cast happens, because nothing afterwards can tell.
+    cast_at_instant_speed: bool,
     /// Whether this spell was cast face down. The permanent it becomes
     /// enters face down, and until it resolves only its controller may know
     /// which card it is.
@@ -733,6 +748,11 @@ impl StackObject {
 pub(super) struct BattlefieldArrival {
     pub(super) controller: PlayerId,
     pub(super) tapped: bool,
+    /// The object to attach to this permanent as it enters. "Put target
+    /// creature card onto the battlefield and attach this to it" cannot be
+    /// two steps: what arrives is a new object, and by the time a following
+    /// effect ran there would be nothing to name.
+    pub(super) attach_source: Option<GameObjectId>,
     /// Whether a double-faced card arrives showing its back face. "Return
     /// him to the battlefield transformed" says which face enters, so it
     /// belongs to the arrival rather than to a transform afterwards: what
@@ -747,6 +767,7 @@ impl BattlefieldArrival {
             controller,
             tapped: false,
             transformed: false,
+            attach_source: None,
         }
     }
 
@@ -755,6 +776,7 @@ impl BattlefieldArrival {
             controller,
             tapped: true,
             transformed: false,
+            attach_source: None,
         }
     }
 
@@ -763,7 +785,13 @@ impl BattlefieldArrival {
             controller,
             tapped: false,
             transformed: true,
+            attach_source: None,
         }
+    }
+
+    pub(super) const fn attaching(mut self, source: GameObjectId) -> Self {
+        self.attach_source = Some(source);
+        self
     }
 }
 

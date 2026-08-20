@@ -116,3 +116,4 @@ pub const CAT_WARRIOR_TOKEN_2_1_WHITE: CardDefinitionId = CardDefinitionId(2198)
 pub const AJANI_NACATL_PARIAH: CardDefinitionId = CardDefinitionId(2199);
 pub const DUELIST_OF_THE_MIND: CardDefinitionId = CardDefinitionId(2200);
 pub const BALEFUL_MASTERY: CardDefinitionId = CardDefinitionId(2201);
+pub const NECROMANCY: CardDefinitionId = CardDefinitionId(2202);

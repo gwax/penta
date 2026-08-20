@@ -639,6 +639,8 @@ fn parse_permanent(
             )
         })
         .collect();
+    permanent.cast_at_instant_speed = state.cast_at_instant_speed;
+    permanent.became_aura = state.became_aura;
     permanent.copy_effect = state
         .copy_effect
         .as_ref()

@@ -509,7 +509,10 @@ impl Game {
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from,
-            completion: EntryCompletion::None,
+            completion: match arrival.attach_source {
+                Some(source) => EntryCompletion::AttachSource { source },
+                None => EntryCompletion::None,
+            },
             redirected_to: None,
         });
         // The entry is committed here unless a replacement needs an answer

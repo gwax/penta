@@ -409,14 +409,21 @@ impl Game {
     /// and only one goes to the graveyard when it comes loose.
     pub(super) fn is_aura_permanent(&self, permanent: &Permanent) -> bool {
         self.effective_rules(permanent).is_some_and(|rules| {
-            rules.ability_clauses().iter().any(|ability| {
-                ability.is_executable()
-                    && matches!(ability.definition, DeclarativeAbilityDef::Spell(_))
-                    && ability
-                        .declarative_effect()
-                        .and_then(Self::immediate_attachment_target)
-                        .is_some()
-            })
+            // An Aura is ordinarily recognised by the host its spell
+            // announces. One that attaches after resolving announces none
+            // and says what it enchants outright instead -- and becomes an
+            // Aura only once it is attached, which is what keeps it from
+            // being binned by state-based actions in the window between
+            // entering and its own trigger resolving.
+            (rules.enchant().is_some() && permanent.became_aura)
+                || rules.ability_clauses().iter().any(|ability| {
+                    ability.is_executable()
+                        && matches!(ability.definition, DeclarativeAbilityDef::Spell(_))
+                        && ability
+                            .declarative_effect()
+                            .and_then(Self::immediate_attachment_target)
+                            .is_some()
+                })
         })
     }
 
@@ -678,6 +685,17 @@ impl Game {
         let Some(rules) = self.effective_rules(aura) else {
             return false;
         };
+        // An Aura that never announces a host as it is cast declares its
+        // restriction outright, because there is no target slot to read one
+        // from.
+        if let Some(object) = rules.enchant() {
+            return self.trigger_object_matches(
+                object,
+                &self.trigger_event_object(host),
+                aura.card.id,
+                false,
+            );
+        }
         let Some(target) = rules.ability_clauses().iter().find_map(|ability| {
             let target = Self::immediate_attachment_target(ability.declarative_effect()?)?;
             let DeclarativeAbilityDef::Spell(spell) = ability.definition else {

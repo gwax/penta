@@ -71,6 +71,9 @@ pub enum TriggerConditionDef {
     /// this: the permanent is here, and the question is which way it was
     /// paid for on the way in. False for anything that never was a spell.
     SourceCastWith(AlternativeCastKindDef),
+    /// "If you cast it any time a sorcery couldn't have been cast." Recorded
+    /// as the spell was cast, because nothing afterwards can tell.
+    SourceCastAtInstantSpeed,
     /// How much loyalty the ability's own source has left.
     SourceLoyalty {
         comparison: ComparisonDef,

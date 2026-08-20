@@ -63,6 +63,7 @@ pub(in crate::card::sets) static ANGELIC_EDICT: CardRecord = CardRecord::new(
             zone: ZoneKind::Exile,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
             controller: None,
         },
     )),
@@ -380,6 +381,7 @@ pub(in crate::card::sets) static LUMINATE_PRIMORDIAL: CardRecord = CardRecord::n
                     zone: ZoneKind::Exile,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
+                    attach_source: false,
                     controller: None,
                 },
                 EffectDef::GainLife {
@@ -600,6 +602,7 @@ pub(in crate::card::sets) static AGORAPHOBIA: CardRecord = CardRecord::new(
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
+                    attach_source: false,
                     controller: None,
                 },
             ),
@@ -733,6 +736,7 @@ static KEYMASTER_ROGUE_BOUNCE: EffectDef = EffectDef::MoveToZone {
     controller: None,
     placement: ZonePlacement::Top,
     arrival_effect: None,
+    attach_source: false,
 };
 
 static KEYMASTER_ROGUE_CHOICE: EffectDef = EffectDef::Choose(ChooseDef {
@@ -1018,6 +1022,7 @@ pub(in crate::card::sets) static TOTALLY_LOST: CardRecord = CardRecord::new(
             zone: ZoneKind::Library,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
             controller: None,
         },
     )),
@@ -1511,6 +1516,7 @@ pub(in crate::card::sets) static SEPULCHRAL_PRIMORDIAL: CardRecord = CardRecord:
                 controller: Some(PlayerRelation::You),
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
+                attach_source: false,
             }),
     ]),
 );
@@ -2633,6 +2639,7 @@ pub(in crate::card::sets) static WILDWOOD_REBIRTH: CardRecord = CardRecord::new(
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
             controller: None,
         },
     )),
@@ -2930,6 +2937,7 @@ pub(in crate::card::sets) static DINROVA_HORROR: CardRecord = CardRecord::new(
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
+                    attach_source: false,
                     controller: None,
                 },
                 EffectDef::Discard {
@@ -3410,6 +3418,7 @@ pub(in crate::card::sets) static MORTUS_STRIDER: CardRecord = CardRecord::new(
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
+                attach_source: false,
                 controller: None,
             },
         ),
@@ -3675,6 +3684,7 @@ pub(in crate::card::sets) static SIMIC_CHARM: CardRecord = CardRecord::new(
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
+                    attach_source: false,
                     controller: None,
                 },
             ),
@@ -3785,6 +3795,7 @@ pub(in crate::card::sets) static TREASURY_THRULL: CardRecord = CardRecord::new(
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
+                    attach_source: false,
                     controller: None,
                 },
             },
@@ -3924,6 +3935,7 @@ pub(in crate::card::sets) static BECKON_APPARITION: CardRecord = CardRecord::new
                     zone: ZoneKind::Exile,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
+                    attach_source: false,
                     controller: None,
                 },
                 EffectDef::CreateToken {
@@ -4111,6 +4123,7 @@ pub(in crate::card::sets) static SHATTERING_BLOW: CardRecord = CardRecord::new(
             zone: ZoneKind::Exile,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
             controller: None,
         },
     )),

@@ -89,6 +89,7 @@ static INTUITION_DISTRIBUTE: EffectDef = EffectDef::Sequence(&[
         zone: ZoneKind::Hand,
         placement: ZonePlacement::Top,
         arrival_effect: None,
+        attach_source: false,
         controller: None,
     },
     EffectDef::MoveToZone {
@@ -96,6 +97,7 @@ static INTUITION_DISTRIBUTE: EffectDef = EffectDef::Sequence(&[
         zone: ZoneKind::Graveyard,
         placement: ZonePlacement::Top,
         arrival_effect: None,
+        attach_source: false,
         controller: None,
     },
 ]);
@@ -185,6 +187,7 @@ static DANCE_EXILE_AT_END: AbilityDef = AbilityDef::triggered(
         zone: ZoneKind::Exile,
         placement: ZonePlacement::Top,
         arrival_effect: None,
+        attach_source: false,
         controller: None,
     },
 );
@@ -214,6 +217,7 @@ pub(in crate::card::sets) static CORPSE_DANCE: CardRecord = CardRecord::new(
                 zone: ZoneKind::Battlefield,
                 placement: ZonePlacement::Top,
                 arrival_effect: Some(&DANCE_ARRIVAL),
+                attach_source: false,
                 controller: None,
             },
         ),
@@ -246,6 +250,7 @@ pub(in crate::card::sets) static REANIMATE: CardRecord = CardRecord::new(
                 zone: ZoneKind::Battlefield,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
+                attach_source: false,
                 controller: Some(PlayerRelation::You),
             },
             EffectDef::LoseLife {

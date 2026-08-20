@@ -764,6 +764,19 @@ impl Game {
                 // stack carries the cast signature itself, which is where a
                 // "when you cast this spell, if it was kicked" trigger has to
                 // read it -- the permanent does not exist yet.
+                // Read from the permanent, which remembers it, or from the
+                // spell still on the stack when the question comes earlier.
+                TriggerConditionDef::SourceCastAtInstantSpeed => {
+                    self.battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == source)
+                        .is_some_and(|permanent| permanent.cast_at_instant_speed)
+                        || self
+                            .stack
+                            .iter()
+                            .find(|candidate| candidate.id == source)
+                            .is_some_and(|candidate| candidate.cast_at_instant_speed)
+                }
                 TriggerConditionDef::SourceCastWith(kind) => {
                     self.battlefield
                         .iter()

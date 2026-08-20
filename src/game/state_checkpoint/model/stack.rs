@@ -28,6 +28,10 @@ pub(in crate::game::state_checkpoint) struct StackSnapshot {
     #[serde(default, skip_serializing_if = "no_colors_spent")]
     pub(in crate::game::state_checkpoint) colors_of_mana_spent: [bool; 5],
     pub(in crate::game::state_checkpoint) cast_via_flashback: bool,
+    /// Additive: a payload written before the flag existed restores as
+    /// false, which is what an ordinary sorcery-speed cast means anyway.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(in crate::game::state_checkpoint) cast_at_instant_speed: bool,
     pub(in crate::game::state_checkpoint) is_copy: bool,
 }
 
@@ -52,6 +56,7 @@ pub(in crate::game::state_checkpoint) struct StackAbilitySnapshot {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(clippy::struct_excessive_bools)]
 pub(in crate::game::state_checkpoint) struct DetachedStackSnapshot {
     pub(in crate::game::state_checkpoint) object_id: u32,
     pub(in crate::game::state_checkpoint) kind: StackObjectKindSnapshot,
@@ -72,6 +77,10 @@ pub(in crate::game::state_checkpoint) struct DetachedStackSnapshot {
     #[serde(default, skip_serializing_if = "no_colors_spent")]
     pub(in crate::game::state_checkpoint) colors_of_mana_spent: [bool; 5],
     pub(in crate::game::state_checkpoint) cast_via_flashback: bool,
+    /// Additive: a payload written before the flag existed restores as
+    /// false, which is what an ordinary sorcery-speed cast means anyway.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(in crate::game::state_checkpoint) cast_at_instant_speed: bool,
     pub(in crate::game::state_checkpoint) is_copy: bool,
 }
 

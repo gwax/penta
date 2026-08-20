@@ -17,7 +17,15 @@ pub(super) enum AttachmentKind {
 impl Game {
     /// The attachment category a permanent currently presents as.
     pub(super) fn attachment_kind(&self, permanent: &Permanent) -> Option<AttachmentKind> {
-        if self.is_aura_permanent(permanent) {
+        // The attaching side asks whether this could be an Aura at all, so a
+        // declared enchant restriction counts here even before anything is
+        // attached. `is_aura_permanent` answers the narrower question that
+        // state-based actions ask, and needs the attachment to exist.
+        if self.is_aura_permanent(permanent)
+            || self
+                .effective_rules(permanent)
+                .is_some_and(|rules| rules.enchant().is_some())
+        {
             return Some(AttachmentKind::Aura);
         }
         let subtypes = self.effective_subtypes(permanent);
@@ -152,6 +160,9 @@ impl Game {
             return false;
         };
         permanent.attached_to = Some(host);
+        // "It becomes an Aura" happens in the same resolution that attaches
+        // it, so the two are recorded together and it stays one afterwards.
+        permanent.became_aura = true;
         permanent.timestamp = timestamp;
         permanent.reconfigured_timestamp = reconfigured.then_some(timestamp);
         true

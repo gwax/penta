@@ -352,6 +352,7 @@ impl Game {
             text_changes: Vec::new(),
             colors: None,
             cast_via_flashback: false,
+            cast_at_instant_speed: false,
             cast_face_down: false,
             colors_of_mana_spent: crate::card::ColorSet::empty(),
             is_copy: false,

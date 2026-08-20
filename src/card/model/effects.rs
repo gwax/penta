@@ -624,6 +624,11 @@ pub enum EffectDef {
         /// time the next effect ran, nothing would name it. Lasts as long as
         /// the permanent does.
         arrival_effect: Option<&'static AppliedEffectDef>,
+        /// "Put target creature card onto the battlefield ... and attach
+        /// this enchantment to it." The attachment rides the arrival for the
+        /// same reason the effect above does: what enters is a new object,
+        /// and a following effect would have nothing left to name.
+        attach_source: bool,
     },
     /// Every card in the named player's hand is revealed to everyone.
     ///

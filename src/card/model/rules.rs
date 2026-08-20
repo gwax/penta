@@ -5,7 +5,7 @@ use crate::ids::{AbilityId, AlternativeCostId, ModeId};
 use super::{
     AbilityDef, AlternativeCostDef, CardBehavior, CardSupertype, CardType, CardTypeSet, ColorSet,
     DeclarativeAbilityDef, HybridPair, ImplementationStatus, KeywordAbility, ManaColor, ManaCost,
-    ModeSetDef, PlayRestriction, PrintedManaCost,
+    ModeSetDef, ObjectPredicateDef, PlayRestriction, PrintedManaCost,
 };
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -92,6 +92,12 @@ pub struct CardRules {
     /// "Spend only black mana on X." The X portion of the cost stops being
     /// generic and has to come from this colour.
     x_spend_restriction: Option<ManaColor>,
+    /// The printed "enchant ..." restriction, for an Aura that does not
+    /// announce what it will enchant as it is cast. Every ordinary Aura
+    /// targets its host from the stack, so the restriction is read off that
+    /// target slot; one that attaches later has no such slot and says it
+    /// here instead.
+    enchant: Option<ObjectPredicateDef>,
     /// Whether this spell's own text counts the colours of mana spent to
     /// cast it -- the converge ability word. It changes nothing about what
     /// the spell costs; what it changes is how the generic portion is paid,
@@ -154,6 +160,7 @@ impl CardRules {
             play_restriction: PlayRestriction::Normal,
             x_spend_restriction: None,
             counts_colors_of_mana_spent: false,
+            enchant: None,
             additional_generic_per_extra_target: 0,
             morph: None,
         }
@@ -673,6 +680,19 @@ impl CardRules {
     #[must_use]
     pub const fn x_spend_restriction(&self) -> Option<ManaColor> {
         self.x_spend_restriction
+    }
+
+    /// "Enchant creature", for an Aura that attaches after it has resolved
+    /// rather than announcing a host as it is cast.
+    #[must_use]
+    pub const fn enchanting(mut self, object: ObjectPredicateDef) -> Self {
+        self.enchant = Some(object);
+        self
+    }
+
+    #[must_use]
+    pub const fn enchant(&self) -> Option<ObjectPredicateDef> {
+        self.enchant
     }
 
     /// "Converge --": this spell reads how many colours paid for it.

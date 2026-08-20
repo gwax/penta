@@ -329,6 +329,12 @@ impl Game {
     /// How a spell still on the stack was cast, if it was cast some
     /// alternative way. Read off the signature rather than from a permanent,
     /// because a spell that has not resolved has no permanent yet.
+    /// Whether this player could cast a sorcery right now (CR 307.1): their
+    /// own main phase, with an empty stack.
+    pub(super) fn sorcery_speed_available(&self, player: PlayerId) -> bool {
+        player == self.active_player && self.step.is_main() && self.stack.is_empty()
+    }
+
     /// Which alternative a spell was cast with, read off the spell object.
     ///
     /// A "when you cast this spell, if it was kicked" trigger asks while the
@@ -760,6 +766,9 @@ impl Game {
         let stack_id = card.id;
         let definition = card.definition;
         let frozen_spell_ability = self.frozen_spell_payload(definition, &signature);
+        // Read now, because nothing afterwards can tell: by resolution the
+        // step has usually moved on, and the stack is empty again.
+        let cast_at_instant_speed = !self.sorcery_speed_available(player);
         let mut stack_object = StackObject {
             id: stack_id,
             kind: StackObjectKind::Spell,
@@ -773,6 +782,7 @@ impl Game {
             text_changes: Vec::new(),
             colors: None,
             cast_via_flashback,
+            cast_at_instant_speed,
             cast_face_down,
             colors_of_mana_spent: crate::card::ColorSet::empty(),
             is_copy: false,

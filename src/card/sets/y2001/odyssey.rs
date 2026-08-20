@@ -56,6 +56,7 @@ pub(in crate::card::sets) static UPHEAVAL: CardRecord = CardRecord::new(
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
             controller: None,
         },
     )),
@@ -79,6 +80,7 @@ static ECHOES_EXILE: EffectDef = EffectDef::Sequence(&[
         zone: ZoneKind::Exile,
         placement: ZonePlacement::Top,
         arrival_effect: None,
+        attach_source: false,
         controller: None,
     },
     EffectDef::MoveToZone {
@@ -90,6 +92,7 @@ static ECHOES_EXILE: EffectDef = EffectDef::Sequence(&[
         zone: ZoneKind::Exile,
         placement: ZonePlacement::Top,
         arrival_effect: None,
+        attach_source: false,
         controller: None,
     },
     EffectDef::ShuffleLibrary {

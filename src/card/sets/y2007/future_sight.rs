@@ -28,6 +28,7 @@ pub(in crate::card::sets) static REALITY_STROBE: CardRecord = CardRecord::new(
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
+                attach_source: false,
                 controller: None,
             },
         )

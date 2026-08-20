@@ -407,6 +407,7 @@ impl Game {
                     colors: object.colors.map(crate::card::ColorSet::to_flags),
                     colors_of_mana_spent: object.colors_of_mana_spent.to_flags(),
                     cast_via_flashback: object.cast_via_flashback,
+                    cast_at_instant_speed: object.cast_at_instant_speed,
                     is_copy: object.is_copy,
                 }
             })

@@ -101,6 +101,7 @@ static CITY_EXILE_AND_UNTAP: EffectDef = EffectDef::Choose(ChooseDef {
             controller: None,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
         },
         EffectDef::Untap {
             object: EffectRecipientDef::Source,

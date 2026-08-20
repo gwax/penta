@@ -30,6 +30,7 @@ static WINDS_SINGLE: [EffectDef; 2] = [
         controller: None,
         placement: ZonePlacement::Top,
         arrival_effect: None,
+        attach_source: false,
     },
     // The searcher is the creature's controller, read from the announced
     // target: by now the creature is in exile and cannot be asked.
@@ -70,6 +71,7 @@ static WINDS_OVERLOADED_STEPS: [EffectDef; 2] = [
         controller: None,
         placement: ZonePlacement::Top,
         arrival_effect: None,
+        attach_source: false,
     },
     EffectDef::SearchZone {
         player: EffectRecipientDef::Opponent,

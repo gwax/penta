@@ -279,6 +279,7 @@ static TAMIYO_ABILITIES: [AbilityDef; 3] = [
             controller: None,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
         },
     ),
 ];

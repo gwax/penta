@@ -731,6 +731,7 @@ pub(in crate::card::sets) static RESURRECTION: CardRecord = CardRecord::new(
                 zone: ZoneKind::Battlefield,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
+                attach_source: false,
                 controller: None,
             },
         ),
@@ -850,6 +851,7 @@ pub(in crate::card::sets) static SWORDS_TO_PLOWSHARES: CardRecord = CardRecord::
                 zone: ZoneKind::Exile,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
+                attach_source: false,
                 controller: None,
             },
             EffectDef::GainLife {
@@ -1646,6 +1648,7 @@ pub(in crate::card::sets) static TIMETWISTER: CardRecord = CardRecord::new(
                 zone: ZoneKind::Library,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
+                attach_source: false,
                 controller: None,
             },
             EffectDef::ShuffleLibrary {
@@ -1715,6 +1718,7 @@ pub(in crate::card::sets) static UNSUMMON: CardRecord = CardRecord::new(
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
             controller: None,
         },
     )]),
@@ -2308,6 +2312,7 @@ pub(in crate::card::sets) static RAISE_DEAD: CardRecord = CardRecord::new(
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
             controller: None,
         },
     )]),
@@ -4081,6 +4086,7 @@ pub(in crate::card::sets) static REGROWTH: CardRecord = CardRecord::new(
             controller: None,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
         },
     )]),
 );

@@ -392,6 +392,7 @@ fn spell(id: u32, definition: CardDefinitionId, controller: PlayerId, x: u16) ->
         text_changes: Vec::new(),
         colors: None,
         cast_via_flashback: false,
+        cast_at_instant_speed: false,
         cast_face_down: false,
         colors_of_mana_spent: ColorSet::empty(),
         is_copy: false,
@@ -778,6 +779,7 @@ mod vintage_cube_mana;
 mod vintage_cube_mastery;
 mod vintage_cube_monarch;
 mod vintage_cube_more_spells;
+mod vintage_cube_necromancy;
 mod vintage_cube_ninjutsu;
 mod vintage_cube_nissa;
 mod vintage_cube_path;

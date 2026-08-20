@@ -339,6 +339,7 @@ pub(in crate::card::sets) static ERASE: CardRecord = CardRecord::new(
             zone: ZoneKind::Exile,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
             controller: None,
         },
     )),
@@ -785,6 +786,7 @@ pub(in crate::card::sets) static ARCHAEOMANCER: CardRecord = CardRecord::new(
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
+                attach_source: false,
                 controller: None,
             },
         ),
@@ -1273,6 +1275,7 @@ static SPHINX_OF_UTHUUN_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
         zone: ZoneKind::Hand,
         placement: ZonePlacement::Top,
         arrival_effect: None,
+        attach_source: false,
         controller: None,
     },
     EffectDef::MoveToZone {
@@ -1280,6 +1283,7 @@ static SPHINX_OF_UTHUUN_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
         zone: ZoneKind::Graveyard,
         placement: ZonePlacement::Top,
         arrival_effect: None,
+        attach_source: false,
         controller: None,
     },
 ]);
@@ -1715,6 +1719,7 @@ pub(in crate::card::sets) static DISENTOMB: CardRecord = CardRecord::new(
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
             controller: None,
         },
     )),
@@ -2080,6 +2085,7 @@ pub(in crate::card::sets) static RISE_FROM_THE_GRAVE: CardRecord = CardRecord::n
             controller: Some(PlayerRelation::You),
             placement: ZonePlacement::Top,
             arrival_effect: Some(&A_BLACK_ZOMBIE_AS_WELL),
+            attach_source: false,
         },
     )),
 );
@@ -2188,6 +2194,7 @@ pub(in crate::card::sets) static VILE_REBIRTH: CardRecord = CardRecord::new(
                 zone: ZoneKind::Exile,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
+                attach_source: false,
                 controller: None,
             },
             EffectDef::CreateToken {
@@ -3468,6 +3475,7 @@ pub(in crate::card::sets) static REVIVE: CardRecord = CardRecord::new(
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             arrival_effect: None,
+            attach_source: false,
             controller: None,
         },
     )),

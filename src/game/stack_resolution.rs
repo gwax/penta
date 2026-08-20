@@ -86,6 +86,7 @@ impl Game {
                 let option = card.play_option(signature.play_option())?;
                 self.selected_alternative_kind(card, option, object.id, signature.costs())
             });
+            permanent.cast_at_instant_speed = object.cast_at_instant_speed;
             permanent.text_changes = object.text_changes;
             permanent.attached_to = aura_host;
             self.enqueue_battlefield_entry(PendingBattlefieldEntry {
