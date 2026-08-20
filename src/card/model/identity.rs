@@ -88,6 +88,7 @@ pub enum CardSet {
     RavnicaClueEdition,
     Fallout,
     ModernHorizons3,
+    OutlawsOfThunderJunction,
     ModernHorizons3Commander,
     FoundationsJumpstart,
     TarkirDragonstorm,

@@ -728,6 +728,24 @@ impl Game {
                     }
                 }
             }
+            EffectDef::DoubleCounters {
+                object: recipient,
+                kind,
+            } => {
+                // Each permanent's own count, read as that permanent is
+                // reached: doubling is not one amount handed to everybody.
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Permanent(permanent) = target
+                        && let Some(permanent) = self
+                            .battlefield
+                            .iter_mut()
+                            .find(|candidate| candidate.card.id == permanent)
+                    {
+                        let existing = permanent.counters(kind);
+                        permanent.add_counters(kind, existing);
+                    }
+                }
+            }
             EffectDef::RemoveCounters {
                 object: recipient,
                 kind,

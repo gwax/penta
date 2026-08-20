@@ -493,6 +493,7 @@ fn validate_resolving_effect(
         | EffectDef::AddManaEqualTo { .. }
         | EffectDef::AddCounters { .. }
         | EffectDef::RemoveCounters { .. }
+        | EffectDef::DoubleCounters { .. }
         | EffectDef::RemoveAllCounters { .. }
         | EffectDef::SkipNextUntapSteps { .. }
         | EffectDef::ChangeTextBasicLandType { .. }
@@ -910,6 +911,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::AddManaEqualTo { .. } => "AddManaEqualTo",
         EffectDef::AddCounters { .. } => "AddCounters",
         EffectDef::RemoveCounters { .. } => "RemoveCounters",
+        EffectDef::DoubleCounters { .. } => "DoubleCounters",
         EffectDef::RemoveAllCounters { .. } => "RemoveAllCounters",
         EffectDef::SkipNextUntapSteps { .. } => "SkipNextUntapSteps",
         EffectDef::ChangeTextBasicLandType { .. } => "ChangeTextBasicLandType",

@@ -90,7 +90,8 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::RemoveFromCombat { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
-        | EffectDef::RemoveAllCounters { .. }
+        | EffectDef::DoubleCounters { .. }
+            | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventDamage { .. }
         | EffectDef::Attach { .. }
@@ -266,7 +267,8 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::RemoveFromCombat { .. }
         | EffectDef::DestroyAtEndOfCombat { .. }
         | EffectDef::SkipNextUntapSteps { .. }
-        | EffectDef::RemoveAllCounters { .. }
+        | EffectDef::DoubleCounters { .. }
+            | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
         | EffectDef::PreventDamage { .. }
         | EffectDef::Attach { .. }

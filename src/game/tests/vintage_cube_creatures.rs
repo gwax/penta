@@ -816,3 +816,114 @@ fn ivora_makes_a_second_blood_only_when_she_connects_in_combat() {
 
     assert_eq!(bloods(&game), 1, "connecting in combat makes another Blood");
 }
+
+/// A land arriving puts a counter on a creature the trigger targets, and it
+/// need not be Bill himself.
+#[test]
+fn bristly_bill_grows_a_creature_when_a_land_arrives() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let bill = creature(89_000, cards::BRISTLY_BILL_SPINE_SOWER, PlayerId::One);
+    let bill_id = bill.card.id;
+    game.battlefield.push(bill);
+    let bears = creature(89_001, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    game.players[0]
+        .hand
+        .push(card(89_002, cards::FOREST, PlayerId::One));
+
+    let play = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { .. }))
+        .expect("a land is playable");
+    game.apply(PlayerId::One, play).expect("it is played");
+    // The trigger asks which creature; take the Bears rather than Bill.
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("landfall asks for a target");
+    let option = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(card, _)| card == bears_id))
+        .expect("the Bears are a legal target");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![option.id],
+        },
+    )
+    .expect("the target is chosen");
+    drain_pending(&mut game);
+
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears_id)
+        .expect("the Bears are still there");
+    assert_eq!(bears.counters(CounterKind::PlusOnePlusOne), 1);
+    let bill = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bill_id)
+        .expect("Bill is still there");
+    assert_eq!(
+        bill.counters(CounterKind::PlusOnePlusOne),
+        0,
+        "the counter went where it was pointed",
+    );
+}
+
+/// Doubling reads each creature's own count, so a creature with none gains
+/// none and every other one gains what it already had.
+#[test]
+fn bristly_bill_doubles_each_creatures_own_counters() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mut bill = creature(89_010, cards::BRISTLY_BILL_SPINE_SOWER, PlayerId::One);
+    bill.add_counters(CounterKind::PlusOnePlusOne, 1);
+    let bill_id = bill.card.id;
+    game.battlefield.push(bill);
+    let mut bears = creature(89_011, cards::GRIZZLY_BEARS, PlayerId::One);
+    bears.add_counters(CounterKind::PlusOnePlusOne, 3);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let plain = creature(89_012, cards::SAVANNAH_LIONS, PlayerId::One);
+    let plain_id = plain.card.id;
+    game.battlefield.push(plain);
+    let mut theirs = creature(89_013, cards::GRIZZLY_BEARS, PlayerId::Two);
+    theirs.add_counters(CounterKind::PlusOnePlusOne, 2);
+    let theirs_id = theirs.card.id;
+    game.battlefield.push(theirs);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == bill_id),
+        )
+        .expect("five mana pays for the doubling");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    drain_pending(&mut game);
+
+    let counters = |game: &Game, id| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .map(|permanent| permanent.counters(CounterKind::PlusOnePlusOne))
+    };
+    assert_eq!(counters(&game, bill_id), Some(2), "one becomes two");
+    assert_eq!(counters(&game, bears_id), Some(6), "three becomes six");
+    assert_eq!(counters(&game, plain_id), Some(0), "none stays none");
+    assert_eq!(
+        counters(&game, theirs_id),
+        Some(2),
+        "and a creature you do not control is untouched",
+    );
+}

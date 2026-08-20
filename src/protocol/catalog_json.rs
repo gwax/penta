@@ -125,6 +125,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::RavnicaClueEdition => "ravnica-clue-edition",
         CardSet::Fallout => "fallout",
         CardSet::ModernHorizons3 => "modern-horizons-3",
+        CardSet::OutlawsOfThunderJunction => "outlaws-of-thunder-junction",
         CardSet::ModernHorizons3Commander => "modern-horizons-3-commander",
         CardSet::FoundationsJumpstart => "foundations-jumpstart",
         CardSet::TarkirDragonstorm => "tarkir-dragonstorm",

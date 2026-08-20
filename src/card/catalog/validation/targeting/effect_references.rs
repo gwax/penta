@@ -149,6 +149,7 @@ fn validate_effect_references(
         | EffectDef::RemoveFromCombat { object }
         | EffectDef::DestroyAtEndOfCombat { object, .. }
         | EffectDef::SkipNextUntapSteps { object, .. }
+        | EffectDef::DoubleCounters { object, .. }
         | EffectDef::RemoveAllCounters { object, .. }
         | EffectDef::Untap { object }
         | EffectDef::Attach { object }

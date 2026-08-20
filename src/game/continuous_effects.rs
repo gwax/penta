@@ -472,6 +472,7 @@ impl Game {
                 | EffectDef::RemoveFromCombat { .. }
                 | EffectDef::DestroyAtEndOfCombat { .. }
                 | EffectDef::SkipNextUntapSteps { .. }
+                | EffectDef::DoubleCounters { .. }
                 | EffectDef::RemoveAllCounters { .. }
                 | EffectDef::Untap { .. }
                 | EffectDef::Destroy { .. }

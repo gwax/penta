@@ -750,6 +750,15 @@ pub enum EffectDef {
         object: EffectRecipientDef,
     },
     /// Removes every counter of one kind from the recipient.
+    /// "Double the number of <kind> counters on each ..." Every matching
+    /// permanent gains as many counters as it already has, read one
+    /// permanent at a time. A shared amount cannot say this: the whole point
+    /// is that each object doubles its own, and a permanent carrying none
+    /// gains none.
+    DoubleCounters {
+        object: EffectRecipientDef,
+        kind: CounterKind,
+    },
     RemoveAllCounters {
         object: EffectRecipientDef,
         kind: CounterKind,

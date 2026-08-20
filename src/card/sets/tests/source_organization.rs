@@ -254,6 +254,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("ravnica_clue_edition.rs") => source(CardSet::RavnicaClueEdition, "CLU"),
         Some("fallout.rs") => source(CardSet::Fallout, "PIP"),
         Some("modern_horizons_3.rs") => source(CardSet::ModernHorizons3, "MH3"),
+        Some("outlaws_of_thunder_junction.rs") => source(CardSet::OutlawsOfThunderJunction, "OTJ"),
         Some("modern_horizons_3_commander.rs") => source(CardSet::ModernHorizons3Commander, "M3C"),
         Some("foundations_jumpstart.rs") => source(CardSet::FoundationsJumpstart, "J25"),
         Some("tarkir_dragonstorm.rs") => source(CardSet::TarkirDragonstorm, "TDM"),

@@ -183,6 +183,7 @@ fn validate_effect_target_shapes(
         | EffectDef::Destroy { object, .. }
         | EffectDef::DestroyAtEndOfCombat { object }
         | EffectDef::Detain { object }
+        | EffectDef::DoubleCounters { object, .. }
         | EffectDef::RemoveAllCounters { object, .. }
         | EffectDef::SkipNextUntapSteps { object, .. }
         | EffectDef::Sacrifice { object }
