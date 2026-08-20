@@ -3798,7 +3798,7 @@ pub(in crate::card::sets) static LOXODON_SMITER: CardRecord = CardRecord::new(
         AbilityDef::replacement_for(
             "If a spell or ability an opponent controls causes you to discard this card, put it onto the battlefield instead of putting it into your graveyard.",
             ReplacementEventDef::WouldMove {
-                from: ZoneKind::Hand,
+                from: Some(ZoneKind::Hand),
                 to: ZoneKind::Graveyard,
                 cause: ZoneMoveCauseDef::EffectControlledBy(PlayerRelation::Opponent),
             },

@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, SpellResolutionDestinationDef,
-    ValueDef, abilities, cards,
+    CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef, ReplacementEffectDef,
+    ReplacementEventDef, SpellResolutionDestinationDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
+    abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -25,6 +26,56 @@ pub(in crate::card::sets) static WHITE_SUNS_ZENITH: CardRecord = CardRecord::new
         )
         .with_resolution_destination(SpellResolutionDestinationDef::LibraryShuffled),
     ),
+);
+
+/// Revealed and shuffled back rather than exiled, so the deck keeps it and
+/// nothing gets to answer it permanently. The reveal is what makes the
+/// shuffle honest: everyone knows the card went back in.
+static COLOSSUS_RETURNS: [ReplacementEffectDef; 2] = [
+    ReplacementEffectDef::MoveToZone(ZoneKind::Library),
+    ReplacementEffectDef::Perform(&EffectDef::ShuffleLibrary {
+        player: EffectRecipientDef::Controller,
+    }),
+];
+
+/// Watched from everywhere the card can be, because "from anywhere" is the
+/// point: countered on the stack, discarded from hand, and milled from the
+/// library all come back the same way.
+static COLOSSUS_ZONES: [ZoneKind; 5] = [
+    ZoneKind::Battlefield,
+    ZoneKind::Stack,
+    ZoneKind::Hand,
+    ZoneKind::Library,
+    ZoneKind::Graveyard,
+];
+
+static COLOSSUS_ABILITIES: [AbilityDef; 4] = [
+    abilities::trample(),
+    abilities::infect(),
+    abilities::indestructible(),
+    AbilityDef::replacement_for(
+        "If this creature would be put into a graveyard from anywhere, reveal it and shuffle it into its owner's library instead.",
+        ReplacementEventDef::WouldMove {
+            from: None,
+            to: ZoneKind::Graveyard,
+            cause: ZoneMoveCauseDef::Any,
+        },
+        ReplacementEffectDef::Sequence(&COLOSSUS_RETURNS),
+    )
+    .with_source_zones(&COLOSSUS_ZONES),
+];
+
+// MBS 99 — Blightsteel Colossus
+pub(in crate::card::sets) static BLIGHTSTEEL_COLOSSUS: CardRecord = CardRecord::new(
+    cards::BLIGHTSTEEL_COLOSSUS,
+    "Blightsteel Colossus",
+    CardArt::new("7928bb14-7631-4830-a756-26d1ea832ba2", "Chris Rahn"),
+    CardSet::MirrodinBesieged,
+    // Eleven infect damage is one hit from a win, and the deck that plays it
+    // is not paying twelve mana honestly -- it is cheating it into play and
+    // attacking once.
+    CardRules::new_artifact_creature(mana_cost!("{12}"), &["Phyrexian", "Golem"], 11, 11)
+        .with_abilities(&COLOSSUS_ABILITIES),
 );
 
 // MBS 115 — Mortarpod
@@ -62,6 +113,7 @@ pub(in crate::card::sets) static MORTARPOD: CardRecord = CardRecord::new(
         ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&WHITE_SUNS_ZENITH, &MORTARPOD];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&WHITE_SUNS_ZENITH, &BLIGHTSTEEL_COLOSSUS, &MORTARPOD];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

@@ -275,7 +275,7 @@ fn replacement_events_reject_programs_their_runtime_would_ignore() {
         ),
         (
             ReplacementEventDef::WouldMove {
-                from: ZoneKind::Hand,
+                from: Some(ZoneKind::Hand),
                 to: ZoneKind::Graveyard,
                 cause: ZoneMoveCauseDef::Any,
             },
@@ -348,7 +348,7 @@ fn replacement_event_validation_accepts_each_supported_program_family() {
         ),
         (
             ReplacementEventDef::WouldMove {
-                from: ZoneKind::Hand,
+                from: Some(ZoneKind::Hand),
                 to: ZoneKind::Graveyard,
                 cause: ZoneMoveCauseDef::Any,
             },
@@ -356,7 +356,7 @@ fn replacement_event_validation_accepts_each_supported_program_family() {
         ),
         (
             ReplacementEventDef::WouldMove {
-                from: ZoneKind::Battlefield,
+                from: Some(ZoneKind::Battlefield),
                 to: ZoneKind::Graveyard,
                 cause: ZoneMoveCauseDef::Any,
             },

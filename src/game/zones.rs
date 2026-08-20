@@ -1,8 +1,8 @@
 use super::{
     BattlefieldArrival, CardDefinitionId, CardInstance, CardPartId, CharacteristicContext,
-    CharacteristicSource, CommittedTriggerEvent, CounterKind, DeclarativeAbilityDef,
-    EntryCompletion, Game, GameEvent, GameObjectId, KeywordAbility, ObjectBacking,
-    PendingBattlefieldEntry, Permanent, PlayerId, PublicCard, ReplacementEffectDef,
+    CharacteristicSource, CommittedTriggerEvent, CounterKind, DeclarativeAbilityDef, EffectDef,
+    EffectRecipientDef, EntryCompletion, Game, GameEvent, GameObjectId, KeywordAbility,
+    ObjectBacking, PendingBattlefieldEntry, Permanent, PlayerId, PublicCard, ReplacementEffectDef,
     ReplacementEventDef, Target, TriggerContext, ZoneCard, ZoneError, ZoneKind, ZoneMoveCause,
     ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
 };
@@ -348,6 +348,51 @@ impl Game {
         }
     }
 
+    /// Whether a replacement program shuffles the library it just put a card
+    /// into. "Reveal it and shuffle it into its owner's library" would
+    /// otherwise leave the card on top, which is a very different card.
+    fn replacement_shuffles_library(effect: ReplacementEffectDef) -> bool {
+        match effect {
+            ReplacementEffectDef::Perform(effect) => matches!(
+                *effect,
+                EffectDef::ShuffleLibrary {
+                    player: EffectRecipientDef::Controller,
+                }
+            ),
+            ReplacementEffectDef::Sequence(effects) => effects
+                .iter()
+                .copied()
+                .any(Self::replacement_shuffles_library),
+            _ => false,
+        }
+    }
+
+    /// Whether the replacement that redirects this move also shuffles.
+    fn zone_move_replacement_shuffles(
+        &self,
+        card: &CardInstance,
+        from: ZoneKind,
+        to: ZoneKind,
+        actual_cause: ZoneMoveCause,
+    ) -> bool {
+        self.zone_move_replacement_program(card, from, to, actual_cause)
+            .is_some_and(Self::replacement_shuffles_library)
+    }
+
+    /// Where a replacement program sends the card, if it sends it anywhere.
+    /// A sequence carries the move alongside whatever else it does, and the
+    /// move is the part a zone change needs to know about.
+    fn replacement_move_destination(effect: ReplacementEffectDef) -> Option<ZoneKind> {
+        match effect {
+            ReplacementEffectDef::MoveToZone(zone) => Some(zone),
+            ReplacementEffectDef::Sequence(effects) => effects
+                .iter()
+                .copied()
+                .find_map(Self::replacement_move_destination),
+            _ => None,
+        }
+    }
+
     pub(super) fn zone_move_replacement_destination(
         &self,
         card: &CardInstance,
@@ -355,6 +400,18 @@ impl Game {
         to: ZoneKind,
         actual_cause: ZoneMoveCause,
     ) -> Option<ZoneKind> {
+        self.zone_move_replacement_program(card, from, to, actual_cause)
+            .and_then(Self::replacement_move_destination)
+    }
+
+    /// The replacement program that answers this move, if one does.
+    fn zone_move_replacement_program(
+        &self,
+        card: &CardInstance,
+        from: ZoneKind,
+        to: ZoneKind,
+        actual_cause: ZoneMoveCause,
+    ) -> Option<ReplacementEffectDef> {
         let characteristic_context = match from {
             ZoneKind::Library => CharacteristicContext::Library,
             ZoneKind::Hand => CharacteristicContext::Hand,
@@ -396,15 +453,15 @@ impl Game {
                         )
                     }
                 };
-                if event_from == from
+                if event_from.is_none_or(|expected| expected == from)
                     && event_to == to
                     && cause_matches
                     && ability.is_executable()
                     && replacement.source_zones.contains(&from)
-                    && let Some(ReplacementEffectDef::MoveToZone(zone)) =
-                        ability.declarative_replacement()
+                    && let Some(effect) = ability.declarative_replacement()
+                    && Self::replacement_move_destination(effect).is_some()
                 {
-                    return Some(zone);
+                    return Some(effect);
                 }
             }
         }
@@ -483,6 +540,7 @@ impl Game {
         let destination = self
             .zone_move_replacement_destination(&card, from, requested_to, cause)
             .unwrap_or(requested_to);
+        let shuffles = self.zone_move_replacement_shuffles(&card, from, requested_to, cause);
         if matches!(destination, ZoneKind::Stack | ZoneKind::Command) {
             return None;
         }
@@ -516,6 +574,9 @@ impl Game {
             }
             card
         };
+        if shuffles && destination == ZoneKind::Library {
+            self.rng.shuffle(&mut self.players[owner.index()].library);
+        }
         Some((card, destination))
     }
 

@@ -8,9 +8,9 @@ use super::prevention_state::{
     ResolvedDamageRecipientMatcher, ResolvedDamageSourceMatcher,
 };
 use super::{
-    AppliedRuleDef, CardType, CommittedTriggerEvent, ControlFlow, CounterKind, Game, GameObjectId,
-    KeywordAbility, Permanent, PlayerId, RelationalSourceFilter, RetiredObject, StackObjectKind,
-    Target, TriggerEventObject,
+    AppliedRuleDef, CardType, CardTypeSet, CommittedTriggerEvent, ControlFlow, CounterKind, Game,
+    GameObjectId, KeywordAbility, Permanent, PlayerId, RelationalSourceFilter, RetiredObject,
+    StackObjectKind, Target, TriggerEventObject,
 };
 
 #[derive(Clone, Copy)]
@@ -500,6 +500,35 @@ impl Game {
     /// Damage landing on a permanent. A planeswalker loses loyalty instead of
     /// marking damage; everything else marks it and remembers what dealt it.
     /// Answers whether the damage was actually dealt to something.
+    /// Whether this permanent is a creature, which is what decides between
+    /// infect's counters and a planeswalker's ordinary loyalty loss.
+    fn is_creature_permanent(&self, id: GameObjectId) -> bool {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .and_then(|permanent| self.permanent_types(permanent))
+            .is_some_and(CardTypeSet::is_creature)
+    }
+
+    /// Infect damage to a creature is -1/-1 counters (CR 702.90b). Nothing
+    /// is marked on the permanent, so it survives cleanup and shrinks the
+    /// creature for good.
+    fn deal_infect_damage_to_creature(
+        &mut self,
+        id: GameObjectId,
+        amount: u16,
+        source: Option<GameObjectId>,
+    ) {
+        self.note_damage_dealt_by(source, amount);
+        if let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == id)
+        {
+            permanent.add_counters(CounterKind::MinusOneMinusOne, amount);
+        }
+    }
+
     fn deal_damage_to_permanent(
         &mut self,
         id: GameObjectId,
@@ -660,9 +689,21 @@ impl Game {
             source_has_keyword(KeywordAbility::Lifelink).then_some(source.controller)
         });
         let has_deathtouch = source_has_keyword(KeywordAbility::Deathtouch);
+        // Infect changes what the damage does rather than how much of it
+        // there is, so it is read here, after every prevention and limit has
+        // settled the amount (CR 702.90a).
+        let has_infect = source_has_keyword(KeywordAbility::Infect);
         let dealt_damage = match target {
+            Some(Target::Player(player)) if has_infect => {
+                self.add_poison_counters(player, amount);
+                true
+            }
             Some(Target::Player(player)) => {
                 self.deal_damage_to_player(player, amount, source, combat);
+                true
+            }
+            Some(Target::Permanent(id)) if has_infect && self.is_creature_permanent(id) => {
+                self.deal_infect_damage_to_creature(id, amount, source);
                 true
             }
             Some(Target::Permanent(id)) => {

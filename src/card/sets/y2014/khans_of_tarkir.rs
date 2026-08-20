@@ -32,7 +32,7 @@ pub(in crate::card::sets) static UGINS_NEXUS: CardRecord = CardRecord::new(
             AbilityDef::replacement_for(
                 "If Ugin's Nexus would be put into a graveyard from the battlefield, instead exile it and take an extra turn after this one.",
                 ReplacementEventDef::WouldMove {
-                    from: ZoneKind::Battlefield,
+                    from: Some(ZoneKind::Battlefield),
                     to: ZoneKind::Graveyard,
                     cause: ZoneMoveCauseDef::Any,
                 },

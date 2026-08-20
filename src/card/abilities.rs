@@ -167,6 +167,16 @@ pub const fn devoid() -> AbilityDef {
     keyword("Devoid (This card has no color.)", KeywordAbility::Devoid)
 }
 
+/// Infect (CR 702.90): "This creature deals damage to creatures in the form
+/// of -1/-1 counters and to players in the form of poison counters."
+#[must_use]
+pub const fn infect() -> AbilityDef {
+    keyword(
+        "Infect (This creature deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)",
+        KeywordAbility::Infect,
+    )
+}
+
 #[must_use]
 pub const fn shroud() -> AbilityDef {
     keyword("Shroud", KeywordAbility::Shroud)

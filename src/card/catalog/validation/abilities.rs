@@ -463,12 +463,14 @@ fn validate_replacement_program_for_event(
             validate_entry_replacement_program(effect)
         }
         ReplacementEventDef::WouldMove {
-            from: ZoneKind::Hand,
+            from: Some(ZoneKind::Hand),
             to: ZoneKind::Graveyard,
             ..
         } if effect == ReplacementEffectDef::MoveToZone(ZoneKind::Battlefield) => Ok(()),
+        // "From anywhere" replaces the same move wherever it starts, so it
+        // is held to the same program as the battlefield exit it includes.
         ReplacementEventDef::WouldMove {
-            from: ZoneKind::Battlefield,
+            from: None | Some(ZoneKind::Battlefield),
             to: ZoneKind::Graveyard,
             cause: ZoneMoveCauseDef::Any,
         } => validate_battlefield_exit_replacement_program(effect),
@@ -576,11 +578,16 @@ fn validate_battlefield_exit_replacement_program(
     effect: ReplacementEffectDef,
 ) -> Result<(), &'static str> {
     match effect {
-        ReplacementEffectDef::MoveToZone(ZoneKind::Exile) => Ok(()),
+        // Exile and library are the two destinations that answer "instead":
+        // one takes the card out of the game, the other puts it back where
+        // it came from.
+        ReplacementEffectDef::MoveToZone(ZoneKind::Exile | ZoneKind::Library) => Ok(()),
         ReplacementEffectDef::Perform(effect)
             if matches!(
                 *effect,
                 EffectDef::TakeExtraTurn {
+                    player: EffectRecipientDef::Controller,
+                } | EffectDef::ShuffleLibrary {
                     player: EffectRecipientDef::Controller,
                 }
             ) =>

@@ -478,7 +478,7 @@ fn loxodon_smiter_replaces_an_opponent_caused_hand_to_graveyard_move() {
     assert_eq!(
         replacement.1.event,
         ReplacementEventDef::WouldMove {
-            from: ZoneKind::Hand,
+            from: Some(ZoneKind::Hand),
             to: ZoneKind::Graveyard,
             cause: ZoneMoveCauseDef::EffectControlledBy(PlayerRelation::Opponent),
         }

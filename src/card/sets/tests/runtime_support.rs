@@ -153,6 +153,7 @@ pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
             | KeywordAbility::ProtectionFromMulticolored
             // The colourlessness is the card's printed colour set, so the
             // keyword itself has nothing left to execute.
+            | KeywordAbility::Infect
             | KeywordAbility::Devoid
     )
 }
@@ -518,14 +519,24 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     && shared_entry_replacement_effect(effect)
             }
             ReplacementEventDef::WouldMove { from, to, cause } => {
+                // "From anywhere" watches from every zone the card can be
+                // in, so the clause's own source zones say so rather than
+                // naming the one zone it leaves.
+                let zones_match = match from {
+                    Some(from) => definition.source_zones == [from],
+                    None => {
+                        definition.source_zones.contains(&ZoneKind::Battlefield)
+                            && definition.source_zones.contains(&ZoneKind::Stack)
+                    }
+                };
                 !definition.optional
                     && definition.condition.is_none()
-                    && definition.source_zones == [from]
-                    && ((from == ZoneKind::Hand
+                    && zones_match
+                    && ((from == Some(ZoneKind::Hand)
                         && to == ZoneKind::Graveyard
                         && shared_zone_move_cause(cause)
                         && effect == ReplacementEffectDef::MoveToZone(ZoneKind::Battlefield))
-                        || (from == ZoneKind::Battlefield
+                        || (matches!(from, None | Some(ZoneKind::Battlefield))
                             && to == ZoneKind::Graveyard
                             && cause == ZoneMoveCauseDef::Any
                             && shared_battlefield_exit_replacement_effect(effect)))

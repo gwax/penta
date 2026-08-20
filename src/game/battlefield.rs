@@ -422,7 +422,7 @@ impl Game {
             })
             .filter(|replacement| match replacement.replacement.event {
                 ReplacementEventDef::WouldMove {
-                    from: ZoneKind::Battlefield,
+                    from: None | Some(ZoneKind::Battlefield),
                     to,
                     cause: ZoneMoveCauseDef::Any,
                 } => replacement.source.object == proposed.object && to == proposed.destination,

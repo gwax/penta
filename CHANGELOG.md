@@ -153,6 +153,19 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Infect, and a graveyard replacement that watches from anywhere.** Infect
+  (CR 702.90) changes what a source's damage does rather than how much of it
+  there is, so it is read after every prevention and limit has settled the
+  amount: to a player it is poison counters, and to a creature it is -1/-1
+  counters, which are not damage and so survive cleanup. A planeswalker
+  still takes ordinary loyalty loss.
+
+  A move-replacement can now name no source zone at all, meaning "from
+  anywhere". Blightsteel Colossus comes back whether it died, was
+  discarded, or was milled, and the shuffle its clause performs now runs on
+  the non-battlefield paths too -- without it the card would sit on top of
+  the library and simply be redrawn.
+
 - **Counting what an earlier step bound.** "For each creature exiled this
   way" has to count what the exile actually took, and by the time the
   follow-up runs those creatures are no longer anywhere to count. A value

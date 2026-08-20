@@ -97,3 +97,4 @@ pub const STOCK_UP: CardDefinitionId = CardDefinitionId(2179);
 pub const SHEOLDRED_THE_APOCALYPSE: CardDefinitionId = CardDefinitionId(2180);
 pub const WINDS_OF_ABANDON: CardDefinitionId = CardDefinitionId(2181);
 pub const UNEXPECTEDLY_ABSENT: CardDefinitionId = CardDefinitionId(2182);
+pub const BLIGHTSTEEL_COLOSSUS: CardDefinitionId = CardDefinitionId(2183);

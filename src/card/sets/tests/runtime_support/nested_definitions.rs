@@ -248,10 +248,16 @@ pub(in super::super) fn shared_battlefield_exit_replacement_effect(
     effect: ReplacementEffectDef,
 ) -> bool {
     match effect {
-        ReplacementEffectDef::MoveToZone(zone) => zone == ZoneKind::Exile,
+        // Exile and library are the two destinations that answer "instead":
+        // one takes the card out of the game, the other puts it back.
+        ReplacementEffectDef::MoveToZone(zone) => {
+            matches!(zone, ZoneKind::Exile | ZoneKind::Library)
+        }
         ReplacementEffectDef::Perform(effect) => matches!(
             *effect,
             EffectDef::TakeExtraTurn {
+                player: EffectRecipientDef::Controller,
+            } | EffectDef::ShuffleLibrary {
                 player: EffectRecipientDef::Controller,
             }
         ),

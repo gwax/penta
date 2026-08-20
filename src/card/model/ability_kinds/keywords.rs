@@ -102,6 +102,11 @@ pub enum KeywordAbility {
     /// Protection from the card type, which is one quality rather than a
     /// family of them and so carries no parameter at all.
     ProtectionFromCreatures,
+    /// CR 702.90. Infect changes what this source's damage does rather than
+    /// how much it deals: to a player it gives that many poison counters,
+    /// and to a creature it puts that many -1/-1 counters on it. Neither is
+    /// damage, so neither marks the creature or costs the player life.
+    Infect,
     /// CR 702.114. Devoid is a characteristic-defining ability rather than
     /// a behaviour: the object simply has no color. That is expressed by the
     /// card's printed color set being empty, so what this variant adds is
@@ -175,6 +180,7 @@ impl KeywordAbility {
             Self::Landwalk(BasicLandType::Forest) => 24,
             Self::LegendaryLandwalk => 25,
             Self::Devoid => 28,
+            Self::Infect => 29,
             Self::ProtectionFrom(_)
             | Self::ProtectionFromCreatureType(_)
             | Self::BandsWithOther(_) => return None,

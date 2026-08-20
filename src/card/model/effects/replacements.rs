@@ -27,7 +27,10 @@ pub enum ReplacementEventDef {
     /// This ability's source would move between the named zones for the
     /// specified reason. Matching happens before the object leaves `from`.
     WouldMove {
-        from: ZoneKind,
+        /// Which zone it would leave. `None` is "from anywhere", which is
+        /// what Blightsteel Colossus means: it comes back whether it died,
+        /// was countered, was discarded, or was milled.
+        from: Option<ZoneKind>,
         to: ZoneKind,
         cause: ZoneMoveCauseDef,
     },

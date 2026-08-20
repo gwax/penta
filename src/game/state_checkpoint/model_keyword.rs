@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub(super) enum KeywordSnapshot {
     Devoid,
+    Infect,
     Flying,
     Trample,
     Haste,

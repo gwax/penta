@@ -752,6 +752,7 @@ mod vintage_cube_creatures;
 mod vintage_cube_eldrazi;
 mod vintage_cube_graveyard;
 mod vintage_cube_hand_attack;
+mod vintage_cube_infect;
 mod vintage_cube_lands;
 mod vintage_cube_library;
 mod vintage_cube_mana;
