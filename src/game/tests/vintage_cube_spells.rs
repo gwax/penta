@@ -806,3 +806,99 @@ fn chain_of_smog_discards_two_and_offers_the_chain_back() {
     }
     panic!("the chain was never offered back to the player who was hit");
 }
+
+/// The free cast is gated twice: on a Swamp, and on having the life to
+/// spend. Both are checked before the option is offered rather than at
+/// resolution, so an unpayable alternative never appears as a legal action.
+#[test]
+fn snuff_out_is_free_only_with_a_swamp_and_the_life_to_pay() {
+    let free_offered = |swamp: bool, life: i16| {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        if swamp {
+            game.battlefield
+                .push(creature(79_000, cards::SWAMP, PlayerId::One));
+        }
+        game.players[PlayerId::One.index()].life = life;
+        let snuff = card(79_001, cards::SNUFF_OUT, PlayerId::One);
+        let snuff_id = snuff.id;
+        game.players[PlayerId::One.index()].hand.push(snuff);
+        game.battlefield
+            .push(creature(79_002, cards::GRIZZLY_BEARS, PlayerId::Two));
+        game.legal_actions(PlayerId::One).into_iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if card == snuff_id && choices.costs().alternative().is_some())
+        })
+    };
+
+    assert!(
+        free_offered(true, 20),
+        "a Swamp and twenty life pays for it"
+    );
+    assert!(!free_offered(false, 20), "no Swamp, no free cast");
+    // CR 118.4: life may be paid when the total is at least the amount, so
+    // exactly four is payable and takes its controller to zero.
+    assert!(free_offered(true, 4), "four life can pay four");
+    assert!(
+        !free_offered(true, 3),
+        "and three cannot, so the option is not offered at all",
+    );
+}
+
+/// Casting it for free costs the four life and kills what it names -- and it
+/// will not name a black creature.
+#[test]
+fn snuff_out_pays_four_life_and_destroys_a_nonblack_creature() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.battlefield
+        .push(creature(79_100, cards::SWAMP, PlayerId::One));
+    let bears = creature(79_101, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let djinn = creature(79_102, cards::JUZAM_DJINN, PlayerId::Two);
+    let djinn_id = djinn.card.id;
+    game.battlefield.push(djinn);
+    game.players[PlayerId::One.index()].life = 20;
+
+    let snuff = card(79_103, cards::SNUFF_OUT, PlayerId::One);
+    let snuff_id = snuff.id;
+    game.players[PlayerId::One.index()].hand.push(snuff);
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+            if *card == snuff_id
+                && choices.targets().iter().any(|selection| {
+                    selection.targets().contains(&Target::Permanent(djinn_id))
+                }))
+        }),
+        "a black creature is not a legal target",
+    );
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+            if *card == snuff_id
+                && choices.costs().alternative().is_some()
+                && choices.targets().iter().any(|selection| {
+                    selection.targets().contains(&Target::Permanent(bears_id))
+                }))
+        })
+        .expect("the free cast can name the green creature");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        16,
+        "the life is paid as the spell is cast",
+    );
+    drain_pending(&mut game);
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != bears_id),
+        "and the creature is destroyed",
+    );
+}

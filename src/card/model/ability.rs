@@ -366,6 +366,7 @@ impl AbilityDef {
                 targets,
                 additional_cost: None,
                 condition: None,
+                life: 0,
             }),
             effect,
         )
@@ -389,6 +390,7 @@ impl AbilityDef {
                 targets: &[],
                 additional_cost: None,
                 condition: None,
+                life: 0,
             }),
             effect,
         )
@@ -504,6 +506,18 @@ impl AbilityDef {
             panic!("only an alternative cast pays instead of a mana cost");
         };
         definition.additional_cost = Some(*cost);
+        self.definition = DeclarativeAbilityDef::AlternativeCast(definition);
+        self
+    }
+
+    /// Life this alternative pays alongside its mana. An alternative that
+    /// names no mana and four life is Snuff Out's whole cost.
+    #[must_use]
+    pub const fn with_alternative_life(mut self, life: u16) -> Self {
+        let DeclarativeAbilityDef::AlternativeCast(mut definition) = self.definition else {
+            return self;
+        };
+        definition.life = life;
         self.definition = DeclarativeAbilityDef::AlternativeCast(definition);
         self
     }

@@ -493,6 +493,10 @@ pub struct AlternativeCastAbilityDef {
     /// the unkicked one does -- and the clause carries its own instructions,
     /// so it has to declare the slots those instructions read.
     pub targets: &'static [AbilityTargetDef],
+    /// Life paid as part of this alternative, on top of whatever mana it
+    /// names. "You may pay 4 life rather than pay this spell's mana cost" is
+    /// a mana cost of nothing and a life cost of four.
+    pub life: u16,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

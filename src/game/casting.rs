@@ -1,10 +1,10 @@
 use super::{
     AbilityCostDef, AbilityOrigin, AbilityTargetDef, AlternativeCastKindDef, BTreeMap,
-    BattlefieldExitCompletion, CREATURE_TYPES, CardBehavior, CardEffectStatus, CardType,
-    CardTypeSet, CastChoices, CastSignature, CastSourceZone, CommittedTriggerEvent, ControlFlow,
-    DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
-    DeclarativeAbilityDef, EntryCompletion, Game, GameEvent, GameObjectId, Mana, ManaColor,
-    ManaCost, ManaPaymentPurpose, PendingBattlefieldEntry, Permanent, PlayActionKind,
+    BattlefieldExitCompletion, CREATURE_TYPES, CardBehavior, CardDefinitionId, CardEffectStatus,
+    CardType, CardTypeSet, CastChoices, CastSignature, CastSourceZone, CommittedTriggerEvent,
+    ControlFlow, DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility,
+    DecisionZone, DeclarativeAbilityDef, EntryCompletion, Game, GameEvent, GameObjectId, Mana,
+    ManaColor, ManaCost, ManaPaymentPurpose, PendingBattlefieldEntry, Permanent, PlayActionKind,
     PlayOptionDef, PlayOptionId, PlayRestriction, PlayerId, StackObject, StackObjectKind, Target,
     TargetPredicate, TargetSlotDef, TargetSlotId, TriggerContext, ZoneKind, ZoneMoveCause,
     ZonePlacement, add_generic, add_mana_cost, extra_target_cost, reduce_generic, remove_card,
@@ -667,10 +667,38 @@ impl Game {
                 .form()
                 .clone(),
         };
+        // Life named by the chosen alternative is paid alongside its mana,
+        // before the spell is finished on the stack.
+        let life = self.selected_alternative_life(definition, &stack_object);
+        if life > 0 {
+            self.lose_life(player, life);
+        }
         self.activate_mana_for_cost_avoiding_for(player, cost, x, None, &payment_purpose);
         let spent_mana = self.pay_player_cost_for(player, cost, x, &payment_purpose);
         Self::apply_spent_mana_to_spell(&mut stack_object, &spent_mana);
         self.continue_spell_cast(stack_object, targets, sacrifices.to_vec());
+    }
+
+    /// The life the chosen alternative names, if the cast selected one.
+    fn selected_alternative_life(&self, definition: CardDefinitionId, object: &StackObject) -> u16 {
+        let Some(signature) = object.signature.as_ref() else {
+            return 0;
+        };
+        let Some(selected) = signature.costs().alternative() else {
+            return 0;
+        };
+        let Some(card) = self.catalog.get(definition) else {
+            return 0;
+        };
+        let Some(option) = card.play_option(signature.play_option()) else {
+            return 0;
+        };
+        Self::alternative_cast_clause(card, option, selected)
+            .and_then(|(_, ability, _)| match ability.definition {
+                DeclarativeAbilityDef::AlternativeCast(alternative) => Some(alternative.life),
+                _ => None,
+            })
+            .unwrap_or(0)
     }
 
     /// How this spell's additional cost spends what it named. A cast that

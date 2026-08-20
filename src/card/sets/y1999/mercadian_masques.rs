@@ -3,9 +3,10 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, SpellAdditionalCostDef,
-    SpendModeDef, ValueDef, ZoneKind, abilities, cards,
+    BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, ValueDef, ZoneKind, abilities,
+    cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -79,6 +80,49 @@ pub(in crate::card::sets) static THWART: CardRecord = CardRecord::new(
     ]),
 );
 
+/// A Swamp on the battlefield, which is what the free cast is gated on.
+static YOU_CONTROL_A_SWAMP: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+static SNUFF_OUT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Color(ManaColor::Black)),
+    ]),
+)];
+
+// MMQ 162 — Snuff Out
+pub(in crate::card::sets) static SNUFF_OUT: CardRecord = CardRecord::new(
+    cards::SNUFF_OUT,
+    "Snuff Out",
+    CardArt::new("18a3cca1-e50e-49b6-9e1a-f86640e3b177", "Mike Ploog"),
+    CardSet::MercadianMasques,
+    // Four life and no mana is why it is played: the answer costs nothing on
+    // the turn it is needed, which is somebody else's.
+    CardRules::new_instant(mana_cost!("{3}{B}")).with_abilities(&[
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::AlternativeCost,
+            Some("If you control a Swamp, you may pay 4 life rather than pay this spell's mana cost."),
+            EffectDef::None,
+        )
+        .with_alternative_life(4)
+        .with_alternative_condition(&YOU_CONTROL_A_SWAMP),
+        AbilityDef::destroy_target(
+            "Destroy target nonblack creature. It can't be regenerated.",
+            &SNUFF_OUT_TARGET[0],
+            false,
+        ),
+    ]),
+);
+
 // MMQ 316 — Dust Bowl
 pub(in crate::card::sets) static DUST_BOWL: CardRecord = CardRecord::new(
     cards::DUST_BOWL,
@@ -128,6 +172,6 @@ pub(in crate::card::sets) static RISHADAN_PORT: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&GUSH, &THWART, &DUST_BOWL, &RISHADAN_PORT];
+    &[&GUSH, &THWART, &SNUFF_OUT, &DUST_BOWL, &RISHADAN_PORT];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

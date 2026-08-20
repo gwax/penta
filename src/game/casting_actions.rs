@@ -546,16 +546,21 @@ impl Game {
             let gated = match Self::alternative_cast_clause(definition, option, cost.id) {
                 Some((origin, ability, _)) => match ability.definition {
                     DeclarativeAbilityDef::AlternativeCast(alternative) => {
-                        alternative.condition.is_some_and(|condition| {
-                            !self.trigger_condition_holds(
-                                condition,
-                                card,
-                                player,
-                                TriggerContext::empty(),
-                                Some(origin),
-                                None,
-                            )
-                        })
+                        // CR 118.4: life can only be paid down to zero, so an
+                        // alternative that costs more life than the player
+                        // has is not on offer at all.
+                        i16::try_from(alternative.life).unwrap_or(i16::MAX)
+                            > self.players[player.index()].life
+                            || alternative.condition.is_some_and(|condition| {
+                                !self.trigger_condition_holds(
+                                    condition,
+                                    card,
+                                    player,
+                                    TriggerContext::empty(),
+                                    Some(origin),
+                                    None,
+                                )
+                            })
                     }
                     _ => false,
                 },
