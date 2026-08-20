@@ -808,6 +808,7 @@ mod vintage_cube_shieldbreaker;
 mod vintage_cube_spells;
 mod vintage_cube_static_prison;
 mod vintage_cube_stoneforge;
+mod vintage_cube_surveil_land;
 mod vintage_cube_sword_of_the_meek;
 mod vintage_cube_tamiyo;
 mod vintage_cube_tendrils;

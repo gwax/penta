@@ -2,8 +2,9 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardType, EffectDef, ObjectPredicateDef,
-    PlayerRelation, TriggerEventDef, ValueDef, cards,
+    AbilityDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
+    ObjectPredicateDef, PlayerRelation, TopCardSelectionDef, TriggerEventDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::mana_cost;
 
@@ -50,6 +51,60 @@ pub(in crate::card::sets) static FORENSIC_GADGETEER: CardRecord = CardRecord::ne
         ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&FORENSIC_GADGETEER];
+/// Surveil 1: look at the top card and choose whether to bin it. Nothing is
+/// revealed and nothing has to go, so the minimum is zero and the card that
+/// stays goes back where it came from.
+static SURVEIL_ONE: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(1),
+    object: None,
+    minimum: 0,
+    maximum: 1,
+    select_all_matching: false,
+    reveal_selected: false,
+    selected_zone: ZoneKind::Graveyard,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Top,
+    selected_order_follows_choice: false,
+    then: None,
+};
+
+static SURVEIL_LAND_ABILITIES: [AbilityDef; 2] = [
+    abilities::enters_tapped("This land enters tapped."),
+    AbilityDef::triggered(
+        "When this land enters, surveil 1. (Look at the top card of your library. You may put it \
+         into your graveyard.)",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        EffectDef::LookAtTopAndSelect {
+            player: EffectRecipientDef::Controller,
+            looker: EffectRecipientDef::Controller,
+            selection: &SURVEIL_ONE,
+        },
+    ),
+];
+
+/// The surveil-land cycle: two basic types, tapped on the way in, and one
+/// look at the top of your library to pay for it. The mana abilities come
+/// from the types rather than from a printed clause.
+const fn surveil_land(types: &'static [&'static str]) -> CardRules {
+    CardRules::new_land(types).with_abilities(&SURVEIL_LAND_ABILITIES)
+}
+
+// MKM 269 — Thundering Falls
+pub(in crate::card::sets) static THUNDERING_FALLS: CardRecord = CardRecord::new(
+    cards::THUNDERING_FALLS,
+    "Thundering Falls",
+    CardArt::new("17260fff-b239-4af4-9306-3236ae3fa5a5", "Grady Frederick"),
+    CardSet::MurdersAtKarlovManor,
+    // A dual that costs you the turn it lands and pays a little of it back by
+    // filling the graveyard the decks that want it are built around.
+    surveil_land(&["Island", "Mountain"]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&FORENSIC_GADGETEER, &THUNDERING_FALLS];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
