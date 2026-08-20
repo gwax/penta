@@ -823,6 +823,7 @@ mod vintage_cube_surveil_land;
 mod vintage_cube_sword_of_the_meek;
 mod vintage_cube_tamiyo;
 mod vintage_cube_tendrils;
+mod vintage_cube_thoughtseize;
 mod vintage_cube_ursine;
 mod vintage_cube_verge;
 mod vintage_cube_vote;

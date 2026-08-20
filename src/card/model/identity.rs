@@ -54,6 +54,7 @@ pub enum CardSet {
     MirrodinBesieged,
     PlanarChaos,
     FutureSight,
+    Lorwyn,
     Conflux,
     Zendikar,
     Worldwake,

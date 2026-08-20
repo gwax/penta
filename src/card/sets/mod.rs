@@ -292,6 +292,11 @@ const SET_MODULES: &[SetModule] = &[
         y2007::future_sight::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Lorwyn,
+        y2007::lorwyn::CARDS,
+        y2007::lorwyn::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::MirrodinBesieged,
         y2011::mirrodin_besieged::CARDS,
         y2011::mirrodin_besieged::ADDITIONAL_PRINTINGS,
