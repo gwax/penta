@@ -838,6 +838,8 @@ pub(in crate::card::sets) static TOME_SCOUR: CardRecord = CardRecord::new(
         EffectDef::Mill {
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::Constant(5),
+            binding: None,
+            then: None,
         },
     )),
 );
@@ -889,6 +891,8 @@ pub(in crate::card::sets) static TRAUMATIZE: CardRecord = CardRecord::new(
         EffectDef::Mill {
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::Halved(&HALF_THEIR_LIBRARY),
+            binding: None,
+            then: None,
         },
     )),
 );

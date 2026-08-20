@@ -171,9 +171,20 @@ fn validate_effect_target_shapes(
             validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
             validate_effect_target_shapes(*effect, targets, triggering_object_zone)
         }
-        EffectDef::Mill { player, amount } => {
+        EffectDef::Mill {
+            player,
+            amount,
+            then,
+            ..
+        } => {
             validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
-            validate_value_shape(amount, targets)
+            validate_value_shape(amount, targets)?;
+            match then {
+                Some(then) => {
+                    validate_effect_target_shapes(*then, targets, triggering_object_zone)
+                }
+                None => Ok(()),
+            }
         }
         EffectDef::DiscardCards { object }
         | EffectDef::Regenerate { object }

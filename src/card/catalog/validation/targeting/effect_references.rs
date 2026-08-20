@@ -239,9 +239,24 @@ fn validate_effect_references(
             validate_recipient_target_references(player, target_count, scope)?;
             validate_effect_references(*effect, target_count, scope)
         }
-        EffectDef::Mill { player, amount } => {
+        EffectDef::Mill {
+            player,
+            amount,
+            binding,
+            then,
+        } => {
             validate_recipient_target_references(player, target_count, scope)?;
-            validate_value_target_references(amount, target_count, scope)
+            validate_value_target_references(amount, target_count, scope)?;
+            let Some(then) = then else {
+                return Ok(());
+            };
+            // The cards a mill put there are in scope for its own follow-up,
+            // the same way a search's found cards are.
+            let nested = match binding {
+                Some(binding) => scope.with_object_set(binding)?,
+                None => scope,
+            };
+            validate_effect_references(*then, target_count, nested)
         }
         EffectDef::AddCounters { object, amount, .. }
         | EffectDef::RemoveCounters { object, amount, .. } => {

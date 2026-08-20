@@ -706,7 +706,10 @@ fn validate_recipient_target_references(
         EffectRecipientSetDef::Objects(
             ObjectSetDef::One(reference) | ObjectSetDef::SharingNameWith(reference),
         ) => validate_object_reference(reference, target_count, scope),
-        EffectRecipientSetDef::Objects(ObjectSetDef::Binding(binding)) => {
+        EffectRecipientSetDef::Objects(
+            ObjectSetDef::Binding(binding)
+            | ObjectSetDef::MatchingBinding { binding, .. },
+        ) => {
             if scope.object_sets & (1 << binding.index()) != 0 {
                 Ok(())
             } else {

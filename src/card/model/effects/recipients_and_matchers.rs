@@ -62,6 +62,14 @@ pub enum ObjectSetDef {
     /// A set of objects saved by an earlier choice or partition in this
     /// resolution.
     Binding(ObjectSetBindingIndex),
+    /// The members of a binding that match a predicate. "Put a creature card
+    /// from among them into your hand" names a subset of what a mill just
+    /// bound, which neither a plain binding nor a zone query can say: the
+    /// query would reach cards that were already there.
+    MatchingBinding {
+        binding: ObjectSetBindingIndex,
+        object: ObjectPredicateDef,
+    },
     Query(ObjectQueryDef),
     /// Every battlefield permanent sharing the referenced object's effective
     /// name, including the referenced object itself.
@@ -160,6 +168,7 @@ impl EffectRecipientDef {
             EffectRecipientSetDef::LegalTargets(_)
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::Binding(_)
+                | ObjectSetDef::MatchingBinding { .. }
                 | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::Query(_)
@@ -179,6 +188,7 @@ impl EffectRecipientDef {
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::One(_)
                 | ObjectSetDef::Binding(_)
+            | ObjectSetDef::MatchingBinding { .. }
                 | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::SharingNameWith(_)

@@ -127,3 +127,4 @@ pub const LORIEN_REVEALED: CardDefinitionId = CardDefinitionId(2209);
 pub const SKELETON_TOKEN_4_1_BLACK: CardDefinitionId = CardDefinitionId(2210);
 pub const GUT_TRUE_SOUL_ZEALOT: CardDefinitionId = CardDefinitionId(2211);
 pub const THASSAS_ORACLE: CardDefinitionId = CardDefinitionId(2212);
+pub const BARROWGOYF: CardDefinitionId = CardDefinitionId(2213);

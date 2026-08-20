@@ -122,6 +122,7 @@ impl Game {
                 EffectRecipientSetDef::LegalTargets(_)
                 | EffectRecipientSetDef::Objects(
                     ObjectSetDef::Binding(_)
+                    | ObjectSetDef::MatchingBinding { .. }
                     | ObjectSetDef::LegalTargets(_)
                     | ObjectSetDef::Query(_)
                     | ObjectSetDef::BottomOfGraveyard(_)

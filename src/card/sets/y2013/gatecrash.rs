@@ -836,6 +836,8 @@ pub(in crate::card::sets) static MINDEYE_DRAKE: CardRecord = CardRecord::new(
             EffectDef::Mill {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(5),
+                binding: None,
+                then: None,
             },
         ),
     ]),
@@ -872,6 +874,8 @@ pub(in crate::card::sets) static SAGES_ROW_DENIZEN: CardRecord = CardRecord::new
             EffectDef::Mill {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(2),
+                binding: None,
+                then: None,
             },
         ),
     ),
@@ -1342,6 +1346,8 @@ pub(in crate::card::sets) static GRISLY_SPECTACLE: CardRecord = CardRecord::new(
                 EffectDef::Mill {
                     player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
                     amount: ValueDef::TargetPower(TargetIndex::PRIMARY),
+                    binding: None,
+                    then: None,
                 },
             ]),
         ),
@@ -3618,6 +3624,8 @@ pub(in crate::card::sets) static PSYCHIC_STRIKE: CardRecord = CardRecord::new(
             EffectDef::Mill {
                 player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(2),
+                binding: None,
+                then: None,
             },
         ]),
     )),

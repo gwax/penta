@@ -1014,6 +1014,8 @@ pub(in crate::card::sets) static ARMORED_SKAAB: CardRecord = CardRecord::new(
             EffectDef::Mill {
                 player: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(4),
+                binding: None,
+                then: None,
             },
         ),
     ),
@@ -1178,6 +1180,8 @@ pub(in crate::card::sets) static DREAM_TWIST: CardRecord = CardRecord::new(
             EffectDef::Mill {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(3),
+                binding: None,
+                then: None,
             },
         ),
         abilities::flashback(mana_cost!("{1}{U}")),
@@ -1468,6 +1472,8 @@ pub(in crate::card::sets) static SELHOFF_OCCULTIST: CardRecord = CardRecord::new
             EffectDef::Mill {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(1),
+                binding: None,
+                then: None,
             },
         ),
     ),
@@ -4624,6 +4630,8 @@ pub(in crate::card::sets) static SPLINTERFRIGHT: CardRecord = CardRecord::new(
             EffectDef::Mill {
                 player: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(2),
+                binding: None,
+                then: None,
             },
         ),
     ]),
@@ -4956,6 +4964,8 @@ pub(in crate::card::sets) static GHOULCALLERS_BELL: CardRecord = CardRecord::new
         EffectDef::Mill {
             player: EffectRecipientDef::EachPlayer,
             amount: ValueDef::Constant(1),
+            binding: None,
+            then: None,
         },
     )),
 );
@@ -5394,6 +5404,8 @@ pub(in crate::card::sets) static NEPHALIA_DROWNYARD: CardRecord = CardRecord::ne
             EffectDef::Mill {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(3),
+                binding: None,
+                then: None,
             },
         ),
     ]),

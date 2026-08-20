@@ -222,6 +222,7 @@ fn validate_object_set_shape(
             validate_target_projection(target, targets, RecipientExpectation::Object)
         }
         ObjectSetDef::Binding(_)
+                | ObjectSetDef::MatchingBinding { .. }
         | ObjectSetDef::BottomOfGraveyard(_)
         | ObjectSetDef::SharingNameWithBinding { .. }
         | ObjectSetDef::TopOfGraveyardMatching { .. } => Ok(()),
@@ -514,6 +515,7 @@ fn recipient_may_name_nonbattlefield_object(
         EffectRecipientSetDef::Objects(
             ObjectSetDef::One(ObjectRefDef::Binding(_))
             | ObjectSetDef::Binding(_)
+            | ObjectSetDef::MatchingBinding { .. }
             // A graveyard is not the battlefield, which is the whole point of
             // naming a card at either end of it.
             | ObjectSetDef::BottomOfGraveyard(_)
@@ -570,6 +572,7 @@ fn recipient_nonbattlefield_zones_support_flashback(
         EffectRecipientSetDef::Objects(
             ObjectSetDef::One(ObjectRefDef::Binding(_))
             | ObjectSetDef::Binding(_)
+            | ObjectSetDef::MatchingBinding { .. }
             | ObjectSetDef::BottomOfGraveyard(_)
             | ObjectSetDef::SharingNameWithBinding { .. }
             | ObjectSetDef::TopOfGraveyardMatching { .. },

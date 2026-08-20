@@ -1159,6 +1159,8 @@ pub(in crate::card::sets) static DROWN_IN_FILTH: CardRecord = CardRecord::new(
                 EffectDef::Mill {
                     player: EffectRecipientDef::Controller,
                     amount: ValueDef::Constant(4),
+                    binding: None,
+                    then: None,
                 },
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -1576,6 +1578,8 @@ pub(in crate::card::sets) static PILFERED_PLANS: CardRecord = CardRecord::new(
             EffectDef::Mill {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(2),
+                binding: None,
+                then: None,
             },
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,

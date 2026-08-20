@@ -836,6 +836,7 @@ impl Game {
                     | ObjectRefDef::TriggeringObject,
                 )
                 | ObjectSetDef::Binding(_)
+                | ObjectSetDef::MatchingBinding { .. }
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::SharingNameWith(_)

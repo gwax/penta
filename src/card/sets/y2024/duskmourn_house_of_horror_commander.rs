@@ -33,6 +33,8 @@ static MONSTROSITY_COMBAT: [EffectDef; 2] = [
     EffectDef::Mill {
         player: EffectRecipientDef::Controller,
         amount: ValueDef::Constant(1),
+        binding: None,
+        then: None,
     },
     EffectDef::Apply {
         recipient: EffectRecipientDef::Source,

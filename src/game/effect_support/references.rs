@@ -316,6 +316,23 @@ impl Game {
                     .collect()
             }
             ObjectSetDef::Binding(binding) => context.object_group(binding).to_vec(),
+            ObjectSetDef::MatchingBinding {
+                binding,
+                object: predicate,
+            } => context
+                .object_group(binding)
+                .iter()
+                .copied()
+                .filter(|bound| {
+                    let (Target::Card(id) | Target::Permanent(id) | Target::Spell(id)) = bound
+                    else {
+                        return false;
+                    };
+                    self.card_in_nonbattlefield_zone(*id).is_some_and(|(zone, card)| {
+                        self.card_object_matches(predicate, card, zone, object.id)
+                    })
+                })
+                .collect(),
             ObjectSetDef::Query(query) => {
                 self.objects_matching_effect_query(query, object, context, scoped)
             }

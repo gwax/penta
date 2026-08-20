@@ -137,6 +137,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                         | ObjectRefDef::TriggeringObject,
                     )
                     | ObjectSetDef::Binding(_)
+                    | ObjectSetDef::MatchingBinding { .. }
                     | ObjectSetDef::BottomOfGraveyard(_)
                     | ObjectSetDef::LegalTargets(_)
                     | ObjectSetDef::SharingNameWith(_)

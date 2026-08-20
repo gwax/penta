@@ -75,6 +75,8 @@ static VISION_CHARM_MODES: [AbilityDef; 3] = [
         EffectDef::Mill {
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::Constant(4),
+            binding: None,
+            then: None,
         },
     ),
     AbilityDef::spell(

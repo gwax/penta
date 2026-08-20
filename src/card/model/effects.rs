@@ -604,6 +604,14 @@ pub enum EffectDef {
     Mill {
         player: EffectRecipientDef,
         amount: ValueDef,
+        /// Where the milled cards are saved for `then` to speak about, by
+        /// the identity they have in the graveyard. "Put a creature card
+        /// from among them into your hand" names what this mill put there
+        /// rather than what the graveyard already held.
+        binding: Option<ObjectSetBindingIndex>,
+        /// What happens once the cards are in the graveyard. A mill resolves
+        /// without stopping to ask, so unlike a search this runs inline.
+        then: Option<&'static EffectDef>,
     },
     /// "That player exiles the top N cards of their library. Until end of
     /// turn, you may play those cards without paying their mana costs."

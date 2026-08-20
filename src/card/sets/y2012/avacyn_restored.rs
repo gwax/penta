@@ -927,6 +927,8 @@ pub(in crate::card::sets) static DREADWATERS: CardRecord = CardRecord::new(
         EffectDef::Mill {
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::CountMatchingObjects(&DREADWATERS_LANDS),
+            binding: None,
+            then: None,
         },
     )),
 );
@@ -1423,6 +1425,8 @@ pub(in crate::card::sets) static ROTCROWN_GHOUL: CardRecord = CardRecord::new(
             EffectDef::Mill {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(5),
+                binding: None,
+                then: None,
             },
         ),
     ),
@@ -1469,6 +1473,8 @@ static STERN_MENTOR_GRANTED: AbilityDef = AbilityDef::activated_with_targets(
     EffectDef::Mill {
         player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         amount: ValueDef::Constant(2),
+        binding: None,
+        then: None,
     },
 );
 

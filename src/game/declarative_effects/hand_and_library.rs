@@ -166,17 +166,37 @@ impl Game {
             EffectDef::Mill {
                 player: recipient,
                 amount,
+                binding,
+                then,
             } => {
                 let count = self.effect_value(amount, object, context, scoped).max(0);
                 let Ok(count) = usize::try_from(count) else {
                     return;
                 };
+                let mut buried = Vec::new();
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Player(player) = target {
                         let milled = self.take_top_of_library(player, count);
-                        self.bury_cards(player, milled);
+                        // Bound by the identity the cards have in the
+                        // graveyard: burying them mints new objects, and
+                        // "from among them" means the ones lying there now.
+                        for card in milled {
+                            let (card, _zone_change) = self.zone_change_card(card);
+                            buried.push(Target::Card(card.id));
+                            self.put_card_into_graveyard(player, card);
+                        }
                     }
                 }
+                let Some(then) = then else {
+                    return;
+                };
+                // A mill never stops to ask, so the follow-up runs here
+                // rather than out of a continuation.
+                let mut context = context.clone();
+                if let Some(binding) = binding {
+                    context.bind_object_group(binding, buried);
+                }
+                self.resolve_effect_def(scoped.with_effect(*then), object, context);
             }
             EffectDef::ExileTopOfLibraryToPlay {
                 player: recipient,

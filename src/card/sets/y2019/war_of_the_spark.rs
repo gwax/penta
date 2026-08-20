@@ -37,6 +37,8 @@ static JACE_MILLS_AND_DRAWS: [EffectDef; 2] = [
     EffectDef::Mill {
         player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         amount: ValueDef::Constant(2),
+        binding: None,
+        then: None,
     },
     EffectDef::DrawCards {
         recipient: EffectRecipientDef::Controller,
