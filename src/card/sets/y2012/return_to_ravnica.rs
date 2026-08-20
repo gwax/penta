@@ -2433,6 +2433,7 @@ pub(in crate::card::sets) static TRAITOROUS_INSTINCT: CardRecord = CardRecord::n
                 EffectDef::GainControl {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     duration: ControlDurationDef::UntilEndOfTurn,
+                    controller: PlayerRefDef::EffectController,
                 },
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),

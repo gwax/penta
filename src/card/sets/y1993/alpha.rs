@@ -1066,6 +1066,7 @@ pub(in crate::card::sets) static CONTROL_MAGIC: CardRecord = CardRecord::new(
                     duration: ControlDurationDef::WhileSourceRemains {
                         while_tapped: false,
                     },
+                    controller: PlayerRefDef::EffectController,
                 },
             ),
         ]),
@@ -1594,6 +1595,7 @@ pub(in crate::card::sets) static STEAL_ARTIFACT: CardRecord = CardRecord::new(
                     duration: ControlDurationDef::WhileSourceRemains {
                         while_tapped: false,
                     },
+                    controller: PlayerRefDef::EffectController,
                 },
             ),
         ]),

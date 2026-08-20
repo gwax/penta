@@ -1,4 +1,5 @@
 use super::*;
+use crate::card::PlayerRefDef;
 
 static ENCHANT_PERMANENT_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::Object {
@@ -76,6 +77,7 @@ fn guardian_beast_stops_an_opponent_from_gaining_control_of_an_artifact() {
     let steal = EffectDef::GainControl {
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         duration: crate::card::ControlDurationDef::UntilEndOfTurn,
+        controller: PlayerRefDef::EffectController,
     };
 
     let object = spell_with_targets(

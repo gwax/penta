@@ -922,6 +922,7 @@ impl Game {
     ) -> Option<PlayerId> {
         match reference {
             PlayerRefDef::EffectController => controller,
+            PlayerRefDef::Opponent => controller.map(PlayerId::opponent),
             PlayerRefDef::EventPlayer => event.context().event_player,
             PlayerRefDef::ControllerOf(reference) => self
                 .trigger_event_object_reference(reference, ability_source, event)

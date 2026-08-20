@@ -9,7 +9,7 @@ use crate::card::{
     DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectPaymentCostDef, EffectPaymentDef,
     EffectRecipientDef, InstalledTriggerDef, KeywordAbility, LikelihoodDef, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayActionMatcherDef,
-    PlayRestrictionDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
+    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
     SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
     ZonePlacement, abilities, cards,
 };
@@ -664,6 +664,7 @@ pub(in crate::card::sets) static ALADDIN: CardRecord = CardRecord::new(
                 duration: ControlDurationDef::WhileSourceRemains {
                     while_tapped: false,
                 },
+                controller: PlayerRefDef::EffectController,
             },
         ),
     ),

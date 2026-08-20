@@ -523,10 +523,16 @@ pub enum EffectDef {
     ExileLinkedToSource {
         object: EffectRecipientDef,
     },
-    /// Gain control of the recipient for the stated duration. Source-bound
+    /// Move control of the recipient for the stated duration. Source-bound
     /// durations also remember whether the source must remain tapped.
+    ///
+    /// Almost every card that says this gives control to the effect's own
+    /// controller, which is what "gain control" means; Wishclaw Talisman
+    /// hands the permanent to an opponent instead, so who receives it is
+    /// part of the effect.
     GainControl {
         object: EffectRecipientDef,
+        controller: PlayerRefDef,
         duration: ControlDurationDef,
     },
     /// Swap who controls two permanents, reading both controllers before

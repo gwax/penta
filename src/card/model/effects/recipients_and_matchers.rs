@@ -33,6 +33,10 @@ pub enum PlayerRefDef {
     ControllerOf(ObjectRefDef),
     /// The owner of an object, using last-known information when necessary.
     OwnerOf(ObjectRefDef),
+    /// The one player the effect's controller is not. A printed "an
+    /// opponent" is a choice in a game with several; in this two-player
+    /// engine it names exactly one player, and there is nothing to ask.
+    Opponent,
 }
 
 /// A set of players. Relations are measured from the resolving effect's

@@ -60,10 +60,14 @@ pub enum CounterKind {
     /// the permanent is sacrificed on the upkeep it cannot pay one, so a
     /// card with fading N lasts N of its controller's turns.
     Fade,
+    /// Wishclaw Talisman's counter, which is how many tutors are left in it
+    /// -- though its controller rarely gets to spend more than the first,
+    /// having handed the artifact away to do so.
+    Wish,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 24;
+    pub const COUNT: usize = 25;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -90,6 +94,7 @@ impl CounterKind {
         Self::Fuse,
         Self::Fade,
         Self::Depletion,
+        Self::Wish,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -121,7 +126,8 @@ impl CounterKind {
             | Self::Mining
             | Self::Fuse
             | Self::Fade
-            | Self::Depletion => (0, 0),
+            | Self::Depletion
+            | Self::Wish => (0, 0),
         }
     }
 
@@ -152,6 +158,7 @@ impl CounterKind {
             Self::Fuse => 21,
             Self::Fade => 22,
             Self::Depletion => 23,
+            Self::Wish => 24,
         }
     }
 
@@ -182,6 +189,7 @@ impl CounterKind {
             Self::Fuse => "fuse",
             Self::Fade => "fade",
             Self::Depletion => "depletion",
+            Self::Wish => "wish",
         }
     }
 }

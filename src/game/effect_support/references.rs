@@ -135,6 +135,7 @@ impl Game {
     ) -> Option<PlayerId> {
         match reference {
             PlayerRefDef::EffectController => Some(object.controller),
+            PlayerRefDef::Opponent => Some(object.controller.opponent()),
             PlayerRefDef::EventPlayer => context.trigger.event_player,
             PlayerRefDef::Target(target) => {
                 let slot = scoped.target_slot(target);

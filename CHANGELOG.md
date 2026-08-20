@@ -153,6 +153,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A control change can hand a permanent to someone other than you.**
+  "Gain control" was exactly that -- the effect's own controller received the
+  permanent, with no way to say who else might. Wishclaw Talisman gives its
+  artifact away as the price of the tutor, so a control change now names who
+  receives it, and player references gained an `Opponent`. In this two-player
+  engine "an opponent" names exactly one player and there is nothing to ask;
+  a game with several would make it a choice. Nothing on the wire changes.
+
 - **"As an additional cost to cast this spell, pay X life."** Toxic Deluge
   chooses X without printing `{X}` in its mana cost, and the engine derived a
   spell's X from the mana cost alone. A spell can now name a life cost, fixed

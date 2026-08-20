@@ -6,7 +6,7 @@ use crate::card::{
     ChoiceVisibilityDef, ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
     DamagePreventionDef, DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
     InstalledTriggerDef, LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, PayOrDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
     ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
     TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
@@ -990,6 +990,7 @@ pub(in crate::card::sets) static THRULL_CHAMPION: CardRecord = CardRecord::new(
                 duration: ControlDurationDef::WhileSourceRemains {
                     while_tapped: false,
                 },
+                controller: PlayerRefDef::EffectController,
             },
         ),
     ]),

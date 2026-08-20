@@ -294,3 +294,91 @@ fn moving_nettlecyst_takes_the_bonus_with_it() {
         "the Germ is a 0/0 once the Equipment leaves it",
     );
 }
+
+/// Three wish counters, one spent per activation, and the ability is only
+/// ever offered on its controller's turn.
+#[test]
+fn wishclaw_talisman_enters_with_three_wishes_and_waits_for_your_turn() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let talisman = card(79_000, cards::WISHCLAW_TALISMAN, PlayerId::One);
+    let talisman_id = talisman.id;
+    game.players[0].hand.push(talisman);
+    game.players[0].mana_pool.black = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == talisman_id))
+        .expect("two mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    resolve(&mut game);
+
+    // Resolving onto the battlefield makes a new object, so the permanent is
+    // found by what it is rather than by the id the card had in hand.
+    let talisman = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::WISHCLAW_TALISMAN)
+        .expect("it is on the battlefield");
+    let talisman_id = talisman.card.id;
+    assert_eq!(talisman.counters(CounterKind::Wish), 3);
+
+    game.players[0].mana_pool.colorless = 1;
+    assert!(
+        activation(&game, talisman_id).is_some(),
+        "its controller's turn is open",
+    );
+    game.active_player = PlayerId::Two;
+    assert!(
+        activation(&game, talisman_id).is_none(),
+        "and the opponent's turn is not",
+    );
+}
+
+/// The tutor and the handover are one clause resolving in order: the card is
+/// in hand before the artifact changes sides, and the opponent inherits the
+/// two counters left in it.
+#[test]
+fn wishclaw_talisman_tutors_then_hands_itself_to_the_opponent() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mut talisman = creature(79_010, cards::WISHCLAW_TALISMAN, PlayerId::One);
+    talisman.add_counters(CounterKind::Wish, 3);
+    let talisman_id = talisman.card.id;
+    game.battlefield.push(talisman);
+    game.players[0]
+        .library
+        .push(card(79_011, cards::BLACK_LOTUS, PlayerId::One));
+    game.players[0].mana_pool.colorless = 1;
+    let before = game.players[0].hand.len();
+
+    let action = activation(&game, talisman_id).expect("the ability is offered");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    resolve(&mut game);
+    // The search asks which card to take; there is only one, and the engine
+    // chooses for a lone eligible card.
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        before + 1,
+        "the searched card reaches the hand",
+    );
+    let talisman = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == talisman_id)
+        .expect("the artifact stays on the battlefield");
+    assert_eq!(
+        talisman.controller,
+        PlayerId::Two,
+        "and the opponent controls it now",
+    );
+    assert_eq!(
+        talisman.counters(CounterKind::Wish),
+        2,
+        "with the two wishes that are left",
+    );
+}

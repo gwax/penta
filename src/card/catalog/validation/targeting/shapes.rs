@@ -169,7 +169,9 @@ fn validate_player_reference_shape(
         PlayerRefDef::ControllerOf(reference) | PlayerRefDef::OwnerOf(reference) => {
             validate_object_reference_shape(reference, targets)
         }
-        PlayerRefDef::EffectController | PlayerRefDef::EventPlayer => Ok(()),
+        PlayerRefDef::EffectController | PlayerRefDef::EventPlayer | PlayerRefDef::Opponent => {
+            Ok(())
+        }
     }
 }
 

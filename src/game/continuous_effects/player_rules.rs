@@ -338,6 +338,9 @@ impl Game {
             EffectRecipientSetDef::Players(PlayerSetDef::One(PlayerRefDef::EffectController)) => {
                 affected_player == source.controller
             }
+            EffectRecipientSetDef::Players(PlayerSetDef::One(PlayerRefDef::Opponent)) => {
+                affected_player == source.controller.opponent()
+            }
             EffectRecipientSetDef::Players(PlayerSetDef::Related(relation)) => self
                 .player_relation_matches(
                     affected_player,

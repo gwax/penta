@@ -80,3 +80,4 @@ pub const VIVI_ORNITIER: CardDefinitionId = CardDefinitionId(2162);
 pub const FLAME_OF_ANOR: CardDefinitionId = CardDefinitionId(2163);
 pub const TOXIC_DELUGE: CardDefinitionId = CardDefinitionId(2164);
 pub const BLOODCHIEFS_THIRST: CardDefinitionId = CardDefinitionId(2165);
+pub const WISHCLAW_TALISMAN: CardDefinitionId = CardDefinitionId(2166);

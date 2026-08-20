@@ -527,7 +527,8 @@ fn applied_effect_adds_ability(effect: AppliedEffectDef) -> bool {
 
 fn static_player_set_supported(players: PlayerSetDef) -> bool {
     match players {
-        PlayerSetDef::All | PlayerSetDef::One(PlayerRefDef::EffectController) => true,
+        PlayerSetDef::All
+        | PlayerSetDef::One(PlayerRefDef::EffectController | PlayerRefDef::Opponent) => true,
         PlayerSetDef::Related(relation) => static_player_relation_supported(relation),
         PlayerSetDef::LegalTargets(_)
         | PlayerSetDef::One(

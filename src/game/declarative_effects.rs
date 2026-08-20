@@ -521,16 +521,17 @@ impl Game {
             }
             EffectDef::GainControl {
                 object: recipient,
+                controller,
                 duration,
             } => {
-                self.take_control_of(
-                    recipient,
-                    object,
-                    &context,
-                    scoped,
-                    duration,
-                    object.controller,
-                );
+                // Who receives it is read where the effect resolves, so
+                // "an opponent gains control" hands it to the one player
+                // the effect's controller is not.
+                let Some(receiver) = self.player_reference(controller, object, &context, scoped)
+                else {
+                    return;
+                };
+                self.take_control_of(recipient, object, &context, scoped, duration, receiver);
             }
             EffectDef::ExchangeControl { first, second } => {
                 self.exchange_control_of(first, second, object, &context, scoped);

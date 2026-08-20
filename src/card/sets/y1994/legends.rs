@@ -2133,6 +2133,7 @@ pub(in crate::card::sets) static THE_WRETCHED: CardRecord = CardRecord::new(
                 duration: ControlDurationDef::WhileSourceRemains {
                     while_tapped: false,
                 },
+                controller: PlayerRefDef::EffectController,
             },
         ),
     ),
@@ -2456,6 +2457,7 @@ static DISHARMONY_EFFECT: [EffectDef; 3] = [
     EffectDef::GainControl {
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         duration: ControlDurationDef::UntilEndOfTurn,
+        controller: PlayerRefDef::EffectController,
     },
     EffectDef::RemoveFromCombat {
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -3787,6 +3789,7 @@ pub(in crate::card::sets) static WILLOW_SATYR: CardRecord = CardRecord::new(
             EffectDef::GainControl {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 duration: ControlDurationDef::WhileSourceRemains { while_tapped: true },
+                controller: PlayerRefDef::EffectController,
             },
         ),
     ]),
@@ -4579,6 +4582,7 @@ pub(in crate::card::sets) static RUBINIA_SOULSINGER: CardRecord = CardRecord::ne
                 EffectDef::GainControl {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     duration: ControlDurationDef::WhileSourceRemains { while_tapped: true },
+                    controller: PlayerRefDef::EffectController,
                 },
             ),
         ]),

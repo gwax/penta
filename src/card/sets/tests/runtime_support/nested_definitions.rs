@@ -115,7 +115,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                     EffectRecipientSetDef::Players(_),
                 ))
                 | DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(
-                    PlayerRefDef::EffectController | PlayerRefDef::EventPlayer,
+                    PlayerRefDef::EffectController
+                    | PlayerRefDef::EventPlayer
+                    | PlayerRefDef::Opponent,
                 ) => true,
                 DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(
                     PlayerRefDef::ControllerOf(reference) | PlayerRefDef::OwnerOf(reference),
