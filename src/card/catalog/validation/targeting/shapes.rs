@@ -41,6 +41,7 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         // on the stack, but nothing reads it as an object, so it names no
         // zone at all.
         TriggerEventDef::CommittedCrime(_)
+        | TriggerEventDef::BecomesLevel(_)
         | TriggerEventDef::Cycled
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::DamageDealt(_)

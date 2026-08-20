@@ -281,6 +281,16 @@ pub(in crate::card::sets) static MINOR_DEMON_TOKEN_1_1_BLACK_RED: CardRecord = C
         .printed_colors(&[ManaColor::Black, ManaColor::Red]),
 );
 
+pub(in crate::card::sets) static OTTER_TOKEN_1_1_BLUE_RED: CardRecord = CardRecord::new(
+    cards::OTTER_TOKEN_1_1_BLUE_RED,
+    "Otter",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Otter"], 1, 1)
+        .printed_colors(&[ManaColor::Blue, ManaColor::Red])
+        .with_abilities(&[abilities::prowess()]),
+);
+
 pub(in crate::card::sets) static WURM_TOKEN_5_5_GREEN: CardRecord = CardRecord::new(
     cards::WURM_TOKEN_5_5_GREEN,
     "Wurm",
@@ -713,6 +723,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &THRULL_TOKEN_0_1_BLACK,
     &WASP_TOKEN_1_1_COLORLESS,
     &MINOR_DEMON_TOKEN_1_1_BLACK_RED,
+    &OTTER_TOKEN_1_1_BLUE_RED,
     &WURM_TOKEN_5_5_GREEN,
     &CENTAUR_TOKEN_3_3_GREEN,
     &RHINO_TOKEN_4_4_GREEN,

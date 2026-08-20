@@ -460,6 +460,7 @@ impl HandcraftedPolicy {
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CannotBeForcedToDiscard
+            | EffectDef::GainClassLevel { .. }
             | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }

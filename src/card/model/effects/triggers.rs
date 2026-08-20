@@ -89,6 +89,9 @@ pub enum TriggerEventDef {
     /// trigger per card, so "whenever you discard a card" fires twice for a
     /// discard of two -- and a discard paid as a cost is still a discard.
     Discarded(PlayerRelation),
+    /// "When this Class becomes level N." Only the Class carrying the clause
+    /// can raise it, so the event names the level and nothing else.
+    BecomesLevel(u8),
     /// "When you cycle this card" (CR 702.29b). Cycling is an activation, so
     /// this fires when the ability is activated rather than when it resolves,
     /// and the card is already in the graveyard by then. Only the cycled card

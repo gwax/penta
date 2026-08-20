@@ -6,8 +6,43 @@
 #![allow(clippy::wildcard_imports)]
 
 use super::*;
+use crate::card::CounterKind;
+use crate::game::CommittedTriggerEvent;
+use crate::ids::GameObjectId;
 
 impl Game {
+    /// "Level N": put level counters on a Class until it is that level, and
+    /// raise an event for each level it passes through. A Class is level 1
+    /// with no counters (CR 717.3), so level N is N-1 counters.
+    pub(in crate::game) fn raise_class_level(&mut self, source: GameObjectId, level: u8) {
+        let Some(wanted) = u16::from(level).checked_sub(1) else {
+            return;
+        };
+        let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == source)
+        else {
+            return;
+        };
+        let current = permanent.counters(CounterKind::Level);
+        if current >= wanted {
+            return;
+        }
+        permanent.set_counters(CounterKind::Level, wanted);
+        // One event per level crossed, so a Class taken from one to three by
+        // a single effect fires both of its clauses.
+        for reached in current + 1..=wanted {
+            let Ok(reached) = u8::try_from(reached + 1) else {
+                continue;
+            };
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::BecameLevel {
+                object: source,
+                level: reached,
+            });
+        }
+    }
+
     pub(super) fn resolve_permanent_state_effect(
         &mut self,
         scoped: ScopedEffect,

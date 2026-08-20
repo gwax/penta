@@ -341,6 +341,7 @@ fn validate_effect_references(
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CannotBeForcedToDiscard
+            | EffectDef::GainClassLevel { .. }
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::CreateAttachedToken { .. }

@@ -64,10 +64,14 @@ pub enum CounterKind {
     /// -- though its controller rarely gets to spend more than the first,
     /// having handed the artifact away to do so.
     Wish,
+    /// A Class enchantment's level counter. A Class is level 1 with none on
+    /// it and one level higher for each counter (CR 717.3), so what the card
+    /// prints as "Level 2" is one counter here.
+    Level,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 25;
+    pub const COUNT: usize = 26;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -95,6 +99,7 @@ impl CounterKind {
         Self::Fade,
         Self::Depletion,
         Self::Wish,
+        Self::Level,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -127,7 +132,8 @@ impl CounterKind {
             | Self::Fuse
             | Self::Fade
             | Self::Depletion
-            | Self::Wish => (0, 0),
+            | Self::Wish
+            | Self::Level => (0, 0),
         }
     }
 
@@ -159,6 +165,7 @@ impl CounterKind {
             Self::Fade => 22,
             Self::Depletion => 23,
             Self::Wish => 24,
+            Self::Level => 25,
         }
     }
 
@@ -190,6 +197,7 @@ impl CounterKind {
             Self::Fade => "fade",
             Self::Depletion => "depletion",
             Self::Wish => "wish",
+            Self::Level => "level",
         }
     }
 }

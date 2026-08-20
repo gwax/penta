@@ -777,6 +777,12 @@ impl Game {
                 TriggerEventDef::DamageDealt(matcher),
                 damage @ CommittedTriggerEvent::DamageDealt { .. },
             ) => self.damage_trigger_matches(matcher, damage, source, controller),
+            // Only the Class carrying the clause can reach its own levels,
+            // so the object is the whole of the match.
+            (
+                TriggerEventDef::BecomesLevel(wanted),
+                CommittedTriggerEvent::BecameLevel { object, level },
+            ) => *object == source && *level == wanted,
             (
                 TriggerEventDef::DrewCard(matcher),
                 CommittedTriggerEvent::DrewCard {

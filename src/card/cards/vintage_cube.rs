@@ -145,3 +145,5 @@ pub const PHLAGE_TITAN_OF_FIRES_FURY: CardDefinitionId = CardDefinitionId(2227);
 pub const SYLVAN_CARYATID: CardDefinitionId = CardDefinitionId(2228);
 pub const MYSTIC_CONFLUENCE: CardDefinitionId = CardDefinitionId(2229);
 pub const SUNBAKED_CANYON: CardDefinitionId = CardDefinitionId(2230);
+pub const OTTER_TOKEN_1_1_BLUE_RED: CardDefinitionId = CardDefinitionId(2231);
+pub const STORMCHASERS_TALENT: CardDefinitionId = CardDefinitionId(2232);

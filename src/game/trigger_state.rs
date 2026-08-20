@@ -232,6 +232,12 @@ pub(super) enum CommittedTriggerEvent {
     BecameMonarch {
         player: PlayerId,
     },
+    /// A Class reached a level it had not reached before. One event per
+    /// level crossed, so a Class taken from one to three raises two.
+    BecameLevel {
+        object: GameObjectId,
+        level: u8,
+    },
     /// A player drew a card. Raised once per card, where the card reaches
     /// the hand -- a draw that was replaced never happened.
     DrewCard {
@@ -330,7 +336,12 @@ impl CommittedTriggerEvent {
                     amount: None,
                 }
             }
-            // Both name only the player, and carry no amount with it.
+            Self::BecameLevel { object, .. } => TriggerContext {
+                object: Some(*object),
+                object_controller: None,
+                event_player: None,
+                amount: None,
+            },
             Self::StepBegins { player, .. }
             | Self::CommittedCrime { player }
             | Self::Discarded { player }

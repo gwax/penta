@@ -84,6 +84,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         // is not part of the event. Cycling names no object of its own: the
         // card that was cycled is the only thing that can be listening.
         TriggerEventDef::CommittedCrime(_)
+        | TriggerEventDef::BecomesLevel(_)
         | TriggerEventDef::Cycled
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
@@ -446,6 +447,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::CannotBeForcedToDiscard
+        | EffectDef::GainClassLevel { .. }
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }

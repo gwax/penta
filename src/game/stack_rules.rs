@@ -137,6 +137,7 @@ impl Game {
             | EffectDef::May { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CannotBeForcedToDiscard
+            | EffectDef::GainClassLevel { .. }
             | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }

@@ -103,6 +103,7 @@ pub enum CardSet {
     ModernHorizons3,
     OutlawsOfThunderJunction,
     ModernHorizons3Commander,
+    Bloomburrow,
     DuskmournHouseOfHorror,
     DuskmournHouseOfHorrorCommander,
     FoundationsJumpstart,

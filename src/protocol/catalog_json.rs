@@ -143,6 +143,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::ModernHorizons3 => "modern-horizons-3",
         CardSet::OutlawsOfThunderJunction => "outlaws-of-thunder-junction",
         CardSet::ModernHorizons3Commander => "modern-horizons-3-commander",
+        CardSet::Bloomburrow => "bloomburrow",
         CardSet::DuskmournHouseOfHorror => "duskmourn-house-of-horror",
         CardSet::DuskmournHouseOfHorrorCommander => "duskmourn-house-of-horror-commander",
         CardSet::FoundationsJumpstart => "foundations-jumpstart",

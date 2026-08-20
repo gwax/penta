@@ -507,6 +507,9 @@ impl Game {
                     object.source.unwrap_or(object.id),
                 );
             }
+            EffectDef::GainClassLevel { level } => {
+                self.raise_class_level(object.source.unwrap_or(object.id), level);
+            }
             EffectDef::BecomeMonarch { player } => {
                 if let Some(player) = self.player_reference(player, object, &context, scoped) {
                     self.set_monarch(player);

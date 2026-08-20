@@ -740,6 +740,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::BecomeCopyOf { .. }
                     | EffectDef::CannotBeForcedToSacrifice
                     | EffectDef::CannotBeForcedToDiscard
+                    | EffectDef::GainClassLevel { .. }
                     | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
                     | EffectDef::CreateEmblem { .. }
                     | EffectDef::Transform { .. }

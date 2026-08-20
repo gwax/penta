@@ -193,6 +193,14 @@ pub enum EffectDef {
     },
     /// Poison counters given to a player. Ten of them is a state-based loss,
     /// which is why this is not expressible as life loss.
+    /// "{cost}: Level N." Puts level counters on the source until its level
+    /// is `level`, which is one fewer counter than the printed number: a
+    /// Class is level 1 with none on it (CR 717.3). Reaching a level raises
+    /// an event, so a "when this Class becomes level N" clause fires exactly
+    /// once however many levels were climbed at a time.
+    GainClassLevel {
+        level: u8,
+    },
     AddPoisonCounters {
         recipient: EffectRecipientDef,
         amount: ValueDef,

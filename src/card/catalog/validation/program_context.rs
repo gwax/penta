@@ -538,6 +538,7 @@ fn validate_resolving_effect(
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::BecomeMonarch { .. }
+        | EffectDef::GainClassLevel { .. }
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::GrantFlashToNextSorcery
@@ -881,6 +882,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::InstallTrigger(_) => "InstallTrigger",
         EffectDef::CannotBeForcedToSacrifice => "CannotBeForcedToSacrifice",
         EffectDef::CannotBeForcedToDiscard => "CannotBeForcedToDiscard",
+        EffectDef::GainClassLevel { .. } => "GainClassLevel",
         EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. } => {
             "SubstituteBasicLandTypeUntilEndOfTurn"
         }

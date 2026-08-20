@@ -582,6 +582,7 @@ fn validate_trigger_event_references(
             Err(unsupported_trigger_event(event))
         }
         TriggerEventDef::CommittedCrime(_)
+        | TriggerEventDef::BecomesLevel(_)
         | TriggerEventDef::Cycled
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)

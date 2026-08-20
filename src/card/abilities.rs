@@ -244,6 +244,35 @@ pub const fn rampage(amount: usize, text: &'static str) -> AbilityDef {
     )
 }
 
+/// A noncreature spell its controller cast, which is what prowess watches.
+static A_NONCREATURE_SPELL_YOU_CAST: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::NoncreatureSpell,
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+/// "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1
+/// until end of turn.)"
+///
+/// Written out as the triggered ability it abbreviates rather than as a
+/// keyword: nothing in the rules reads "has prowess" the way combat reads
+/// flying, so the clause is the whole of it.
+#[must_use]
+pub const fn prowess() -> AbilityDef {
+    AbilityDef::triggered(
+        "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of \
+         turn.)",
+        TriggerEventDef::SpellCast(A_NONCREATURE_SPELL_YOU_CAST),
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(1),
+                ValueDef::Constant(1),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )
+}
+
 /// The printed landwalk clause for one basic land type. The rules text is the
 /// keyword on its own, exactly as the card prints it.
 #[must_use]
