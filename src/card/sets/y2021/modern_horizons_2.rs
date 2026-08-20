@@ -91,6 +91,10 @@ static BONE_SHARDS_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_on
     ]),
 )];
 
+static DAMN_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
 // MH2 76 — Bone Shards
 pub(in crate::card::sets) static BONE_SHARDS: CardRecord = CardRecord::new(
     cards::BONE_SHARDS,
@@ -110,6 +114,40 @@ pub(in crate::card::sets) static BONE_SHARDS: CardRecord = CardRecord::new(
             },
         ),
     ),
+);
+
+// MH2 80 — Damn
+pub(in crate::card::sets) static DAMN: CardRecord = CardRecord::new(
+    cards::DAMN,
+    "Damn",
+    CardArt::new("efeae088-9ac5-4d2f-a15c-d8675a471ac5", "Lucas Graciano"),
+    CardSet::ModernHorizons2,
+    // Two black is removal and four with two white is a Wrath, off one card
+    // -- and neither half leaves anything to regenerate, which is what puts
+    // it ahead of the sorceries it is otherwise a copy of.
+    CardRules::new_sorcery(mana_cost!("{B}{B}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Destroy target creature. A creature destroyed this way can't be regenerated.",
+            &DAMN_TARGET,
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: false,
+            },
+        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{2}{W}{W}"),
+            AlternativeCastKindDef::Overload,
+            Some("Destroy each creature. A creature destroyed this way can't be regenerated."),
+            EffectDef::Destroy {
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+                can_regenerate: false,
+            },
+        ),
+    ]),
 );
 
 // MH2 126 — Fury
@@ -210,6 +248,7 @@ pub(in crate::card::sets) static YAVIMAYA_CRADLE_OF_GROWTH: CardRecord = CardRec
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BONE_SHARDS,
+    &DAMN,
     &FURY,
     &UNHOLY_HEAT,
     &NETTLECYST,
