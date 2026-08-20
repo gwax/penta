@@ -570,7 +570,20 @@ impl Game {
                 destination,
                 placement,
                 reveal,
+                arrival,
             } => {
+                // Read back off the effect the choice came from: what a
+                // permanent arrives carrying is part of that printed clause,
+                // not a second thing the continuation has to remember.
+                let arrival_effect =
+                    arrival
+                        .as_ref()
+                        .and_then(|arrival| match arrival.effect.effect {
+                            crate::card::EffectDef::ChooseCards { arrival_effect, .. } => {
+                                arrival_effect
+                            }
+                            _ => None,
+                        });
                 let selected = options
                     .iter()
                     .filter_map(|selected| {
@@ -644,6 +657,22 @@ impl Game {
                             remove_card(&mut self.players[moved.owner.index()].library, moved.id)
                     {
                         self.players[moved.owner.index()].library.insert(0, card);
+                    }
+                    // What arrived is a new object: the card that left the
+                    // hand and the permanent now standing there are two
+                    // identities, and only the second one can carry
+                    // anything.
+                    if actual_destination == ZoneKind::Battlefield
+                        && let (Some(effect), Some(arrival), Some(arrived)) =
+                            (arrival_effect, arrival.as_ref(), self.arrived)
+                    {
+                        self.apply_arrival_effect(
+                            arrived,
+                            *effect,
+                            &arrival.object,
+                            &arrival.context,
+                            arrival.effect,
+                        );
                     }
                 }
             }

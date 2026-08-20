@@ -217,11 +217,26 @@ fn continuation_snapshot(
             destination,
             placement,
             reveal,
+            arrival,
         } => DecisionContinuationSnapshot::ChooseCards {
             controller: controller.index(),
             destination: zone_kind_snapshot(*destination),
             placement: zone_placement_snapshot(*placement),
             reveal: *reveal,
+            arrival: match arrival {
+                // As with a search's follow-up: a resolution this format
+                // cannot relocate makes the whole choice uncarryable, rather
+                // than one written down without the half that matters.
+                Some(arrival) => Some(effect_continuation_snapshot(
+                    game,
+                    viewer,
+                    &arrival.object,
+                    &arrival.context,
+                    arrival.effect,
+                    visible_rebindings,
+                )?),
+                None => None,
+            },
         },
         DecisionContinuation::DrawReplacement {
             player,

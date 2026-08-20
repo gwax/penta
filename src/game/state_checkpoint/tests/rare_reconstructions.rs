@@ -474,3 +474,47 @@ fn a_multi_zone_search_reconstructs_before_it_is_answered() {
 
     assert_reconstructs(&game, "a multi-zone search waiting to be answered");
 }
+
+/// A Breach choice caught before it is answered. What the creature arrives
+/// carrying travels with the resolution rather than with the choice, so a
+/// snapshot that lost it would put down a permanent with neither haste nor
+/// the clause that takes it away again.
+#[test]
+fn a_choice_that_puts_a_permanent_onto_the_battlefield_reconstructs_unanswered() {
+    let mut game = staged_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.players[PlayerId::One.index()]
+        .hand
+        .push(card(33_000, cards::SERRA_ANGEL, PlayerId::One));
+    let breach = card(33_001, cards::THROUGH_THE_BREACH, PlayerId::One);
+    let breach_id = breach.id;
+    game.players[PlayerId::One.index()].hand.push(breach);
+    fill_mana(&mut game, PlayerId::One, 5);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == breach_id))
+        .expect("Through the Breach is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    while game.observe(PlayerId::One).decision.is_none() {
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the spell is waiting to be answered");
+    }
+
+    assert!(
+        matches!(
+            game.pending_decisions
+                .first()
+                .map(|pending| &pending.continuation),
+            Some(DecisionContinuation::ChooseCards {
+                arrival: Some(_),
+                ..
+            })
+        ),
+        "the pending choice carries the resolution its arrival belongs to",
+    );
+    assert_reconstructs(&game, "a creature chosen for the battlefield, unanswered");
+}

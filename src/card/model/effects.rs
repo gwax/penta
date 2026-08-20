@@ -388,6 +388,12 @@ pub enum EffectDef {
         reveal: bool,
         destination: ZoneKind,
         placement: ZonePlacement,
+        /// A continuous effect a permanent this choice puts onto the
+        /// battlefield arrives carrying, for the same reason
+        /// [`Self::MoveToZone`] has one: what enters is a new object, and by
+        /// the time a following effect ran there would be nothing to name.
+        /// Ignored for every other destination.
+        arrival_effect: Option<&'static AppliedEffectDef>,
     },
     /// Return a spell from the stack to its owner's hand. Not a counter: the
     /// spell is never countered, so "can't be countered" does not stop this

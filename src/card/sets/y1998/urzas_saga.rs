@@ -69,6 +69,7 @@ static GOBLIN_LACKEY_TRIGGER: EffectDef = EffectDef::ChooseCards {
     reveal: false,
     destination: ZoneKind::Battlefield,
     placement: ZonePlacement::Top,
+    arrival_effect: None,
 };
 
 // USG 61 — Attunement

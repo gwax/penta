@@ -71,11 +71,23 @@ fn parse_continuation(
             destination,
             placement,
             reveal,
+            arrival,
         } => DecisionContinuation::ChooseCards {
             controller: player(*controller)?,
             destination: parse_zone_kind(*destination),
             placement: parse_zone_placement(*placement),
             reveal: *reveal,
+            arrival: arrival
+                .as_ref()
+                .map(|snapshot| {
+                    let continuation = parse_effect_continuation(snapshot, game)?;
+                    Ok::<_, String>(Box::new(super::super::SearchFollowUp {
+                        object: *continuation.object,
+                        context: continuation.context,
+                        effect: continuation.effect,
+                    }))
+                })
+                .transpose()?,
         },
         DecisionContinuationSnapshot::DrawReplacement {
             player: owner,

@@ -229,6 +229,12 @@ pub(super) enum DecisionContinuation {
         destination: ZoneKind,
         placement: ZonePlacement,
         reveal: bool,
+        /// The resolution this choice belongs to, carried only when the
+        /// choice puts a permanent onto the battlefield carrying something.
+        /// What it arrives with is read back off the effect itself, so the
+        /// continuation stores the resolution rather than a second copy of
+        /// the printed clause.
+        arrival: Option<Box<SearchFollowUp>>,
     },
     /// The affected player chooses which of several applicable next-draw
     /// replacements consumes this draw. Unchosen replacements remain live.
@@ -492,7 +498,9 @@ pub(super) enum DecisionContinuation {
     },
 }
 
-/// What a search runs once it is answered, and the resolution it belongs to.
+/// The resolution an answered decision belongs to: the object that was
+/// resolving, the context it had built, and the effect to run or to read the
+/// rest of the printed clause out of.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct SearchFollowUp {
     pub(super) object: StackObject,

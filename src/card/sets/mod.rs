@@ -267,6 +267,11 @@ const SET_MODULES: &[SetModule] = &[
         y2004::darksteel::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::ChampionsOfKamigawa,
+        y2004::champions_of_kamigawa::CARDS,
+        y2004::champions_of_kamigawa::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::BetrayersOfKamigawa,
         y2005::betrayers_of_kamigawa::CARDS,
         y2005::betrayers_of_kamigawa::ADDITIONAL_PRINTINGS,

@@ -1371,6 +1371,7 @@ static GOBLIN_WIZARD_CHOICE: EffectDef = EffectDef::ChooseCards {
     reveal: false,
     destination: ZoneKind::Battlefield,
     placement: ZonePlacement::Top,
+    arrival_effect: None,
 };
 
 // DRK 69 — Goblin Wizard
@@ -1548,6 +1549,7 @@ static GAEAS_TOUCH_CHOICE: EffectDef = EffectDef::ChooseCards {
     reveal: false,
     destination: ZoneKind::Battlefield,
     placement: ZonePlacement::Top,
+    arrival_effect: None,
 };
 
 // DRK 77 — Gaea's Touch

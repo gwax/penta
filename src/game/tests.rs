@@ -761,6 +761,7 @@ mod venarian_gold;
 mod vintage_cube_adventure;
 mod vintage_cube_arrival;
 mod vintage_cube_artifacts;
+mod vintage_cube_breach;
 mod vintage_cube_creatures;
 mod vintage_cube_eldrazi;
 mod vintage_cube_graveyard;

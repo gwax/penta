@@ -116,6 +116,7 @@ impl Game {
         reveal: bool,
         destination: ZoneKind,
         placement: ZonePlacement,
+        arrival: Option<(StackObject, EffectResolutionContext, ScopedEffect)>,
         source: GameObjectId,
         controller: PlayerId,
     ) {
@@ -200,6 +201,13 @@ impl Game {
                 destination,
                 placement,
                 reveal,
+                arrival: arrival.map(|(object, context, effect)| {
+                    Box::new(SearchFollowUp {
+                        object,
+                        context,
+                        effect,
+                    })
+                }),
             },
         );
     }

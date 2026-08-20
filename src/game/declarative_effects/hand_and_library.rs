@@ -337,6 +337,7 @@ impl Game {
                 reveal,
                 destination,
                 placement,
+                arrival_effect,
             } => {
                 let source = object.source.unwrap_or(object.id);
                 for target in self.effect_recipients(recipient, object, context, scoped) {
@@ -350,6 +351,9 @@ impl Game {
                             reveal,
                             destination,
                             placement,
+                            // Only a battlefield arrival can carry anything,
+                            // and only the clauses that print one do.
+                            arrival_effect.map(|_| (object.clone(), context.clone(), scoped)),
                             source,
                             object.controller,
                         );

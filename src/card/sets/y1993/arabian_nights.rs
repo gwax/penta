@@ -1334,6 +1334,7 @@ static RING_ORACLE_CHOICE: EffectDef = EffectDef::ChooseCards {
     reveal: false,
     destination: ZoneKind::Hand,
     placement: ZonePlacement::Top,
+    arrival_effect: None,
 };
 static RING_OLD_SCHOOL_CHOICE: EffectDef = EffectDef::ChooseCards {
     player: EffectRecipientDef::Controller,
@@ -1344,6 +1345,7 @@ static RING_OLD_SCHOOL_CHOICE: EffectDef = EffectDef::ChooseCards {
     reveal: false,
     destination: ZoneKind::Hand,
     placement: ZonePlacement::Top,
+    arrival_effect: None,
 };
 static RING_FORMAT_CHOICE: EffectDef = EffectDef::IfFormat {
     format: Format::OldSchool9394,
