@@ -507,6 +507,11 @@ const SET_MODULES: &[SetModule] = &[
         y2016::eternal_masters::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::EldritchMoon,
+        y2016::eldritch_moon::CARDS,
+        y2016::eldritch_moon::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::ConspiracyTakeTheCrown,
         y2016::conspiracy_take_the_crown::CARDS,
         y2016::conspiracy_take_the_crown::ADDITIONAL_PRINTINGS,

@@ -158,3 +158,4 @@ pub const THOUGHTSEIZE: CardDefinitionId = CardDefinitionId(2240);
 pub const PONDER: CardDefinitionId = CardDefinitionId(2241);
 pub const PARADOXICAL_OUTCOME: CardDefinitionId = CardDefinitionId(2242);
 pub const LION_SASH: CardDefinitionId = CardDefinitionId(2243);
+pub const COLLECTIVE_BRUTALITY: CardDefinitionId = CardDefinitionId(2244);

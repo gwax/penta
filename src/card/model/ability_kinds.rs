@@ -57,6 +57,21 @@ pub enum SpellResolutionDestinationDef {
     LibraryShuffled,
 }
 
+/// Where an additional cost's count comes from.
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub enum SpellAdditionalCostCountDef {
+    /// The printed number, which is what almost every cost names.
+    #[default]
+    Printed,
+    /// The X the spell is cast for. Flash of Insight's flashback exiles as
+    /// many blue cards as its X, so the cost cannot be known until that X is
+    /// chosen.
+    ChosenX,
+    /// One for each mode chosen past the first, which is escalate
+    /// (CR 702.120a). A spell with one mode pays nothing extra.
+    ModesBeyondFirst,
+}
+
 /// An additional cost that selects objects to spend. The zone decides what
 /// spending means: a permanent on the battlefield is sacrificed, a card in a
 /// graveyard is exiled, and a card in hand is discarded.
@@ -65,10 +80,8 @@ pub struct SpellAdditionalCostDef {
     pub object: ObjectPredicateDef,
     pub zone: ZoneKind,
     pub count: u8,
-    /// The count is X rather than the fixed number above. Flash of Insight's
-    /// flashback exiles as many blue cards as the X it is cast for, so the
-    /// cost cannot be known until that X is chosen.
-    pub count_is_x: bool,
+    /// Where the count comes from, when it is not the printed number above.
+    pub counted: SpellAdditionalCostCountDef,
     pub spend: SpendModeDef,
     /// A second way to pay the same printed cost. "Sacrifice a creature or
     /// discard a card" is one cost with two ways to pay it, and which one is
@@ -133,7 +146,7 @@ impl SpellAdditionalCostDef {
             object,
             zone,
             count,
-            count_is_x: false,
+            counted: SpellAdditionalCostCountDef::Printed,
             spend: SpendModeDef::ByZone,
             or: None,
         }
@@ -161,7 +174,14 @@ impl SpellAdditionalCostDef {
     /// The same cost, counted in X rather than in a printed number.
     #[must_use]
     pub const fn counted_in_x(mut self) -> Self {
-        self.count_is_x = true;
+        self.counted = SpellAdditionalCostCountDef::ChosenX;
+        self
+    }
+
+    /// Escalate: the same cost, paid once for each mode past the first.
+    #[must_use]
+    pub const fn counted_per_extra_mode(mut self) -> Self {
+        self.counted = SpellAdditionalCostCountDef::ModesBeyondFirst;
         self
     }
 
@@ -181,6 +201,10 @@ pub struct ModalSpellDef {
     pub maximum: u8,
     /// Some spells explicitly allow the same mode to be chosen more than once.
     pub may_repeat: bool,
+    /// A cost paid as the whole spell is cast, on top of its mana. Escalate
+    /// is the only one printed on a modal spell, and it belongs to the spell
+    /// rather than to any mode: what varies is how many modes were chosen.
+    pub additional_cost: Option<SpellAdditionalCostDef>,
     /// A printed "if <condition> as you cast this spell, you may choose two
     /// instead". The larger maximum applies when the condition holds where
     /// the spell is offered; it never lowers the printed one, and the
@@ -209,6 +233,7 @@ impl ModalSpellDef {
             minimum,
             maximum,
             may_repeat,
+            additional_cost: None,
             conditional_maximum: None,
         }
     }
@@ -276,7 +301,12 @@ impl SpellAbilityDef {
                 life_cost,
                 resolution_destination,
             },
-            Self::Modal(_) => panic!("an additional cost belongs to a whole spell"),
+            // Escalate is printed on a modal spell and belongs to the whole
+            // of it; what varies is how many modes it was cast with.
+            Self::Modal(modal) => Self::Modal(ModalSpellDef {
+                additional_cost: Some(cost),
+                ..modal
+            }),
         }
     }
 
@@ -299,7 +329,7 @@ impl SpellAbilityDef {
                 life_cost: Some(cost),
                 resolution_destination,
             },
-            Self::Modal(_) => panic!("an additional cost belongs to a whole spell"),
+            Self::Modal(_) => panic!("a life cost belongs to a whole spell"),
         }
     }
 
@@ -317,7 +347,7 @@ impl SpellAbilityDef {
             Self::Nonmodal {
                 additional_cost, ..
             } => additional_cost,
-            Self::Modal(_) => None,
+            Self::Modal(modal) => modal.additional_cost,
         }
     }
 

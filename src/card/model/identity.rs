@@ -96,6 +96,7 @@ pub enum CardSet {
     CommanderLegendsBattleForBaldursGate,
     DominariaUnited,
     EternalMasters,
+    EldritchMoon,
     ConspiracyTakeTheCrown,
     Kaladesh,
     AetherRevolt,

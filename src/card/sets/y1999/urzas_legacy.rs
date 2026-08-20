@@ -8,8 +8,8 @@ use crate::card::{
     ChooseDef, ColorChoiceOperationDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
     ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
     PlayerRefDef, PlayerRelation, ReplacementChoiceDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, SpellAdditionalCostDef, SpendModeDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    ResolvedEffectDurationDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -167,7 +167,7 @@ static SACRIFICE_A_LAND: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Land),
     zone: ZoneKind::Battlefield,
     count: 1,
-    count_is_x: false,
+    counted: SpellAdditionalCostCountDef::Printed,
     spend: SpendModeDef::ByZone,
     or: None,
 };

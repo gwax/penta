@@ -149,6 +149,24 @@ impl AbilityDef {
         )
     }
 
+    /// A cost paid as the whole spell is cast, on top of its mana. Escalate
+    /// is the only one a modal spell prints.
+    ///
+    /// # Panics
+    ///
+    /// Panics for any ability that is not a spell.
+    #[must_use]
+    pub const fn with_spell_additional_cost(
+        mut self,
+        cost: &'static SpellAdditionalCostDef,
+    ) -> Self {
+        let DeclarativeAbilityDef::Spell(spell) = self.definition else {
+            panic!("only a spell has an additional cost to pay");
+        };
+        self.definition = DeclarativeAbilityDef::Spell(spell.with_additional_cost(*cost));
+        self
+    }
+
     /// "If <condition> as you cast this spell, you may choose two instead."
     /// The larger maximum applies where the spell is offered, which is what
     /// "as you cast" means; the minimum is unchanged, because choosing the

@@ -12,9 +12,10 @@ use crate::card::{
     EffectRecipientDef, HalvedValueDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
     ObjectRefDef, PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
     ProtectedCreatureType, QuantifierDef, ReplacementConditionDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, RoundingDef, SacrificedAmountDef, SpellAdditionalCostDef, SpellForm,
-    SpendModeDef, TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement, abilities, cards,
+    ResolvedEffectDurationDef, RoundingDef, SacrificedAmountDef, SpellAdditionalCostCountDef,
+    SpellAdditionalCostDef, SpellForm, SpendModeDef, TargetConditionDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneChangeEventMatcherDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::game::{
     CardAbilityResolver, CardRuntime, PileChoice, PileChosen, PileSplit, PilesSeparated,
@@ -1368,7 +1369,7 @@ static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Graveyard,
     count: 1,
-    count_is_x: false,
+    counted: SpellAdditionalCostCountDef::Printed,
     spend: SpendModeDef::ByZone,
     or: None,
 };
@@ -1541,7 +1542,7 @@ static EXILE_TWO_CREATURE_CARDS: SpellAdditionalCostDef = SpellAdditionalCostDef
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Graveyard,
     count: 2,
-    count_is_x: false,
+    counted: SpellAdditionalCostCountDef::Printed,
     spend: SpendModeDef::ByZone,
     or: None,
 };
@@ -1782,7 +1783,7 @@ static SACRIFICE_A_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Battlefield,
     count: 1,
-    count_is_x: false,
+    counted: SpellAdditionalCostCountDef::Printed,
     spend: SpendModeDef::ByZone,
     or: None,
 };

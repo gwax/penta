@@ -13,6 +13,14 @@ use super::super::{
 };
 use crate::card::SpellAdditionalCostDef;
 
+/// The chosen quantities a cost can be counted from: the X the spell is cast
+/// for, and how many modes it was cast with.
+#[derive(Clone, Copy)]
+pub(in crate::game) struct CastScale {
+    pub(in crate::game) x: u16,
+    pub(in crate::game) modes: usize,
+}
+
 impl Game {
     /// Every way to pay a spell's declarative additional cost. A spell with
     /// none has exactly one way to pay it: spend nothing. A spell with one it
@@ -24,7 +32,7 @@ impl Game {
         costs: &CostConfiguration,
         card: &CardInstance,
         player: PlayerId,
-        x: u16,
+        scale: CastScale,
     ) -> Vec<Vec<GameObjectId>> {
         // A cost paid instead of the mana cost replaces the spell's own
         // additional cost rather than stacking with it: "rather than pay this
@@ -57,7 +65,7 @@ impl Game {
         // contributes nothing.
         let mut payments = Vec::new();
         for alternative in cost.alternatives() {
-            for payment in self.additional_cost_payments(alternative, card, player, x) {
+            for payment in self.additional_cost_payments(alternative, card, player, scale) {
                 if !payments.contains(&payment) {
                     payments.push(payment);
                 }
@@ -72,7 +80,7 @@ impl Game {
         cost: SpellAdditionalCostDef,
         card: &CardInstance,
         player: PlayerId,
-        x: u16,
+        scale: CastScale,
     ) -> Vec<Vec<GameObjectId>> {
         let candidates: Vec<GameObjectId> = match cost.zone {
             ZoneKind::Battlefield => self
@@ -119,10 +127,14 @@ impl Game {
         // object enumerates combinations rather than candidates. Order does
         // not matter -- exiling A then B is the same payment as B then A --
         // so each combination appears once, in candidate order.
-        let required = if cost.count_is_x {
-            usize::from(x)
-        } else {
-            usize::from(cost.count)
+        let required = match cost.counted {
+            crate::card::SpellAdditionalCostCountDef::Printed => usize::from(cost.count),
+            crate::card::SpellAdditionalCostCountDef::ChosenX => usize::from(scale.x),
+            // Escalate: a spell with one mode pays nothing extra, and every
+            // mode past the first costs another one of these.
+            crate::card::SpellAdditionalCostCountDef::ModesBeyondFirst => {
+                usize::from(cost.count).saturating_mul(scale.modes.saturating_sub(1))
+            }
         };
         Self::object_combinations(&candidates, required)
     }

@@ -270,6 +270,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         }
         Some("dominaria_united.rs") => source(CardSet::DominariaUnited, "DMU"),
         Some("eternal_masters.rs") => source(CardSet::EternalMasters, "EMA"),
+        Some("eldritch_moon.rs") => source(CardSet::EldritchMoon, "EMN"),
         Some("conspiracy_take_the_crown.rs") => source(CardSet::ConspiracyTakeTheCrown, "CN2"),
         Some("kaladesh.rs") => source(CardSet::Kaladesh, "KLD"),
         Some("aether_revolt.rs") => source(CardSet::AetherRevolt, "AER"),

@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 231 are cataloged and 303 are not
+- 534 cards in the pool, of which 232 are cataloged and 302 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -113,7 +113,7 @@ lands are legal in every format and are not listed.
 - `Trinket Mage`
 - `Urza, Lord High Artificer`
 
-### Black (31)
+### Black (30)
 
 - `Animate Dead`
 - `Archon of Cruelty`
@@ -121,7 +121,6 @@ lands are legal in every format and are not listed.
 - `Bolas's Citadel`
 - `Cabal Ritual`
 - `Caustic Bronco`
-- `Collective Brutality`
 - `Concealing Curtains`
 - `Crabomination`
 - `Dark Confidant`
@@ -362,7 +361,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 231 pool cards are in the catalog because an earlier format needed them.
+These 232 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -402,6 +401,7 @@ been played beside.
 - `Chandra, Torch of Defiance`
 - `Channel`
 - `Coalition Relic`
+- `Collective Brutality`
 - `Concealed Courtyard`
 - `Containment Priest`
 - `Copperline Gorge`

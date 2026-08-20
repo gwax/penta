@@ -9,9 +9,9 @@ use crate::card::{
     DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectRecipientDef, KeywordAbility,
     LifeConditionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation,
     QuantifierDef, ReplacementEffectDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    ScaledValueDef, SpellAdditionalCostDef, SpellForm, SpendModeDef, TargetConditionDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    ScaledValueDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpellForm, SpendModeDef,
+    TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetIndex};
 use crate::mana_cost;
@@ -811,7 +811,7 @@ static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Graveyard,
     count: 1,
-    count_is_x: false,
+    counted: SpellAdditionalCostCountDef::Printed,
     spend: SpendModeDef::ByZone,
     or: None,
 };

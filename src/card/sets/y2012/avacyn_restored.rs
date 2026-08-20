@@ -12,9 +12,9 @@ use crate::card::{
     EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef, ManaSpendEffectDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation,
     PlayerSetDef, ProtectedCreatureType, ReplacementChoiceDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostDef,
-    SpendModeDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement, abilities, cards,
+    ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostCountDef,
+    SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -1674,7 +1674,7 @@ static SACRIFICE_A_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Battlefield,
     count: 1,
-    count_is_x: false,
+    counted: SpellAdditionalCostCountDef::Printed,
     spend: SpendModeDef::ByZone,
     or: None,
 };

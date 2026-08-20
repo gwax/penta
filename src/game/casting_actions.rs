@@ -306,7 +306,15 @@ impl Game {
                                             .collect()
                                     } else {
                                         self.additional_cost_choices(
-                                            definition, option, &costs, card, player, x,
+                                            definition,
+                                            option,
+                                            &costs,
+                                            card,
+                                            player,
+                                            cost_configurations::CastScale {
+                                                x,
+                                                modes: modes.len(),
+                                            },
                                         )
                                     };
                                     for sacrifices in sacrifice_choices {

@@ -495,9 +495,11 @@ fn shared_spell_additional_cost(cost: Option<SpellAdditionalCostDef>) -> bool {
     // one spend mode for the whole cost, and picks the zone per object.
     cost.alternatives().into_iter().all(|alternative| {
         alternative.spend == cost.spend
-            // A cost counted in X has no printed number to check; what makes
-            // it payable is the X the spell is cast for.
-            && (alternative.count_is_x || alternative.count >= 1)
+            // A cost counted from something else has no printed number to
+            // check: what makes it payable is the X the spell is cast for,
+            // or how many modes were chosen.
+            && (alternative.counted != crate::card::SpellAdditionalCostCountDef::Printed
+                || alternative.count >= 1)
             && matches!(
                 alternative.zone,
                 ZoneKind::Battlefield | ZoneKind::Graveyard | ZoneKind::Hand

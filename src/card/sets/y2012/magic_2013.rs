@@ -14,9 +14,9 @@ use crate::card::{
     DiscardSelectionDef, DividedTotal, EffectDef, EffectExecutionDef, EffectRecipientDef,
     KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
     ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, SpellAdditionalCostDef,
-    SpendModeDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -2908,7 +2908,7 @@ static DISCARD_A_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
     object: ObjectPredicateDef::Any,
     zone: ZoneKind::Hand,
     count: 1,
-    count_is_x: false,
+    counted: SpellAdditionalCostCountDef::Printed,
     spend: SpendModeDef::ByZone,
     or: None,
 };

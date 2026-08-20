@@ -5,8 +5,9 @@ use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
     ArrivalAttachmentDef, BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef,
     EffectRecipientDef, InstalledTriggerDef, ObjectPredicateDef, PlayerRefDef, PlayerRelation,
-    SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -48,7 +49,7 @@ static SACRIFICE_TWO_MOUNTAINS: SpellAdditionalCostDef = SpellAdditionalCostDef 
     object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
     zone: ZoneKind::Battlefield,
     count: 2,
-    count_is_x: false,
+    counted: SpellAdditionalCostCountDef::Printed,
     spend: SpendModeDef::ByZone,
     or: None,
 };
