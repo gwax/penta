@@ -304,6 +304,8 @@ fn validate_effect_references(
         | EffectDef::CreateEmblem { .. }
         | EffectDef::DamageCannotBePreventedThisTurn
             | EffectDef::GrantFlashToNextSorcery
+        // The ballot is a predicate, not a target: nothing is pointed at.
+        | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }

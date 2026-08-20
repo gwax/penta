@@ -232,6 +232,11 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         task: BalanceTaskSnapshot,
         remaining: Vec<BalanceTaskSnapshot>,
     },
+    Vote {
+        candidates: Vec<u32>,
+        remaining: Vec<usize>,
+        votes: Vec<u32>,
+    },
     SylvanOffer {
         player: usize,
     },

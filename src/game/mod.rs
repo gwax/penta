@@ -105,6 +105,7 @@ mod trigger_capture;
 mod trigger_placement;
 mod trigger_state;
 mod turn;
+mod vote;
 mod zones;
 
 use prevention_state::{

@@ -756,6 +756,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
         | EffectDef::BecomeMonarch { .. }
+        | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
@@ -931,6 +932,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
         | EffectDef::BecomeMonarch { .. }
+        | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }

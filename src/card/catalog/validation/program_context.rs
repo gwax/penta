@@ -500,6 +500,7 @@ fn validate_resolving_effect(
         | EffectDef::ChooseColor { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::BecomeMonarch { .. }
+        | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
@@ -915,6 +916,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::ChooseColor { .. } => "ChooseColor",
         EffectDef::BecomeCopyOf { .. } => "BecomeCopyOf",
         EffectDef::BecomeMonarch { .. } => "BecomeMonarch",
+        EffectDef::VoteForPermanentToExile { .. } => "VoteForPermanentToExile",
         EffectDef::DamageCannotBePreventedThisTurn => "DamageCannotBePreventedThisTurn",
         EffectDef::GrantFlashToNextSorcery => "GrantFlashToNextSorcery",
         EffectDef::May { .. } => "May",

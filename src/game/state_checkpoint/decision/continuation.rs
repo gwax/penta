@@ -788,6 +788,18 @@ fn parse_continuation(
                 player: player(*owner)?,
             }
         }
+        DecisionContinuationSnapshot::Vote {
+            candidates,
+            remaining,
+            votes,
+        } => DecisionContinuation::Vote {
+            candidates: game_ids(candidates),
+            remaining: remaining
+                .iter()
+                .map(|owner| player(*owner))
+                .collect::<Result<Vec<_>, _>>()?,
+            votes: game_ids(votes),
+        },
         DecisionContinuationSnapshot::SylvanSelect {
             player: owner,
             candidates,

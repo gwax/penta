@@ -703,6 +703,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ScheduleTurnPhases(_)
                     | EffectDef::TakeExtraTurn { .. }
                     | EffectDef::BecomeMonarch { .. }
+                    | EffectDef::VoteForPermanentToExile { .. }
                     | EffectDef::DamageCannotBePreventedThisTurn
                     | EffectDef::GrantFlashToNextSorcery
                     | EffectDef::ExileLinkedToSource { .. }

@@ -576,6 +576,21 @@ impl Game {
                     },
                 );
             }
+            DecisionContinuation::Vote {
+                candidates,
+                remaining,
+                mut votes,
+            } => {
+                votes.extend(
+                    pending
+                        .observation
+                        .options
+                        .iter()
+                        .filter(|option| options.contains(&option.id))
+                        .filter_map(|option| option.card.map(|(card, _)| card)),
+                );
+                self.queue_next_vote(candidates, remaining, votes);
+            }
             DecisionContinuation::SacrificeOfChoice {
                 followup,
                 declined,

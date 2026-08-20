@@ -499,6 +499,7 @@ impl Game {
                 | EffectDef::ScheduleTurnPhases(_)
                 | EffectDef::TakeExtraTurn { .. }
                 | EffectDef::BecomeMonarch { .. }
+                | EffectDef::VoteForPermanentToExile { .. }
                 | EffectDef::DamageCannotBePreventedThisTurn
                 | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }

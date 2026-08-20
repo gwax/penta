@@ -153,6 +153,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Voting (CR 701.34).** "Will of the council" asks each player in turn,
+  starting with the resolving controller, and then acts on what got the most
+  votes -- including everything tied for most. The ballot is read once,
+  against that controller, before anyone votes: "a nonland permanent you
+  don't control" means the same set for every voter, because "you" is the
+  spell's controller rather than whoever is voting. Council's Judgment is
+  the first card to use it, and exiling without targeting is what it is
+  played for.
+
 - **The monarch (CR 720).** At most one player holds the crown; they draw a
   card at the beginning of their own end step, and a creature that deals
   combat damage to them hands it to that creature's controller. Both are

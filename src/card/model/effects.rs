@@ -570,6 +570,17 @@ pub enum EffectDef {
         then: &'static EffectDef,
         otherwise: &'static EffectDef,
     },
+    /// "Will of the council" (CR 701.34): starting with the resolving
+    /// controller, each player in turn votes for one of the permanents the
+    /// predicate names, and then every permanent with the most votes --
+    /// including every one tied for most -- is exiled.
+    ///
+    /// The predicate is read against the resolving controller, so "a
+    /// nonland permanent you don't control" means the same set for every
+    /// voter: "you" is the spell's controller, not whoever is voting.
+    VoteForPermanentToExile {
+        object: ObjectPredicateDef,
+    },
     /// The named player becomes the monarch (CR 720.2). There is only ever
     /// one, so this takes the crown from whoever held it; a player who
     /// already has it keeps it and nothing happens.

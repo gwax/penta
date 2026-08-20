@@ -443,6 +443,13 @@ impl Game {
                     });
                 self.schedule_extra_turns(players);
             }
+            EffectDef::VoteForPermanentToExile { object: predicate } => {
+                self.queue_permanent_vote(
+                    object.controller,
+                    predicate,
+                    object.source.unwrap_or(object.id),
+                );
+            }
             EffectDef::BecomeMonarch { player } => {
                 if let Some(player) = self.player_reference(player, object, &context, scoped) {
                     self.set_monarch(player);

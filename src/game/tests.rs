@@ -758,6 +758,7 @@ mod vintage_cube_monarch;
 mod vintage_cube_more_spells;
 mod vintage_cube_nissa;
 mod vintage_cube_spells;
+mod vintage_cube_vote;
 mod wards;
 mod while_source_tapped;
 mod word_of_binding;

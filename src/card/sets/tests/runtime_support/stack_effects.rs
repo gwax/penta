@@ -354,6 +354,10 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::DamageCannotBePreventedThisTurn
         // The crown goes to one named player, and nothing has to be read off
         // the board to know which.
+        // A vote waits on one decision per player, so it belongs to the
+        // deferred half, and its ballot is a predicate the shared walk
+        // already reads.
+        | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::BecomeMonarch { .. }
         | EffectDef::GrantFlashToNextSorcery => true,
         // Each of these asks a question and then runs an inner effect,

@@ -275,7 +275,9 @@ fn validate_effect_target_shapes(
         }
         // The copy names nobody: it reuses whatever the spell already
         // targeted unless its chooser retargets it as it is made.
-        EffectDef::CopyResolvingSpell { .. }
+        // The ballot is a predicate, not a target: nothing is pointed at.
+        EffectDef::VoteForPermanentToExile { .. }
+        | EffectDef::CopyResolvingSpell { .. }
         | EffectDef::IncreaseMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::None

@@ -633,6 +633,15 @@ fn continuation_snapshot(
                 .map(|task| balance_task_snapshot(viewer, task))
                 .collect(),
         },
+        DecisionContinuation::Vote {
+            candidates,
+            remaining,
+            votes,
+        } => DecisionContinuationSnapshot::Vote {
+            candidates: ids(candidates),
+            remaining: remaining.iter().map(|player| player.index()).collect(),
+            votes: ids(votes),
+        },
         DecisionContinuation::SylvanOffer { player } => DecisionContinuationSnapshot::SylvanOffer {
             player: player.index(),
         },

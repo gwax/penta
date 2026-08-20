@@ -425,6 +425,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
         | EffectDef::BecomeMonarch { .. }
+        | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }

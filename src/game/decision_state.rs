@@ -368,6 +368,18 @@ pub(super) enum DecisionContinuation {
         task: BalanceTask,
         remaining: Vec<BalanceTask>,
     },
+    /// A "will of the council" vote in progress. The candidates are frozen
+    /// before the first vote is cast, so every voter sees the same ballot;
+    /// a permanent that has left by the time the votes are counted simply
+    /// is not there to exile.
+    Vote {
+        candidates: Vec<GameObjectId>,
+        /// Who has yet to vote, in the order they vote: the resolving
+        /// controller first.
+        remaining: Vec<PlayerId>,
+        /// One entry per vote cast, in the order they were cast.
+        votes: Vec<GameObjectId>,
+    },
     SylvanOffer {
         player: PlayerId,
     },

@@ -377,3 +377,56 @@ fn a_pending_trigger_division_reconstructs_and_resumes() {
     );
     assert_reconstructs(&game, "a pending trigger division");
 }
+
+/// A vote half cast. The tally so far and who has yet to vote live only in
+/// the continuation, so a snapshot that loses either would resume a
+/// different election.
+#[test]
+fn a_vote_reconstructs_between_the_two_ballots() {
+    let mut game = staged_game();
+    game.battlefield.clear();
+    game.battlefield
+        .push(creature(31_000, cards::SERRA_ANGEL, PlayerId::Two));
+    game.battlefield
+        .push(creature(31_001, cards::GRIZZLY_BEARS, PlayerId::Two));
+    fill_mana(&mut game, PlayerId::One, 3);
+    let judgment = card(31_002, cards::COUNCILS_JUDGMENT, PlayerId::One);
+    let judgment_id = judgment.id;
+    game.players[PlayerId::One.index()].hand.push(judgment);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == judgment_id))
+        .expect("Council's Judgment is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    let ballot = loop {
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            break decision;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the spell is waiting to be voted on");
+    };
+    let angel = ballot
+        .options
+        .iter()
+        .find(|option| option.label == "Serra Angel")
+        .expect("the Angel is on the ballot");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: ballot.id,
+            options: vec![angel.id],
+        },
+    )
+    .expect("the first vote is cast");
+
+    assert!(
+        game.observe(PlayerId::Two)
+            .decision
+            .is_some_and(|decision| decision.prompt.contains("Vote")),
+        "the second ballot is what is pending",
+    );
+    assert_reconstructs(&game, "a vote with one ballot still to come");
+}

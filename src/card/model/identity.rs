@@ -71,6 +71,7 @@ pub enum CardSet {
     Theros,
     Commander2013,
     JourneyIntoNyx,
+    Conspiracy,
     Commander2014,
     KhansOfTarkir,
     DragonsOfTarkir,
