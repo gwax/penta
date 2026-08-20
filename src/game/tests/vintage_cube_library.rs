@@ -469,3 +469,87 @@ fn spellseeker_finds_a_cheap_instant_or_sorcery_and_nothing_else() {
         "the found card goes to hand",
     );
 }
+
+/// Five cards seen, exactly two taken, and the other three go under the
+/// library rather than to the graveyard.
+#[test]
+fn stock_up_takes_two_of_five_and_buries_the_rest() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].library.clear();
+    // Pushed last is drawn first, so this is the top five in reverse.
+    let bottom = card(91_000, cards::BLACK_LOTUS, PlayerId::One);
+    let bottom_id = bottom.id;
+    game.players[0].library.push(bottom);
+    for id in 91_001..91_006 {
+        game.players[0]
+            .library
+            .push(card(id, cards::GRIZZLY_BEARS, PlayerId::One));
+    }
+    let stock_up = card(91_010, cards::STOCK_UP, PlayerId::One);
+    let stock_up_id = stock_up.id;
+    game.players[0].hand.push(stock_up);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    let held = game.players[0].hand.len();
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == stock_up_id))
+        .expect("three mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_until_decision(&mut game);
+
+    let look = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the dig asks which cards to take");
+    assert_eq!(look.options.len(), 5, "five cards are seen");
+    assert_eq!(
+        (look.minimum, look.maximum),
+        (2, 2),
+        "and exactly two are taken",
+    );
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: look.id,
+            options: look
+                .options
+                .iter()
+                .take(2)
+                .map(|option| option.id)
+                .collect(),
+        },
+    )
+    .expect("taking two is the only legal answer");
+    drain_pending(&mut game);
+
+    // One card left the hand for Stock Up and two came back.
+    assert_eq!(game.players[0].hand.len(), held + 1);
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .all(|card| card.definition != cards::GRIZZLY_BEARS),
+        "the rest are not milled",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        4,
+        "one card was already under them, and three went back beneath it",
+    );
+    // The library is stored bottom-first, so the deepest card is the one at
+    // the front: the three that went back are now beneath the card that was
+    // already at the bottom, and it will be drawn before any of them.
+    assert!(
+        game.players[0]
+            .library
+            .iter()
+            .position(|card| card.id == bottom_id)
+            .is_some_and(|position| position == 3),
+        "the rest went under what was already at the bottom",
+    );
+}

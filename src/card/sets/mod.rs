@@ -486,6 +486,11 @@ const SET_MODULES: &[SetModule] = &[
         y2025::tarkir_dragonstorm::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Aetherdrift,
+        y2025::aetherdrift::CARDS,
+        y2025::aetherdrift::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::FinalFantasy,
         y2025::final_fantasy::CARDS,
         y2025::final_fantasy::ADDITIONAL_PRINTINGS,
