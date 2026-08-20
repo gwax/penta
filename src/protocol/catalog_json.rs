@@ -39,6 +39,9 @@ const fn implementation_status_name(status: ImplementationStatus) -> &'static st
     }
 }
 
+// Long because it is a table: one line per set, and the list only ever
+// grows. The source-organization map it mirrors is marked the same way.
+#[allow(clippy::too_many_lines)]
 const fn card_set_slug(set: CardSet) -> &'static str {
     match set {
         CardSet::Alpha => "alpha",
@@ -118,6 +121,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::KhansOfTarkir => "khans-of-tarkir",
         CardSet::DragonsOfTarkir => "dragons-of-tarkir",
         CardSet::ModernHorizons1 => "modern-horizons-1",
+        CardSet::StrixhavenSchoolOfMages => "strixhaven-school-of-mages",
         CardSet::ModernHorizons2 => "modern-horizons-2",
         CardSet::Ikoria => "ikoria",
         CardSet::KamigawaNeonDynasty => "kamigawa-neon-dynasty",

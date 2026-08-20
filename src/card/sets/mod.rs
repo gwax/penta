@@ -437,6 +437,11 @@ const SET_MODULES: &[SetModule] = &[
         y2020::ikoria::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::StrixhavenSchoolOfMages,
+        y2021::strixhaven_school_of_mages::CARDS,
+        y2021::strixhaven_school_of_mages::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::ModernHorizons2,
         y2021::modern_horizons_2::CARDS,
         y2021::modern_horizons_2::ADDITIONAL_PRINTINGS,

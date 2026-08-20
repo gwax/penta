@@ -775,6 +775,7 @@ mod vintage_cube_jitte;
 mod vintage_cube_lands;
 mod vintage_cube_library;
 mod vintage_cube_mana;
+mod vintage_cube_mastery;
 mod vintage_cube_monarch;
 mod vintage_cube_more_spells;
 mod vintage_cube_ninjutsu;

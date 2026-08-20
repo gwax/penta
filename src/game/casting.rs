@@ -329,11 +329,25 @@ impl Game {
     /// How a spell still on the stack was cast, if it was cast some
     /// alternative way. Read off the signature rather than from a permanent,
     /// because a spell that has not resolved has no permanent yet.
+    /// Which alternative a spell was cast with, read off the spell object.
+    ///
+    /// A "when you cast this spell, if it was kicked" trigger asks while the
+    /// spell is still on the stack. The spell's own resolution asks after it
+    /// has left, so the retired record answers there -- the signature is the
+    /// same either way.
     pub(super) fn stack_object_cast_with(
         &self,
         object: GameObjectId,
     ) -> Option<AlternativeCastKindDef> {
-        let stack_object = self.stack.iter().find(|candidate| candidate.id == object)?;
+        let stack_object = self
+            .stack
+            .iter()
+            .find(|candidate| candidate.id == object)
+            .or_else(|| match self.retired_objects.get(&object) {
+                Some(super::RetiredObject::Stack(retired)) => Some(retired.as_ref()),
+                Some(super::RetiredObject::Card(_) | super::RetiredObject::Permanent { .. })
+                | None => None,
+            })?;
         let signature = stack_object.signature.as_ref()?;
         let definition = self.catalog.get(stack_object.card.definition)?;
         let option = definition.play_option(signature.play_option())?;

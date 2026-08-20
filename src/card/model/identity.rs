@@ -81,6 +81,7 @@ pub enum CardSet {
     KhansOfTarkir,
     DragonsOfTarkir,
     ModernHorizons1,
+    StrixhavenSchoolOfMages,
     ModernHorizons2,
     Ikoria,
     KamigawaNeonDynasty,
