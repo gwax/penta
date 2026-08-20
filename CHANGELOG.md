@@ -153,6 +153,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **An additional cost with two ways to pay it.** "Sacrifice a creature or
+  discard a card" is one printed cost, and a spell could only name one way of
+  paying. A cost can now carry an alternative, and the ways of paying are the
+  union of both halves -- each enumerated over its own zone, so a half nothing
+  can pay simply contributes nothing. Which half is paid is settled as the
+  spell is cast, like every other spent object, and the payment path already
+  knew to sacrifice what it finds on the battlefield and discard what it finds
+  in hand. Bone Shards is the first card to ask.
+
 - **"Return target spell to its owner's hand."** Taking a spell off the stack
   and putting it somewhere is what a counter does, so the engine only had the
   countering version -- which checks "can't be countered" and is watched by

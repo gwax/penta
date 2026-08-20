@@ -11,6 +11,7 @@ use super::super::{
     ManaCost, PlayOptionDef, PlayerId, TriggerContext, ZoneKind, add_mana_cost,
     configured_mana_cost,
 };
+use crate::card::SpellAdditionalCostDef;
 
 impl Game {
     /// Every way to pay a spell's declarative additional cost. A spell with
@@ -50,6 +51,29 @@ impl Game {
         let Some(cost) = cost else {
             return vec![Vec::new()];
         };
+        // "Sacrifice a creature or discard a card" is one cost with two ways
+        // to pay it, so the ways of paying are the union: each half is
+        // enumerated over its own zone, and a half nothing can pay simply
+        // contributes nothing.
+        let mut payments = Vec::new();
+        for alternative in cost.alternatives() {
+            for payment in self.additional_cost_payments(alternative, card, player, x) {
+                if !payments.contains(&payment) {
+                    payments.push(payment);
+                }
+            }
+        }
+        payments
+    }
+
+    /// Every way to pay one half of a spell's additional cost.
+    fn additional_cost_payments(
+        &self,
+        cost: SpellAdditionalCostDef,
+        card: &CardInstance,
+        player: PlayerId,
+        x: u16,
+    ) -> Vec<Vec<GameObjectId>> {
         let candidates: Vec<GameObjectId> = match cost.zone {
             ZoneKind::Battlefield => self
                 .battlefield

@@ -83,3 +83,4 @@ pub const BLOODCHIEFS_THIRST: CardDefinitionId = CardDefinitionId(2165);
 pub const WISHCLAW_TALISMAN: CardDefinitionId = CardDefinitionId(2166);
 pub const BONECRUSHER_GIANT: CardDefinitionId = CardDefinitionId(2167);
 pub const REPRIEVE: CardDefinitionId = CardDefinitionId(2168);
+pub const BONE_SHARDS: CardDefinitionId = CardDefinitionId(2169);

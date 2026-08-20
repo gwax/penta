@@ -470,14 +470,20 @@ fn shared_spell_additional_cost(cost: Option<SpellAdditionalCostDef>) -> bool {
     let Some(cost) = cost else {
         return true;
     };
-    // A cost counted in X has no printed number to check; what makes it
-    // payable is the X the spell is cast for.
-    (cost.count_is_x || cost.count >= 1)
-        && matches!(
-            cost.zone,
-            ZoneKind::Battlefield | ZoneKind::Graveyard | ZoneKind::Hand
-        )
-        && shared_object_predicate(cost.object)
+    // Each way of paying has to be one the runtime can enumerate, and all of
+    // them have to spend what they name the same way: the payment path reads
+    // one spend mode for the whole cost, and picks the zone per object.
+    cost.alternatives().into_iter().all(|alternative| {
+        alternative.spend == cost.spend
+            // A cost counted in X has no printed number to check; what makes
+            // it payable is the X the spell is cast for.
+            && (alternative.count_is_x || alternative.count >= 1)
+            && matches!(
+                alternative.zone,
+                ZoneKind::Battlefield | ZoneKind::Graveyard | ZoneKind::Hand
+            )
+            && shared_object_predicate(alternative.object)
+    })
 }
 
 pub(super) fn battlefield_only(zones: &[ZoneKind]) -> bool {

@@ -1355,6 +1355,7 @@ static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
     count: 1,
     count_is_x: false,
     spend: SpendModeDef::ByZone,
+    or: None,
 };
 
 // ISD 65 — Makeshift Mauler
@@ -1524,6 +1525,7 @@ static EXILE_TWO_CREATURE_CARDS: SpellAdditionalCostDef = SpellAdditionalCostDef
     count: 2,
     count_is_x: false,
     spend: SpendModeDef::ByZone,
+    or: None,
 };
 
 // ISD 76 — Skaab Goliath
@@ -1763,6 +1765,7 @@ static SACRIFICE_A_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
     count: 1,
     count_is_x: false,
     spend: SpendModeDef::ByZone,
+    or: None,
 };
 
 // ISD 86 — Altar's Reap

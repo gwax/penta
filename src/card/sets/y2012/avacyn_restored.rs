@@ -1656,6 +1656,7 @@ static SACRIFICE_A_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
     count: 1,
     count_is_x: false,
     spend: SpendModeDef::ByZone,
+    or: None,
 };
 
 // AVR 88 — Bone Splinters

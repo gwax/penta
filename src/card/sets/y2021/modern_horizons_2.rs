@@ -71,6 +71,47 @@ static FURY_ABILITIES: [AbilityDef; 4] = [
     abilities::evoke_sacrifice("When this creature enters, if it was evoked, sacrifice it."),
 ];
 
+/// The second half of "sacrifice a creature or discard a card". Which half
+/// is paid is settled as the spell is cast: both spend a card the caster
+/// already had, and the enumeration offers every one of them.
+static BONE_SHARDS_DISCARD: SpellAdditionalCostDef =
+    SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Hand, 1);
+
+static BONE_SHARDS_COST: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ZoneKind::Battlefield,
+    1,
+)
+.or(&BONE_SHARDS_DISCARD);
+
+static BONE_SHARDS_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::HasType(CardType::Planeswalker),
+    ]),
+)];
+
+// MH2 76 — Bone Shards
+pub(in crate::card::sets) static BONE_SHARDS: CardRecord = CardRecord::new(
+    cards::BONE_SHARDS,
+    "Bone Shards",
+    CardArt::new("1ee98955-4c47-4d45-9377-608dfa755337", "Tommy Arnold"),
+    CardSet::ModernHorizons2,
+    // One black kills anything, and the second card is the price. A deck
+    // full of things it wants in the graveyard pays it gladly.
+    CardRules::new_sorcery(mana_cost!("{B}")).with_ability(
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, sacrifice a creature or discard a card.\nDestroy target creature or planeswalker.",
+            &BONE_SHARDS_TARGET,
+            BONE_SHARDS_COST,
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: true,
+            },
+        ),
+    ),
+);
+
 // MH2 126 — Fury
 pub(in crate::card::sets) static FURY: CardRecord = CardRecord::new(
     cards::FURY,
@@ -167,7 +208,12 @@ pub(in crate::card::sets) static YAVIMAYA_CRADLE_OF_GROWTH: CardRecord = CardRec
         )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&FURY, &UNHOLY_HEAT, &NETTLECYST, &YAVIMAYA_CRADLE_OF_GROWTH];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &BONE_SHARDS,
+    &FURY,
+    &UNHOLY_HEAT,
+    &NETTLECYST,
+    &YAVIMAYA_CRADLE_OF_GROWTH,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

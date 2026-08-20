@@ -1,0 +1,185 @@
+//! The alternative ways a card can be cast.
+//!
+//! Flashback, overload, kicker, evoke, miracle, and casting a card face down
+//! all reach the stack by a route other than paying what the card prints, so
+//! each is one clause of this shape rather than a special case in the
+//! casting path.
+
+use crate::ids::{AbilityId, AlternativeCostId};
+
+use super::super::{AlternativeCostDef, ManaCost};
+use super::{AbilityTargetDef, SpellAdditionalCostDef, TriggerConditionDef};
+
+/// The rules procedure and mana cost supplied by a printed
+/// alternative-casting keyword.
+///
+/// A play option exposes a derived [`AlternativeCostDef`] whose identity is
+/// the positional [`AbilityId`] of this clause. An overload clause uses its
+/// [`AbilityDef::effect`] as the targetless text-replacement result; flashback
+/// uses `EffectDef::None` and changes where the card may be cast and where it
+/// goes after the stack.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct AlternativeCastAbilityDef {
+    pub mana_cost: AlternativeCastManaCostDef,
+    pub kind: AlternativeCastKindDef,
+    /// Rules text for the spell as modified by this alternative, when the
+    /// procedure changes its visible instructions (as overload does).
+    pub stack_text: Option<&'static str>,
+    /// A nonmana cost paid in place of the mana one. The objects it names are
+    /// spent the way the zone says: a permanent is sacrificed, a card in a
+    /// graveyard is exiled, a card in hand is discarded.
+    pub additional_cost: Option<SpellAdditionalCostDef>,
+    /// A board condition the alternative requires. Mogg Salvage's free cast
+    /// is only available while the two lands it names are out, so a false
+    /// condition means the alternative is not offered at all.
+    pub condition: Option<&'static TriggerConditionDef>,
+    /// What the modified spell targets. Overload replaces "target" with
+    /// "each" and so declares none, but a kicked spell targets exactly what
+    /// the unkicked one does -- and the clause carries its own instructions,
+    /// so it has to declare the slots those instructions read.
+    pub targets: &'static [AbilityTargetDef],
+    /// Life paid as part of this alternative, on top of whatever mana it
+    /// names. "You may pay 4 life rather than pay this spell's mana cost" is
+    /// a mana cost of nothing and a life cost of four.
+    pub life: u16,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum AlternativeCastKindDef {
+    Flashback,
+    Overload,
+    /// Cast from hand only in the window opened by drawing the card, as the
+    /// first card drawn that turn.
+    Miracle,
+    /// A plain "you may <do something> rather than pay this spell's mana
+    /// cost". Like flashback it only changes what the spell costs, never what
+    /// it does, so the spell's own clause still supplies the instructions --
+    /// what it carries instead is a nonmana cost in `additional_cost`.
+    AlternativeCost,
+    /// Cast from hand with its kicker paid. A kicker is printed as an
+    /// optional additional cost, but the kicked spell is exactly a spell cast
+    /// for the printed cost plus the kicker with a different set of
+    /// instructions -- which is what an alternative cast already is, so the
+    /// mana cost here is the whole kicked total rather than the surcharge.
+    Kicked,
+    /// Cast face down as a 2/2 creature with no name for {3} (CR 702.37a).
+    /// The spell's own clauses are not what it does while face down -- it
+    /// does nothing at all -- so this kind changes the object rather than
+    /// only its cost.
+    FaceDown,
+}
+
+/// How an alternative-casting ability determines the cost it supplies.
+///
+/// Printed abilities normally carry a fixed cost. A granted ability such as
+/// Snapcaster Mage's flashback instead reads the mana cost of the card that
+/// gained it, after a concrete play option has selected the spell form.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum AlternativeCastManaCostDef {
+    Fixed(ManaCost),
+    ThisCardManaCost,
+}
+
+impl AlternativeCastManaCostDef {
+    #[must_use]
+    pub const fn resolve(self, card_mana_cost: Option<ManaCost>) -> Option<ManaCost> {
+        match self {
+            Self::Fixed(mana_cost) => Some(mana_cost),
+            Self::ThisCardManaCost => card_mana_cost,
+        }
+    }
+}
+
+impl AlternativeCastKindDef {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Flashback => "Flashback",
+            Self::Overload => "Overload",
+            Self::Miracle => "Miracle",
+            Self::Kicked => "Kicker",
+            Self::AlternativeCost => "Alternative cost",
+            Self::FaceDown => "Morph",
+        }
+    }
+
+    /// The inverse of [`Self::label`], for a snapshot that names the kind
+    /// rather than storing an enum whose order could move.
+    #[must_use]
+    pub fn from_label(label: &str) -> Option<Self> {
+        [
+            Self::Flashback,
+            Self::Overload,
+            Self::Miracle,
+            Self::Kicked,
+            Self::AlternativeCost,
+            Self::FaceDown,
+        ]
+        .into_iter()
+        .find(|kind| kind.label() == label)
+    }
+}
+
+impl AlternativeCastAbilityDef {
+    #[must_use]
+    pub fn rules_text(self) -> String {
+        match (self.kind, self.mana_cost) {
+            (AlternativeCastKindDef::Flashback, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
+                format!(
+                    "Flashback {mana_cost} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+                )
+            }
+            (
+                AlternativeCastKindDef::Flashback,
+                AlternativeCastManaCostDef::ThisCardManaCost,
+            ) => "Flashback—the flashback cost is equal to this card's mana cost. (You may cast this card from your graveyard for its flashback cost. Then exile it.)".into(),
+            (AlternativeCastKindDef::Overload, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
+                format!(
+                    "Overload {mana_cost} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+                )
+            }
+            (
+                AlternativeCastKindDef::Overload,
+                AlternativeCastManaCostDef::ThisCardManaCost,
+            ) => "Overload—the overload cost is equal to this card's mana cost. (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")".into(),
+            (AlternativeCastKindDef::Miracle, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
+                format!(
+                    "Miracle {mana_cost} (You may cast this card for its miracle cost when you draw it if it's the first card you drew this turn.)",
+                )
+            }
+            (
+                AlternativeCastKindDef::Miracle,
+                AlternativeCastManaCostDef::ThisCardManaCost,
+            ) => "Miracle—the miracle cost is equal to this card's mana cost. (You may cast this card for its miracle cost when you draw it if it's the first card you drew this turn.)".into(),
+            // The printed reminder names the surcharge, but the cost carried
+            // here is the kicked total, so the card supplies its own text.
+            (AlternativeCastKindDef::Kicked, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
+                format!("Kicked, for {mana_cost} in total")
+            }
+            (AlternativeCastKindDef::Kicked, AlternativeCastManaCostDef::ThisCardManaCost) => {
+                "Kicked".into()
+            }
+            // The card prints what is paid instead, so it supplies the text.
+            (AlternativeCastKindDef::AlternativeCost, _) => "Alternative cost".into(),
+            // Morph is printed on the card that has it; casting face down is
+            // the rule that applies to every such card, and the cost of doing
+            // it is always {3}.
+            (AlternativeCastKindDef::FaceDown, _) => {
+                "You may cast this card face down as a 2/2 creature spell for {3}.".into()
+            }
+        }
+    }
+
+    #[must_use]
+    pub fn alternative_cost(
+        self,
+        ability: AbilityId,
+        card_mana_cost: Option<ManaCost>,
+    ) -> Option<AlternativeCostDef> {
+        Some(AlternativeCostDef {
+            id: AlternativeCostId(ability.0),
+            label: self.kind.label().into(),
+            mana_cost: self.mana_cost.resolve(card_mana_cost)?,
+        })
+    }
+}

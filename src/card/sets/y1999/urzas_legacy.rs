@@ -169,6 +169,7 @@ static SACRIFICE_A_LAND: SpellAdditionalCostDef = SpellAdditionalCostDef {
     count: 1,
     count_is_x: false,
     spend: SpendModeDef::ByZone,
+    or: None,
 };
 
 // ULG 98 — Crop Rotation

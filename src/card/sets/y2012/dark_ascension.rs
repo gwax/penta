@@ -800,6 +800,7 @@ static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
     count: 1,
     count_is_x: false,
     spend: SpendModeDef::ByZone,
+    or: None,
 };
 
 // DKA 40 — Headless Skaab

@@ -49,6 +49,7 @@ static SACRIFICE_TWO_MOUNTAINS: SpellAdditionalCostDef = SpellAdditionalCostDef 
     count: 2,
     count_is_x: false,
     spend: SpendModeDef::ByZone,
+    or: None,
 };
 
 static FIREBLAST_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(

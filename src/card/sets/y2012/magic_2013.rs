@@ -2885,6 +2885,7 @@ static DISCARD_A_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
     count: 1,
     count_is_x: false,
     spend: SpendModeDef::ByZone,
+    or: None,
 };
 
 // M13 157 — Wild Guess

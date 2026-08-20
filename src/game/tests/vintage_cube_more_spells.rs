@@ -638,3 +638,97 @@ fn reprieve_answers_a_spell_that_cannot_be_countered() {
         "and is back in hand despite not being counterable",
     );
 }
+
+/// "Sacrifice a creature or discard a card" is one cost with two ways to pay
+/// it, so both are on offer at once and each names its own object.
+#[test]
+fn bone_shards_offers_both_ways_to_pay() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let bears = creature(82_000, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let angel = creature(82_001, cards::SERRA_ANGEL, PlayerId::Two);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    let shards = card(82_002, cards::BONE_SHARDS, PlayerId::One);
+    let shards_id = shards.id;
+    game.players[0].hand.push(shards);
+    let spare = card(82_003, cards::LIGHTNING_BOLT, PlayerId::One);
+    let spare_id = spare.id;
+    game.players[0].hand.push(spare);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+
+    let mut paid = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell {
+                card,
+                choices,
+                sacrifices,
+            } if card == shards_id
+                && choices
+                    .iter_targets()
+                    .any(|target| *target == Target::Permanent(angel_id)) =>
+            {
+                Some(sacrifices)
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    paid.sort_unstable();
+
+    assert_eq!(
+        paid,
+        vec![vec![bears_id], vec![spare_id]],
+        "the creature on the battlefield and the card in hand are both ways to pay",
+    );
+}
+
+/// Paying by discarding puts the card in the graveyard and the target is
+/// destroyed all the same.
+#[test]
+fn bone_shards_discards_its_price_and_destroys() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let angel = creature(82_010, cards::SERRA_ANGEL, PlayerId::Two);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    let shards = card(82_011, cards::BONE_SHARDS, PlayerId::One);
+    let shards_id = shards.id;
+    game.players[0].hand.push(shards);
+    let spare = card(82_012, cards::LIGHTNING_BOLT, PlayerId::One);
+    let spare_id = spare.id;
+    game.players[0].hand.push(spare);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell {
+                card, sacrifices, ..
+            } => *card == shards_id && sacrifices == &[spare_id],
+            _ => false,
+        })
+        .expect("discarding is a way to pay");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "the discarded card is in the graveyard",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == angel_id),
+        "and the Angel is destroyed",
+    );
+}
