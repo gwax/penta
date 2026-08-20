@@ -760,6 +760,11 @@ impl Game {
                     .is_some_and(|permanent| {
                         compare(&permanent.counters(*kind), *comparison, &u16::from(*amount))
                     }),
+                TriggerConditionDef::SourceCastWith(kind) => self
+                    .battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == source)
+                    .is_some_and(|permanent| permanent.cast_alternative == Some(*kind)),
                 TriggerConditionDef::SourceLoyalty { comparison, amount } => self
                     .battlefield
                     .iter()

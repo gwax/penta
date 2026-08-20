@@ -805,6 +805,7 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceUntapped
         | TriggerConditionDef::SourceIsPaired
         | TriggerConditionDef::SourceCounters { .. }
+        | TriggerConditionDef::SourceCastWith(_)
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::SourceIsTapped

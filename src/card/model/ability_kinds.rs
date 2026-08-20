@@ -553,6 +553,22 @@ impl AlternativeCastKindDef {
             Self::FaceDown => "Morph",
         }
     }
+
+    /// The inverse of [`Self::label`], for a snapshot that names the kind
+    /// rather than storing an enum whose order could move.
+    #[must_use]
+    pub fn from_label(label: &str) -> Option<Self> {
+        [
+            Self::Flashback,
+            Self::Overload,
+            Self::Miracle,
+            Self::Kicked,
+            Self::AlternativeCost,
+            Self::FaceDown,
+        ]
+        .into_iter()
+        .find(|kind| kind.label() == label)
+    }
 }
 
 impl AlternativeCastAbilityDef {

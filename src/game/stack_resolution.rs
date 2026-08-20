@@ -80,6 +80,11 @@ impl Game {
                 .signature
                 .as_ref()
                 .map_or(0, crate::casting::CastSignature::x);
+            permanent.cast_alternative = object.signature.as_ref().and_then(|signature| {
+                let card = self.catalog.get(definition)?;
+                let option = card.play_option(signature.play_option())?;
+                self.selected_alternative_kind(card, option, object.id, signature.costs())
+            });
             permanent.text_changes = object.text_changes;
             permanent.attached_to = aura_host;
             self.enqueue_battlefield_entry(PendingBattlefieldEntry {

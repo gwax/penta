@@ -453,6 +453,17 @@ pub(super) enum DecisionContinuation {
         remaining: Vec<TriggerPlacementBatch>,
         candidates: Vec<Target>,
     },
+    /// How a triggered ability's fixed total is split among the targets it
+    /// just chose. A cast spell settles this while the action is enumerated;
+    /// a trigger has already put its targets on the stack, so the split is a
+    /// second question with the same answer space.
+    TriggerDivision {
+        trigger: PendingTrigger,
+        pending: Vec<PendingTrigger>,
+        remaining: Vec<TriggerPlacementBatch>,
+        targets: Vec<Target>,
+        divisions: Vec<Vec<u16>>,
+    },
 }
 
 /// What a search runs once it is answered, and the resolution it belongs to.

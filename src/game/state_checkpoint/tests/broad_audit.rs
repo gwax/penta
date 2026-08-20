@@ -305,6 +305,7 @@ fn categories(game: &Game, wire: &Value) -> Vec<&'static str> {
                 pending.continuation,
                 crate::game::DecisionContinuation::TriggerOrder { .. }
                     | crate::game::DecisionContinuation::TriggerPlacement { .. }
+                    | crate::game::DecisionContinuation::TriggerDivision { .. }
             ),
             "pending-triggers",
         );

@@ -2,11 +2,12 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ValueDef, ZoneKind, abilities, cards,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, AppliedEffectDef,
+    BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, DividedTotal, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    SpellAdditionalCostDef, SpendModeDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 /// "Artifact and/or enchantment" is one query rather than two sums: a
 /// permanent that is both is counted once, and Nettlecyst counts itself.
@@ -19,8 +20,65 @@ static ARTIFACTS_AND_ENCHANTMENTS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::
     PlayerRelation::You,
 );
 
+/// Four damage split however the caster likes, over creatures and
+/// planeswalkers alike. Every target must be assigned at least one, so four
+/// is the most it can ever cover.
+static FURY_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
+    predicate: AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::HasType(CardType::Planeswalker),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    minimum: 1,
+    maximum: AbilityTargetDef::UNLIMITED,
+    divided_total: Some(DividedTotal::Fixed(4)),
+}];
+
+static EXILE_A_RED_CARD: SpellAdditionalCostDef =
+    SpellAdditionalCostDef::new(ObjectPredicateDef::Color(ManaColor::Red), ZoneKind::Hand, 1)
+        .spent(SpendModeDef::Exile);
+
+static FURY_ABILITIES: [AbilityDef; 4] = [
+    abilities::double_strike(),
+    AbilityDef::triggered_with_targets(
+        "When this creature enters, it deals 4 damage divided as you choose among any number of target creatures and/or planeswalkers.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        &FURY_TARGETS,
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::DividedAmongTargets,
+        },
+    ),
+    AbilityDef::alternative_cast(
+        mana_cost!("{0}"),
+        AlternativeCastKindDef::AlternativeCost,
+        Some("Evoke—Exile a red card from your hand."),
+        EffectDef::None,
+    )
+    .with_alternative_additional_cost(&EXILE_A_RED_CARD),
+    // Evoke's own sacrifice. It is a separate trigger because it happens
+    // after the Elemental has arrived, alongside the damage trigger rather
+    // than instead of it -- which is why an evoked Fury still burns.
+    abilities::evoke_sacrifice("When this creature enters, if it was evoked, sacrifice it."),
+];
+
 // MH2 126 — Fury
-// Audit: blocked — Needs two things. Divided damage is recorded on a spell's cast signature, so a triggered ability that divides an amount among targets chosen through a decision assigns nothing to any of them. And evoke's sacrifice needs the permanent to know its spell was evoked, which an alternative cost of this kind cannot install.
+pub(in crate::card::sets) static FURY: CardRecord = CardRecord::new(
+    cards::FURY,
+    "Fury",
+    CardArt::new("bd281158-8180-40b9-a5b7-03cfc712d81a", "Raoul Vitale"),
+    CardSet::ModernHorizons2,
+    CardRules::new_creature(mana_cost!("{3}{R}{R}"), &["Elemental", "Incarnation"], 3, 3)
+        .with_abilities(&FURY_ABILITIES),
+);
 
 // MH2 202 — Grist, the Hunger Tide
 // Audit: blocked — Needs three capabilities at once: a resolution loop that repeats a step while reading what the previous iteration milled, a reflexive triggered ability that chooses its target when the optional sacrifice is actually made rather than on activation, and characteristics that apply in every zone except the battlefield.
@@ -70,6 +128,7 @@ pub(in crate::card::sets) static YAVIMAYA_CRADLE_OF_GROWTH: CardRecord = CardRec
         )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&NETTLECYST, &YAVIMAYA_CRADLE_OF_GROWTH];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&FURY, &NETTLECYST, &YAVIMAYA_CRADLE_OF_GROWTH];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

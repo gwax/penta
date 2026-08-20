@@ -184,6 +184,13 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         remaining: Vec<TriggerPlacementBatchSnapshot>,
         candidates: Vec<TargetSnapshot>,
     },
+    TriggerDivision {
+        trigger: PendingTriggerSnapshot,
+        pending: Vec<PendingTriggerSnapshot>,
+        remaining: Vec<TriggerPlacementBatchSnapshot>,
+        targets: Vec<TargetSnapshot>,
+        divisions: Vec<Vec<u16>>,
+    },
     MiracleReveal {
         card: u32,
     },

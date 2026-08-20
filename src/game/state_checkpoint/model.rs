@@ -248,6 +248,11 @@ pub(super) struct PermanentSnapshot {
     /// The X the spell that made this permanent was cast for.
     #[serde(default, skip_serializing_if = "is_zero_u16")]
     pub(super) cast_x: u16,
+    /// The alternative this permanent's spell was cast with, by its stable
+    /// name. Stored as a string so the wire form does not depend on the
+    /// order of a catalog enum.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) cast_alternative: Option<String>,
     pub(super) destroy_at_end: bool,
     pub(super) counters: Vec<u16>,
     pub(super) attached_to: Option<u32>,

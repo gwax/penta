@@ -665,6 +665,7 @@ fn validate_trigger_condition(
         | TriggerConditionDef::SourceMatches { .. }
         | TriggerConditionDef::AttachedPermanentMatches { .. }
         | TriggerConditionDef::SourceCounters { .. }
+        | TriggerConditionDef::SourceCastWith(_)
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn

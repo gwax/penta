@@ -422,6 +422,30 @@ pub const fn overload(
     )
 }
 
+/// Evoke: an alternative cost that comes due once the creature has arrived.
+/// The permission is the alternative cast; the sacrifice is a separate
+/// triggered ability, because it happens after the spell has already
+/// resolved and the creature's own enters triggers have gone on the stack
+/// alongside it.
+#[must_use]
+pub const fn evoke_sacrifice(text: &'static str) -> AbilityDef {
+    AbilityDef::triggered_if(
+        text,
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        &EVOKED,
+        EffectDef::Sacrifice {
+            object: EffectRecipientDef::Source,
+        },
+    )
+}
+
+static EVOKED: TriggerConditionDef =
+    TriggerConditionDef::SourceCastWith(AlternativeCastKindDef::AlternativeCost);
+
 /// A kicker: "Kicker {cost} (You may pay an additional {cost} as you cast
 /// this spell.)", together with what the spell does when it was paid.
 ///

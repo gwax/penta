@@ -407,6 +407,7 @@ fn validate_trigger_condition_shape(
         | TriggerConditionDef::ActivePlayer(_)
         | TriggerConditionDef::SpellsCastThisTurn { .. }
         | TriggerConditionDef::SpellsCastLastTurn { .. }
+        | TriggerConditionDef::SourceCastWith(_)
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn

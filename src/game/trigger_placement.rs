@@ -164,6 +164,71 @@ impl Game {
         );
     }
 
+    /// Asks how a fixed total is split among targets already chosen. Every
+    /// target takes at least one, so with one target there is nothing to ask.
+    pub(super) fn queue_trigger_division_decision(
+        &mut self,
+        trigger: PendingTrigger,
+        pending: Vec<PendingTrigger>,
+        remaining: Vec<TriggerPlacementBatch>,
+        targets: Vec<Target>,
+        divisions: Vec<Vec<u16>>,
+    ) {
+        let source_name = self
+            .catalog
+            .get(trigger.definition)
+            .map_or("Triggered ability", |card| card.name.as_str())
+            .to_owned();
+        let labels = targets
+            .iter()
+            .map(|target| self.target_label(trigger.controller, *target))
+            .collect::<Vec<_>>();
+        let options = divisions
+            .iter()
+            .enumerate()
+            .map(|(index, amounts)| DecisionOption {
+                id: u32::try_from(index).unwrap_or(u32::MAX),
+                label: amounts
+                    .iter()
+                    .zip(&labels)
+                    .map(|(amount, label)| format!("{amount} to {label}"))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                card: None,
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::None,
+            })
+            .collect::<Vec<_>>();
+        let id = self.next_decision_id;
+        self.next_decision_id = self.next_decision_id.saturating_add(1);
+        self.pending_decisions.insert(
+            0,
+            PendingDecision {
+                observation: DecisionObservation {
+                    id,
+                    player: trigger.controller,
+                    kind: DecisionKind::TriggerPlacement,
+                    order_semantics: None,
+                    prompt: format!("{source_name}: divide the total"),
+                    visibility: DecisionVisibility::Public,
+                    preference: DecisionPreference::Neutral,
+                    minimum: 1,
+                    maximum: 1,
+                    cancellable: false,
+                    options,
+                },
+                continuation: DecisionContinuation::TriggerDivision {
+                    trigger,
+                    pending,
+                    remaining,
+                    targets,
+                    divisions,
+                },
+            },
+        );
+    }
+
     pub(super) fn queue_trigger_order_decision(
         &mut self,
         batch: TriggerPlacementBatch,

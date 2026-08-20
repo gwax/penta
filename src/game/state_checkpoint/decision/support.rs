@@ -106,6 +106,12 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             pending,
             remaining,
             ..
+        }
+        | DecisionContinuation::TriggerDivision {
+            trigger,
+            pending,
+            remaining,
+            ..
         } => extend_trigger_placement_ids(&mut ids, trigger, pending, remaining),
         DecisionContinuation::SacrificeToTotalPower { object, context, .. }
         | DecisionContinuation::BasicLandTypeSubstitution { object, context, .. } => {

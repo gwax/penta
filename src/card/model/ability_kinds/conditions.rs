@@ -67,6 +67,10 @@ pub enum TriggerConditionDef {
         comparison: ComparisonDef,
         amount: u8,
     },
+    /// How the source's own spell was cast. Evoke's sacrifice asks exactly
+    /// this: the permanent is here, and the question is which way it was
+    /// paid for on the way in. False for anything that never was a spell.
+    SourceCastWith(AlternativeCastKindDef),
     /// How much loyalty the ability's own source has left.
     SourceLoyalty {
         comparison: ComparisonDef,

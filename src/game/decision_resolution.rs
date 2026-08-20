@@ -1,9 +1,11 @@
+mod triggers;
+
 use super::decision_search_resolution::SearchResolution;
 use super::{
     BalanceAction, BasicLandType, BasicLandTypeChange, BattlefieldArrival,
     BattlefieldExitCompletion, CardRuntime, CounterKind, DecisionContinuation, DecisionOption,
     Game, GameEvent, ManaCost, PendingProcedure, PileChoice, PileSplit, PlayerId, ReplaceableEvent,
-    Target, TargetSelection, TargetSlotId, ZoneKind, ZoneMoveCause, ZonePlacement, remove_card,
+    Target, TargetSelection, ZoneKind, ZoneMoveCause, ZonePlacement, remove_card,
 };
 use crate::card::{BattlefieldEntryChoiceDestinationDef, ReplacementEffectDef};
 
@@ -932,31 +934,10 @@ impl Game {
                     permanent.add_counters(CounterKind::PlusOnePlusOne, returned);
                 }
             }
-            DecisionContinuation::TriggerOrder { batch, remaining } => {
-                self.complete_trigger_order(&batch, remaining, options);
-            }
-            DecisionContinuation::TriggerPlacement {
-                mut trigger,
-                pending,
-                remaining,
-                candidates,
-            } => {
-                let target_index = trigger.targets.len();
-                let selected = options
-                    .iter()
-                    .filter_map(|option| {
-                        usize::try_from(*option)
-                            .ok()
-                            .and_then(|index| candidates.get(index))
-                            .copied()
-                    })
-                    .collect();
-                let slot = TargetSlotId::from_index(target_index)
-                    .expect("validated trigger targets fit the runtime slot space");
-                trigger.targets.push(TargetSelection::new(slot, selected));
-                let mut continued = vec![trigger];
-                continued.extend(pending);
-                self.place_trigger_sequence(continued, remaining);
+            trigger @ (DecisionContinuation::TriggerOrder { .. }
+            | DecisionContinuation::TriggerPlacement { .. }
+            | DecisionContinuation::TriggerDivision { .. }) => {
+                self.complete_trigger_continuation(trigger, options);
             }
         }
     }

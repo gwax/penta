@@ -676,6 +676,25 @@ fn parse_continuation(
                 .collect::<Result<Vec<_>, _>>()?,
             candidates: candidates.iter().copied().map(parse_target).collect(),
         },
+        DecisionContinuationSnapshot::TriggerDivision {
+            trigger,
+            pending,
+            remaining,
+            targets,
+            divisions,
+        } => DecisionContinuation::TriggerDivision {
+            trigger: parse_pending_trigger(trigger, game)?,
+            pending: pending
+                .iter()
+                .map(|trigger| parse_pending_trigger(trigger, game))
+                .collect::<Result<Vec<_>, _>>()?,
+            remaining: remaining
+                .iter()
+                .map(|batch| parse_trigger_batch(batch, game))
+                .collect::<Result<Vec<_>, _>>()?,
+            targets: targets.iter().copied().map(parse_target).collect(),
+            divisions: divisions.clone(),
+        },
         DecisionContinuationSnapshot::MiracleReveal { card } => {
             DecisionContinuation::MiracleReveal {
                 card: GameObjectId(*card),

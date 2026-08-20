@@ -8,6 +8,7 @@
 
 use super::super::*;
 use super::{determinized, true_hidden_hypothesis};
+use crate::card::cards;
 use crate::game::tests::{card, creature, mana_ability_for, ready_game};
 use crate::game::{DecisionContinuation, ResolvedEffectPayment};
 use crate::{Action, CardDefinitionId, CounterKind, ManaColor, TargetSelection};
@@ -949,4 +950,51 @@ fn a_run_of_sacrifices_reconstructs_mid_payment() {
         other => panic!("the run of sacrifices came back as {other:?}"),
     };
     assert_eq!(remaining, 12, "and it still owes the whole twelve");
+}
+
+/// A trigger that divides a fixed total asks twice: which targets, and then
+/// how much each takes. A game saved between those two questions has to come
+/// back asking the second one, with the same splits on offer.
+#[test]
+fn a_pending_trigger_division_reconstructs_and_resumes() {
+    let mut game = staged_game();
+    game.battlefield.clear();
+    game.battlefield
+        .push(creature(30_000, cards::SERRA_ANGEL, PlayerId::Two));
+    game.battlefield
+        .push(creature(30_001, cards::SERRA_ANGEL, PlayerId::Two));
+    game.put_onto_battlefield(PlayerId::One, cards::FURY)
+        .expect("Fury is cataloged");
+
+    let targets = loop {
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            break decision;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the enters trigger is waiting on its targets");
+    };
+    let both = targets
+        .options
+        .iter()
+        .filter(|option| option.label == "Serra Angel")
+        .map(|option| option.id)
+        .collect::<Vec<_>>();
+    assert_eq!(both.len(), 2);
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: targets.id,
+            options: both,
+        },
+    )
+    .expect("naming two targets is legal");
+
+    assert!(
+        game.observe(PlayerId::One)
+            .decision
+            .is_some_and(|decision| decision.prompt.contains("divide")),
+        "the division is what is pending",
+    );
+    assert_reconstructs(&game, "a pending trigger division");
 }

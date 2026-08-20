@@ -71,3 +71,4 @@ pub const DELIGHTED_HALFLING: CardDefinitionId = CardDefinitionId(2153);
 pub const MANA_CONFLUENCE: CardDefinitionId = CardDefinitionId(2154);
 pub const CHAIN_OF_SMOG: CardDefinitionId = CardDefinitionId(2155);
 pub const CONTAINMENT_PRIEST: CardDefinitionId = CardDefinitionId(2156);
+pub const FURY: CardDefinitionId = CardDefinitionId(2157);

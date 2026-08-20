@@ -246,6 +246,11 @@ struct Permanent {
     /// nothing chose one. Its own enters trigger is a separate object and so
     /// cannot read the spell's X any other way.
     cast_x: u16,
+    /// How this permanent's spell was cast, when it was cast at all. Evoke's
+    /// sacrifice and every other clause that asks "if it was cast this way"
+    /// reads it here, because the spell object is gone by the time the
+    /// permanent's own triggers resolve.
+    cast_alternative: Option<AlternativeCastKindDef>,
     attacking: bool,
     attack_defender: Option<crate::AttackDefender>,
     /// Which attacking band this creature belongs to, as an index shared by
@@ -430,6 +435,7 @@ impl Permanent {
             entered_controller_turn,
             damage: 0,
             cast_x: 0,
+            cast_alternative: None,
             attacking: false,
             attack_defender: None,
             attacking_band: None,

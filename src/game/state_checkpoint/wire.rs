@@ -585,6 +585,10 @@ fn parse_permanent(
         .map(super::super::ContinuousEffectTimestamp);
     permanent.chosen_player = state.chosen_player.map(player_from_index).transpose()?;
     permanent.cast_x = state.cast_x;
+    permanent.cast_alternative = state
+        .cast_alternative
+        .as_deref()
+        .and_then(crate::card::AlternativeCastKindDef::from_label);
     permanent.chosen_creature_type = shown.chosen_creature_type;
     permanent.chosen_card_name = shown.chosen_card_name;
     permanent.face_down = shown.face_down;
