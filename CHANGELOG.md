@@ -153,6 +153,25 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Adventure.** An Adventure card is castable from hand either way; the
+  adventure half exiles itself on resolution rather than going to the
+  graveyard, and its owner may then cast the creature half from exile
+  (CR 715.3d) -- as the creature, never as the adventure again. Casting from
+  exile is a third cast source alongside hand and graveyard. Bonecrusher
+  Giant is the first card to use it.
+
+- **"Whenever this becomes the target of a spell."** Raised where a spell's
+  targets are locked in, which is as it is cast, and once per targeting spell
+  however many of its slots name the same permanent (CR 115.7c). The event
+  carries the spell, so "that spell's controller" reads off it. Activated
+  abilities target too, and this is deliberately not about them.
+
+- **"Damage can't be prevented this turn."** A rule about every prevention
+  rather than a prevention of its own, so it is read where damage is dealt,
+  ahead of both the installed rules and the static ones. It also switches off
+  what protection prevents (CR 702.16e) -- what protection does to targeting
+  is untouched. Damage limits are not prevention (CR 615.1) and still apply.
+
 - **A control change can hand a permanent to someone other than you.**
   "Gain control" was exactly that -- the effect's own controller received the
   permanent, with no way to say who else might. Wishclaw Talisman gives its

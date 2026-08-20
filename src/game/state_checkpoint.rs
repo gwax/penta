@@ -446,6 +446,8 @@ impl Game {
                 .iter()
                 .map(|(source, card)| [source.0, card.0])
                 .collect(),
+            damage_cannot_be_prevented_this_turn: self.damage_cannot_be_prevented_this_turn,
+            adventuring_exiles: self.adventuring_exiles.iter().map(|id| id.0).collect(),
             sorcery_flash_grants: self.sorcery_flash_grants,
             turn_phase_queue: self
                 .turn_phase_queue
@@ -757,6 +759,12 @@ impl Game {
             attackers_declared: checkpoint.attackers_declared,
             creature_died_this_turn: checkpoint.creature_died_this_turn,
             creatures_died_this_turn: checkpoint.creatures_died_this_turn,
+            damage_cannot_be_prevented_this_turn: checkpoint.damage_cannot_be_prevented_this_turn,
+            adventuring_exiles: checkpoint
+                .adventuring_exiles
+                .iter()
+                .map(|id| GameObjectId(*id))
+                .collect(),
             linked_exiles: checkpoint
                 .linked_exiles
                 .iter()

@@ -232,6 +232,12 @@ impl Game {
             SpellResolutionDestinationDef::Graveyard | SpellResolutionDestinationDef::Exile => {
                 self.players[owner.index()].exile.push(card);
             }
+            SpellResolutionDestinationDef::ExileOnAdventure => {
+                // The exiled card is a new object, and it is that object its
+                // owner may cast the creature half of later.
+                self.adventuring_exiles.push(card.id);
+                self.players[owner.index()].exile.push(card);
+            }
             SpellResolutionDestinationDef::ExileWithCounters(counters) => {
                 for &(kind, amount) in counters {
                     card.add_counters(kind, amount);

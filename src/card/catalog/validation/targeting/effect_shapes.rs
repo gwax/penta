@@ -278,7 +278,8 @@ fn validate_effect_target_shapes(
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::None
         | EffectDef::AddMana(_)
-        | EffectDef::GrantFlashToNextSorcery
+        | EffectDef::DamageCannotBePreventedThisTurn
+            | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }

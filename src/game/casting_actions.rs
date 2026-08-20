@@ -1,127 +1,21 @@
 use super::{
     AbilityDef, AbilityId, AbilityOrigin, AbilityTargetDef, AbilityTargetPredicate, Action,
-    AdditionalCostId, AlternativeCastAbilityDef, AlternativeCastKindDef, AlternativeCostId,
-    CardBehavior, CardDefinition, CardDefinitionId, CardEffectStatus, CardInstance, CardPartId,
-    CardType, CardTypeSet, CastChoices, CastSignature, CastSourceZone, ControlFlow,
-    CostConfiguration, DeclarativeAbilityDef, DividedTotal, Game, GameObjectId, KeywordAbility,
-    ManaCost, ManaPaymentPurpose, ModeId, PlayActionKind, PlayOptionDef, PlayOptionId,
-    PlayRestriction, PlayerId, ScopedEffect, SelectedSpellPlan, StackAbilityPayload,
-    StackAbilityResolver, Target, TargetSelection, TargetSlotDef, TargetSlotId, TriggerContext,
-    ZoneKind, add_generic, add_mana_cost, configured_mana_cost, extra_target_cost,
-    mode_id_selections, positive_compositions, reduce_generic, target_combinations,
+    AlternativeCastAbilityDef, AlternativeCastKindDef, AlternativeCostId, CardBehavior,
+    CardDefinition, CardDefinitionId, CardEffectStatus, CardPartId, CardType, CardTypeSet,
+    CastChoices, CastSignature, CastSourceZone, ControlFlow, CostConfiguration,
+    DeclarativeAbilityDef, DividedTotal, Game, GameObjectId, KeywordAbility, ManaCost,
+    ManaPaymentPurpose, ModeId, PlayActionKind, PlayOptionDef, PlayOptionId, PlayRestriction,
+    PlayerId, ScopedEffect, SelectedSpellPlan, StackAbilityPayload, StackAbilityResolver, Target,
+    TargetSelection, TargetSlotDef, TargetSlotId, TriggerContext, add_generic, add_mana_cost,
+    extra_target_cost, mode_id_selections, positive_compositions, reduce_generic,
+    target_combinations,
 };
 
-use crate::card::ModeSetDef;
+use crate::card::{AlternateSpellKind, CardStructure, ModeSetDef, SpellForm};
+
+mod cost_configurations;
 
 impl Game {
-    /// Every way to pay a spell's declarative additional cost. A spell with
-    /// none has exactly one way to pay it: spend nothing. A spell with one it
-    /// cannot afford has none at all, which is what stops it being offered.
-    fn additional_cost_choices(
-        &self,
-        definition: &CardDefinition,
-        option: &PlayOptionDef,
-        costs: &CostConfiguration,
-        card: &CardInstance,
-        player: PlayerId,
-        x: u16,
-    ) -> Vec<Vec<GameObjectId>> {
-        // A cost paid instead of the mana cost replaces the spell's own
-        // additional cost rather than stacking with it: "rather than pay this
-        // spell's mana cost" is the whole payment.
-        let selected = costs
-            .alternative()
-            .and_then(|selected| Self::alternative_cast_ability(definition, option, selected))
-            .and_then(|(_, ability, _)| match ability.definition {
-                DeclarativeAbilityDef::AlternativeCast(alternative) => alternative.additional_cost,
-                _ => None,
-            });
-        let cost = selected.or_else(|| {
-            definition
-                .rules
-                .ability_clauses()
-                .iter()
-                .find_map(|ability| match ability.definition {
-                    DeclarativeAbilityDef::Spell(spell) if ability.is_executable() => {
-                        spell.additional_cost()
-                    }
-                    _ => None,
-                })
-        });
-        let Some(cost) = cost else {
-            return vec![Vec::new()];
-        };
-        let candidates: Vec<GameObjectId> = match cost.zone {
-            ZoneKind::Battlefield => self
-                .battlefield
-                .iter()
-                .filter(|permanent| {
-                    permanent.controller == player
-                        && self.trigger_object_matches(
-                            cost.object,
-                            &self.trigger_event_object(permanent),
-                            permanent.card.id,
-                            false,
-                        )
-                })
-                .map(|permanent| permanent.card.id)
-                .collect(),
-            ZoneKind::Graveyard => self.players[player.index()]
-                .graveyard
-                .iter()
-                .filter(|card| {
-                    self.card_object_matches(cost.object, card, ZoneKind::Graveyard, card.id)
-                })
-                .map(|card| card.id)
-                .collect(),
-            // The card paying the cost cannot be the spell itself: it has
-            // already left hand by the time the cost is paid.
-            ZoneKind::Hand => self.players[player.index()]
-                .hand
-                .iter()
-                .filter(|held| {
-                    held.id != card.id
-                        && self.card_object_matches(cost.object, held, ZoneKind::Hand, held.id)
-                })
-                .map(|held| held.id)
-                .collect(),
-            _ => Vec::new(),
-        };
-        // One configuration per way of paying, so a cost naming more than one
-        // object enumerates combinations rather than candidates. Order does
-        // not matter -- exiling A then B is the same payment as B then A --
-        // so each combination appears once, in candidate order.
-        let required = if cost.count_is_x {
-            usize::from(x)
-        } else {
-            usize::from(cost.count)
-        };
-        Self::object_combinations(&candidates, required)
-    }
-
-    /// Every `size`-element combination of `candidates`, in candidate order.
-    /// An empty requirement has exactly one payment: the empty one.
-    pub(super) fn object_combinations(
-        candidates: &[GameObjectId],
-        size: usize,
-    ) -> Vec<Vec<GameObjectId>> {
-        if size == 0 {
-            return vec![Vec::new()];
-        }
-        if candidates.len() < size {
-            return Vec::new();
-        }
-        let mut combinations = Vec::new();
-        for (index, candidate) in candidates.iter().enumerate() {
-            for mut rest in Self::object_combinations(&candidates[index + 1..], size - 1) {
-                let mut combination = vec![*candidate];
-                combination.append(&mut rest);
-                combinations.push(combination);
-            }
-        }
-        combinations
-    }
-
     pub(super) fn add_land_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
         let state = &self.players[player.index()];
         if player != self.active_player
@@ -168,6 +62,13 @@ impl Game {
                     .iter()
                     .map(|card| (card, CastSourceZone::Graveyard)),
             )
+            .chain(
+                state
+                    .exile
+                    .iter()
+                    .filter(|card| self.adventuring_exiles.contains(&card.id))
+                    .map(|card| (card, CastSourceZone::Exile)),
+            )
         {
             let Some(definition) = self.catalog.get(card.definition) else {
                 continue;
@@ -180,8 +81,15 @@ impl Game {
                 if self.play_is_prohibited(card, player, option) {
                     continue;
                 }
-                if source_zone == CastSourceZone::Graveyard
+                if source_zone != CastSourceZone::Hand
                     && option.restriction == PlayRestriction::FromHandOnly
+                {
+                    continue;
+                }
+                // A card on an adventure comes back as the creature it is,
+                // never as the adventure again (CR 715.3d).
+                if source_zone == CastSourceZone::Exile
+                    && !Self::is_adventure_return_option(definition, option)
                 {
                     continue;
                 }
@@ -434,6 +342,24 @@ impl Game {
         Some(alternative.targets)
     }
 
+    /// Whether this play option is the one a card on an adventure may be
+    /// cast with from exile: the main half of an Adventure card, never the
+    /// adventure it just went on.
+    pub(super) fn is_adventure_return_option(
+        definition: &CardDefinition,
+        option: &PlayOptionDef,
+    ) -> bool {
+        let CardStructure::AlternateSpell {
+            main,
+            kind: AlternateSpellKind::Adventure,
+            ..
+        } = definition.structure
+        else {
+            return false;
+        };
+        option.form == SpellForm::Part(main)
+    }
+
     pub(super) fn spell_ability(
         definition: &CardDefinition,
         option: &PlayOptionDef,
@@ -584,194 +510,6 @@ impl Game {
                 .expect("one play option presents at most 256 target slots");
         }
         slots
-    }
-
-    pub(super) fn visit_cost_configurations(
-        &self,
-        definition: &CardDefinition,
-        card: GameObjectId,
-        player: PlayerId,
-        option: &PlayOptionDef,
-        source_zone: CastSourceZone,
-        mut visitor: impl FnMut(CostConfiguration) -> ControlFlow<()>,
-    ) -> ControlFlow<()> {
-        let mut selected_additional = Vec::with_capacity(option.additional_costs.len());
-        if source_zone == CastSourceZone::Hand
-            && Self::visit_additional_cost_configurations(
-                option,
-                None,
-                option.additional_costs.len(),
-                &mut selected_additional,
-                &mut visitor,
-            )
-            .is_break()
-        {
-            return ControlFlow::Break(());
-        }
-        for cost in &option.alternative_costs {
-            let kind = match Self::alternative_cast_clause(definition, option, cost.id) {
-                Some((_, ability, kind)) if ability.is_executable() => Some(kind),
-                Some(_) => continue,
-                None => None,
-            };
-            // A free cast gated on the board is not offered while its
-            // condition is false, the same way an "activate only if" ability
-            // is not offered.
-            let gated = match Self::alternative_cast_clause(definition, option, cost.id) {
-                Some((origin, ability, _)) => match ability.definition {
-                    DeclarativeAbilityDef::AlternativeCast(alternative) => {
-                        // CR 118.4: life can only be paid down to zero, so an
-                        // alternative that costs more life than the player
-                        // has is not on offer at all.
-                        i16::try_from(alternative.life).unwrap_or(i16::MAX)
-                            > self.players[player.index()].life
-                            || alternative.condition.is_some_and(|condition| {
-                                !self.trigger_condition_holds(
-                                    condition,
-                                    card,
-                                    player,
-                                    TriggerContext::empty(),
-                                    Some(origin),
-                                    None,
-                                )
-                            })
-                    }
-                    _ => false,
-                },
-                None => false,
-            };
-            let available = !gated
-                && match (source_zone, kind) {
-                    (CastSourceZone::Hand, Some(AlternativeCastKindDef::Flashback))
-                    | (
-                        CastSourceZone::Graveyard,
-                        Some(
-                            AlternativeCastKindDef::Overload
-                            | AlternativeCastKindDef::Miracle
-                            | AlternativeCastKindDef::Kicked
-                            | AlternativeCastKindDef::AlternativeCost
-                            | AlternativeCastKindDef::FaceDown,
-                        )
-                        | None,
-                    ) => false,
-                    // A kicked spell, and one paid for some other way, are both
-                    // cast from hand like any other; only what they cost and what
-                    // they do are different.
-                    (
-                        CastSourceZone::Hand,
-                        Some(
-                            AlternativeCastKindDef::Overload
-                            | AlternativeCastKindDef::Kicked
-                            | AlternativeCastKindDef::AlternativeCost
-                            // Face down is a way of casting the card from
-                            // hand, not a permission to cast it elsewhere.
-                            | AlternativeCastKindDef::FaceDown,
-                        )
-                        | None,
-                    )
-                    | (CastSourceZone::Graveyard, Some(AlternativeCastKindDef::Flashback)) => true,
-                    // Only in the window the draw opened, and only for the card
-                    // that was drawn.
-                    (CastSourceZone::Hand, Some(AlternativeCastKindDef::Miracle)) => {
-                        self.miracle_window == Some(card)
-                    }
-                };
-            if available
-                && Self::visit_additional_cost_configurations(
-                    option,
-                    Some(cost.id),
-                    option.additional_costs.len(),
-                    &mut selected_additional,
-                    &mut visitor,
-                )
-                .is_break()
-            {
-                return ControlFlow::Break(());
-            }
-        }
-        if source_zone == CastSourceZone::Graveyard
-            && self.granted_flashback(card, option).is_some()
-            && let Some(granted) = Self::temporary_alternative_cost_id(option)
-            && Self::visit_additional_cost_configurations(
-                option,
-                Some(granted),
-                option.additional_costs.len(),
-                &mut selected_additional,
-                &mut visitor,
-            )
-            .is_break()
-        {
-            return ControlFlow::Break(());
-        }
-
-        ControlFlow::Continue(())
-    }
-
-    pub(super) fn visit_additional_cost_configurations(
-        option: &PlayOptionDef,
-        alternative: Option<AlternativeCostId>,
-        remaining: usize,
-        selected_reversed: &mut Vec<AdditionalCostId>,
-        visitor: &mut impl FnMut(CostConfiguration) -> ControlFlow<()>,
-    ) -> ControlFlow<()> {
-        let Some(index) = remaining.checked_sub(1) else {
-            let additional = selected_reversed.iter().rev().copied().collect();
-            return visitor(CostConfiguration::new(alternative, additional));
-        };
-
-        if Self::visit_additional_cost_configurations(
-            option,
-            alternative,
-            index,
-            selected_reversed,
-            visitor,
-        )
-        .is_break()
-        {
-            return ControlFlow::Break(());
-        }
-        selected_reversed.push(option.additional_costs[index].id);
-        let result = Self::visit_additional_cost_configurations(
-            option,
-            alternative,
-            index,
-            selected_reversed,
-            visitor,
-        );
-        selected_reversed.pop();
-        result
-    }
-
-    pub(super) fn configured_cast_mana_cost(
-        &self,
-        card: GameObjectId,
-        option: &PlayOptionDef,
-        configuration: &CostConfiguration,
-    ) -> Option<ManaCost> {
-        let granted = Self::temporary_alternative_cost_id(option);
-        let granted_flashback = (configuration.alternative().is_some()
-            && configuration.alternative() == granted)
-            .then(|| self.granted_flashback(card, option))
-            .flatten();
-        let mut cost = granted_flashback.map_or_else(
-            || configured_mana_cost(option, configuration),
-            |(_, mana_cost)| Some(mana_cost),
-        )?;
-        // `configured_mana_cost` already included additional costs for every
-        // printed alternative and the normal cost. Runtime-granted
-        // alternatives need them folded in here.
-        if granted_flashback.is_some() {
-            for selected in configuration.additional() {
-                let additional = option
-                    .additional_costs
-                    .iter()
-                    .find(|candidate| candidate.id == *selected)?;
-                if let Some(mana) = additional.mana_cost {
-                    cost = add_mana_cost(cost, mana);
-                }
-            }
-        }
-        Some(cost)
     }
 
     pub(super) fn legacy_target_selections(

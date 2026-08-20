@@ -695,6 +695,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Transform { .. }
                     | EffectDef::ScheduleTurnPhases(_)
                     | EffectDef::TakeExtraTurn { .. }
+                    | EffectDef::DamageCannotBePreventedThisTurn
                     | EffectDef::GrantFlashToNextSorcery
                     | EffectDef::ExileLinkedToSource { .. }
                     | EffectDef::ReturnLinkedExiles { .. }

@@ -443,6 +443,9 @@ impl Game {
                     });
                 self.schedule_extra_turns(players);
             }
+            EffectDef::DamageCannotBePreventedThisTurn => {
+                self.damage_cannot_be_prevented_this_turn = true;
+            }
             EffectDef::GrantFlashToNextSorcery => {
                 let grants = &mut self.sorcery_flash_grants[object.controller.index()];
                 *grants = grants.saturating_add(1);

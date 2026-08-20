@@ -228,6 +228,13 @@ pub(super) enum CommittedTriggerEvent {
     SpellCast {
         object: TriggerEventObject,
     },
+    /// An object became the target of a spell as that spell was cast. The
+    /// object carried is the spell, so "that spell's controller" reads off
+    /// the event; `target` is what it pointed at.
+    BecameTargetOfSpell {
+        target: GameObjectId,
+        object: TriggerEventObject,
+    },
     Transformed {
         object: TriggerEventObject,
     },
@@ -296,12 +303,14 @@ impl CommittedTriggerEvent {
                 event_player: Some(*player),
                 amount: Some(i32::from(*amount)),
             },
-            Self::SpellCast { object } => TriggerContext {
-                object: Some(object.id),
-                object_controller: Some(object.controller),
-                event_player: Some(object.controller),
-                amount: None,
-            },
+            Self::BecameTargetOfSpell { object, .. } | Self::SpellCast { object } => {
+                TriggerContext {
+                    object: Some(object.id),
+                    object_controller: Some(object.controller),
+                    event_player: Some(object.controller),
+                    amount: None,
+                }
+            }
             // Both name only the player, and carry no amount with it.
             Self::StepBegins { player, .. } | Self::Discarded { player } => TriggerContext {
                 object: None,

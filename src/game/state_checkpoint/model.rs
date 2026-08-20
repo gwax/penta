@@ -60,6 +60,14 @@ pub(super) struct GameSnapshot {
     #[serde(default, skip_serializing_if = "is_zero_u16")]
     pub(super) creatures_died_this_turn: u16,
     pub(super) linked_exiles: Vec<[u32; 2]>,
+    /// Additive: a checkpoint written before the rule existed restores as
+    /// false, which is what every ordinary turn means anyway.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) damage_cannot_be_prevented_this_turn: bool,
+    /// Additive: a checkpoint written before adventures existed restores as
+    /// empty, which is what a game with none of them means anyway.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) adventuring_exiles: Vec<u32>,
     pub(super) sorcery_flash_grants: [u8; 2],
     pub(super) turn_phase_queue: Vec<TurnPhaseSnapshot>,
     pub(super) turn_phase_resume: Option<TurnPhaseResumeSnapshot>,

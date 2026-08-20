@@ -671,6 +671,10 @@ pub enum EffectDef {
     },
     None,
     PayOr(PayOrDef),
+    /// "Damage can't be prevented this turn." Not a prevention of its own
+    /// but a rule about every other one, including what protection prevents
+    /// (CR 702.16e). Damage limits are not prevention and still apply.
+    DamageCannotBePreventedThisTurn,
     /// Install a resolved damage-prevention rule for the named duration.
     PreventDamage {
         prevention: DamagePreventionDef,

@@ -37,6 +37,10 @@ pub enum SpellAbilityDef {
 pub enum SpellResolutionDestinationDef {
     Graveyard,
     Exile,
+    /// Exile the card "on an adventure" (CR 715.3d): its owner may cast it
+    /// later from exile, as the creature it is on the other half. Only the
+    /// alternate half of an Adventure card resolves this way.
+    ExileOnAdventure,
     /// Exile the card and put these counters on its new object. A zone change
     /// happens before the counters are added, so prior-zone counters cannot
     /// leak into exile.

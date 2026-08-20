@@ -75,7 +75,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         TriggerEventDef::BecomesBlocked(object) | TriggerEventDef::Transforms(object) => {
             shared_object_predicate(object)
         }
-        TriggerEventDef::SpellCast(object) => {
+        // Both read the spell rather than the battlefield, and a spell on
+        // the stack is not a permanent the predicate can interrogate.
+        TriggerEventDef::SpellCast(object) | TriggerEventDef::BecomesTargetOfSpell(object) => {
             shared_object_predicate(object) && !trigger_predicate_requires_live_battlefield(object)
         }
         // Cycling names no object of its own: the card that was cycled is
@@ -418,6 +420,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
+        | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::ReturnLinkedExiles { .. }

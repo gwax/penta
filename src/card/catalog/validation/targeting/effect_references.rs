@@ -298,7 +298,8 @@ fn validate_effect_references(
         | EffectDef::AddMana(_)
         | EffectDef::AddManaEqualTo { .. }
         | EffectDef::CreateEmblem { .. }
-        | EffectDef::GrantFlashToNextSorcery
+        | EffectDef::DamageCannotBePreventedThisTurn
+            | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }

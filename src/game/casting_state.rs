@@ -15,4 +15,7 @@ pub(super) struct SelectedSpellPlan {
 pub(super) enum CastSourceZone {
     Hand,
     Graveyard,
+    /// A card on an adventure, which its owner may cast from exile as the
+    /// creature it is on the other half.
+    Exile,
 }

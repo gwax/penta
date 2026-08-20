@@ -489,6 +489,7 @@ impl Game {
             | EffectDef::Transform { .. }
             | EffectDef::ScheduleTurnPhases(_)
             | EffectDef::TakeExtraTurn { .. }
+            | EffectDef::DamageCannotBePreventedThisTurn
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ReturnLinkedExiles { .. }
@@ -809,6 +810,17 @@ impl Game {
             ) => self.trigger_object_matches_for_controller(
                 predicate, object, source, false, controller,
             ),
+            // The listener is the permanent that was pointed at, and the
+            // predicate reads the spell doing the pointing.
+            (
+                TriggerEventDef::BecomesTargetOfSpell(predicate),
+                CommittedTriggerEvent::BecameTargetOfSpell { target, object },
+            ) => {
+                *target == source
+                    && self.trigger_object_matches_for_controller(
+                        predicate, object, source, false, controller,
+                    )
+            }
             (
                 TriggerEventDef::BlocksOrBecomesBlockedBy { object: predicate },
                 CommittedTriggerEvent::BlocksOrBecomesBlocked { creature, other },

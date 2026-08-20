@@ -54,6 +54,12 @@ pub enum TriggerEventDef {
         blocker: ObjectPredicateDef,
     },
     SpellCast(ObjectPredicateDef),
+    /// This object became the target of a spell the predicate matches.
+    /// Raised where the targets are locked in -- as the spell is cast, which
+    /// is what "becomes the target" means -- and once per targeting spell
+    /// however many of its slots name the same object (CR 115.7c). Activated
+    /// abilities target too, and this is not about them.
+    BecomesTargetOfSpell(ObjectPredicateDef),
     StepBegins {
         step: TurnStepDef,
         player: PlayerRelation,

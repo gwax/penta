@@ -1,13 +1,16 @@
 //! Throne of Eldraine cards cataloged for the Vintage Cube pool.
 
 use super::{CardRecord, PrintingRecord};
+use crate::card::PlayOptionDef;
 use crate::card::{
-    AbilityCostDef, AbilityDef, ActivationTimingDef, BattlefieldEntryModificationDef, CardArt,
-    CardRules, CardSet, ControlDurationDef, CounterKind, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, PlayerRefDef, ReplacementEffectDef, ValueDef, ZoneKind, ZonePlacement,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    AlternateSpellKind, BattlefieldEntryModificationDef, CardArt, CardComposition,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, ControlDurationDef, CounterKind,
+    EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRefDef, ReplacementEffectDef,
+    SpellForm, SpellResolutionDestinationDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
     cards,
 };
-use crate::mana_cost;
+use crate::{CardPartId, PlayOptionId, TargetIndex, mana_cost};
 
 static WISHCLAW_COSTS: [AbilityCostDef; 3] = [
     AbilityCostDef::Mana(mana_cost!("{1}")),
@@ -73,9 +76,100 @@ pub(in crate::card::sets) static WISHCLAW_TALISMAN: CardRecord = CardRecord::new
     ]),
 );
 
+static STOMP_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
+/// The two sentences are one clause resolving in order, and the order is what
+/// the card is for: prevention is off before the damage arrives, so a
+/// protection that would have stopped it does not.
+static STOMP_EFFECTS: [EffectDef; 2] = [
+    EffectDef::DamageCannotBePreventedThisTurn,
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(2),
+    },
+];
+
+const fn stomp_rules() -> CardRules {
+    CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(
+        AbilityDef::spell_with_targets(
+            "Damage can't be prevented this turn.\nStomp deals 2 damage to any target.",
+            &STOMP_TARGET,
+            EffectDef::Sequence(&STOMP_EFFECTS),
+        )
+        .with_resolution_destination(SpellResolutionDestinationDef::ExileOnAdventure),
+    )
+}
+
+/// The punishment half. Answering the Giant with a removal spell costs two
+/// life whether or not the spell works, which is what makes it awkward to
+/// answer at all.
+static BONECRUSHER_PUNISHES: AbilityDef = AbilityDef::triggered(
+    "Whenever this creature becomes the target of a spell, this creature deals 2 damage to that spell's controller.",
+    TriggerEventDef::BecomesTargetOfSpell(ObjectPredicateDef::Any),
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::EventPlayer,
+        amount: ValueDef::Constant(2),
+    },
+);
+
+const fn bonecrusher_rules() -> CardRules {
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Giant"], 4, 3)
+        .with_ability(BONECRUSHER_PUNISHES)
+}
+
+fn bonecrusher_composition() -> CardComposition {
+    let giant = bonecrusher_rules();
+    let stomp = stomp_rules();
+    CardComposition {
+        parts: vec![
+            CardPart::new(CardPartId::PRIMARY, "Bonecrusher Giant", giant),
+            CardPart::new(CardPartId(1), "Stomp", stomp),
+        ],
+        structure: CardStructure::AlternateSpell {
+            main: CardPartId::PRIMARY,
+            alternate: CardPartId(1),
+            kind: AlternateSpellKind::Adventure,
+        },
+        play_options: vec![
+            PlayOptionDef::cast(
+                PlayOptionId::DEFAULT,
+                "Bonecrusher Giant",
+                SpellForm::Part(CardPartId::PRIMARY),
+                giant
+                    .mana_cost()
+                    .expect("the Giant has a printed mana cost"),
+                CardEffectStatus::Implemented,
+            ),
+            PlayOptionDef::cast(
+                PlayOptionId(1),
+                "Stomp",
+                SpellForm::Part(CardPartId(1)),
+                stomp.mana_cost().expect("Stomp has a printed mana cost"),
+                CardEffectStatus::Implemented,
+            ),
+        ],
+    }
+    .with_derived_spell_targets()
+}
+
+// ELD 115 — Bonecrusher Giant
+pub(in crate::card::sets) static BONECRUSHER_GIANT: CardRecord = CardRecord::new(
+    cards::BONECRUSHER_GIANT,
+    "Bonecrusher Giant",
+    CardArt::new(
+        "09fd2d9c-1793-4beb-a3fb-7a869f660cd4",
+        "Victor Adame Minguez",
+    ),
+    CardSet::ThroneOfEldraine,
+    bonecrusher_rules(),
+)
+.with_composition(bonecrusher_composition);
+
 // ELD 138 — Robber of the Rich
 // Audit: blocked — Needs three things. An intervening-if that compares two players' hand sizes rather than a count against a printed number; a permission to cast one exiled card that survives its source leaving the battlefield and is gated on having attacked with a Rogue that turn; and spending mana as though it were mana of any color, which already blocks North Star in Legends.
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&WISHCLAW_TALISMAN];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&WISHCLAW_TALISMAN, &BONECRUSHER_GIANT];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

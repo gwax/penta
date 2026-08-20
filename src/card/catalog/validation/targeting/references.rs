@@ -562,6 +562,7 @@ fn validate_trigger_event_references(
         | TriggerEventDef::Blocks { blocked: predicate }
         | TriggerEventDef::BecomesBlockedBy { blocker: predicate }
         | TriggerEventDef::SpellCast(predicate)
+        | TriggerEventDef::BecomesTargetOfSpell(predicate)
         | TriggerEventDef::Transforms(predicate) => {
             validate_trigger_object_predicate(predicate, event, target_count, scope)
         }

@@ -499,6 +499,13 @@ impl Game {
                     .iter()
                     .find(|card| card.id == card_id)
                     .map(|card| (card, CastSourceZone::Graveyard))
+            })
+            .or_else(|| {
+                state
+                    .exile
+                    .iter()
+                    .find(|card| card.id == card_id && self.adventuring_exiles.contains(&card.id))
+                    .map(|card| (card, CastSourceZone::Exile))
             })?;
         let definition = self.catalog.get(card.definition)?;
         let option = definition
@@ -507,8 +514,15 @@ impl Game {
         if self.play_is_prohibited(card, player, option) {
             return None;
         }
-        if source_zone == CastSourceZone::Graveyard
+        if source_zone != CastSourceZone::Hand
             && option.restriction == PlayRestriction::FromHandOnly
+        {
+            return None;
+        }
+        // A card on an adventure comes back as the creature it is, never as
+        // the adventure again (CR 715.3d).
+        if source_zone == CastSourceZone::Exile
+            && !Self::is_adventure_return_option(definition, option)
         {
             return None;
         }
@@ -685,6 +699,10 @@ impl Game {
             CastSourceZone::Hand => remove_card(&mut self.players[player.index()].hand, card_id),
             CastSourceZone::Graveyard => {
                 remove_card(&mut self.players[player.index()].graveyard, card_id)
+            }
+            CastSourceZone::Exile => {
+                self.adventuring_exiles.retain(|id| *id != card_id);
+                remove_card(&mut self.players[player.index()].exile, card_id)
             }
         }
         .expect("legal cast action references a card in its validated source zone");
@@ -892,13 +910,34 @@ impl Game {
         self.consecutive_passes = 0;
         self.spells_cast_this_turn[player.index()] =
             self.spells_cast_this_turn[player.index()].saturating_add(1);
+        // Kept for the targeting triggers below, which run after the cast
+        // event has taken the list.
+        let mut targeted = Vec::new();
+        for target in &targets {
+            if let Target::Permanent(id) | Target::Card(id) = target
+                && !targeted.contains(id)
+            {
+                targeted.push(*id);
+            }
+        }
         self.events.push(GameEvent::SpellCast {
             player,
             card: stack_id,
             definition,
             targets,
         });
-        self.capture_battlefield_triggers(&CommittedTriggerEvent::SpellCast { object: cast_event });
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::SpellCast {
+            object: cast_event.clone(),
+        });
+        // "Whenever this becomes the target of a spell" fires here, where the
+        // targets are locked in -- once per targeting spell however many of
+        // its slots name the same permanent (CR 115.7c).
+        for target in targeted {
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::BecameTargetOfSpell {
+                target,
+                object: cast_event.clone(),
+            });
+        }
         // The spell's own cast clause, which no battlefield listener carries.
         self.capture_own_cast_triggers(stack_id);
     }

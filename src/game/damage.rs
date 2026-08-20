@@ -610,23 +610,38 @@ impl Game {
             recipient_object: recipient_object.as_ref(),
             combat,
         };
-        let amount = self.apply_resolved_damage_prevention(event, amount);
+        // "Damage can't be prevented this turn" is not a prevention of its
+        // own but a rule about every other one, so it is read here, ahead of
+        // both the installed rules and the static ones. Damage limits are
+        // not prevention (CR 615.1) and still apply.
+        let preventable = !self.damage_cannot_be_prevented_this_turn;
+        let amount = if preventable {
+            self.apply_resolved_damage_prevention(event, amount)
+        } else {
+            amount
+        };
         let amount = self.apply_damage_limits(event, amount);
         if amount == 0 {
             return 0;
         }
-        if self.static_damage_is_prevented(event)
-            || target.is_some_and(|target| match target {
-                Target::Permanent(id) => self
-                    .battlefield
-                    .iter()
-                    .find(|permanent| permanent.card.id == id)
-                    .is_some_and(|permanent| {
-                        source
-                            .is_some_and(|source| self.is_protected_from_object(permanent, source))
-                    }),
-                Target::Player(_) | Target::Card(_) | Target::Spell(_) => false,
-            })
+        // Protection prevents the damage it stops (CR 702.16e), so it is
+        // part of what a "damage can't be prevented" turn switches off --
+        // what protection does to targeting is untouched, and is decided
+        // long before this.
+        if preventable
+            && (self.static_damage_is_prevented(event)
+                || target.is_some_and(|target| match target {
+                    Target::Permanent(id) => self
+                        .battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == id)
+                        .is_some_and(|permanent| {
+                            source.is_some_and(|source| {
+                                self.is_protected_from_object(permanent, source)
+                            })
+                        }),
+                    Target::Player(_) | Target::Card(_) | Target::Spell(_) => false,
+                }))
         {
             return 0;
         }

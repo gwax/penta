@@ -876,6 +876,16 @@ pub struct Game {
     /// Cards exiled by an object that promises to bring them back, paired
     /// with whatever exiled them. Oblivion Ring is the shape.
     linked_exiles: Vec<(GameObjectId, GameObjectId)>,
+    /// Cards in exile that are on an adventure, which their owner may cast
+    /// from there as the creature half (CR 715.3d). Object ids are allocated
+    /// per zone change and never reused, so an entry is dropped when the
+    /// card is cast and cannot otherwise be mistaken for a later object.
+    adventuring_exiles: Vec<GameObjectId>,
+    /// Whether "damage can't be prevented this turn" is in force. Stomp
+    /// prints it, and it is a rule about the whole turn rather than about
+    /// any one damage event, so it is read where damage is dealt rather
+    /// than installed as a prevention of its own.
+    damage_cannot_be_prevented_this_turn: bool,
     /// How many of each player's next sorceries may be cast as though they
     /// had flash. Quicken grants one, and the grant lapses with the turn.
     sorcery_flash_grants: [u8; 2],
