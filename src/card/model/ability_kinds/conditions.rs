@@ -79,6 +79,10 @@ pub enum TriggerConditionDef {
     /// "If you cast it any time a sorcery couldn't have been cast." Recorded
     /// as the spell was cast, because nothing afterwards can tell.
     SourceCastAtInstantSpeed,
+    /// "If you cast it from your hand." Recorded as the spell was cast for
+    /// the same reason, and false for anything that was never a spell: a
+    /// permanent put onto the battlefield was not cast from anywhere.
+    SourceCastFromHand,
     /// How much loyalty the ability's own source has left.
     SourceLoyalty {
         comparison: ComparisonDef,

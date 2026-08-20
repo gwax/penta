@@ -11,7 +11,7 @@ fn is_zero_u8(value: &u8) -> bool {
 pub(super) struct ExilePlayPermissionSnapshot {
     pub(super) card: u32,
     pub(super) player: usize,
-    pub(super) free: bool,
+    pub(super) cost: String,
     pub(super) until_end_of_turn: Option<(usize, u32)>,
     pub(super) adventure_return_only: bool,
 }
@@ -279,6 +279,7 @@ pub(super) struct PermanentSnapshot {
     /// order of a catalog enum.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) cast_alternative: Option<String>,
+    pub(super) cast_from_hand: bool,
     pub(super) destroy_at_end: bool,
     pub(super) counters: Vec<u16>,
     pub(super) attached_to: Option<u32>,

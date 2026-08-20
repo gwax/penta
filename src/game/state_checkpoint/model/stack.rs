@@ -32,6 +32,7 @@ pub(in crate::game::state_checkpoint) struct StackSnapshot {
     /// false, which is what an ordinary sorcery-speed cast means anyway.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(in crate::game::state_checkpoint) cast_at_instant_speed: bool,
+    pub(in crate::game::state_checkpoint) cast_from_hand: bool,
     pub(in crate::game::state_checkpoint) is_copy: bool,
 }
 
@@ -81,6 +82,7 @@ pub(in crate::game::state_checkpoint) struct DetachedStackSnapshot {
     /// false, which is what an ordinary sorcery-speed cast means anyway.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(in crate::game::state_checkpoint) cast_at_instant_speed: bool,
+    pub(in crate::game::state_checkpoint) cast_from_hand: bool,
     pub(in crate::game::state_checkpoint) is_copy: bool,
 }
 

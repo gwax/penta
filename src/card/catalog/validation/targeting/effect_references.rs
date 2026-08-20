@@ -214,6 +214,7 @@ fn validate_effect_references(
         EffectDef::SearchZonesAndExileRest { player, .. }
         | EffectDef::ExileTopOfLibraryToPlay { player, .. }
         | EffectDef::MillUntil { player, .. }
+        | EffectDef::ExileFromTopUntil { player, .. }
         | EffectDef::ChooseCards { player, .. }
         | EffectDef::SacrificeKeepingOnePerType { player, .. }
         | EffectDef::TakeExtraTurn { player }

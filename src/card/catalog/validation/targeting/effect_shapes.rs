@@ -98,6 +98,7 @@ fn validate_effect_target_shapes(
         EffectDef::SearchZonesAndExileRest { player, .. }
         | EffectDef::ExileTopOfLibraryToPlay { player, .. }
         | EffectDef::MillUntil { player, .. }
+        | EffectDef::ExileFromTopUntil { player, .. }
         |         EffectDef::ShuffleLibrary { player }
         | EffectDef::EmptyManaPool { player }
         | EffectDef::LoseTheGame { player }

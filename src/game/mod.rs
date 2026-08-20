@@ -160,7 +160,7 @@ use decision_state::{
     PendingDecision, Pregame, ResolvedEffectPayment, SacrificeDeclined, SacrificeFollowup,
     SearchFollowUp, ZoneMoveCause,
 };
-use exile_permission::ExilePlayPermission;
+use exile_permission::{ExilePlayCost, ExilePlayPermission};
 use mana_state::{
     AppliedStackEffect, FlexibleManaSource, ManaAbilityActivation, ManaActivationChoices,
     ManaPaymentPurpose, ManaSourceOutput, ManaSourceOutputs, PlannedManaActivation,
@@ -291,6 +291,11 @@ struct StackObject {
     /// Whether this spell was cast at a time a sorcery could not have been.
     /// Recorded as the cast happens, because nothing afterwards can tell.
     cast_at_instant_speed: bool,
+    /// Whether this spell was cast from its controller's hand. "If you cast
+    /// it from your hand" distinguishes the ordinary cast from one made off
+    /// the top of a library or out of a graveyard, and by the time the
+    /// permanent's own trigger resolves nothing else remembers.
+    cast_from_hand: bool,
     /// Whether this spell was cast face down. The permanent it becomes
     /// enters face down, and until it resolves only its controller may know
     /// which card it is.

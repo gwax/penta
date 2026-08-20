@@ -63,6 +63,7 @@ impl Game {
             | EffectDef::Mill { .. }
             | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }
+            | EffectDef::ExileFromTopUntil { .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }

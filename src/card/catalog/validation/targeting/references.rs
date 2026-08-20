@@ -684,6 +684,7 @@ fn validate_trigger_condition(
         | TriggerConditionDef::AttachedPermanentMatches { .. }
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::SourceCastWith(_)
+        | TriggerConditionDef::SourceCastFromHand
         | TriggerConditionDef::SourceCastAtInstantSpeed
         | TriggerConditionDef::ValueComparison(_)
         | TriggerConditionDef::SourceLoyalty { .. }

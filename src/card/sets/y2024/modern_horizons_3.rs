@@ -93,6 +93,58 @@ pub(in crate::card::sets) static STATIC_PRISON: CardRecord = CardRecord::new(
     ]),
 );
 
+/// A land is what the exile walks past; the first thing that is not one is
+/// what you get to keep.
+static A_NONLAND_CARD: ObjectPredicateDef =
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land));
+
+static RAPTOR_DIGS: EffectDef = EffectDef::ExileFromTopUntil {
+    player: EffectRecipientDef::Controller,
+    object: A_NONLAND_CARD,
+};
+
+/// "Then if you cast it from your hand" is part of the effect rather than an
+/// intervening-if: a Raptor put onto the battlefield gets the energy and
+/// nothing else.
+static RAPTOR_ENTERS: [EffectDef; 2] = [
+    EffectDef::AddEnergyCounters {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+    EffectDef::IfCondition {
+        condition: &TriggerConditionDef::SourceCastFromHand,
+        then: &RAPTOR_DIGS,
+    },
+];
+
+static AMPED_RAPTOR_ABILITIES: [AbilityDef; 2] = [
+    abilities::first_strike(),
+    AbilityDef::triggered(
+        "When this creature enters, you get {E}{E} (two energy counters). Then if you cast it \
+         from your hand, exile cards from the top of your library until you exile a nonland card. \
+         You may cast that card by paying an amount of {E} equal to its mana value rather than \
+         paying its mana cost.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        EffectDef::Sequence(&RAPTOR_ENTERS),
+    ),
+];
+
+// MH3 114 — Amped Raptor
+pub(in crate::card::sets) static AMPED_RAPTOR: CardRecord = CardRecord::new(
+    cards::AMPED_RAPTOR,
+    "Amped Raptor",
+    CardArt::new("1ac0e78b-0fdd-44f9-8b7b-c4f28a32782e", "Alex Konstad"),
+    CardSet::ModernHorizons3,
+    // Two mana for a 2/1 first striker and a free spell off the top, as long
+    // as the top of the deck is cheap enough for two energy to cover.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Dinosaur"], 2, 1)
+        .with_abilities(&AMPED_RAPTOR_ABILITIES),
+);
+
 // MH3 148 — Colossal Dreadmask
 pub(in crate::card::sets) static COLOSSAL_DREADMASK: CardRecord = CardRecord::new(
     cards::COLOSSAL_DREADMASK,
@@ -392,6 +444,7 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::n
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STATIC_PRISON,
+    &AMPED_RAPTOR,
     &COLOSSAL_DREADMASK,
     &SOWING_MYCOSPAWN,
     &AJANI_NACATL_PARIAH,

@@ -243,6 +243,11 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::MillUntil {
             player: recipient, ..
         }
+        // The same predicate over the same cards; what differs is only where
+        // they land and what the matched one carries.
+        | EffectDef::ExileFromTopUntil {
+            player: recipient, ..
+        }
         | EffectDef::LoseTheGame { player: recipient }
         | EffectDef::WinTheGame { player: recipient }
         | EffectDef::LookAtHand { player: recipient }

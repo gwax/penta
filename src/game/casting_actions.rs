@@ -109,6 +109,14 @@ impl Game {
             if only.is_some_and(|only| only != card.id) {
                 continue;
             }
+            // Energy replaces the mana cost rather than joining it, so a card
+            // nobody has the energy for is not castable at all.
+            if self
+                .exile_energy_cost(card.id, player)
+                .is_some_and(|energy| energy > self.players[player.index()].energy)
+            {
+                continue;
+            }
             let Some(definition) = self.catalog.get(card.definition) else {
                 continue;
             };

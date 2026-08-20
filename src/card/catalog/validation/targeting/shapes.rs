@@ -426,6 +426,7 @@ fn validate_trigger_condition_shape(
         | TriggerConditionDef::SpellsCastThisTurn { .. }
         | TriggerConditionDef::SpellsCastLastTurn { .. }
         | TriggerConditionDef::SourceCastWith(_)
+        | TriggerConditionDef::SourceCastFromHand
         | TriggerConditionDef::SourceCastAtInstantSpeed
         | TriggerConditionDef::ValueComparison(_)
         | TriggerConditionDef::SourceLoyalty { .. }

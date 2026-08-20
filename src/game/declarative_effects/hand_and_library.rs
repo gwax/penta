@@ -3,10 +3,45 @@
 
 use super::super::{
     DiscardSelectionDef, DrawReplacement, EffectDef, EffectResolutionContext, Game, GameEvent,
-    ScopedEffect, StackObject, Target, ZoneMoveCause, public_cards,
+    GameObjectId, PlayerId, ScopedEffect, StackObject, Target, ZoneKind, ZoneMoveCause,
+    public_cards,
 };
+use crate::card::ObjectPredicateDef;
 
 impl Game {
+    /// "Exile cards from the top of your library until you exile a nonland
+    /// card." Everything walked past is exiled with it; only the card that
+    /// matched gets the permission, and a library that ran out gives one to
+    /// nobody.
+    fn exile_from_top_until(
+        &mut self,
+        player: PlayerId,
+        predicate: ObjectPredicateDef,
+        source: GameObjectId,
+        caster: PlayerId,
+    ) {
+        let mut passed = Vec::new();
+        let mut matched = None;
+        while let Some(card) = self.players[player.index()].library.pop() {
+            if self.card_object_matches(predicate, &card, ZoneKind::Library, source) {
+                matched = Some(card);
+                break;
+            }
+            passed.push(card);
+        }
+        for card in passed {
+            let (card, _zone_change) = self.zone_change_card(card);
+            self.players[player.index()].exile.push(card);
+        }
+        let Some(card) = matched else {
+            return;
+        };
+        let (card, _zone_change) = self.zone_change_card(card);
+        let exiled = card.id;
+        self.players[player.index()].exile.push(card);
+        self.permit_energy_cast(exiled, caster);
+    }
+
     #[allow(clippy::too_many_lines)]
     pub(super) fn resolve_hand_and_library_effect(
         &mut self,
@@ -160,6 +195,17 @@ impl Game {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Player(player) = target {
                         self.mill_until_matching(player, predicate, matched_zone, source);
+                    }
+                }
+            }
+            EffectDef::ExileFromTopUntil {
+                player: recipient,
+                object: predicate,
+            } => {
+                let source = object.source.unwrap_or(object.id);
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.exile_from_top_until(player, predicate, source, object.controller);
                     }
                 }
             }

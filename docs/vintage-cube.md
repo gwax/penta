@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 210 are cataloged and 324 are not
+- 534 cards in the pool, of which 211 are cataloged and 323 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -160,10 +160,9 @@ lands are legal in every format and are not listed.
 - `Vampire Hexmage`
 - `Yawgmoth's Will`
 
-### Red (43)
+### Red (42)
 
 - `Abrade`
-- `Amped Raptor`
 - `Broadside Bombardiers`
 - `Burst Lightning`
 - `Chainsaw`
@@ -383,12 +382,13 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 210 pool cards are in the catalog because an earlier format needed them.
+These 211 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
 
 - `Ajani, Nacatl Pariah`
+- `Amped Raptor`
 - `Ancestral Recall`
 - `Ancient Tomb`
 - `Arid Mesa`

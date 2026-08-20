@@ -397,6 +397,7 @@ fn spell(id: u32, definition: CardDefinitionId, controller: PlayerId, x: u16) ->
         colors: None,
         cast_via_flashback: false,
         cast_at_instant_speed: false,
+        cast_from_hand: false,
         cast_face_down: false,
         colors_of_mana_spent: ColorSet::empty(),
         is_copy: false,
@@ -766,6 +767,7 @@ mod urza_lands;
 mod venarian_gold;
 mod vintage_cube_adventure;
 mod vintage_cube_ajani;
+mod vintage_cube_amped_raptor;
 mod vintage_cube_arrival;
 mod vintage_cube_artifacts;
 mod vintage_cube_barrowgoyf;

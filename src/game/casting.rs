@@ -487,6 +487,7 @@ impl Game {
         let alternative_kind = self.cast_alternative_kind(player, card_id, &signature);
         let cast_via_flashback = alternative_kind == Some(AlternativeCastKindDef::Flashback);
         let cast_face_down = alternative_kind == Some(AlternativeCastKindDef::FaceDown);
+        let energy = self.exile_energy_cost(card_id, player).unwrap_or(0);
         let card = match source_zone {
             CastSourceZone::Hand => remove_card(&mut self.players[player.index()].hand, card_id),
             CastSourceZone::Graveyard => {
@@ -540,6 +541,7 @@ impl Game {
             colors: None,
             cast_via_flashback,
             cast_at_instant_speed,
+            cast_from_hand: source_zone == CastSourceZone::Hand,
             cast_face_down,
             colors_of_mana_spent: crate::card::ColorSet::empty(),
             is_copy: false,
@@ -572,6 +574,11 @@ impl Game {
             .unwrap_or(0);
         if life > 0 {
             self.lose_life(player, life);
+        }
+        // Read before the permission is consumed above; spent here, where
+        // every other cost for this cast is paid.
+        if energy > 0 {
+            self.spend_energy(player, energy);
         }
         self.activate_mana_for_cost_avoiding_for(player, cost, x, None, &payment_purpose);
         let spent_mana = self.pay_player_cost_for(player, cost, x, &payment_purpose);

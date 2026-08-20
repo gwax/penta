@@ -7,8 +7,8 @@
 
 use super::super::{
     AdditionalCostId, AlternativeCastKindDef, AlternativeCostId, CardDefinition, CardInstance,
-    CastSourceZone, ControlFlow, CostConfiguration, DeclarativeAbilityDef, Game, GameObjectId,
-    ManaCost, PlayOptionDef, PlayerId, TriggerContext, ZoneKind, add_mana_cost,
+    CastSourceZone, ControlFlow, CostConfiguration, DeclarativeAbilityDef, ExilePlayCost, Game,
+    GameObjectId, ManaCost, PlayOptionDef, PlayerId, TriggerContext, ZoneKind, add_mana_cost,
     configured_mana_cost,
 };
 use crate::card::SpellAdditionalCostDef;
@@ -336,11 +336,12 @@ impl Game {
                 }
             }
         }
-        // "Without paying its mana cost" is a permission held over the card
-        // rather than an alternative printed on it, so it is applied here,
-        // after everything the card itself asks for. Additional costs still
-        // apply (CR 601.2h); only the mana cost is waived.
-        if self.card_is_played_free(card) {
+        // "Without paying its mana cost" and "rather than paying its mana
+        // cost" are both permissions held over the card rather than
+        // alternatives printed on it, so they are applied here, after
+        // everything the card itself asks for. Additional costs still apply
+        // (CR 601.2h); only the mana cost is replaced.
+        if self.card_mana_cost_is_replaced(card) {
             cost = ManaCost {
                 variable_x: cost.variable_x,
                 x_multiplier: cost.x_multiplier,
@@ -350,12 +351,16 @@ impl Game {
         Some(cost)
     }
 
-    /// Whether whoever is playing this card has been told they need not pay
-    /// for it. Read off the exile permissions, which is the only source
-    /// today.
-    fn card_is_played_free(&self, card: GameObjectId) -> bool {
-        self.exile_play_permissions
-            .iter()
-            .any(|permission| permission.card == card && permission.free)
+    /// Whether whoever is playing this card pays something other than its
+    /// mana cost -- nothing at all, or energy. Read off the exile
+    /// permissions, which is the only source today.
+    fn card_mana_cost_is_replaced(&self, card: GameObjectId) -> bool {
+        self.exile_play_permissions.iter().any(|permission| {
+            permission.card == card
+                && matches!(
+                    permission.cost,
+                    ExilePlayCost::Free | ExilePlayCost::EnergyEqualToManaValue
+                )
+        })
     }
 }

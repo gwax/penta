@@ -427,6 +427,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceIsPaired
         | TriggerConditionDef::ActivePlayer(_)
         | TriggerConditionDef::SourceCastWith(_)
+        | TriggerConditionDef::SourceCastFromHand
         | TriggerConditionDef::SourceCastAtInstantSpeed
         | TriggerConditionDef::ValueComparison(_)
         | TriggerConditionDef::SourceLoyalty { .. }
@@ -718,6 +719,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Mill { .. }
                     | EffectDef::SearchZonesAndExileRest { .. }
                     | EffectDef::MillUntil { .. }
+                    | EffectDef::ExileFromTopUntil { .. }
                     | EffectDef::LookAtTopAndSelect { .. }
                     | EffectDef::LookAtHand { .. }
                     | EffectDef::RevealAtRandomFromHand { .. }

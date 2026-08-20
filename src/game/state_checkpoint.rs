@@ -6,16 +6,17 @@ use super::{
     AbilitySourceRef, ApplicableReplacement, AppliedStackEffect, BasicLandTypeChange, CardInstance,
     CharacteristicSource, CombatDamageStage, ContinuousEffectExpiration, ContinuousEffectTimestamp,
     CopiableAbility, CopiableCharacteristics, CounterKind, DamageSourceGroupDef,
-    EffectResolutionContext, EntryCompletion, ExilePlayPermission, Game, GameEvent, GameObjectId,
-    GameStack, InstalledTrigger, InstalledTriggerLifetime, Mana, ManaSource, ObjectBacking,
-    PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent, PlayerId,
-    PlayerState, Pregame, RelationalSourceFilter, ReplaceableEvent, ReplacementEffectContext,
-    ReplayRng, ResolvedAbilityOperation, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
-    ResolvedDamagePrevention, ResolvedDamagePreventionCapacity, ResolvedDamagePreventionCoverage,
-    ResolvedDamageRecipientMatcher, ResolvedDamageRedirect, ResolvedDamageSourceMatcher,
-    ResolvedPlayRestriction, ResolvedPowerToughnessOperation, RetiredObject, ScopedEffect,
-    StackAbilityPayload, StackAbilityResolver, StackObject, StackObjectKind, Step,
-    TemporaryAbilityGrant, TriggerCapture, TriggerContext, TurnPhaseResume, ZoneMoveCause,
+    EffectResolutionContext, EntryCompletion, ExilePlayCost, ExilePlayPermission, Game, GameEvent,
+    GameObjectId, GameStack, InstalledTrigger, InstalledTriggerLifetime, Mana, ManaSource,
+    ObjectBacking, PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent,
+    PlayerId, PlayerState, Pregame, RelationalSourceFilter, ReplaceableEvent,
+    ReplacementEffectContext, ReplayRng, ResolvedAbilityOperation, ResolvedContinuousEffect,
+    ResolvedContinuousEffectKind, ResolvedDamagePrevention, ResolvedDamagePreventionCapacity,
+    ResolvedDamagePreventionCoverage, ResolvedDamageRecipientMatcher, ResolvedDamageRedirect,
+    ResolvedDamageSourceMatcher, ResolvedPlayRestriction, ResolvedPowerToughnessOperation,
+    RetiredObject, ScopedEffect, StackAbilityPayload, StackAbilityResolver, StackObject,
+    StackObjectKind, Step, TemporaryAbilityGrant, TriggerCapture, TriggerContext, TurnPhaseResume,
+    ZoneMoveCause,
 };
 use crate::card::{
     AbilityOperationDef, AppliedEffectDef, BasicLandType, CardType, CardTypeSet,
@@ -408,6 +409,7 @@ impl Game {
                     colors_of_mana_spent: object.colors_of_mana_spent.to_flags(),
                     cast_via_flashback: object.cast_via_flashback,
                     cast_at_instant_speed: object.cast_at_instant_speed,
+                    cast_from_hand: object.cast_from_hand,
                     is_copy: object.is_copy,
                 }
             })
@@ -455,7 +457,7 @@ impl Game {
                 .map(|permission| ExilePlayPermissionSnapshot {
                     card: permission.card.0,
                     player: permission.player.index(),
-                    free: permission.free,
+                    cost: permission.cost.label().to_owned(),
                     until_end_of_turn: permission
                         .until_end_of_turn
                         .map(|(player, turn)| (player.index(), turn)),
@@ -788,7 +790,8 @@ impl Game {
                     Ok(ExilePlayPermission {
                         card: GameObjectId(permission.card),
                         player: player_from_index(permission.player)?,
-                        free: permission.free,
+                        cost: ExilePlayCost::from_label(&permission.cost)
+                            .ok_or("unknown exile-play cost")?,
                         until_end_of_turn: match permission.until_end_of_turn {
                             Some((player, turn)) => Some((player_from_index(player)?, turn)),
                             None => None,

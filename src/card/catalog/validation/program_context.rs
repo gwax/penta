@@ -514,6 +514,7 @@ fn validate_resolving_effect(
         | EffectDef::Mill { .. }
         | EffectDef::SearchZonesAndExileRest { .. }
         | EffectDef::MillUntil { .. }
+        | EffectDef::ExileFromTopUntil { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }
@@ -753,6 +754,7 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceIsPaired
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::SourceCastWith(_)
+        | TriggerConditionDef::SourceCastFromHand
         | TriggerConditionDef::SourceCastAtInstantSpeed
         | TriggerConditionDef::ValueComparison(_)
         | TriggerConditionDef::SourceLoyalty { .. }
@@ -791,6 +793,8 @@ fn static_damage_object_reference_supported(reference: ObjectRefDef) -> bool {
     )
 }
 
+// A table that only grows: one line per effect, and nothing to factor.
+#[allow(clippy::too_many_lines)]
 const fn effect_operation_name(effect: EffectDef) -> &'static str {
     match effect {
         EffectDef::None => "None",
@@ -838,6 +842,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::Mill { .. } => "Mill",
         EffectDef::SearchZonesAndExileRest { .. } => "SearchZonesAndExileRest",
         EffectDef::MillUntil { .. } => "MillUntil",
+        EffectDef::ExileFromTopUntil { .. } => "ExileFromTopUntil",
         EffectDef::LookAtHand { .. } => "LookAtHand",
         EffectDef::RevealHand { .. } => "RevealHand",
         EffectDef::RevealAtRandomFromHand { .. } => "RevealAtRandomFromHand",

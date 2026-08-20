@@ -599,6 +599,18 @@ pub enum EffectDef {
         object: ObjectPredicateDef,
         matched_zone: ZoneKind,
     },
+    /// "Exile cards from the top of your library until you exile a nonland
+    /// card. You may cast that card by paying an amount of {E} equal to its
+    /// mana value rather than paying its mana cost."
+    ///
+    /// Everything passed on the way is exiled too, so this is not a mill with
+    /// a different destination: what distinguishes the matched card is the
+    /// permission it carries, not where it lands. Nothing states a duration,
+    /// so the permission lasts as long as the card sits there.
+    ExileFromTopUntil {
+        player: EffectRecipientDef,
+        object: ObjectPredicateDef,
+    },
     /// Put that many cards from the top of a library into its owner's
     /// graveyard.
     Mill {

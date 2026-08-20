@@ -124,6 +124,7 @@ pub(super) fn detached_stack_snapshot_allowing(
         colors_of_mana_spent: object.colors_of_mana_spent.to_flags(),
         cast_via_flashback: object.cast_via_flashback,
         cast_at_instant_speed: object.cast_at_instant_speed,
+        cast_from_hand: object.cast_from_hand,
         is_copy: object.is_copy,
     })
 }
@@ -563,6 +564,7 @@ pub(super) fn parse_stack(
             colors_of_mana_spent: color_set_from_flags(state.colors_of_mana_spent),
             cast_via_flashback: state.cast_via_flashback,
             cast_at_instant_speed: state.cast_at_instant_speed,
+            cast_from_hand: state.cast_from_hand,
             cast_face_down: false,
             is_copy: state.is_copy,
         });
@@ -627,6 +629,7 @@ pub(super) fn parse_detached_stack(
         colors_of_mana_spent: color_set_from_flags(state.colors_of_mana_spent),
         cast_via_flashback: state.cast_via_flashback,
         cast_at_instant_speed: state.cast_at_instant_speed,
+        cast_from_hand: state.cast_from_hand,
         cast_face_down: false,
         is_copy: state.is_copy,
     })

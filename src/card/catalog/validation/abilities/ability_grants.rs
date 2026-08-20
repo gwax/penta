@@ -120,6 +120,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::ExileTopAndMayCast { otherwise: None, .. }
         | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }
+        | EffectDef::ExileFromTopUntil { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }
@@ -314,6 +315,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::ExileTopAndMayCast { otherwise: None, .. }
         | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }
+        | EffectDef::ExileFromTopUntil { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }
