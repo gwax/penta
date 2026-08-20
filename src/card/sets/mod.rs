@@ -467,6 +467,11 @@ const SET_MODULES: &[SetModule] = &[
         y2021::modern_horizons_2::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::InnistradCrimsonVowCommander,
+        y2021::innistrad_crimson_vow_commander::CARDS,
+        y2021::innistrad_crimson_vow_commander::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::KamigawaNeonDynasty,
         y2022::kamigawa_neon_dynasty::CARDS,
         y2022::kamigawa_neon_dynasty::ADDITIONAL_PRINTINGS,

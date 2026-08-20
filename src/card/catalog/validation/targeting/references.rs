@@ -283,6 +283,7 @@ fn validate_trigger_object_predicate(
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
                     | ValueDef::MatchedCount
+                    | ValueDef::MatchedCardTypes
         | ValueDef::BoundObjectCount(_)
                     | ValueDef::SpellsCastBeforeThisTurn
             ) {
@@ -807,6 +808,7 @@ fn validate_value_target_references(
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount
+        | ValueDef::MatchedCardTypes
         | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::CreaturesDiedThisTurn

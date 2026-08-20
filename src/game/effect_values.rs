@@ -199,6 +199,7 @@ impl Game {
             // What the step before this one matched -- the land cards a
             // discard took. Zero without such a step behind it.
             ValueDef::MatchedCount => i32::from(context.matched_count.unwrap_or(0)),
+            ValueDef::MatchedCardTypes => i32::from(context.matched_card_types.unwrap_or(0)),
             // Read off the binding rather than off the board: what was
             // exiled is no longer anywhere to count.
             ValueDef::BoundObjectCount(binding) => {

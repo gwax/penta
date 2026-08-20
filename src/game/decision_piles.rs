@@ -462,24 +462,51 @@ impl Game {
         // asks what went, and by the time they are in a graveyard they are
         // indistinguishable from what was already there.
         let follow_up = self.pending_discard_follow_up.take();
-        let matched = follow_up.as_ref().map_or(0, |follow_up| {
+        let counted = follow_up.as_ref().map_or_else(Vec::new, |follow_up| {
             chosen
                 .iter()
                 .flat_map(|(player, cards)| cards.iter().map(move |card| (*player, *card)))
                 .filter(|(player, card)| {
                     self.discarded_card_matches(follow_up.counted, *player, *card)
                 })
-                .count()
+                .collect::<Vec<_>>()
         });
+        let matched = counted.len();
+        // "For each card type among cards discarded this way" counts the
+        // types, not the cards: one artifact creature is two and two
+        // creatures are one.
+        let matched_card_types = counted
+            .iter()
+            .filter_map(|(player, card)| self.discarded_card_types(*player, *card))
+            .fold(
+                crate::card::CardTypeSet::EMPTY,
+                crate::card::CardTypeSet::union,
+            )
+            .count();
         for (player, cards) in chosen {
             self.discard_cards_with_cause(player, &cards, cause);
         }
         if let Some(follow_up) = follow_up {
             let mut context = follow_up.context;
             context.matched_count = u16::try_from(matched).ok();
+            context.matched_card_types = Some(matched_card_types);
             let object = *follow_up.object;
             self.resolve_effect_def(follow_up.effect, &object, context);
         }
+    }
+
+    /// The card types a card about to be discarded has, read while it is
+    /// still in hand for the same reason its match is.
+    fn discarded_card_types(
+        &self,
+        player: PlayerId,
+        card: GameObjectId,
+    ) -> Option<crate::card::CardTypeSet> {
+        let held = self.players[player.index()]
+            .hand
+            .iter()
+            .find(|held| held.id == card)?;
+        Some(self.catalog.get(held.definition)?.rules.types())
     }
 
     /// Whether a card about to be discarded matches what a follow-up counts.

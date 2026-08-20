@@ -257,6 +257,9 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("zendikar_rising.rs") => source(CardSet::ZendikarRising, "ZNR"),
         Some("strixhaven_school_of_mages.rs") => source(CardSet::StrixhavenSchoolOfMages, "STX"),
         Some("modern_horizons_2.rs") => source(CardSet::ModernHorizons2, "MH2"),
+        Some("innistrad_crimson_vow_commander.rs") => {
+            source(CardSet::InnistradCrimsonVowCommander, "VOC")
+        }
         Some("ikoria.rs") => source(CardSet::Ikoria, "IKO"),
         Some("kamigawa_neon_dynasty.rs") => source(CardSet::KamigawaNeonDynasty, "NEO"),
         Some("streets_of_new_capenna.rs") => source(CardSet::StreetsOfNewCapenna, "SNC"),

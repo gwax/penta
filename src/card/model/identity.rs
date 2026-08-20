@@ -87,6 +87,7 @@ pub enum CardSet {
     ModernHorizons1,
     StrixhavenSchoolOfMages,
     ModernHorizons2,
+    InnistradCrimsonVowCommander,
     Ikoria,
     KamigawaNeonDynasty,
     StreetsOfNewCapenna,

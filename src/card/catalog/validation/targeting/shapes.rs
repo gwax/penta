@@ -327,6 +327,7 @@ fn validate_value_shape(
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount
+        | ValueDef::MatchedCardTypes
         | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::DividedAmongTargets => Ok(()),

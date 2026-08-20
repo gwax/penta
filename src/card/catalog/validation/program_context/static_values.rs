@@ -61,6 +61,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount
+        | ValueDef::MatchedCardTypes
         | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::TargetPower(_)
@@ -111,6 +112,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount
+        | ValueDef::MatchedCardTypes
         | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::TargetPower(_)

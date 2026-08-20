@@ -203,6 +203,11 @@ pub enum ValueDef {
     /// How many objects the step before this one matched: the land cards a
     /// discard actually took. Zero without such a step behind it.
     MatchedCount,
+    /// How many distinct card types those matched objects had between them,
+    /// which is what "for each card type among cards discarded this way"
+    /// counts. One card that is both an artifact and a creature contributes
+    /// two; two creatures contribute one.
+    MatchedCardTypes,
     /// How many objects an earlier step in this resolution bound. "For each
     /// creature exiled this way" counts what the exile actually took, which
     /// the board no longer holds by the time the follow-up runs. Zero

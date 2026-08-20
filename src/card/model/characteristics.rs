@@ -296,6 +296,18 @@ impl CardTypeSet {
         self.0 & (1 << card_type.index()) != 0
     }
 
+    /// How many distinct types are in the set. "For each card type among
+    /// them" counts this rather than the cards. There are only eight of
+    /// them, so the width is never in question.
+    #[must_use]
+    pub const fn count(self) -> u16 {
+        // Eight types fit in a byte, so the count fits anywhere.
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            self.0.count_ones() as u16
+        }
+    }
+
     #[must_use]
     pub const fn is_empty(self) -> bool {
         self.0 == 0

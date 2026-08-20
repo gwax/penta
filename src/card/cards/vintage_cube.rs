@@ -149,3 +149,4 @@ pub const OTTER_TOKEN_1_1_BLUE_RED: CardDefinitionId = CardDefinitionId(2231);
 pub const STORMCHASERS_TALENT: CardDefinitionId = CardDefinitionId(2232);
 pub const FATAL_PUSH: CardDefinitionId = CardDefinitionId(2233);
 pub const OVERLORD_OF_THE_BALEMURK: CardDefinitionId = CardDefinitionId(2234);
+pub const OCCULT_EPIPHANY: CardDefinitionId = CardDefinitionId(2235);

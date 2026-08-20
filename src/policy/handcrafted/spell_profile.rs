@@ -527,6 +527,7 @@ impl HandcraftedPolicy {
             | ValueDef::ColorsOfManaSpent
             | ValueDef::PaidAmount
             | ValueDef::MatchedCount
+            | ValueDef::MatchedCardTypes
             | ValueDef::BoundObjectCount(_)
             | ValueDef::SpellsCastBeforeThisTurn
             | ValueDef::DividedAmongTargets
