@@ -263,6 +263,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("kaladesh.rs") => source(CardSet::Kaladesh, "KLD"),
         Some("lord_of_the_rings.rs") => source(CardSet::LordOfTheRings, "LTR"),
         Some("lost_caverns_of_ixalan.rs") => source(CardSet::LostCavernsOfIxalan, "LCI"),
+        Some("murders_at_karlov_manor.rs") => source(CardSet::MurdersAtKarlovManor, "MKM"),
         Some("ravnica_clue_edition.rs") => source(CardSet::RavnicaClueEdition, "CLU"),
         Some("fallout.rs") => source(CardSet::Fallout, "PIP"),
         Some("modern_horizons_3.rs") => source(CardSet::ModernHorizons3, "MH3"),

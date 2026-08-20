@@ -536,6 +536,26 @@ pub(in crate::card::sets) static FOOD_TOKEN: CardRecord = CardRecord::new(
     )),
 );
 
+/// What investigating makes. Unlike Food it does not tap to be spent, so a
+/// Clue made this turn is already a card.
+pub(in crate::card::sets) static CLUE_TOKEN: CardRecord = CardRecord::new(
+    cards::CLUE_TOKEN,
+    "Clue",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_artifact_without_mana_cost(&["Clue"]).with_ability(AbilityDef::activated(
+        "{2}, Sacrifice this token: Draw a card.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{2}")),
+            AbilityCostDef::SacrificeSource,
+        ],
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    )),
+);
+
 /// The other noncreature token here, and the one whose ability spends a card
 /// to find a better one.
 pub(in crate::card::sets) static BLOOD_TOKEN: CardRecord = CardRecord::new(
@@ -628,6 +648,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WURM_TOKEN_6_6_GREEN,
     &RAT_TOKEN_1_1_BLACK,
     &FOOD_TOKEN,
+    &CLUE_TOKEN,
     &BLOOD_TOKEN,
 ];
 

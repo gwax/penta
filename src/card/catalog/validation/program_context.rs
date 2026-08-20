@@ -158,6 +158,17 @@ fn validate_static_effect(
         {
             Ok(())
         }
+        EffectDef::ReduceMatchingAbilityCostBy {
+            permanent: matcher,
+            amount,
+            ..
+        } if position == StaticPosition::Root
+            && source_zones == [ZoneKind::Battlefield]
+            && static_object_predicate_supported(matcher)
+            && static_cost_reduction_value_supported(amount) =>
+        {
+            Ok(())
+        }
         EffectDef::IncreaseMatchingSpellCostBy { spell, caster, .. }
             if position == StaticPosition::Root
                 && source_zones == [ZoneKind::Battlefield]
@@ -455,6 +466,7 @@ fn validate_resolving_effect(
         | EffectDef::CannotBeForcedToDiscard
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::IncreaseMatchingAbilityCostBy { .. }
+        | EffectDef::ReduceMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::ReduceMatchingSpellCostBy { .. }
         | EffectDef::CannotAttackUnless(_)
@@ -967,6 +979,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         }
         EffectDef::ReduceGenericCostBy(_) => "ReduceGenericCostBy",
         EffectDef::IncreaseMatchingAbilityCostBy { .. } => "IncreaseMatchingAbilityCostBy",
+        EffectDef::ReduceMatchingAbilityCostBy { .. } => "ReduceMatchingAbilityCostBy",
         EffectDef::IncreaseMatchingSpellCostBy { .. } => "IncreaseMatchingSpellCostBy",
         EffectDef::ReduceMatchingSpellCostBy { .. } => "ReduceMatchingSpellCostBy",
         EffectDef::CannotAttackUnless(_) => "CannotAttackUnless",

@@ -691,6 +691,20 @@ pub enum EffectDef {
         permanent: ObjectPredicateDef,
         amount: ManaCost,
     },
+    /// A permanent making matching permanents' activated abilities cost less
+    /// to activate. The mirror of [`Self::IncreaseMatchingAbilityCostBy`],
+    /// and like a spell discount it touches generic mana only.
+    ///
+    /// The printed floor is part of the effect rather than a rule of its
+    /// own: "this effect can't reduce the mana in that cost to less than one
+    /// mana" is what keeps a free ability from becoming free twice over.
+    ReduceMatchingAbilityCostBy {
+        permanent: ObjectPredicateDef,
+        amount: ValueDef,
+        /// The least mana the cost may be left with. An ability whose cost
+        /// already holds no more than this is untouched.
+        minimum: u16,
+    },
     /// A permanent making matching spells cost more. The mirror of
     /// [`Self::ReduceMatchingSpellCostBy`], but the amount is a whole mana
     /// cost rather than a number: an increase can name a colour, which a

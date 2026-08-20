@@ -451,6 +451,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::ExchangeControl { .. }
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::IncreaseMatchingAbilityCostBy { .. }
+        | EffectDef::ReduceMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::ReduceMatchingSpellCostBy { .. }
         | EffectDef::LandwalkCanBeBlocked(_)

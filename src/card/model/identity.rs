@@ -93,6 +93,7 @@ pub enum CardSet {
     Kaladesh,
     LordOfTheRings,
     LostCavernsOfIxalan,
+    MurdersAtKarlovManor,
     RavnicaClueEdition,
     Fallout,
     ModernHorizons3,

@@ -433,6 +433,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             | EffectDef::CannotBeForcedToDiscard
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::IncreaseMatchingAbilityCostBy { .. }
+            | EffectDef::ReduceMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::ReduceMatchingSpellCostBy { .. }
         | EffectDef::LandwalkCanBeBlocked(_)

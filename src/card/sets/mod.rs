@@ -487,6 +487,11 @@ const SET_MODULES: &[SetModule] = &[
         y2023::lord_of_the_rings::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::MurdersAtKarlovManor,
+        y2024::murders_at_karlov_manor::CARDS,
+        y2024::murders_at_karlov_manor::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::RavnicaClueEdition,
         y2024::ravnica_clue_edition::CARDS,
         y2024::ravnica_clue_edition::ADDITIONAL_PRINTINGS,

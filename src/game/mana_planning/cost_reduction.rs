@@ -115,11 +115,16 @@ impl Game {
         increase
     }
 
-    /// What this permanent's activated abilities actually cost in mana,
-    /// with every increase on the battlefield folded in. Abilities have no
-    /// discount vocabulary, so unlike a spell this only ever goes up.
+    /// What this permanent's activated abilities actually cost in mana, with
+    /// every increase and discount on the battlefield folded in.
+    ///
+    /// Increases go on first and discounts second, the way they do for a
+    /// spell (CR 601.2f): a discount that ran first could take a cost to its
+    /// floor and leave an increase to push it back up, which is not what
+    /// either printed clause means.
     pub(super) fn ability_mana_cost(&self, permanent: &Permanent, cost: ManaCost) -> ManaCost {
         let mut total = cost;
+        let mut discounts = Vec::new();
         for other in &self.battlefield {
             let Some(rules) = self.effective_rules(other) else {
                 continue;
@@ -128,24 +133,56 @@ impl Game {
                 if !ability.is_executable() {
                     continue;
                 }
-                let Some(EffectDef::IncreaseMatchingAbilityCostBy {
-                    permanent: matcher,
-                    amount,
-                }) = ability.declarative_effect()
-                else {
-                    continue;
-                };
-                if self.trigger_object_matches(
-                    matcher,
-                    &self.trigger_event_object(permanent),
-                    other.card.id,
-                    false,
-                ) {
-                    total = add_mana_cost(total, amount);
+                match ability.declarative_effect() {
+                    Some(EffectDef::IncreaseMatchingAbilityCostBy {
+                        permanent: matcher,
+                        amount,
+                    }) if self.ability_cost_effect_applies(matcher, permanent, other) => {
+                        total = add_mana_cost(total, amount);
+                    }
+                    Some(EffectDef::ReduceMatchingAbilityCostBy {
+                        permanent: matcher,
+                        amount,
+                        minimum,
+                    }) if self.ability_cost_effect_applies(matcher, permanent, other) => {
+                        let amount =
+                            self.cost_reduction_value(amount, other.controller, other.card.id);
+                        discounts.push((amount, minimum));
+                    }
+                    _ => {}
                 }
             }
         }
+        for (amount, minimum) in discounts {
+            total = Self::reduce_ability_cost(total, amount, minimum);
+        }
         total
+    }
+
+    fn ability_cost_effect_applies(
+        &self,
+        matcher: crate::card::ObjectPredicateDef,
+        permanent: &Permanent,
+        source: &Permanent,
+    ) -> bool {
+        self.trigger_object_matches(
+            matcher,
+            &self.trigger_event_object(permanent),
+            source.card.id,
+            false,
+        )
+    }
+
+    /// A discount touches generic mana only, and stops at the printed floor:
+    /// "this effect can't reduce the mana in that cost to less than one
+    /// mana" leaves an ability that already costs that little alone.
+    fn reduce_ability_cost(cost: ManaCost, amount: u16, minimum: u16) -> ManaCost {
+        // Only the generic portion can go, and only down to the floor. A
+        // cost whose coloured symbols already meet the floor keeps all of
+        // its generic anyway.
+        let floor = minimum.max(cost.mana_value().saturating_sub(cost.generic));
+        let room = cost.mana_value().saturating_sub(floor);
+        reduce_generic(cost, amount.min(room))
     }
 
     /// The values a cost reduction can read. There is no resolving object

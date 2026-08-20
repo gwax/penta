@@ -771,6 +771,7 @@ mod vintage_cube_cut_down;
 mod vintage_cube_damn;
 mod vintage_cube_duelist;
 mod vintage_cube_eldrazi;
+mod vintage_cube_gadgeteer;
 mod vintage_cube_graveyard;
 mod vintage_cube_hand_attack;
 mod vintage_cube_infect;

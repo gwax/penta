@@ -286,6 +286,7 @@ fn validate_effect_target_shapes(
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::CopyResolvingSpell { .. }
         | EffectDef::IncreaseMatchingAbilityCostBy { .. }
+            | EffectDef::ReduceMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::None
         | EffectDef::AddMana(_)

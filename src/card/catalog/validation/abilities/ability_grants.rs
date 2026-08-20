@@ -142,6 +142,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::ExchangeControl { .. }
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::IncreaseMatchingAbilityCostBy { .. }
+            | EffectDef::ReduceMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::ReduceMatchingSpellCostBy { .. }
         | EffectDef::LandwalkCanBeBlocked(_)
@@ -326,6 +327,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::ExchangeControl { .. }
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::IncreaseMatchingAbilityCostBy { .. }
+            | EffectDef::ReduceMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::ReduceMatchingSpellCostBy { .. }
         | EffectDef::LandwalkCanBeBlocked(_)

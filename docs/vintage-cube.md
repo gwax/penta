@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 199 are cataloged and 335 are not
+- 534 cards in the pool, of which 200 are cataloged and 334 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -72,7 +72,7 @@ lands are legal in every format and are not listed.
 - `Voice of Victory`
 - `Witch Enchanter`
 
-### Blue (50)
+### Blue (49)
 
 - `Abhorrent Oculus`
 - `Astrologian's Planisphere`
@@ -88,7 +88,6 @@ lands are legal in every format and are not listed.
 - `Faerie Mastermind`
 - `Flash`
 - `Force of Negation`
-- `Forensic Gadgeteer`
 - `Gitaxian Probe`
 - `Hullbreacher`
 - `Jace, Vryn's Prodigy`
@@ -394,7 +393,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 199 pool cards are in the catalog because an earlier format needed them.
+These 200 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -461,6 +460,7 @@ been played beside.
 - `Flooded Strand`
 - `Force of Vigor`
 - `Force of Will`
+- `Forensic Gadgeteer`
 - `Frantic Search`
 - `Fury`
 - `Gaea's Cradle`

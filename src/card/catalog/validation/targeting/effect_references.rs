@@ -300,6 +300,7 @@ fn validate_effect_references(
         // targeted unless its chooser retargets it as it is made.
         EffectDef::CopyResolvingSpell { .. }
         | EffectDef::IncreaseMatchingAbilityCostBy { .. }
+            | EffectDef::ReduceMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)

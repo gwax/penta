@@ -31,6 +31,19 @@ pub(in super::super) fn shared_static_non_apply_effect(
         EffectDef::IncreaseMatchingAbilityCostBy { permanent, .. } => {
             battlefield_only(source_zones) && shared_object_predicate(permanent)
         }
+        // The discount beside it does carry a value, read off the board the
+        // same way a spell discount's is.
+        EffectDef::ReduceMatchingAbilityCostBy {
+            permanent, amount, ..
+        } => {
+            battlefield_only(source_zones)
+                && shared_object_predicate(permanent)
+                && matches!(
+                    amount,
+                    crate::card::ValueDef::Constant(_)
+                        | crate::card::ValueDef::CountMatchingObjects(_)
+                )
+        }
         EffectDef::IncreaseMatchingSpellCostBy { spell, caster, .. } => {
             battlefield_only(source_zones)
                 && shared_object_predicate(spell)
@@ -92,6 +105,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::IncreaseMatchingAbilityCostBy { .. }
+        | EffectDef::ReduceMatchingAbilityCostBy { .. }
         | EffectDef::IncreaseMatchingSpellCostBy { .. }
         | EffectDef::ReduceMatchingSpellCostBy { .. }
         | EffectDef::LandwalkCanBeBlocked(_)
