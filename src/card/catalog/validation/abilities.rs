@@ -121,12 +121,14 @@ fn validate_attached_ability(
             definition, part, ability_id, &problem,
         ));
     }
-    if let DeclarativeAbilityDef::Spell(spell) = ability.definition
-        && let Some(modal) = spell.modal()
-    {
-        if ability.coverage.status != ImplementationStatus::Complete
-            || ability.effect.execution != EffectExecutionDef::Declarative
-            || ability.effect.definition != AbilityProgramDef::Effects(EffectDef::None)
+    if let Some(modal) = ability.modal() {
+        // An activated ability's own effect is the thing it does before its
+        // modes; a modal spell prints nothing but its modes. Only the spell
+        // is required to be empty.
+        if matches!(ability.definition, DeclarativeAbilityDef::Spell(_))
+            && (ability.coverage.status != ImplementationStatus::Complete
+                || ability.effect.execution != EffectExecutionDef::Declarative
+                || ability.effect.definition != AbilityProgramDef::Effects(EffectDef::None))
         {
             return Err(CatalogError::InvalidModalSpellParent {
                 definition: definition.id,
@@ -248,9 +250,7 @@ fn validate_granted_abilities(
 /// continue the same [`GrantId`] sequence in printed mode order.
 fn collect_direct_ability_grants<'a>(ability: &'a AbilityDef, grants: &mut Vec<&'a AbilityDef>) {
     collect_program_ability_grants(ability.effect.definition, grants);
-    if let DeclarativeAbilityDef::Spell(spell) = ability.definition
-        && let Some(modal) = spell.modal()
-    {
+    if let Some(modal) = ability.modal() {
         for mode in modal.modes {
             collect_program_ability_grants(mode.effect.definition, grants);
         }
@@ -260,9 +260,7 @@ fn collect_direct_ability_grants<'a>(ability: &'a AbilityDef, grants: &mut Vec<&
 #[allow(clippy::too_many_lines)]
 fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilityValidationError> {
     let mut grant_sites = program_ability_grant_sites(ability.effect.definition);
-    if let DeclarativeAbilityDef::Spell(spell) = ability.definition
-        && let Some(modal) = spell.modal()
-    {
+    if let Some(modal) = ability.modal() {
         grant_sites = modal
             .modes
             .iter()

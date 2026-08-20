@@ -22,6 +22,7 @@ fn griselbrand_pays_seven_life_then_draws_seven_cards() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));
 
@@ -106,6 +107,7 @@ fn door_to_nothingness_makes_its_target_lose() {
         targets: activated_targets(Target::Player(PlayerId::Two)),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));
 

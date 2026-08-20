@@ -684,6 +684,7 @@ fn a_spell_created_installed_trigger_reconstructs_at_an_action_boundary() {
                 targets: Vec::new(),
                 cost_objects: Vec::new(),
                 x: 0,
+                modes: Vec::new(),
             },
         )
         .expect("Dragon Whelp activates");

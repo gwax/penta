@@ -266,6 +266,7 @@ fn loyalty_action(
         targets,
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     }
 }
 

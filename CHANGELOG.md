@@ -153,6 +153,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Modal activated abilities.** "Choose one --" was a casting shape, so only
+  a spell could print it. An activated ability chooses its modes as it is
+  activated (CR 601.2b) rather than as it resolves, which puts the choice on
+  the action beside its targets and its X: one printed ability is offered once
+  per selection, each with the modes' own target slots appended to its own,
+  and each named after the clause it picked. Umezawa's Jitte is the first
+  card to print one.
+
 - **Buyback.** Like a kicker it only costs more, so the spell resolves
   exactly as printed; what it changes is where the card goes afterwards --
   to its owner's hand rather than the graveyard (CR 702.27a). That made it

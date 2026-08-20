@@ -63,6 +63,7 @@ fn activated_actions_serialize_their_exact_ability_origin() {
         ],
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     });
     assert_eq!(activated["ability"]["kind"], "printed");
     assert_eq!(
@@ -92,6 +93,7 @@ fn activated_actions_serialize_their_exact_ability_origin() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     });
     assert_eq!(granted["ability"]["kind"], "granted");
     assert_eq!(granted["ability"]["source"], 9);

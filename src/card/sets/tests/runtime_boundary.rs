@@ -559,9 +559,7 @@ fn fully_declarative_clauses_stay_within_the_shared_runtime_boundary() {
                     );
                 }
                 assert_nested_program_abilities(&definition.name, ability.effect.definition);
-                if let DeclarativeAbilityDef::Spell(spell) = ability.definition
-                    && let Some(modal) = spell.modal()
-                {
+                if let Some(modal) = ability.modal() {
                     for mode in modal.modes {
                         if mode.declarative_effect().is_some()
                             || mode.declarative_replacement().is_some()

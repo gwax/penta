@@ -1,9 +1,9 @@
 use super::{
-    AbilityDef, AbilityId, AbilityOrigin, Action, ActionError, CardBehavior, CardType,
-    CharacteristicContext, CombatDamageStage, CounterKind, DecisionVisibility, EmblemObservation,
-    Game, GameEvent, GameObjectId, GameResult, KeywordAbility, ManaActivationChoices, ManaColor,
-    Permanent, PermanentObservation, PlayerId, PlayerObservation, Pregame, StackObservation, Step,
-    WinReason, ZoneKind, combinations, public_cards,
+    AbilityDef, AbilityId, AbilityOrigin, Action, ActionError, ActivationChoices, CardBehavior,
+    CardType, CharacteristicContext, CombatDamageStage, CounterKind, DecisionVisibility,
+    EmblemObservation, Game, GameEvent, GameObjectId, GameResult, KeywordAbility,
+    ManaActivationChoices, ManaColor, Permanent, PermanentObservation, PlayerId, PlayerObservation,
+    Pregame, StackObservation, Step, WinReason, ZoneKind, combinations, public_cards,
 };
 
 impl Game {
@@ -359,7 +359,18 @@ impl Game {
                 targets,
                 cost_objects,
                 x,
-            } => self.activate_ability(player, source, ability, targets, &cost_objects, x),
+                modes,
+            } => self.activate_ability(
+                player,
+                source,
+                ability,
+                ActivationChoices {
+                    targets,
+                    cost_objects: &cost_objects,
+                    x,
+                    modes: &modes,
+                },
+            ),
             Action::DeclareAttacker { attacker, defender } => {
                 self.declare_attacker(attacker, defender);
             }

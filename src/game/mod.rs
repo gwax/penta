@@ -137,7 +137,7 @@ pub(crate) use card_runtime::{
 
 use observation::{LastSeenHand, PublicCard};
 
-use activation_state::FrozenActivatedAbility;
+use activation_state::{ActivationChoices, FrozenActivatedAbility};
 use casting_state::{CastSourceZone, SelectedSpellPlan};
 use characteristic_state::{
     BasicLandTypeChange, BattlefieldExitSnapshot, CharacteristicSource, CopiableAbility,

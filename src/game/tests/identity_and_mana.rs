@@ -174,6 +174,7 @@ fn ability_events_distinguish_the_stack_object_from_a_source_that_left_play() {
             targets: activated_targets(Target::Permanent(target_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();

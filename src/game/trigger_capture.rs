@@ -571,9 +571,11 @@ impl Game {
             definition,
             presentation_definition,
             text,
-            target_defs,
+            target_defs: target_defs.to_vec(),
             resolver,
-            // Filled in by the activation, which is where X is chosen.
+            // Both filled in by the activation, which is where X and the
+            // modes are chosen.
+            mode_effects: Vec::new(),
             x: 0,
         }
     }

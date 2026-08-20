@@ -3,11 +3,71 @@ use super::{
     CardInstance, CardPart, CardStructure, CharacteristicContext, CharacteristicSource,
     ControlFlow, DeclarativeAbilityDef, DoubleFacedKind, EffectiveAbility, FrozenActivatedAbility,
     Game, GameEvent, GameObjectId, ManaCost, ManaPaymentPurpose, Permanent, PlayerId,
-    RetiredObject, StackAbilityPayload, StackObject, StackObjectKind, TargetSelection,
-    TriggerContext, ZoneKind, add_mana_cost, applicable_part_ids, mana_cost_value,
+    RetiredObject, ScopedEffect, SelectedSpellPlan, StackAbilityPayload, StackObject,
+    StackObjectKind, TargetSelection, TriggerContext, ZoneKind, add_mana_cost, applicable_part_ids,
+    mana_cost_value, mode_id_selections,
 };
+use crate::card::ActivatedAbilityDef;
+use crate::ids::ModeId;
 
 impl Game {
+    /// Every way of answering an activated ability's "choose one --". An
+    /// ability that prints no modes has exactly one answer: choose none.
+    pub(super) fn activated_mode_selections(definition: ActivatedAbilityDef) -> Vec<Vec<ModeId>> {
+        let Some(modal) = definition.modes else {
+            return vec![Vec::new()];
+        };
+        let implemented = modal
+            .modes
+            .iter()
+            .enumerate()
+            .filter(|(_, mode)| mode.is_executable())
+            .filter_map(|(index, _)| ModeId::from_index(index))
+            .collect::<Vec<_>>();
+        mode_id_selections(
+            &implemented,
+            usize::from(modal.minimum),
+            usize::from(modal.maximum),
+            modal.may_repeat,
+        )
+    }
+
+    /// The targets and mode effects an activation with these modes carries.
+    /// The ability's own targets come first, then each chosen mode's, which
+    /// is the same flattening a modal spell uses.
+    pub(super) fn selected_activated_plan(
+        definition: ActivatedAbilityDef,
+        selected_modes: &[ModeId],
+    ) -> Option<SelectedSpellPlan> {
+        let Some(modal) = definition.modes else {
+            return selected_modes.is_empty().then(|| SelectedSpellPlan {
+                target_defs: definition.targets.to_vec(),
+                mode_effects: Vec::new(),
+            });
+        };
+        let mut target_defs = definition.targets.to_vec();
+        let mut selected = selected_modes.to_vec();
+        selected.sort_by_key(|mode| mode.index());
+        let mut mode_effects = Vec::with_capacity(selected.len());
+        for selected in selected {
+            let mode = modal.modes.get(selected.index())?;
+            let effect = mode.declarative_effect()?;
+            let DeclarativeAbilityDef::Spell(mode_spell) = mode.definition else {
+                return None;
+            };
+            let target_base = target_defs.len();
+            target_defs.extend_from_slice(mode_spell.targets());
+            mode_effects.push(ScopedEffect {
+                effect,
+                target_base,
+            });
+        }
+        Some(SelectedSpellPlan {
+            target_defs,
+            mode_effects,
+        })
+    }
+
     pub(super) fn push_activated_ability(
         &mut self,
         source: GameObjectId,
@@ -48,13 +108,13 @@ impl Game {
                 definition: frozen.definition,
                 presentation_definition: frozen.presentation_definition,
                 text: frozen.text,
-                target_defs: frozen.target_defs.to_vec(),
+                target_defs: frozen.target_defs,
                 targets,
                 context: TriggerContext::empty().into(),
                 resolver: frozen.resolver,
                 // Only a triggered ability carries an intervening-if.
                 condition: None,
-                mode_effects: Vec::new(),
+                mode_effects: frozen.mode_effects,
                 x: frozen.x,
             }),
             controller,
@@ -370,32 +430,43 @@ impl Game {
                 // it: "X target lands" offers a different set of declarations
                 // for each affordable X, so the targets have to be enumerated
                 // inside that loop rather than once for all of them.
+                // "Choose one --" is answered as the ability is activated, so
+                // each way of answering is its own action, with that mode's
+                // targets appended to the ability's own.
+                let mode_selections = Self::activated_mode_selections(definition);
                 for x in 0..=max_x {
-                    for selections in self.legal_ability_target_selections(
-                        definition.targets,
-                        player,
-                        permanent.card.id,
-                        TriggerContext::empty(),
-                        x,
-                    ) {
-                        if ability
-                            .declarative_effect()
-                            .is_some_and(Self::effect_is_reconfigure)
-                            && permanent.attached_to.is_none()
-                            && selections
-                                .iter()
-                                .all(|selection| selection.targets().is_empty())
-                        {
+                    for selected_modes in &mode_selections {
+                        let Some(plan) = Self::selected_activated_plan(definition, selected_modes)
+                        else {
                             continue;
-                        }
-                        for cost_objects in &cost_object_choices {
-                            actions.push(Action::ActivateAbility {
-                                source: permanent.card.id,
-                                ability: effective.origin,
-                                targets: selections.clone(),
-                                cost_objects: cost_objects.clone(),
-                                x,
-                            });
+                        };
+                        for selections in self.legal_ability_target_selections(
+                            &plan.target_defs,
+                            player,
+                            permanent.card.id,
+                            TriggerContext::empty(),
+                            x,
+                        ) {
+                            if ability
+                                .declarative_effect()
+                                .is_some_and(Self::effect_is_reconfigure)
+                                && permanent.attached_to.is_none()
+                                && selections
+                                    .iter()
+                                    .all(|selection| selection.targets().is_empty())
+                            {
+                                continue;
+                            }
+                            for cost_objects in &cost_object_choices {
+                                actions.push(Action::ActivateAbility {
+                                    source: permanent.card.id,
+                                    ability: effective.origin,
+                                    targets: selections.clone(),
+                                    cost_objects: cost_objects.clone(),
+                                    x,
+                                    modes: selected_modes.clone(),
+                                });
+                            }
                         }
                     }
                 }
@@ -430,6 +501,7 @@ impl Game {
                     targets: Vec::new(),
                     cost_objects: Vec::new(),
                     x: 0,
+                    modes: Vec::new(),
                 });
             }
             CardBehavior::LibraryOfAlexandria
@@ -443,6 +515,7 @@ impl Game {
                     targets: Vec::new(),
                     cost_objects: Vec::new(),
                     x: 0,
+                    modes: Vec::new(),
                 });
             }
             _ => {}
@@ -600,6 +673,7 @@ impl Game {
                                 targets: targets.clone(),
                                 cost_objects: cost_objects.clone(),
                                 x,
+                                modes: Vec::new(),
                             });
                         }
                     }
@@ -687,6 +761,7 @@ impl Game {
                             targets,
                             cost_objects: Vec::new(),
                             x: 0,
+                            modes: Vec::new(),
                         });
                     }
                 },

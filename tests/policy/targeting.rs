@@ -98,6 +98,7 @@ fn handcrafted_scavenging_ooze_exiles_an_opponents_graveyard_card() {
         targets: activated_targets(Target::Card(food)),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     let mut observation = policy_observation(
         vec![permanent(
@@ -132,6 +133,7 @@ fn handcrafted_animates_a_factory_once_rather_than_every_priority() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
 
     let dormant = permanent(1, poc::cards::MISHRA_S_FACTORY, PlayerId::One, None, None);

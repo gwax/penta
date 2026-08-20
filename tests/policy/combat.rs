@@ -107,6 +107,7 @@ fn handcrafted_uses_domri_to_win_a_favorable_fight() {
         ],
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     let observation = policy_observation(
         vec![domri, fighter, victim],
@@ -118,6 +119,7 @@ fn handcrafted_uses_domri_to_win_a_favorable_fight() {
                 targets: Vec::new(),
                 cost_objects: Vec::new(),
                 x: 0,
+                modes: Vec::new(),
             },
             fight.clone(),
         ],
@@ -296,6 +298,7 @@ fn handcrafted_only_uses_orcish_mechanics_on_a_player_for_lethal() {
                 targets: activated_targets(Target::Player(PlayerId::Two)),
                 cost_objects: vec![vise],
                 x: 0,
+                modes: Vec::new(),
             },
         ],
     );
@@ -323,6 +326,7 @@ fn handcrafted_scores_triskelion_from_its_declarative_damage_effect() {
         targets: activated_targets(Target::Permanent(target)),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     let observation = policy_observation(
         vec![
@@ -337,6 +341,7 @@ fn handcrafted_scores_triskelion_from_its_declarative_damage_effect() {
                 targets: activated_targets(Target::Player(PlayerId::Two)),
                 cost_objects: Vec::new(),
                 x: 0,
+                modes: Vec::new(),
             },
             hit_creature.clone(),
         ],
@@ -376,6 +381,7 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
                 targets: Vec::new(),
                 cost_objects: vec![vise],
                 x: 0,
+                modes: Vec::new(),
             },
             Action::ActivateAbility {
                 source: atog,
@@ -383,6 +389,7 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
                 targets: Vec::new(),
                 cost_objects: vec![mox],
                 x: 0,
+                modes: Vec::new(),
             },
         ],
     );
@@ -398,6 +405,7 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
             targets: Vec::new(),
             cost_objects: vec![vise],
             x: 0,
+            modes: Vec::new(),
         })
     );
 }

@@ -824,6 +824,7 @@ fn ratchet_bomb_sweeps_the_mana_value_it_ticked_up_to() {
                         targets: Vec::new(),
                         cost_objects: Vec::new(),
                         x: 0,
+                        modes: Vec::new(),
                     },
                 )),
                 _ => None,

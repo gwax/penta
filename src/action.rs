@@ -4,7 +4,7 @@ use std::fmt;
 use crate::card::{BasicLandType, ManaSplit};
 use crate::casting::{CastChoices, TargetSelection};
 use crate::{
-    AbilityId, CardDefinitionId, CardPartId, GameObjectId, GrantId, PlayOptionId, PlayerId,
+    AbilityId, CardDefinitionId, CardPartId, GameObjectId, GrantId, ModeId, PlayOptionId, PlayerId,
 };
 
 pub use crate::card::ManaColor;
@@ -135,6 +135,11 @@ pub enum Action {
         /// The value chosen for X in the activation cost, zero when the cost
         /// has no X.
         x: u16,
+        /// The modes chosen for an ability that prints "choose one --",
+        /// in ascending order. Modes are chosen as the ability is activated
+        /// (CR 601.2b), so they travel with the action. Empty for every
+        /// ability that prints no modes, which is nearly all of them.
+        modes: Vec<ModeId>,
     },
     /// Turn a face-down permanent face up by paying its morph cost. A
     /// special action rather than an ability: it uses no stack, nothing can

@@ -1,5 +1,5 @@
 use super::{
-    AbilityCostDef, AbilityOrigin, AbilityProcedureDef, ActivationTimingDef,
+    AbilityCostDef, AbilityOrigin, AbilityProcedureDef, ActivationChoices, ActivationTimingDef,
     BattlefieldExitCompletion, CardBehavior, CardInstance, CharacteristicContext, CounterKind,
     DeclarativeAbilityDef, FrozenActivatedAbility, Game, GameEvent, GameObjectId, ManaCost,
     ManaPaymentPurpose, PlayRestriction, PlayerId, Step, Target, TargetSelection, ZoneKind,
@@ -51,10 +51,12 @@ impl Game {
         player: PlayerId,
         source: GameObjectId,
         ability: AbilityOrigin,
-        targets: Vec<TargetSelection>,
-        x: u16,
+        choices: ActivationChoices<'_>,
         source_card: &CardInstance,
     ) {
+        let ActivationChoices {
+            targets, x, modes, ..
+        } = choices;
         let Some(effective) = self.find_printed_card_ability(
             source_card,
             &CharacteristicContext::Graveyard,
@@ -71,6 +73,9 @@ impl Game {
         {
             return;
         }
+        let Some(plan) = Self::selected_activated_plan(definition, modes) else {
+            return;
+        };
         let frozen = FrozenActivatedAbility {
             origin: effective.origin,
             definition: Some(Box::new(effective.ability)),
@@ -79,8 +84,9 @@ impl Game {
                 source_card.definition,
             ),
             text: Some(effective.ability.text),
-            target_defs: definition.targets,
+            target_defs: plan.target_defs,
             resolver: Self::ability_resolver(effective.origin, &effective.ability),
+            mode_effects: plan.mode_effects,
             x,
         };
         let payment_purpose = ManaPaymentPurpose::Ability {
@@ -156,10 +162,14 @@ impl Game {
         player: PlayerId,
         source: GameObjectId,
         ability: AbilityOrigin,
-        targets: Vec<TargetSelection>,
-        cost_objects: &[GameObjectId],
-        x: u16,
+        choices: ActivationChoices<'_>,
     ) {
+        let ActivationChoices {
+            targets,
+            cost_objects,
+            x,
+            modes,
+        } = choices;
         if let Some(source_card) = self.players[player.index()]
             .hand
             .iter()
@@ -182,6 +192,9 @@ impl Game {
             {
                 return;
             }
+            let Some(plan) = Self::selected_activated_plan(definition, modes) else {
+                return;
+            };
             let frozen = FrozenActivatedAbility {
                 origin: effective.origin,
                 definition: Some(Box::new(effective.ability)),
@@ -190,8 +203,9 @@ impl Game {
                     source_card.definition,
                 ),
                 text: Some(effective.ability.text),
-                target_defs: definition.targets,
+                target_defs: plan.target_defs,
                 resolver: Self::ability_resolver(effective.origin, &effective.ability),
+                mode_effects: plan.mode_effects,
                 x,
             };
             let payment_purpose = ManaPaymentPurpose::Ability {
@@ -288,7 +302,13 @@ impl Game {
             .find(|card| card.id == source)
             .cloned()
         {
-            self.activate_graveyard_ability(player, source, ability, targets, x, &source_card);
+            let choices = ActivationChoices {
+                targets,
+                cost_objects,
+                x,
+                modes,
+            };
+            self.activate_graveyard_ability(player, source, ability, choices, &source_card);
             return;
         }
         let Some(source_permanent) = self
@@ -301,6 +321,18 @@ impl Game {
         let source_card = source_permanent.card.clone();
         let mut frozen_ability = self.freeze_activated_ability(source_permanent, ability);
         frozen_ability.x = x;
+        // A modal ability's slots are its own followed by each chosen
+        // mode's, and the chosen modes' effects resolve after its own.
+        if let Some(DeclarativeAbilityDef::Activated(definition)) = self
+            .find_effective_ability(source_permanent, |effective| effective.origin == ability)
+            .map(|effective| effective.ability.definition)
+        {
+            let Some(plan) = Self::selected_activated_plan(definition, modes) else {
+                return;
+            };
+            frozen_ability.target_defs = plan.target_defs;
+            frozen_ability.mode_effects = plan.mode_effects;
+        }
         // `apply` validated these exact ordered slot selections against a
         // generated legal action. Freeze both their slot identity and values
         // before any activation cost can move or change the source.

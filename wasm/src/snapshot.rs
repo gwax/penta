@@ -74,6 +74,9 @@ impl WebGame {
                         Action::CastSpell { choices, .. } => Some(
                             choices.modes().iter().map(|mode| mode.0).collect::<Vec<_>>(),
                         ),
+                        Action::ActivateAbility { modes, .. } => {
+                            Some(modes.iter().map(|mode| mode.0).collect::<Vec<_>>())
+                        }
                         _ => None,
                     },
                     "paymentAction": matches!(action, Action::CastSpell { .. } | Action::ActivateAbility { .. }),

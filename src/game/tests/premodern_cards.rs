@@ -14,6 +14,7 @@ fn mogg_fanatic_and_seal_of_fire_pay_sacrifice_before_dealing_damage() {
             targets: activated_targets(Target::Player(PlayerId::Two)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         };
 
         assert!(game.legal_actions(PlayerId::One).contains(&activation));
@@ -203,6 +204,7 @@ fn seal_of_cleansing_and_monk_realist_destroy_enchantments_at_their_printed_timi
             targets: activated_targets(Target::Permanent(artifact_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();

@@ -92,6 +92,7 @@ fn mana_preview_uses_the_selected_declarative_activated_ability_cost() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&action));
@@ -134,6 +135,7 @@ fn mana_preview_uses_the_selected_declarative_activated_ability_cost() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
 
     assert_eq!(
@@ -160,6 +162,7 @@ fn orcish_mechanics_can_sacrifice_an_artifact_to_damage_a_creature() {
         targets: activated_targets(Target::Permanent(target_id)),
         cost_objects: vec![artifact_id],
         x: 0,
+        modes: Vec::new(),
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));
 
@@ -677,6 +680,7 @@ fn factory_animates_and_strip_mine_destroys_lands() {
             targets: Vec::new(),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -700,6 +704,7 @@ fn factory_animates_and_strip_mine_destroys_lands() {
                 targets: activated_targets(Target::Permanent(factory_id)),
                 cost_objects: Vec::new(),
                 x: 0,
+                modes: Vec::new(),
             })
     );
 
@@ -711,6 +716,7 @@ fn factory_animates_and_strip_mine_destroys_lands() {
             targets: activated_targets(Target::Permanent(opposing_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -759,6 +765,7 @@ fn mishras_factory_can_use_its_own_mana_to_animate() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&animate));
@@ -834,6 +841,7 @@ fn strip_mine_can_be_activated_in_response_to_strip_mine() {
             targets: activated_targets(Target::Permanent(first_strip_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -845,6 +853,7 @@ fn strip_mine_can_be_activated_in_response_to_strip_mine() {
         targets: activated_targets(Target::Permanent(other_land_id)),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert!(game.legal_actions(PlayerId::One).contains(&response));
     game.apply(PlayerId::One, response).unwrap();
@@ -881,6 +890,7 @@ fn icatian_javelineers_cannot_activate_until_their_controller_turn() {
         targets: activated_targets(Target::Player(PlayerId::Two)),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert_eq!(game.power(&game.battlefield[0]), Some(1));
     assert_eq!(game.toughness(&game.battlefield[0]), Some(1));
@@ -915,6 +925,7 @@ fn icatian_javelineers_counter_cost_preserves_white_source_targeting() {
         targets: activated_targets(Target::Permanent(knight_id)),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert!(
         !game
@@ -929,6 +940,7 @@ fn icatian_javelineers_counter_cost_preserves_white_source_targeting() {
         targets: activated_targets(Target::Player(PlayerId::Two)),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     game.apply(PlayerId::One, player_target).unwrap();
     let javelineers = game

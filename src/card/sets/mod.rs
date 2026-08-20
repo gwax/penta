@@ -18,6 +18,7 @@ mod y2001;
 mod y2002;
 mod y2003;
 mod y2004;
+mod y2005;
 mod y2007;
 mod y2008;
 mod y2009;
@@ -264,6 +265,11 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::Darksteel,
         y2004::darksteel::CARDS,
         y2004::darksteel::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::BetrayersOfKamigawa,
+        y2005::betrayers_of_kamigawa::CARDS,
+        y2005::betrayers_of_kamigawa::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
         CardSet::PlanarChaos,

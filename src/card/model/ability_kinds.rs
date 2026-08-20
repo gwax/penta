@@ -463,6 +463,12 @@ pub struct ActivatedAbilityDef {
     /// whose condition is false is not a legal action at all, which is what
     /// threshold means.
     pub condition: Option<&'static TriggerConditionDef>,
+    /// "Choose one --", for an activated ability that prints modes. The
+    /// choice is made as the ability is activated rather than as it
+    /// resolves (CR 601.2b), so it travels with the action; each mode is a
+    /// clause of its own with its own targets, exactly as a modal spell's
+    /// modes are.
+    pub modes: Option<ModalSpellDef>,
 }
 
 impl ActivatedAbilityDef {
@@ -482,7 +488,15 @@ impl ActivatedAbilityDef {
             activation_limit: None,
             any_player_may_activate: false,
             condition: None,
+            modes: None,
         }
+    }
+
+    /// "Choose one --" on an activated ability.
+    #[must_use]
+    pub const fn with_modes(mut self, modes: ModalSpellDef) -> Self {
+        self.modes = Some(modes);
+        self
     }
 
     /// "Any player may activate this ability." The permanent stays the

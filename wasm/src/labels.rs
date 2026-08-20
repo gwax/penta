@@ -7,6 +7,7 @@ use super::{
     GameResult, ModeId, PlayOptionId, PlayerId, PlayerObservation, Step, Target, WebGame,
     readable_debug,
 };
+use penta::card::AbilityDef;
 use std::fmt::Write as _;
 
 impl WebGame {
@@ -114,15 +115,51 @@ impl WebGame {
         observation: &PlayerObservation,
         source: CardInstanceId,
         ability: AbilityOrigin,
+        modes: &[ModeId],
     ) -> String {
         let source_name = self.instance_name(observation, source);
-        if source_has_multiple_activated_abilities(observation, source)
+        let mut label = if source_has_multiple_activated_abilities(observation, source)
             && let Some(text) = self.ability_rules_text(source, ability)
         {
             format!("{source_name} — {text}")
         } else {
             format!("Activate {source_name}")
+        };
+        // The modes are chosen as the ability is activated, so one printed
+        // ability offers one action per selection. Without the chosen mode
+        // named, they would all read alike.
+        let chosen = self.activated_mode_labels(source, ability, modes);
+        if !chosen.is_empty() {
+            let _ = write!(label, " — {}", chosen.join(" + "));
         }
+        label
+    }
+
+    /// Names each mode an activation chose, reading the printed clause off
+    /// the ability itself rather than the catalog: an ability's modes are
+    /// not a play option's.
+    fn activated_mode_labels(
+        &self,
+        source: CardInstanceId,
+        ability: AbilityOrigin,
+        modes: &[ModeId],
+    ) -> Vec<String> {
+        let Some(modal) = self
+            .session
+            .ability_for_origin(source, ability)
+            .and_then(AbilityDef::modal)
+        else {
+            return Vec::new();
+        };
+        modes
+            .iter()
+            .map(|id| {
+                modal.modes.get(id.index()).map_or_else(
+                    || format!("Mode {}", id.0),
+                    |mode| mode.rules_text().into_owned(),
+                )
+            })
+            .collect()
     }
 
     pub(super) fn action_ability_label(
@@ -132,8 +169,11 @@ impl WebGame {
     ) -> Option<String> {
         match action {
             Action::ActivateAbility {
-                source, ability, ..
-            } => Some(self.activation_label(observation, *source, *ability)),
+                source,
+                ability,
+                modes,
+                ..
+            } => Some(self.activation_label(observation, *source, *ability, modes)),
             Action::KeepHand
             | Action::TakeMulligan
             | Action::BottomCards { .. }
@@ -528,8 +568,9 @@ impl WebGame {
                 targets: target_selections,
                 cost_objects,
                 x,
+                modes,
             } => {
-                let mut label = self.activation_label(observation, *source, *ability);
+                let mut label = self.activation_label(observation, *source, *ability, modes);
                 if source_ability_has_multiple_x_values(observation, *source, *ability) {
                     let _ = write!(label, " (X={x})");
                 }

@@ -162,6 +162,18 @@ impl TriggerEventDef {
         })
     }
 
+    /// "Whenever <object> deals combat damage" -- to anything. A creature
+    /// that was blocked deals its damage to the blockers, and the clause
+    /// counts that no differently from a hit to the player.
+    #[must_use]
+    pub const fn combat_damage_dealt_by(source: ObjectPredicateDef) -> Self {
+        Self::DamageDealt(DamageEventMatcherDef {
+            kind: DamageKindDef::Combat,
+            source: Self::damage_source(source),
+            recipient: DamageRecipientMatcherDef::Any,
+        })
+    }
+
     #[must_use]
     pub const fn combat_damage_to_player(source: ObjectPredicateDef) -> Self {
         Self::DamageDealt(DamageEventMatcherDef {

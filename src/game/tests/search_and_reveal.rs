@@ -483,6 +483,7 @@ fn sage_and_relic_barrier_use_the_shared_activated_ability_stack() {
             targets: Vec::new(),
             cost_objects: vec![ring_id],
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -510,6 +511,7 @@ fn sage_and_relic_barrier_use_the_shared_activated_ability_stack() {
             targets: activated_targets(Target::Permanent(ring_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();

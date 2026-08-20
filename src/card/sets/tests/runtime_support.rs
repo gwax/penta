@@ -788,7 +788,16 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                         .targets
                         .iter()
                         .all(|slot| slot.divided_total.is_none())
-                    && shared_stack_effect(effect)
+                    && definition.modes.is_none_or(|modal| {
+                        modal.modes.iter().all(|mode| {
+                            mode.declarative_effect().is_none() || shared_definition_ability(mode)
+                        })
+                    })
+                    // A purely modal ability does nothing of its own before
+                    // its chosen modes, which is the one place an activated
+                    // ability may resolve to nothing.
+                    && (shared_stack_effect(effect)
+                        || (definition.modes.is_some() && effect == EffectDef::None))
         }
         DeclarativeAbilityDef::Triggered(definition) => {
             // A state trigger is nothing but its condition: without one it

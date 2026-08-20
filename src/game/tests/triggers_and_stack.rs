@@ -184,6 +184,7 @@ fn a_resolving_tap_effect_uses_the_same_city_trigger_path() {
         targets: activated_targets(Target::Permanent(CardInstanceId(10_001))),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));
     game.apply(PlayerId::One, activation).unwrap();

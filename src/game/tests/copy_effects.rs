@@ -28,6 +28,7 @@ fn stage_copies_dryad_arbors_copiable_values_but_not_hack_or_presence() {
             targets: activated_targets(Target::Permanent(arbor_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -109,6 +110,7 @@ fn a_new_stage_can_copy_dryad_arbor_but_the_result_is_summoning_sick() {
         targets: activated_targets(Target::Permanent(arbor_id)),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert!(
         game.legal_actions(PlayerId::One).contains(&copy),
@@ -155,6 +157,7 @@ fn stage_copying_stage_does_not_duplicate_indistinguishable_legal_actions() {
             targets: activated_targets(Target::Permanent(copied_stage)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -183,6 +186,7 @@ fn stage_copying_stage_does_not_duplicate_indistinguishable_legal_actions() {
         targets: activated_targets(Target::Permanent(mountain)),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert_eq!(
         game.legal_actions(PlayerId::One)
@@ -217,6 +221,7 @@ fn stage_keeps_a_resolved_factory_animation_after_copying_another_land() {
             targets: activated_targets(Target::Permanent(factory_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -229,6 +234,7 @@ fn stage_keeps_a_resolved_factory_animation_after_copying_another_land() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     game.players[0].mana_pool.colorless = 1;
     assert!(
@@ -259,6 +265,7 @@ fn stage_keeps_a_resolved_factory_animation_after_copying_another_land() {
             targets: activated_targets(Target::Permanent(mountain_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -281,6 +288,7 @@ fn stage_keeps_a_resolved_factory_animation_after_copying_another_land() {
         targets: activated_targets(Target::Permanent(stage_id)),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert!(
         game.legal_actions(PlayerId::One).contains(&pump),
@@ -333,6 +341,7 @@ fn stage_does_not_copy_a_land_that_leaves_before_the_ability_resolves() {
             targets: activated_targets(Target::Permanent(target_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -430,6 +439,7 @@ fn copy_artifact_resolves_a_copied_icy_manipulator_ability_from_its_frozen_origi
             targets: activated_targets(Target::Permanent(target_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -525,6 +535,7 @@ fn granted_activation_freezes_payload_before_sacrificing_grant_source() {
         targets: activated_targets(Target::Player(PlayerId::Two)),
         cost_objects: vec![grantor],
         x: 0,
+        modes: Vec::new(),
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));
 

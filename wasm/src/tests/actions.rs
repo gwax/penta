@@ -166,6 +166,7 @@ fn activated_action_labels_distinguish_exact_ability_origins() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     let pump = Action::ActivateAbility {
         source,
@@ -180,6 +181,7 @@ fn activated_action_labels_distinguish_exact_ability_origins() {
         )],
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
 
     // Multiple target/X/sacrifice variants of one origin remain one
@@ -253,6 +255,7 @@ fn activated_action_labels_show_distinct_x_and_every_selected_target() {
         )],
         cost_objects: Vec::new(),
         x,
+        modes: Vec::new(),
     };
     let zero = action(0);
     let two = action(2);
@@ -473,6 +476,7 @@ fn ability_actions_expose_their_stable_origins() {
         ],
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert_eq!(
         action_ability_origin(&action),
@@ -524,6 +528,7 @@ fn ability_actions_expose_their_stable_origins() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert_eq!(
         action_ability_origin(&granted_action),

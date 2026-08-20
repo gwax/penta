@@ -7,7 +7,7 @@ use super::{
     AbilityTargetDef, ActivatedAbilityDef, ActivationTimingDef, AlternativeCastAbilityDef,
     AlternativeCastKindDef, AlternativeCastManaCostDef, CardBehavior, ConditionDef,
     DeclarativeAbilityDef, EffectDef, EffectExecutionDef, ImplementationStatus, KeywordAbility,
-    ManaCost, ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef,
+    ManaCost, ModalSpellDef, ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef,
     ReplacementEventDef, SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef,
     SpellLifeCostDef, SpellResolutionDestinationDef, StaticAbilityDef, TriggerConditionDef,
     TriggerEventDef, TriggeredAbilityDef, ZoneKind,
@@ -241,6 +241,28 @@ impl AbilityDef {
                 ActivatedAbilityDef::with_costs(costs).with_targets(targets),
             ),
             effect,
+        )
+    }
+
+    /// "Choose one --" on an activated ability, which chooses its modes as
+    /// it is activated (CR 601.2b) rather than as it resolves. The ability
+    /// does nothing of its own beyond the modes it prints.
+    #[must_use]
+    pub const fn modal_activated(
+        text: &'static str,
+        costs: &'static [AbilityCostDef],
+        modes: &'static [AbilityDef],
+        minimum: u8,
+        maximum: u8,
+        may_repeat: bool,
+    ) -> Self {
+        Self::defined(
+            text,
+            DeclarativeAbilityDef::Activated(
+                ActivatedAbilityDef::with_costs(AbilityCostList::borrowed(costs))
+                    .with_modes(ModalSpellDef::new(modes, minimum, maximum, may_repeat)),
+            ),
+            EffectDef::None,
         )
     }
 
@@ -691,6 +713,20 @@ impl AbilityDef {
             self.effect.custom_behavior()
         } else {
             None
+        }
+    }
+
+    /// The printed "choose one --" of this clause, wherever it prints it.
+    /// A spell carries its modes in its casting shape; an activated ability
+    /// carries its own, chosen as it is activated (CR 601.2b). Everything
+    /// downstream -- validation, grant numbering, mode selection -- treats
+    /// the two identically, so it asks here rather than matching the kind.
+    #[must_use]
+    pub const fn modal(self) -> Option<ModalSpellDef> {
+        match self.definition {
+            DeclarativeAbilityDef::Spell(spell) => spell.modal(),
+            DeclarativeAbilityDef::Activated(activated) => activated.modes,
+            _ => None,
         }
     }
 

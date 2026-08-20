@@ -355,6 +355,19 @@ fn activated_ability_for(game: &Game, source: GameObjectId, index: usize) -> Abi
     game.activated_ability_origin(permanent, index)
 }
 
+/// The plain activation of one ability: no targets, no cost objects, no X,
+/// and no modes. Most printed abilities are activated exactly this way.
+fn plain_activation(source: GameObjectId, ability: AbilityOrigin) -> Action {
+    Action::ActivateAbility {
+        source,
+        ability,
+        targets: Vec::new(),
+        cost_objects: Vec::new(),
+        x: 0,
+        modes: Vec::new(),
+    }
+}
+
 fn synchronize_single_part_definition(definition: &mut CardDefinition) {
     let composition = CardComposition::single(definition.name.clone(), definition.rules);
     definition.parts = composition.parts;
@@ -753,6 +766,7 @@ mod vintage_cube_eldrazi;
 mod vintage_cube_graveyard;
 mod vintage_cube_hand_attack;
 mod vintage_cube_infect;
+mod vintage_cube_jitte;
 mod vintage_cube_lands;
 mod vintage_cube_library;
 mod vintage_cube_mana;

@@ -155,6 +155,7 @@ fn handcrafted_prioritizes_time_vaults_declarative_extra_turn() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     let draw = Action::ActivateAbility {
         source: tome,
@@ -162,6 +163,7 @@ fn handcrafted_prioritizes_time_vaults_declarative_extra_turn() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     let observation = policy_observation(
         vec![
@@ -296,6 +298,7 @@ fn handcrafted_animates_a_manland_only_when_it_can_attack() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     let vault = || permanent(1, cards::MUTAVAULT, PlayerId::One, None, None);
 

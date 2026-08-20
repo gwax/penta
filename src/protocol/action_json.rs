@@ -104,9 +104,14 @@ pub fn action_json(action: &Action) -> Value {
             targets,
             cost_objects,
             x,
+            modes,
         } => json!({
             "type": "ActivateAbility",
             "x": x,
+            // Present for every activation, empty for the abilities that
+            // print no modes -- which is nearly all of them. A cast already
+            // reports its modes the same way.
+            "modeIds": modes.iter().map(|mode| mode.0).collect::<Vec<_>>(),
             "source": source.0,
             "ability": ability_origin_json(*ability),
             "target": targets

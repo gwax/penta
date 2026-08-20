@@ -44,6 +44,7 @@ fn exile_source_and_life_costs_are_paid_before_the_ability_goes_on_the_stack() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));
 

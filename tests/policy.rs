@@ -138,6 +138,7 @@ fn bloodrush_action(source: CardInstanceId, target: CardInstanceId) -> Action {
         targets: activated_targets(Target::Permanent(target)),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     }
 }
 

@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 183 are cataloged and 351 are not
+- 534 cards in the pool, of which 184 are cataloged and 350 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -322,7 +322,7 @@ lands are legal in every format and are not listed.
 - `Wrenn and Six`
 - `Zirda, the Dawnwaker`
 
-### Colorless (43)
+### Colorless (42)
 
 - `Aether Spellbomb`
 - `Agatha's Soul Cauldron`
@@ -364,7 +364,6 @@ lands are legal in every format and are not listed.
 - `The Mightstone and Weakstone`
 - `The One Ring`
 - `Ugin, Eye of the Storms`
-- `Umezawa's Jitte`
 - `Urza's Bauble`
 - `Walking Ballista`
 
@@ -410,7 +409,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 183 pool cards are in the catalog because an earlier format needed them.
+These 184 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -574,6 +573,7 @@ been played beside.
 - `Toxic Deluge`
 - `Tropical Island`
 - `Tundra`
+- `Umezawa's Jitte`
 - `Underground Sea`
 - `Unexpectedly Absent`
 - `Unholy Heat`

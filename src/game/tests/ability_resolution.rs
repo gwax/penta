@@ -16,6 +16,7 @@ fn copied_grant_source_definition_is_part_of_the_granted_ability_origin() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert!(game.legal_actions(PlayerId::One).contains(&stale_action));
 
@@ -40,6 +41,7 @@ fn copied_grant_source_definition_is_part_of_the_granted_ability_origin() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     }));
 }
 
@@ -108,6 +110,7 @@ fn declarative_activation_preserves_multiple_slots_before_sacrificing_its_source
         targets: targets.clone(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
 
     let invalid_slots = Action::ActivateAbility {
@@ -119,6 +122,7 @@ fn declarative_activation_preserves_multiple_slots_before_sacrificing_its_source
         ],
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
     assert!(game.apply(PlayerId::One, invalid_slots).is_err());
     assert!(
@@ -221,6 +225,7 @@ fn one_ability_target_slot_resolves_for_every_selected_legal_target() {
         )],
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&action));
@@ -460,20 +465,8 @@ fn legacy_activated_clauses_dispatch_from_their_own_effect_execution() {
         .extend((0..7).map(|offset| card(10_001 + offset, cards::MOUNTAIN, PlayerId::One)));
     let library_origin = activated_ability_for(&game, source, 0);
     let regeneration_origin = activated_ability_for(&game, source, 1);
-    let library = Action::ActivateAbility {
-        source,
-        ability: library_origin,
-        targets: Vec::new(),
-        cost_objects: Vec::new(),
-        x: 0,
-    };
-    let regeneration = Action::ActivateAbility {
-        source,
-        ability: regeneration_origin,
-        targets: Vec::new(),
-        cost_objects: Vec::new(),
-        x: 0,
-    };
+    let library = plain_activation(source, library_origin);
+    let regeneration = plain_activation(source, regeneration_origin);
     let actions = game.legal_actions(PlayerId::One);
     assert!(actions.contains(&library));
     assert!(actions.contains(&regeneration));
@@ -563,6 +556,7 @@ fn a_legacy_activation_after_a_shared_clause_keeps_its_own_origin() {
         targets: Vec::new(),
         cost_objects: Vec::new(),
         x: 0,
+        modes: Vec::new(),
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&action));

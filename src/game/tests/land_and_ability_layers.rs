@@ -61,6 +61,7 @@ fn factory_and_sorceress_queen_base_setters_follow_timestamp_without_losing_type
             targets: Vec::new(),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -74,6 +75,7 @@ fn factory_and_sorceress_queen_base_setters_follow_timestamp_without_losing_type
             targets: activated_targets(Target::Permanent(factory)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -109,6 +111,7 @@ fn factory_and_sorceress_queen_base_setters_follow_timestamp_without_losing_type
             targets: Vec::new(),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -441,6 +444,7 @@ fn stage_copying_a_basic_land_stays_basic_through_blood_moon() {
             targets: activated_targets(Target::Permanent(island_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -504,6 +508,7 @@ fn stage_activation_already_on_the_stack_resolves_through_blood_moon() {
             targets: activated_targets(Target::Permanent(island_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -555,6 +560,7 @@ fn stage_copying_a_nonbasic_land_is_masked_but_persists_through_blood_moon() {
             targets: activated_targets(Target::Permanent(yavimaya_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();

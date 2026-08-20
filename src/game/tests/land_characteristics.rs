@@ -553,6 +553,7 @@ fn magical_hack_on_stage_applies_to_land_types_that_stage_later_copies() {
             targets: activated_targets(Target::Permanent(arbor_id)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();

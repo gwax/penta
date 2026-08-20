@@ -337,6 +337,7 @@ fn izzet_staticaster_reads_the_name_copied_by_thespians_stage() {
             targets: activated_targets(Target::Permanent(arbor)),
             cost_objects: Vec::new(),
             x: 0,
+            modes: Vec::new(),
         },
     )
     .unwrap();
@@ -803,6 +804,7 @@ fn aetherling_dodges_a_blocker_and_comes_back_at_the_end_step() {
                 targets: Vec::new(),
                 cost_objects: Vec::new(),
                 x: 0,
+                modes: Vec::new(),
             },
         )
         .unwrap();
