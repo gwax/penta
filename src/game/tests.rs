@@ -786,6 +786,7 @@ mod vintage_cube_gadgeteer;
 mod vintage_cube_graveyard;
 mod vintage_cube_gut;
 mod vintage_cube_hand_attack;
+mod vintage_cube_horizon_land;
 mod vintage_cube_infect;
 mod vintage_cube_jitte;
 mod vintage_cube_lands;
