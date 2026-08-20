@@ -53,6 +53,31 @@ static STERN_SCOLDING_TARGET: AbilityTargetDef =
         ]),
     ]));
 
+// LTR 60 — Lórien Revealed
+pub(in crate::card::sets) static LORIEN_REVEALED: CardRecord = CardRecord::new(
+    cards::LORIEN_REVEALED,
+    "Lórien Revealed",
+    CardArt::new("0ce44270-a684-4489-9077-521456e6dfaa", "Randy Gallegos"),
+    CardSet::LordOfTheRings,
+    // Five mana is not what this card is for either. One mana from hand for
+    // an Island is, and the three cards are what makes the last copy in the
+    // deck worth drawing.
+    CardRules::new_sorcery(mana_cost!("{3}{U}{U}")).with_abilities(&[
+        AbilityDef::spell(
+            "Draw three cards.",
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(3),
+            },
+        ),
+        abilities::typecycling(
+            "Islandcycling {1} ({1}, Discard this card: Search your library for an Island card, reveal it, put it into your hand, then shuffle.)",
+            mana_cost!("{1}"),
+            ObjectPredicateDef::Subtype("Island"),
+        ),
+    ]),
+);
+
 // LTR 71 — Stern Scolding
 pub(in crate::card::sets) static STERN_SCOLDING: CardRecord = CardRecord::new(
     cards::STERN_SCOLDING,
@@ -194,6 +219,7 @@ pub(in crate::card::sets) static FLAME_OF_ANOR: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &REPRIEVE,
+    &LORIEN_REVEALED,
     &STERN_SCOLDING,
     &DELIGHTED_HALFLING,
     &GENEROUS_ENT,

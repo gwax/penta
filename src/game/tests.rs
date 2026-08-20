@@ -778,6 +778,7 @@ mod vintage_cube_infect;
 mod vintage_cube_jitte;
 mod vintage_cube_lands;
 mod vintage_cube_library;
+mod vintage_cube_lorien;
 mod vintage_cube_mana;
 mod vintage_cube_manifold_key;
 mod vintage_cube_mastery;
