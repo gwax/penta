@@ -164,6 +164,18 @@ impl Game {
         &self,
         affected_player: PlayerId,
     ) -> bool {
+        self.player_static_rule_applies(
+            affected_player,
+            AppliedEffectDef::Rule(AppliedRuleDef::NoMaximumHandSize),
+        )
+    }
+
+    /// Whether any live static ability applies `wanted` to this player.
+    fn player_static_rule_applies(
+        &self,
+        affected_player: PlayerId,
+        wanted: AppliedEffectDef,
+    ) -> bool {
         let land_type_sources = self.land_type_effect_sources(None);
         for source in self.battlefield.iter().chain(self.emblems.iter()) {
             let Some(rules) = self.effective_rules(source) else {
@@ -197,7 +209,7 @@ impl Game {
                 else {
                     continue;
                 };
-                if effect != AppliedEffectDef::Rule(AppliedRuleDef::NoMaximumHandSize) {
+                if effect != wanted {
                     continue;
                 }
                 if self.static_player_recipient_matches(recipient, source, affected_player) {
@@ -206,6 +218,19 @@ impl Game {
             }
         }
         false
+    }
+
+    /// Whether any live static ability tells `affected_player` that drawing
+    /// from an empty library wins the game rather than losing it. Walked the
+    /// same way as the hand-size rule above.
+    pub(in crate::game) fn player_wins_on_empty_library_draw(
+        &self,
+        affected_player: PlayerId,
+    ) -> bool {
+        self.player_static_rule_applies(
+            affected_player,
+            AppliedEffectDef::Rule(AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary),
+        )
     }
 
     fn collect_static_play_restrictions(

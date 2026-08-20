@@ -610,10 +610,11 @@ fn validate_applied_effect_shapes(
             }
             Ok(())
         }
-        // Names a player and carries nothing else.
-        AppliedEffectDef::Rule(AppliedRuleDef::NoMaximumHandSize) => {
-            validate_recipient_shape(recipient, targets, RecipientExpectation::Player)
-        }
+        // Both name a player and carry nothing else.
+        AppliedEffectDef::Rule(
+            AppliedRuleDef::NoMaximumHandSize
+            | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary,
+        ) => validate_recipient_shape(recipient, targets, RecipientExpectation::Player),
         // The cap names the players it applies to; the predicate picks out
         // which of their permanents it covers.
         AppliedEffectDef::Rule(AppliedRuleDef::UntapAtMostOne(predicate)) => {

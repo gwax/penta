@@ -5,7 +5,7 @@ use super::{
     DeferredBeginTurnEffect, EffectResolutionContext, Game, GameEvent, GameObjectId, GameResult,
     InstalledTriggerLifetime, ManaPool, PendingProcedure, PlayerId, ReplacementEffectDef,
     ReplacementEventDef, Step, TriggerContext, TurnPhaseDef, TurnPhaseResume, TurnStepDef,
-    one_or_none,
+    WinReason, one_or_none,
 };
 
 mod begin_turn;
@@ -684,6 +684,15 @@ impl Game {
             return None;
         }
         let Some(card) = self.players[player.index()].library.pop() else {
+            // Jace, Wielder of Mysteries turns the loss into a win. The draw
+            // is replaced, so the flag that would end the game is never set.
+            if self.player_wins_on_empty_library_draw(player) {
+                self.finish(GameResult::Winner {
+                    winner: player,
+                    reason: WinReason::OpponentLostToAnEffect,
+                });
+                return None;
+            }
             self.players[player.index()].tried_to_draw_from_empty_library = true;
             return None;
         };

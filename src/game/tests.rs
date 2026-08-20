@@ -748,6 +748,7 @@ mod venarian_gold;
 mod vintage_cube_arrival;
 mod vintage_cube_artifacts;
 mod vintage_cube_creatures;
+mod vintage_cube_graveyard;
 mod vintage_cube_hand_attack;
 mod vintage_cube_lands;
 mod vintage_cube_library;

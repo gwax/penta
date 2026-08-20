@@ -116,6 +116,10 @@ pub enum AppliedRuleDef {
     /// never asks them to discard. A player rule rather than an object one:
     /// it is found by walking the battlefield for statics naming that player.
     NoMaximumHandSize,
+    /// "If you would draw a card while your library has no cards in it, you
+    /// win the game instead." A player rule rather than a permanent's,
+    /// because the draw it replaces belongs to the player.
+    WinsInsteadOfDrawingFromEmptyLibrary,
     /// The affected permanent's activated abilities can't be activated. Only
     /// the activations: its triggered and static clauses, and any mana it
     /// makes as a cost of something else, are untouched.

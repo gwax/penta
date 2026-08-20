@@ -376,6 +376,11 @@ const SET_MODULES: &[SetModule] = &[
         y2019::modern_horizons::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::WarOfTheSpark,
+        y2019::war_of_the_spark::CARDS,
+        y2019::war_of_the_spark::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::ThroneOfEldraine,
         y2019::throne_of_eldraine::CARDS,
         y2019::throne_of_eldraine::ADDITIONAL_PRINTINGS,

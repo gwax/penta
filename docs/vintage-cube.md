@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 156 are cataloged and 378 are not
+- 534 cards in the pool, of which 157 are cataloged and 377 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -81,7 +81,7 @@ lands are legal in every format and are not listed.
 - `Winds of Abandon`
 - `Witch Enchanter`
 
-### Blue (54)
+### Blue (53)
 
 - `Abhorrent Oculus`
 - `Astrologian's Planisphere`
@@ -103,7 +103,6 @@ lands are legal in every format and are not listed.
 - `Gitaxian Probe`
 - `Hullbreacher`
 - `Jace, Vryn's Prodigy`
-- `Jace, Wielder of Mysteries`
 - `Jace, the Mind Sculptor`
 - `Kappa Cannoneer`
 - `Kitsa, Otterball Elite`
@@ -437,7 +436,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 156 pool cards are in the catalog because an earlier format needed them.
+These 157 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -498,6 +497,7 @@ been played beside.
 - `Indatha Triome`
 - `Inspiring Vantage`
 - `Ivora, Insatiable Heir`
+- `Jace, Wielder of Mysteries`
 - `Jetmir's Garden`
 - `Karakas`
 - `Ketria Triome`
