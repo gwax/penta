@@ -232,6 +232,11 @@ pub(super) enum CommittedTriggerEvent {
     BecameMonarch {
         player: PlayerId,
     },
+    /// A player drew a card. Raised once per card, where the card reaches
+    /// the hand -- a draw that was replaced never happened.
+    DrewCard {
+        player: PlayerId,
+    },
     /// An object became the target of a spell as that spell was cast. The
     /// object carried is the spell, so "that spell's controller" reads off
     /// the event; `target` is what it pointed at.
@@ -318,7 +323,8 @@ impl CommittedTriggerEvent {
             // Both name only the player, and carry no amount with it.
             Self::StepBegins { player, .. }
             | Self::Discarded { player }
-            | Self::BecameMonarch { player } => TriggerContext {
+            | Self::BecameMonarch { player }
+            | Self::DrewCard { player } => TriggerContext {
                 object: None,
                 object_controller: None,
                 event_player: Some(*player),

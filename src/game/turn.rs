@@ -712,6 +712,9 @@ impl Game {
         if self.cards_drawn_this_turn[player.index()] == 1 && self.has_miracle(definition) {
             self.queue_miracle_reveal(player, card_id);
         }
+        // Raised where the card actually reaches the hand: a draw that was
+        // replaced above never happened, so nothing watching for one fires.
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::DrewCard { player });
         Some(card_id)
     }
 

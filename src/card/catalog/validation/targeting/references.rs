@@ -576,6 +576,7 @@ fn validate_trigger_event_references(
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
         | TriggerEventDef::BecomesMonarch(_)
+        | TriggerEventDef::DrewCard(_)
         | TriggerEventDef::Discarded(_)
         | TriggerEventDef::StateCondition => Ok(()),
     }

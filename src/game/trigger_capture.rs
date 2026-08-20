@@ -892,6 +892,7 @@ impl Game {
                 TriggerEventDef::BecomesMonarch(relation),
                 CommittedTriggerEvent::BecameMonarch { player },
             )
+            | (TriggerEventDef::DrewCard(relation), CommittedTriggerEvent::DrewCard { player })
             | (
                 TriggerEventDef::LifeGained(relation),
                 CommittedTriggerEvent::LifeGained { player, .. },

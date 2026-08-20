@@ -426,6 +426,11 @@ const SET_MODULES: &[SetModule] = &[
         y2022::streets_of_new_capenna::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::DominariaUnited,
+        y2022::dominaria_united::CARDS,
+        y2022::dominaria_united::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::EternalMasters,
         y2016::eternal_masters::CARDS,
         y2016::eternal_masters::ADDITIONAL_PRINTINGS,

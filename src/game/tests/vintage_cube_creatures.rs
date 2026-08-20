@@ -927,3 +927,64 @@ fn bristly_bill_doubles_each_creatures_own_counters() {
         "and a creature you do not control is untouched",
     );
 }
+
+/// Each draw is its own trigger, so a spell that draws three fires three
+/// times -- and the two clauses point in opposite directions.
+#[test]
+fn sheoldred_pays_you_and_charges_them_per_card() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let sheoldred = creature(92_000, cards::SHEOLDRED_THE_APOCALYPSE, PlayerId::One);
+    game.battlefield.push(sheoldred);
+    for (seat, player) in [PlayerId::One, PlayerId::Two].into_iter().enumerate() {
+        game.players[player.index()].library.clear();
+        for id in 0..4 {
+            let seat = u32::try_from(seat).expect("two seats fit in a u32");
+            game.players[player.index()].library.push(card(
+                92_010 + id + 10 * seat,
+                cards::GRIZZLY_BEARS,
+                player,
+            ));
+        }
+    }
+    let mine = game.players[0].life;
+    let theirs = game.players[1].life;
+
+    game.draw_cards(PlayerId::One, 3);
+    drain_pending(&mut game);
+    assert_eq!(
+        game.players[0].life,
+        mine + 6,
+        "three of your draws is six life",
+    );
+    assert_eq!(game.players[1].life, theirs, "and none of theirs");
+
+    game.draw_cards(PlayerId::Two, 2);
+    drain_pending(&mut game);
+    assert_eq!(
+        game.players[1].life,
+        theirs - 4,
+        "two of their draws is four life the other way",
+    );
+    assert_eq!(game.players[0].life, mine + 6, "which pays you nothing");
+}
+
+/// A draw that was replaced never happened, so nothing fires for it.
+#[test]
+fn sheoldred_ignores_a_draw_that_never_lands() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let sheoldred = creature(92_030, cards::SHEOLDRED_THE_APOCALYPSE, PlayerId::One);
+    game.battlefield.push(sheoldred);
+    game.players[0].library.clear();
+    let before = game.players[0].life;
+
+    // An empty library draws nothing at all.
+    game.draw_cards(PlayerId::One, 1);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].life, before,
+        "no card reached the hand, so nothing triggered",
+    );
+}

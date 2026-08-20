@@ -80,6 +80,7 @@ pub enum CardSet {
     Ikoria,
     KamigawaNeonDynasty,
     StreetsOfNewCapenna,
+    DominariaUnited,
     EternalMasters,
     ConspiracyTakeTheCrown,
     Kaladesh,

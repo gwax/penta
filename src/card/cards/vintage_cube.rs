@@ -94,3 +94,4 @@ pub const SOWING_MYCOSPAWN: CardDefinitionId = CardDefinitionId(2176);
 pub const BRISTLY_BILL_SPINE_SOWER: CardDefinitionId = CardDefinitionId(2177);
 pub const FALLEN_SHINOBI: CardDefinitionId = CardDefinitionId(2178);
 pub const STOCK_UP: CardDefinitionId = CardDefinitionId(2179);
+pub const SHEOLDRED_THE_APOCALYPSE: CardDefinitionId = CardDefinitionId(2180);
