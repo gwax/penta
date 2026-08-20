@@ -141,6 +141,9 @@ pub struct PlayerObservation {
     pub life_totals: [i16; 2],
     /// Poison counters each seat has, in seat order. Ten is a loss.
     pub poison_counters: [u16; 2],
+    /// Energy counters each seat has, in seat order. Public information,
+    /// like any other counter a player holds.
+    pub energy_counters: [u16; 2],
     /// Who holds the crown (CR 720), if anyone. Public information: both
     /// players know, and so does anything reading the observation.
     pub monarch: Option<PlayerId>,

@@ -764,6 +764,10 @@ struct PlayerState {
     /// Poison counters this player has been given. Ten of them is a loss,
     /// checked as a state-based action alongside life and library.
     poison: u16,
+    /// Energy counters this player has (CR 122.1a). Unlike poison it is a
+    /// resource rather than a clock: it is spent, no amount of it wins or
+    /// loses anything, and it persists between turns.
+    energy: u16,
 }
 
 #[derive(Clone, Debug)]

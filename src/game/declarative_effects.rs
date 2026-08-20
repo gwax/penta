@@ -78,6 +78,7 @@ impl Game {
                         ResolvedEffectPayment::Mana(crate::ManaCost::of_color(color, amount))
                     }
                     EffectPaymentCostDef::Life(amount) => ResolvedEffectPayment::Life(amount),
+                    EffectPaymentCostDef::Energy(amount) => ResolvedEffectPayment::Energy(amount),
                     EffectPaymentCostDef::Mill(amount) => ResolvedEffectPayment::Mill(amount),
                     EffectPaymentCostDef::Discard(amount) => ResolvedEffectPayment::Discard(amount),
                     EffectPaymentCostDef::SacrificePermanentMatching(predicate) => {
@@ -209,6 +210,18 @@ impl Game {
             | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
             | EffectDef::SkipNextUntapSteps { .. } => {
                 self.resolve_permanent_state_effect(scoped, object, &context);
+            }
+            EffectDef::AddEnergyCounters { recipient, amount } => {
+                let amount = self
+                    .effect_value(amount, object, &context, scoped)
+                    .max(0)
+                    .try_into()
+                    .unwrap_or(u16::MAX);
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.add_energy(player, amount);
+                    }
+                }
             }
             EffectDef::AddPoisonCounters { recipient, amount } => {
                 let amount = self

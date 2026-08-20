@@ -43,6 +43,9 @@ fn resolved_effect_payment(
             super::super::ResolvedEffectPayment::Mana(ManaCost::of_color(color, amount))
         }
         EffectPaymentCostDef::Life(amount) => super::super::ResolvedEffectPayment::Life(amount),
+        EffectPaymentCostDef::Energy(amount) => {
+            super::super::ResolvedEffectPayment::Energy(amount)
+        }
         EffectPaymentCostDef::Mill(amount) => super::super::ResolvedEffectPayment::Mill(amount),
         EffectPaymentCostDef::Discard(amount) => {
             super::super::ResolvedEffectPayment::Discard(amount)

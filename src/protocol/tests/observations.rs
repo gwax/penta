@@ -11,6 +11,7 @@ fn observation_json_carries_interwave_state_and_presented_card_part() {
         priority: PlayerId::One,
         step: crate::game::Step::CombatDamage,
         regular_combat_damage_pending: true,
+        energy_counters: [0, 0],
         poison_counters: [0, 0],
         monarch: None,
         life_totals: [20, 20],

@@ -27,6 +27,9 @@ pub enum EffectPaymentCostDef {
         amount: ValueDef,
     },
     Life(u16),
+    /// "Unless you pay {E}." Energy is spent all at once or not at all: a
+    /// player short of the amount cannot pay part of it.
+    Energy(u16),
     /// Mill this many cards. Never impossible: a library shorter than the
     /// amount mills what it has (CR 701.13b), so this branch of an "unless"
     /// is always open and the choice is a real one even at one card left.

@@ -385,6 +385,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::DrainLife { .. }
         | EffectDef::GainLife { .. }
         | EffectDef::AddPoisonCounters { .. }
+        | EffectDef::AddEnergyCounters { .. }
         | EffectDef::DrawCards { .. }
         | EffectDef::Discard { .. }
         | EffectDef::DiscardCards { .. }

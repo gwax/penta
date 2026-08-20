@@ -86,6 +86,7 @@ fn validate_effect_target_shapes(
         }
         EffectDef::GainLife { recipient, amount }
         | EffectDef::AddPoisonCounters { recipient, amount }
+        | EffectDef::AddEnergyCounters { recipient, amount }
         | EffectDef::DrawCards { recipient, amount }
         | EffectDef::Discard {
             recipient, amount, ..

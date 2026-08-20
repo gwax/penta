@@ -2,11 +2,92 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules,
-    CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, TriggerConditionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, AppliedEffectDef,
+    CardArt, CardRules, CardSet, CardType, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
+    EffectRecipientDef, InstalledTriggerDef, ObjectPredicateDef, PayOrDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
+
+/// "Until this enchantment leaves the battlefield" is one printed ability,
+/// so the return rides on the same resolution as a delayed trigger rather
+/// than appearing as a second clause the card does not print.
+static PRISON_RETURNS_IT: AbilityDef = AbilityDef::triggered(
+    "When this enchantment leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+    TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Source,
+        Some(ZoneKind::Battlefield),
+        None,
+    ),
+    EffectDef::ReturnLinkedExiles {
+        zone: ZoneKind::Battlefield,
+        grant: None,
+        controller: None,
+    },
+);
+
+static PRISON_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+)];
+
+static PRISON_ENTERS: [EffectDef; 3] = [
+    EffectDef::ExileLinkedToSource {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&PRISON_RETURNS_IT)),
+    // The energy arrives with the exile rather than paying for it: the first
+    // upkeep tax is already covered, and the second is not.
+    EffectDef::AddEnergyCounters {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+];
+
+static PRISON_SACRIFICE: EffectDef = EffectDef::Sacrifice {
+    object: EffectRecipientDef::Source,
+};
+
+// MH3 44 — Static Prison
+pub(in crate::card::sets) static STATIC_PRISON: CardRecord = CardRecord::new(
+    cards::STATIC_PRISON,
+    "Static Prison",
+    CardArt::new("dd16222e-349c-4a2b-a7c8-8eb35a8ab332", "Jason A. Engle"),
+    CardSet::ModernHorizons3,
+    // One white answers anything, and the two energy it comes with buy two
+    // more turns of holding it. After that the prison opens.
+    CardRules::new_enchantment(mana_cost!("{W}")).with_abilities(&[
+        AbilityDef::triggered_with_targets(
+            "When this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield. You get {E}{E} (two energy counters).",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &PRISON_TARGET,
+            EffectDef::Sequence(&PRISON_ENTERS),
+        ),
+        AbilityDef::triggered(
+            "At the beginning of your first main phase, sacrifice this enchantment unless you pay {E}.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::PrecombatMain,
+                player: PlayerRelation::You,
+            },
+            EffectDef::PayOr(PayOrDef::unless(
+                EffectPaymentDef {
+                    payer: PlayerSetDef::One(PlayerRefDef::EffectController),
+                    cost: EffectPaymentCostDef::Energy(1),
+                },
+                &PRISON_SACRIFICE,
+            )),
+        ),
+    ]),
+);
 
 // MH3 148 — Colossal Dreadmask
 pub(in crate::card::sets) static COLOSSAL_DREADMASK: CardRecord = CardRecord::new(
@@ -102,6 +183,7 @@ pub(in crate::card::sets) static SOWING_MYCOSPAWN: CardRecord = CardRecord::new(
         .with_abilities(&MYCOSPAWN_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&COLOSSAL_DREADMASK, &SOWING_MYCOSPAWN];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&STATIC_PRISON, &COLOSSAL_DREADMASK, &SOWING_MYCOSPAWN];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

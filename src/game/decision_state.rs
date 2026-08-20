@@ -47,6 +47,8 @@ pub(super) struct SacrificeDeclined {
 pub(super) enum ResolvedEffectPayment {
     Mana(ManaCost),
     Life(u16),
+    /// Energy, spent in full or not at all.
+    Energy(u16),
     Mill(u16),
     Discard(u16),
     /// One card matching the predicate, named as part of the payment

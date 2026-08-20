@@ -248,6 +248,9 @@ impl Game {
             ResolvedEffectPayment::Mana(cost) => self.can_pay_cost(player, cost, 0),
             ResolvedEffectPayment::Life(amount) => i16::try_from(amount)
                 .is_ok_and(|amount| self.players[player.index()].life >= amount),
+            // Unlike life, energy cannot be spent past nothing: a player
+            // short of the amount cannot pay at all.
+            ResolvedEffectPayment::Energy(amount) => self.players[player.index()].energy >= amount,
             // A short library is not a failure to pay, so this is always
             // affordable. Running out of cards is answered by the draw that
             // finds none, not by refusing the payment.
@@ -442,6 +445,9 @@ impl Game {
                 let _spent = self.pay_player_cost(player, cost, 0);
             }
             ResolvedEffectPayment::Life(amount) => self.lose_life(player, amount),
+            ResolvedEffectPayment::Energy(amount) => {
+                let _paid = self.spend_energy(player, amount);
+            }
             ResolvedEffectPayment::Mill(amount) => {
                 let milled = self.take_top_of_library(player, usize::from(amount));
                 self.bury_cards(player, milled);
@@ -496,6 +502,7 @@ impl Game {
         match payment {
             ResolvedEffectPayment::Mana(_) => "Pay the cost".to_string(),
             ResolvedEffectPayment::Life(amount) => format!("Pay {amount} life"),
+            ResolvedEffectPayment::Energy(amount) => format!("Pay {amount} energy"),
             ResolvedEffectPayment::Mill(amount) => format!("Mill {amount} cards"),
             ResolvedEffectPayment::Discard(amount) => format!("Discard {amount} cards"),
             // Every candidate carries its own label, so this one only names

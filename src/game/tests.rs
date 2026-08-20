@@ -780,6 +780,7 @@ mod vintage_cube_nissa;
 mod vintage_cube_path;
 mod vintage_cube_prismatic_ending;
 mod vintage_cube_spells;
+mod vintage_cube_static_prison;
 mod vintage_cube_stoneforge;
 mod vintage_cube_tamiyo;
 mod vintage_cube_vote;

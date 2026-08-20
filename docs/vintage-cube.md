@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 189 are cataloged and 345 are not
+- 534 cards in the pool, of which 190 are cataloged and 344 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -33,7 +33,7 @@ leaves empty so nothing reads it as a set window by accident.
 Grouped by color so a tranche can be scoped to one part of the pool. Basic
 lands are legal in every format and are not listed.
 
-### White (37)
+### White (36)
 
 - `Adeline, Resplendent Cathar`
 - `Cathar Commando`
@@ -64,7 +64,6 @@ lands are legal in every format and are not listed.
 - `Skyclave Apparition`
 - `Solitude`
 - `Staff of the Storyteller`
-- `Static Prison`
 - `Sunfall`
 - `The Wandering Emperor`
 - `Thraben Inspector`
@@ -404,7 +403,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 189 pool cards are in the catalog because an earlier format needed them.
+These 190 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -549,6 +548,7 @@ been played beside.
 - `Spell Pierce`
 - `Spellseeker`
 - `Spirebluff Canal`
+- `Static Prison`
 - `Steam Vents`
 - `Stern Scolding`
 - `Stock Up`

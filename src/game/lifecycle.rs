@@ -108,6 +108,7 @@ impl Game {
                     mana: Vec::new(),
                     land_played_this_turn: false,
                     poison: 0,
+                    energy: 0,
                 })
             };
 

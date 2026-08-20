@@ -701,6 +701,7 @@ pub(super) fn resolved_effect_payment_snapshot(
             ResolvedEffectPaymentSnapshot::Mana(mana_cost_snapshot(cost))
         }
         ResolvedEffectPayment::Life(amount) => ResolvedEffectPaymentSnapshot::Life(amount),
+        ResolvedEffectPayment::Energy(amount) => ResolvedEffectPaymentSnapshot::Energy(amount),
         ResolvedEffectPayment::Mill(amount) => ResolvedEffectPaymentSnapshot::Mill(amount),
         ResolvedEffectPayment::Discard(amount) => ResolvedEffectPaymentSnapshot::Discard(amount),
         ResolvedEffectPayment::DiscardMatching(_) => ResolvedEffectPaymentSnapshot::DiscardMatching,

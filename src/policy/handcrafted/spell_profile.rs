@@ -431,6 +431,7 @@ impl HandcraftedPolicy {
             | EffectDef::EmptyManaPool { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::AddPoisonCounters { .. }
+            | EffectDef::AddEnergyCounters { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Regenerate { .. }
             | EffectDef::Sacrifice { .. }

@@ -1,0 +1,104 @@
+//! The composite shapes an effect carries: a bounded choice among objects,
+//! a partition into piles, and a triggered ability installed by a
+//! resolution. Each is a small vocabulary of its own that several effects
+//! reach for, rather than a variant of any one of them.
+
+use super::super::{
+    AbilityDef, ChoiceVisibilityDef, EffectDef, ObjectRefDef, ObjectSetDef, PlayerRefDef,
+    PlayerSetDef, ValueDef,
+};
+use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
+
+/// The context slot populated by an object choice.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ObjectChoiceBindingDef {
+    Object(ObjectBindingIndex),
+    Objects(ObjectSetBindingIndex),
+}
+
+/// Choose a bounded number of non-targeted objects, save them in the resolving
+/// context, then continue the effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ChooseDef {
+    pub binding: ObjectChoiceBindingDef,
+    /// Where the candidates that were *not* chosen are saved, when the
+    /// printed clause goes on to say what happens to them. "Put that card
+    /// into your hand and the rest into your graveyard" names both halves of
+    /// one partition, so both have to be nameable.
+    pub unchosen: Option<ObjectSetBindingIndex>,
+    pub chooser: PlayerRefDef,
+    pub candidates: ObjectSetDef,
+    pub exclude: Option<ObjectRefDef>,
+    pub minimum: usize,
+    pub maximum: usize,
+    pub visibility: ChoiceVisibilityDef,
+    pub then: &'static EffectDef,
+}
+
+/// What a named colour is used for once it has been chosen.
+///
+/// An operation rather than a general effect: the colour has to reach a
+/// characteristic leaf, and only the leaves that take one are meaningful
+/// here.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ColorChoiceOperationDef {
+    /// Gain protection from the chosen colour.
+    ProtectionFromChosenColor,
+    /// Become the chosen colour, replacing whatever colours it had.
+    BecomesChosenColor,
+}
+
+/// The objects divided by a pile-splitting procedure.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum PartitionItemsDef {
+    Objects(ObjectSetDef),
+    TopOfLibrary {
+        player: PlayerRefDef,
+        count: ValueDef,
+    },
+}
+
+/// Divide objects into two piles, choose one pile, bind both results, and then
+/// continue the effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct SplitIntoPilesDef {
+    pub items: PartitionItemsDef,
+    pub divider: PlayerSetDef,
+    pub chooser: PlayerSetDef,
+    pub chosen: ObjectSetBindingIndex,
+    pub unchosen: ObjectSetBindingIndex,
+    pub then: &'static EffectDef,
+}
+
+/// How long an effect-created triggered ability listens from outside every
+/// zone.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum InstalledTriggerLifetimeDef {
+    Once,
+    UntilNextTurn(PlayerRefDef),
+}
+
+/// A triggered ability installed by a resolving effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct InstalledTriggerDef {
+    pub ability: &'static AbilityDef,
+    pub lifetime: InstalledTriggerLifetimeDef,
+}
+
+impl InstalledTriggerDef {
+    #[must_use]
+    pub const fn once(ability: &'static AbilityDef) -> Self {
+        Self {
+            ability,
+            lifetime: InstalledTriggerLifetimeDef::Once,
+        }
+    }
+
+    #[must_use]
+    pub const fn until_next_turn(ability: &'static AbilityDef, player: PlayerRefDef) -> Self {
+        Self {
+            ability,
+            lifetime: InstalledTriggerLifetimeDef::UntilNextTurn(player),
+        }
+    }
+}

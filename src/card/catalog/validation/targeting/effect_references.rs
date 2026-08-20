@@ -133,6 +133,7 @@ fn validate_effect_references(
         | EffectDef::DrainLife { recipient, amount }
         | EffectDef::GainLife { recipient, amount }
         | EffectDef::AddPoisonCounters { recipient, amount }
+        | EffectDef::AddEnergyCounters { recipient, amount }
         | EffectDef::DrawCards { recipient, amount }
         | EffectDef::Discard {
             recipient, amount, ..

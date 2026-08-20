@@ -417,6 +417,7 @@ impl HandcraftedPolicy {
                     }
                     crate::card::EffectPaymentCostDef::Mana(_)
                     | crate::card::EffectPaymentCostDef::Life(_)
+                    | crate::card::EffectPaymentCostDef::Energy(_)
                     | crate::card::EffectPaymentCostDef::Mill(_)
                     | crate::card::EffectPaymentCostDef::SacrificeCreaturesWithTotalPower(_)
                     | crate::card::EffectPaymentCostDef::Discard(_)

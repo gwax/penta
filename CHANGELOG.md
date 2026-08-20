@@ -153,6 +153,21 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Energy counters.** A player resource rather than a clock: nothing checks
+  how much of it anyone has, it persists between turns, and it leaves only by
+  being spent. `energy` joins `poison` on the observation as a two-element
+  array -- an additive member, so the epoch does not move -- and "unless you
+  pay {E}" is a payment that is made in full or not at all, because a player
+  short of the amount cannot pay part of it.
+
+- **Converge.** Which colours of mana actually paid for a spell are now
+  recorded on the stack object, beside the effects mana riders leave rather
+  than inside the cast signature: a copy is never cast, so nothing was spent
+  on it and its count is zero however the original was paid for. A spell that
+  prints converge says so on its rules, which makes the generic portion of
+  its cost reach first for a colour its coloured symbols have not already
+  spent, one mana at a time, and for colourless last of all.
+
 - **Modal activated abilities.** "Choose one --" was a casting shape, so only
   a spell could print it. An activated ability chooses its modes as it is
   activated (CR 601.2b) rather than as it resolves, which puts the choice on

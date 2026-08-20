@@ -674,6 +674,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::DrainLife { .. }
                     | EffectDef::GainLife { .. }
                     | EffectDef::AddPoisonCounters { .. }
+                    | EffectDef::AddEnergyCounters { .. }
                     | EffectDef::DrawCards { .. }
                     | EffectDef::Discard { .. }
                     | EffectDef::DiscardCards { .. }

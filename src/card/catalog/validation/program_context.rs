@@ -462,6 +462,7 @@ fn validate_resolving_effect(
         | EffectDef::PreventDamage { .. }
         | EffectDef::AddMana(_)
         | EffectDef::AddPoisonCounters { .. }
+        | EffectDef::AddEnergyCounters { .. }
         | EffectDef::DealDamage { .. }
         | EffectDef::DealDamageAndApply { .. }
         | EffectDef::GainLife { .. }
@@ -886,6 +887,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::PreventDamage { .. } => "PreventDamage",
         EffectDef::AddMana(_) => "AddMana",
         EffectDef::AddPoisonCounters { .. } => "AddPoisonCounters",
+        EffectDef::AddEnergyCounters { .. } => "AddEnergyCounters",
         EffectDef::DealDamage { .. } => "DealDamage",
         EffectDef::DealDamageAndApply { .. } => "DealDamageAndApply",
         EffectDef::GainLife { .. } => "GainLife",

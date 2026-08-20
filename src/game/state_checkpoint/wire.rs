@@ -200,19 +200,29 @@ pub(super) fn i16_pair(value: &Value) -> Result<[i16; 2], String> {
 /// Poison counters, which are additive on the wire: an observation written
 /// before poison existed simply has none, and reconstructs with none.
 pub(super) fn poison_pair(observation: &Value) -> Result<[u16; 2], String> {
-    let Some(value) = observation.get("poison") else {
+    counter_pair(observation, "poison")
+}
+
+pub(super) fn energy_pair(observation: &Value) -> Result<[u16; 2], String> {
+    counter_pair(observation, "energy")
+}
+
+/// One per-seat counter total off the wire. Absent means none: a payload
+/// written before that counter existed describes a game with none of it.
+fn counter_pair(observation: &Value, key: &str) -> Result<[u16; 2], String> {
+    let Some(value) = observation.get(key) else {
         return Ok([0, 0]);
     };
     let values = array(value)?;
     if values.len() != 2 {
-        return Err("poison must contain p1 and p2 values".into());
+        return Err(format!("{key} must contain p1 and p2 values"));
     }
     let mut counters = [0_u16; 2];
     for (slot, value) in counters.iter_mut().zip(values) {
         *slot = value
             .as_u64()
             .and_then(|counters| u16::try_from(counters).ok())
-            .ok_or("poison counters must be unsigned integers")?;
+            .ok_or_else(|| format!("{key} counters must be unsigned integers"))?;
     }
     Ok(counters)
 }

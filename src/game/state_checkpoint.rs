@@ -649,6 +649,7 @@ impl Game {
         let exiles = parse_two_public_zones(field(observation, "exiles")?, &catalog)?;
         let life = i16_pair(field(observation, "life")?)?;
         let poison = poison_pair(observation)?;
+        let energy = energy_pair(observation)?;
         let mut checkpoint_hands = if viewer == PlayerId::One {
             [own_hand, opponent_hand]
         } else {
@@ -697,6 +698,7 @@ impl Game {
             mana: mana[player.index()].clone(),
             land_played_this_turn: land_played[player.index()],
             poison: poison[player.index()],
+            energy: energy[player.index()],
         });
 
         let turns_started = checkpoint.turns_started;

@@ -548,6 +548,7 @@ impl Game {
             regular_combat_damage_pending: self.regular_combat_damage_pending(),
             life_totals: [self.players[0].life, self.players[1].life],
             poison_counters: [self.players[0].poison, self.players[1].poison],
+            energy_counters: [self.players[0].energy, self.players[1].energy],
             monarch: self.monarch,
             mana_pools: [self.players[0].mana_pool, self.players[1].mana_pool],
             hand: player

@@ -417,6 +417,7 @@ impl Game {
                 ResolvedEffectPayment::Mana(crate::ManaCost::of_color(color, amount))
             }
             EffectPaymentCostDef::Life(amount) => ResolvedEffectPayment::Life(amount),
+            EffectPaymentCostDef::Energy(amount) => ResolvedEffectPayment::Energy(amount),
             EffectPaymentCostDef::Mill(amount) => ResolvedEffectPayment::Mill(amount),
             EffectPaymentCostDef::Discard(amount) => ResolvedEffectPayment::Discard(amount),
             EffectPaymentCostDef::ChosenGenericMana => ResolvedEffectPayment::ChosenGenericMana,
