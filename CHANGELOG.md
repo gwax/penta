@@ -153,6 +153,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Buyback.** Like a kicker it only costs more, so the spell resolves
+  exactly as printed; what it changes is where the card goes afterwards --
+  to its owner's hand rather than the graveyard (CR 702.27a). That made it
+  an alternative cast carrying no instructions of its own, which the
+  cost-only kicker had already made possible. Flashback still wins: a
+  bought-back flashback spell is exiled wherever else it would have gone.
+
 - **"Can't cause you to discard cards."** The prohibition over being made to
   sacrifice existed; the same prohibition over discarding did not. Both are
   now one shape, and a static clause may state several of them in the one

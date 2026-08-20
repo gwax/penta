@@ -101,3 +101,4 @@ pub const BLIGHTSTEEL_COLOSSUS: CardDefinitionId = CardDefinitionId(2183);
 pub const FLAME_SLASH: CardDefinitionId = CardDefinitionId(2184);
 pub const DOOMSDAY: CardDefinitionId = CardDefinitionId(2185);
 pub const TAMIYO_COLLECTOR_OF_TALES: CardDefinitionId = CardDefinitionId(2186);
+pub const CORPSE_DANCE: CardDefinitionId = CardDefinitionId(2187);

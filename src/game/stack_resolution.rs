@@ -1,8 +1,9 @@
 use super::{
-    BattlefieldExitCompletion, CardBehavior, CardPartId, CardRuntime, CardType, CounterKind,
-    DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
-    EntryCompletion, Game, GameEvent, GameObjectId, PendingBattlefieldEntry, Permanent, PlayerId,
-    ResolvedAbility, StackAbilityResolver, StackObject, StackObjectKind, Target, ZoneKind,
+    AlternativeCastKindDef, BattlefieldExitCompletion, CardBehavior, CardPartId, CardRuntime,
+    CardType, CounterKind, DecisionContinuation, DecisionOption, DecisionPreference,
+    DecisionVisibility, DecisionZone, EntryCompletion, Game, GameEvent, GameObjectId,
+    PendingBattlefieldEntry, Permanent, PlayerId, ResolvedAbility, StackAbilityResolver,
+    StackObject, StackObjectKind, Target, ZoneKind,
 };
 use crate::SpellResolutionDestinationDef;
 
@@ -196,17 +197,24 @@ impl Game {
     ) {
         let owner = object.card.owner;
         let destination = if resolved {
-            object
-                .ability
-                .as_ref()
-                .and_then(|ability| ability.definition.as_deref())
-                .and_then(|ability| match ability.definition {
-                    crate::card::DeclarativeAbilityDef::Spell(spell) => {
-                        Some(spell.resolution_destination())
-                    }
-                    _ => None,
-                })
-                .unwrap_or(SpellResolutionDestinationDef::Graveyard)
+            // Buyback changes nothing about what the spell does, only where
+            // its card goes afterwards -- so it is read here rather than in
+            // the clause that resolved (CR 702.27a).
+            if self.cast_with_buyback(object) {
+                SpellResolutionDestinationDef::Hand
+            } else {
+                object
+                    .ability
+                    .as_ref()
+                    .and_then(|ability| ability.definition.as_deref())
+                    .and_then(|ability| match ability.definition {
+                        crate::card::DeclarativeAbilityDef::Spell(spell) => {
+                            Some(spell.resolution_destination())
+                        }
+                        _ => None,
+                    })
+                    .unwrap_or(SpellResolutionDestinationDef::Graveyard)
+            }
         } else {
             SpellResolutionDestinationDef::Graveyard
         };
@@ -229,7 +237,15 @@ impl Game {
             SpellResolutionDestinationDef::Graveyard if !flashback_replaces_move => {
                 self.put_card_into_graveyard(owner, card);
             }
-            SpellResolutionDestinationDef::Graveyard | SpellResolutionDestinationDef::Exile => {
+            SpellResolutionDestinationDef::Hand if !flashback_replaces_move => {
+                self.players[owner.index()].hand.push(card);
+            }
+            // Flashback exiles the card wherever else it would have gone, so
+            // a bought-back flashback spell is still exiled rather than
+            // returned (CR 702.34a).
+            SpellResolutionDestinationDef::Graveyard
+            | SpellResolutionDestinationDef::Hand
+            | SpellResolutionDestinationDef::Exile => {
                 self.players[owner.index()].exile.push(card);
             }
             SpellResolutionDestinationDef::ExileOnAdventure => {
@@ -253,6 +269,19 @@ impl Game {
                 self.rng.shuffle(&mut self.players[owner.index()].library);
             }
         }
+    }
+
+    /// Whether this spell was cast with its buyback paid.
+    fn cast_with_buyback(&self, object: &StackObject) -> bool {
+        object.signature.as_ref().is_some_and(|signature| {
+            self.catalog
+                .get(object.card.definition)
+                .and_then(|definition| {
+                    let option = definition.play_option(signature.play_option())?;
+                    self.selected_alternative_kind(definition, option, object.id, signature.costs())
+                })
+                == Some(AlternativeCastKindDef::Buyback)
+        })
     }
 
     fn defer_stack_resolution(

@@ -3,12 +3,13 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
-    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BattlefieldEntryModificationDef,
-    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef,
-    ChooseDef, EffectDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AbilityTargetPredicate, AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef,
+    BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardSupertype,
+    CardType, ChoiceVisibilityDef, ChooseDef, EffectDef, EffectExecutionDef, EffectRecipientDef,
+    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ReplacementEventDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 use crate::{TargetIndex, mana_cost};
@@ -167,6 +168,62 @@ pub(in crate::card::sets) static TIME_WARP: CardRecord = CardRecord::new(
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         },
     )),
+);
+
+static DANCE_HASTE: AbilityDef = abilities::haste();
+
+/// The creature exiles itself rather than being named by a delayed trigger:
+/// it is the object that arrived, and it carries the clause with it.
+static DANCE_EXILE_AT_END: AbilityDef = AbilityDef::triggered(
+    "At the beginning of the next end step, exile this creature.",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+    },
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::Source,
+        zone: ZoneKind::Exile,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        controller: None,
+    },
+);
+
+static DANCE_ARRIVAL: AppliedEffectDef = AppliedEffectDef::Composite(&[
+    AppliedEffectDef::add_ability(&DANCE_HASTE),
+    AppliedEffectDef::add_ability(&DANCE_EXILE_AT_END),
+]);
+
+// TMP 116 — Corpse Dance
+pub(in crate::card::sets) static CORPSE_DANCE: CardRecord = CardRecord::new(
+    cards::CORPSE_DANCE,
+    "Corpse Dance",
+    CardArt::new("76ae81ea-13e3-4ab8-b956-4c7b139a5e9c", "Brian Snõddy"),
+    CardSet::Tempest,
+    // Shallow Grave that comes back, which is why five mana a turn is a
+    // price worth paying: whatever is on top of the graveyard attacks every
+    // turn from here, and the card is never spent.
+    CardRules::new_instant(mana_cost!("{2}{B}")).with_abilities(&[
+        AbilityDef::spell(
+            "Return the top creature card of your graveyard to the battlefield. That creature gains haste until end of turn. Exile it at the beginning of the next end step.",
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::objects(ObjectSetDef::TopOfGraveyardMatching {
+                    player: PlayerRefDef::EffectController,
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                }),
+                zone: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                arrival_effect: Some(&DANCE_ARRIVAL),
+                controller: None,
+            },
+        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{4}{B}"),
+            AlternativeCastKindDef::Buyback,
+            Some("Buyback {2} (You may pay an additional {2} as you cast this spell. If you do, put this card into your hand as it resolves.)"),
+            EffectDef::None,
+        ),
+    ]),
 );
 
 // TMP 151 — Reanimate
@@ -434,6 +491,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CHILL,
     &INTUITION,
     &TIME_WARP,
+    &CORPSE_DANCE,
     &REANIMATE,
     &GOBLIN_BOMBARDMENT,
     &JACKAL_PUP,

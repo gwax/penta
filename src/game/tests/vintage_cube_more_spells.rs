@@ -852,3 +852,60 @@ fn force_of_will_needs_a_blue_card_to_exile() {
         "and a green card cannot be the blue one",
     );
 }
+
+/// Cast for its printed cost the card goes to the graveyard; bought back it
+/// returns to hand instead, and either way the creature comes back hasty.
+#[test]
+fn corpse_dance_returns_itself_only_when_bought_back() {
+    for bought_back in [false, true] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[0].graveyard.clear();
+        game.players[0]
+            .graveyard
+            .push(card(99_000, cards::GRIZZLY_BEARS, PlayerId::One));
+        let dance = card(99_001, cards::CORPSE_DANCE, PlayerId::One);
+        let dance_id = dance.id;
+        game.players[0].hand.push(dance);
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 4);
+
+        let cast = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    *card == dance_id && choices.costs().alternative().is_some() == bought_back
+                }
+                _ => false,
+            })
+            .unwrap_or_else(|| panic!("a cast with bought_back={bought_back} is offered"));
+        game.apply(PlayerId::One, cast).expect("it is cast");
+        pass_until_decision(&mut game);
+        drain_pending(&mut game);
+
+        let bears = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+            .expect("the creature comes back either way");
+        assert!(
+            game.permanent_has_executable_keyword(bears, KeywordAbility::Haste),
+            "with haste",
+        );
+
+        let in_hand = game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::CORPSE_DANCE);
+        let in_graveyard = game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::CORPSE_DANCE);
+        assert_eq!(in_hand, bought_back, "bought back means back in hand");
+        assert_eq!(
+            in_graveyard, !bought_back,
+            "and otherwise it is spent like any other instant",
+        );
+    }
+}

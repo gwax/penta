@@ -40,6 +40,8 @@ pub enum SpellAbilityDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SpellResolutionDestinationDef {
     Graveyard,
+    /// Its owner's hand, which is what buyback buys (CR 702.27a).
+    Hand,
     Exile,
     /// Exile the card "on an adventure" (CR 715.3d): its owner may cast it
     /// later from exile, as the creature it is on the other half. Only the

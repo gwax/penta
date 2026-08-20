@@ -208,6 +208,7 @@ impl Game {
                             AlternativeCastKindDef::Overload
                             | AlternativeCastKindDef::Miracle
                             | AlternativeCastKindDef::Kicked
+                            | AlternativeCastKindDef::Buyback
                             | AlternativeCastKindDef::AlternativeCost
                             | AlternativeCastKindDef::FaceDown,
                         )
@@ -225,6 +226,7 @@ impl Game {
                         Some(
                             AlternativeCastKindDef::Overload
                             | AlternativeCastKindDef::Kicked
+                            | AlternativeCastKindDef::Buyback
                             | AlternativeCastKindDef::AlternativeCost
                             // Face down is a way of casting the card from
                             // hand, not a permission to cast it elsewhere.
