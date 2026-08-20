@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 161 are cataloged and 373 are not
+- 534 cards in the pool, of which 162 are cataloged and 372 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -137,14 +137,13 @@ lands are legal in every format and are not listed.
 - `Trinket Mage`
 - `Urza, Lord High Artificer`
 
-### Black (47)
+### Black (46)
 
 - `Animate Dead`
 - `Archon of Cruelty`
 - `Baleful Mastery`
 - `Barrowgoyf`
 - `Bitter Triumph`
-- `Bloodchief's Thirst`
 - `Bolas's Citadel`
 - `Bone Shards`
 - `Cabal Ritual`
@@ -432,7 +431,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 161 pool cards are in the catalog because an earlier format needed them.
+These 162 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -450,6 +449,7 @@ been played beside.
 - `Black Lotus`
 - `Blackcleave Cliffs`
 - `Blood Crypt`
+- `Bloodchief's Thirst`
 - `Bloodstained Mire`
 - `Blooming Marsh`
 - `Botanical Sanctum`

@@ -47,6 +47,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A kicked spell could not target anything the unkicked one could not.**
+  A kicked cast resolves its own clause, and that clause has always been able
+  to declare its own target slots -- but the enumeration of legal casts and
+  the validation of a submitted one both read the base spell's slots instead,
+  so a kicker that widens what may be targeted offered nothing new. Both now
+  read the kicked clause's slots, matching what resolution already did.
+  Bloodchief's Thirst is the first card that asks: unkicked it reaches a
+  two-mana creature, and kicked it reaches any of them. This changes which
+  casts are legal, expressed through the existing action shape, so the epoch
+  does not move.
+
 - **A condition reading a target's characteristics never saw a spell.** It
   matched permanents on the battlefield and nothing else, so "counter target
   spell if its mana value is 2 or less" would have been false for every spell

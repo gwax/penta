@@ -278,6 +278,16 @@ impl Game {
                                     == Some(AlternativeCastKindDef::Overload)
                                 {
                                     vec![Vec::new()]
+                                } else if let Some(kicked) =
+                                    Self::kicked_target_defs(definition, option, &costs)
+                                {
+                                    self.legal_ability_target_selections(
+                                        kicked,
+                                        player,
+                                        card.id,
+                                        TriggerContext::empty(),
+                                        x,
+                                    )
                                 } else if let Some((_, ability)) =
                                     Self::spell_ability(definition, option)
                                 {
@@ -398,6 +408,30 @@ impl Game {
         definition
             .part(first)
             .and_then(|part| part.rules.special_behavior())
+    }
+
+    /// The target slots a kicked cast declares. A kicked spell resolves its
+    /// own clause, and that clause can name something the unkicked one
+    /// cannot: Bloodchief's Thirst reaches past two mana only when kicked.
+    /// So the enumeration and the validation both read the kicked slots
+    /// rather than the base spell's, which is what the resolution already
+    /// does. Overload is handled separately, having changed "target" to
+    /// "each".
+    pub(super) fn kicked_target_defs(
+        definition: &CardDefinition,
+        option: &PlayOptionDef,
+        costs: &CostConfiguration,
+    ) -> Option<&'static [AbilityTargetDef]> {
+        let selected = costs.alternative()?;
+        let (_, ability, AlternativeCastKindDef::Kicked) =
+            Self::alternative_cast_ability(definition, option, selected)?
+        else {
+            return None;
+        };
+        let DeclarativeAbilityDef::AlternativeCast(alternative) = ability.definition else {
+            unreachable!("alternative_cast_ability returns an alternative-cast clause")
+        };
+        Some(alternative.targets)
     }
 
     pub(super) fn spell_ability(

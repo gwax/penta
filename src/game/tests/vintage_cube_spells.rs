@@ -571,3 +571,91 @@ fn stern_scolding_answers_a_spell_small_in_either_direction() {
         );
     }
 }
+
+/// The mana-value bound is a targeting restriction, not a resolution check,
+/// so an unkicked Thirst is never offered the bigger creature at all. Paying
+/// the kicker is a second, dearer cast of the same card that can.
+#[test]
+fn bloodchiefs_thirst_reaches_past_two_mana_only_when_kicked() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let bears = creature(78_000, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let angel = creature(78_001, cards::SERRA_ANGEL, PlayerId::Two);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    let thirst = card(78_002, cards::BLOODCHIEFS_THIRST, PlayerId::One);
+    let thirst_id = thirst.id;
+    game.players[0].hand.push(thirst);
+    game.players[0].mana_pool.black = 1;
+
+    let targets = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter_map(|action| match action {
+                Action::CastSpell { card, choices, .. } if card == thirst_id => {
+                    choices.iter_targets().copied().next()
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+    };
+
+    assert_eq!(
+        targets(&game),
+        vec![Target::Permanent(bears_id)],
+        "one black mana reaches the 2/2 and nothing else",
+    );
+
+    game.players[0].mana_pool.black = 2;
+    game.players[0].mana_pool.colorless = 2;
+    let mut kicked = targets(&game);
+    kicked.sort_unstable();
+    kicked.dedup();
+    assert!(
+        kicked.contains(&Target::Permanent(angel_id)),
+        "four mana reaches the Angel",
+    );
+}
+
+/// A kicked Thirst destroys what an unkicked one could not, and the extra
+/// mana is really spent.
+#[test]
+fn bloodchiefs_thirst_kicked_destroys_a_large_creature() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let angel = creature(78_010, cards::SERRA_ANGEL, PlayerId::Two);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    let thirst = card(78_011, cards::BLOODCHIEFS_THIRST, PlayerId::One);
+    let thirst_id = thirst.id;
+    game.players[0].hand.push(thirst);
+    game.players[0].mana_pool.black = 2;
+    game.players[0].mana_pool.colorless = 2;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == thirst_id
+                    && choices.iter_targets().any(|target| *target == Target::Permanent(angel_id)))
+        })
+        .expect("the kicked cast is on offer");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    resolve(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == angel_id),
+        "the Angel is destroyed",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.total(),
+        0,
+        "the kicker is paid, not just declared",
+    );
+}

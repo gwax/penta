@@ -146,7 +146,8 @@ impl Game {
                 presentation_definition: definition_id,
                 text: alternative_cast.stack_text.or(Some(ability.text)),
                 // Overload declares none, having changed "target" to "each";
-                // a kicked spell declares the same slots it always targeted.
+                // a kicked spell declares its own, which need not be the ones
+                // the unkicked spell could point at.
                 target_defs: alternative_cast.targets.to_vec(),
                 targets: signature.targets().to_vec(),
                 context: TriggerContext::empty().into(),

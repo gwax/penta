@@ -562,6 +562,13 @@ impl Game {
             if !choices.targets().is_empty() {
                 return None;
             }
+        } else if let Some(kicked) = Self::kicked_target_defs(definition, option, choices.costs()) {
+            if kicked.len() != choices.targets().len() {
+                return None;
+            }
+            if !self.spell_target_selection_is_valid(kicked, choices, player, card_id) {
+                return None;
+            }
         } else if let Some((_, ability)) = Self::spell_ability(definition, option) {
             let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
                 unreachable!("spell_ability returns a spell clause")
