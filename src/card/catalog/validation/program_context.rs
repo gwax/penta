@@ -695,7 +695,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::TotalToughnessOfLinkedExiles
         // Read live from every graveyard, which the static layer can see the
         // same way it sees a battlefield count.
-        | ValueDef::CardTypesAmongGraveyards => true,
+        | ValueDef::CardTypesAmongGraveyards(_) => true,
         ValueDef::CountMatchingObjects(query)
         | ValueDef::AnyMatchingObject(query)
         | ValueDef::GreatestPowerAmong(query) => static_query_supported(*query),
@@ -705,7 +705,10 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
             static_power_toughness_value_supported(sum.left)
                 && static_power_toughness_value_supported(sum.right)
         }
-        ValueDef::CreaturesDiedThisTurn
+        // A conditional amount belongs to a resolving effect, not to the
+        // static power-and-toughness layer.
+        ValueDef::IfCardTypesAmongGraveyards(_)
+        | ValueDef::CreaturesDiedThisTurn
         | ValueDef::ChosenX
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
@@ -741,7 +744,8 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
                 && static_cost_reduction_value_supported(sum.right)
         }
         ValueDef::CreaturesDiedThisTurn
-        | ValueDef::CardTypesAmongGraveyards
+        | ValueDef::CardTypesAmongGraveyards(_)
+        | ValueDef::IfCardTypesAmongGraveyards(_)
         | ValueDef::GreatestPowerAmong(_)
         | ValueDef::ChosenX
         | ValueDef::SourceCastX

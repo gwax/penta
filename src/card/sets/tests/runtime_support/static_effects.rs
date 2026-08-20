@@ -375,7 +375,7 @@ fn static_stat_value(value: crate::card::ValueDef) -> bool {
         | crate::card::ValueDef::TotalToughnessOfLinkedExiles
         // Read live from every graveyard, which the layer walk can reach
         // without a resolving spell in hand.
-        | crate::card::ValueDef::CardTypesAmongGraveyards => true,
+        | crate::card::ValueDef::CardTypesAmongGraveyards(_) => true,
         crate::card::ValueDef::Scaled(scaled) => static_stat_value(scaled.value),
         crate::card::ValueDef::Halved(halved) => static_stat_value(halved.value),
         _ => false,

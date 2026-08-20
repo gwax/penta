@@ -28,8 +28,8 @@ static PYROGOYF_ABILITIES: [AbilityDef; 2] = [
             // The printed toughness carries the "plus 1", so the counted part
             // is the same number on both sides.
             effect: AppliedEffectDef::modify_power_toughness(
-                ValueDef::CardTypesAmongGraveyards,
-                ValueDef::CardTypesAmongGraveyards,
+                ValueDef::CardTypesAmongGraveyards(PlayerRelation::Any),
+                ValueDef::CardTypesAmongGraveyards(PlayerRelation::Any),
             ),
         },
     )

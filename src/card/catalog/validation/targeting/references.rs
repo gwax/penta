@@ -263,7 +263,8 @@ fn validate_trigger_object_predicate(
             if matches!(
                 value,
                 ValueDef::CreaturesDiedThisTurn
-        | ValueDef::CardTypesAmongGraveyards
+        | ValueDef::CardTypesAmongGraveyards(_)
+        | ValueDef::IfCardTypesAmongGraveyards(_)
         | ValueDef::Constant(_)
                     | ValueDef::ChosenX
                     | ValueDef::SourceCastX
@@ -775,7 +776,8 @@ fn validate_value_target_references(
         | ValueDef::MatchedCount
         | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::CreaturesDiedThisTurn
-        | ValueDef::CardTypesAmongGraveyards
+        | ValueDef::CardTypesAmongGraveyards(_)
+        | ValueDef::IfCardTypesAmongGraveyards(_)
         // This reads the share assigned to the target currently being
         // affected; the surrounding recipient carries the slot reference.
         | ValueDef::DividedAmongTargets => Ok(()),

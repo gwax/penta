@@ -1,6 +1,6 @@
 use super::{
     CardType, CardTypeSet, EffectResolutionContext, Game, GameObjectId, ObjectPredicateDef,
-    PlayerId, RetiredObject, ScopedEffect, StackObject, Target, ValueDef,
+    PlayerId, PlayerRelation, RetiredObject, ScopedEffect, StackObject, Target, ValueDef,
 };
 
 impl Game {
@@ -15,7 +15,18 @@ impl Game {
         match value {
             ValueDef::Constant(value) => value,
             ValueDef::CreaturesDiedThisTurn => i32::from(self.creatures_died_this_turn),
-            ValueDef::CardTypesAmongGraveyards => self.card_types_among_graveyards(),
+            ValueDef::CardTypesAmongGraveyards(player) => {
+                self.card_types_among_graveyards(player, object.controller)
+            }
+            ValueDef::IfCardTypesAmongGraveyards(condition) => {
+                let held = self.card_types_among_graveyards(condition.player, object.controller);
+                let branch = if held >= i32::from(condition.minimum) {
+                    condition.then
+                } else {
+                    condition.otherwise
+                };
+                self.effect_value(branch, object, context, scoped)
+            }
             ValueDef::ChosenX => i32::from(object.x()),
             ValueDef::SourcePower => object
                 .source
@@ -309,9 +320,26 @@ impl Game {
     /// Types rather than cards, and the union across both players: a single
     /// artifact creature card is worth two, and twenty cards split between
     /// artifacts and creatures are worth the same two.
-    pub(super) fn card_types_among_graveyards(&self) -> i32 {
+    pub(super) fn card_types_among_graveyards(
+        &self,
+        relation: PlayerRelation,
+        controller: PlayerId,
+    ) -> i32 {
         let mut seen = CardTypeSet::empty();
-        for player in &self.players {
+        for (index, player) in self.players.iter().enumerate() {
+            let candidate = if index == 0 {
+                PlayerId::One
+            } else {
+                PlayerId::Two
+            };
+            if !self.player_relation_matches(
+                candidate,
+                relation,
+                controller,
+                super::TriggerContext::empty(),
+            ) {
+                continue;
+            }
             for card in &player.graveyard {
                 if let Some(definition) = self.catalog.get(card.definition) {
                     seen = seen.union(definition.rules.types());

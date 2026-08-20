@@ -10,6 +10,15 @@ pub struct ConditionalValueDef {
     pub otherwise: ValueDef,
 }
 
+/// A value that depends on how many card types a graveyard holds.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct GraveyardTypeConditionDef {
+    pub player: PlayerRelation,
+    pub minimum: u8,
+    pub then: ValueDef,
+    pub otherwise: ValueDef,
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct LifeConditionDef {
     pub threshold: u16,
@@ -202,10 +211,15 @@ pub enum ValueDef {
     /// died this turn". Counted as they die rather than read off a zone,
     /// because a graveyard is not a record of this turn.
     CreaturesDiedThisTurn,
-    /// How many distinct card types appear among the cards in every
-    /// graveyard. Types, not cards: ten artifact cards and ten creature cards
-    /// are still two. What a Lhurgoyf is worth.
-    CardTypesAmongGraveyards,
+    /// How many distinct card types appear among the cards in the graveyards
+    /// of matching players. Types, not cards: ten artifact cards and ten
+    /// creature cards are still two. A Lhurgoyf counts every graveyard;
+    /// delirium counts one.
+    CardTypesAmongGraveyards(PlayerRelation),
+    /// One value once a graveyard holds at least so many card types, and
+    /// another below it. This is delirium, which changes an amount rather
+    /// than switching an effect on.
+    IfCardTypesAmongGraveyards(&'static GraveyardTypeConditionDef),
     /// The morbid condition. Held by reference so that `ValueDef` stays one
     /// word wide; a second inline value would grow everything embedding it.
     IfCreatureDiedThisTurn(&'static ConditionalValueDef),

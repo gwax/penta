@@ -73,3 +73,4 @@ pub const CHAIN_OF_SMOG: CardDefinitionId = CardDefinitionId(2155);
 pub const CONTAINMENT_PRIEST: CardDefinitionId = CardDefinitionId(2156);
 pub const FURY: CardDefinitionId = CardDefinitionId(2157);
 pub const SNUFF_OUT: CardDefinitionId = CardDefinitionId(2158);
+pub const UNHOLY_HEAT: CardDefinitionId = CardDefinitionId(2159);

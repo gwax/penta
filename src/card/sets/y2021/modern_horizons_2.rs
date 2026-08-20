@@ -4,8 +4,9 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, AppliedEffectDef,
     BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, DividedTotal, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    SpellAdditionalCostDef, SpendModeDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    EffectRecipientDef, GraveyardTypeConditionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRelation, SpellAdditionalCostDef, SpendModeDef, TriggerEventDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -80,6 +81,44 @@ pub(in crate::card::sets) static FURY: CardRecord = CardRecord::new(
         .with_abilities(&FURY_ABILITIES),
 );
 
+/// Delirium changes the amount, not the effect, so it is a conditional value
+/// rather than a second clause: four card types in your own graveyard, and
+/// the same spell deals six.
+static UNHOLY_HEAT_AMOUNT: GraveyardTypeConditionDef = GraveyardTypeConditionDef {
+    player: PlayerRelation::You,
+    minimum: 4,
+    then: ValueDef::Constant(6),
+    otherwise: ValueDef::Constant(2),
+};
+
+static UNHOLY_HEAT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::HasType(CardType::Planeswalker),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
+// MH2 145 — Unholy Heat
+pub(in crate::card::sets) static UNHOLY_HEAT: CardRecord = CardRecord::new(
+    cards::UNHOLY_HEAT,
+    "Unholy Heat",
+    CardArt::new("2b73d294-6ab1-4051-9b0f-d8e335d37674", "Kari Christensen"),
+    CardSet::ModernHorizons2,
+    CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Unholy Heat deals 2 damage to target creature or planeswalker.\nDelirium — Unholy Heat deals 6 damage instead if there are four or more card types among cards in your graveyard.",
+        &UNHOLY_HEAT_TARGET,
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::IfCardTypesAmongGraveyards(&UNHOLY_HEAT_AMOUNT),
+        },
+    )),
+);
+
 // MH2 202 — Grist, the Hunger Tide
 // Audit: blocked — Needs three capabilities at once: a resolution loop that repeats a step while reading what the previous iteration milled, a reflexive triggered ability that chooses its target when the optional sacrifice is actually made rather than on activation, and characteristics that apply in every zone except the battlefield.
 
@@ -129,6 +168,6 @@ pub(in crate::card::sets) static YAVIMAYA_CRADLE_OF_GROWTH: CardRecord = CardRec
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&FURY, &NETTLECYST, &YAVIMAYA_CRADLE_OF_GROWTH];
+    &[&FURY, &UNHOLY_HEAT, &NETTLECYST, &YAVIMAYA_CRADLE_OF_GROWTH];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
