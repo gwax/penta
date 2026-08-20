@@ -176,6 +176,7 @@ impl Game {
             | AlternativeCastKindDef::Kicked
             | AlternativeCastKindDef::Buyback
             | AlternativeCastKindDef::AlternativeCost
+            | AlternativeCastKindDef::Impending
             | AlternativeCastKindDef::FaceDown,
                 )
                 | None,
@@ -194,6 +195,7 @@ impl Game {
             | AlternativeCastKindDef::Kicked
             | AlternativeCastKindDef::Buyback
             | AlternativeCastKindDef::AlternativeCost
+            | AlternativeCastKindDef::Impending
             // Face down is a way of casting the card from
             // hand, not a permission to cast it elsewhere.
             | AlternativeCastKindDef::FaceDown,

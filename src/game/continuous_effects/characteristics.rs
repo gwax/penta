@@ -56,6 +56,21 @@ impl Game {
                 SetOperationDef::Remove(CardTypeSet::single(CardType::Creature)),
             ));
         }
+        // Impending (CR 702.175a): a permanent cast for its impending cost is
+        // not a creature until its last time counter is removed. Structural
+        // like reconfigure above rather than a clause the card writes,
+        // because it is a consequence of how the spell was paid for -- and
+        // because it has to be true the instant the permanent arrives, with
+        // no window in which anything could see a creature.
+        if permanent.cast_alternative == Some(crate::card::AlternativeCastKindDef::Impending)
+            && permanent.counters(crate::card::CounterKind::Time) > 0
+        {
+            operations.push((
+                permanent.timestamp,
+                u16::MAX,
+                SetOperationDef::Remove(CardTypeSet::single(CardType::Creature)),
+            ));
+        }
         if let Some(_pass) = StaticSetCharacteristicLayerGuard::enter() {
             let result = self.visit_static_applied_effects(permanent, |applied| {
                 if let AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(

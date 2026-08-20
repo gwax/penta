@@ -73,6 +73,10 @@ pub enum AlternativeCastKindDef {
     /// card is not exiled afterwards, so a creature that escaped and later
     /// dies may escape again.
     Escape,
+    /// Cast for its impending cost (CR 702.175a). Like a kicker it is an
+    /// ordinary cast from hand for a different price; what it changes is how
+    /// the permanent arrives, which the card's own clauses say.
+    Impending,
     /// Cast face down as a 2/2 creature with no name for {3} (CR 702.37a).
     /// The spell's own clauses are not what it does while face down -- it
     /// does nothing at all -- so this kind changes the object rather than
@@ -112,6 +116,7 @@ impl AlternativeCastKindDef {
             Self::Buyback => "Buyback",
             Self::AlternativeCost => "Alternative cost",
             Self::Escape => "Escape",
+            Self::Impending => "Impending",
             Self::FaceDown => "Morph",
         }
     }
@@ -122,6 +127,7 @@ impl AlternativeCastKindDef {
     pub fn from_label(label: &str) -> Option<Self> {
         [
             Self::Escape,
+            Self::Impending,
             Self::Flashback,
             Self::Overload,
             Self::Miracle,
@@ -148,6 +154,12 @@ impl AlternativeCastAbilityDef {
                 AlternativeCastKindDef::Flashback,
                 AlternativeCastManaCostDef::ThisCardManaCost,
             ) => "Flashback—the flashback cost is equal to this card's mana cost. (You may cast this card from your graveyard for its flashback cost. Then exile it.)".into(),
+            (AlternativeCastKindDef::Impending, _) => self.stack_text.map_or_else(
+                || {
+                    "Impending (If you cast this spell for its impending cost, it enters with time counters and isn't a creature until the last is removed.)".into()
+                },
+                std::borrow::ToOwned::to_owned,
+            ),
             (AlternativeCastKindDef::Escape, _) => self.stack_text.map_or_else(
                 || "Escape (You may cast this card from your graveyard for its escape cost.)".into(),
                 std::borrow::ToOwned::to_owned,

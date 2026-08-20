@@ -2,10 +2,14 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType, CardTypeSet, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerConditionDef, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AbilityDef, AlternativeCastKindDef, AppliedEffectDef, BattlefieldEntryModificationDef, CardArt,
+    CardRules, CardSet, CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef, CounterKind,
+    EffectDef, EffectRecipientDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementConditionDef,
+    ReplacementEffectDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
+use crate::ids::ObjectSetBindingIndex;
 use crate::mana_cost;
 
 /// "Other creatures you control with power 2 or less", read as each one
@@ -78,6 +82,117 @@ pub(in crate::card::sets) static ENDURING_INNOCENCE: CardRecord = CardRecord::ne
         .with_abilities(&ENDURING_INNOCENCE_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&ENDURING_INNOCENCE];
+/// "A non-Avatar creature card or a planeswalker card." The Overlord itself
+/// is an Avatar, which is what the exclusion is there for: it cannot buy
+/// itself back.
+static A_NON_AVATAR_CREATURE_OR_PLANESWALKER: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype("Avatar")),
+    ]),
+    ObjectPredicateDef::HasType(CardType::Planeswalker),
+]);
+
+static OVERLORD_TAKES_ONE: EffectDef = EffectDef::MoveToZone {
+    object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+    zone: ZoneKind::Hand,
+    placement: ZonePlacement::Top,
+    controller: None,
+    arrival_effect: None,
+    attachment: None,
+};
+
+/// The whole graveyard, not only what the mill just put there: the clause
+/// says "from your graveyard" and means it.
+static OVERLORD_CHOOSES: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+        A_NON_AVATAR_CREATURE_OR_PLANESWALKER,
+        &[ZoneKind::Graveyard],
+        PlayerSetDef::Related(PlayerRelation::You),
+    )),
+    exclude: None,
+    minimum: 0,
+    maximum: 1,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &OVERLORD_TAKES_ONE,
+});
+
+static OVERLORD_DIGS: [EffectDef; 2] = [
+    EffectDef::Mill {
+        player: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(4),
+        binding: None,
+        then: None,
+    },
+    OVERLORD_CHOOSES,
+];
+
+static OVERLORD_EVENTS: [TriggerEventDef; 2] = [
+    TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Source,
+        None,
+        Some(ZoneKind::Battlefield),
+    ),
+    TriggerEventDef::attacks(ObjectPredicateDef::Source),
+];
+
+static OVERLORD_ABILITIES: [AbilityDef; 4] = [
+    AbilityDef::alternative_cast(
+        mana_cost!("{1}{B}"),
+        AlternativeCastKindDef::Impending,
+        Some(
+            "Impending 5—{1}{B} (If you cast this spell for its impending cost, it enters with \
+             five time counters and isn't a creature until the last is removed. At the beginning \
+             of your end step, remove a time counter from it.)",
+        ),
+        EffectDef::None,
+    ),
+    AbilityDef::as_enters_if(
+        "If you cast this spell for its impending cost, it enters with five time counters.",
+        ReplacementConditionDef::SourceCastWith(AlternativeCastKindDef::Impending),
+        ReplacementEffectDef::ModifyBattlefieldEntry(
+            BattlefieldEntryModificationDef::AddCounters {
+                kind: CounterKind::Time,
+                amount: 5,
+            },
+        ),
+    ),
+    AbilityDef::triggered(
+        "At the beginning of your end step, remove a time counter from this permanent.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::You,
+        },
+        EffectDef::RemoveCounters {
+            object: EffectRecipientDef::Source,
+            kind: CounterKind::Time,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    AbilityDef::triggered(
+        "Whenever this permanent enters or attacks, mill four cards, then you may return a \
+         non-Avatar creature card or a planeswalker card from your graveyard to your hand.",
+        TriggerEventDef::AnyOf(&OVERLORD_EVENTS),
+        EffectDef::Sequence(&OVERLORD_DIGS),
+    ),
+];
+
+// DSK 113 — Overlord of the Balemurk
+pub(in crate::card::sets) static OVERLORD_OF_THE_BALEMURK: CardRecord = CardRecord::new(
+    cards::OVERLORD_OF_THE_BALEMURK,
+    "Overlord of the Balemurk",
+    CardArt::new("9b911653-7b96-4cf3-a907-13c5c53a14f7", "Babs Webb"),
+    CardSet::DuskmournHouseOfHorror,
+    // Two mana for the trigger now and a 5/5 five turns later, which is the
+    // whole appeal: the enchantment does the work while the body waits.
+    CardRules::new_enchantment_creature(mana_cost!("{3}{B}{B}"), &["Avatar", "Horror"], 5, 5)
+        .with_abilities(&OVERLORD_ABILITIES),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&ENDURING_INNOCENCE, &OVERLORD_OF_THE_BALEMURK];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

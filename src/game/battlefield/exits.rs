@@ -132,6 +132,8 @@ impl Game {
                         ReplacementConditionDef::CreatureDiedThisTurn => {
                             self.creature_died_this_turn
                         }
+                        // Asked as a permanent enters, never as one leaves.
+                        ReplacementConditionDef::SourceCastWith(_) => false,
                     }
                 } else {
                     true

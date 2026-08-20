@@ -84,6 +84,9 @@ impl Game {
                     Some(ReplacementConditionDef::CreatureDiedThisTurn) => {
                         self.creature_died_this_turn
                     }
+                    // How a permanent's spell was paid for is a fact about
+                    // the entry, so nothing about a turn beginning asks it.
+                    Some(ReplacementConditionDef::SourceCastWith(_)) => false,
                 };
                 if applied.contains(&source)
                     || !definition.source_zones.contains(&ZoneKind::Battlefield)

@@ -9,6 +9,7 @@ use super::{
     ConditionDef, CounterKind, EffectDef, EffectPaymentDef, ObjectPredicateDef, PlayerRelation,
     TurnKindDef, ZoneKind,
 };
+use crate::card::AlternativeCastKindDef;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ReplacementEventDef {
@@ -67,6 +68,10 @@ pub enum ZoneMoveCauseDef {
 pub enum ReplacementConditionDef {
     /// The permanent carrying the replacement ability is currently tapped.
     SourceTapped,
+    /// The spell this permanent came from was cast a particular way.
+    /// Impending's counters are put on as the permanent enters and only when
+    /// it was paid for that way, so the entry has to ask.
+    SourceCastWith(AlternativeCastKindDef),
     /// A creature died at some point this turn, which is what morbid asks.
     /// Read as the replacement applies, so a creature dying in response
     /// changes the answer.

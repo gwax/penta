@@ -531,6 +531,11 @@ impl Game {
                         .is_some_and(|permanent| permanent.tapped)
                 }
             }
+            // The entering permanent already knows how its spell was paid
+            // for: the resolution recorded it before enqueueing the entry.
+            ReplacementConditionDef::SourceCastWith(kind) => {
+                entry.permanent.card.id == source && entry.permanent.cast_alternative == Some(kind)
+            }
             ReplacementConditionDef::CreatureDiedThisTurn => self.creature_died_this_turn,
         }
     }
