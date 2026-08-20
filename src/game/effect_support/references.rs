@@ -296,6 +296,38 @@ impl Game {
         }
     }
 
+    /// The permanents a stack object has chosen as targets.
+    ///
+    /// The spell that triggered an ability is still on the stack while that
+    /// ability resolves above it; one answered in between is read from what
+    /// it was, which holds the same targets either way. Only permanents come
+    /// back: a spell that also points at a player targets a permanent all the
+    /// same, and the player is not one of "those permanents".
+    fn permanents_targeted_by(&self, reference: Target) -> Vec<Target> {
+        let (Target::Spell(spell) | Target::Permanent(spell) | Target::Card(spell)) = reference
+        else {
+            return Vec::new();
+        };
+        self.stack
+            .iter()
+            .find(|candidate| candidate.id == spell)
+            .or_else(|| match self.retired_objects.get(&spell) {
+                Some(crate::game::RetiredObject::Stack(retired)) => Some(retired.as_ref()),
+                _ => None,
+            })
+            .map(|stack_object| {
+                stack_object
+                    .iter_targets()
+                    .copied()
+                    .filter(|target| {
+                        matches!(target, Target::Permanent(id)
+                            if self.battlefield.iter().any(|permanent| permanent.card.id == *id))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
     pub(super) fn effect_objects(
         &self,
         objects: ObjectSetDef,
@@ -333,6 +365,10 @@ impl Game {
                     })
                 })
                 .collect(),
+            ObjectSetDef::PermanentsTargetedBy(reference) => self
+                .object_reference_target(reference, object, context, scoped)
+                .map(|reference| self.permanents_targeted_by(reference))
+                .unwrap_or_default(),
             ObjectSetDef::Query(query) => {
                 self.objects_matching_effect_query(query, object, context, scoped)
             }

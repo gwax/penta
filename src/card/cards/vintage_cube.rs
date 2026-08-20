@@ -132,3 +132,5 @@ pub const ORC_ARMY_TOKEN_0_0_BLACK: CardDefinitionId = CardDefinitionId(2214);
 pub const ORCISH_BOWMASTERS: CardDefinitionId = CardDefinitionId(2215);
 pub const CHANDRA_TORCH_OF_DEFIANCE_EMBLEM: CardDefinitionId = CardDefinitionId(2216);
 pub const CHANDRA_TORCH_OF_DEFIANCE: CardDefinitionId = CardDefinitionId(2217);
+pub const DACK_FAYDEN_EMBLEM: CardDefinitionId = CardDefinitionId(2218);
+pub const DACK_FAYDEN: CardDefinitionId = CardDefinitionId(2219);

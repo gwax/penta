@@ -96,6 +96,7 @@ pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
         EffectRecipientSetDef::LegalTargets(_)
         | EffectRecipientSetDef::Objects(
             ObjectSetDef::One(_)
+            | ObjectSetDef::PermanentsTargetedBy(_)
             | ObjectSetDef::Binding(_)
             | ObjectSetDef::MatchingBinding { .. }
             | ObjectSetDef::BottomOfGraveyard(_)

@@ -774,6 +774,7 @@ mod vintage_cube_chandra;
 mod vintage_cube_creatures;
 mod vintage_cube_crucible;
 mod vintage_cube_cut_down;
+mod vintage_cube_dack;
 mod vintage_cube_damn;
 mod vintage_cube_duelist;
 mod vintage_cube_eldrazi;

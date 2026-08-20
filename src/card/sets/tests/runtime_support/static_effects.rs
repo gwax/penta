@@ -140,6 +140,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                     | ObjectSetDef::MatchingBinding { .. }
                     | ObjectSetDef::BottomOfGraveyard(_)
                     | ObjectSetDef::LegalTargets(_)
+                    | ObjectSetDef::PermanentsTargetedBy(_)
                     | ObjectSetDef::SharingNameWith(_)
                     | ObjectSetDef::SharingNameWithBinding { .. }
                     | ObjectSetDef::TopOfGraveyardMatching { .. },

@@ -70,6 +70,11 @@ pub enum ObjectSetDef {
         binding: ObjectSetBindingIndex,
         object: ObjectPredicateDef,
     },
+    /// The permanents a stack object is targeting. "Gain control of those
+    /// permanents" names what the spell that triggered this picked, which
+    /// neither a query nor a binding can say: nothing chose them here, and
+    /// the spell is still on the stack holding them.
+    PermanentsTargetedBy(ObjectRefDef),
     Query(ObjectQueryDef),
     /// Every battlefield permanent sharing the referenced object's effective
     /// name, including the referenced object itself.
@@ -169,6 +174,7 @@ impl EffectRecipientDef {
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::Binding(_)
                 | ObjectSetDef::MatchingBinding { .. }
+                | ObjectSetDef::PermanentsTargetedBy(_)
                 | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::Query(_)
@@ -189,6 +195,7 @@ impl EffectRecipientDef {
                 ObjectSetDef::One(_)
                 | ObjectSetDef::Binding(_)
             | ObjectSetDef::MatchingBinding { .. }
+                | ObjectSetDef::PermanentsTargetedBy(_)
                 | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::SharingNameWith(_)

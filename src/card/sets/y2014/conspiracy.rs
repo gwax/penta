@@ -2,9 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardType, EffectDef, ObjectPredicateDef, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
+    CardSet, CardSupertype, CardType, ControlDurationDef, DiscardSelectionDef, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRefDef, PlayerRelation, ValueDef, cards,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 /// "A nonland permanent you don't control" is read against the spell's
 /// controller for every voter, so both players choose from the same ballot.
@@ -29,6 +31,71 @@ pub(in crate::card::sets) static COUNCILS_JUDGMENT: CardRecord = CardRecord::new
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&COUNCILS_JUDGMENT];
+static DACK_PLAYER_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+static DACK_ARTIFACT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+)];
+
+/// Two for two is a wash against most decks and a windmill against a graveyard
+/// one, which is the whole reason to point it at yourself.
+static DACK_ROOTS_THROUGH: EffectDef = EffectDef::Sequence(&[
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(2),
+    },
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(2),
+        selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
+    },
+]);
+
+static DACK_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::activated_with_targets(
+        "+1: Target player draws two cards, then discards two cards.",
+        &[AbilityCostDef::Loyalty(1)],
+        &DACK_PLAYER_TARGET,
+        DACK_ROOTS_THROUGH,
+    ),
+    // Nothing is holding the theft and no cleanup ends it: a control change
+    // with no stated duration lasts indefinitely (CR 611.2b).
+    AbilityDef::activated_with_targets(
+        "−2: Gain control of target artifact.",
+        &[AbilityCostDef::Loyalty(-2)],
+        &DACK_ARTIFACT_TARGET,
+        EffectDef::GainControl {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            controller: PlayerRefDef::EffectController,
+            duration: ControlDurationDef::Indefinitely,
+        },
+    ),
+    AbilityDef::activated(
+        "−6: You get an emblem with \"Whenever you cast a spell that targets one or more \
+         permanents, gain control of those permanents.\"",
+        &[AbilityCostDef::Loyalty(-6)],
+        EffectDef::CreateEmblem {
+            emblem: cards::DACK_FAYDEN_EMBLEM,
+        },
+    ),
+];
+
+// CNS 42 — Dack Fayden
+pub(in crate::card::sets) static DACK_FAYDEN: CardRecord = CardRecord::new(
+    cards::DACK_FAYDEN,
+    "Dack Fayden",
+    CardArt::new("3fcb7810-1054-4001-855c-6e17939b3d3f", "Eric Deschamps"),
+    CardSet::Conspiracy,
+    // The greatest thief in the multiverse, and in a cube full of Moxen the
+    // minus is what he is actually here for.
+    CardRules::new_planeswalker(mana_cost!("{1}{U}{R}"), &["Dack"], 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&DACK_ABILITIES),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&COUNCILS_JUDGMENT, &DACK_FAYDEN];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

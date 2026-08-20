@@ -214,7 +214,9 @@ fn validate_object_set_shape(
     targets: &[AbilityTargetDef],
 ) -> Result<(), GrantedAbilityValidationError> {
     match objects {
-        ObjectSetDef::One(reference) | ObjectSetDef::SharingNameWith(reference) => {
+        ObjectSetDef::One(reference)
+        | ObjectSetDef::PermanentsTargetedBy(reference)
+        | ObjectSetDef::SharingNameWith(reference) => {
             validate_object_reference_shape(reference, targets)
         }
         ObjectSetDef::Query(query) => validate_query_shape(query, targets),
@@ -536,6 +538,7 @@ fn recipient_may_name_nonbattlefield_object(
                 // battlefield or nowhere.
                 | ObjectRefDef::SourceOfTargetedStackObject(_),
             )
+            | ObjectSetDef::PermanentsTargetedBy(_)
             | ObjectSetDef::SharingNameWith(_),
         )
         | EffectRecipientSetDef::Players(_) => false,
@@ -584,6 +587,7 @@ fn recipient_nonbattlefield_zones_support_flashback(
                 | ObjectRefDef::AttachedToSource
                 | ObjectRefDef::SourceOfTargetedStackObject(_),
             )
+            | ObjectSetDef::PermanentsTargetedBy(_)
             | ObjectSetDef::SharingNameWith(_),
         )
         | EffectRecipientSetDef::Players(_) => true,

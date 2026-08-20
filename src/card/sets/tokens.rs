@@ -13,7 +13,8 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AppliedEffectDef, AppliedRuleDef, BandingQuality, CardArt, CardRules, CardSet, CardType,
-    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    ControlDurationDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
     ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
@@ -470,6 +471,35 @@ pub(in crate::card::sets) static WURM_TOKEN_6_6_GREEN: CardRecord = CardRecord::
     CardRules::new_creature_without_mana_cost(&["Wurm"], 6, 6).printed_colors(&[ManaColor::Green]),
 );
 
+/// Any permanent at all, read off what the spell already targets. A spell
+/// that points at a player as well is still a spell that targets a permanent.
+static ANY_PERMANENT: ObjectPredicateDef = ObjectPredicateDef::Any;
+
+/// Dack's emblem. The clause reads the targets a spell has already chosen, so
+/// the theft happens before the spell resolves: the removal you pointed at
+/// their creature kills a creature you now own.
+pub(in crate::card::sets) static DACK_FAYDEN_EMBLEM: CardRecord = CardRecord::new(
+    cards::DACK_FAYDEN_EMBLEM,
+    "Dack Fayden emblem",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_emblem().with_ability(AbilityDef::triggered(
+        "Whenever you cast a spell that targets one or more permanents, gain control of those \
+         permanents.",
+        TriggerEventDef::SpellCast(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ObjectPredicateDef::TargetsObjectMatching(&ANY_PERMANENT),
+        ])),
+        EffectDef::GainControl {
+            object: EffectRecipientDef::objects(ObjectSetDef::PermanentsTargetedBy(
+                ObjectRefDef::TriggeringObject,
+            )),
+            controller: PlayerRefDef::EffectController,
+            duration: ControlDurationDef::Indefinitely,
+        },
+    )),
+);
+
 static CHANDRA_EMBLEM_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::AnyTarget,
 )];
@@ -661,6 +691,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WOLVES_OF_THE_HUNT_TOKEN_1_1_GREEN,
     &WOLF_TOKEN_1_1_BLACK,
     &CHANDRA_TORCH_OF_DEFIANCE_EMBLEM,
+    &DACK_FAYDEN_EMBLEM,
     &DOMRI_RADE_EMBLEM,
     &NISSA_WHO_SHAKES_THE_WORLD_EMBLEM,
     &DJINN_TOKEN_5_5_COLORLESS,

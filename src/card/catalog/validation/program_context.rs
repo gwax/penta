@@ -607,6 +607,7 @@ fn static_object_set_supported(objects: ObjectSetDef) -> bool {
         )
         | ObjectSetDef::Binding(_)
         | ObjectSetDef::MatchingBinding { .. }
+        | ObjectSetDef::PermanentsTargetedBy(_)
         | ObjectSetDef::BottomOfGraveyard(_)
         | ObjectSetDef::SharingNameWith(_)
         | ObjectSetDef::SharingNameWithBinding { .. }

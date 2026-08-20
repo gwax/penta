@@ -431,6 +431,7 @@ impl Game {
                 | ObjectSetDef::Binding(_)
                 | ObjectSetDef::MatchingBinding { .. }
                 | ObjectSetDef::LegalTargets(_)
+                | ObjectSetDef::PermanentsTargetedBy(_)
                 | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::SharingNameWith(_)
                 | ObjectSetDef::SharingNameWithBinding { .. }

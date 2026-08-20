@@ -704,7 +704,9 @@ fn validate_recipient_target_references(
     match recipient.0 {
         EffectRecipientSetDef::LegalTargets(target) => validate_target_index(target, target_count),
         EffectRecipientSetDef::Objects(
-            ObjectSetDef::One(reference) | ObjectSetDef::SharingNameWith(reference),
+            ObjectSetDef::One(reference)
+            | ObjectSetDef::PermanentsTargetedBy(reference)
+            | ObjectSetDef::SharingNameWith(reference),
         ) => validate_object_reference(reference, target_count, scope),
         EffectRecipientSetDef::Objects(
             ObjectSetDef::Binding(binding)
