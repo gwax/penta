@@ -433,3 +433,81 @@ fn flame_of_anor_resolves_both_chosen_modes() {
         "five damage kills a 2/2",
     );
 }
+
+/// "Pay X life" is a cost, so the casts on offer stop at the life its caster
+/// actually has. Paying none is always available.
+#[test]
+fn toxic_deluge_is_offered_for_as_much_life_as_you_have() {
+    for life in [3_i16, 20] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[0].life = life;
+        let deluge = card(77_000, cards::TOXIC_DELUGE, PlayerId::One);
+        let deluge_id = deluge.id;
+        game.players[0].hand.push(deluge);
+        game.players[0].mana_pool.black = 1;
+        game.players[0].mana_pool.colorless = 2;
+
+        let mut offered = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .filter_map(|action| match action {
+                Action::CastSpell { card, choices, .. } if card == deluge_id => Some(choices.x()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        offered.sort_unstable();
+
+        assert_eq!(
+            offered,
+            (0..=u16::try_from(life).unwrap()).collect::<Vec<_>>(),
+            "with {life} life",
+        );
+    }
+}
+
+/// The life is paid as the spell is cast, and the same X is what every
+/// creature shrinks by. A creature whose toughness reaches zero dies.
+#[test]
+fn toxic_deluge_pays_its_life_and_shrinks_every_creature() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let bears = creature(77_010, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let angel = creature(77_011, cards::SERRA_ANGEL, PlayerId::Two);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    let deluge = card(77_012, cards::TOXIC_DELUGE, PlayerId::One);
+    let deluge_id = deluge.id;
+    game.players[0].hand.push(deluge);
+    game.players[0].mana_pool.black = 1;
+    game.players[0].mana_pool.colorless = 2;
+    let before = game.players[0].life;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == deluge_id && choices.x() == 3)
+        })
+        .expect("three life is affordable");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[0].life, before - 3, "the life is paid");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears_id),
+        "a 2/2 does not survive -3/-3",
+    );
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == angel_id)
+        .expect("a 4/4 does");
+    assert_eq!(game.toughness(angel), Some(1));
+}

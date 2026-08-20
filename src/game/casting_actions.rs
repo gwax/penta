@@ -255,10 +255,23 @@ impl Game {
                             else {
                                 return ControlFlow::Continue(());
                             };
-                            let max_x = if cost.variable_x {
-                                self.maximum_x_for(player, cost, &payment_purpose)
+                            // X comes from the mana cost's {X}, from a
+                            // printed "pay X life", or from both -- and a
+                            // spell naming both is bounded by whichever runs
+                            // out first.
+                            let life_cost = Self::spell_life_cost(definition, option);
+                            let mana_x = if cost.variable_x {
+                                Some(self.maximum_x_for(player, cost, &payment_purpose))
                             } else {
-                                0
+                                None
+                            };
+                            let life_x = life_cost
+                                .filter(|cost| cost.amount_is_x)
+                                .map(|_| self.maximum_x_for_life(player));
+                            let max_x = match (mana_x, life_x) {
+                                (Some(mana), Some(life)) => mana.min(life),
+                                (Some(bound), None) | (None, Some(bound)) => bound,
+                                (None, None) => 0,
                             };
                             for x in 0..=max_x {
                                 let target_choices = if alternative_kind

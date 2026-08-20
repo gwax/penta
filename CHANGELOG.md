@@ -142,6 +142,20 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"As an additional cost to cast this spell, pay X life."** Toxic Deluge
+  chooses X without printing `{X}` in its mana cost, and the engine derived a
+  spell's X from the mana cost alone. A spell can now name a life cost, fixed
+  or variable, and that cost bounds X the way an `{X}` bounds it: the casts on
+  offer stop at the life its caster actually has, and every clause reading X
+  reads the same choice. A spell naming both is bounded by whichever runs out
+  first. The life is paid where the alternative-cost life already was, before
+  the spell is finished on the stack.
+
+  A bot reading `x` off a cast action should not assume a nonzero value
+  implies `{X}` in the mana cost. Nothing else on the wire changes: a spell's
+  own additional cost has never been catalog data, and the legal actions
+  remain the authority.
+
 - **A mode count that rises under a condition read as the spell is cast.**
   "Choose one. If you control a Wizard as you cast this spell, you may choose
   two instead" is Flame of Anor's, and a modal spell's maximum was previously

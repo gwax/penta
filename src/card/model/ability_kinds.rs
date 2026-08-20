@@ -15,6 +15,11 @@ pub enum SpellAbilityDef {
         /// it names. Unlike a target this is spent rather than pointed at, so
         /// it is not checked again on resolution.
         additional_cost: Option<SpellAdditionalCostDef>,
+        /// A printed "as an additional cost to cast this spell, pay N life".
+        /// Life is spent rather than named, so unlike the cost above it
+        /// selects nothing and enumerates nothing -- except when the amount
+        /// is X, which the caster chooses as the spell is cast.
+        life_cost: Option<SpellLifeCostDef>,
         /// Where the card goes after a successful resolution. This is part of
         /// a spell's shared stack procedure rather than an instruction that
         /// can move the resolving object while it is off the stack.
@@ -55,6 +60,35 @@ pub struct SpellAdditionalCostDef {
     /// cost cannot be known until that X is chosen.
     pub count_is_x: bool,
     pub spend: SpendModeDef,
+}
+
+/// A printed "as an additional cost to cast this spell, pay N life".
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct SpellLifeCostDef {
+    pub amount: u8,
+    /// The amount is X rather than the fixed number above. Toxic Deluge is
+    /// cast for as much life as its caster is willing to spend, and every
+    /// clause that reads X reads that same choice.
+    pub amount_is_x: bool,
+}
+
+impl SpellLifeCostDef {
+    #[must_use]
+    pub const fn new(amount: u8) -> Self {
+        Self {
+            amount,
+            amount_is_x: false,
+        }
+    }
+
+    /// "Pay X life", chosen as the spell is cast.
+    #[must_use]
+    pub const fn variable() -> Self {
+        Self {
+            amount: 0,
+            amount_is_x: true,
+        }
+    }
 }
 
 /// What spending a named object actually does to it.
@@ -159,6 +193,7 @@ impl SpellAbilityDef {
         Self::Nonmodal {
             targets: &[],
             additional_cost: None,
+            life_cost: None,
             resolution_destination: SpellResolutionDestinationDef::Graveyard,
         }
     }
@@ -172,10 +207,13 @@ impl SpellAbilityDef {
     pub const fn with_targets(self, targets: &'static [AbilityTargetDef]) -> Self {
         match self {
             Self::Nonmodal {
-                additional_cost, ..
+                additional_cost,
+                life_cost,
+                ..
             } => Self::Nonmodal {
                 targets,
                 additional_cost,
+                life_cost,
                 resolution_destination: self.resolution_destination(),
             },
             Self::Modal(_) => panic!("targets belong on modal spell branches"),
@@ -190,14 +228,47 @@ impl SpellAbilityDef {
         match self {
             Self::Nonmodal {
                 targets,
+                life_cost,
                 resolution_destination,
                 ..
             } => Self::Nonmodal {
                 targets,
                 additional_cost: Some(cost),
+                life_cost,
                 resolution_destination,
             },
             Self::Modal(_) => panic!("an additional cost belongs to a whole spell"),
+        }
+    }
+
+    /// "As an additional cost to cast this spell, pay N life."
+    ///
+    /// # Panics
+    ///
+    /// Panics for a modal wrapper, which has no single cost to attach.
+    #[must_use]
+    pub const fn with_life_cost(self, cost: SpellLifeCostDef) -> Self {
+        match self {
+            Self::Nonmodal {
+                targets,
+                additional_cost,
+                resolution_destination,
+                ..
+            } => Self::Nonmodal {
+                targets,
+                additional_cost,
+                life_cost: Some(cost),
+                resolution_destination,
+            },
+            Self::Modal(_) => panic!("an additional cost belongs to a whole spell"),
+        }
+    }
+
+    #[must_use]
+    pub const fn life_cost(self) -> Option<SpellLifeCostDef> {
+        match self {
+            Self::Nonmodal { life_cost, .. } => life_cost,
+            Self::Modal(_) => None,
         }
     }
 
@@ -222,10 +293,12 @@ impl SpellAbilityDef {
             Self::Nonmodal {
                 targets,
                 additional_cost,
+                life_cost,
                 ..
             } => Self::Nonmodal {
                 targets,
                 additional_cost,
+                life_cost,
                 resolution_destination: destination,
             },
             Self::Modal(modal) => Self::Modal(modal),

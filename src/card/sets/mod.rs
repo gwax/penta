@@ -341,6 +341,11 @@ const SET_MODULES: &[SetModule] = &[
         y2013::theros::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Commander2013,
+        y2013::commander_2013::CARDS,
+        y2013::commander_2013::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::JourneyIntoNyx,
         y2014::journey_into_nyx::CARDS,
         y2014::journey_into_nyx::ADDITIONAL_PRINTINGS,

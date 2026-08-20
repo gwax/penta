@@ -553,6 +553,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                 // nothing to do on resolution, which is why None is allowed
                 // here and nowhere else.
                 let cost = definition.additional_cost();
+                // Life is spent rather than named, so a life cost selects
+                // nothing and needs no shape beyond the amount itself. The
+                // caster's choice of X is bounded where the cast is offered.
                 shared_spell_additional_cost(cost)
                     && (shared_stack_effect(effect)
                         || (cost.is_some() && effect == EffectDef::None))

@@ -1,16 +1,18 @@
 use super::{
     AbilityCostDef, AbilityOrigin, AbilityTargetDef, AlternativeCastKindDef, BTreeMap,
-    BattlefieldExitCompletion, CREATURE_TYPES, CardBehavior, CardDefinitionId, CardEffectStatus,
-    CardType, CardTypeSet, CastChoices, CastSignature, CastSourceZone, CommittedTriggerEvent,
-    ControlFlow, DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility,
-    DecisionZone, DeclarativeAbilityDef, EntryCompletion, Game, GameEvent, GameObjectId, Mana,
-    ManaActivationChoices, ManaColor, ManaCost, ManaPaymentPurpose, PendingBattlefieldEntry,
-    Permanent, PlayActionKind, PlayOptionDef, PlayOptionId, PlayRestriction, PlayerId, StackObject,
-    StackObjectKind, Target, TargetPredicate, TargetSlotDef, TargetSlotId, TriggerContext,
-    ZoneKind, ZoneMoveCause, ZonePlacement, add_generic, add_mana_cost, extra_target_cost,
-    reduce_generic, remove_card,
+    BattlefieldExitCompletion, CREATURE_TYPES, CardBehavior, CardDefinition, CardDefinitionId,
+    CardEffectStatus, CardType, CardTypeSet, CastChoices, CastSignature, CastSourceZone,
+    CommittedTriggerEvent, ControlFlow, DecisionContinuation, DecisionOption, DecisionPreference,
+    DecisionVisibility, DecisionZone, DeclarativeAbilityDef, EntryCompletion, Game, GameEvent,
+    GameObjectId, Mana, ManaActivationChoices, ManaColor, ManaCost, ManaPaymentPurpose,
+    PendingBattlefieldEntry, Permanent, PlayActionKind, PlayOptionDef, PlayOptionId,
+    PlayRestriction, PlayerId, StackObject, StackObjectKind, Target, TargetPredicate,
+    TargetSlotDef, TargetSlotId, TriggerContext, ZoneKind, ZoneMoveCause, ZonePlacement,
+    add_generic, add_mana_cost, extra_target_cost, reduce_generic, remove_card,
 };
-use crate::card::{BattlefieldEntryScalarChoiceDef, CardSet, ScalarChoiceListDef, SpendModeDef};
+use crate::card::{
+    BattlefieldEntryScalarChoiceDef, CardSet, ScalarChoiceListDef, SpellLifeCostDef, SpendModeDef,
+};
 
 impl Game {
     pub(super) fn play_land(
@@ -543,7 +545,15 @@ impl Game {
             return None;
         }
         let mut cost = self.configured_cast_mana_cost(card_id, option, choices.costs())?;
-        if !cost.variable_x && choices.x() != 0 {
+        // X comes from the mana cost's {X} or from a printed "pay X life",
+        // and a spell with neither is cast for nothing at all.
+        let life_cost = Self::spell_life_cost(definition, option);
+        let x_is_chosen = cost.variable_x || life_cost.is_some_and(|cost| cost.amount_is_x);
+        if !x_is_chosen && choices.x() != 0 {
+            return None;
+        }
+        let life = Self::spell_life_payment(definition, option, choices.x());
+        if i16::try_from(life).unwrap_or(i16::MAX) > self.players[player.index()].life {
             return None;
         }
 
@@ -610,6 +620,43 @@ impl Game {
 
     pub(super) fn target_matches(&self, predicate: TargetPredicate, target: Target) -> bool {
         self.targets_matching(predicate).contains(&target)
+    }
+
+    /// The spell's own "as an additional cost to cast this spell, pay N
+    /// life", if it prints one. An alternative cost replaces the mana cost
+    /// rather than the additional one, so this is read whichever way the
+    /// spell is being cast.
+    pub(super) fn spell_life_cost(
+        definition: &CardDefinition,
+        option: &PlayOptionDef,
+    ) -> Option<SpellLifeCostDef> {
+        let (_, ability) = Self::spell_ability(definition, option)?;
+        let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
+            return None;
+        };
+        spell.life_cost()
+    }
+
+    /// How much life a cast of this spell for `x` actually pays.
+    pub(super) fn spell_life_payment(
+        definition: &CardDefinition,
+        option: &PlayOptionDef,
+        x: u16,
+    ) -> u16 {
+        Self::spell_life_cost(definition, option).map_or(0, |cost| {
+            if cost.amount_is_x {
+                x
+            } else {
+                u16::from(cost.amount)
+            }
+        })
+    }
+
+    /// The largest X a "pay X life" cost can be paid at. A player may pay
+    /// life only down to zero (CR 118.4), so their life total is the bound;
+    /// paying none is always available.
+    pub(super) fn maximum_x_for_life(&self, player: PlayerId) -> u16 {
+        u16::try_from(self.players[player.index()].life.max(0)).unwrap_or(u16::MAX)
     }
 
     pub(super) fn cast_spell(
@@ -683,9 +730,21 @@ impl Game {
                 .form()
                 .clone(),
         };
-        // Life named by the chosen alternative is paid alongside its mana,
-        // before the spell is finished on the stack.
-        let life = self.selected_alternative_life(definition, &stack_object);
+        // Life named by the chosen alternative, or by the spell's own
+        // additional cost, is paid alongside its mana, before the spell is
+        // finished on the stack.
+        let mut life = self.selected_alternative_life(definition, &stack_object);
+        life += self
+            .catalog
+            .get(definition)
+            .and_then(|definition| {
+                let option = stack_object
+                    .signature
+                    .as_ref()
+                    .and_then(|signature| definition.play_option(signature.play_option()))?;
+                Some(Self::spell_life_payment(definition, option, x))
+            })
+            .unwrap_or(0);
         if life > 0 {
             self.lose_life(player, life);
         }
