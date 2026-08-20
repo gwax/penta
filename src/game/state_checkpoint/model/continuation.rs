@@ -11,11 +11,11 @@ use super::{
     ApplicableReplacementSnapshot, BalancePhaseSnapshot, BalanceTaskSnapshot,
     DecisionOptionSnapshot, DeferredBeginTurnEffectSnapshot, DetachedCardSnapshot,
     DetachedStackSnapshot, DiscardChoiceSnapshot, DrawReplacementSnapshot,
-    EffectContinuationSnapshot, EffectResolutionContextSnapshot, PendingTriggerSnapshot,
-    PileSplitSnapshot, ReplacementEffectContextSnapshot, ReplacementEffectLocator,
-    ResolvedEffectPaymentSnapshot, ScopedEffectSnapshot, TargetSelectionSnapshot, TargetSnapshot,
-    TriggerPlacementBatchSnapshot, TurnKindSnapshot, ZoneKindSnapshot, ZoneMoveCauseSnapshot,
-    ZonePlacementSnapshot,
+    EffectContinuationSnapshot, EffectResolutionContextSnapshot, ManaSnapshot,
+    PendingTriggerSnapshot, PileSplitSnapshot, ReplacementEffectContextSnapshot,
+    ReplacementEffectLocator, ResolvedEffectPaymentSnapshot, ScopedEffectSnapshot,
+    TargetSelectionSnapshot, TargetSnapshot, TriggerPlacementBatchSnapshot, TurnKindSnapshot,
+    ZoneKindSnapshot, ZoneMoveCauseSnapshot, ZonePlacementSnapshot,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -225,6 +225,15 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
     ChooseColor {
         continuation: Box<EffectContinuationSnapshot>,
         targets: Vec<TargetSnapshot>,
+    },
+    ChosenColorMana {
+        controller: usize,
+        /// The mana each answer produces, with its colour standing in for
+        /// the one still to be chosen.
+        prototype: ManaSnapshot,
+        remaining: u16,
+        /// Which colours may be chosen, in the usual WUBRG flag order.
+        choosable: [bool; 5],
     },
     RecallDiscard {
         player: usize,

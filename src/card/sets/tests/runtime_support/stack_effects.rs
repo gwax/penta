@@ -198,6 +198,15 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::BindMatching { then, .. } => {
             deferred_decision_allowed && shared_stack_effect_at_position(*then, true)
         }
+        // A resolving ability names each mana as it is added, one question
+        // per mana, so a choice of colour is supported here as long as the
+        // resolution is allowed to ask one. A combination is not: dividing
+        // an amount across types is enumerated where an activation is
+        // offered, and a resolution has nowhere to enumerate it.
+        EffectDef::AddMana(AddManaEffectDef {
+            mana: ManaSelectionDef::Choice(_),
+            ..
+        }) => deferred_decision_allowed && shared_mana_effect(effect, true),
         EffectDef::AddMana(_) => shared_mana_effect(effect, false),
         EffectDef::DealDamage { recipient, .. }
         | EffectDef::DealDamageAndApply { recipient, .. }

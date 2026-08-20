@@ -10,7 +10,7 @@ use crate::ids::{CardDefinitionId, GameObjectId, ObjectSetBindingIndex, PlayerId
 use super::{
     AbilitySourceRef, ApplicableReplacement, ApplicableZoneMoveReplacement, CardInstance,
     DecisionObservation, DecisionOption, DecisionZone, DrawReplacement, EffectResolutionContext,
-    PendingBattlefieldExitBatch, PendingTrigger, PileChosen, PileSplit, PilesSeparated,
+    Mana, PendingBattlefieldExitBatch, PendingTrigger, PileChosen, PileSplit, PilesSeparated,
     ReplacementEffectContext, ResolvedEffectDurationDef, SacrificedAmountDef, ScopedEffect,
     StackObject, TriggerPlacementBatch,
 };
@@ -259,6 +259,21 @@ pub(super) enum DecisionContinuation {
         targets: Vec<Target>,
         operation: ColorChoiceOperationDef,
         duration: ResolvedEffectDurationDef,
+    },
+    /// One mana of a colour the controller is choosing, out of a run of
+    /// them. "Add one mana of any color for each charge counter removed"
+    /// names each mana separately, so the run is answered one colour at a
+    /// time and re-queues itself until it is spent.
+    ChosenColorMana {
+        controller: PlayerId,
+        /// The mana each answer produces, with only its colour still open.
+        /// Carried whole so that a restriction or a spend rider the clause
+        /// attaches survives the question in the middle.
+        prototype: Mana,
+        /// How many are still unanswered, counting this one.
+        remaining: u16,
+        /// Which colours the printed clause allows. "Any color" is all five.
+        choosable: ColorSet,
     },
     ChainLightning {
         player: PlayerId,

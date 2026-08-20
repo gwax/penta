@@ -1,13 +1,14 @@
 use super::{
     AbilitySourceRef, ApplicableReplacement, BasicLandType, BattlefieldEntryModificationDef,
-    CardTypeSet, ColorChoiceOperationDef, CommittedTriggerEvent, ConditionDef, ControlFlow,
-    DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
-    DeclarativeAbilityDef, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
-    EffectResolutionContext, EntryCompletion, Game, GameEvent, ManaColor, ObjectCountConditionDef,
-    ObjectPredicateDef, PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, PlayerId,
-    ReplaceableEvent, ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectContext,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ResolvedEffectPayment,
-    ScopedEffect, StackObject, StackObjectKind, Target, TriggerContext, ZoneKind,
+    CardTypeSet, ColorChoiceOperationDef, ColorSet, CommittedTriggerEvent, ConditionDef,
+    ControlFlow, DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility,
+    DecisionZone, DeclarativeAbilityDef, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
+    EffectResolutionContext, EntryCompletion, Game, GameEvent, Mana, ManaColor,
+    ObjectCountConditionDef, ObjectPredicateDef, PendingBattlefieldEntry, PendingEvent,
+    PendingReplacementEffect, PlayerId, ReplaceableEvent, ReplacementChoiceDef,
+    ReplacementConditionDef, ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, ResolvedEffectPayment, ScopedEffect, StackObject, StackObjectKind,
+    Target, TriggerContext, ZoneKind,
 };
 
 mod discovery;
@@ -826,6 +827,68 @@ impl Game {
         ManaColor::Green,
     ];
 
+    /// Offers one colour of a run of "add one mana of any color for each ...".
+    /// Each mana is named separately, so the run is answered one at a time
+    /// and this re-queues itself until it is spent.
+    pub(super) fn queue_chosen_color_mana(
+        &mut self,
+        controller: PlayerId,
+        prototype: Mana,
+        remaining: u16,
+        choosable: ColorSet,
+    ) {
+        let colors = Self::chosen_mana_colors(choosable);
+        if remaining == 0 || colors.is_empty() {
+            return;
+        }
+        let options = colors
+            .iter()
+            .enumerate()
+            .map(|(index, color)| DecisionOption {
+                id: u32::try_from(index).expect("a colour list fits u32"),
+                label: Self::color_label(*color).to_owned(),
+                card: None,
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::None,
+            })
+            .collect();
+        self.queue_decision(
+            controller,
+            "Choose a color to add",
+            DecisionVisibility::Public,
+            DecisionPreference::Neutral,
+            1..=1,
+            false,
+            options,
+            DecisionContinuation::ChosenColorMana {
+                controller,
+                prototype,
+                remaining,
+                choosable,
+            },
+        );
+    }
+
+    /// The colours a set admits, in the order the options are numbered.
+    pub(super) fn chosen_mana_colors(choosable: ColorSet) -> Vec<ManaColor> {
+        Self::CHOOSABLE_COLORS
+            .into_iter()
+            .filter(|color| choosable.contains(*color))
+            .collect()
+    }
+
+    pub(super) const fn color_label(color: ManaColor) -> &'static str {
+        match color {
+            ManaColor::White => "White",
+            ManaColor::Blue => "Blue",
+            ManaColor::Black => "Black",
+            ManaColor::Red => "Red",
+            ManaColor::Green => "Green",
+            ManaColor::Colorless => "Colorless",
+        }
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub(super) fn queue_color_choice(
         &mut self,
@@ -842,15 +905,7 @@ impl Game {
             .enumerate()
             .map(|(index, color)| DecisionOption {
                 id: u32::try_from(index).expect("five colours fit u32"),
-                label: match color {
-                    ManaColor::White => "White",
-                    ManaColor::Blue => "Blue",
-                    ManaColor::Black => "Black",
-                    ManaColor::Red => "Red",
-                    ManaColor::Green => "Green",
-                    ManaColor::Colorless => "Colorless",
-                }
-                .to_owned(),
+                label: Self::color_label(color).to_owned(),
                 card: None,
                 members: Vec::new(),
                 ability_text: None,

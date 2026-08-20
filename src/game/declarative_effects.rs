@@ -1,15 +1,16 @@
 use super::{
-    AbilityProcedureDef, AbilitySourceRef, AddManaEffectDef, BattlefieldArrival, CardPartId,
-    CharacteristicSource, CopiableAbility, CounteredSpellZone, DeclarativeAbilityDef, EffectDef,
-    EffectResolutionContext, Game, GameResult, InstalledTrigger, InstalledTriggerLifetime, Mana,
-    ManaPool, ManaSelectionDef, ManaSource, Permanent, ResolvedEffectPayment, SacrificeDeclined,
-    SacrificeFollowup, ScopedEffect, StackAbilityResolver, StackObject, Target, TriggerCapture,
-    WinReason, ZoneKind, ZoneMoveCause, ZonePlacement,
+    AbilityProcedureDef, AbilitySourceRef, BattlefieldArrival, CardPartId, CharacteristicSource,
+    CopiableAbility, CounteredSpellZone, DeclarativeAbilityDef, EffectDef, EffectResolutionContext,
+    Game, GameResult, InstalledTrigger, InstalledTriggerLifetime, ManaPool, Permanent,
+    ResolvedEffectPayment, SacrificeDeclined, SacrificeFollowup, ScopedEffect,
+    StackAbilityResolver, StackObject, Target, TriggerCapture, WinReason, ZoneKind, ZoneMoveCause,
+    ZonePlacement,
 };
 use crate::card::{EffectPaymentCostDef, InstalledTriggerLifetimeDef};
 
 mod damage;
 mod hand_and_library;
+mod mana;
 mod permanent_state;
 mod prevention;
 mod tapping;
@@ -113,57 +114,8 @@ impl Game {
             EffectDef::SplitIntoPiles(definition) => {
                 self.queue_effect_pile_split(definition, object, context, scoped);
             }
-            EffectDef::AddMana(AddManaEffectDef {
-                mana: ManaSelectionDef::One(kind),
-                // A second colour is offered by the mana runtime, which is
-                // where an ability making two unlike mana is enumerated.
-                also: _,
-                amount,
-                restrictions,
-                spend_effects,
-                damage_to_controller,
-                amount_override,
-                // Read only by the mana runtime, which offers the ability;
-                // a triggered mana effect resolving here has a plain amount.
-                variable_amount: _,
-                // Resolving from the stack, the ability's own controller is
-                // the only recipient any current card names.
-                recipient: _,
-                // A counter-spending land is offered by the mana runtime,
-                // which is also where its rider is checked.
-                sacrifice_source_when_out_of: _,
-            }) => {
-                let color = kind;
-                let source = object
-                    .source
-                    .zip(object.ability_origin())
-                    .map(|(object, ability)| ManaSource { object, ability });
-                let mana = Mana {
-                    color,
-                    source,
-                    restrictions,
-                    spend_effects,
-                };
-                let amount = amount_override
-                    .filter(|override_| {
-                        self.static_condition_holds(
-                            override_.condition,
-                            object.controller,
-                            object.source.unwrap_or(object.id),
-                        )
-                    })
-                    .map_or(amount, |override_| override_.amount);
-                self.add_mana(
-                    object.controller,
-                    std::iter::repeat_n(mana, usize::from(amount)),
-                );
-                if damage_to_controller > 0 {
-                    self.damage_target_from(
-                        object.source.or(Some(object.id)),
-                        Some(Target::Player(object.controller)),
-                        damage_to_controller,
-                    );
-                }
+            EffectDef::AddMana(_) | EffectDef::AddManaEqualTo { .. } => {
+                self.resolve_mana_effect(scoped, object, &context);
             }
             EffectDef::DrainLife { recipient, amount } => {
                 let amount = self
@@ -686,14 +638,6 @@ impl Game {
                     lifetime,
                 });
             }
-            EffectDef::AddManaEqualTo { color, amount } => {
-                let amount = self
-                    .effect_value(amount, object, &context, scoped)
-                    .max(0)
-                    .try_into()
-                    .unwrap_or(u16::MAX);
-                self.add_unrestricted_mana(object.controller, color, amount);
-            }
             EffectDef::BindMatching {
                 objects,
                 binding,
@@ -960,10 +904,6 @@ impl Game {
                 }
             }
             EffectDef::None
-            | EffectDef::AddMana(AddManaEffectDef {
-                mana: ManaSelectionDef::Choice(_) | ManaSelectionDef::Combination(_),
-                ..
-            })
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CannotBeForcedToDiscard
             | EffectDef::ReduceGenericCostBy(_)
@@ -975,9 +915,8 @@ impl Game {
             | EffectDef::CannotAttackIf(_)
             | EffectDef::StaticApply { .. }
             | EffectDef::Special(_) => {
-                // Choice-bearing mana and the remaining declarative effect
-                // families are execution seams until a supported card needs
-                // their concrete rules procedure.
+                // Execution seams until a supported card needs their
+                // concrete rules procedure.
             }
         }
     }

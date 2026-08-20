@@ -125,7 +125,10 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             ids.push(*entering);
             ids.extend(candidates.iter().map(|(card, _)| *card));
         }
-        DecisionContinuation::SearchZone { .. }
+        // The prototype names the object its mana came from, which is a
+        // provenance rather than a reference the decision has to keep alive.
+        DecisionContinuation::ChosenColorMana { .. }
+        | DecisionContinuation::SearchZone { .. }
         // Nothing in a name choice is an object id.
         | DecisionContinuation::CardNameChoice { .. }
         | DecisionContinuation::ChooseCards { .. }

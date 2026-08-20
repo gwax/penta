@@ -66,6 +66,23 @@ fn parse_continuation(
                 })
                 .transpose()?,
         },
+        DecisionContinuationSnapshot::ChosenColorMana {
+            controller,
+            prototype,
+            remaining,
+            choosable,
+        } => DecisionContinuation::ChosenColorMana {
+            controller: player(*controller)?,
+            prototype: crate::game::state_checkpoint::wire::parse_mana(
+                std::slice::from_ref(prototype),
+                &game.catalog,
+            )?
+                .into_iter()
+                .next()
+                .ok_or("a chosen-colour mana prototype is required")?,
+            remaining: *remaining,
+            choosable: crate::game::state_checkpoint::stack::color_set_from_flags(*choosable),
+        },
         DecisionContinuationSnapshot::ChooseCards {
             controller,
             destination,

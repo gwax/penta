@@ -641,7 +641,7 @@ fn parse_text_changes(
         .collect()
 }
 
-fn color_set_from_flags(flags: [bool; 5]) -> ColorSet {
+pub(super) fn color_set_from_flags(flags: [bool; 5]) -> ColorSet {
     let colors = [
         ManaColor::White,
         ManaColor::Blue,

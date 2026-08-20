@@ -585,6 +585,17 @@ fn continuation_snapshot(
             )?),
             targets: targets.iter().copied().map(target_snapshot).collect(),
         },
+        DecisionContinuation::ChosenColorMana {
+            controller,
+            prototype,
+            remaining,
+            choosable,
+        } => DecisionContinuationSnapshot::ChosenColorMana {
+            controller: controller.index(),
+            prototype: super::mana_snapshot(&game.catalog, *prototype),
+            remaining: *remaining,
+            choosable: choosable.to_flags(),
+        },
         DecisionContinuation::SacrificeOfChoice {
             followup,
             declined,

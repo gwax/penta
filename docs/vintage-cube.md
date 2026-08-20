@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 192 are cataloged and 342 are not
+- 534 cards in the pool, of which 193 are cataloged and 341 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -315,13 +315,12 @@ lands are legal in every format and are not listed.
 - `Wrenn and Six`
 - `Zirda, the Dawnwaker`
 
-### Colorless (42)
+### Colorless (41)
 
 - `Aether Spellbomb`
 - `Agatha's Soul Cauldron`
 - `Chromatic Star`
 - `Chrome Mox`
-- `Coalition Relic`
 - `Coveted Jewel`
 - `Crucible of Worlds`
 - `Currency Converter`
@@ -401,7 +400,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 192 pool cards are in the catalog because an earlier format needed them.
+These 193 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -434,6 +433,7 @@ been played beside.
 - `Chain Lightning`
 - `Chain of Smog`
 - `Channel`
+- `Coalition Relic`
 - `Concealed Courtyard`
 - `Containment Priest`
 - `Copperline Gorge`

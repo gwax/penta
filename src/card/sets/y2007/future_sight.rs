@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules,
-    CardSet, CardType, CounterKind, CreatureStats, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, ResolvedEffectDurationDef, SpellResolutionDestinationDef, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AddManaEffectDef,
+    AppliedEffectDef, CardArt, CardRules, CardSet, CardType, CounterKind, CreatureStats, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
+    SpellResolutionDestinationDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -37,6 +38,56 @@ pub(in crate::card::sets) static REALITY_STROBE: CardRecord = CardRecord::new(
             "Suspend's upkeep counter removal and free cast from exile need the shared exile-casting lifecycle.",
         )),
     ),
+);
+
+/// The printed clause removes the counters and then adds the mana, but the
+/// amount is read off the counters, so the two steps are written the other
+/// way round. One resolution, no priority in between, and nothing else in
+/// the pool watches a charge counter leave: what is observable is that the
+/// counters are gone and that many mana arrived.
+static RELIC_CASHES_IN: [EffectDef; 2] = [
+    EffectDef::AddMana(
+        AddManaEffectDef::any_color()
+            .with_variable_amount(ValueDef::CountersOnSource(CounterKind::Charge)),
+    ),
+    EffectDef::RemoveAllCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::Charge,
+    },
+];
+
+// FUT 161 — Coalition Relic
+pub(in crate::card::sets) static COALITION_RELIC: CardRecord = CardRecord::new(
+    cards::COALITION_RELIC,
+    "Coalition Relic",
+    CardArt::new("7a7c98b0-d64d-4d0a-b284-1187a8e7095e", "Donato Giancola"),
+    CardSet::FutureSight,
+    // Three mana that fixes on the turn it lands and ramps on every one
+    // after, provided nothing needs the Relic tapped for mana that turn.
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add one mana of any color.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::any_color()),
+        ),
+        AbilityDef::activated(
+            "{T}: Put a charge counter on this artifact.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::Charge,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::triggered(
+            "At the beginning of your first main phase, remove all charge counters from this artifact. Add one mana of any color for each charge counter removed this way.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::PrecombatMain,
+                player: PlayerRelation::You,
+            },
+            EffectDef::Sequence(&RELIC_CASHES_IN),
+        ),
+    ]),
 );
 
 // FUT 167 — Darksteel Garrison
@@ -93,7 +144,11 @@ pub(in crate::card::sets) static DRYAD_ARBOR: CardRecord = CardRecord::new(
         .printed_colors(&[ManaColor::Green]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&REALITY_STROBE, &DARKSTEEL_GARRISON, &DRYAD_ARBOR];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &REALITY_STROBE,
+    &COALITION_RELIC,
+    &DARKSTEEL_GARRISON,
+    &DRYAD_ARBOR,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

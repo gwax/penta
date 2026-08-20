@@ -29,7 +29,10 @@ const fn completion_snapshot(completion: EntryCompletion) -> EntryCompletionSnap
     }
 }
 
-fn mana_snapshot(catalog: &CardCatalog, mana: Mana) -> ManaSnapshot {
+pub(in crate::game::state_checkpoint) fn mana_snapshot(
+    catalog: &CardCatalog,
+    mana: Mana,
+) -> ManaSnapshot {
     ManaSnapshot {
         color: mana_color_snapshot(mana.color),
         source: mana.source.map(|source| ManaSourceSnapshot {

@@ -64,6 +64,29 @@ impl Game {
             } => self.resolve_card_name_choice(
                 &choices, searched, zone, binding, &object, context, effect, options,
             ),
+            DecisionContinuation::ChosenColorMana {
+                controller,
+                mut prototype,
+                remaining,
+                choosable,
+            } => {
+                let colors = Self::chosen_mana_colors(choosable);
+                let Some(color) = options
+                    .first()
+                    .and_then(|option| usize::try_from(*option).ok())
+                    .and_then(|index| colors.get(index).copied())
+                else {
+                    return;
+                };
+                prototype.color = color;
+                self.add_mana(controller, std::iter::once(prototype));
+                self.queue_chosen_color_mana(
+                    controller,
+                    prototype,
+                    remaining.saturating_sub(1),
+                    choosable,
+                );
+            }
             DecisionContinuation::ChooseColor {
                 object,
                 context,

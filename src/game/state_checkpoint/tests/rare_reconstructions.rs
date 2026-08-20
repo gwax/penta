@@ -518,3 +518,45 @@ fn a_choice_that_puts_a_permanent_onto_the_battlefield_reconstructs_unanswered()
     );
     assert_reconstructs(&game, "a creature chosen for the battlefield, unanswered");
 }
+
+/// A run of colour choices caught between its two answers. The mana already
+/// added is in the pool; what has to survive is how many are still owed and
+/// what they will be made of.
+#[test]
+fn a_run_of_chosen_color_mana_reconstructs_between_answers() {
+    let mut game = staged_game();
+    game.battlefield.clear();
+    let relic = game
+        .put_onto_battlefield(PlayerId::One, cards::COALITION_RELIC)
+        .expect("Coalition Relic is cataloged");
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == relic)
+    {
+        permanent.counters[crate::game::CounterKind::Charge.index()] = 3;
+    }
+
+    game.capture_battlefield_triggers(&crate::game::CommittedTriggerEvent::StepBegins {
+        step: crate::card::TurnStepDef::PrecombatMain,
+        player: PlayerId::One,
+    });
+    game.finish_rules_procedure();
+    while game.observe(PlayerId::One).decision.is_none() {
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the trigger is waiting to be answered");
+    }
+    answer_with_first_option(&mut game);
+
+    assert!(
+        matches!(
+            game.pending_decisions
+                .first()
+                .map(|pending| &pending.continuation),
+            Some(DecisionContinuation::ChosenColorMana { remaining: 2, .. })
+        ),
+        "two of the three are still owed",
+    );
+    assert_reconstructs(&game, "a colour run with two answers still to come");
+}
