@@ -355,6 +355,7 @@ fn mode_and_target_cardinality_bounds_are_sane() {
         maximum: 1,
         may_repeat: false,
         modes: vec![mode(0, Vec::new()), mode(1, Vec::new())],
+        conditional_maximum: None,
     });
     assert_eq!(
         error(invalid_modes),
@@ -372,6 +373,7 @@ fn mode_and_target_cardinality_bounds_are_sane() {
         maximum: 2,
         may_repeat: false,
         modes: vec![mode(0, Vec::new())],
+        conditional_maximum: None,
     });
     assert_eq!(
         error(too_many_modes),
@@ -618,6 +620,7 @@ fn semantic_spell_mode_selection_rules_cannot_drift_from_presentation() {
             maximum: 2,
             may_repeat: true,
             modes: vec![mode(0, Vec::new()), mode(1, Vec::new())],
+            conditional_maximum: None,
         }),
     );
 
@@ -788,6 +791,7 @@ fn composed_target_count_fits_the_runtime_slot_space() {
         maximum: 2,
         may_repeat: false,
         modes: vec![mode(0, targets()), mode(1, targets())],
+        conditional_maximum: None,
     });
 
     assert_eq!(
@@ -819,6 +823,7 @@ fn modal_target_slots_are_local_to_each_selected_occurrence() {
             mode(0, vec![target(0, 1, 1)]),
             mode(1, vec![target(0, 1, 1)]),
         ],
+        conditional_maximum: None,
     });
     CardCatalog::new([coexisting]).unwrap();
 
@@ -828,6 +833,7 @@ fn modal_target_slots_are_local_to_each_selected_occurrence() {
         maximum: 2,
         may_repeat: true,
         modes: vec![mode(0, vec![target(0, 1, 1)])],
+        conditional_maximum: None,
     });
     CardCatalog::new([repeatable]).unwrap();
 }

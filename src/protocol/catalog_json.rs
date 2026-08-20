@@ -219,12 +219,23 @@ fn play_option_json(option: &PlayOptionDef) -> Value {
             PlayRestriction::DeclareAttackersStep => "declareAttackersStep",
             PlayRestriction::OpponentsTurnAfterUpkeep => "opponentsTurnAfterUpkeep",
         },
-        "modes": option.modes.as_ref().map(|modes| json!({
-            "minimum": modes.minimum,
-            "maximum": modes.maximum,
-            "mayRepeat": modes.may_repeat,
-            "choices": modes.modes.iter().map(mode_json).collect::<Vec<_>>(),
-        })),
+        "modes": option.modes.as_ref().map(|modes| {
+            let mut value = json!({
+                "minimum": modes.minimum,
+                "maximum": modes.maximum,
+                "mayRepeat": modes.may_repeat,
+                "choices": modes.modes.iter().map(mode_json).collect::<Vec<_>>(),
+            });
+            // Optional, and present only for a spell whose printed maximum
+            // rises under a condition -- "if you control a Wizard as you cast
+            // this spell, you may choose two instead". Every other modal
+            // spell's shape is unchanged, and the legal actions already show
+            // which selections are available right now.
+            if let Some(conditional) = modes.conditional_maximum {
+                value["conditionalMaximum"] = json!(conditional.maximum);
+            }
+            value
+        }),
         "targets": option.targets.iter().map(target_slot_json).collect::<Vec<_>>(),
         "alternativeCosts": option.alternative_costs.iter().map(|cost| json!({
             "id": cost.id.0,

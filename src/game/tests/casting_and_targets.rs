@@ -135,6 +135,7 @@ fn cast_validation_rejects_unrecognized_structured_choices() {
                 effect_status: CardEffectStatus::Implemented,
             },
         ],
+        conditional_maximum: None,
     });
     option.alternative_costs = vec![AlternativeCostDef {
         id: alternative_id,
@@ -519,6 +520,7 @@ fn manual_mode_target_slots_are_rebased_after_selected_modes_are_flattened() {
         maximum: 3,
         may_repeat: true,
         modes: vec![local(ModeId(0), "First"), local(ModeId(1), "Second")],
+        conditional_maximum: None,
     });
 
     let slots = Game::target_slots_for(&option, &[ModeId(0), ModeId(1), ModeId(1)]);

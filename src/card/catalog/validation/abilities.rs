@@ -138,17 +138,24 @@ fn validate_attached_ability(
                 count: modal.modes.len(),
             });
         }
+        // A conditional "you may choose two instead" has to be a real
+        // increase and has to stay within the modes the card prints, or the
+        // condition would offer a selection that cannot be made.
+        let conditional_maximum = modal
+            .conditional_maximum
+            .map_or(modal.maximum, |conditional| conditional.maximum);
         if modal.modes.is_empty()
             || modal.minimum > modal.maximum
             || modal.maximum == 0
-            || (!modal.may_repeat && usize::from(modal.maximum) > modal.modes.len())
+            || conditional_maximum < modal.maximum
+            || (!modal.may_repeat && usize::from(conditional_maximum) > modal.modes.len())
         {
             return Err(CatalogError::InvalidModalSpellSelection {
                 definition: definition.id,
                 part,
                 ability: ability_id,
                 minimum: modal.minimum,
-                maximum: modal.maximum,
+                maximum: conditional_maximum,
                 may_repeat: modal.may_repeat,
                 available: modal.modes.len(),
             });

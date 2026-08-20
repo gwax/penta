@@ -488,6 +488,7 @@ impl CardRules {
             minimum: modal.minimum,
             maximum: modal.maximum,
             may_repeat: modal.may_repeat,
+            conditional_maximum: modal.conditional_maximum,
             modes,
         })
     }

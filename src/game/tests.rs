@@ -753,6 +753,7 @@ mod vintage_cube_hand_attack;
 mod vintage_cube_lands;
 mod vintage_cube_library;
 mod vintage_cube_mana;
+mod vintage_cube_more_spells;
 mod vintage_cube_spells;
 mod wards;
 mod while_source_tapped;

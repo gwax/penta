@@ -5,11 +5,12 @@ use crate::ids::TargetIndex;
 use super::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityEffectDef, AbilityProcedureDef,
     AbilityTargetDef, ActivatedAbilityDef, ActivationTimingDef, AlternativeCastAbilityDef,
-    AlternativeCastKindDef, AlternativeCastManaCostDef, CardBehavior, DeclarativeAbilityDef,
-    EffectDef, EffectExecutionDef, ImplementationStatus, KeywordAbility, ManaCost,
-    ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
-    SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef, SpellResolutionDestinationDef,
-    StaticAbilityDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, ZoneKind,
+    AlternativeCastKindDef, AlternativeCastManaCostDef, CardBehavior, ConditionDef,
+    DeclarativeAbilityDef, EffectDef, EffectExecutionDef, ImplementationStatus, KeywordAbility,
+    ManaCost, ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef,
+    ReplacementEventDef, SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef,
+    SpellResolutionDestinationDef, StaticAbilityDef, TriggerConditionDef, TriggerEventDef,
+    TriggeredAbilityDef, ZoneKind,
 };
 
 /// One printed rules clause and its implementation.
@@ -131,6 +132,30 @@ impl AbilityDef {
             )),
             EffectDef::None,
         )
+    }
+
+    /// "If <condition> as you cast this spell, you may choose two instead."
+    /// The larger maximum applies where the spell is offered, which is what
+    /// "as you cast" means; the minimum is unchanged, because choosing the
+    /// extra mode is always optional.
+    ///
+    /// # Panics
+    ///
+    /// Panics for any ability that is not a modal spell, since nothing else
+    /// has a mode count to raise.
+    #[must_use]
+    pub const fn with_conditional_mode_maximum(
+        mut self,
+        condition: ConditionDef,
+        maximum: u8,
+    ) -> Self {
+        let DeclarativeAbilityDef::Spell(SpellAbilityDef::Modal(modal)) = self.definition else {
+            panic!("only a modal spell has a mode count");
+        };
+        self.definition = DeclarativeAbilityDef::Spell(SpellAbilityDef::Modal(
+            modal.with_conditional_maximum(condition, maximum),
+        ));
+        self
     }
 
     #[must_use]

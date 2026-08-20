@@ -2,7 +2,7 @@ use crate::ids::{AbilityId, AlternativeCostId, ModeId, ObjectBindingIndex, Targe
 
 use super::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AlternativeCostDef,
-    BasicLandType, CardBehavior, CardSupertype, CardType, CounterKind, EffectDef,
+    BasicLandType, CardBehavior, CardSupertype, CardType, ConditionDef, CounterKind, EffectDef,
     ImplementationStatus, ManaColor, ManaCost, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
     ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, TriggerEventDef, ZoneKind,
 };
@@ -108,6 +108,19 @@ pub struct ModalSpellDef {
     pub maximum: u8,
     /// Some spells explicitly allow the same mode to be chosen more than once.
     pub may_repeat: bool,
+    /// A printed "if <condition> as you cast this spell, you may choose two
+    /// instead". The larger maximum applies when the condition holds where
+    /// the spell is offered; it never lowers the printed one, and the
+    /// minimum is unaffected because the extra mode is always optional.
+    pub conditional_maximum: Option<ConditionalModeMaximumDef>,
+}
+
+/// The two halves of "you may choose two instead": what has to be true, and
+/// how many modes that allows.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ConditionalModeMaximumDef {
+    pub condition: ConditionDef,
+    pub maximum: u8,
 }
 
 impl ModalSpellDef {
@@ -123,7 +136,15 @@ impl ModalSpellDef {
             minimum,
             maximum,
             may_repeat,
+            conditional_maximum: None,
         }
+    }
+
+    /// "If <condition> as you cast this spell, you may choose two instead."
+    #[must_use]
+    pub const fn with_conditional_maximum(mut self, condition: ConditionDef, maximum: u8) -> Self {
+        self.conditional_maximum = Some(ConditionalModeMaximumDef { condition, maximum });
+        self
     }
 
     #[must_use]

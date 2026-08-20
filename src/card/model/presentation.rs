@@ -9,8 +9,8 @@ use super::presentation_predicates::{
 };
 use super::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardEffectStatus, CardSupertype,
-    CardType, DeclarativeAbilityDef, DividedTotal, ManaColor, ObjectPredicateDef, PlayerRelation,
-    TargetPredicate, ZoneKind,
+    CardType, ConditionalModeMaximumDef, DeclarativeAbilityDef, DividedTotal, ManaColor,
+    ObjectPredicateDef, PlayerRelation, TargetPredicate, ZoneKind,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -484,6 +484,9 @@ pub struct ModeSetDef {
     pub maximum: u8,
     /// Some cards explicitly allow the same mode to be chosen more than once.
     pub may_repeat: bool,
+    /// The larger maximum a printed "you may choose two instead" allows, and
+    /// what has to be true where the spell is offered for it to apply.
+    pub conditional_maximum: Option<ConditionalModeMaximumDef>,
     pub modes: Vec<ModeDef>,
 }
 
@@ -494,6 +497,7 @@ impl ModeSetDef {
             minimum: 1,
             maximum: 1,
             may_repeat: false,
+            conditional_maximum: None,
             modes,
         }
     }

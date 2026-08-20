@@ -701,6 +701,15 @@ casting window. The set is open: treat a tag you do not recognize as a window
 the engine will enforce for you, and keep choosing from the legal actions it
 offers rather than predicting them.
 
+A play option's `modes` object carries `minimum`, `maximum`, `mayRepeat`, and
+`choices`. It also carries an optional `conditionalMaximum` when, and only
+when, the spell prints a clause that raises its maximum under a condition
+read as it is cast -- "if you control a Wizard as you cast this spell, you may
+choose two instead". The condition itself is not on the wire: the legal
+actions already enumerate only the mode selections available right now, so
+that larger maximum tells a bot what the card can do rather than what it may
+do this turn. Every other modal spell omits the key.
+
 Catalog target labels and simplified target projections are presentation data,
 not identity or a complete rules predicate. A richer semantic target can lack
 that legacy projection while still producing targeted legal actions; use the

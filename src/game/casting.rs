@@ -380,12 +380,19 @@ impl Game {
     /// Whether the chosen modes suit the play option: the right number, in
     /// ascending order, without repeats unless the card allows them, and all
     /// of them actually executable.
-    pub(super) fn mode_selection_is_valid(option: &PlayOptionDef, choices: &CastChoices) -> bool {
+    pub(super) fn mode_selection_is_valid(
+        &self,
+        option: &PlayOptionDef,
+        choices: &CastChoices,
+        controller: PlayerId,
+        source: GameObjectId,
+    ) -> bool {
         match &option.modes {
             None => choices.modes().is_empty(),
             Some(mode_set) => {
                 let count = choices.modes().len();
-                if count < usize::from(mode_set.minimum) || count > usize::from(mode_set.maximum) {
+                let maximum = self.effective_mode_maximum(mode_set, controller, source);
+                if count < usize::from(mode_set.minimum) || count > usize::from(maximum) {
                     return false;
                 }
                 if !mode_set.may_repeat {
@@ -513,7 +520,7 @@ impl Game {
             return None;
         }
 
-        if !Self::mode_selection_is_valid(option, choices) {
+        if !self.mode_selection_is_valid(option, choices, player, card_id) {
             return None;
         }
 

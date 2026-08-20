@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 159 are cataloged and 375 are not
+- 534 cards in the pool, of which 160 are cataloged and 374 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -288,7 +288,7 @@ lands are legal in every format and are not listed.
 - `Woodfall Primus`
 - `Worldspine Wurm`
 
-### Multicolor (52)
+### Multicolor (51)
 
 - `Ajani, Nacatl Pariah`
 - `Arwen, Mortal Queen`
@@ -305,7 +305,6 @@ lands are legal in every format and are not listed.
 - `Fallen Shinobi`
 - `Figure of Destiny`
 - `Fire Covenant`
-- `Flame of Anor`
 - `Forth Eorlingas!`
 - `Fractured Identity`
 - `Grist, the Hunger Tide`
@@ -434,7 +433,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 159 pool cards are in the catalog because an earlier format needed them.
+These 160 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -480,6 +479,7 @@ been played beside.
 - `Faithless Looting`
 - `Fireblast`
 - `Firebolt`
+- `Flame of Anor`
 - `Flooded Strand`
 - `Force of Vigor`
 - `Frantic Search`

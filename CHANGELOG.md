@@ -142,6 +142,16 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A mode count that rises under a condition read as the spell is cast.**
+  "Choose one. If you control a Wizard as you cast this spell, you may choose
+  two instead" is Flame of Anor's, and a modal spell's maximum was previously
+  fixed at what it printed. The larger maximum is now read where the spell is
+  offered, which is what "as you cast" means, so the two-mode selections are
+  legal actions only while the condition holds; the minimum is unchanged,
+  because the extra mode is always optional. A play option's `modes` object
+  gained an optional `conditionalMaximum`, present only for such a spell. An
+  optional member is additive, so the epoch does not move.
+
 - **Mana "in any combination of" more than one type.** A mana ability that
   divides one amount across several types is now offered once per division
   rather than once per type, so Vivi Ornitier at two power can make two blue,

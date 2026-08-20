@@ -11,6 +11,8 @@ use super::{
     mode_id_selections, positive_compositions, reduce_generic, target_combinations,
 };
 
+use crate::card::ModeSetDef;
+
 impl Game {
     /// Every way to pay a spell's declarative additional cost. A spell with
     /// none has exactly one way to pay it: spend nothing. A spell with one it
@@ -232,7 +234,7 @@ impl Game {
                     form: option.form.clone(),
                 };
 
-                for modes in Self::implemented_mode_selections(option) {
+                for modes in self.implemented_mode_selections(option, player, card.id) {
                     let declared_slots = Self::target_slots_for(option, &modes);
                     let _ = self.visit_cost_configurations(
                         definition,
@@ -472,7 +474,32 @@ impl Game {
             && Self::spell_ability(definition, option).is_none()
     }
 
-    pub(super) fn implemented_mode_selections(option: &PlayOptionDef) -> Vec<Vec<ModeId>> {
+    /// How many modes a spell may choose here. "If you control a Wizard as
+    /// you cast this spell, you may choose two instead" is read where the
+    /// spell is offered, which is what "as you cast" means, and it never
+    /// lowers the printed maximum.
+    pub(super) fn effective_mode_maximum(
+        &self,
+        mode_set: &ModeSetDef,
+        controller: PlayerId,
+        source: GameObjectId,
+    ) -> u8 {
+        let Some(conditional) = mode_set.conditional_maximum else {
+            return mode_set.maximum;
+        };
+        if self.static_condition_holds(conditional.condition, controller, source) {
+            mode_set.maximum.max(conditional.maximum)
+        } else {
+            mode_set.maximum
+        }
+    }
+
+    pub(super) fn implemented_mode_selections(
+        &self,
+        option: &PlayOptionDef,
+        controller: PlayerId,
+        source: GameObjectId,
+    ) -> Vec<Vec<ModeId>> {
         let Some(mode_set) = &option.modes else {
             return vec![Vec::new()];
         };
@@ -487,7 +514,7 @@ impl Game {
         mode_id_selections(
             &implemented,
             usize::from(mode_set.minimum),
-            usize::from(mode_set.maximum),
+            usize::from(self.effective_mode_maximum(mode_set, controller, source)),
             mode_set.may_repeat,
         )
     }
