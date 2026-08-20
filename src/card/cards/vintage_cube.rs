@@ -153,3 +153,4 @@ pub const OCCULT_EPIPHANY: CardDefinitionId = CardDefinitionId(2235);
 pub const SUBTLETY: CardDefinitionId = CardDefinitionId(2236);
 pub const WALKING_BALLISTA: CardDefinitionId = CardDefinitionId(2237);
 pub const MANAMORPHOSE: CardDefinitionId = CardDefinitionId(2238);
+pub const CELESTIAL_COLONNADE: CardDefinitionId = CardDefinitionId(2239);

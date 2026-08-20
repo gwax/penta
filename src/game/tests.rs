@@ -774,6 +774,7 @@ mod vintage_cube_barrowgoyf;
 mod vintage_cube_breach;
 mod vintage_cube_caryatid;
 mod vintage_cube_chandra;
+mod vintage_cube_colonnade;
 mod vintage_cube_creatures;
 mod vintage_cube_crucible;
 mod vintage_cube_cut_down;
