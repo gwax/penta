@@ -325,6 +325,15 @@ impl AppliedEffectDef {
         )))
     }
 
+    /// "It's an enchantment. (It's not a creature.)" Replaces the type line
+    /// rather than adding to it, which is what takes the creature away.
+    #[must_use]
+    pub const fn set_card_types(types: CardTypeSet) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::CardTypes(SetOperationDef::Set(
+            types,
+        )))
+    }
+
     #[must_use]
     pub const fn add_creature_types(types: CreatureTypeSetDef) -> Self {
         Self::Characteristic(CharacteristicOperationDef::CreatureTypes(

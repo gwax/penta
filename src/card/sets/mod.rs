@@ -537,6 +537,11 @@ const SET_MODULES: &[SetModule] = &[
         y2024::modern_horizons_3_commander::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::DuskmournHouseOfHorror,
+        y2024::duskmourn_house_of_horror::CARDS,
+        y2024::duskmourn_house_of_horror::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::DuskmournHouseOfHorrorCommander,
         y2024::duskmourn_house_of_horror_commander::CARDS,
         y2024::duskmourn_house_of_horror_commander::ADDITIONAL_PRINTINGS,

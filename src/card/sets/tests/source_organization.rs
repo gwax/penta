@@ -274,6 +274,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("modern_horizons_3.rs") => source(CardSet::ModernHorizons3, "MH3"),
         Some("outlaws_of_thunder_junction.rs") => source(CardSet::OutlawsOfThunderJunction, "OTJ"),
         Some("modern_horizons_3_commander.rs") => source(CardSet::ModernHorizons3Commander, "M3C"),
+        Some("duskmourn_house_of_horror.rs") => source(CardSet::DuskmournHouseOfHorror, "DSK"),
         Some("duskmourn_house_of_horror_commander.rs") => {
             source(CardSet::DuskmournHouseOfHorrorCommander, "DSC")
         }

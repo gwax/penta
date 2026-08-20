@@ -780,6 +780,7 @@ mod vintage_cube_dack;
 mod vintage_cube_damn;
 mod vintage_cube_duelist;
 mod vintage_cube_eldrazi;
+mod vintage_cube_enduring_innocence;
 mod vintage_cube_gadgeteer;
 mod vintage_cube_graveyard;
 mod vintage_cube_gut;

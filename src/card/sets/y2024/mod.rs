@@ -1,5 +1,6 @@
 //! Card sets first released in 2024.
 
+pub(super) mod duskmourn_house_of_horror;
 pub(super) mod duskmourn_house_of_horror_commander;
 pub(super) mod fallout;
 pub(super) mod foundations_jumpstart;

@@ -37,8 +37,21 @@ impl Game {
                 {
                     return Target::Permanent(source);
                 }
-                match self.card_in_nonbattlefield_zone(source) {
-                    Some(_) => Target::Card(source),
+                if self.card_in_nonbattlefield_zone(source).is_some() {
+                    return Target::Card(source);
+                }
+                // A dies-trigger names the permanent that was standing there,
+                // and the card it became on the way out has a different
+                // identity. "Return it to the battlefield" means that card,
+                // so follow the move rather than pointing at a permanent
+                // nothing can find.
+                match self
+                    .successors
+                    .get(&source)
+                    .copied()
+                    .filter(|successor| self.card_in_nonbattlefield_zone(*successor).is_some())
+                {
+                    Some(successor) => Target::Card(successor),
                     None => Target::Permanent(source),
                 }
             }),

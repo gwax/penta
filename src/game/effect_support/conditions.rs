@@ -191,10 +191,21 @@ impl Game {
                 // Follows the attachment rather than being frozen when the
                 // Equipment moved, so the answer is about where it is now.
                 TriggerConditionDef::CreatureDiedThisTurn => self.creature_died_this_turn,
+                // A dies-trigger asks about the permanent that died, which
+                // is no longer there to look at. "If it was a creature" has
+                // to read what it last was (CR 603.10); finding nothing and
+                // answering no would be the wrong answer rather than a
+                // deliberate one.
                 TriggerConditionDef::SourceMatches { object: predicate } => self
                     .battlefield
                     .iter()
                     .find(|permanent| permanent.card.id == source)
+                    .or_else(|| match self.retired_objects.get(&source) {
+                        Some(crate::game::RetiredObject::Permanent { permanent, .. }) => {
+                            Some(permanent.as_ref())
+                        }
+                        _ => None,
+                    })
                     .is_some_and(|permanent| {
                         self.trigger_object_matches(
                             *predicate,

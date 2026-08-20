@@ -219,6 +219,24 @@ impl CardRules {
         rules
     }
 
+    /// An enchantment creature: one card that is both, as the Glimmers and
+    /// the Theros gods print it.
+    #[must_use]
+    pub const fn new_enchantment_creature(
+        mana_cost: ManaCost,
+        subtypes: &'static [&'static str],
+        power: i16,
+        toughness: i16,
+    ) -> Self {
+        let mut rules = Self::base(
+            CardTypeSet::single(CardType::Enchantment).with(CardType::Creature),
+            PrintedManaCost::Cost(mana_cost),
+        );
+        rules.subtypes = subtypes;
+        rules.creature_stats = Some(CreatureStats { power, toughness });
+        rules
+    }
+
     #[must_use]
     pub const fn new_artifact_creature(
         mana_cost: ManaCost,
