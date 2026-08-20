@@ -137,3 +137,4 @@ pub const DACK_FAYDEN: CardDefinitionId = CardDefinitionId(2219);
 pub const SWORD_OF_THE_MEEK: CardDefinitionId = CardDefinitionId(2220);
 pub const AMPED_RAPTOR: CardDefinitionId = CardDefinitionId(2221);
 pub const ENDURING_INNOCENCE: CardDefinitionId = CardDefinitionId(2222);
+pub const TENDRILS_OF_AGONY: CardDefinitionId = CardDefinitionId(2223);

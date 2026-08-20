@@ -232,6 +232,48 @@ static A_BIG_CREATURE_ENTERING: ObjectPredicateDef = ObjectPredicateDef::All(&[
     )),
 ]);
 
+/// Life loss rather than damage: nothing prevents it, nothing watching for
+/// damage sees it, and the two life you gain is a flat two however little
+/// they had left to lose.
+static TENDRILS_DRAINS: EffectDef = EffectDef::Sequence(&[
+    EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(2),
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+]);
+
+static TENDRILS_STORM: EffectDef = EffectDef::CopyResolvingSpell {
+    chooser: PlayerRefDef::EffectController,
+    count: ValueDef::SpellsCastBeforeThisTurn,
+};
+
+// SCG 75 — Tendrils of Agony
+pub(in crate::card::sets) static TENDRILS_OF_AGONY: CardRecord = CardRecord::new(
+    cards::TENDRILS_OF_AGONY,
+    "Tendrils of Agony",
+    CardArt::new("0559352e-95c1-403b-bd8f-d0679717cfa2", "Pete Venters"),
+    CardSet::Scourge,
+    // Four life is nothing; ten copies of it is the whole game, which is why
+    // every ritual in the format is really a Tendrils card.
+    CardRules::new_sorcery(mana_cost!("{2}{B}{B}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Target player loses 2 life and you gain 2 life.",
+            &A_PLAYER,
+            TENDRILS_DRAINS,
+        ),
+        AbilityDef::triggered(
+            "Storm (When you cast this spell, copy it for each spell cast before it this turn. \
+             You may choose new targets for the copies.)",
+            TriggerEventDef::SpellCast(ObjectPredicateDef::Source),
+            TENDRILS_STORM,
+        ),
+    ]),
+);
+
 // SCG 86 — Dragon Breath
 pub(in crate::card::sets) static DRAGON_BREATH: CardRecord = CardRecord::new(
     cards::DRAGON_BREATH,
@@ -370,6 +412,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BRAIN_FREEZE,
     &DECREE_OF_SILENCE,
     &STIFLE,
+    &TENDRILS_OF_AGONY,
     &DRAGON_BREATH,
     &GOBLIN_WARCHIEF,
     &SIEGE_GANG_COMMANDER,
