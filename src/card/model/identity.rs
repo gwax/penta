@@ -74,6 +74,7 @@ pub enum CardSet {
     Gatecrash,
     DragonsMaze,
     Magic2014,
+    Magic2020,
     Theros,
     Commander2013,
     JourneyIntoNyx,

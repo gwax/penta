@@ -417,6 +417,11 @@ const SET_MODULES: &[SetModule] = &[
         y2018::battlebond::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Magic2020,
+        y2019::magic_2020::CARDS,
+        y2019::magic_2020::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::ModernHorizons1,
         y2019::modern_horizons::CARDS,
         y2019::modern_horizons::ADDITIONAL_PRINTINGS,

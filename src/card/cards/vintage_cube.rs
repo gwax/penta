@@ -121,3 +121,4 @@ pub const CRUCIBLE_OF_WORLDS: CardDefinitionId = CardDefinitionId(2203);
 pub const CUT_DOWN: CardDefinitionId = CardDefinitionId(2204);
 pub const CLUE_TOKEN: CardDefinitionId = CardDefinitionId(2205);
 pub const FORENSIC_GADGETEER: CardDefinitionId = CardDefinitionId(2206);
+pub const MANIFOLD_KEY: CardDefinitionId = CardDefinitionId(2207);
