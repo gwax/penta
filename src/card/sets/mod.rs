@@ -307,6 +307,11 @@ const SET_MODULES: &[SetModule] = &[
         y2008::shards_of_alara::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Worldwake,
+        y2010::worldwake::CARDS,
+        y2010::worldwake::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::ScarsOfMirrodin,
         y2010::scars_of_mirrodin::CARDS,
         y2010::scars_of_mirrodin::ADDITIONAL_PRINTINGS,

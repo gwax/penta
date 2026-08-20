@@ -777,6 +777,7 @@ mod vintage_cube_ninjutsu;
 mod vintage_cube_nissa;
 mod vintage_cube_path;
 mod vintage_cube_spells;
+mod vintage_cube_stoneforge;
 mod vintage_cube_tamiyo;
 mod vintage_cube_vote;
 mod wards;

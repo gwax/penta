@@ -55,6 +55,7 @@ pub enum CardSet {
     FutureSight,
     Conflux,
     Zendikar,
+    Worldwake,
     WarOfTheSpark,
     ThroneOfEldraine,
     ZendikarRising,

@@ -170,6 +170,10 @@ struct SetSource {
     code: &'static str,
 }
 
+// Long because it is a table: one line per set module, and the list only
+// ever grows. Splitting it would put half the sets somewhere else for no
+// reason a reader would thank us for.
+#[allow(clippy::too_many_lines)]
 fn set_source_for_file(path: &Path) -> SetSource {
     let source = |set, code| SetSource { set, code };
     match path.file_name().and_then(|name| name.to_str()) {
@@ -221,6 +225,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("planar_chaos.rs") => source(CardSet::PlanarChaos, "PLC"),
         Some("conflux.rs") => source(CardSet::Conflux, "CON"),
         Some("zendikar.rs") => source(CardSet::Zendikar, "ZEN"),
+        Some("worldwake.rs") => source(CardSet::Worldwake, "WWK"),
         Some("shards_of_alara.rs") => source(CardSet::ShardsOfAlara, "ALA"),
         Some("ixalan.rs") => source(CardSet::Ixalan, "XLN"),
         Some("battlebond.rs") => source(CardSet::Battlebond, "BBD"),
