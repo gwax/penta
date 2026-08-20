@@ -170,6 +170,13 @@ pub(super) enum EntryCompletion {
     AttachSource {
         source: GameObjectId,
     },
+    /// The mirror of the above: what arrives attaches to a permanent that is
+    /// already there. "Return this card from your graveyard to the
+    /// battlefield, then attach it to that creature" moves the Equipment, so
+    /// the host is the one thing that keeps its identity through the entry.
+    AttachToHost {
+        host: GameObjectId,
+    },
     /// "Create a token that's tapped and attacking." The attack is declared
     /// as the token enters rather than afterwards, because what enters is a
     /// new object and the declaration step is long over.

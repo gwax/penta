@@ -1,10 +1,10 @@
 use super::{
-    BattlefieldArrival, CardDefinitionId, CardInstance, CardPartId, CharacteristicContext,
-    CharacteristicSource, CommittedTriggerEvent, CounterKind, DeclarativeAbilityDef, EffectDef,
-    EffectRecipientDef, EntryCompletion, Game, GameEvent, GameObjectId, KeywordAbility,
-    ObjectBacking, PendingBattlefieldEntry, Permanent, PlayerId, PublicCard, ReplacementEffectDef,
-    ReplacementEventDef, Target, TriggerContext, ZoneCard, ZoneError, ZoneKind, ZoneMoveCause,
-    ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
+    ArrivalAttachment, BattlefieldArrival, CardDefinitionId, CardInstance, CardPartId,
+    CharacteristicContext, CharacteristicSource, CommittedTriggerEvent, CounterKind,
+    DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EntryCompletion, Game, GameEvent,
+    GameObjectId, KeywordAbility, ObjectBacking, PendingBattlefieldEntry, Permanent, PlayerId,
+    PublicCard, ReplacementEffectDef, ReplacementEventDef, Target, TriggerContext, ZoneCard,
+    ZoneError, ZoneKind, ZoneMoveCause, ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
 };
 
 impl Game {
@@ -509,8 +509,13 @@ impl Game {
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from,
-            completion: match arrival.attach_source {
-                Some(source) => EntryCompletion::AttachSource { source },
+            completion: match arrival.attachment {
+                Some(ArrivalAttachment::SourceToArrival(source)) => {
+                    EntryCompletion::AttachSource { source }
+                }
+                Some(ArrivalAttachment::ArrivalToHost(host)) => {
+                    EntryCompletion::AttachToHost { host }
+                }
                 None => EntryCompletion::None,
             },
             redirected_to: None,

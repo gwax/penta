@@ -70,7 +70,7 @@ static BARROWGOYF_TAKES_ONE: EffectDef = EffectDef::MoveToZone {
     placement: ZonePlacement::Top,
     controller: None,
     arrival_effect: None,
-    attach_source: false,
+    attachment: None,
 };
 
 /// Where the chosen card is saved, kept apart from the milled pile so that

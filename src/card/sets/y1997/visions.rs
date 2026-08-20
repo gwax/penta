@@ -2,11 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, BasicLandType,
-    CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, InstalledTriggerDef,
-    ObjectPredicateDef, PlayerRefDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
+    ArrivalAttachmentDef, BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef,
+    EffectRecipientDef, InstalledTriggerDef, ObjectPredicateDef, PlayerRefDef, PlayerRelation,
+    SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -149,7 +149,7 @@ static NECROMANCY_REANIMATES: [EffectDef; 2] = [
         placement: ZonePlacement::Top,
         controller: Some(PlayerRelation::You),
         arrival_effect: None,
-        attach_source: true,
+        attachment: Some(ArrivalAttachmentDef::SourceToArrival),
     },
     EffectDef::IfCondition {
         condition: &NECROMANCY_CAST_AT_INSTANT_SPEED,

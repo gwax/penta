@@ -24,6 +24,9 @@ const fn completion_snapshot(completion: EntryCompletion) -> EntryCompletionSnap
         EntryCompletion::AttachSource { source } => EntryCompletionSnapshot::AttachSource {
             source: source.0,
         },
+        EntryCompletion::AttachToHost { host } => {
+            EntryCompletionSnapshot::AttachToHost { host: host.0 }
+        }
         EntryCompletion::Attacking { defender } => EntryCompletionSnapshot::Attacking {
             defender: match defender {
                 crate::AttackDefender::Player(player) => AttackDefenderSnapshot::Player {

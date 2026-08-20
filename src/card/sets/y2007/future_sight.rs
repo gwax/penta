@@ -3,10 +3,10 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AddManaEffectDef,
-    AppliedEffectDef, CardArt, CardRules, CardSet, CardType, CounterKind, CreatureStats, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
-    SpellResolutionDestinationDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    AppliedEffectDef, ArrivalAttachmentDef, CardArt, CardRules, CardSet, CardType, CounterKind,
+    CreatureStats, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef,
+    PlayerRelation, ResolvedEffectDurationDef, SpellResolutionDestinationDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -28,7 +28,7 @@ pub(in crate::card::sets) static REALITY_STROBE: CardRecord = CardRecord::new(
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
                 controller: None,
             },
         )
@@ -91,6 +91,70 @@ pub(in crate::card::sets) static COALITION_RELIC: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Read as the creature enters, so a 1/1 that is only a 1/1 because of what
+/// is already on the battlefield still counts, and a 2/2 shrunk to 1/1 does
+/// too.
+static A_ONE_ONE_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::PowerExactly(1),
+    ObjectPredicateDef::ToughnessExactly(1),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+/// The attachment rides the return rather than following it: what comes back
+/// from the graveyard is a new object, so a later effect would have nothing
+/// left to name.
+static SWORD_RETURNS_AND_EQUIPS: EffectDef = EffectDef::MoveToZone {
+    object: EffectRecipientDef::Source,
+    zone: ZoneKind::Battlefield,
+    placement: ZonePlacement::Top,
+    controller: None,
+    arrival_effect: None,
+    attachment: Some(ArrivalAttachmentDef::ArrivalToHost(
+        ObjectRefDef::TriggeringObject,
+    )),
+};
+
+static SWORD_OF_THE_MEEK_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::static_ability(
+        "Equipped creature gets +1/+2.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::AttachedPermanent,
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(1),
+                ValueDef::Constant(2),
+            ),
+        },
+    ),
+    abilities::equip(
+        mana_cost!("{2}"),
+        "Equip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+    ),
+    AbilityDef::triggered(
+        "Whenever a 1/1 creature you control enters, you may return this card from your graveyard \
+         to the battlefield, then attach it to that creature.",
+        TriggerEventDef::zone_changed(A_ONE_ONE_YOU_CONTROL, None, Some(ZoneKind::Battlefield)),
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &SWORD_RETURNS_AND_EQUIPS,
+        },
+    )
+    .with_source_zones(&[ZoneKind::Graveyard]),
+];
+
+// FUT 165 — Sword of the Meek
+pub(in crate::card::sets) static SWORD_OF_THE_MEEK: CardRecord = CardRecord::new(
+    cards::SWORD_OF_THE_MEEK,
+    "Sword of the Meek",
+    CardArt::new("e9f13705-6ede-4c29-a2b4-a082bf69e9c5", "Franz Vohwinkel"),
+    CardSet::FutureSight,
+    // On its own it is a bad Equipment. Beside anything that makes 1/1s for
+    // free it is an engine that never runs out of Swords.
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&SWORD_OF_THE_MEEK_ABILITIES),
+);
+
 // FUT 167 — Darksteel Garrison
 pub(in crate::card::sets) static DARKSTEEL_GARRISON: CardRecord = CardRecord::new(
     cards::DARKSTEEL_GARRISON,
@@ -148,6 +212,7 @@ pub(in crate::card::sets) static DRYAD_ARBOR: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &REALITY_STROBE,
     &COALITION_RELIC,
+    &SWORD_OF_THE_MEEK,
     &DARKSTEEL_GARRISON,
     &DRYAD_ARBOR,
 ];

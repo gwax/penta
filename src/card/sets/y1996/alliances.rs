@@ -189,7 +189,7 @@ static GLACIERS_RETURN: EffectDef =
             controller: None,
             placement: ZonePlacement::Top,
             arrival_effect: None,
-            attach_source: false,
+            attachment: None,
         },
     )));
 

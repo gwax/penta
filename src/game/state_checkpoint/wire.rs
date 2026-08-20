@@ -848,6 +848,9 @@ pub(super) fn parse_completion(
         EntryCompletionSnapshot::AttachSource { source } => Ok(EntryCompletion::AttachSource {
             source: GameObjectId(source),
         }),
+        EntryCompletionSnapshot::AttachToHost { host } => Ok(EntryCompletion::AttachToHost {
+            host: GameObjectId(host),
+        }),
         EntryCompletionSnapshot::Attacking { defender } => Ok(EntryCompletion::Attacking {
             defender: match defender {
                 AttackDefenderSnapshot::Player { seat } => {

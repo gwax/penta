@@ -1124,7 +1124,7 @@ pub(in crate::card::sets) static DEPUTY_OF_ACQUITTALS: CardRecord = CardRecord::
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
-                    attach_source: false,
+                    attachment: None,
                     controller: None,
                 },
             },
@@ -1480,7 +1480,7 @@ pub(in crate::card::sets) static MORGUE_BURST: CardRecord = CardRecord::new(
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
                 controller: None,
             },
         )
@@ -1557,7 +1557,7 @@ pub(in crate::card::sets) static OBZEDATS_AID: CardRecord = CardRecord::new(
             zone: ZoneKind::Battlefield,
             placement: ZonePlacement::Top,
             arrival_effect: None,
-            attach_source: false,
+            attachment: None,
             controller: None,
         },
     )),
@@ -1746,7 +1746,7 @@ static SIN_COLLECTOR_EXILE: EffectDef = EffectDef::MoveToZone {
     zone: ZoneKind::Exile,
     placement: ZonePlacement::Top,
     arrival_effect: None,
-    attach_source: false,
+    attachment: None,
     controller: None,
 };
 
@@ -2159,7 +2159,7 @@ fn down_dirty_composition() -> CardComposition {
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
                 controller: None,
             },
         ));
@@ -2185,7 +2185,7 @@ const fn far_rules() -> CardRules {
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             arrival_effect: None,
-            attach_source: false,
+            attachment: None,
             controller: None,
         },
     ))

@@ -38,7 +38,7 @@ static MASTERY_EXILE: EffectDef = EffectDef::MoveToZone {
     placement: ZonePlacement::Top,
     controller: None,
     arrival_effect: None,
-    attach_source: false,
+    attachment: None,
 };
 
 /// Printed order: the draw is named before the exile, and it happens first.

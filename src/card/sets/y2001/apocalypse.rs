@@ -257,7 +257,7 @@ static DEATH_EFFECTS: [EffectDef; 2] = [
         zone: ZoneKind::Battlefield,
         placement: ZonePlacement::Top,
         arrival_effect: None,
-        attach_source: false,
+        attachment: None,
         controller: Some(PlayerRelation::You),
     },
     EffectDef::LoseLife {

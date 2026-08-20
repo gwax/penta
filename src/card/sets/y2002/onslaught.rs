@@ -133,7 +133,7 @@ pub(in crate::card::sets) static CHAIN_OF_VAPOR: CardRecord = CardRecord::new(
                 controller: None,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
             },
             CHAIN_OF_VAPOR_REBOUND,
         ]),

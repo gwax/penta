@@ -458,16 +458,24 @@ impl StackObject {
     }
 }
 
+/// Which way an attachment goes as a permanent enters, with both objects
+/// already resolved to the identities they have now.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum ArrivalAttachment {
+    SourceToArrival(GameObjectId),
+    ArrivalToHost(GameObjectId),
+}
+
 /// How a card arrives when an effect puts it onto the battlefield.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct BattlefieldArrival {
     pub(super) controller: PlayerId,
     pub(super) tapped: bool,
-    /// The object to attach to this permanent as it enters. "Put target
-    /// creature card onto the battlefield and attach this to it" cannot be
-    /// two steps: what arrives is a new object, and by the time a following
-    /// effect ran there would be nothing to name.
-    pub(super) attach_source: Option<GameObjectId>,
+    /// The attachment this permanent makes as it enters, in whichever
+    /// direction. "Put target creature card onto the battlefield and attach
+    /// this to it" cannot be two steps: what arrives is a new object, and by
+    /// the time a following effect ran there would be nothing to name.
+    pub(super) attachment: Option<ArrivalAttachment>,
     /// Whether a double-faced card arrives showing its back face. "Return
     /// him to the battlefield transformed" says which face enters, so it
     /// belongs to the arrival rather than to a transform afterwards: what
@@ -482,7 +490,7 @@ impl BattlefieldArrival {
             controller,
             tapped: false,
             transformed: false,
-            attach_source: None,
+            attachment: None,
         }
     }
 
@@ -491,7 +499,7 @@ impl BattlefieldArrival {
             controller,
             tapped: true,
             transformed: false,
-            attach_source: None,
+            attachment: None,
         }
     }
 
@@ -500,12 +508,19 @@ impl BattlefieldArrival {
             controller,
             tapped: false,
             transformed: true,
-            attach_source: None,
+            attachment: None,
         }
     }
 
+    /// The resolving source attaches to what arrives.
     pub(super) const fn attaching(mut self, source: GameObjectId) -> Self {
-        self.attach_source = Some(source);
+        self.attachment = Some(ArrivalAttachment::SourceToArrival(source));
+        self
+    }
+
+    /// What arrives attaches to a permanent already on the battlefield.
+    pub(super) const fn attached_to(mut self, host: GameObjectId) -> Self {
+        self.attachment = Some(ArrivalAttachment::ArrivalToHost(host));
         self
     }
 }

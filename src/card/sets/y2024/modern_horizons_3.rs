@@ -169,7 +169,7 @@ static MYCOSPAWN_ABILITIES: [AbilityDef; 4] = [
             controller: None,
             placement: ZonePlacement::Top,
             arrival_effect: None,
-            attach_source: false,
+            attachment: None,
         },
     ),
 ];

@@ -517,7 +517,7 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(
                 controller: None,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
             },
         ),
         AbilityDef::replacement_for(
@@ -665,7 +665,7 @@ static TROSTANIS_JUDGMENT_EFFECTS: [EffectDef; 2] = [
         zone: ZoneKind::Exile,
         placement: ZonePlacement::Top,
         arrival_effect: None,
-        attach_source: false,
+        attachment: None,
         controller: None,
     },
     abilities::populate(),
@@ -813,7 +813,7 @@ pub(in crate::card::sets) static CYCLONIC_RIFT: CardRecord = CardRecord::new(
                 controller: None,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
             },
         ),
         abilities::overload(
@@ -829,7 +829,7 @@ pub(in crate::card::sets) static CYCLONIC_RIFT: CardRecord = CardRecord::new(
                 controller: None,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
             },
         ),
     ]),
@@ -1066,7 +1066,7 @@ static JACE_ARCHITECT_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
         zone: ZoneKind::Hand,
         placement: ZonePlacement::Top,
         arrival_effect: None,
-        attach_source: false,
+        attachment: None,
         controller: None,
     },
     EffectDef::MoveToZone {
@@ -1074,7 +1074,7 @@ static JACE_ARCHITECT_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
         zone: ZoneKind::Library,
         placement: ZonePlacement::Bottom,
         arrival_effect: None,
-        attach_source: false,
+        attachment: None,
         controller: None,
     },
 ]);
@@ -1300,7 +1300,7 @@ static VOIDWIELDER_RETURN: EffectDef = EffectDef::MoveToZone {
     controller: None,
     placement: ZonePlacement::Top,
     arrival_effect: None,
-    attach_source: false,
+    attachment: None,
 };
 
 // RTR 56 — Voidwielder
@@ -1394,7 +1394,7 @@ pub(in crate::card::sets) static CREMATE: CardRecord = CardRecord::new(
                 controller: None,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
             },
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,
@@ -3146,7 +3146,7 @@ pub(in crate::card::sets) static AZORIUS_CHARM: CardRecord = CardRecord::new(
                     controller: None,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
-                    attach_source: false,
+                    attachment: None,
                 }),
         ],
     )),
@@ -3425,7 +3425,7 @@ pub(in crate::card::sets) static DRAMATIC_RESCUE: CardRecord = CardRecord::new(
                 controller: None,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
             },
             EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
@@ -4096,7 +4096,7 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
                     controller: None,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
-                    attach_source: false,
+                    attachment: None,
                 }).with_coverage(AbilityCoverageDef::partial(
                     "PowerAtLeast reads resolved power changes but not power changes supplied by static continuous effects.",
                 )),
@@ -4142,7 +4142,7 @@ static SKYMARK_ROC_RETURN: EffectDef = EffectDef::MoveToZone {
     controller: None,
     placement: ZonePlacement::Top,
     arrival_effect: None,
-    attach_source: false,
+    attachment: None,
 };
 
 // RTR 196 — Skymark Roc
@@ -4344,7 +4344,7 @@ pub(in crate::card::sets) static TREASURED_FIND: CardRecord = CardRecord::new(
                 controller: None,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
             },
             EffectDef::MoveToZone {
                 object: EffectRecipientDef::Source,
@@ -4352,7 +4352,7 @@ pub(in crate::card::sets) static TREASURED_FIND: CardRecord = CardRecord::new(
                 controller: None,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
             },
         ]),
     )
@@ -4616,7 +4616,7 @@ pub(in crate::card::sets) static DEATHRITE_SHAMAN: CardRecord = CardRecord::new(
                     controller: None,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
-                    attach_source: false,
+                    attachment: None,
                 },
                 EffectDef::LoseLife {
                     recipient: EffectRecipientDef::Opponent,
@@ -4645,7 +4645,7 @@ pub(in crate::card::sets) static DEATHRITE_SHAMAN: CardRecord = CardRecord::new(
                     controller: None,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
-                    attach_source: false,
+                    attachment: None,
                 },
                 EffectDef::GainLife {
                     recipient: EffectRecipientDef::Controller,
@@ -4947,7 +4947,7 @@ pub(in crate::card::sets) static CODEX_SHREDDER: CardRecord = CardRecord::new(
                 controller: None,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
             },
         ),
     ]),

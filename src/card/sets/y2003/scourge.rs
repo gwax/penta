@@ -82,7 +82,7 @@ pub(in crate::card::sets) static ETERNAL_DRAGON: CardRecord = CardRecord::new(
                 placement: ZonePlacement::Top,
                 controller: None,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
             },
         )
         .with_source_zones(&[ZoneKind::Graveyard])

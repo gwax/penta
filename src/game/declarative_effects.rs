@@ -1,37 +1,21 @@
 use super::{
-    AbilityProcedureDef, AbilitySourceRef, BattlefieldArrival, CardPartId, CharacteristicSource,
-    CopiableAbility, CounteredSpellZone, DeclarativeAbilityDef, EffectDef, EffectResolutionContext,
-    Game, GameResult, InstalledTrigger, InstalledTriggerLifetime, ManaPool, Permanent,
-    ResolvedEffectPayment, SacrificeDeclined, SacrificeFollowup, ScopedEffect,
+    AbilityProcedureDef, AbilitySourceRef, ArrivalAttachment, BattlefieldArrival, CardPartId,
+    CharacteristicSource, CopiableAbility, CounteredSpellZone, DeclarativeAbilityDef, EffectDef,
+    EffectResolutionContext, Game, GameResult, InstalledTrigger, InstalledTriggerLifetime,
+    ManaPool, Permanent, ResolvedEffectPayment, SacrificeDeclined, SacrificeFollowup, ScopedEffect,
     StackAbilityResolver, StackObject, Target, TriggerCapture, WinReason, ZoneKind, ZoneMoveCause,
     ZonePlacement,
 };
-use crate::card::{EffectPaymentCostDef, InstalledTriggerLifetimeDef};
+use crate::card::{ArrivalAttachmentDef, EffectPaymentCostDef, InstalledTriggerLifetimeDef};
+use move_to_zone::MoveToZoneClause;
 
 mod damage;
 mod hand_and_library;
 mod mana;
+mod move_to_zone;
 mod permanent_state;
 mod prevention;
 mod tapping;
-
-/// How a permanent this effect moves arrives, when it arrives at all.
-/// "Under your control" and "attach this to it" both belong to the arrival:
-/// what enters is a new object, so neither can wait for a later step.
-fn battlefield_arrival(
-    object: &StackObject,
-    arriving_controller: Option<crate::PlayerId>,
-    attach_source: bool,
-) -> Option<BattlefieldArrival> {
-    if arriving_controller.is_none() && !attach_source {
-        return None;
-    }
-    let arrival = BattlefieldArrival::under(arriving_controller.unwrap_or(object.controller));
-    Some(match object.source.filter(|_| attach_source) {
-        Some(source) => arrival.attaching(source),
-        None => arrival,
-    })
-}
 
 impl Game {
     #[allow(clippy::too_many_lines)]
@@ -849,42 +833,20 @@ impl Game {
                 controller,
                 placement,
                 arrival_effect,
-                attach_source,
-            } => {
-                let arriving_controller = controller.map(|relation| {
-                    if self.player_relation_matches(
-                        object.controller,
-                        relation,
-                        object.controller,
-                        context.trigger,
-                    ) {
-                        object.controller
-                    } else {
-                        object.controller.opponent()
-                    }
-                });
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    let arrived = self.move_target_to_zone(
-                        target,
-                        zone,
-                        ZoneMoveCause::Effect {
-                            controller: object.controller,
-                        },
-                        // "Under your control" and "attach this to it" both
-                        // belong to the arrival: a permanent that enters is
-                        // a new object, so neither can wait for a later step.
-                        battlefield_arrival(object, arriving_controller, attach_source),
-                        placement,
-                    );
-                    // Applied as the move happens: the identity a permanent
-                    // gets on arrival is not the one the card had in the
-                    // graveyard it came from, so a later effect would have
-                    // nothing to name.
-                    if let (Some(effect), Some(arrived)) = (arrival_effect, arrived) {
-                        self.apply_arrival_effect(arrived, *effect, object, &context, scoped);
-                    }
-                }
-            }
+                attachment,
+            } => self.resolve_move_to_zone(
+                MoveToZoneClause {
+                    recipient,
+                    zone,
+                    controller,
+                    placement,
+                    arrival_effect,
+                    attachment,
+                },
+                object,
+                &context,
+                scoped,
+            ),
             // An Aura attaches as its spell becomes a permanent, so its own
             // clause has nothing left to do. Equip resolves this instead.
             EffectDef::Attach { object: recipient } => {

@@ -234,7 +234,7 @@ pub(in crate::card::sets) static RANCOR: CardRecord = CardRecord::new(
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
-                    attach_source: false,
+                    attachment: None,
                     controller: None,
                 },
             ),

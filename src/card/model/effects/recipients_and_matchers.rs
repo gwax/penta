@@ -499,6 +499,19 @@ pub enum TapPurposeDef {
     Mana,
 }
 
+/// Which way an attachment goes as a permanent enters the battlefield.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ArrivalAttachmentDef {
+    /// Attach the resolving source to what arrived. "Put target creature card
+    /// onto the battlefield ... and attach this enchantment to it."
+    SourceToArrival,
+    /// Attach what arrived to a permanent already there. "Return this card
+    /// from your graveyard to the battlefield, then attach it to that
+    /// creature" moves the Equipment, so the host is what it is named
+    /// against.
+    ArrivalToHost(ObjectRefDef),
+}
+
 /// A matcher over one card reaching a player's hand as a draw.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct DrawEventMatcherDef {

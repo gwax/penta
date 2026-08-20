@@ -134,3 +134,4 @@ pub const CHANDRA_TORCH_OF_DEFIANCE_EMBLEM: CardDefinitionId = CardDefinitionId(
 pub const CHANDRA_TORCH_OF_DEFIANCE: CardDefinitionId = CardDefinitionId(2217);
 pub const DACK_FAYDEN_EMBLEM: CardDefinitionId = CardDefinitionId(2218);
 pub const DACK_FAYDEN: CardDefinitionId = CardDefinitionId(2219);
+pub const SWORD_OF_THE_MEEK: CardDefinitionId = CardDefinitionId(2220);

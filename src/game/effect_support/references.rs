@@ -15,7 +15,7 @@ impl Game {
         Self::chosen_targets(object, scoped.target_slot(slot)).next()
     }
 
-    fn object_reference_target(
+    pub(in crate::game) fn object_reference_target(
         &self,
         reference: ObjectRefDef,
         object: &StackObject,

@@ -128,7 +128,7 @@ static RECLAMATION_SHUFFLE: EffectDef = EffectDef::Sequence(&[
         zone: ZoneKind::Library,
         placement: ZonePlacement::Top,
         arrival_effect: None,
-        attach_source: false,
+        attachment: None,
         controller: None,
     },
     EffectDef::ShuffleLibrary {

@@ -202,7 +202,7 @@ static FURNACE_EXILE_AND_DRAW: EffectDef = EffectDef::Sequence(&[
         controller: None,
         placement: ZonePlacement::Top,
         arrival_effect: None,
-        attach_source: false,
+        attachment: None,
     },
     EffectDef::DrawCards {
         recipient: EffectRecipientDef::Controller,
@@ -258,7 +258,7 @@ pub(in crate::card::sets) static PHYREXIAN_FURNACE: CardRecord = CardRecord::new
                 controller: None,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
-                attach_source: false,
+                attachment: None,
             },
         ),
         AbilityDef::activated_with_targets(

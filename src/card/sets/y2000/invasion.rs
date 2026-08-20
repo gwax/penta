@@ -16,7 +16,7 @@ static FACT_OR_FICTION_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
         zone: ZoneKind::Hand,
         placement: ZonePlacement::Top,
         arrival_effect: None,
-        attach_source: false,
+        attachment: None,
         controller: None,
     },
     EffectDef::MoveToZone {
@@ -24,7 +24,7 @@ static FACT_OR_FICTION_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
         zone: ZoneKind::Graveyard,
         placement: ZonePlacement::Top,
         arrival_effect: None,
-        attach_source: false,
+        attachment: None,
         controller: None,
     },
 ]);

@@ -760,6 +760,12 @@ impl Game {
             self.try_attach(source, permanent_id);
         }
 
+        // The other direction: the Equipment is what arrived, and the host
+        // was here all along.
+        if let EntryCompletion::AttachToHost { host } = entry.completion {
+            self.try_attach(permanent_id, host);
+        }
+
         if let EntryCompletion::Attacking { defender } = entry.completion
             && let Some(permanent) = self
                 .battlefield

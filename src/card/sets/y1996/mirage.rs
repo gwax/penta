@@ -54,7 +54,7 @@ static GRAVE_EXILE_AT_END: AbilityDef = AbilityDef::triggered(
         zone: ZoneKind::Exile,
         placement: ZonePlacement::Top,
         arrival_effect: None,
-        attach_source: false,
+        attachment: None,
         controller: None,
     },
 );
@@ -110,7 +110,7 @@ pub(in crate::card::sets) static SHALLOW_GRAVE: CardRecord = CardRecord::new(
             zone: ZoneKind::Battlefield,
             placement: ZonePlacement::Top,
             arrival_effect: Some(&GRAVE_ARRIVAL),
-            attach_source: false,
+            attachment: None,
             controller: None,
         },
     )),
