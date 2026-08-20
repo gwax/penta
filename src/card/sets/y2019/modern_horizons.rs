@@ -3,11 +3,116 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AlternativeCastKindDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
-    ManaColor, ObjectPredicateDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, cards,
+    AlternativeCastKindDef, CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, cards,
 };
+use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
+
+/// "You don't control" is a constraint on the slot rather than on the object:
+/// a spell being cast is not a permanent, so a predicate that compares
+/// controllers has nothing to compare against yet.
+static WINDS_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+)];
+
+static WINDS_SINGLE: [EffectDef; 2] = [
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        zone: ZoneKind::Exile,
+        controller: None,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+    },
+    // The searcher is the creature's controller, read from the announced
+    // target: by now the creature is in exile and cannot be asked.
+    EffectDef::SearchZone {
+        player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
+            TargetIndex::PRIMARY,
+        ))),
+        source: ZoneKind::Library,
+        object: ObjectPredicateDef::Supertype(CardSupertype::Basic),
+        minimum: 0,
+        maximum: ValueDef::Constant(1),
+        reveal: false,
+        destination: ZoneKind::Battlefield,
+        placement: ZonePlacement::Top,
+        shuffle: true,
+        enters_tapped: true,
+        binding: None,
+        then: None,
+    },
+];
+
+static WINDS_OVERLOADED_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Opponent,
+);
+
+/// "For each creature exiled this way" counts what the exile actually took,
+/// so the set is bound before it is emptied and the search reads the count
+/// off that binding rather than off a board the creatures have left.
+static WINDS_OVERLOADED_STEPS: [EffectDef; 2] = [
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+        zone: ZoneKind::Exile,
+        controller: None,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+    },
+    EffectDef::SearchZone {
+        player: EffectRecipientDef::Opponent,
+        source: ZoneKind::Library,
+        object: ObjectPredicateDef::Supertype(CardSupertype::Basic),
+        minimum: 0,
+        maximum: ValueDef::BoundObjectCount(ObjectSetBindingIndex::PRIMARY),
+        reveal: false,
+        destination: ZoneKind::Battlefield,
+        placement: ZonePlacement::Top,
+        shuffle: true,
+        enters_tapped: true,
+        binding: None,
+        then: None,
+    },
+];
+
+static WINDS_OVERLOADED: EffectDef = EffectDef::BindMatching {
+    objects: ObjectSetDef::Query(WINDS_OVERLOADED_CREATURES),
+    binding: ObjectSetBindingIndex::PRIMARY,
+    then: &EffectDef::Sequence(&WINDS_OVERLOADED_STEPS),
+};
+
+// MH1 37 — Winds of Abandon
+pub(in crate::card::sets) static WINDS_OF_ABANDON: CardRecord = CardRecord::new(
+    cards::WINDS_OF_ABANDON,
+    "Winds of Abandon",
+    CardArt::new("3bb17913-fe4d-4acd-9b75-71f5a90f898b", "Noah Bradley"),
+    CardSet::ModernHorizons1,
+    // Two mana answers one creature and six answers the board, and neither
+    // half leaves anything behind to rebuild from -- exile rather than
+    // destruction is the whole reason the card ends games.
+    CardRules::new_sorcery(mana_cost!("{1}{W}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Exile target creature you don't control. For each creature exiled this way, its controller searches their library for a basic land card. Those players put those cards onto the battlefield tapped, then shuffle.",
+            &WINDS_TARGET,
+            EffectDef::Sequence(&WINDS_SINGLE),
+        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{4}{W}{W}"),
+            AlternativeCastKindDef::Overload,
+            Some("Exile each creature you don't control. For each creature exiled this way, its controller searches their library for a basic land card. Those players put those cards onto the battlefield tapped, then shuffle."),
+            WINDS_OVERLOADED,
+        ),
+    ]),
+);
 
 /// Exiled rather than discarded: the card is spent without ever becoming a
 /// graveyard card, which is what "exile a green card" means.
@@ -101,6 +206,7 @@ pub(in crate::card::sets) static FALLEN_SHINOBI: CardRecord = CardRecord::new(
         .with_abilities(&SHINOBI_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&FORCE_OF_VIGOR, &FALLEN_SHINOBI];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&WINDS_OF_ABANDON, &FORCE_OF_VIGOR, &FALLEN_SHINOBI];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

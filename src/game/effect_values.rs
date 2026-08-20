@@ -118,6 +118,11 @@ impl Game {
             // What the step before this one matched -- the land cards a
             // discard took. Zero without such a step behind it.
             ValueDef::MatchedCount => i32::from(context.matched_count.unwrap_or(0)),
+            // Read off the binding rather than off the board: what was
+            // exiled is no longer anywhere to count.
+            ValueDef::BoundObjectCount(binding) => {
+                i32::try_from(context.object_group(binding).len()).unwrap_or(i32::MAX)
+            }
             // Everybody's spells, minus the one carrying the ability: it was
             // counted as it was cast, and storm copies what came before it.
             ValueDef::SpellsCastBeforeThisTurn => i32::from(

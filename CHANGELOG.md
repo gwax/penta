@@ -153,6 +153,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Counting what an earlier step bound.** "For each creature exiled this
+  way" has to count what the exile actually took, and by the time the
+  follow-up runs those creatures are no longer anywhere to count. A value
+  can now read the size of an object set an earlier step in the same
+  resolution bound. Winds of Abandon is the first card to ask, and the first
+  to use overload at all.
+
 - **Ninjutsu, and playing somebody else's cards from exile.** Ninjutsu
   (CR 702.49) is an activated ability that works from its owner's hand in
   the priority round the attack declaration opens: it returns an unblocked

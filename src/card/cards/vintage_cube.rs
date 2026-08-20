@@ -95,3 +95,4 @@ pub const BRISTLY_BILL_SPINE_SOWER: CardDefinitionId = CardDefinitionId(2177);
 pub const FALLEN_SHINOBI: CardDefinitionId = CardDefinitionId(2178);
 pub const STOCK_UP: CardDefinitionId = CardDefinitionId(2179);
 pub const SHEOLDRED_THE_APOCALYPSE: CardDefinitionId = CardDefinitionId(2180);
+pub const WINDS_OF_ABANDON: CardDefinitionId = CardDefinitionId(2181);

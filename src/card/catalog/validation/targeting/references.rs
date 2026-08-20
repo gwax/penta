@@ -279,6 +279,7 @@ fn validate_trigger_object_predicate(
                     | ValueDef::CountersOnSource(_)
                     | ValueDef::PaidAmount
                     | ValueDef::MatchedCount
+        | ValueDef::BoundObjectCount(_)
                     | ValueDef::SpellsCastBeforeThisTurn
             ) {
                 Ok(())
@@ -781,6 +782,7 @@ fn validate_value_target_references(
         | ValueDef::CountersOnSource(_)
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount
+        | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::CreaturesDiedThisTurn
         | ValueDef::CardTypesAmongGraveyards(_)

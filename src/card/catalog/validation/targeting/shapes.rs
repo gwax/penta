@@ -318,6 +318,7 @@ fn validate_value_shape(
         | ValueDef::CountersOnSource(_)
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount
+        | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::DividedAmongTargets => Ok(()),
     }

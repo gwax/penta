@@ -1,4 +1,4 @@
-use crate::ids::TargetIndex;
+use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 
 use super::super::{CounterKind, ObjectPredicateDef, PlayerRelation, ZoneKind};
 use super::{DamageSourceGroupDef, PlayerSetDef};
@@ -203,6 +203,11 @@ pub enum ValueDef {
     /// How many objects the step before this one matched: the land cards a
     /// discard actually took. Zero without such a step behind it.
     MatchedCount,
+    /// How many objects an earlier step in this resolution bound. "For each
+    /// creature exiled this way" counts what the exile actually took, which
+    /// the board no longer holds by the time the follow-up runs. Zero
+    /// without such a step behind it.
+    BoundObjectCount(ObjectSetBindingIndex),
     /// What was actually paid for a [`super::EffectPaymentCostDef::ChosenGenericMana`]
     /// payment in this resolution. Zero anywhere else, so a branch that reads
     /// it without a payment behind it does nothing rather than guessing.
