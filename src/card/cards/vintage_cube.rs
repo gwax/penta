@@ -155,3 +155,4 @@ pub const WALKING_BALLISTA: CardDefinitionId = CardDefinitionId(2237);
 pub const MANAMORPHOSE: CardDefinitionId = CardDefinitionId(2238);
 pub const CELESTIAL_COLONNADE: CardDefinitionId = CardDefinitionId(2239);
 pub const THOUGHTSEIZE: CardDefinitionId = CardDefinitionId(2240);
+pub const PONDER: CardDefinitionId = CardDefinitionId(2241);
