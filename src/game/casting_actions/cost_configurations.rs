@@ -89,13 +89,18 @@ impl Game {
                 })
                 .map(|permanent| permanent.card.id)
                 .collect(),
+            // The same exclusion as hand below, for the same reason: escape
+            // and flashback are cast from the graveyard, so by the time the
+            // cost is paid the card is on the stack and not there to spend.
+            // This is what "exile five other cards" means.
             ZoneKind::Graveyard => self.players[player.index()]
                 .graveyard
                 .iter()
-                .filter(|card| {
-                    self.card_object_matches(cost.object, card, ZoneKind::Graveyard, card.id)
+                .filter(|held| {
+                    held.id != card.id
+                        && self.card_object_matches(cost.object, held, ZoneKind::Graveyard, held.id)
                 })
-                .map(|card| card.id)
+                .map(|held| held.id)
                 .collect(),
             // The card paying the cost cannot be the spell itself: it has
             // already left hand by the time the cost is paid.
@@ -143,6 +148,68 @@ impl Game {
             }
         }
         combinations
+    }
+
+    /// Whether an alternative of this kind may be used on a card being cast
+    /// from this zone. What separates them is where the permission lets the
+    /// card be cast from: flashback and escape are permissions to cast it
+    /// where it lies, and everything else is an ordinary cast from hand paid
+    /// for differently.
+    fn alternative_is_castable_from(
+        &self,
+        source_zone: CastSourceZone,
+        kind: Option<AlternativeCastKindDef>,
+        card: GameObjectId,
+    ) -> bool {
+        match (source_zone, kind) {
+            // Both are permission to cast the card where it lies,
+            // which is nowhere else.
+            (
+                CastSourceZone::Hand,
+                Some(AlternativeCastKindDef::Flashback | AlternativeCastKindDef::Escape),
+            )
+            | (
+                CastSourceZone::Graveyard,
+                Some(
+            AlternativeCastKindDef::Overload
+            | AlternativeCastKindDef::Miracle
+            | AlternativeCastKindDef::Kicked
+            | AlternativeCastKindDef::Buyback
+            | AlternativeCastKindDef::AlternativeCost
+            | AlternativeCastKindDef::FaceDown,
+                )
+                | None,
+            )
+            // A card coming back from an adventure is cast for what
+            // its creature half prints, which is the permission the
+            // adventure gave. Nothing else about it changes.
+            | (CastSourceZone::Exile, _) => false,
+            // A kicked spell, and one paid for some other way, are both
+            // cast from hand like any other; only what they cost and what
+            // they do are different.
+            (
+                CastSourceZone::Hand,
+                Some(
+            AlternativeCastKindDef::Overload
+            | AlternativeCastKindDef::Kicked
+            | AlternativeCastKindDef::Buyback
+            | AlternativeCastKindDef::AlternativeCost
+            // Face down is a way of casting the card from
+            // hand, not a permission to cast it elsewhere.
+            | AlternativeCastKindDef::FaceDown,
+                )
+                | None,
+            )
+            | (
+                CastSourceZone::Graveyard,
+                Some(AlternativeCastKindDef::Flashback | AlternativeCastKindDef::Escape),
+            ) => true,
+            // Only in the window the draw opened, and only for the card
+            // that was drawn.
+            (CastSourceZone::Hand, Some(AlternativeCastKindDef::Miracle)) => {
+                self.miracle_window == Some(card)
+            }
+        }
     }
 
     pub(in crate::game) fn visit_cost_configurations(
@@ -199,48 +266,7 @@ impl Game {
                 },
                 None => false,
             };
-            let available = !gated
-                && match (source_zone, kind) {
-                    (CastSourceZone::Hand, Some(AlternativeCastKindDef::Flashback))
-                    | (
-                        CastSourceZone::Graveyard,
-                        Some(
-                            AlternativeCastKindDef::Overload
-                            | AlternativeCastKindDef::Miracle
-                            | AlternativeCastKindDef::Kicked
-                            | AlternativeCastKindDef::Buyback
-                            | AlternativeCastKindDef::AlternativeCost
-                            | AlternativeCastKindDef::FaceDown,
-                        )
-                        | None,
-                    )
-                    // A card coming back from an adventure is cast for what
-                    // its creature half prints, which is the permission the
-                    // adventure gave. Nothing else about it changes.
-                    | (CastSourceZone::Exile, _) => false,
-                    // A kicked spell, and one paid for some other way, are both
-                    // cast from hand like any other; only what they cost and what
-                    // they do are different.
-                    (
-                        CastSourceZone::Hand,
-                        Some(
-                            AlternativeCastKindDef::Overload
-                            | AlternativeCastKindDef::Kicked
-                            | AlternativeCastKindDef::Buyback
-                            | AlternativeCastKindDef::AlternativeCost
-                            // Face down is a way of casting the card from
-                            // hand, not a permission to cast it elsewhere.
-                            | AlternativeCastKindDef::FaceDown,
-                        )
-                        | None,
-                    )
-                    | (CastSourceZone::Graveyard, Some(AlternativeCastKindDef::Flashback)) => true,
-                    // Only in the window the draw opened, and only for the card
-                    // that was drawn.
-                    (CastSourceZone::Hand, Some(AlternativeCastKindDef::Miracle)) => {
-                        self.miracle_window == Some(card)
-                    }
-                };
+            let available = !gated && self.alternative_is_castable_from(source_zone, kind, card);
             if available
                 && Self::visit_additional_cost_configurations(
                     option,

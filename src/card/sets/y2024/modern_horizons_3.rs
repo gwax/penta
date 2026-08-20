@@ -7,8 +7,9 @@ use crate::card::{
     CardRules, CardSet, CardStructure, CardSupertype, CardType, ComparisonDef, CounterKind,
     DoubleFacedKind, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
     InstalledTriggerDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PayOrDef,
-    PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, SpellForm, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, SpellAdditionalCostDef, SpellForm,
+    SpendModeDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId};
 use crate::{TargetIndex, mana_cost};
@@ -498,6 +499,91 @@ fn ajani_composition() -> CardComposition {
     }
 }
 
+/// Five cards out of your own graveyard, exiled to pay. The card being cast
+/// is on the stack by the time costs are paid, so "other" takes care of
+/// itself: it is not there to be chosen.
+static EXILE_FIVE_OTHER_CARDS: SpellAdditionalCostDef =
+    SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Graveyard, 5)
+        .spent(SpendModeDef::Exile);
+
+static PHLAGE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
+/// Entering and attacking are two ways for one printed ability to fire, so
+/// the damage and the life are written once.
+static PHLAGE_EVENTS: [TriggerEventDef; 2] = [
+    TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Source,
+        None,
+        Some(ZoneKind::Battlefield),
+    ),
+    TriggerEventDef::attacks(ObjectPredicateDef::Source),
+];
+
+static PHLAGE_BOLTS: [EffectDef; 2] = [
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(3),
+    },
+];
+
+/// "Unless it escaped" reads how the spell was cast, which the permanent
+/// remembers: a Phlage cast for its printed cost sacrifices itself and leaves
+/// the Lightning Helix behind.
+static PHLAGE_DID_NOT_ESCAPE: TriggerConditionDef = TriggerConditionDef::Not(
+    &TriggerConditionDef::SourceCastWith(AlternativeCastKindDef::Escape),
+);
+
+static PHLAGE_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::triggered_if(
+        "When this creature enters, sacrifice it unless it escaped.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        &PHLAGE_DID_NOT_ESCAPE,
+        EffectDef::Sacrifice {
+            object: EffectRecipientDef::Source,
+        },
+    ),
+    AbilityDef::triggered_with_targets(
+        "Whenever this creature enters or attacks, it deals 3 damage to any target and you gain \
+         3 life.",
+        TriggerEventDef::AnyOf(&PHLAGE_EVENTS),
+        &PHLAGE_TARGET,
+        EffectDef::Sequence(&PHLAGE_BOLTS),
+    ),
+    AbilityDef::alternative_cast(
+        mana_cost!("{R}{R}{W}{W}"),
+        AlternativeCastKindDef::Escape,
+        Some(
+            "Escape—{R}{R}{W}{W}, Exile five other cards from your graveyard. (You may cast this \
+             card from your graveyard for its escape cost.)",
+        ),
+        EffectDef::None,
+    )
+    .with_alternative_additional_cost(&EXILE_FIVE_OTHER_CARDS),
+];
+
+// MH3 197 — Phlage, Titan of Fire's Fury
+pub(in crate::card::sets) static PHLAGE_TITAN_OF_FIRES_FURY: CardRecord = CardRecord::new(
+    cards::PHLAGE_TITAN_OF_FIRES_FURY,
+    "Phlage, Titan of Fire's Fury",
+    CardArt::new("e419cd0b-2449-4cc5-9ead-b9e45e271700", "Lucas Graciano"),
+    CardSet::ModernHorizons3,
+    // A three-mana Lightning Helix that stays a Helix until the graveyard is
+    // deep enough, and then is a 6/6 that helixes again every attack.
+    CardRules::new_creature(mana_cost!("{1}{R}{W}"), &["Elder", "Giant"], 6, 6)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&PHLAGE_ABILITIES),
+);
+
 // MH3 237 — Ajani, Nacatl Pariah
 pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::new(
     cards::AJANI_NACATL_PARIAH,
@@ -514,6 +600,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AMPED_RAPTOR,
     &COLOSSAL_DREADMASK,
     &SOWING_MYCOSPAWN,
+    &PHLAGE_TITAN_OF_FIRES_FURY,
     &AJANI_NACATL_PARIAH,
 ];
 

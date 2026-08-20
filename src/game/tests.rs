@@ -802,6 +802,7 @@ mod vintage_cube_ocelot_pride;
 mod vintage_cube_oracle;
 mod vintage_cube_orcish_bowmasters;
 mod vintage_cube_path;
+mod vintage_cube_phlage;
 mod vintage_cube_prismatic_ending;
 mod vintage_cube_relic;
 mod vintage_cube_shieldbreaker;

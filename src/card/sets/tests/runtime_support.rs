@@ -849,11 +849,12 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
         }
         DeclarativeAbilityDef::Replacement(_) => unreachable!("handled before ordinary effects"),
         DeclarativeAbilityDef::AlternativeCast(definition) => match definition.kind {
-            // All five are permission to cast rather than effects of their
-            // own. For four of them the card's spell clause does the work;
+            // All six are permission to cast rather than effects of their
+            // own. For five of them the card's spell clause does the work;
             // for a face-down cast nothing does, which is the point. Buyback
             // changes only where the card goes afterwards.
             AlternativeCastKindDef::Flashback
+            | AlternativeCastKindDef::Escape
             | AlternativeCastKindDef::Miracle
             | AlternativeCastKindDef::Buyback
             | AlternativeCastKindDef::AlternativeCost

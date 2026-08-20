@@ -67,6 +67,12 @@ pub enum AlternativeCastKindDef {
     /// instructions -- which is what an alternative cast already is, so the
     /// mana cost here is the whole kicked total rather than the surcharge.
     Kicked,
+    /// Cast from a graveyard for its escape cost (CR 702.152a). Like
+    /// flashback it is a permission to cast the card where it lies, and the
+    /// cards it exiles are an additional cost -- but unlike flashback the
+    /// card is not exiled afterwards, so a creature that escaped and later
+    /// dies may escape again.
+    Escape,
     /// Cast face down as a 2/2 creature with no name for {3} (CR 702.37a).
     /// The spell's own clauses are not what it does while face down -- it
     /// does nothing at all -- so this kind changes the object rather than
@@ -105,6 +111,7 @@ impl AlternativeCastKindDef {
             Self::Kicked => "Kicker",
             Self::Buyback => "Buyback",
             Self::AlternativeCost => "Alternative cost",
+            Self::Escape => "Escape",
             Self::FaceDown => "Morph",
         }
     }
@@ -114,6 +121,7 @@ impl AlternativeCastKindDef {
     #[must_use]
     pub fn from_label(label: &str) -> Option<Self> {
         [
+            Self::Escape,
             Self::Flashback,
             Self::Overload,
             Self::Miracle,
@@ -140,6 +148,10 @@ impl AlternativeCastAbilityDef {
                 AlternativeCastKindDef::Flashback,
                 AlternativeCastManaCostDef::ThisCardManaCost,
             ) => "Flashback—the flashback cost is equal to this card's mana cost. (You may cast this card from your graveyard for its flashback cost. Then exile it.)".into(),
+            (AlternativeCastKindDef::Escape, _) => self.stack_text.map_or_else(
+                || "Escape (You may cast this card from your graveyard for its escape cost.)".into(),
+                std::borrow::ToOwned::to_owned,
+            ),
             (AlternativeCastKindDef::Overload, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
                 format!(
                     "Overload {mana_cost} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
