@@ -227,6 +227,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("conflux.rs") => source(CardSet::Conflux, "CON"),
         Some("zendikar.rs") => source(CardSet::Zendikar, "ZEN"),
         Some("worldwake.rs") => source(CardSet::Worldwake, "WWK"),
+        Some("shadowmoor.rs") => source(CardSet::Shadowmoor, "SHM"),
         Some("shards_of_alara.rs") => source(CardSet::ShardsOfAlara, "ALA"),
         Some("ixalan.rs") => source(CardSet::Ixalan, "XLN"),
         Some("battlebond.rs") => source(CardSet::Battlebond, "BBD"),

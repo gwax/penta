@@ -199,12 +199,12 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             deferred_decision_allowed && shared_stack_effect_at_position(*then, true)
         }
         // A resolving ability names each mana as it is added, one question
-        // per mana, so a choice of colour is supported here as long as the
-        // resolution is allowed to ask one. A combination is not: dividing
-        // an amount across types is enumerated where an activation is
-        // offered, and a resolution has nowhere to enumerate it.
+        // per mana, so both a choice of colour and a combination are
+        // supported here as long as the resolution is allowed to ask. What
+        // separates them is enumeration before an activation is offered,
+        // which a resolution never does.
         EffectDef::AddMana(AddManaEffectDef {
-            mana: ManaSelectionDef::Choice(_),
+            mana: ManaSelectionDef::Choice(_) | ManaSelectionDef::Combination(_),
             ..
         }) => deferred_decision_allowed && shared_mana_effect(effect, true),
         // Each type is asked separately, so the run needs a resolution that

@@ -307,6 +307,11 @@ const SET_MODULES: &[SetModule] = &[
         y2009::zendikar::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Shadowmoor,
+        y2008::shadowmoor::CARDS,
+        y2008::shadowmoor::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::ShardsOfAlara,
         y2008::shards_of_alara::CARDS,
         y2008::shards_of_alara::ADDITIONAL_PRINTINGS,

@@ -69,9 +69,14 @@ impl Game {
                     );
                 }
             }
+            // Both reduce to the same question here. A mana ability
+            // enumerates its colours before it is offered, and there a
+            // choice names one colour for the whole amount while a
+            // combination splits it; a resolution has nowhere to enumerate,
+            // so each mana is named as it is added either way.
             EffectDef::AddMana(
                 effect @ AddManaEffectDef {
-                    mana: ManaSelectionDef::Choice(colors),
+                    mana: ManaSelectionDef::Choice(colors) | ManaSelectionDef::Combination(colors),
                     ..
                 },
             ) => {
@@ -109,13 +114,6 @@ impl Game {
                     .unwrap_or(u16::MAX);
                 self.add_unrestricted_mana(object.controller, color, amount);
             }
-            // A combination divides one amount across several types, which is
-            // enumerated where an activation is offered; a resolution has
-            // nowhere to enumerate it, so it stays a seam.
-            EffectDef::AddMana(AddManaEffectDef {
-                mana: ManaSelectionDef::Combination(_),
-                ..
-            }) => {}
             _ => unreachable!("resolve_mana_effect called for another effect"),
         }
     }

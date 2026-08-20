@@ -61,6 +61,7 @@ pub enum CardSet {
     ThroneOfEldraine,
     TherosBeyondDeath,
     ZendikarRising,
+    Shadowmoor,
     ShardsOfAlara,
     Ixalan,
     Battlebond,
