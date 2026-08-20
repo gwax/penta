@@ -1,7 +1,7 @@
 use crate::action::{ManaColor, Target};
 use crate::card::{
-    BattlefieldEntryScalarChoiceDef, CardTypeSet, ColorChoiceOperationDef, ColorSet, EffectDef,
-    ManaCost, ObjectChoiceBindingDef, ObjectPredicateDef, ReplacementEffectDef,
+    BattlefieldEntryScalarChoiceDef, CardType, CardTypeSet, ColorChoiceOperationDef, ColorSet,
+    EffectDef, ManaCost, ObjectChoiceBindingDef, ObjectPredicateDef, ReplacementEffectDef,
     TopCardSelectionDef, TurnKindDef, ZoneKind, ZonePlacement,
 };
 use crate::casting::TargetSelection;
@@ -274,6 +274,19 @@ pub(super) enum DecisionContinuation {
         remaining: u16,
         /// Which colours the printed clause allows. "Any color" is all five.
         choosable: ColorSet,
+    },
+    /// One step of "keep one of each of these types, then sacrifice the
+    /// rest". Each type is asked separately, and what has been kept so far
+    /// travels with the question; the sacrifice happens once the last type
+    /// has been answered.
+    KeepOnePerType {
+        /// Who is choosing, and whose permanents are at stake.
+        player: PlayerId,
+        /// Who the sacrifice is attributed to.
+        controller: PlayerId,
+        /// The types still to be asked about, this one first.
+        remaining: Vec<CardType>,
+        kept: Vec<GameObjectId>,
     },
     ChainLightning {
         player: PlayerId,

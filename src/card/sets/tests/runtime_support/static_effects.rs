@@ -208,6 +208,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::CreateTokenCopyOf { .. }
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
+        | EffectDef::SacrificeKeepingOnePerType { .. }
         | EffectDef::SacrificeOfChoice { .. }
         | EffectDef::ExileTopOfLibraryToPlay { .. }
         | EffectDef::Mill { .. }

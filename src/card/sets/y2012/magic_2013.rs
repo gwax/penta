@@ -485,6 +485,7 @@ pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new(
                 zone: ZoneKind::Battlefield,
                 grant: None,
                 controller: None,
+                transformed: false,
             },
         ),
     ]),

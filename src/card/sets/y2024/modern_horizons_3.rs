@@ -2,12 +2,15 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, AppliedEffectDef,
-    CardArt, CardRules, CardSet, CardType, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
-    EffectRecipientDef, InstalledTriggerDef, ObjectPredicateDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
+    AppliedEffectDef, CardArt, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet,
+    CardStructure, CardSupertype, CardType, ComparisonDef, CounterKind, DoubleFacedKind, EffectDef,
+    EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PayOrDef, PlayOptionDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, SpellForm, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
+use crate::ids::{CardPartId, PlayOptionId};
 use crate::{TargetIndex, mana_cost};
 
 /// "Until this enchantment leaves the battlefield" is one printed ability,
@@ -24,6 +27,7 @@ static PRISON_RETURNS_IT: AbilityDef = AbilityDef::triggered(
         zone: ZoneKind::Battlefield,
         grant: None,
         controller: None,
+        transformed: false,
     },
 );
 
@@ -183,7 +187,211 @@ pub(in crate::card::sets) static SOWING_MYCOSPAWN: CardRecord = CardRecord::new(
         .with_abilities(&MYCOSPAWN_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&STATIC_PRISON, &COLOSSAL_DREADMASK, &SOWING_MYCOSPAWN];
+/// The Cats that matter are the other ones: Ajani dying alongside them does
+/// not turn him over, and neither does his own death.
+static ANOTHER_CAT_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Subtype("Cat"),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+]);
+
+/// "Exile Ajani, then return him to the battlefield transformed." One
+/// resolution: the exile links him to himself and the return brings him
+/// straight back on the other face, under his owner's control.
+static AJANI_TURNS_OVER: [EffectDef; 2] = [
+    EffectDef::ExileLinkedToSource {
+        object: EffectRecipientDef::Source,
+    },
+    EffectDef::ReturnLinkedExiles {
+        zone: ZoneKind::Battlefield,
+        grant: None,
+        controller: None,
+        transformed: true,
+    },
+];
+
+static CATS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::Subtype("Cat"),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+/// "If you control a red permanent other than Ajani." Ajani himself is
+/// white, so the clause is about a second permanent rather than about him.
+static A_RED_PERMANENT_BESIDES_AJANI: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::Color(ManaColor::Red),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+/// The reflexive "when you do" is folded into this resolution: the token is
+/// made, and then the damage happens if the condition holds. What that
+/// costs is the separate window between the two and the chance to decline
+/// the damage; the target is named as the ability is activated instead of
+/// after the token appears, and there is always a legal one because a
+/// player is a legal target.
+static AJANI_MAKES_A_CAT_AND_MAY_BURN: [EffectDef; 2] = [
+    EffectDef::CreateToken {
+        token: cards::CAT_WARRIOR_TOKEN_2_1_WHITE,
+        count: ValueDef::Constant(1),
+        tapped: false,
+    },
+    EffectDef::IfCondition {
+        condition: &A_RED_PERMANENT_BESIDES_AJANI,
+        then: &EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL),
+        },
+    },
+];
+
+static CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static AJANI_BURN_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
+/// The four types the ultimate lets each opponent keep one of. Order is the
+/// printed order, which is the order the questions are asked in.
+static AJANI_SPARED_TYPES: [CardType; 4] = [
+    CardType::Artifact,
+    CardType::Creature,
+    CardType::Enchantment,
+    CardType::Planeswalker,
+];
+
+static AJANI_TURNS_OVER_SEQUENCE: EffectDef = EffectDef::Sequence(&AJANI_TURNS_OVER);
+
+static AJANI_PARIAH_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::triggered(
+        "When Ajani enters, create a 2/1 white Cat Warrior creature token.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        EffectDef::CreateToken {
+            token: cards::CAT_WARRIOR_TOKEN_2_1_WHITE,
+            count: ValueDef::Constant(1),
+            tapped: false,
+        },
+    ),
+    // One trigger per Cat rather than one per batch. Several Cats dying at
+    // once fire it several times, and every firing after the first finds
+    // Ajani already exiled and returned as a new object, so it has nothing
+    // left to turn over.
+    AbilityDef::triggered(
+        "Whenever one or more other Cats you control die, you may exile Ajani, then return him to the battlefield transformed under his owner's control.",
+        TriggerEventDef::zone_changed(
+            ANOTHER_CAT_YOU_CONTROL,
+            Some(ZoneKind::Battlefield),
+            Some(ZoneKind::Graveyard),
+        ),
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &AJANI_TURNS_OVER_SEQUENCE,
+        },
+    ),
+];
+
+static AJANI_AVENGER_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::activated(
+        "+2: Put a +1/+1 counter on each Cat you control.",
+        &AJANI_PLUS_TWO_COST,
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::objects(ObjectSetDef::Query(CATS_YOU_CONTROL)),
+            kind: CounterKind::PlusOnePlusOne,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    AbilityDef::activated_with_targets(
+        "0: Create a 2/1 white Cat Warrior creature token. When you do, if you control a red permanent other than Ajani, he deals damage equal to the number of creatures you control to any target.",
+        &AJANI_ZERO_COST,
+        &AJANI_BURN_TARGET,
+        EffectDef::Sequence(&AJANI_MAKES_A_CAT_AND_MAY_BURN),
+    ),
+    AbilityDef::activated(
+        "−4: Each opponent chooses an artifact, a creature, an enchantment, and a planeswalker from among the nonland permanents they control, then sacrifices the rest.",
+        &AJANI_MINUS_FOUR_COST,
+        EffectDef::SacrificeKeepingOnePerType {
+            player: EffectRecipientDef::Opponent,
+            types: &AJANI_SPARED_TYPES,
+        },
+    ),
+];
+
+static AJANI_PLUS_TWO_COST: [AbilityCostDef; 1] = [AbilityCostDef::Loyalty(2)];
+static AJANI_ZERO_COST: [AbilityCostDef; 1] = [AbilityCostDef::Loyalty(0)];
+static AJANI_MINUS_FOUR_COST: [AbilityCostDef; 1] = [AbilityCostDef::Loyalty(-4)];
+
+const fn ajani_nacatl_pariah_rules() -> CardRules {
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Cat", "Warrior"], 1, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&AJANI_PARIAH_ABILITIES)
+}
+
+const fn ajani_nacatl_avenger_rules() -> CardRules {
+    CardRules::new_planeswalker_without_mana_cost(&["Ajani"])
+        .with_supertype(CardSupertype::Legendary)
+        .with_starting_loyalty(3)
+        .with_abilities(&AJANI_AVENGER_ABILITIES)
+}
+
+fn ajani_composition() -> CardComposition {
+    CardComposition {
+        parts: vec![
+            CardPart::new(
+                CardPartId::PRIMARY,
+                "Ajani, Nacatl Pariah",
+                ajani_nacatl_pariah_rules(),
+            ),
+            CardPart::new(
+                CardPartId(1),
+                "Ajani, Nacatl Avenger",
+                ajani_nacatl_avenger_rules(),
+            ),
+        ],
+        structure: CardStructure::DoubleFaced {
+            front: CardPartId::PRIMARY,
+            back: CardPartId(1),
+            kind: DoubleFacedKind::Transforming,
+        },
+        play_options: vec![PlayOptionDef::cast(
+            PlayOptionId::DEFAULT,
+            "Ajani, Nacatl Pariah",
+            SpellForm::Part(CardPartId::PRIMARY),
+            mana_cost!("{1}{W}"),
+            CardEffectStatus::Implemented,
+        )],
+    }
+}
+
+// MH3 237 — Ajani, Nacatl Pariah
+pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::new(
+    cards::AJANI_NACATL_PARIAH,
+    "Ajani, Nacatl Pariah",
+    CardArt::new("0d16e8e0-31b2-4389-afd6-783c501f6fa0", "Chris Rallis"),
+    CardSet::ModernHorizons3,
+    ajani_nacatl_pariah_rules(),
+)
+.with_composition(ajani_composition);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &STATIC_PRISON,
+    &COLOSSAL_DREADMASK,
+    &SOWING_MYCOSPAWN,
+    &AJANI_NACATL_PARIAH,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

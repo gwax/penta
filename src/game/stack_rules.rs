@@ -110,6 +110,7 @@ impl Game {
             | EffectDef::PairWithSource { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
+            | EffectDef::SacrificeKeepingOnePerType { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }
             | EffectDef::Mill { .. }

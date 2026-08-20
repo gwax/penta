@@ -65,6 +65,7 @@ static TIDEHOLLOW_SCULLER_ABILITIES: [AbilityDef; 2] = [
             zone: ZoneKind::Hand,
             grant: None,
             controller: None,
+            transformed: false,
         },
     ),
 ];

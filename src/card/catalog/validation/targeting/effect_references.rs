@@ -214,6 +214,7 @@ fn validate_effect_references(
         | EffectDef::ExileTopOfLibraryToPlay { player, .. }
         | EffectDef::MillUntil { player, .. }
         | EffectDef::ChooseCards { player, .. }
+        | EffectDef::SacrificeKeepingOnePerType { player, .. }
         | EffectDef::TakeExtraTurn { player }
         | EffectDef::LookAtHand { player }
         | EffectDef::RevealHand { player } => {

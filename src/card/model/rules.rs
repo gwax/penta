@@ -338,6 +338,15 @@ impl CardRules {
         rules
     }
 
+    /// A back face's printed loyalty. It has no mana cost -- nothing casts
+    /// it -- but it still prints a number, and a permanent that arrives on
+    /// that face enters with it.
+    #[must_use]
+    pub const fn with_starting_loyalty(mut self, loyalty: u16) -> Self {
+        self.starting_loyalty = Some(loyalty);
+        self
+    }
+
     #[must_use]
     pub const fn types(&self) -> CardTypeSet {
         self.card_types

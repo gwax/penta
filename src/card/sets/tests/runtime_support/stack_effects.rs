@@ -207,6 +207,11 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             mana: ManaSelectionDef::Choice(_),
             ..
         }) => deferred_decision_allowed && shared_mana_effect(effect, true),
+        // Each type is asked separately, so the run needs a resolution that
+        // is allowed to stop and ask.
+        EffectDef::SacrificeKeepingOnePerType { player, types } => {
+            deferred_decision_allowed && shared_effect_recipient(player) && !types.is_empty()
+        }
         EffectDef::AddMana(_) => shared_mana_effect(effect, false),
         EffectDef::DealDamage { recipient, .. }
         | EffectDef::DealDamageAndApply { recipient, .. }

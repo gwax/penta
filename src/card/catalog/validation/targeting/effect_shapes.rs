@@ -105,6 +105,7 @@ fn validate_effect_target_shapes(
             player, then: None, ..
         }
         | EffectDef::ChooseCards { player, .. }
+        | EffectDef::SacrificeKeepingOnePerType { player, .. }
         | EffectDef::TakeExtraTurn { player }
         | EffectDef::LookAtHand { player }
         | EffectDef::RevealHand { player } => {

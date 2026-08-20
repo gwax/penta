@@ -480,10 +480,17 @@ impl Game {
             .catalog
             .get(card.definition)
             .expect("a card in hand remains cataloged");
-        let presented = applicable_part_ids(definition, &CharacteristicContext::Hand)
+        let front = applicable_part_ids(definition, &CharacteristicContext::Hand)
             .ok()
             .and_then(|parts| parts.first().copied())
             .unwrap_or(CardPartId::PRIMARY);
+        // A card told to arrive transformed enters showing its other face.
+        // A single-faced card has no other face and simply ignores it.
+        let presented = if arrival.transformed {
+            definition.other_face(front).unwrap_or(front)
+        } else {
+            front
+        };
         let entered_card = card.clone();
         let mut permanent = Permanent::entering(
             card,

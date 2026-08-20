@@ -705,6 +705,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::CreateTokenCopyOf { .. }
                     | EffectDef::Destroy { .. }
                     | EffectDef::Sacrifice { .. }
+                    | EffectDef::SacrificeKeepingOnePerType { .. }
                     | EffectDef::SacrificeOfChoice { .. }
                     | EffectDef::ExileTopOfLibraryToPlay { .. }
                     | EffectDef::Mill { .. }

@@ -489,6 +489,7 @@ fn validate_resolving_effect(
         | EffectDef::Detain { .. }
         | EffectDef::Regenerate { .. }
         | EffectDef::Sacrifice { .. }
+        | EffectDef::SacrificeKeepingOnePerType { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
         | EffectDef::ExileTopOfLibraryToPlay { .. }
         | EffectDef::Mill { .. }
@@ -914,6 +915,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::Detain { .. } => "Detain",
         EffectDef::Regenerate { .. } => "Regenerate",
         EffectDef::Sacrifice { .. } => "Sacrifice",
+        EffectDef::SacrificeKeepingOnePerType { .. } => "SacrificeKeepingOnePerType",
         EffectDef::SacrificeOfChoice { .. } => "SacrificeOfChoice",
         EffectDef::ExileTopOfLibraryToPlay { .. } => "ExileTopOfLibraryToPlay",
         EffectDef::Mill { .. } => "Mill",

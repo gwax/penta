@@ -105,6 +105,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::CreateTokenCopyOf { .. }
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
+        | EffectDef::SacrificeKeepingOnePerType { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
         | EffectDef::ExileTopOfLibraryToPlay { .. }
             | EffectDef::Mill { .. }
@@ -288,6 +289,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::CreateTokenCopyOf { .. }
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
+        | EffectDef::SacrificeKeepingOnePerType { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
         | EffectDef::ExileTopOfLibraryToPlay { .. }
             | EffectDef::Mill { .. }

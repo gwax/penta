@@ -55,6 +55,7 @@ impl Game {
             | EffectDef::Untap { .. }
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
+        | EffectDef::SacrificeKeepingOnePerType { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }
             | EffectDef::Mill { .. }

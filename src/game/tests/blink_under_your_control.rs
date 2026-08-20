@@ -150,7 +150,7 @@ fn an_ordinary_return_gives_it_back_to_its_owner() {
     let bear_id = bear.card.id;
     game.players[PlayerId::Two.index()].exile.push(bear.card);
 
-    game.return_exiled_card(bear_id, ZoneKind::Battlefield, None, None);
+    game.return_exiled_card(bear_id, ZoneKind::Battlefield, None, None, false);
 
     assert_eq!(
         controller_of(&game, cards::GRIZZLY_BEARS),

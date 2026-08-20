@@ -97,6 +97,7 @@ pub(in crate::card::sets) static PARALLAX_WAVE: CardRecord = CardRecord::new(
                 zone: ZoneKind::Battlefield,
                 grant: None,
                 controller: None,
+                transformed: false,
             },
         ),
     ]),

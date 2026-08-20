@@ -633,6 +633,7 @@ pub(in crate::card::sets) static RESTORATION_ANGEL: CardRecord = CardRecord::new
                         zone: ZoneKind::Battlefield,
                         grant: None,
                         controller: None,
+                        transformed: false,
                     },
                 ]),
             },
@@ -1312,6 +1313,7 @@ static BLINK_UNDER_YOUR_CONTROL: [EffectDef; 2] = [
         zone: ZoneKind::Battlefield,
         grant: None,
         controller: Some(PlayerRelation::You),
+        transformed: false,
     },
 ];
 

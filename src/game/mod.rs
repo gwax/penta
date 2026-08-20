@@ -65,6 +65,7 @@ mod creature_characteristics;
 mod damage;
 mod decision;
 mod decision_doomsday;
+mod decision_keep_one_per_type;
 mod decision_offers;
 mod decision_permanent_choice;
 mod decision_piles;
@@ -726,6 +727,12 @@ impl StackObject {
 pub(super) struct BattlefieldArrival {
     pub(super) controller: PlayerId,
     pub(super) tapped: bool,
+    /// Whether a double-faced card arrives showing its back face. "Return
+    /// him to the battlefield transformed" says which face enters, so it
+    /// belongs to the arrival rather than to a transform afterwards: what
+    /// enters is a new object, and a following effect would have nothing
+    /// left to name.
+    pub(super) transformed: bool,
 }
 
 impl BattlefieldArrival {
@@ -733,6 +740,7 @@ impl BattlefieldArrival {
         Self {
             controller,
             tapped: false,
+            transformed: false,
         }
     }
 
@@ -740,6 +748,15 @@ impl BattlefieldArrival {
         Self {
             controller,
             tapped: true,
+            transformed: false,
+        }
+    }
+
+    pub(super) const fn transformed_under(controller: PlayerId) -> Self {
+        Self {
+            controller,
+            tapped: false,
+            transformed: true,
         }
     }
 }

@@ -25,6 +25,7 @@ static JAILER_RELEASE: AbilityDef = AbilityDef::triggered(
         zone: ZoneKind::Battlefield,
         grant: None,
         controller: None,
+        transformed: false,
     },
 );
 

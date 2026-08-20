@@ -226,6 +226,15 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         continuation: Box<EffectContinuationSnapshot>,
         targets: Vec<TargetSnapshot>,
     },
+    KeepOnePerType {
+        player: usize,
+        controller: usize,
+        /// Indices into `CardType::ALL`, in the order the printed clause
+        /// names them. The same positional encoding a copied entry's added
+        /// types already uses.
+        remaining: Vec<usize>,
+        kept: Vec<u32>,
+    },
     ChosenColorMana {
         controller: usize,
         /// The mana each answer produces, with its colour standing in for

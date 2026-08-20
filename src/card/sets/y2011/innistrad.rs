@@ -350,6 +350,7 @@ pub(in crate::card::sets) static FIEND_HUNTER: CardRecord = CardRecord::new(
                     zone: ZoneKind::Battlefield,
                     grant: None,
                     controller: None,
+                    transformed: false,
                 },
             ),
         ]),

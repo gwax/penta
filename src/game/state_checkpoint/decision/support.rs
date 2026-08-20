@@ -127,6 +127,7 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
         }
         // The prototype names the object its mana came from, which is a
         // provenance rather than a reference the decision has to keep alive.
+        DecisionContinuation::KeepOnePerType { kept, .. } => ids.extend(kept.iter().copied()),
         DecisionContinuation::ChosenColorMana { .. }
         | DecisionContinuation::SearchZone { .. }
         // Nothing in a name choice is an object id.

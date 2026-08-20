@@ -392,6 +392,21 @@ impl Game {
                     _ => unreachable!("a two-player game has at most two losers"),
                 }
             }
+            EffectDef::SacrificeKeepingOnePerType {
+                player: recipient,
+                types,
+            } => {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.queue_keep_one_per_type(
+                            player,
+                            object.controller,
+                            types.to_vec(),
+                            Vec::new(),
+                        );
+                    }
+                }
+            }
             EffectDef::Transform { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Permanent(id) = target {
@@ -506,6 +521,7 @@ impl Game {
                 zone,
                 grant,
                 controller,
+                transformed,
             } => {
                 let source = object.source.unwrap_or(object.id);
                 let returning = self
@@ -529,7 +545,7 @@ impl Game {
                     }
                 });
                 for card in returning {
-                    self.return_exiled_card(card, zone, grant, arriving_controller);
+                    self.return_exiled_card(card, zone, grant, arriving_controller, transformed);
                 }
             }
             EffectDef::Detain { object: recipient } => {

@@ -760,6 +760,7 @@ mod until_end_of_combat;
 mod urza_lands;
 mod venarian_gold;
 mod vintage_cube_adventure;
+mod vintage_cube_ajani;
 mod vintage_cube_arrival;
 mod vintage_cube_artifacts;
 mod vintage_cube_breach;

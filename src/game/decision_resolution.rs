@@ -64,6 +64,23 @@ impl Game {
             } => self.resolve_card_name_choice(
                 &choices, searched, zone, binding, &object, context, effect, options,
             ),
+            DecisionContinuation::KeepOnePerType {
+                player: chooser,
+                controller,
+                remaining,
+                mut kept,
+            } => {
+                kept.extend(
+                    pending
+                        .observation
+                        .options
+                        .iter()
+                        .filter(|option| options.contains(&option.id))
+                        .filter_map(|option| option.card.map(|(card, _)| card)),
+                );
+                let rest = remaining.get(1..).unwrap_or_default().to_vec();
+                self.queue_keep_one_per_type(chooser, controller, rest, kept);
+            }
             DecisionContinuation::ChosenColorMana {
                 controller,
                 mut prototype,

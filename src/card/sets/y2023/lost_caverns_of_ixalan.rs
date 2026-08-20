@@ -24,6 +24,7 @@ static BAT_RETURNS_IT: AbilityDef = AbilityDef::triggered(
         zone: ZoneKind::Hand,
         grant: None,
         controller: None,
+        transformed: false,
     },
 );
 

@@ -585,6 +585,24 @@ fn continuation_snapshot(
             )?),
             targets: targets.iter().copied().map(target_snapshot).collect(),
         },
+        DecisionContinuation::KeepOnePerType {
+            player,
+            controller,
+            remaining,
+            kept,
+        } => DecisionContinuationSnapshot::KeepOnePerType {
+            player: player.index(),
+            controller: controller.index(),
+            remaining: remaining
+                .iter()
+                .map(|kind| {
+                    CardType::ALL
+                        .into_iter()
+                        .position(|candidate| candidate == *kind)
+                })
+                .collect::<Option<Vec<_>>>()?,
+            kept: kept.iter().map(|id| id.0).collect(),
+        },
         DecisionContinuation::ChosenColorMana {
             controller,
             prototype,

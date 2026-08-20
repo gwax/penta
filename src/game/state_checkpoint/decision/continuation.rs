@@ -66,6 +66,25 @@ fn parse_continuation(
                 })
                 .transpose()?,
         },
+        DecisionContinuationSnapshot::KeepOnePerType {
+            player: chooser,
+            controller,
+            remaining,
+            kept,
+        } => DecisionContinuation::KeepOnePerType {
+            player: player(*chooser)?,
+            controller: player(*controller)?,
+            remaining: remaining
+                .iter()
+                .map(|index| {
+                    crate::card::CardType::ALL
+                        .get(*index)
+                        .copied()
+                        .ok_or("card-type index is out of range")
+                })
+                .collect::<Result<Vec<_>, _>>()?,
+            kept: kept.iter().copied().map(GameObjectId).collect(),
+        },
         DecisionContinuationSnapshot::ChosenColorMana {
             controller,
             prototype,

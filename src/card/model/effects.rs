@@ -744,6 +744,10 @@ pub enum EffectDef {
     ReturnLinkedExiles {
         zone: ZoneKind,
         grant: Option<KeywordAbility>,
+        /// "Return him to the battlefield transformed." The returning card
+        /// is a new object, so which face it shows is settled as it arrives
+        /// rather than by a transform afterwards.
+        transformed: bool,
         /// Who the returning permanent arrives under. `None` is its owner,
         /// which is what an ordinary "return it to the battlefield" means.
         /// A card that says "under your control" needs the ability's own
@@ -753,6 +757,15 @@ pub enum EffectDef {
     },
     Sacrifice {
         object: EffectRecipientDef,
+    },
+    /// "Each opponent chooses an artifact, a creature, an enchantment, and a
+    /// planeswalker from among the nonland permanents they control, then
+    /// sacrifices the rest." The keeping is a run of choices rather than one
+    /// selection: a player may keep at most one of each named type, and a
+    /// single multi-select could not say that.
+    SacrificeKeepingOnePerType {
+        player: EffectRecipientDef,
+        types: &'static [crate::card::CardType],
     },
     /// Each recipient player chooses one permanent they control that matches,
     /// and sacrifices it. This remains a dedicated simultaneous procedure:
