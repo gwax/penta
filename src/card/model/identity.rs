@@ -48,6 +48,7 @@ pub enum CardSet {
     Scourge,
     Mirrodin,
     Darksteel,
+    FifthDawn,
     ChampionsOfKamigawa,
     BetrayersOfKamigawa,
     MirrodinBesieged,

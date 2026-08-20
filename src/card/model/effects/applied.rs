@@ -112,6 +112,11 @@ pub enum AppliedRuleDef {
     /// nothing to spill and no blocker is dealt a lethal share.
     AssignsNoCombatDamage,
     CannotBeCountered,
+    /// "You may play lands from your graveyard." The mirror of
+    /// [`Self::CannotPlay`]: a permission rather than a prohibition, matched
+    /// against the same action and object the prohibition names, so a card
+    /// that widens it to spells later says so in the same vocabulary.
+    MayPlayFromGraveyard(PlayRestrictionDef),
     /// The affected player has no maximum hand size, so the cleanup step
     /// never asks them to discard. A player rule rather than an object one:
     /// it is found by walking the battlefield for statics naming that player.

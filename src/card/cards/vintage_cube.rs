@@ -117,3 +117,4 @@ pub const AJANI_NACATL_PARIAH: CardDefinitionId = CardDefinitionId(2199);
 pub const DUELIST_OF_THE_MIND: CardDefinitionId = CardDefinitionId(2200);
 pub const BALEFUL_MASTERY: CardDefinitionId = CardDefinitionId(2201);
 pub const NECROMANCY: CardDefinitionId = CardDefinitionId(2202);
+pub const CRUCIBLE_OF_WORLDS: CardDefinitionId = CardDefinitionId(2203);

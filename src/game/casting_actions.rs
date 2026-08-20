@@ -25,7 +25,15 @@ impl Game {
         {
             return;
         }
-        for card in &state.hand {
+        // A graveyard is walked too, for the permissions that reach into it.
+        // Nothing there is playable without one, so the ordinary game pays
+        // only the cost of the filter below.
+        for (card, from_graveyard) in state
+            .hand
+            .iter()
+            .map(|card| (card, false))
+            .chain(state.graveyard.iter().map(|card| (card, true)))
+        {
             let Some(definition) = self.catalog.get(card.definition) else {
                 continue;
             };
@@ -35,6 +43,9 @@ impl Game {
                     .iter()
                     .filter(|option| option.action == PlayActionKind::PlayLand)
                     .filter(|option| !self.play_is_prohibited(card, player, option))
+                    .filter(|option| {
+                        !from_graveyard || self.graveyard_play_is_permitted(card, player, option)
+                    })
                     .filter(|option| match &option.form {
                         crate::card::SpellForm::Part(part) => definition
                             .part(*part)

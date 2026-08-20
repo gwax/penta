@@ -82,6 +82,7 @@ mod error;
 mod event;
 mod exile_permission;
 mod face_down;
+mod graveyard_play;
 mod land_type_layers;
 mod land_type_substitution;
 mod legacy_resolution;

@@ -766,6 +766,7 @@ mod vintage_cube_arrival;
 mod vintage_cube_artifacts;
 mod vintage_cube_breach;
 mod vintage_cube_creatures;
+mod vintage_cube_crucible;
 mod vintage_cube_damn;
 mod vintage_cube_duelist;
 mod vintage_cube_eldrazi;

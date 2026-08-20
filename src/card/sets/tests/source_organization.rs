@@ -218,6 +218,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("scourge.rs") => source(CardSet::Scourge, "SCG"),
         Some("mirrodin.rs") => source(CardSet::Mirrodin, "MRD"),
         Some("darksteel.rs") => source(CardSet::Darksteel, "DST"),
+        Some("fifth_dawn.rs") => source(CardSet::FifthDawn, "5DN"),
         Some("champions_of_kamigawa.rs") => source(CardSet::ChampionsOfKamigawa, "CHK"),
         Some("betrayers_of_kamigawa.rs") => source(CardSet::BetrayersOfKamigawa, "BOK"),
         Some("mirrodin_besieged.rs") => source(CardSet::MirrodinBesieged, "MBS"),

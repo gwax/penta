@@ -355,7 +355,10 @@ pub(in super::super) fn shared_static_applied_effect(
         AppliedEffectDef::Rule(AppliedRuleDef::RemainsAttachedThroughProtection) => {
             recipient == EffectRecipientDef::Source
         }
-        AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(restriction)) => {
+        AppliedEffectDef::Rule(
+            AppliedRuleDef::CannotPlay(restriction)
+            | AppliedRuleDef::MayPlayFromGraveyard(restriction),
+        ) => {
             matches!(recipient.0, EffectRecipientSetDef::Players(_))
                 && shared_object_predicate(restriction.object)
         }

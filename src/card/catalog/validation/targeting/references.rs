@@ -851,7 +851,9 @@ fn validate_resolving_applied_effect(
             Ok(())
         }
         AppliedEffectDef::Rule(
-            AppliedRuleDef::CannotPlay(_) | AppliedRuleDef::RedirectDamageFromTo { .. },
+            AppliedRuleDef::CannotPlay(_)
+            | AppliedRuleDef::MayPlayFromGraveyard(_)
+            | AppliedRuleDef::RedirectDamageFromTo { .. },
         ) => {
             if matches!(recipient.0, EffectRecipientSetDef::Objects(_)) {
                 Err(GrantedAbilityValidationError::UnsupportedResolvingAppliedEffect)

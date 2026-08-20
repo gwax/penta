@@ -597,7 +597,10 @@ fn validate_applied_effect_shapes(
             }
             Ok(())
         }
-        AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(restriction)) => {
+        AppliedEffectDef::Rule(
+            AppliedRuleDef::CannotPlay(restriction)
+            | AppliedRuleDef::MayPlayFromGraveyard(restriction),
+        ) => {
             validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
             validate_object_predicate_shape(restriction.object, targets)?;
             if static_effect
