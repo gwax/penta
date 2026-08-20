@@ -211,6 +211,9 @@ pub enum ValueDef {
     /// What was actually paid for a [`super::EffectPaymentCostDef::ChosenGenericMana`]
     /// payment in this resolution. Zero anywhere else, so a branch that reads
     /// it without a payment behind it does nothing rather than guessing.
+    /// "The number of cards you've drawn this turn." Counts every draw,
+    /// including the turn's own draw step, and resets when the turn does.
+    CardsDrawnThisTurn(PlayerRelation),
     /// "The number of colors of mana spent to cast this spell" (CR 702.86a,
     /// converge). Colorless is a mana type rather than a color and never
     /// counts. A copy of a spell was never cast, so nothing was spent on it

@@ -98,6 +98,13 @@ impl Game {
             CharacteristicSource::Ability(frozen.presentation_definition),
         );
         let id = card.id;
+        // The activation's targets are locked in here, which is where a
+        // crime is committed if any of them belongs to an opponent.
+        let crime_targets = targets
+            .iter()
+            .flat_map(TargetSelection::targets)
+            .copied()
+            .collect::<Vec<_>>();
         self.stack.push(StackObject {
             id,
             kind: StackObjectKind::ActivatedAbility,
@@ -135,6 +142,7 @@ impl Game {
             definition: frozen.presentation_definition,
             chosen_permanents: event_chosen_permanents,
         });
+        self.capture_crime_triggers(controller, &crime_targets);
         id
     }
 

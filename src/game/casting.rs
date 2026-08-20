@@ -940,6 +940,7 @@ impl Game {
             self.spells_cast_this_turn[player.index()].saturating_add(1);
         // Kept for the targeting triggers below, which run after the cast
         // event has taken the list.
+        let crime_targets = targets.clone();
         let mut targeted = Vec::new();
         for target in &targets {
             if let Target::Permanent(id) | Target::Card(id) = target
@@ -957,6 +958,7 @@ impl Game {
         self.capture_battlefield_triggers(&CommittedTriggerEvent::SpellCast {
             object: cast_event.clone(),
         });
+        self.capture_crime_triggers(player, &crime_targets);
         // "Whenever this becomes the target of a spell" fires here, where the
         // targets are locked in -- once per targeting spell however many of
         // its slots name the same permanent (CR 115.7c).

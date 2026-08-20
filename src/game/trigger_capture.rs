@@ -148,6 +148,7 @@ impl Game {
             listeners.push(BattlefieldTriggerListener {
                 event: definition.event,
                 uses_stack: true,
+                trigger_limit: definition.trigger_limit,
                 installed: None,
                 capture: TriggerCapture {
                     source: AbilitySourceRef {
@@ -214,6 +215,7 @@ impl Game {
             listeners.push(BattlefieldTriggerListener {
                 event: definition.event,
                 uses_stack: true,
+                trigger_limit: definition.trigger_limit,
                 installed: None,
                 capture: TriggerCapture {
                     source: AbilitySourceRef {
@@ -244,6 +246,40 @@ impl Game {
             &listeners,
             &CommittedTriggerEvent::SpellCast { object },
         );
+    }
+
+    /// How many times this object's copy of one ability has triggered this
+    /// turn, for the abilities that cap themselves.
+    fn triggers_this_turn(&self, source: AbilitySourceRef) -> u8 {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source.object)
+            .and_then(|permanent| {
+                permanent
+                    .triggers_this_turn
+                    .iter()
+                    .find(|(origin, _)| *origin == source.ability)
+            })
+            .map_or(0, |(_, count)| *count)
+    }
+
+    fn record_trigger_this_turn(&mut self, source: AbilitySourceRef) {
+        let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == source.object)
+        else {
+            return;
+        };
+        if let Some(entry) = permanent
+            .triggers_this_turn
+            .iter_mut()
+            .find(|(origin, _)| *origin == source.ability)
+        {
+            entry.1 = entry.1.saturating_add(1);
+        } else {
+            permanent.triggers_this_turn.push((source.ability, 1));
+        }
     }
 
     pub(super) fn battlefield_trigger_listeners(&self) -> Vec<BattlefieldTriggerListener> {
@@ -287,6 +323,7 @@ impl Game {
                 listeners.push(BattlefieldTriggerListener {
                     event: definition.event,
                     uses_stack,
+                    trigger_limit: definition.trigger_limit,
                     installed: None,
                     capture: TriggerCapture {
                         source,
@@ -314,6 +351,7 @@ impl Game {
         // relative order they had before any existed.
         listeners.extend(self.installed_triggers.iter().map(|installed| {
             BattlefieldTriggerListener {
+                trigger_limit: None,
                 event: installed.event,
                 uses_stack: true,
                 installed: Some(installed.id),
@@ -365,6 +403,11 @@ impl Game {
     ) {
         let mut consumed_once = Vec::new();
         let mut matched = Vec::new();
+        // "Triggers only once each turn" counts the triggering rather than
+        // the resolution, and one batch can offer a capped ability several
+        // matching events, so the count has to rise inside this loop as
+        // well as be read from the turn so far.
+        let mut limited = Vec::new();
         for event in events {
             for listener in listeners {
                 if !self.trigger_event_matches_for_controller(
@@ -374,6 +417,15 @@ impl Game {
                     Some(listener.capture.controller),
                 ) {
                     continue;
+                }
+                if let Some(limit) = listener.trigger_limit {
+                    let source = listener.capture.source;
+                    let already = self.triggers_this_turn(source);
+                    let in_batch = limited.iter().filter(|counted| **counted == source).count();
+                    if usize::from(already).saturating_add(in_batch) >= usize::from(limit) {
+                        continue;
+                    }
+                    limited.push(source);
                 }
                 if let Some(id) = listener.installed
                     && self
@@ -402,6 +454,9 @@ impl Game {
 
         self.installed_triggers
             .retain(|installed| !consumed_once.contains(&installed.id));
+        for source in limited {
+            self.record_trigger_this_turn(source);
+        }
 
         // Record ordinary triggers first, using the precomputed condition.
         // Any triggers caused while a triggered-mana ability resolves are
@@ -725,6 +780,10 @@ impl Game {
                 CommittedTriggerEvent::BecameMonarch { player },
             )
             | (TriggerEventDef::DrewCard(relation), CommittedTriggerEvent::DrewCard { player })
+            | (
+                TriggerEventDef::CommittedCrime(relation),
+                CommittedTriggerEvent::CommittedCrime { player },
+            )
             | (
                 TriggerEventDef::LifeGained(relation),
                 CommittedTriggerEvent::LifeGained { player, .. },

@@ -108,6 +108,14 @@ pub(super) fn permanent_snapshot(
                 count: *count,
             })
             .collect(),
+        triggers_this_turn: permanent
+            .triggers_this_turn
+            .iter()
+            .map(|(origin, count)| AbilityActivationSnapshot {
+                origin: ability_origin_snapshot(*origin),
+                count: *count,
+            })
+            .collect(),
         copy_effect: copy_effect.map(|(snapshot, _)| snapshot),
         copied_from: permanent
             .copied_from

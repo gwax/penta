@@ -629,6 +629,16 @@ fn parse_permanent(
             )
         })
         .collect();
+    permanent.triggers_this_turn = state
+        .triggers_this_turn
+        .iter()
+        .map(|triggered| {
+            (
+                ability_origin_from_snapshot(triggered.origin),
+                triggered.count,
+            )
+        })
+        .collect();
     permanent.copy_effect = state
         .copy_effect
         .as_ref()

@@ -306,6 +306,10 @@ pub(super) struct PermanentSnapshot {
     pub(super) keywords_until_upkeep_of: Vec<UpkeepKeywordSnapshot>,
     pub(super) resolved_continuous_effects: Vec<ResolvedContinuousEffectSnapshot>,
     pub(super) activations_this_turn: Vec<AbilityActivationSnapshot>,
+    /// Additive: a payload written before any ability capped its own
+    /// triggering carries none, which is a turn in which none has.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) triggers_this_turn: Vec<AbilityActivationSnapshot>,
     pub(super) copy_effect: Option<CopiableCharacteristicsSnapshot>,
     pub(super) copied_from: Option<CopiedFromSnapshot>,
     pub(super) text_changes: Vec<BasicLandTypeChangeSnapshot>,

@@ -40,7 +40,8 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         // The cycled card is in the graveyard by the time the trigger goes
         // on the stack, but nothing reads it as an object, so it names no
         // zone at all.
-        TriggerEventDef::Cycled
+        TriggerEventDef::CommittedCrime(_)
+        | TriggerEventDef::Cycled
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::DamageDealt(_)
         | TriggerEventDef::StateCondition
@@ -316,6 +317,7 @@ fn validate_value_shape(
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
+        | ValueDef::CardsDrawnThisTurn(_)
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount

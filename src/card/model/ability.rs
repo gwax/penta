@@ -290,6 +290,23 @@ impl AbilityDef {
         Self::triggered_with_targets(text, event, &[], effect)
     }
 
+    /// "This ability triggers only once each turn."
+    ///
+    /// # Panics
+    ///
+    /// Panics for any ability that is not a triggered one, since nothing
+    /// else has a triggering to cap.
+    #[must_use]
+    pub const fn triggering_at_most(self, times: u8) -> Self {
+        let DeclarativeAbilityDef::Triggered(definition) = self.definition else {
+            panic!("only a triggered ability caps how often it triggers");
+        };
+        Self {
+            definition: DeclarativeAbilityDef::Triggered(definition.triggering_at_most(times)),
+            ..self
+        }
+    }
+
     #[must_use]
     pub const fn triggered_with_targets(
         text: &'static str,

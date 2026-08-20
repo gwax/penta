@@ -461,6 +461,7 @@ impl Game {
             // returns as the turn does.
             permanent.activated_loyalty_this_turn = false;
             permanent.activations_this_turn.clear();
+            permanent.triggers_this_turn.clear();
             permanent.dealt_damage_to_opponent_this_turn = false;
             permanent.attacked_this_turn = false;
             permanent.attacks_this_turn = 0;

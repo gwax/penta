@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 194 are cataloged and 340 are not
+- 534 cards in the pool, of which 195 are cataloged and 339 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -72,7 +72,7 @@ lands are legal in every format and are not listed.
 - `Voice of Victory`
 - `Witch Enchanter`
 
-### Blue (51)
+### Blue (50)
 
 - `Abhorrent Oculus`
 - `Astrologian's Planisphere`
@@ -83,7 +83,6 @@ lands are legal in every format and are not listed.
 - `Consult the Star Charts`
 - `Cryptic Command`
 - `Displacer Kitten`
-- `Duelist of the Mind`
 - `Echo of Eons`
 - `Emry, Lurker of the Loch`
 - `Faerie Mastermind`
@@ -399,7 +398,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 194 pool cards are in the catalog because an earlier format needed them.
+These 195 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -450,6 +449,7 @@ been played beside.
 - `Delighted Halfling`
 - `Demonic Tutor`
 - `Doomsday`
+- `Duelist of the Mind`
 - `Duress`
 - `Elvish Mystic`
 - `Entomb`

@@ -114,3 +114,4 @@ pub const WASTEWOOD_VERGE: CardDefinitionId = CardDefinitionId(2196);
 pub const COALITION_RELIC: CardDefinitionId = CardDefinitionId(2197);
 pub const CAT_WARRIOR_TOKEN_2_1_WHITE: CardDefinitionId = CardDefinitionId(2198);
 pub const AJANI_NACATL_PARIAH: CardDefinitionId = CardDefinitionId(2199);
+pub const DUELIST_OF_THE_MIND: CardDefinitionId = CardDefinitionId(2200);

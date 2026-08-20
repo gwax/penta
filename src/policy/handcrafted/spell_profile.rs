@@ -516,6 +516,7 @@ impl HandcraftedPolicy {
             | ValueDef::GreatestPowerAmong(_)
             | ValueDef::AnyMatchingObject(_)
             | ValueDef::CountersOnSource(_)
+            | ValueDef::CardsDrawnThisTurn(_)
             | ValueDef::ColorsOfManaSpent
             | ValueDef::PaidAmount
             | ValueDef::MatchedCount

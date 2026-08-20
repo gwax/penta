@@ -277,7 +277,8 @@ fn validate_trigger_object_predicate(
                     | ValueDef::LifeTotal(_)
         | ValueDef::SourceToughness
                     | ValueDef::CountersOnSource(_)
-                    | ValueDef::ColorsOfManaSpent
+                    | ValueDef::CardsDrawnThisTurn(_)
+        | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
                     | ValueDef::MatchedCount
         | ValueDef::BoundObjectCount(_)
@@ -576,7 +577,8 @@ fn validate_trigger_event_references(
         TriggerEventDef::LifeGained(PlayerRelation::ChosenPlayer) => {
             Err(unsupported_trigger_event(event))
         }
-        TriggerEventDef::Cycled
+        TriggerEventDef::CommittedCrime(_)
+        | TriggerEventDef::Cycled
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
         | TriggerEventDef::BecomesMonarch(_)
@@ -783,6 +785,7 @@ fn validate_value_target_references(
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
+        | ValueDef::CardsDrawnThisTurn(_)
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount

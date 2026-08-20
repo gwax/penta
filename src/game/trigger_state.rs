@@ -247,6 +247,11 @@ pub(super) enum CommittedTriggerEvent {
     Transformed {
         object: TriggerEventObject,
     },
+    /// A player committed a crime. Only who did it is carried: the printed
+    /// clauses ask whether it was you, never what you pointed at.
+    CommittedCrime {
+        player: PlayerId,
+    },
     StepBegins {
         step: TurnStepDef,
         player: PlayerId,
@@ -322,6 +327,7 @@ impl CommittedTriggerEvent {
             }
             // Both name only the player, and carry no amount with it.
             Self::StepBegins { player, .. }
+            | Self::CommittedCrime { player }
             | Self::Discarded { player }
             | Self::BecameMonarch { player }
             | Self::DrewCard { player } => TriggerContext {
@@ -409,6 +415,10 @@ pub(super) struct InstalledTrigger {
 pub(super) struct BattlefieldTriggerListener {
     pub(super) event: TriggerEventDef,
     pub(super) uses_stack: bool,
+    /// "This ability triggers only once each turn", carried from the
+    /// printed definition so the capture can count without rediscovering
+    /// which ability it came from.
+    pub(super) trigger_limit: Option<u8>,
     /// Identifies an effect-installed listener. Battlefield listeners have no
     /// ID because their source's zone presence determines their lifetime.
     pub(super) installed: Option<u32>,

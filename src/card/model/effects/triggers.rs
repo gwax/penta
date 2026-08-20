@@ -93,6 +93,12 @@ pub enum TriggerEventDef {
     /// and the card is already in the graveyard by then. Only the cycled card
     /// carries the clause, so the event names nothing else.
     Cycled,
+    /// "Whenever you commit a crime" (CR 701.51a). A player commits a crime
+    /// as they cast a spell, activate an ability, or put a triggered ability
+    /// onto the stack that targets an opponent, anything an opponent
+    /// controls, or a card in an opponent's graveyard. It names only the
+    /// player who did it -- what was targeted is not part of the event.
+    CommittedCrime(PlayerRelation),
 }
 
 impl TriggerEventDef {

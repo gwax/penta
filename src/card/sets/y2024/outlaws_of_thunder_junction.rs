@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    TriggerEventDef, ValueDef, ZoneKind, cards,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt,
+    CardRules, CardSet, CardSupertype, CardType, CounterKind, DiscardSelectionDef, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -48,6 +49,65 @@ static BILL_ABILITIES: [AbilityDef; 2] = [
     ),
 ];
 
+/// "Draw a card. If you do, discard a card." A draw from an empty library
+/// does not happen, so the discard is conditional on the draw rather than
+/// sequenced after it.
+static DUELIST_DRAWS_THEN_DISCARDS: EffectDef = EffectDef::Sequence(&[
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+        selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
+    },
+]);
+
+static DUELIST_ABILITIES: [AbilityDef; 4] = [
+    abilities::flying(),
+    abilities::vigilance(),
+    AbilityDef::static_ability(
+        "Duelist of the Mind's power is equal to the number of cards you've drawn this turn.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Source,
+            // The printed power is zero, so the counted part is the whole of
+            // it; the toughness the card prints is left alone.
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::CardsDrawnThisTurn(PlayerRelation::You),
+                ValueDef::Constant(0),
+            ),
+        },
+    )
+    .with_coverage(AbilityCoverageDef::partial(
+        "A characteristic-defining ability sets power in every zone. This is a battlefield-only \
+         continuous effect, so the value is right wherever the card is played and absent for \
+         anything reading it in another zone.",
+    )),
+    AbilityDef::triggered(
+        "Whenever you commit a crime, you may draw a card. If you do, discard a card. This ability triggers only once each turn.",
+        TriggerEventDef::CommittedCrime(PlayerRelation::You),
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &DUELIST_DRAWS_THEN_DISCARDS,
+        },
+    )
+    .triggering_at_most(1),
+];
+
+// OTJ 45 — Duelist of the Mind
+pub(in crate::card::sets) static DUELIST_OF_THE_MIND: CardRecord = CardRecord::new(
+    cards::DUELIST_OF_THE_MIND,
+    "Duelist of the Mind",
+    CardArt::new("2b58e47b-c165-4a58-aa2a-033a35645adc", "Darren Tan"),
+    CardSet::OutlawsOfThunderJunction,
+    // A 0/3 flier that grows with every draw and feeds itself once a turn,
+    // provided you point something at your opponent.
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Human", "Advisor"], 0, 3)
+        .with_abilities(&DUELIST_ABILITIES),
+);
+
 // OTJ 157 — Bristly Bill, Spine Sower
 pub(in crate::card::sets) static BRISTLY_BILL_SPINE_SOWER: CardRecord = CardRecord::new(
     cards::BRISTLY_BILL_SPINE_SOWER,
@@ -61,6 +121,7 @@ pub(in crate::card::sets) static BRISTLY_BILL_SPINE_SOWER: CardRecord = CardReco
         .with_abilities(&BILL_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&BRISTLY_BILL_SPINE_SOWER];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&DUELIST_OF_THE_MIND, &BRISTLY_BILL_SPINE_SOWER];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

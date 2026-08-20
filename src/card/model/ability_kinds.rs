@@ -567,6 +567,11 @@ pub enum ComparisonDef {
 pub struct TriggeredAbilityDef {
     pub source_zones: &'static [ZoneKind],
     pub event: TriggerEventDef,
+    /// "This ability triggers only once each turn." A cap on how often one
+    /// object's copy of this ability may trigger per turn; `None` is the
+    /// ordinary unlimited case. Checked where the trigger is captured, so a
+    /// capped ability past its count simply does not trigger.
+    pub trigger_limit: Option<u8>,
     pub targets: &'static [AbilityTargetDef],
     pub procedure: AbilityProcedureDef,
     /// Held by reference so that this definition stays small enough to pass
@@ -582,8 +587,16 @@ impl TriggeredAbilityDef {
             event,
             targets: &[],
             procedure: AbilityProcedureDef::Shared,
+            trigger_limit: None,
             condition: None,
         }
+    }
+
+    /// "This ability triggers only once each turn."
+    #[must_use]
+    pub const fn triggering_at_most(mut self, times: u8) -> Self {
+        self.trigger_limit = Some(times);
+        self
     }
 
     #[must_use]

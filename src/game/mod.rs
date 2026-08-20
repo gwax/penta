@@ -62,6 +62,7 @@ mod continuous_effects;
 mod continuous_state;
 mod control_changes;
 mod creature_characteristics;
+mod crime;
 mod damage;
 mod decision;
 mod decision_doomsday;
@@ -324,6 +325,10 @@ struct Permanent {
     /// activated this turn, for the cards that count their own activations.
     /// Cleared when the next turn begins, after any inserted phases.
     activations_this_turn: Vec<(AbilityOrigin, u8)>,
+    /// How many times each of this permanent's triggered abilities has
+    /// triggered this turn, for the ones that print "this ability triggers
+    /// only once each turn". Cleared alongside the activations above.
+    triggers_this_turn: Vec<(AbilityOrigin, u8)>,
     /// Every kind of counter this permanent carries, indexed by
     /// [`CounterKind::index`]. Only +1/+1 counters have rules meaning on their
     /// own; the rest are markers the cards that place them interpret.
@@ -465,6 +470,7 @@ impl Permanent {
             temporary_keywords: Vec::new(),
             resolved_continuous_effects: Vec::new(),
             activations_this_turn: Vec::new(),
+            triggers_this_turn: Vec::new(),
             counters: [0; CounterKind::COUNT],
             attached_to: None,
             reconfigured_timestamp: None,

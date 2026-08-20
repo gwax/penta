@@ -243,6 +243,20 @@ impl Game {
             ValueDef::CardTypesAmongGraveyards(player) => {
                 self.card_types_among_graveyards(player, controller)
             }
+            // A tally the turn keeps, read the same way: the creature
+            // resizes as its controller draws.
+            ValueDef::CardsDrawnThisTurn(relation) => [PlayerId::One, PlayerId::Two]
+                .into_iter()
+                .filter(|player| {
+                    self.player_relation_matches(
+                        *player,
+                        relation,
+                        controller,
+                        TriggerContext::empty(),
+                    )
+                })
+                .map(|player| i32::from(self.cards_drawn_this_turn[player.index()]))
+                .sum(),
             _ => 0,
         }
     }

@@ -39,6 +39,7 @@ impl Game {
                         listeners.push(BattlefieldTriggerListener {
                             event: definition.event,
                             uses_stack: true,
+                            trigger_limit: definition.trigger_limit,
                             installed: None,
                             capture: TriggerCapture {
                                 source: AbilitySourceRef {

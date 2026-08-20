@@ -119,6 +119,18 @@ impl Game {
             // copy has nothing spent on it and counts zero, which is what
             // converge on a copied spell means.
             ValueDef::ColorsOfManaSpent => i32::from(object.colors_spent_count()),
+            ValueDef::CardsDrawnThisTurn(relation) => [PlayerId::One, PlayerId::Two]
+                .into_iter()
+                .filter(|player| {
+                    self.player_relation_matches(
+                        *player,
+                        relation,
+                        object.controller,
+                        context.trigger,
+                    )
+                })
+                .map(|player| i32::from(self.cards_drawn_this_turn[player.index()]))
+                .sum(),
             // What the step before this one matched -- the land cards a
             // discard took. Zero without such a step behind it.
             ValueDef::MatchedCount => i32::from(context.matched_count.unwrap_or(0)),
