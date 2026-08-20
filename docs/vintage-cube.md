@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 190 are cataloged and 344 are not
+- 534 cards in the pool, of which 191 are cataloged and 343 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -218,7 +218,7 @@ lands are legal in every format and are not listed.
 - `Underworld Breach`
 - `Voldaren Epicure`
 
-### Green (43)
+### Green (42)
 
 - `Baloth Prime`
 - `Cankerbloom`
@@ -258,7 +258,6 @@ lands are legal in every format and are not listed.
 - `Titania, Protector of Argoth`
 - `Traveling Chocobo`
 - `Ulvenwald Oddity`
-- `Ursine Monstrosity`
 - `Vaultborn Tyrant`
 - `Walk-In Closet // Forgotten Cellar`
 - `Woodfall Primus`
@@ -403,7 +402,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 190 pool cards are in the catalog because an earlier format needed them.
+These 191 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -580,6 +579,7 @@ been played beside.
 - `Unruly Krasis`
 - `Upheaval`
 - `Urborg, Tomb of Yawgmoth`
+- `Ursine Monstrosity`
 - `Vampiric Tutor`
 - `Verdant Catacombs`
 - `Vindicate`
