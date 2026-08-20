@@ -107,6 +107,7 @@ fn validate_effect_target_shapes(
         | EffectDef::RevealHand { player } => {
             validate_recipient_shape(player, targets, RecipientExpectation::Player)
         }
+        EffectDef::BecomeMonarch { player } => validate_player_reference_shape(player, targets),
         EffectDef::SacrificeOfChoice {
             player,
             object,

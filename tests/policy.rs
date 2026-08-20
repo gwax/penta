@@ -43,6 +43,7 @@ fn policy_observation(
         step: Step::PrecombatMain,
         regular_combat_damage_pending: false,
         poison_counters: [0, 0],
+        monarch: None,
         life_totals: [20, 20],
         mana_pools: [ManaPool::default(), ManaPool::default()],
         hand: Vec::new(),

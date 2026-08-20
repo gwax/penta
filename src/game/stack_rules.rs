@@ -133,6 +133,7 @@ impl Game {
             | EffectDef::Transform { .. }
             | EffectDef::ScheduleTurnPhases(_)
             | EffectDef::TakeExtraTurn { .. }
+            | EffectDef::BecomeMonarch { .. }
             | EffectDef::DamageCannotBePreventedThisTurn
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }

@@ -233,6 +233,10 @@ pub fn observation_json_for_format(
         "regularCombatDamagePending": observation.regular_combat_damage_pending,
         "life": observation.life_totals,
         "poison": observation.poison_counters,
+        // Optional, and present only while someone holds the crown. A game
+        // in which nobody ever becomes the monarch has the shape it always
+        // had.
+        "monarch": observation.monarch.map(seat_name),
         "manaPools": [
             mana_pool_json(&observation.mana_pools[0]),
             mana_pool_json(&observation.mana_pools[1]),

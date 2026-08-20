@@ -179,6 +179,7 @@ impl Game {
             creature_died_this_turn: false,
             creatures_died_this_turn: 0,
             linked_exiles: Vec::new(),
+            monarch: None,
             adventuring_exiles: Vec::new(),
             damage_cannot_be_prevented_this_turn: false,
             sorcery_flash_grants: [0; 2],

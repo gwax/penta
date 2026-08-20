@@ -86,6 +86,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
         | TriggerEventDef::Discarded(_)
+        // The crown names only the player who received it, and there is
+        // nothing else for a predicate to read.
+        | TriggerEventDef::BecomesMonarch(_)
         | TriggerEventDef::StateCondition => true,
         TriggerEventDef::DamageDealt(matcher) => {
             let source = match matcher.source {
@@ -421,6 +424,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
+        | EffectDef::BecomeMonarch { .. }
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }

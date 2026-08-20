@@ -68,6 +68,10 @@ pub(super) struct GameSnapshot {
     /// empty, which is what a game with none of them means anyway.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) adventuring_exiles: Vec<u32>,
+    /// Additive: a checkpoint written before the monarch existed restores
+    /// with nobody wearing the crown, which is how every game starts.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) monarch: Option<usize>,
     pub(super) sorcery_flash_grants: [u8; 2],
     pub(super) turn_phase_queue: Vec<TurnPhaseSnapshot>,
     pub(super) turn_phase_resume: Option<TurnPhaseResumeSnapshot>,

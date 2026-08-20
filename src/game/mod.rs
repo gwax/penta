@@ -86,6 +86,7 @@ mod mana;
 mod mana_planning;
 mod mana_runtime;
 mod mana_state;
+mod monarch;
 mod observation;
 mod phasing;
 mod prevention_state;
@@ -876,6 +877,10 @@ pub struct Game {
     /// Cards exiled by an object that promises to bring them back, paired
     /// with whatever exiled them. Oblivion Ring is the shape.
     linked_exiles: Vec<(GameObjectId, GameObjectId)>,
+    /// The monarch, if anyone is (CR 720). There is at most one, they draw
+    /// a card at the beginning of their end step, and a creature that deals
+    /// combat damage to them hands the crown to its controller.
+    monarch: Option<PlayerId>,
     /// Cards in exile that are on an adventure, which their owner may cast
     /// from there as the creature half (CR 715.3d). Object ids are allocated
     /// per zone change and never reused, so an entry is dropped when the

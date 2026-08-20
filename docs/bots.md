@@ -363,6 +363,7 @@ world it can search.
 | `turn`, `activeTurn`, `activeSeat`, `prioritySeat`, `step` | where the game is; `activeTurn` counts turns started by the active player, including extra turns, and `step` is one of `Upkeep`, `Draw`, `PrecombatMain`, `BeginningOfCombat`, `DeclareAttackers`, `DeclareBlockers`, `CombatDamage`, `EndOfCombat`, `PostcombatMain`, `End`, `Cleanup` |
 | `regularCombatDamagePending` | true during the priority window after first-strike damage and before regular combat damage; both damage waves otherwise use `step: "CombatDamage"` |
 | `life`, `poison`, `manaPools`, `librarySizes` | two-element arrays, indexed p1 then p2. Ten or more `poison` is a loss |
+| `monarch` | who holds the crown (CR 720) as `"p1"` or `"p2"`, or null while nobody does. The monarch draws a card at the beginning of their end step, and a creature that deals combat damage to them hands the crown to its controller |
 | `hand` | your cards: `{objectId, instance, definition, name}`; `instance` is a compatibility alias for `objectId` |
 | `opponentHandSize` | their current hidden hand as a count; learned snapshots are reported separately in `lastSeenHand` |
 | `lastSeenHand` | null or the most recently revealed hand snapshot as `{seat, cards}`; it records known information and can outlive later hand changes |

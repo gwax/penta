@@ -141,6 +141,9 @@ pub struct PlayerObservation {
     pub life_totals: [i16; 2],
     /// Poison counters each seat has, in seat order. Ten is a loss.
     pub poison_counters: [u16; 2],
+    /// Who holds the crown (CR 720), if anyone. Public information: both
+    /// players know, and so does anything reading the observation.
+    pub monarch: Option<PlayerId>,
     pub mana_pools: [ManaPool; 2],
     pub hand: Vec<(GameObjectId, CardDefinitionId)>,
     pub opponent_hand_size: usize,

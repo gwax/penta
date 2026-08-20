@@ -228,6 +228,10 @@ pub(super) enum CommittedTriggerEvent {
     SpellCast {
         object: TriggerEventObject,
     },
+    /// A player became the monarch.
+    BecameMonarch {
+        player: PlayerId,
+    },
     /// An object became the target of a spell as that spell was cast. The
     /// object carried is the spell, so "that spell's controller" reads off
     /// the event; `target` is what it pointed at.
@@ -312,7 +316,9 @@ impl CommittedTriggerEvent {
                 }
             }
             // Both name only the player, and carry no amount with it.
-            Self::StepBegins { player, .. } | Self::Discarded { player } => TriggerContext {
+            Self::StepBegins { player, .. }
+            | Self::Discarded { player }
+            | Self::BecameMonarch { player } => TriggerContext {
                 object: None,
                 object_controller: None,
                 event_player: Some(*player),

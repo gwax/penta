@@ -498,6 +498,7 @@ impl Game {
                 | EffectDef::May { .. }
                 | EffectDef::ScheduleTurnPhases(_)
                 | EffectDef::TakeExtraTurn { .. }
+                | EffectDef::BecomeMonarch { .. }
                 | EffectDef::DamageCannotBePreventedThisTurn
                 | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }

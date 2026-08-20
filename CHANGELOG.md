@@ -153,6 +153,21 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **The monarch (CR 720).** At most one player holds the crown; they draw a
+  card at the beginning of their own end step, and a creature that deals
+  combat damage to them hands it to that creature's controller. Both are
+  turn-based and rules-based actions rather than abilities anyone controls,
+  so they are read where the step begins and where the damage lands. Cards
+  can become the monarch and can trigger on someone becoming it. Palace
+  Jailer is the first card to use it, and its "exile until an opponent
+  becomes the monarch" is a linked exile released by a delayed trigger --
+  which means a Jailer that has already died still gives the creature back,
+  and a crown that never moves keeps it forever.
+
+  Observations gained an optional `monarch`, present only while someone
+  holds the crown. An optional member is additive, so the epoch does not
+  move.
+
 - **An additional cost with two ways to pay it.** "Sacrifice a creature or
   discard a card" is one printed cost, and a spell could only name one way of
   paying. A cost can now carry an alternative, and the ways of paying are the

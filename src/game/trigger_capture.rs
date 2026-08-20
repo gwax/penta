@@ -490,6 +490,7 @@ impl Game {
             | EffectDef::Transform { .. }
             | EffectDef::ScheduleTurnPhases(_)
             | EffectDef::TakeExtraTurn { .. }
+            | EffectDef::BecomeMonarch { .. }
             | EffectDef::DamageCannotBePreventedThisTurn
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
@@ -883,6 +884,10 @@ impl Game {
             ) => self.damage_trigger_matches(matcher, damage, source, controller),
             // Both name only the player the event happened to.
             (TriggerEventDef::Discarded(relation), CommittedTriggerEvent::Discarded { player })
+            | (
+                TriggerEventDef::BecomesMonarch(relation),
+                CommittedTriggerEvent::BecameMonarch { player },
+            )
             | (
                 TriggerEventDef::LifeGained(relation),
                 CommittedTriggerEvent::LifeGained { player, .. },

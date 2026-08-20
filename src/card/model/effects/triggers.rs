@@ -78,6 +78,9 @@ pub enum TriggerEventDef {
     /// A player gained life. The amount is available as
     /// `ValueDef::TriggerEventAmount`.
     LifeGained(PlayerRelation),
+    /// A matching player became the monarch (CR 720). The crown passing
+    /// from one player to another raises this once, for whoever received it.
+    BecomesMonarch(PlayerRelation),
     /// A card was put into a graveyard from a matching player's hand. One
     /// trigger per card, so "whenever you discard a card" fires twice for a
     /// discard of two -- and a discard paid as a cost is still a discard.

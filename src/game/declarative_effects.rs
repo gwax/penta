@@ -443,6 +443,11 @@ impl Game {
                     });
                 self.schedule_extra_turns(players);
             }
+            EffectDef::BecomeMonarch { player } => {
+                if let Some(player) = self.player_reference(player, object, &context, scoped) {
+                    self.set_monarch(player);
+                }
+            }
             EffectDef::DamageCannotBePreventedThisTurn => {
                 self.damage_cannot_be_prevented_this_turn = true;
             }

@@ -499,6 +499,7 @@ fn validate_resolving_effect(
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::ChooseColor { .. }
         | EffectDef::BecomeCopyOf { .. }
+        | EffectDef::BecomeMonarch { .. }
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
@@ -913,6 +914,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::ChangeTextBasicLandType { .. } => "ChangeTextBasicLandType",
         EffectDef::ChooseColor { .. } => "ChooseColor",
         EffectDef::BecomeCopyOf { .. } => "BecomeCopyOf",
+        EffectDef::BecomeMonarch { .. } => "BecomeMonarch",
         EffectDef::DamageCannotBePreventedThisTurn => "DamageCannotBePreventedThisTurn",
         EffectDef::GrantFlashToNextSorcery => "GrantFlashToNextSorcery",
         EffectDef::May { .. } => "May",

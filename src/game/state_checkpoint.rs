@@ -448,6 +448,7 @@ impl Game {
                 .collect(),
             damage_cannot_be_prevented_this_turn: self.damage_cannot_be_prevented_this_turn,
             adventuring_exiles: self.adventuring_exiles.iter().map(|id| id.0).collect(),
+            monarch: self.monarch.map(PlayerId::index),
             sorcery_flash_grants: self.sorcery_flash_grants,
             turn_phase_queue: self
                 .turn_phase_queue
@@ -765,6 +766,7 @@ impl Game {
                 .iter()
                 .map(|id| GameObjectId(*id))
                 .collect(),
+            monarch: checkpoint.monarch.map(player_from_index).transpose()?,
             linked_exiles: checkpoint
                 .linked_exiles
                 .iter()

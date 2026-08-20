@@ -80,6 +80,7 @@ pub enum CardSet {
     KamigawaNeonDynasty,
     StreetsOfNewCapenna,
     EternalMasters,
+    ConspiracyTakeTheCrown,
     Kaladesh,
     LordOfTheRings,
     LostCavernsOfIxalan,

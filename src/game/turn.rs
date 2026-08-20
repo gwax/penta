@@ -558,6 +558,7 @@ impl Game {
     }
 
     pub(super) fn handle_end_step(&mut self) {
+        self.monarch_draws_at_end_step();
         let doomed: Vec<_> = self
             .battlefield
             .iter()

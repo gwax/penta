@@ -12,6 +12,7 @@ fn observation_json_carries_interwave_state_and_presented_card_part() {
         step: crate::game::Step::CombatDamage,
         regular_combat_damage_pending: true,
         poison_counters: [0, 0],
+        monarch: None,
         life_totals: [20, 20],
         mana_pools: [crate::ManaPool::default(); 2],
         hand: Vec::new(),

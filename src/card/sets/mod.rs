@@ -426,6 +426,11 @@ const SET_MODULES: &[SetModule] = &[
         y2016::eternal_masters::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::ConspiracyTakeTheCrown,
+        y2016::conspiracy_take_the_crown::CARDS,
+        y2016::conspiracy_take_the_crown::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Kaladesh,
         y2016::kaladesh::CARDS,
         y2016::kaladesh::ADDITIONAL_PRINTINGS,

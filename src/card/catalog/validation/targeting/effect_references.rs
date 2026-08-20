@@ -204,6 +204,9 @@ fn validate_effect_references(
             };
             validate_effect_references(*then, target_count, nested)
         }
+        EffectDef::BecomeMonarch { player } => {
+            validate_player_reference(player, target_count, scope)
+        }
         EffectDef::MillUntil { player, .. }
         | EffectDef::ChooseCards { player, .. }
         | EffectDef::TakeExtraTurn { player }

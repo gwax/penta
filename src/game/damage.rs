@@ -461,10 +461,14 @@ impl Game {
         player: PlayerId,
         amount: u16,
         source: Option<GameObjectId>,
+        combat: bool,
     ) {
         self.record_damage_taken(player, amount, source);
         self.deal_damage(player, amount);
         self.note_damage_dealt_by(source, amount);
+        if combat {
+            self.combat_damage_may_steal_the_crown(source, player, amount);
+        }
         if amount > 0
             && let Some(damager) = source.and_then(|source| {
                 self.battlefield
@@ -658,7 +662,7 @@ impl Game {
         let has_deathtouch = source_has_keyword(KeywordAbility::Deathtouch);
         let dealt_damage = match target {
             Some(Target::Player(player)) => {
-                self.deal_damage_to_player(player, amount, source);
+                self.deal_damage_to_player(player, amount, source, combat);
                 true
             }
             Some(Target::Permanent(id)) => {

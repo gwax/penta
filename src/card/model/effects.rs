@@ -570,6 +570,12 @@ pub enum EffectDef {
         then: &'static EffectDef,
         otherwise: &'static EffectDef,
     },
+    /// The named player becomes the monarch (CR 720.2). There is only ever
+    /// one, so this takes the crown from whoever held it; a player who
+    /// already has it keeps it and nothing happens.
+    BecomeMonarch {
+        player: PlayerRefDef,
+    },
     /// Installs a triggered ability that listens from outside every zone.
     InstallTrigger(InstalledTriggerDef),
     /// A static effect that turns off one landwalk for blocking purposes:
