@@ -101,6 +101,7 @@ fn validate_effect_target_shapes(
         |         EffectDef::ShuffleLibrary { player }
         | EffectDef::EmptyManaPool { player }
         | EffectDef::LoseTheGame { player }
+        | EffectDef::WinTheGame { player }
         | EffectDef::SearchZone {
             player, then: None, ..
         }

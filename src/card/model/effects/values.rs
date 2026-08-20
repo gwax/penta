@@ -1,6 +1,6 @@
 use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 
-use super::super::{CounterKind, ObjectPredicateDef, PlayerRelation, ZoneKind};
+use super::super::{CounterKind, ManaColor, ObjectPredicateDef, PlayerRelation, ZoneKind};
 use super::{DamageSourceGroupDef, PlayerSetDef};
 
 /// The two branches of a conditional value.
@@ -211,6 +211,15 @@ pub enum ValueDef {
     /// What was actually paid for a [`super::EffectPaymentCostDef::ChosenGenericMana`]
     /// payment in this resolution. Zero anywhere else, so a branch that reads
     /// it without a payment behind it does nothing rather than guessing.
+    /// "Your devotion to blue" (CR 702.10c): each coloured mana symbol of
+    /// that colour in the mana costs of permanents this player controls. A
+    /// hybrid symbol counts once for each of its colours, and a permanent
+    /// with no mana cost contributes nothing.
+    DevotionTo(ManaColor),
+    /// How many cards a player's library holds. The mirror of
+    /// [`Self::TargetLibrarySize`] for the clauses that name a player by
+    /// relation rather than by pointing at one.
+    LibrarySize(PlayerRelation),
     /// "The number of cards you've drawn this turn." Counts every draw,
     /// including the turn's own draw step, and resets when the turn does.
     CardsDrawnThisTurn(PlayerRelation),

@@ -69,6 +69,10 @@ pub enum WinReason {
     /// An effect said the opponent loses the game, with no life total or
     /// empty library involved.
     OpponentLostToAnEffect,
+    /// An effect said you win the game outright. The mirror of
+    /// [`Self::OpponentLostToAnEffect`]: nothing happened to the loser, the
+    /// winner's card simply said so.
+    WonByAnEffect,
     /// The opponent did not act inside the time their host allowed. Distinct
     /// from conceding: nobody chose this, it was imposed by a clock.
     OpponentRanOutOfTime,

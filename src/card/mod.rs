@@ -59,8 +59,8 @@ pub use model::{
     SpendModeDef, SplitIntoPilesDef, StackTargetKindDef, StaticAbilityDef, SumValueDef,
     TapEventMatcherDef, TapPurposeDef, TargetConditionDef, TargetPredicate, TargetSlotDef,
     TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, TurnKindDef,
-    TurnPhaseDef, TurnStepDef, ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef,
-    ZonePlacement,
+    TurnPhaseDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneChangeEventMatcherDef, ZoneKind,
+    ZoneMoveCauseDef, ZonePlacement,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every

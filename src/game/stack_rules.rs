@@ -95,6 +95,7 @@ impl Game {
             | EffectDef::EmptyManaPool { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::LoseTheGame { .. }
+            | EffectDef::WinTheGame { .. }
             | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }
             | EffectDef::RemoveFromCombat { .. }

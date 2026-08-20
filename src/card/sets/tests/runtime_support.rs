@@ -426,6 +426,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::ActivePlayer(_)
         | TriggerConditionDef::SourceCastWith(_)
         | TriggerConditionDef::SourceCastAtInstantSpeed
+        | TriggerConditionDef::ValueComparison(_)
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::ControlsGreatestPowerCreature
@@ -690,6 +691,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::EmptyManaPool { .. }
                     | EffectDef::LoseLife { .. }
                     | EffectDef::LoseTheGame { .. }
+                    | EffectDef::WinTheGame { .. }
                     | EffectDef::Regenerate { .. }
                     | EffectDef::Tap { .. }
                     | EffectDef::RemoveFromCombat { .. }

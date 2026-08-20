@@ -421,6 +421,7 @@ impl HandcraftedPolicy {
             } => profile.mark(DeclarativeSpellProfile::EXTRA_TURN),
             // Nothing outranks winning, so it needs no profile of its own.
             EffectDef::LoseTheGame { .. }
+            | EffectDef::WinTheGame { .. }
             // A copy of the spell being cast is the same spell again, so the
             // profile is already the right one.
             | EffectDef::CopyResolvingSpell { .. }
@@ -518,6 +519,8 @@ impl HandcraftedPolicy {
             | ValueDef::AnyMatchingObject(_)
             | ValueDef::CountersOnSource(_)
             | ValueDef::CardsDrawnThisTurn(_)
+            | ValueDef::DevotionTo(_)
+            | ValueDef::LibrarySize(_)
             | ValueDef::ColorsOfManaSpent
             | ValueDef::PaidAmount
             | ValueDef::MatchedCount

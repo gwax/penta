@@ -3,7 +3,69 @@ use super::{
     PlayerId, PlayerRelation, RetiredObject, ScopedEffect, StackObject, Target, ValueDef,
 };
 
+/// How many symbols of one colour a printed mana cost carries. A hybrid
+/// symbol counts once for each colour it offers, which is what makes a
+/// permanent cast for one colour still count toward the other's devotion.
+fn devotion_symbols(cost: crate::card::ManaCost, color: crate::card::ManaColor) -> u16 {
+    let plain = match color {
+        crate::card::ManaColor::White => cost.white,
+        crate::card::ManaColor::Blue => cost.blue,
+        crate::card::ManaColor::Black => cost.black,
+        crate::card::ManaColor::Red => cost.red,
+        crate::card::ManaColor::Green => cost.green,
+        // Colourless is a mana type rather than a colour, so nothing is
+        // devoted to it.
+        crate::card::ManaColor::Colorless => return 0,
+    };
+    crate::card::HybridPair::ALL
+        .into_iter()
+        .filter(|pair| pair.contains(color))
+        .map(|pair| cost.hybrid[pair.index()])
+        .fold(plain, u16::saturating_add)
+}
+
 impl Game {
+    /// The values that read a player rather than an object: what they are
+    /// devoted to, and how much library they have left. Shared by the
+    /// resolving path and by the conditions that compare two of them.
+    pub(super) fn player_readable_value(
+        &self,
+        value: crate::card::ValueDef,
+        controller: crate::ids::PlayerId,
+    ) -> i32 {
+        match value {
+            // Read live off the board, and off the permanents' printed mana
+            // costs -- a copy effect that changes what a permanent is
+            // changes what it contributes with it.
+            crate::card::ValueDef::DevotionTo(color) => self
+                .battlefield
+                .iter()
+                .filter(|permanent| permanent.controller == controller)
+                .filter_map(|permanent| self.effective_rules(permanent))
+                .filter_map(crate::card::CardRules::mana_cost)
+                .map(|cost| i32::from(devotion_symbols(cost, color)))
+                .sum(),
+            crate::card::ValueDef::LibrarySize(relation) => {
+                [crate::ids::PlayerId::One, crate::ids::PlayerId::Two]
+                    .into_iter()
+                    .filter(|player| {
+                        self.player_relation_matches(
+                            *player,
+                            relation,
+                            controller,
+                            crate::game::TriggerContext::empty(),
+                        )
+                    })
+                    .map(|player| {
+                        i32::try_from(self.players[player.index()].library.len())
+                            .unwrap_or(i32::MAX)
+                    })
+                    .sum()
+            }
+            _ => 0,
+        }
+    }
+
     #[allow(clippy::too_many_lines)]
     pub(super) fn effect_value(
         &self,
@@ -119,6 +181,9 @@ impl Game {
             // copy has nothing spent on it and counts zero, which is what
             // converge on a copied spell means.
             ValueDef::ColorsOfManaSpent => i32::from(object.colors_spent_count()),
+            ValueDef::DevotionTo(_) | ValueDef::LibrarySize(_) => {
+                self.player_readable_value(value, object.controller)
+            }
             ValueDef::CardsDrawnThisTurn(relation) => [PlayerId::One, PlayerId::Two]
                 .into_iter()
                 .filter(|player| {

@@ -487,6 +487,7 @@ fn validate_resolving_effect(
         | EffectDef::DiscardCards { .. }
         | EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }
+        | EffectDef::WinTheGame { .. }
         | EffectDef::Tap { .. }
         | EffectDef::RemoveFromCombat { .. }
         | EffectDef::Untap { .. }
@@ -716,119 +717,6 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
     }
 }
 
-fn static_source_value_supported(value: ValueDef) -> bool {
-    matches!(
-        value,
-        ValueDef::Constant(_) | ValueDef::SourcePower | ValueDef::CountersOnSource(_)
-    )
-}
-
-fn static_power_toughness_value_supported(value: ValueDef) -> bool {
-    match value {
-        // The first two are read live from the static effect's own
-        // controller: a battlefield count, or the size of that player's
-        // hand. The third is read from the affected object instead, which
-        // the static power-and-toughness layer has in hand.
-        ValueDef::Constant(_)
-        | ValueDef::CardsInHandAbove { .. }
-        | ValueDef::AffectedManaValue
-        | ValueDef::TotalPowerOfLinkedExiles
-        | ValueDef::TotalToughnessOfLinkedExiles
-        // Read live from every graveyard, which the static layer can see the
-        // same way it sees a battlefield count.
-        | ValueDef::CardTypesAmongGraveyards(_)
-        // A per-turn tally the game keeps and clears with the turn, read the
-        // same way and just as live.
-        | ValueDef::CardsDrawnThisTurn(_) => true,
-        ValueDef::CountMatchingObjects(query)
-        | ValueDef::AnyMatchingObject(query)
-        | ValueDef::GreatestPowerAmong(query) => static_query_supported(*query),
-        ValueDef::Scaled(scaled) => static_power_toughness_value_supported(scaled.value),
-        ValueDef::Halved(halved) => static_power_toughness_value_supported(halved.value),
-        ValueDef::Sum(sum) => {
-            static_power_toughness_value_supported(sum.left)
-                && static_power_toughness_value_supported(sum.right)
-        }
-        // A conditional amount belongs to a resolving effect, not to the
-        // static power-and-toughness layer.
-        ValueDef::IfCardTypesAmongGraveyards(_)
-        | ValueDef::CreaturesDiedThisTurn
-        | ValueDef::ChosenX
-        | ValueDef::SourceCastX
-        | ValueDef::SourcePower
-        | ValueDef::SourceToughness
-        | ValueDef::TriggeringObjectPower
-        | ValueDef::TriggeringObjectToughness
-        | ValueDef::TriggerEventAmount
-        | ValueDef::DamageTakenThisTurn { .. }
-        | ValueDef::Negate(_)
-        | ValueDef::IfCreatureDiedThisTurn(_)
-        | ValueDef::IfControllerLifeAtMost(_)
-        | ValueDef::IfTargetMatches(_)
-        | ValueDef::IfMatchingObjectCount(_)
-        | ValueDef::CountersOnSource(_)
-        | ValueDef::ColorsOfManaSpent
-        | ValueDef::PaidAmount
-        | ValueDef::MatchedCount
-        | ValueDef::BoundObjectCount(_)
-        | ValueDef::SpellsCastBeforeThisTurn
-        | ValueDef::TargetPower(_)
-        | ValueDef::TargetToughness(_)
-        | ValueDef::TargetLibrarySize(_)
-        | ValueDef::LifeTotal(_)
-        | ValueDef::TargetManaValue(_)
-        | ValueDef::DividedAmongTargets => false,
-    }
-}
-
-fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
-    match value {
-        ValueDef::Constant(_) => true,
-        ValueDef::CountMatchingObjects(query) => static_query_supported(*query),
-        ValueDef::Sum(sum) => {
-            static_cost_reduction_value_supported(sum.left)
-                && static_cost_reduction_value_supported(sum.right)
-        }
-        ValueDef::CreaturesDiedThisTurn
-        | ValueDef::CardTypesAmongGraveyards(_)
-        | ValueDef::IfCardTypesAmongGraveyards(_)
-        | ValueDef::GreatestPowerAmong(_)
-        | ValueDef::ChosenX
-        | ValueDef::SourceCastX
-        | ValueDef::SourcePower
-        | ValueDef::AffectedManaValue
-        | ValueDef::TotalPowerOfLinkedExiles
-        | ValueDef::TotalToughnessOfLinkedExiles
-        | ValueDef::SourceToughness
-        | ValueDef::TriggeringObjectPower
-        | ValueDef::TriggeringObjectToughness
-        | ValueDef::TriggerEventAmount
-        | ValueDef::CardsInHandAbove { .. }
-        | ValueDef::DamageTakenThisTurn { .. }
-        | ValueDef::AnyMatchingObject(_)
-        | ValueDef::Negate(_)
-        | ValueDef::Scaled(_)
-        | ValueDef::Halved(_)
-        | ValueDef::IfCreatureDiedThisTurn(_)
-        | ValueDef::IfControllerLifeAtMost(_)
-        | ValueDef::IfTargetMatches(_)
-        | ValueDef::IfMatchingObjectCount(_)
-        | ValueDef::CountersOnSource(_)
-        | ValueDef::CardsDrawnThisTurn(_)
-        | ValueDef::ColorsOfManaSpent
-        | ValueDef::PaidAmount
-        | ValueDef::MatchedCount
-        | ValueDef::BoundObjectCount(_)
-        | ValueDef::SpellsCastBeforeThisTurn
-        | ValueDef::TargetPower(_)
-        | ValueDef::TargetToughness(_)
-        | ValueDef::TargetLibrarySize(_)
-        | ValueDef::LifeTotal(_)
-        | ValueDef::TargetManaValue(_)
-        | ValueDef::DividedAmongTargets => false,
-    }
-}
-
 fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
     match condition {
         TriggerConditionDef::All(conditions) => conditions
@@ -860,6 +748,7 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::SourceCastWith(_)
         | TriggerConditionDef::SourceCastAtInstantSpeed
+        | TriggerConditionDef::ValueComparison(_)
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::SourceIsTapped
@@ -919,6 +808,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::DiscardCards { .. } => "DiscardCards",
         EffectDef::LoseLife { .. } => "LoseLife",
         EffectDef::LoseTheGame { .. } => "LoseTheGame",
+        EffectDef::WinTheGame { .. } => "WinTheGame",
         EffectDef::Tap { .. } => "Tap",
         EffectDef::RemoveFromCombat { .. } => "RemoveFromCombat",
         EffectDef::Untap { .. } => "Untap",
@@ -996,3 +886,5 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::Special(_) => "Special",
     }
 }
+
+include!("program_context/static_values.rs");

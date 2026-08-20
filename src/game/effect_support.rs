@@ -564,6 +564,24 @@ impl Game {
 
     /// How many times this ability has been activated from this permanent so
     /// far this turn.
+    /// One side of a two-value condition. The board-readable values a cost
+    /// reduction already answers, plus the two a condition of this shape
+    /// actually asks about: what a player is devoted to, and how much
+    /// library they have left.
+    fn condition_value(
+        &self,
+        value: crate::card::ValueDef,
+        source: GameObjectId,
+        controller: PlayerId,
+    ) -> i32 {
+        match value {
+            crate::card::ValueDef::DevotionTo(_) | crate::card::ValueDef::LibrarySize(_) => {
+                self.player_readable_value(value, controller)
+            }
+            other => i32::from(self.cost_reduction_value(other, controller, source)),
+        }
+    }
+
     pub(super) fn ability_activations_this_turn(
         &self,
         source: GameObjectId,
@@ -609,6 +627,14 @@ impl Game {
                 TriggerConditionDef::Not(condition) => !self.trigger_condition_holds(
                     condition, source, controller, context, ability, object,
                 ),
+                // Both sides are read where the condition is checked, which
+                // is the only way "X or more cards in your library" can be
+                // said: neither amount is a printed number.
+                TriggerConditionDef::ValueComparison(values) => {
+                    let left = self.condition_value(values.left, source, controller);
+                    let right = self.condition_value(values.right, source, controller);
+                    compare(&left, values.comparison, &right)
+                }
                 TriggerConditionDef::SourceOnBattlefield => self
                     .battlefield
                     .iter()

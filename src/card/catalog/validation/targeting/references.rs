@@ -278,6 +278,8 @@ fn validate_trigger_object_predicate(
         | ValueDef::SourceToughness
                     | ValueDef::CountersOnSource(_)
                     | ValueDef::CardsDrawnThisTurn(_)
+        | ValueDef::DevotionTo(_)
+        | ValueDef::LibrarySize(_)
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
                     | ValueDef::MatchedCount
@@ -683,6 +685,7 @@ fn validate_trigger_condition(
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::SourceCastWith(_)
         | TriggerConditionDef::SourceCastAtInstantSpeed
+        | TriggerConditionDef::ValueComparison(_)
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
@@ -789,6 +792,8 @@ fn validate_value_target_references(
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
         | ValueDef::CardsDrawnThisTurn(_)
+        | ValueDef::DevotionTo(_)
+        | ValueDef::LibrarySize(_)
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount

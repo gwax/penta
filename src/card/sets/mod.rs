@@ -437,6 +437,11 @@ const SET_MODULES: &[SetModule] = &[
         y2019::throne_of_eldraine::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::TherosBeyondDeath,
+        y2020::theros_beyond_death::CARDS,
+        y2020::theros_beyond_death::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::ZendikarRising,
         y2020::zendikar_rising::CARDS,
         y2020::zendikar_rising::ADDITIONAL_PRINTINGS,

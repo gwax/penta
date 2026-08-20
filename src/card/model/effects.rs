@@ -575,6 +575,11 @@ pub enum EffectDef {
     LoseTheGame {
         player: EffectRecipientDef,
     },
+    /// "You win the game." The mirror of [`Self::LoseTheGame`], and rarer:
+    /// most cards that end a game do it to the other player.
+    WinTheGame {
+        player: EffectRecipientDef,
+    },
     /// An effect the named player may decline. Held by reference so that
     /// `EffectDef` does not grow a recursive inline copy of itself.
     May {

@@ -394,6 +394,27 @@ impl Game {
                 emblem.emblem_source = object.ability_origin();
                 self.emblems.push(emblem);
             }
+            EffectDef::WinTheGame { player: recipient } => {
+                let mut winners = self
+                    .effect_recipients(recipient, object, &context, scoped)
+                    .into_iter()
+                    .filter_map(|target| match target {
+                        Target::Player(player) => Some(player),
+                        Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
+                    })
+                    .collect::<Vec<_>>();
+                winners.sort_unstable();
+                winners.dedup();
+                // Both players winning at once is a draw, the same way both
+                // losing at once is. Only one card in the pool ends a game
+                // this way, and it names its own controller.
+                if let [winner] = winners.as_slice() {
+                    self.finish(GameResult::Winner {
+                        winner: *winner,
+                        reason: WinReason::WonByAnEffect,
+                    });
+                }
+            }
             EffectDef::LoseTheGame { player: recipient } => {
                 let mut losers = self
                     .effect_recipients(recipient, object, &context, scoped)

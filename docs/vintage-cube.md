@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 204 are cataloged and 330 are not
+- 534 cards in the pool, of which 205 are cataloged and 329 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -72,7 +72,7 @@ lands are legal in every format and are not listed.
 - `Voice of Victory`
 - `Witch Enchanter`
 
-### Blue (48)
+### Blue (47)
 
 - `Abhorrent Oculus`
 - `Astrologian's Planisphere`
@@ -113,7 +113,6 @@ lands are legal in every format and are not listed.
 - `Sink into Stupor`
 - `Stormchaser's Talent`
 - `Subtlety`
-- `Thassa's Oracle`
 - `Thieving Skydiver`
 - `Thundertrap Trainer`
 - `Time Spiral`
@@ -389,7 +388,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 204 pool cards are in the catalog because an earlier format needed them.
+These 205 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -559,6 +558,7 @@ been played beside.
 - `Tamiyo, Collector of Tales`
 - `Temple Garden`
 - `Thalia, Guardian of Thraben`
+- `Thassa's Oracle`
 - `Thespian's Stage`
 - `Thought Scour`
 - `Through the Breach`

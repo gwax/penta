@@ -133,6 +133,7 @@ fn result_json(result: GameResult) -> Value {
                 WinReason::OpponentConceded => "OpponentConceded",
                 WinReason::OpponentLostAllLife => "OpponentLostAllLife",
                 WinReason::OpponentLostToAnEffect => "OpponentLostToAnEffect",
+                WinReason::WonByAnEffect => "WonByAnEffect",
                 WinReason::OpponentTriedToDrawFromEmptyLibrary =>
                     "OpponentTriedToDrawFromEmptyLibrary",
                 WinReason::OpponentRanOutOfTime => "OpponentRanOutOfTime",

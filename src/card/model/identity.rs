@@ -59,6 +59,7 @@ pub enum CardSet {
     Worldwake,
     WarOfTheSpark,
     ThroneOfEldraine,
+    TherosBeyondDeath,
     ZendikarRising,
     ShardsOfAlara,
     Ixalan,

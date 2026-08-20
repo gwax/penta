@@ -44,6 +44,7 @@ impl Game {
             | EffectDef::EmptyManaPool { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::LoseTheGame { .. }
+        | EffectDef::WinTheGame { .. }
             | EffectDef::AddManaEqualTo { .. }
             | EffectDef::Regenerate { .. }
             | EffectDef::Tap { .. }

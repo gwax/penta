@@ -4,7 +4,7 @@ use super::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, BasicLandType, CardBehavior,
     CardSupertype, CardType, ConditionDef, CounterKind, EffectDef, ImplementationStatus, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementConditionDef,
-    ReplacementEffectDef, ReplacementEventDef, TriggerEventDef, ZoneKind,
+    ReplacementEffectDef, ReplacementEventDef, TriggerEventDef, ValueDef, ZoneKind,
 };
 
 mod alternative_casts;

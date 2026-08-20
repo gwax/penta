@@ -71,6 +71,11 @@ pub enum TriggerConditionDef {
     /// this: the permanent is here, and the question is which way it was
     /// paid for on the way in. False for anything that never was a spell.
     SourceCastWith(AlternativeCastKindDef),
+    /// Two computed amounts against each other, for "if X is greater than
+    /// or equal to the number of cards in your library". Every other
+    /// condition here compares one amount against a printed number, which
+    /// cannot say this.
+    ValueComparison(&'static ValueComparisonDef),
     /// "If you cast it any time a sorcery couldn't have been cast." Recorded
     /// as the spell was cast, because nothing afterwards can tell.
     SourceCastAtInstantSpeed,
@@ -138,4 +143,13 @@ pub enum TriggerConditionDef {
         slot: TargetIndex,
         object: ObjectPredicateDef,
     },
+}
+
+/// Two amounts and how they are compared. Held behind a reference so that
+/// [`TriggerConditionDef`] stays the width of its smallest useful variant.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ValueComparisonDef {
+    pub left: ValueDef,
+    pub comparison: ComparisonDef,
+    pub right: ValueDef,
 }
