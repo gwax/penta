@@ -46,6 +46,7 @@ pub enum CardSet {
     Onslaught,
     Legions,
     Scourge,
+    Mirrodin,
     Darksteel,
     MirrodinBesieged,
     PlanarChaos,

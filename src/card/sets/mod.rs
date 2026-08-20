@@ -256,6 +256,11 @@ const SET_MODULES: &[SetModule] = &[
         y2003::scourge::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Mirrodin,
+        y2003::mirrodin::CARDS,
+        y2003::mirrodin::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Darksteel,
         y2004::darksteel::CARDS,
         y2004::darksteel::ADDITIONAL_PRINTINGS,

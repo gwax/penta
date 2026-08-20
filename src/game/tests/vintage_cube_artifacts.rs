@@ -382,3 +382,71 @@ fn wishclaw_talisman_tutors_then_hands_itself_to_the_opponent() {
         "with the two wishes that are left",
     );
 }
+
+/// Haste is the half the creature notices: a Giant that arrived this turn
+/// attacks the moment the Greaves are on it, and stops being able to when
+/// they move on.
+#[test]
+fn the_greaves_hand_their_haste_to_whatever_wears_them() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let greaves = game
+        .put_onto_battlefield(PlayerId::One, cards::LIGHTNING_GREAVES)
+        .expect("cataloged");
+    let mut bears = creature(83_000, cards::GRIZZLY_BEARS, PlayerId::One);
+    // Arrived this turn, so it is summoning sick without help.
+    bears.entered_controller_turn = game.turns_started[PlayerId::One.index()];
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+
+    let hasty = |game: &Game| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == bears_id)
+            .is_some_and(|permanent| {
+                game.permanent_has_executable_keyword(permanent, KeywordAbility::Haste)
+            })
+    };
+
+    assert!(!hasty(&game), "an unequipped creature has no haste");
+    equip_to(&mut game, greaves, bears_id);
+    assert!(hasty(&game), "and an equipped one does");
+}
+
+/// Shroud is the half the opponent notices, and it does not care whose spell
+/// it is: the Greaves protect the creature from its own controller too.
+#[test]
+fn the_greaves_put_their_creature_out_of_reach_of_everyone() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let greaves = game
+        .put_onto_battlefield(PlayerId::One, cards::LIGHTNING_GREAVES)
+        .expect("cataloged");
+    let bears = creature(83_010, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let bolt = card(83_011, cards::LIGHTNING_BOLT, PlayerId::One);
+    let bolt_id = bolt.id;
+    game.players[0].hand.push(bolt);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+
+    let targetable = |game: &Game| {
+        game.legal_actions(PlayerId::One).into_iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if card == bolt_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(bears_id)))
+        })
+    };
+
+    assert!(
+        targetable(&game),
+        "an unequipped creature can be pointed at"
+    );
+    equip_to(&mut game, greaves, bears_id);
+    assert!(
+        !targetable(&game),
+        "shroud stops its own controller too, which is the cost of the card",
+    );
+}
