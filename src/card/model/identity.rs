@@ -60,6 +60,7 @@ pub enum CardSet {
     Battlebond,
     ScarsOfMirrodin,
     Magic2011,
+    RiseOfTheEldrazi,
     Innistrad,
     DarkAscension,
     AvacynRestored,

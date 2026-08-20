@@ -301,6 +301,11 @@ const SET_MODULES: &[SetModule] = &[
         y2010::magic_2011::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::RiseOfTheEldrazi,
+        y2010::rise_of_the_eldrazi::CARDS,
+        y2010::rise_of_the_eldrazi::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Innistrad,
         y2011::innistrad::CARDS,
         y2011::innistrad::ADDITIONAL_PRINTINGS,

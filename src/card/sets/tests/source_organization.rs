@@ -223,6 +223,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("battlebond.rs") => source(CardSet::Battlebond, "BBD"),
         Some("scars_of_mirrodin.rs") => source(CardSet::ScarsOfMirrodin, "SOM"),
         Some("magic_2011.rs") => source(CardSet::Magic2011, "M11"),
+        Some("rise_of_the_eldrazi.rs") => source(CardSet::RiseOfTheEldrazi, "ROE"),
         Some("innistrad.rs") => source(CardSet::Innistrad, "ISD"),
         Some("avacyn_restored.rs") => source(CardSet::AvacynRestored, "AVR"),
         Some("dark_ascension.rs") => source(CardSet::DarkAscension, "DKA"),

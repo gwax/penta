@@ -797,3 +797,50 @@ fn overloaded_winds_takes_their_board_and_leaves_yours() {
         "three lands came back, tapped",
     );
 }
+
+/// Four damage for one mana, at sorcery speed and only at creatures.
+#[test]
+fn flame_slash_kills_a_four_toughness_creature_and_cannot_go_upstairs() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let angel = creature(96_000, cards::SERRA_ANGEL, PlayerId::Two);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    let slash = card(96_001, cards::FLAME_SLASH, PlayerId::One);
+    let slash_id = slash.id;
+    game.players[0].hand.push(slash);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+
+    let offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == slash_id => {
+                choices.iter_targets().copied().next()
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        offered,
+        vec![Target::Permanent(angel_id)],
+        "the only legal target is the creature, never a player",
+    );
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == slash_id))
+        .expect("one red mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    resolve(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == angel_id),
+        "four damage kills a 4/4",
+    );
+}

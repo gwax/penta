@@ -1,6 +1,7 @@
 //! Card sets first released in 2010.
 
 pub(super) mod magic_2011;
+pub(super) mod rise_of_the_eldrazi;
 pub(super) mod scars_of_mirrodin;
 
 pub(super) use super::{CardRecord, PrintingRecord};
