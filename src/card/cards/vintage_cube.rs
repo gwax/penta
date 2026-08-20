@@ -92,3 +92,4 @@ pub const FORCE_OF_WILL: CardDefinitionId = CardDefinitionId(2174);
 pub const COUNCILS_JUDGMENT: CardDefinitionId = CardDefinitionId(2175);
 pub const SOWING_MYCOSPAWN: CardDefinitionId = CardDefinitionId(2176);
 pub const BRISTLY_BILL_SPINE_SOWER: CardDefinitionId = CardDefinitionId(2177);
+pub const FALLEN_SHINOBI: CardDefinitionId = CardDefinitionId(2178);

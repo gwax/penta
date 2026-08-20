@@ -1,0 +1,95 @@
+//! Permission to play a card from exile.
+//!
+//! Two shapes reach this: a card on an adventure, which its owner may cast
+//! later as the creature half and which never lapses; and a card somebody
+//! else's effect exiled and handed to a player for a while, which is played
+//! for free and expires.
+
+use super::{CardDefinition, Game, GameObjectId, PlayOptionDef, PlayerId};
+
+/// One card in exile somebody may play from there.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct ExilePlayPermission {
+    pub(super) card: GameObjectId,
+    /// Who may play it. An adventure returns to its owner; a card taken off
+    /// the top of somebody's library is played by whoever took it.
+    pub(super) player: PlayerId,
+    /// Whether the mana cost is waived (CR 118.5): "you may play those cards
+    /// without paying their mana costs".
+    pub(super) free: bool,
+    /// The turn this permission belongs to, as the turn count of the player
+    /// whose turn it was. `None` never lapses, which is what an adventure
+    /// means; anything else is gone once that turn is over.
+    pub(super) until_end_of_turn: Option<(PlayerId, u32)>,
+    /// Whether only the main half of an Adventure card may be played, which
+    /// is what "as the creature, never as the adventure again" means
+    /// (CR 715.3d).
+    pub(super) adventure_return_only: bool,
+}
+
+impl Game {
+    /// Whether `player` may presently play `card` from exile with `option`.
+    pub(super) fn exile_play_is_permitted(
+        &self,
+        definition: &CardDefinition,
+        option: &PlayOptionDef,
+        card: GameObjectId,
+        player: PlayerId,
+    ) -> bool {
+        self.exile_play_permission(card, player)
+            .is_some_and(|permission| {
+                !permission.adventure_return_only
+                    || Self::is_adventure_return_option(definition, option)
+            })
+    }
+
+    /// The live permission `player` holds over `card`, if any.
+    pub(super) fn exile_play_permission(
+        &self,
+        card: GameObjectId,
+        player: PlayerId,
+    ) -> Option<ExilePlayPermission> {
+        self.exile_play_permissions
+            .iter()
+            .copied()
+            .find(|permission| {
+                permission.card == card
+                    && permission.player == player
+                    && permission.until_end_of_turn.is_none_or(|(owner, turn)| {
+                        self.turns_started[owner.index()] == turn && self.active_player == owner
+                    })
+            })
+    }
+
+    /// Records that a card on an adventure may come back as the creature it
+    /// is. The permission never lapses: a crown that never moves keeps it,
+    /// and so does an adventure nobody takes.
+    pub(super) fn permit_adventure_return(&mut self, card: GameObjectId, player: PlayerId) {
+        self.exile_play_permissions.push(ExilePlayPermission {
+            card,
+            player,
+            free: false,
+            until_end_of_turn: None,
+            adventure_return_only: true,
+        });
+    }
+
+    /// "Until end of turn, you may play those cards without paying their
+    /// mana costs."
+    pub(super) fn permit_free_play_this_turn(&mut self, card: GameObjectId, player: PlayerId) {
+        let active = self.active_player;
+        self.exile_play_permissions.push(ExilePlayPermission {
+            card,
+            player,
+            free: true,
+            until_end_of_turn: Some((active, self.turns_started[active.index()])),
+            adventure_return_only: false,
+        });
+    }
+
+    /// Drops the permission a play has just consumed.
+    pub(super) fn consume_exile_play_permission(&mut self, card: GameObjectId) {
+        self.exile_play_permissions
+            .retain(|permission| permission.card != card);
+    }
+}

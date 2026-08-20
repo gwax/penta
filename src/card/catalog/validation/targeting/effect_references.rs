@@ -208,7 +208,8 @@ fn validate_effect_references(
         EffectDef::BecomeMonarch { player } => {
             validate_player_reference(player, target_count, scope)
         }
-        EffectDef::MillUntil { player, .. }
+        EffectDef::ExileTopOfLibraryToPlay { player, .. }
+        | EffectDef::MillUntil { player, .. }
         | EffectDef::ChooseCards { player, .. }
         | EffectDef::TakeExtraTurn { player }
         | EffectDef::LookAtHand { player }
@@ -306,6 +307,7 @@ fn validate_effect_references(
         | EffectDef::DamageCannotBePreventedThisTurn
             | EffectDef::GrantFlashToNextSorcery
         // The ballot is a predicate, not a target: nothing is pointed at.
+        | EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::CannotBeForcedToSacrifice

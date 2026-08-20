@@ -62,11 +62,14 @@ impl Game {
                     .iter()
                     .map(|card| (card, CastSourceZone::Graveyard)),
             )
+            // Exile is walked for both players: a card on an adventure is
+            // its owner's, but a card somebody took off the top of a library
+            // is played from the exile of the player who owned it.
             .chain(
-                state
-                    .exile
+                self.players
                     .iter()
-                    .filter(|card| self.adventuring_exiles.contains(&card.id))
+                    .flat_map(|state| state.exile.iter())
+                    .filter(|card| self.exile_play_permission(card.id, player).is_some())
                     .map(|card| (card, CastSourceZone::Exile)),
             )
         {
@@ -86,10 +89,8 @@ impl Game {
                 {
                     continue;
                 }
-                // A card on an adventure comes back as the creature it is,
-                // never as the adventure again (CR 715.3d).
                 if source_zone == CastSourceZone::Exile
-                    && !Self::is_adventure_return_option(definition, option)
+                    && !self.exile_play_is_permitted(definition, option, card.id, player)
                 {
                     continue;
                 }

@@ -570,6 +570,10 @@ pub enum EffectDef {
         then: &'static EffectDef,
         otherwise: &'static EffectDef,
     },
+    /// Ninjutsu's payoff (CR 702.49b): put the card this ability came from
+    /// onto the battlefield from its owner's hand, tapped and attacking the
+    /// same defender the returned creature was attacking.
+    PutSourceOntoBattlefieldAttacking,
     /// "Will of the council" (CR 701.34): starting with the resolving
     /// controller, each player in turn votes for one of the permanents the
     /// predicate names, and then every permanent with the most votes --
@@ -643,6 +647,16 @@ pub enum EffectDef {
     /// Put that many cards from the top of a library into its owner's
     /// graveyard.
     Mill {
+        player: EffectRecipientDef,
+        amount: ValueDef,
+    },
+    /// "That player exiles the top N cards of their library. Until end of
+    /// turn, you may play those cards without paying their mana costs."
+    ///
+    /// The exile and the permission are one clause: the cards are gone
+    /// whether or not anything is played, and the permission belongs to the
+    /// resolving controller rather than to the player who lost them.
+    ExileTopOfLibraryToPlay {
         player: EffectRecipientDef,
         amount: ValueDef,
     },

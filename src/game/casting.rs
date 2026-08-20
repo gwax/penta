@@ -286,6 +286,7 @@ impl Game {
                 | AbilityCostDef::DiscardCards(_)
                 | AbilityCostDef::DiscardCardMatching(_)
                 | AbilityCostDef::DiscardCardsAtRandom(_)
+                | AbilityCostDef::ReturnUnblockedAttackerToHand
                 | AbilityCostDef::TapPermanent { .. }
                 | AbilityCostDef::Special(_) => {
                     unreachable!("unsupported mana-ability costs are not enumerated")
@@ -515,10 +516,12 @@ impl Game {
                     .map(|card| (card, CastSourceZone::Graveyard))
             })
             .or_else(|| {
-                state
-                    .exile
+                self.players
                     .iter()
-                    .find(|card| card.id == card_id && self.adventuring_exiles.contains(&card.id))
+                    .flat_map(|state| state.exile.iter())
+                    .find(|card| {
+                        card.id == card_id && self.exile_play_permission(card_id, player).is_some()
+                    })
                     .map(|card| (card, CastSourceZone::Exile))
             })?;
         let definition = self.catalog.get(card.definition)?;
@@ -533,10 +536,8 @@ impl Game {
         {
             return None;
         }
-        // A card on an adventure comes back as the creature it is, never as
-        // the adventure again (CR 715.3d).
         if source_zone == CastSourceZone::Exile
-            && !Self::is_adventure_return_option(definition, option)
+            && !self.exile_play_is_permitted(definition, option, card_id, player)
         {
             return None;
         }
@@ -715,8 +716,11 @@ impl Game {
                 remove_card(&mut self.players[player.index()].graveyard, card_id)
             }
             CastSourceZone::Exile => {
-                self.adventuring_exiles.retain(|id| *id != card_id);
-                remove_card(&mut self.players[player.index()].exile, card_id)
+                self.consume_exile_play_permission(card_id);
+                // The card is in its owner's exile, which need not be the
+                // exile of the player casting it.
+                remove_card(&mut self.players[0].exile, card_id)
+                    .or_else(|| remove_card(&mut self.players[1].exile, card_id))
             }
         }
         .expect("legal cast action references a card in its validated source zone");

@@ -235,7 +235,7 @@ impl Game {
             SpellResolutionDestinationDef::ExileOnAdventure => {
                 // The exiled card is a new object, and it is that object its
                 // owner may cast the creature half of later.
-                self.adventuring_exiles.push(card.id);
+                self.permit_adventure_return(card.id, owner);
                 self.players[owner.index()].exile.push(card);
             }
             SpellResolutionDestinationDef::ExileWithCounters(counters) => {

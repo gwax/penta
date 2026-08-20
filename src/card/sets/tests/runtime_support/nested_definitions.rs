@@ -405,6 +405,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { .. }
+        | EffectDef::ExileTopOfLibraryToPlay { .. }
         | EffectDef::Mill { .. }
         | EffectDef::MillUntil { .. }
         | EffectDef::LookAtHand { .. }
@@ -425,6 +426,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
+        | EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::BecomeMonarch { .. }
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::DamageCannotBePreventedThisTurn

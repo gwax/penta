@@ -38,6 +38,12 @@ pub enum CostDef {
         object: ObjectPredicateDef,
         controller: PlayerRelation,
     },
+    /// Ninjutsu's cost: return an unblocked attacker you control to its
+    /// owner's hand. Which one is chosen as the ability is activated, and
+    /// what makes a creature eligible is combat state rather than any
+    /// printed characteristic -- so unlike the costs above this one names no
+    /// predicate at all.
+    ReturnUnblockedAttackerToHand,
     /// Tap a chosen untapped permanent other than the source, for "tap an
     /// untapped Gate you control". Unlike [`Self::TapSource`] the permanent
     /// paying is selected when the ability is activated.

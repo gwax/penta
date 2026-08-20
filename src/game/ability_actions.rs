@@ -229,7 +229,8 @@ impl Game {
                         | AbilityCostDef::ReturnSourceToHand
                         | AbilityCostDef::ExileSource
                         | AbilityCostDef::SacrificePermanent { .. }
-                        | AbilityCostDef::TapPermanent { .. }
+                        | AbilityCostDef::ReturnUnblockedAttackerToHand
+                | AbilityCostDef::TapPermanent { .. }
                         // Payability is decided by whether any card qualifies,
                         // which the choice list below answers.
                         | AbilityCostDef::ExileCardsFromGraveyard { .. }
@@ -263,6 +264,7 @@ impl Game {
                     matches!(
                         cost,
                         AbilityCostDef::SacrificePermanent { .. }
+                            | AbilityCostDef::ReturnUnblockedAttackerToHand
                             | AbilityCostDef::TapPermanent { .. }
                             | AbilityCostDef::ExileCardsFromGraveyard { .. }
                             | AbilityCostDef::DiscardCardMatching(_)
@@ -522,6 +524,7 @@ impl Game {
                 if !ability.is_executable()
                     || definition.procedure != AbilityProcedureDef::Shared
                     || !definition.source_zones.contains(&ZoneKind::Hand)
+                    || !self.activation_timing_allows(player, definition.timing)
                 {
                     return;
                 }
@@ -532,7 +535,8 @@ impl Game {
                         AbilityCostDef::Mana(cost) => {
                             mana_cost = add_mana_cost(mana_cost, *cost);
                         }
-                        AbilityCostDef::DiscardSource => {}
+                        AbilityCostDef::DiscardSource
+                        | AbilityCostDef::ReturnUnblockedAttackerToHand => {}
                         AbilityCostDef::TapSource
                         | AbilityCostDef::UntapSource
                         | AbilityCostDef::SacrificeSource
@@ -564,6 +568,21 @@ impl Game {
                 } else {
                     0
                 };
+                // Which attacker ninjutsu returns is a choice, and it is made
+                // as the ability is activated, so it is one action per
+                // eligible creature. Every other hand ability names none.
+                let returned = if definition
+                    .costs
+                    .contains(&AbilityCostDef::ReturnUnblockedAttackerToHand)
+                {
+                    let candidates = self.unblocked_attackers_controlled_by(player);
+                    if candidates.is_empty() {
+                        return;
+                    }
+                    candidates.into_iter().map(|id| vec![id]).collect()
+                } else {
+                    vec![Vec::new()]
+                };
                 // As on the battlefield path, X is the outer loop so a slot
                 // whose count comes from X sees the X it was enumerated for.
                 for x in 0..=max_x {
@@ -574,13 +593,15 @@ impl Game {
                         TriggerContext::empty(),
                         x,
                     ) {
-                        actions.push(Action::ActivateAbility {
-                            source: card.id,
-                            ability: effective.origin,
-                            targets,
-                            cost_objects: Vec::new(),
-                            x,
-                        });
+                        for cost_objects in &returned {
+                            actions.push(Action::ActivateAbility {
+                                source: card.id,
+                                ability: effective.origin,
+                                targets: targets.clone(),
+                                cost_objects: cost_objects.clone(),
+                                x,
+                            });
+                        }
                     }
                 }
             });
@@ -633,6 +654,7 @@ impl Game {
                             | AbilityCostDef::DiscardCardMatching(_)
                             | AbilityCostDef::DiscardCardsAtRandom(_)
                             | AbilityCostDef::SacrificePermanent { .. }
+                            | AbilityCostDef::ReturnUnblockedAttackerToHand
                             | AbilityCostDef::TapPermanent { .. }
                             | AbilityCostDef::Loyalty(_)
                             | AbilityCostDef::ExileCardsFromGraveyard { .. }

@@ -77,6 +77,7 @@ mod effect_values;
 mod entry_replacements;
 mod error;
 mod event;
+mod exile_permission;
 mod face_down;
 mod land_type_layers;
 mod land_type_substitution;
@@ -87,6 +88,7 @@ mod mana_planning;
 mod mana_runtime;
 mod mana_state;
 mod monarch;
+mod ninjutsu;
 mod observation;
 mod phasing;
 mod prevention_state;
@@ -154,6 +156,7 @@ use decision_state::{
     PendingDecision, Pregame, ResolvedEffectPayment, SacrificeDeclined, SacrificeFollowup,
     SearchFollowUp, ZoneMoveCause,
 };
+use exile_permission::ExilePlayPermission;
 use mana_state::{
     AppliedStackEffect, FlexibleManaSource, ManaAbilityActivation, ManaActivationChoices,
     ManaPaymentPurpose, ManaSourceOutput, ManaSourceOutputs, PlannedManaActivation,
@@ -882,11 +885,15 @@ pub struct Game {
     /// a card at the beginning of their end step, and a creature that deals
     /// combat damage to them hands the crown to its controller.
     monarch: Option<PlayerId>,
-    /// Cards in exile that are on an adventure, which their owner may cast
-    /// from there as the creature half (CR 715.3d). Object ids are allocated
-    /// per zone change and never reused, so an entry is dropped when the
-    /// card is cast and cannot otherwise be mistaken for a later object.
-    adventuring_exiles: Vec<GameObjectId>,
+    /// Who the creature a ninjutsu cost just returned was attacking. Read
+    /// as the cost is paid and consumed as the ability resolves, because by
+    /// then the creature is in hand and cannot be asked.
+    ninjutsu_returned_defender: Option<AttackDefender>,
+    /// Cards in exile somebody has been given permission to play from
+    /// there. Object ids are allocated per zone change and never reused, so
+    /// an entry is dropped when the card is played and cannot otherwise be
+    /// mistaken for a later object.
+    exile_play_permissions: Vec<ExilePlayPermission>,
     /// Whether "damage can't be prevented this turn" is in force. Stomp
     /// prints it, and it is a rule about the whole turn rather than about
     /// any one damage event, so it is read where damage is dealt rather

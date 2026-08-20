@@ -3,7 +3,7 @@ use super::{
     BattlefieldExitCompletion, CardBehavior, CardInstance, CharacteristicContext, CounterKind,
     DeclarativeAbilityDef, FrozenActivatedAbility, Game, GameEvent, GameObjectId, ManaCost,
     ManaPaymentPurpose, PlayRestriction, PlayerId, Step, Target, TargetSelection, ZoneKind,
-    remove_card,
+    ZoneMoveCause, ZonePlacement, remove_card,
 };
 
 impl Game {
@@ -31,6 +31,12 @@ impl Game {
             // The same window Berserk uses, and read the same way: once
             // combat damage has started it is gone for the rest of the turn,
             // even in a later step.
+            // The priority round the declaration opens, which is the only
+            // window between the two declarations: once the step advances,
+            // blockers are being declared and nothing else has priority.
+            ActivationTimingDef::AfterAttackersDeclared => {
+                self.step == Step::DeclareAttackers && self.attackers_declared
+            }
             ActivationTimingDef::BeforeCombatDamage => {
                 self.play_timing_allows(player, PlayRestriction::BeforeCombatDamage)
             }
@@ -115,6 +121,7 @@ impl Game {
                 | AbilityCostDef::DiscardCardMatching(_)
                 | AbilityCostDef::DiscardCardsAtRandom(_)
                 | AbilityCostDef::SacrificePermanent { .. }
+                | AbilityCostDef::ReturnUnblockedAttackerToHand
                 | AbilityCostDef::TapPermanent { .. }
                 | AbilityCostDef::Loyalty(_)
                 | AbilityCostDef::ExileCardsFromGraveyard { .. }
@@ -220,6 +227,20 @@ impl Game {
                         // activation rather than on resolution -- so here,
                         // beside the cost, rather than at the draw.
                         self.capture_cycling_triggers(discarded_id, player);
+                    }
+                    // The attacker named by the action, returned before the
+                    // ability goes on the stack: it is a cost.
+                    AbilityCostDef::ReturnUnblockedAttackerToHand => {
+                        if let Some(returned) = cost_objects.first() {
+                            self.ninjutsu_returned_defender = self.attack_defender_of(*returned);
+                            self.move_target_to_zone(
+                                Target::Permanent(*returned),
+                                ZoneKind::Hand,
+                                ZoneMoveCause::Effect { controller: player },
+                                None,
+                                ZonePlacement::Top,
+                            );
+                        }
                     }
                     AbilityCostDef::TapSource
                     | AbilityCostDef::UntapSource
@@ -331,11 +352,13 @@ impl Game {
                 .any(|cost| matches!(cost, AbilityCostDef::SacrificePermanent { .. }));
             let sacrifice_choice_is_source =
                 has_generic_sacrifice && cost_objects.contains(&source);
-            if definition
-                .costs
-                .iter()
-                .any(|cost| matches!(cost, AbilityCostDef::TapPermanent { .. }))
-            {
+            if definition.costs.iter().any(|cost| {
+                matches!(
+                    cost,
+                    AbilityCostDef::ReturnUnblockedAttackerToHand
+                        | AbilityCostDef::TapPermanent { .. }
+                )
+            }) {
                 // Ahead of the loop, so automatic mana payment cannot tap the
                 // chosen permanent out from under the cost it is paying.
                 let chosen = *cost_objects
@@ -375,6 +398,7 @@ impl Game {
                     // The open-ended removal never reaches payment: mana
                     // enumeration replaced it with a sized one.
                     AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
+                    | AbilityCostDef::ReturnUnblockedAttackerToHand
                     | AbilityCostDef::TapPermanent { .. }
                     | AbilityCostDef::SacrificeSource
                     | AbilityCostDef::ReturnSourceToHand

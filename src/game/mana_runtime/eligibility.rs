@@ -48,6 +48,7 @@ impl Game {
                 | AbilityCostDef::DiscardCardMatching(_)
                 | AbilityCostDef::DiscardCardsAtRandom(_)
                 | AbilityCostDef::SacrificePermanent { .. }
+                | AbilityCostDef::ReturnUnblockedAttackerToHand
                 | AbilityCostDef::TapPermanent { .. }
                 | AbilityCostDef::ExileSource
                 | AbilityCostDef::Loyalty(_)
@@ -116,7 +117,8 @@ impl Game {
             | AbilityCostDef::DiscardCards(_)
             | AbilityCostDef::DiscardCardMatching(_)
             | AbilityCostDef::DiscardCardsAtRandom(_)
-            | AbilityCostDef::TapPermanent { .. }
+            | AbilityCostDef::ReturnUnblockedAttackerToHand
+                | AbilityCostDef::TapPermanent { .. }
             | AbilityCostDef::Loyalty(_)
             | AbilityCostDef::ExileCardsFromGraveyard { .. }
             | AbilityCostDef::Special(_) => false,

@@ -334,6 +334,26 @@ impl Game {
                 }
             }
         }
+        // "Without paying its mana cost" is a permission held over the card
+        // rather than an alternative printed on it, so it is applied here,
+        // after everything the card itself asks for. Additional costs still
+        // apply (CR 601.2h); only the mana cost is waived.
+        if self.card_is_played_free(card) {
+            cost = ManaCost {
+                variable_x: cost.variable_x,
+                x_multiplier: cost.x_multiplier,
+                ..ManaCost::default()
+            };
+        }
         Some(cost)
+    }
+
+    /// Whether whoever is playing this card has been told they need not pay
+    /// for it. Read off the exile permissions, which is the only source
+    /// today.
+    fn card_is_played_free(&self, card: GameObjectId) -> bool {
+        self.exile_play_permissions
+            .iter()
+            .any(|permission| permission.card == card && permission.free)
     }
 }

@@ -153,6 +153,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         }
         // None of these is a static ability; all execute from the stack.
         EffectDef::DamageCannotBePreventedThisTurn
+        | EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::BecomeMonarch { .. }
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::GrantFlashToNextSorcery
@@ -205,6 +206,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { .. }
+        | EffectDef::ExileTopOfLibraryToPlay { .. }
         | EffectDef::Mill { .. }
         | EffectDef::MillUntil { .. }
         | EffectDef::LookAtTopAndSelect { .. }

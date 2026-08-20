@@ -232,6 +232,7 @@ impl Game {
             | EffectDef::Discard { .. }
             | EffectDef::DiscardCards { .. }
             | EffectDef::Mill { .. }
+            | EffectDef::ExileTopOfLibraryToPlay { .. }
             | EffectDef::MillUntil { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }
@@ -442,6 +443,9 @@ impl Game {
                         Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
                     });
                 self.schedule_extra_turns(players);
+            }
+            EffectDef::PutSourceOntoBattlefieldAttacking => {
+                self.put_ninja_onto_the_battlefield(object);
             }
             EffectDef::VoteForPermanentToExile { object: predicate } => {
                 self.queue_permanent_vote(

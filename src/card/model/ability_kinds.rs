@@ -431,6 +431,10 @@ pub enum ActivationTimingDef {
     /// with the stack empty. Unlike the windows above, this one does depend
     /// on the stack, because that is what "as a sorcery" means.
     SorcerySpeed,
+    /// The ninjutsu window: the priority round the attack declaration
+    /// opens. It is the only moment an attacker can be both unblocked and
+    /// still able to be swapped out, which is the whole of the mechanic.
+    AfterAttackersDeclared,
     /// "Activate only before the combat damage step." The window is open all
     /// turn until damage is about to be dealt, on either player's turn, which
     /// is what makes the ability something the attacker can be surprised by.

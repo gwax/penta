@@ -478,6 +478,7 @@ impl Game {
                 | EffectDef::Destroy { .. }
                 | EffectDef::Sacrifice { .. }
                 | EffectDef::SacrificeOfChoice { .. }
+                | EffectDef::ExileTopOfLibraryToPlay { .. }
                 | EffectDef::Mill { .. }
                 | EffectDef::MillUntil { .. }
                 | EffectDef::LookAtTopAndSelect { .. }
@@ -499,6 +500,7 @@ impl Game {
                 | EffectDef::May { .. }
                 | EffectDef::ScheduleTurnPhases(_)
                 | EffectDef::TakeExtraTurn { .. }
+                | EffectDef::PutSourceOntoBattlefieldAttacking
                 | EffectDef::BecomeMonarch { .. }
                 | EffectDef::VoteForPermanentToExile { .. }
                 | EffectDef::DamageCannotBePreventedThisTurn

@@ -110,6 +110,7 @@ impl Game {
             | EffectDef::Destroy { .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
+            | EffectDef::ExileTopOfLibraryToPlay { .. }
             | EffectDef::Mill { .. }
             | EffectDef::MillUntil { .. }
             | EffectDef::SearchZone { then: None, .. }
@@ -134,6 +135,7 @@ impl Game {
             | EffectDef::Transform { .. }
             | EffectDef::ScheduleTurnPhases(_)
             | EffectDef::TakeExtraTurn { .. }
+            | EffectDef::PutSourceOntoBattlefieldAttacking
             | EffectDef::BecomeMonarch { .. }
             | EffectDef::VoteForPermanentToExile { .. }
             | EffectDef::DamageCannotBePreventedThisTurn

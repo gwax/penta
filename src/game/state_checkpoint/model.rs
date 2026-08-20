@@ -6,6 +6,16 @@ fn is_zero_u8(value: &u8) -> bool {
     *value == 0
 }
 
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct ExilePlayPermissionSnapshot {
+    pub(super) card: u32,
+    pub(super) player: usize,
+    pub(super) free: bool,
+    pub(super) until_end_of_turn: Option<(usize, u32)>,
+    pub(super) adventure_return_only: bool,
+}
+
 /// Taken by reference because that is the signature serde's
 /// `skip_serializing_if` requires.
 #[allow(clippy::trivially_copy_pass_by_ref)]
@@ -64,10 +74,13 @@ pub(super) struct GameSnapshot {
     /// false, which is what every ordinary turn means anyway.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) damage_cannot_be_prevented_this_turn: bool,
-    /// Additive: a checkpoint written before adventures existed restores as
-    /// empty, which is what a game with none of them means anyway.
+    /// Additive: a checkpoint written before exile permissions existed
+    /// restores as empty, which is what a game with none of them means
+    /// anyway. Each entry is the card, who may play it, whether it is free,
+    /// the turn it lapses at the end of, and whether only an adventure's
+    /// creature half may be played.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub(super) adventuring_exiles: Vec<u32>,
+    pub(super) exile_play_permissions: Vec<ExilePlayPermissionSnapshot>,
     /// Additive: a checkpoint written before the monarch existed restores
     /// with nobody wearing the crown, which is how every game starts.
     #[serde(default, skip_serializing_if = "Option::is_none")]

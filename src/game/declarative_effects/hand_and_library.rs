@@ -173,6 +173,26 @@ impl Game {
                     }
                 }
             }
+            EffectDef::ExileTopOfLibraryToPlay {
+                player: recipient,
+                amount,
+            } => {
+                let count = self.effect_value(amount, object, context, scoped).max(0);
+                let Ok(count) = usize::try_from(count) else {
+                    return;
+                };
+                let controller = object.controller;
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        for card in self.take_top_of_library(player, count) {
+                            let (card, _zone_change) = self.zone_change_card(card);
+                            let exiled = card.id;
+                            self.players[player.index()].exile.push(card);
+                            self.permit_free_play_this_turn(exiled, controller);
+                        }
+                    }
+                }
+            }
             EffectDef::LookAtHand { player: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Player(seen) = target {

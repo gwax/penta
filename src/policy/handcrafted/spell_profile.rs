@@ -436,6 +436,7 @@ impl HandcraftedPolicy {
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::DiscardCards { .. }
+            | EffectDef::ExileTopOfLibraryToPlay { .. }
             | EffectDef::Mill { .. }
             | EffectDef::MillUntil { .. }
             | EffectDef::LookAtTopAndSelect { .. }
@@ -457,6 +458,7 @@ impl HandcraftedPolicy {
             | EffectDef::Transform { .. }
             | EffectDef::ScheduleTurnPhases(_)
             | EffectDef::TakeExtraTurn { .. }
+            | EffectDef::PutSourceOntoBattlefieldAttacking
             | EffectDef::BecomeMonarch { .. }
             | EffectDef::VoteForPermanentToExile { .. }
             | EffectDef::DamageCannotBePreventedThisTurn

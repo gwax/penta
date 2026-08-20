@@ -105,7 +105,8 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
-        | EffectDef::Mill { .. }
+        | EffectDef::ExileTopOfLibraryToPlay { .. }
+            | EffectDef::Mill { .. }
         | EffectDef::MillUntil { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
@@ -125,7 +126,8 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
-        | EffectDef::BecomeMonarch { .. }
+        | EffectDef::PutSourceOntoBattlefieldAttacking
+            | EffectDef::BecomeMonarch { .. }
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::GrantFlashToNextSorcery
@@ -282,7 +284,8 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
-        | EffectDef::Mill { .. }
+        | EffectDef::ExileTopOfLibraryToPlay { .. }
+            | EffectDef::Mill { .. }
         | EffectDef::MillUntil { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
@@ -302,7 +305,8 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
-        | EffectDef::BecomeMonarch { .. }
+        | EffectDef::PutSourceOntoBattlefieldAttacking
+            | EffectDef::BecomeMonarch { .. }
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::GrantFlashToNextSorcery

@@ -153,6 +153,22 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Ninjutsu, and playing somebody else's cards from exile.** Ninjutsu
+  (CR 702.49) is an activated ability that works from its owner's hand in
+  the priority round the attack declaration opens: it returns an unblocked
+  attacker and puts the ninja onto the battlefield in its place, tapped and
+  attacking the same defender. It was never declared as an attacker, so
+  nothing watching for a declaration fires.
+
+  The permission a card on an adventure carries became the general shape it
+  always was: who may play the card, whether the mana cost is waived, and
+  when the permission lapses. An adventure is its owner's, costs what it
+  prints, and never lapses; "that player exiles the top two cards of their
+  library, and until end of turn you may play those cards without paying
+  their mana costs" is the other player's, free, and gone with the turn.
+  Additional costs still apply to a free play (CR 601.2h); only the mana
+  cost is waived.
+
 - **`{C}`, devoid, and a kicker that only costs more.** Sowing Mycospawn
   needed all three. A mana cost can now carry `{C}` symbols, which unlike
   generic can only be paid with colorless mana. Devoid is a

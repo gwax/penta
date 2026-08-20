@@ -390,7 +390,11 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
             // Nobody chooses which cards go, so a random discard needs no
             // decision procedure -- only a permanent to activate from.
             | AbilityCostDef::DiscardCardsAtRandom(_) => battlefield,
-            AbilityCostDef::DiscardSource => hand,
+            // Ninjutsu's cost joins the discard here: what it may return is
+            // combat state rather than a predicate, and both are paid by a
+            // card in hand.
+            AbilityCostDef::DiscardSource
+            | AbilityCostDef::ReturnUnblockedAttackerToHand => hand,
             AbilityCostDef::UntapSource
             | AbilityCostDef::DiscardCards(_)
             | AbilityCostDef::Special(_) => false,
@@ -682,6 +686,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Destroy { .. }
                     | EffectDef::Sacrifice { .. }
                     | EffectDef::SacrificeOfChoice { .. }
+                    | EffectDef::ExileTopOfLibraryToPlay { .. }
                     | EffectDef::Mill { .. }
                     | EffectDef::MillUntil { .. }
                     | EffectDef::LookAtTopAndSelect { .. }
@@ -706,6 +711,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Transform { .. }
                     | EffectDef::ScheduleTurnPhases(_)
                     | EffectDef::TakeExtraTurn { .. }
+                    | EffectDef::PutSourceOntoBattlefieldAttacking
                     | EffectDef::BecomeMonarch { .. }
                     | EffectDef::VoteForPermanentToExile { .. }
                     | EffectDef::DamageCannotBePreventedThisTurn

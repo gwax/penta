@@ -213,6 +213,11 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::Mill {
             player: recipient, ..
         }
+        // The permission it grants belongs to the resolving controller, so
+        // nothing beyond the recipient has to be read here.
+        | EffectDef::ExileTopOfLibraryToPlay {
+            player: recipient, ..
+        }
         // The predicate is read against library cards, which the shared
         // walk already reads for a search.
         | EffectDef::MillUntil {
@@ -359,6 +364,9 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         // deferred half, and its ballot is a predicate the shared walk
         // already reads.
         | EffectDef::VoteForPermanentToExile { .. }
+        // The card it puts onto the battlefield is its own source, so it
+        // names no recipient to check.
+        | EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::BecomeMonarch { .. }
         | EffectDef::GrantFlashToNextSorcery => true,
         // Each of these asks a question and then runs an inner effect,

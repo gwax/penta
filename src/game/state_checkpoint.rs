@@ -6,8 +6,8 @@ use super::{
     AbilitySourceRef, ApplicableReplacement, AppliedStackEffect, BasicLandTypeChange, CardInstance,
     CharacteristicSource, CombatDamageStage, ContinuousEffectExpiration, ContinuousEffectTimestamp,
     CopiableAbility, CopiableCharacteristics, CounterKind, DamageSourceGroupDef,
-    EffectResolutionContext, EntryCompletion, Game, GameEvent, GameObjectId, GameStack,
-    InstalledTrigger, InstalledTriggerLifetime, Mana, ManaSource, ObjectBacking,
+    EffectResolutionContext, EntryCompletion, ExilePlayPermission, Game, GameEvent, GameObjectId,
+    GameStack, InstalledTrigger, InstalledTriggerLifetime, Mana, ManaSource, ObjectBacking,
     PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect, Permanent, PlayerId,
     PlayerState, Pregame, RelationalSourceFilter, ReplaceableEvent, ReplacementEffectContext,
     ReplayRng, ResolvedAbilityOperation, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
@@ -62,13 +62,13 @@ use model::{
     ApplicableReplacementSnapshot, AttackDefenderSnapshot, BasicLandTypeSnapshot,
     CombatDamageAssignmentSnapshot, CombatDamageStageSnapshot, ContinuousEffectExpirationSnapshot,
     CopiableAbilitySnapshot, CopiableCharacteristicsSnapshot, CopiedFromSnapshot,
-    DetachedCardSnapshot, DetachedPermanentSnapshot, EntryCompletionSnapshot, GameSnapshot,
-    ManaColorSnapshot, ManaSnapshot, ManaSourceSnapshot, PendingBattlefieldEntrySnapshot,
-    PendingEventSnapshot, PendingReplacementEffectSnapshot, PermanentSnapshot, PregameSnapshot,
-    ReplacementEffectContextSnapshot, ReplacementEffectLocator, ResolvedContinuousEffectSnapshot,
-    ResolvedContinuousOperationSnapshot, RetiredObjectSnapshot, SetOperationSnapshot,
-    StackSnapshot, SuccessorSnapshot, TemporaryAbilityGrantSnapshot, TurnPhaseResumeSnapshot,
-    TurnPhaseSnapshot, ZoneKindSnapshot,
+    DetachedCardSnapshot, DetachedPermanentSnapshot, EntryCompletionSnapshot,
+    ExilePlayPermissionSnapshot, GameSnapshot, ManaColorSnapshot, ManaSnapshot, ManaSourceSnapshot,
+    PendingBattlefieldEntrySnapshot, PendingEventSnapshot, PendingReplacementEffectSnapshot,
+    PermanentSnapshot, PregameSnapshot, ReplacementEffectContextSnapshot, ReplacementEffectLocator,
+    ResolvedContinuousEffectSnapshot, ResolvedContinuousOperationSnapshot, RetiredObjectSnapshot,
+    SetOperationSnapshot, StackSnapshot, SuccessorSnapshot, TemporaryAbilityGrantSnapshot,
+    TurnPhaseResumeSnapshot, TurnPhaseSnapshot, ZoneKindSnapshot,
 };
 use model_keyword::UpkeepKeywordSnapshot;
 use permanent::{detached_permanent_snapshot, permanent_snapshot};
@@ -447,7 +447,19 @@ impl Game {
                 .map(|(source, card)| [source.0, card.0])
                 .collect(),
             damage_cannot_be_prevented_this_turn: self.damage_cannot_be_prevented_this_turn,
-            adventuring_exiles: self.adventuring_exiles.iter().map(|id| id.0).collect(),
+            exile_play_permissions: self
+                .exile_play_permissions
+                .iter()
+                .map(|permission| ExilePlayPermissionSnapshot {
+                    card: permission.card.0,
+                    player: permission.player.index(),
+                    free: permission.free,
+                    until_end_of_turn: permission
+                        .until_end_of_turn
+                        .map(|(player, turn)| (player.index(), turn)),
+                    adventure_return_only: permission.adventure_return_only,
+                })
+                .collect(),
             monarch: self.monarch.map(PlayerId::index),
             sorcery_flash_grants: self.sorcery_flash_grants,
             turn_phase_queue: self
@@ -761,11 +773,25 @@ impl Game {
             creature_died_this_turn: checkpoint.creature_died_this_turn,
             creatures_died_this_turn: checkpoint.creatures_died_this_turn,
             damage_cannot_be_prevented_this_turn: checkpoint.damage_cannot_be_prevented_this_turn,
-            adventuring_exiles: checkpoint
-                .adventuring_exiles
+            // Never live across a checkpoint: it is read and consumed
+            // inside one activation, which cannot be interrupted.
+            ninjutsu_returned_defender: None,
+            exile_play_permissions: checkpoint
+                .exile_play_permissions
                 .iter()
-                .map(|id| GameObjectId(*id))
-                .collect(),
+                .map(|permission| {
+                    Ok(ExilePlayPermission {
+                        card: GameObjectId(permission.card),
+                        player: player_from_index(permission.player)?,
+                        free: permission.free,
+                        until_end_of_turn: match permission.until_end_of_turn {
+                            Some((player, turn)) => Some((player_from_index(player)?, turn)),
+                            None => None,
+                        },
+                        adventure_return_only: permission.adventure_return_only,
+                    })
+                })
+                .collect::<Result<Vec<_>, String>>()?,
             monarch: checkpoint.monarch.map(player_from_index).transpose()?,
             linked_exiles: checkpoint
                 .linked_exiles
