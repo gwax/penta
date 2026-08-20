@@ -83,7 +83,16 @@ pub enum ReplacementConditionDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum BattlefieldEntryModificationDef {
     Tapped,
-    AddCounters { kind: CounterKind, amount: u16 },
+    AddCounters {
+        kind: CounterKind,
+        amount: u16,
+    },
+    /// As many counters as the X its spell was cast for. "This creature
+    /// enters with X +1/+1 counters on it" cannot name a number, and the
+    /// entering permanent already knows what it was paid for.
+    AddCastXCounters {
+        kind: CounterKind,
+    },
 }
 
 /// The catalog-derived vocabulary presented by a scalar entry choice.

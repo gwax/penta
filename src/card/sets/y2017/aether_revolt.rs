@@ -2,8 +2,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, TriggerConditionDef, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardType, CounterKind, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, ReplacementEffectDef, TriggerConditionDef, ValueDef,
+    cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -68,6 +70,58 @@ pub(in crate::card::sets) static FATAL_PUSH: CardRecord = CardRecord::new(
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&FATAL_PUSH];
+static ANY_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
+static BALLISTA_SHOOTS_COST: [AbilityCostDef; 1] = [AbilityCostDef::RemoveCountersFromSource {
+    kind: CounterKind::PlusOnePlusOne,
+    amount: 1,
+}];
+
+static WALKING_BALLISTA_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::as_enters(
+        "This creature enters with X +1/+1 counters on it.",
+        ReplacementEffectDef::ModifyBattlefieldEntry(
+            BattlefieldEntryModificationDef::AddCastXCounters {
+                kind: CounterKind::PlusOnePlusOne,
+            },
+        ),
+    ),
+    AbilityDef::activated(
+        "{4}: Put a +1/+1 counter on this creature.",
+        &[AbilityCostDef::Mana(mana_cost!("{4}"))],
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::Source,
+            kind: CounterKind::PlusOnePlusOne,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    // The counter comes off as the cost, so the last one shoots and then the
+    // Ballista is a 0/0 that state-based actions clear away.
+    AbilityDef::activated_with_targets(
+        "Remove a +1/+1 counter from this creature: It deals 1 damage to any target.",
+        &BALLISTA_SHOOTS_COST,
+        &ANY_TARGET,
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(1),
+        },
+    ),
+];
+
+// AER 181 — Walking Ballista
+pub(in crate::card::sets) static WALKING_BALLISTA: CardRecord = CardRecord::new(
+    cards::WALKING_BALLISTA,
+    "Walking Ballista",
+    CardArt::new("329a8738-3e17-403a-857a-0ba529ce8cd1", "Daniel Ljunggren"),
+    CardSet::AetherRevolt,
+    // Two mana per point, which is a bad rate and never a dead card: it is
+    // removal, a mana sink, and a creature, and it needs no colours at all.
+    CardRules::new_artifact_creature(mana_cost!("{X}{X}"), &["Construct"], 0, 0)
+        .with_abilities(&WALKING_BALLISTA_ABILITIES),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&FATAL_PUSH, &WALKING_BALLISTA];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

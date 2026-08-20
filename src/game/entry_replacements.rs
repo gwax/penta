@@ -550,6 +550,10 @@ impl Game {
             BattlefieldEntryModificationDef::AddCounters { kind, amount } => {
                 entry.permanent.add_counters(kind, amount);
             }
+            BattlefieldEntryModificationDef::AddCastXCounters { kind } => {
+                let amount = entry.permanent.cast_x;
+                entry.permanent.add_counters(kind, amount);
+            }
         }
     }
 
