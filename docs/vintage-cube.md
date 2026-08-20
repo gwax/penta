@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 207 are cataloged and 327 are not
+- 534 cards in the pool, of which 208 are cataloged and 326 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -160,14 +160,13 @@ lands are legal in every format and are not listed.
 - `Vampire Hexmage`
 - `Yawgmoth's Will`
 
-### Red (44)
+### Red (43)
 
 - `Abrade`
 - `Amped Raptor`
 - `Broadside Bombardiers`
 - `Burst Lightning`
 - `Chainsaw`
-- `Chandra, Torch of Defiance`
 - `Cori-Steel Cutter`
 - `Death-Greeter's Champion`
 - `Delayed Blast Fireball`
@@ -386,7 +385,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 207 pool cards are in the catalog because an earlier format needed them.
+These 208 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -421,6 +420,7 @@ been played beside.
 - `Cecil, Dark Knight`
 - `Chain Lightning`
 - `Chain of Smog`
+- `Chandra, Torch of Defiance`
 - `Channel`
 - `Coalition Relic`
 - `Concealed Courtyard`

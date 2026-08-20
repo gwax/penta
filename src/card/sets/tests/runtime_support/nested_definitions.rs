@@ -358,6 +358,13 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         }
         EffectDef::May { effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
+        | EffectDef::ExileTopAndMayCast {
+            otherwise: Some(effect),
+            ..
+        }
+        | EffectDef::Mill {
+            then: Some(effect), ..
+        }
         | EffectDef::ReplaceNextDrawThisTurn { effect, .. } => {
             assert_nested_definition_abilities(card_name, *effect);
         }
@@ -418,7 +425,10 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::SacrificeKeepingOnePerType { .. }
         | EffectDef::SacrificeOfChoice { .. }
         | EffectDef::ExileTopOfLibraryToPlay { .. }
-        | EffectDef::Mill { .. }
+        | EffectDef::Mill { then: None, .. }
+        | EffectDef::ExileTopAndMayCast {
+            otherwise: None, ..
+        }
         | EffectDef::SearchZonesAndExileRest { .. }
         | EffectDef::MillUntil { .. }
         | EffectDef::LookAtHand { .. }

@@ -44,6 +44,13 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         }
         EffectDef::May { effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
+        | EffectDef::ExileTopAndMayCast {
+            otherwise: Some(effect),
+            ..
+        }
+        | EffectDef::Mill {
+            then: Some(effect), ..
+        }
         | EffectDef::ReplaceNextDrawThisTurn { effect, .. } => {
             collect_ability_grants(*effect, grants);
         }
@@ -109,7 +116,8 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::SacrificeKeepingOnePerType { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
         | EffectDef::ExileTopOfLibraryToPlay { .. }
-            | EffectDef::Mill { .. }
+        | EffectDef::Mill { then: None, .. }
+        | EffectDef::ExileTopAndMayCast { otherwise: None, .. }
         | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }
         | EffectDef::LookAtHand { .. }
@@ -239,6 +247,13 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         EffectDef::SplitIntoPiles(partition) => ability_grant_sites(*partition.then),
         EffectDef::May { effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
+        | EffectDef::ExileTopAndMayCast {
+            otherwise: Some(effect),
+            ..
+        }
+        | EffectDef::Mill {
+            then: Some(effect), ..
+        }
         | EffectDef::ReplaceNextDrawThisTurn { effect, .. }
         | EffectDef::SacrificeOfChoice {
             then: Some(effect), ..
@@ -295,7 +310,8 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::SacrificeKeepingOnePerType { .. }
         | EffectDef::SacrificeOfChoice { then: None, .. }
         | EffectDef::ExileTopOfLibraryToPlay { .. }
-            | EffectDef::Mill { .. }
+        | EffectDef::Mill { then: None, .. }
+        | EffectDef::ExileTopAndMayCast { otherwise: None, .. }
         | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }
         | EffectDef::LookAtHand { .. }

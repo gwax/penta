@@ -440,6 +440,7 @@ impl HandcraftedPolicy {
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::DiscardCards { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }
+            | EffectDef::ExileTopAndMayCast { .. }
             | EffectDef::Mill { .. }
             | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }

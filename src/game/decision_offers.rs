@@ -6,7 +6,7 @@ use super::{
     TargetSelection, TargetSlotId, TriggerContext, ZoneKind, ZoneMoveCause, ZonePlacement,
     flatten_target_selections, target_combinations,
 };
-use crate::card::{ChoiceVisibilityDef, ObjectPredicateDef};
+use crate::card::{ChoiceVisibilityDef, EffectDef, ObjectPredicateDef};
 use crate::ids::GameObjectId;
 
 pub(super) const fn effect_choice_visibility(
@@ -519,6 +519,84 @@ impl Game {
                 format!("Sacrifice creatures with total power {total} or greater")
             }
         }
+    }
+
+    /// "Exile the top card of your library. You may cast that card."
+    ///
+    /// The card is exiled whatever happens next. The offer to cast it is a
+    /// standing decision rather than a yes-or-no: casting is a `CastSpell`
+    /// action taken while the decision waits, and the decision itself is the
+    /// decline. An offer nobody could take is not made at all -- an empty
+    /// library, or a card there is no legal way to cast -- and `otherwise`
+    /// runs straight away instead.
+    pub(super) fn exile_top_and_offer_cast(
+        &mut self,
+        player: PlayerId,
+        object: &StackObject,
+        context: EffectResolutionContext,
+        definition: ScopedEffect,
+    ) {
+        let Some(card) = self.take_top_of_library(player, 1).into_iter().next() else {
+            self.resolve_declined_cast(object, context, definition);
+            return;
+        };
+        let (card, _zone_change) = self.zone_change_card(card);
+        let exiled = card.id;
+        let printed = card.definition;
+        let name = self
+            .catalog
+            .get(printed)
+            .map_or_else(|| "that card".to_owned(), |card| card.name.clone());
+        self.players[player.index()].exile.push(card);
+        self.permit_cast_this_turn(exiled, player);
+        let mut castable = Vec::new();
+        self.add_offered_cast_actions(player, exiled, &mut castable);
+        if castable.is_empty() {
+            self.consume_exile_play_permission(exiled);
+            self.resolve_declined_cast(object, context, definition);
+            return;
+        }
+        self.queue_decision(
+            player,
+            format!("Cast {name} from exile, or decline"),
+            DecisionVisibility::Public,
+            DecisionPreference::PreferOption(0),
+            1..=1,
+            false,
+            vec![DecisionOption {
+                id: 0,
+                label: "Decline".into(),
+                card: Some((exiled, printed)),
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::Exile,
+            }],
+            DecisionContinuation::MayCastExiled {
+                player,
+                card: exiled,
+                object: Box::new(object.clone()),
+                context,
+                definition,
+            },
+        );
+    }
+
+    /// What happens when the card is not cast, whether it was declined or
+    /// never offered.
+    pub(super) fn resolve_declined_cast(
+        &mut self,
+        object: &StackObject,
+        context: EffectResolutionContext,
+        definition: ScopedEffect,
+    ) {
+        let EffectDef::ExileTopAndMayCast {
+            otherwise: Some(otherwise),
+            ..
+        } = definition.effect
+        else {
+            return;
+        };
+        self.resolve_effect_def(definition.with_effect(*otherwise), object, context);
     }
 
     /// Offers an effect its controller may decline, resolving it only on a

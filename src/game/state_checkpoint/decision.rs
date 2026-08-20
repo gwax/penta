@@ -356,6 +356,30 @@ fn continuation_snapshot(
                 effect: continuation.effect,
             }
         }
+        DecisionContinuation::MayCastExiled {
+            player,
+            card,
+            object,
+            context,
+            definition,
+        } => {
+            let continuation = effect_continuation_snapshot(
+                game,
+                viewer,
+                object,
+                context,
+                *definition,
+                visible_rebindings,
+            )?;
+            DecisionContinuationSnapshot::MayCastExiled {
+                player: player.index(),
+                card: card.0,
+                object: continuation.object,
+                ability: continuation.ability,
+                context: continuation.context,
+                definition: continuation.effect,
+            }
+        }
         DecisionContinuation::ChooseForEffect {
             definition,
             object,

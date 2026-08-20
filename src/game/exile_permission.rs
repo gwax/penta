@@ -87,6 +87,20 @@ impl Game {
         });
     }
 
+    /// "You may cast that card." Unlike the free play above, the cost is
+    /// still owed; what the permission grants is only that exile is a legal
+    /// place to cast it from.
+    pub(super) fn permit_cast_this_turn(&mut self, card: GameObjectId, player: PlayerId) {
+        let active = self.active_player;
+        self.exile_play_permissions.push(ExilePlayPermission {
+            card,
+            player,
+            free: false,
+            until_end_of_turn: Some((active, self.turns_started[active.index()])),
+            adventure_return_only: false,
+        });
+    }
+
     /// Drops the permission a play has just consumed.
     pub(super) fn consume_exile_play_permission(&mut self, card: GameObjectId) {
         self.exile_play_permissions

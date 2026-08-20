@@ -25,6 +25,9 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
         | DecisionContinuation::OptionalEffect {
             object, context, ..
         }
+        | DecisionContinuation::MayCastExiled {
+            object, context, ..
+        }
         | DecisionContinuation::PayOr {
             object, context, ..
         }

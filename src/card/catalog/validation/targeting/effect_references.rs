@@ -298,6 +298,13 @@ fn validate_effect_references(
             validate_effect_references(*then, target_count, scope)?;
             validate_effect_references(*otherwise, target_count, scope)
         }
+        EffectDef::ExileTopAndMayCast { player, otherwise } => {
+            validate_recipient_target_references(player, target_count, scope)?;
+            match otherwise {
+                Some(otherwise) => validate_effect_references(*otherwise, target_count, scope),
+                None => Ok(()),
+            }
+        }
         EffectDef::StaticApply { recipient, effect } => {
             validate_recipient_target_references(recipient, target_count, scope)?;
             validate_applied_effect_target_references(effect, target_count, scope)

@@ -402,6 +402,13 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
                 && shared_effect_recipient(player)
                 && shared_stack_effect_at_position(*effect, true)
         }
+        // The offer to cast is a standing decision, and what happens when it
+        // is declined runs in that decision's own continuation.
+        EffectDef::ExileTopAndMayCast { player, otherwise } => {
+            deferred_decision_allowed
+                && shared_effect_recipient(player)
+                && otherwise.is_none_or(|effect| shared_stack_effect_at_position(*effect, true))
+        }
         // Scheduling creates a fresh resolution boundary. A decision may
         // therefore be the delayed effect's root even when scheduling it
         // is itself one component of a sequence.

@@ -346,7 +346,11 @@ pub(super) fn mana_ability_for(
         .ability
 }
 
-fn activated_ability_for(game: &Game, source: GameObjectId, index: usize) -> AbilityOrigin {
+pub(in crate::game) fn activated_ability_for(
+    game: &Game,
+    source: GameObjectId,
+    index: usize,
+) -> AbilityOrigin {
     let permanent = game
         .battlefield
         .iter()
@@ -766,6 +770,7 @@ mod vintage_cube_arrival;
 mod vintage_cube_artifacts;
 mod vintage_cube_barrowgoyf;
 mod vintage_cube_breach;
+mod vintage_cube_chandra;
 mod vintage_cube_creatures;
 mod vintage_cube_crucible;
 mod vintage_cube_cut_down;

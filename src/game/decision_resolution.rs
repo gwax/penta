@@ -1,4 +1,5 @@
 mod battlefield_entry;
+mod leaving;
 mod triggers;
 
 use super::decision_search_resolution::SearchResolution;
@@ -359,6 +360,18 @@ impl Game {
                     self.players[player.index()].hand.push(card);
                 }
                 self.bury_cards(player, to_graveyard);
+            }
+            DecisionContinuation::MayCastExiled {
+                card,
+                object,
+                context,
+                definition,
+                ..
+            } => {
+                // Answering this decision is the decline: a cast would have
+                // taken the decision away instead of resolving it.
+                self.consume_exile_play_permission(card);
+                self.resolve_declined_cast(&object, context, definition);
             }
             DecisionContinuation::OptionalEffect {
                 object,
@@ -936,22 +949,6 @@ impl Game {
                 self.complete_trigger_continuation(trigger, options);
             }
         }
-    }
-
-    pub(super) fn cancel_decision(&mut self, decision: u32) {
-        debug_assert_eq!(self.pending_decisions[0].observation.id, decision);
-        self.pending_decisions.remove(0);
-    }
-
-    pub(super) fn resolve_nested_effect_before_later(
-        &mut self,
-        effect: super::ScopedEffect,
-        object: &super::StackObject,
-        context: super::EffectResolutionContext,
-    ) {
-        let mut later_procedures = std::mem::take(&mut self.pending_procedures);
-        self.resolve_effect_def(effect, object, context);
-        self.pending_procedures.append(&mut later_procedures);
     }
 }
 

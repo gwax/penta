@@ -13,7 +13,7 @@ use super::rare_states::{
 };
 use crate::card::cards;
 use crate::game::DecisionContinuation;
-use crate::game::tests::{card, creature, mana_ability_for, ready_game};
+use crate::game::tests::{activated_ability_for, card, creature, mana_ability_for, ready_game};
 use crate::{Action, ManaColor};
 
 /// Mishra's Workshop pays for artifacts and nothing else. Unspent restricted
@@ -559,4 +559,62 @@ fn a_run_of_chosen_color_mana_reconstructs_between_answers() {
         "two of the three are still owed",
     );
     assert_reconstructs(&game, "a colour run with two answers still to come");
+}
+
+/// A standing offer to cast an exiled card is a decision whose answer is a
+/// cast rather than a selection, so the rebuilt position has to carry both
+/// the clause that made the offer and the card it points at.
+#[test]
+fn a_standing_cast_offer_reconstructs() {
+    let mut game = staged_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].library.clear();
+    let chandra = game
+        .put_onto_battlefield(PlayerId::One, cards::CHANDRA_TORCH_OF_DEFIANCE)
+        .expect("Chandra is cataloged");
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == chandra)
+    {
+        permanent.entered_controller_turn = 0;
+    }
+    let bolt = game
+        .build_zone(PlayerId::One, &[cards::LIGHTNING_BOLT])
+        .expect("Lightning Bolt is cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[PlayerId::One.index()].library.push(bolt);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+
+    let ability = activated_ability_for(&game, chandra, 0);
+    game.apply(
+        PlayerId::One,
+        Action::ActivateAbility {
+            source: chandra,
+            ability,
+            targets: Vec::new(),
+            cost_objects: Vec::new(),
+            x: 0,
+            modes: Vec::new(),
+        },
+    )
+    .expect("the loyalty ability activates");
+    while game.pending_decisions.is_empty() && !game.stack.is_empty() {
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the ability is waiting to resolve");
+    }
+
+    assert!(
+        matches!(
+            game.pending_decisions
+                .first()
+                .map(|pending| &pending.continuation),
+            Some(DecisionContinuation::MayCastExiled { .. })
+        ),
+        "the offer is what the position is waiting on",
+    );
+    assert_reconstructs(&game, "an offer to cast the exiled top card");
 }

@@ -2,9 +2,72 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AddManaEffectDef, CardArt, CardRules, CardSet, EffectDef,
-    ManaColor, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ValueDef, abilities, cards,
 };
+use crate::{TargetIndex, mana_cost};
+
+/// "If you don't" is the whole of the first ability's tension: the exile
+/// happens either way, and the card is either spent now at its own cost or
+/// traded for two damage.
+static CHANDRA_SHOOTS_INSTEAD: EffectDef = EffectDef::DealDamage {
+    recipient: EffectRecipientDef::Opponent,
+    amount: ValueDef::Constant(2),
+};
+
+static CHANDRA_DAMAGE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+static CHANDRA_ABILITIES: [AbilityDef; 4] = [
+    AbilityDef::activated(
+        "+1: Exile the top card of your library. You may cast that card. If you don't, Chandra, \
+         Torch of Defiance deals 2 damage to each opponent.",
+        &[AbilityCostDef::Loyalty(1)],
+        EffectDef::ExileTopAndMayCast {
+            player: EffectRecipientDef::Controller,
+            otherwise: Some(&CHANDRA_SHOOTS_INSTEAD),
+        },
+    ),
+    // A loyalty ability is never a mana ability (CR 605.1a), so this one uses
+    // the stack like the rest of her.
+    AbilityDef::activated(
+        "+1: Add {R}{R}.",
+        &[AbilityCostDef::Loyalty(1)],
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red).with_amount(2)),
+    ),
+    AbilityDef::activated_with_targets(
+        "−3: Chandra, Torch of Defiance deals 4 damage to target creature.",
+        &[AbilityCostDef::Loyalty(-3)],
+        &CHANDRA_DAMAGE_TARGET,
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(4),
+        },
+    ),
+    AbilityDef::activated(
+        "−7: You get an emblem with \"Whenever you cast a spell, this emblem deals 5 damage to \
+         any target.\"",
+        &[AbilityCostDef::Loyalty(-7)],
+        EffectDef::CreateEmblem {
+            emblem: cards::CHANDRA_TORCH_OF_DEFIANCE_EMBLEM,
+        },
+    ),
+];
+
+// KLD 110 — Chandra, Torch of Defiance
+pub(in crate::card::sets) static CHANDRA_TORCH_OF_DEFIANCE: CardRecord = CardRecord::new(
+    cards::CHANDRA_TORCH_OF_DEFIANCE,
+    "Chandra, Torch of Defiance",
+    CardArt::new("ff8086cd-b868-4f4e-823e-2635ad7ebc07", "Magali Villeneuve"),
+    CardSet::Kaladesh,
+    // Four abilities and no bad one: she draws, she ramps, she kills, and if
+    // the game somehow goes long she ends it by herself.
+    CardRules::new_planeswalker(mana_cost!("{2}{R}{R}"), &["Chandra"], 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&CHANDRA_ABILITIES),
+);
 
 /// The fastland cycle: untapped while the board is still small, an expensive
 /// tapped land after that. Every one of the ten prints this same clause, and
@@ -116,6 +179,7 @@ pub(in crate::card::sets) static SPIREBLUFF_CANAL: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &CHANDRA_TORCH_OF_DEFIANCE,
     &BLOOMING_MARSH,
     &BOTANICAL_SANCTUM,
     &CONCEALED_COURTYARD,

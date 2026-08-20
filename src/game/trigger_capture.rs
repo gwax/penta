@@ -284,7 +284,11 @@ impl Game {
 
     pub(super) fn battlefield_trigger_listeners(&self) -> Vec<BattlefieldTriggerListener> {
         let mut listeners = Vec::new();
-        for permanent in &self.battlefield {
+        // Emblems listen alongside the battlefield, the way they already sit
+        // in every other sweep. Nothing about an emblem is in a zone, so the
+        // battlefield an emblem's clause names is the one its abilities were
+        // written against rather than a place it can be found.
+        for permanent in self.battlefield.iter().chain(self.emblems.iter()) {
             self.for_each_effective_ability(permanent, |effective| {
                 let ability = effective.ability;
                 if !ability.is_executable() {

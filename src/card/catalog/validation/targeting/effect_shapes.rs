@@ -236,6 +236,15 @@ fn validate_effect_target_shapes(
             validate_effect_target_shapes(*then, targets, triggering_object_zone)?;
             validate_effect_target_shapes(*otherwise, targets, triggering_object_zone)
         }
+        EffectDef::ExileTopAndMayCast { player, otherwise } => {
+            validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
+            match otherwise {
+                Some(otherwise) => {
+                    validate_effect_target_shapes(*otherwise, targets, triggering_object_zone)
+                }
+                None => Ok(()),
+            }
+        }
         EffectDef::InstallTrigger(trigger) => {
             if let crate::card::InstalledTriggerLifetimeDef::UntilNextTurn(player) =
                 trigger.lifetime

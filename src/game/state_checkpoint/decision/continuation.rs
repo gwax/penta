@@ -316,6 +316,35 @@ fn parse_continuation(
             effect: catalog_scoped_effect(&game.catalog, ability, effect)
                 .ok_or("optional effect locator is absent from this catalog")?,
         },
+        DecisionContinuationSnapshot::MayCastExiled {
+            player: caster,
+            card,
+            object,
+            ability,
+            context,
+            definition,
+        } => {
+            let caster = player(*caster)?;
+            if caster != observation.player {
+                return Err("cast offer names a player other than the deciding one".into());
+            }
+            let object = Box::new(parse_detached_stack(object, game)?);
+            if !ability_locator_matches_origin(ability, &object) {
+                return Err("cast-offer locator disagrees with its resolving ability".into());
+            }
+            let definition = catalog_scoped_effect(&game.catalog, ability, definition)
+                .ok_or("cast-offer locator is absent from this catalog")?;
+            if !matches!(definition.effect, EffectDef::ExileTopAndMayCast { .. }) {
+                return Err("cast-offer locator does not identify an offered cast".into());
+            }
+            DecisionContinuation::MayCastExiled {
+                player: caster,
+                card: GameObjectId(*card),
+                object,
+                context: parse_effect_resolution_context(context.clone())?,
+                definition,
+            }
+        }
         DecisionContinuationSnapshot::ChooseForEffect {
             continuation: snapshot,
         } => {

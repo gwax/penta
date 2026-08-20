@@ -713,6 +713,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::SacrificeKeepingOnePerType { .. }
                     | EffectDef::SacrificeOfChoice { .. }
                     | EffectDef::ExileTopOfLibraryToPlay { .. }
+                    | EffectDef::ExileTopAndMayCast { .. }
                     | EffectDef::Mill { .. }
                     | EffectDef::SearchZonesAndExileRest { .. }
                     | EffectDef::MillUntil { .. }

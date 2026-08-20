@@ -1,9 +1,10 @@
 use super::{
     AbilityDef, AbilityId, AbilityOrigin, Action, ActionError, ActivationChoices, CardBehavior,
-    CardType, CharacteristicContext, CombatDamageStage, CounterKind, DecisionVisibility,
-    EmblemObservation, Game, GameEvent, GameObjectId, GameResult, KeywordAbility,
-    ManaActivationChoices, ManaColor, Permanent, PermanentObservation, PlayerId, PlayerObservation,
-    Pregame, StackObservation, Step, WinReason, ZoneKind, combinations, public_cards,
+    CardType, CharacteristicContext, CombatDamageStage, CounterKind, DecisionContinuation,
+    DecisionVisibility, EmblemObservation, Game, GameEvent, GameObjectId, GameResult,
+    KeywordAbility, ManaActivationChoices, ManaColor, Permanent, PermanentObservation, PlayerId,
+    PlayerObservation, Pregame, StackObservation, Step, WinReason, ZoneKind, combinations,
+    public_cards,
 };
 
 impl Game {
@@ -144,6 +145,18 @@ impl Game {
                     actions.push(Action::CancelDecision {
                         decision: decision.observation.id,
                     });
+                }
+                // "You may cast that card" is answered by casting it, not by
+                // answering the decision, so the cast stands beside the
+                // decline rather than behind it.
+                if let DecisionContinuation::MayCastExiled {
+                    player: caster,
+                    card,
+                    ..
+                } = decision.continuation
+                    && caster == player
+                {
+                    self.add_offered_cast_actions(player, card, &mut actions);
                 }
             }
             return actions;
@@ -352,7 +365,10 @@ impl Game {
                 card,
                 choices,
                 sacrifices,
-            } => self.cast_spell(player, card, &choices, &sacrifices),
+            } => {
+                self.take_answered_cast_offer(card);
+                self.cast_spell(player, card, &choices, &sacrifices);
+            }
             Action::ActivateAbility {
                 source,
                 ability,

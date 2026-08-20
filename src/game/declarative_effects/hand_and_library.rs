@@ -218,6 +218,15 @@ impl Game {
                     }
                 }
             }
+            EffectDef::ExileTopAndMayCast {
+                player: recipient, ..
+            } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.exile_top_and_offer_cast(player, object, context.clone(), scoped);
+                    }
+                }
+            }
             EffectDef::LookAtHand { player: recipient } => {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Player(seen) = target {

@@ -139,6 +139,14 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         context: EffectResolutionContextSnapshot,
         effect: ScopedEffectSnapshot,
     },
+    MayCastExiled {
+        player: usize,
+        card: u32,
+        object: DetachedStackSnapshot,
+        ability: AbilityLocator,
+        context: EffectResolutionContextSnapshot,
+        definition: ScopedEffectSnapshot,
+    },
     ChooseForEffect {
         continuation: EffectContinuationSnapshot,
     },

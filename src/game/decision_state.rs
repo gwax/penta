@@ -315,6 +315,21 @@ pub(super) enum DecisionContinuation {
         context: EffectResolutionContext,
         effect: ScopedEffect,
     },
+    /// "You may cast that card." The card is already in exile with a
+    /// permission attached; casting it is a `CastSpell` action taken while
+    /// this decision stands, which discards the decision without ever
+    /// answering it. Answering the decision is the decline, and takes the
+    /// permission back.
+    MayCastExiled {
+        player: PlayerId,
+        card: GameObjectId,
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
+        /// The whole authored clause rather than only its else branch, so
+        /// that a rebuilt decision can check it is still the clause it says
+        /// it is instead of trusting a detached fragment.
+        definition: ScopedEffect,
+    },
     /// A generic bounded non-targeting object choice. `candidates` is kept
     /// typed because a spell and a permanent are different objects even
     /// though both are addressed by `GameObjectId`.

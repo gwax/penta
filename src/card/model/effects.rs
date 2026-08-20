@@ -623,6 +623,16 @@ pub enum EffectDef {
         player: EffectRecipientDef,
         amount: ValueDef,
     },
+    /// "Exile the top card of your library. You may cast that card. If you
+    /// don't, ..." The card is cast during this resolution rather than at
+    /// some later window, so the offer is the resolution: the player either
+    /// answers it by casting, which ignores the timing its type would
+    /// normally impose, or declines and `otherwise` runs. A card left
+    /// unplayed stays in exile with no permission attached to it.
+    ExileTopAndMayCast {
+        player: EffectRecipientDef,
+        otherwise: Option<&'static EffectDef>,
+    },
     MoveToZone {
         object: EffectRecipientDef,
         zone: ZoneKind,

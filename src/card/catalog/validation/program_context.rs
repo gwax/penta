@@ -432,6 +432,10 @@ fn validate_resolving_effect(
         | EffectDef::IfCondition { then: effect, .. } => {
             validate_resolving_effect(*effect, source_zones)
         }
+        EffectDef::ExileTopAndMayCast { otherwise, .. } => match otherwise {
+            Some(effect) => validate_resolving_effect(*effect, source_zones),
+            None => Ok(()),
+        },
         EffectDef::SacrificeOfChoice {
             then: Some(effect), ..
         } => validate_resolving_effect(*effect, source_zones),
@@ -829,6 +833,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::SacrificeKeepingOnePerType { .. } => "SacrificeKeepingOnePerType",
         EffectDef::SacrificeOfChoice { .. } => "SacrificeOfChoice",
         EffectDef::ExileTopOfLibraryToPlay { .. } => "ExileTopOfLibraryToPlay",
+        EffectDef::ExileTopAndMayCast { .. } => "ExileTopAndMayCast",
         EffectDef::Mill { .. } => "Mill",
         EffectDef::SearchZonesAndExileRest { .. } => "SearchZonesAndExileRest",
         EffectDef::MillUntil { .. } => "MillUntil",

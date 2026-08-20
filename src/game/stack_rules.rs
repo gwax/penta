@@ -114,6 +114,7 @@ impl Game {
             | EffectDef::SacrificeKeepingOnePerType { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }
+            | EffectDef::ExileTopAndMayCast { .. }
             | EffectDef::Mill { .. }
             | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }

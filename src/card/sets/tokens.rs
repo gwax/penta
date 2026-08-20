@@ -11,12 +11,12 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AppliedEffectDef, AppliedRuleDef,
-    BandingQuality, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef,
-    TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AppliedEffectDef, AppliedRuleDef, BandingQuality, CardArt, CardRules, CardSet, CardType,
+    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 /// Not a token: the body a face-down permanent presents while it is face
 /// down. It lives here because it needs the same thing a token needs -- a
@@ -470,6 +470,28 @@ pub(in crate::card::sets) static WURM_TOKEN_6_6_GREEN: CardRecord = CardRecord::
     CardRules::new_creature_without_mana_cost(&["Wurm"], 6, 6).printed_colors(&[ManaColor::Green]),
 );
 
+static CHANDRA_EMBLEM_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
+/// Chandra's emblem. Five damage per spell is a clock nobody outruns, so the
+/// only question the emblem ever asks is where to point it.
+pub(in crate::card::sets) static CHANDRA_TORCH_OF_DEFIANCE_EMBLEM: CardRecord = CardRecord::new(
+    cards::CHANDRA_TORCH_OF_DEFIANCE_EMBLEM,
+    "Chandra, Torch of Defiance emblem",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_emblem().with_ability(AbilityDef::triggered_with_targets(
+        "Whenever you cast a spell, this emblem deals 5 damage to any target.",
+        TriggerEventDef::SpellCast(ObjectPredicateDef::ControlledBy(PlayerRelation::You)),
+        &CHANDRA_EMBLEM_TARGETS,
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(5),
+        },
+    )),
+);
+
 /// Domri's emblem. An emblem is an object with abilities and no other
 /// characteristics, so it is cataloged like a token and lives in its own
 /// list rather than on the battlefield.
@@ -638,6 +660,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WOLF_TOKEN_2_2_GREEN,
     &WOLVES_OF_THE_HUNT_TOKEN_1_1_GREEN,
     &WOLF_TOKEN_1_1_BLACK,
+    &CHANDRA_TORCH_OF_DEFIANCE_EMBLEM,
     &DOMRI_RADE_EMBLEM,
     &NISSA_WHO_SHAKES_THE_WORLD_EMBLEM,
     &DJINN_TOKEN_5_5_COLORLESS,

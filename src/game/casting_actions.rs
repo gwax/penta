@@ -60,8 +60,30 @@ impl Game {
         }
     }
 
-    #[allow(clippy::too_many_lines)]
     pub(super) fn add_spell_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
+        self.add_castable_spell_actions(player, None, actions);
+    }
+
+    /// Every way `player` could cast `card` right now, ignoring the timing
+    /// its type would normally impose. An offer made during a resolution is
+    /// answered then or not at all (CR 608.2f), so a sorcery on the top of a
+    /// library is castable in the middle of somebody else's turn.
+    pub(super) fn add_offered_cast_actions(
+        &self,
+        player: PlayerId,
+        card: GameObjectId,
+        actions: &mut Vec<Action>,
+    ) {
+        self.add_castable_spell_actions(player, Some(card), actions);
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn add_castable_spell_actions(
+        &self,
+        player: PlayerId,
+        only: Option<GameObjectId>,
+        actions: &mut Vec<Action>,
+    ) {
         let state = &self.players[player.index()];
         for (card, source_zone) in state
             .hand
@@ -84,6 +106,9 @@ impl Game {
                     .map(|card| (card, CastSourceZone::Exile)),
             )
         {
+            if only.is_some_and(|only| only != card.id) {
+                continue;
+            }
             let Some(definition) = self.catalog.get(card.definition) else {
                 continue;
             };
@@ -105,7 +130,7 @@ impl Game {
                 {
                     continue;
                 }
-                if !self.play_timing_allows(player, option.restriction) {
+                if only.is_none() && !self.play_timing_allows(player, option.restriction) {
                     continue;
                 }
                 // A declarative card intentionally has no custom behavior.

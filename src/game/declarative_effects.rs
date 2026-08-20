@@ -219,6 +219,7 @@ impl Game {
             | EffectDef::DiscardCards { .. }
             | EffectDef::Mill { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }
+            | EffectDef::ExileTopAndMayCast { .. }
             | EffectDef::MillUntil { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }
