@@ -436,6 +436,11 @@ const SET_MODULES: &[SetModule] = &[
         y2024::fallout::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::LostCavernsOfIxalan,
+        y2023::lost_caverns_of_ixalan::CARDS,
+        y2023::lost_caverns_of_ixalan::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::ModernHorizons3,
         y2024::modern_horizons_3::CARDS,
         y2024::modern_horizons_3::ADDITIONAL_PRINTINGS,

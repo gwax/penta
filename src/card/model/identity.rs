@@ -80,6 +80,7 @@ pub enum CardSet {
     EternalMasters,
     Kaladesh,
     LordOfTheRings,
+    LostCavernsOfIxalan,
     RavnicaClueEdition,
     Fallout,
     ModernHorizons3,
