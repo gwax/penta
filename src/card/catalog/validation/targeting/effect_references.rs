@@ -209,7 +209,8 @@ fn validate_effect_references(
         EffectDef::BecomeMonarch { player } => {
             validate_player_reference(player, target_count, scope)
         }
-        EffectDef::ExileTopOfLibraryToPlay { player, .. }
+        EffectDef::SearchZonesAndExileRest { player, .. }
+        | EffectDef::ExileTopOfLibraryToPlay { player, .. }
         | EffectDef::MillUntil { player, .. }
         | EffectDef::ChooseCards { player, .. }
         | EffectDef::TakeExtraTurn { player }

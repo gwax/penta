@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 180 are cataloged and 354 are not
+- 534 cards in the pool, of which 181 are cataloged and 353 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -130,7 +130,7 @@ lands are legal in every format and are not listed.
 - `Trinket Mage`
 - `Urza, Lord High Artificer`
 
-### Black (43)
+### Black (42)
 
 - `Animate Dead`
 - `Archon of Cruelty`
@@ -149,7 +149,6 @@ lands are legal in every format and are not listed.
 - `Dark Confidant`
 - `Dauthi Voidwalker`
 - `Dismember`
-- `Doomsday`
 - `Emperor of Bones`
 - `Exhume`
 - `Fatal Push`
@@ -413,7 +412,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 180 pool cards are in the catalog because an earlier format needed them.
+These 181 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -459,6 +458,7 @@ been played beside.
 - `Deep-Cavern Bat`
 - `Delighted Halfling`
 - `Demonic Tutor`
+- `Doomsday`
 - `Duress`
 - `Elvish Mystic`
 - `Entomb`

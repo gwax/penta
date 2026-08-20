@@ -430,3 +430,47 @@ fn a_vote_reconstructs_between_the_two_ballots() {
     );
     assert_reconstructs(&game, "a vote with one ballot still to come");
 }
+
+/// A Doomsday search half answered. What the search looked at is fixed
+/// before anybody answers, so a snapshot that lost it would exile a
+/// different set of cards.
+#[test]
+fn a_multi_zone_search_reconstructs_before_it_is_answered() {
+    let mut game = staged_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].library.clear();
+    game.players[PlayerId::One.index()].graveyard.clear();
+    for id in 32_000..32_008 {
+        game.players[PlayerId::One.index()].library.push(card(
+            id,
+            cards::GRIZZLY_BEARS,
+            PlayerId::One,
+        ));
+    }
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        32_020,
+        cards::BLACK_LOTUS,
+        PlayerId::One,
+    ));
+    fill_mana(&mut game, PlayerId::One, 3);
+    let doomsday = card(32_030, cards::DOOMSDAY, PlayerId::One);
+    let doomsday_id = doomsday.id;
+    game.players[PlayerId::One.index()].hand.push(doomsday);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == doomsday_id))
+        .expect("Doomsday is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    loop {
+        if game.observe(PlayerId::One).decision.is_some() {
+            break;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the spell is waiting on its search");
+    }
+
+    assert_reconstructs(&game, "a multi-zone search waiting to be answered");
+}

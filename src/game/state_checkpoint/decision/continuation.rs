@@ -788,6 +788,15 @@ fn parse_continuation(
                 player: player(*owner)?,
             }
         }
+        DecisionContinuationSnapshot::SearchZonesAndExileRest {
+            player: owner,
+            zones,
+            searched,
+        } => DecisionContinuation::SearchZonesAndExileRest {
+            player: player(*owner)?,
+            zones: zones.iter().copied().map(parse_zone_kind).collect(),
+            searched: game_ids(searched),
+        },
         DecisionContinuationSnapshot::Vote {
             candidates,
             remaining,

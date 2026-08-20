@@ -480,6 +480,7 @@ impl Game {
                 | EffectDef::SacrificeOfChoice { .. }
                 | EffectDef::ExileTopOfLibraryToPlay { .. }
                 | EffectDef::Mill { .. }
+                | EffectDef::SearchZonesAndExileRest { .. }
                 | EffectDef::MillUntil { .. }
                 | EffectDef::LookAtTopAndSelect { .. }
                 | EffectDef::LookAtHand { .. }

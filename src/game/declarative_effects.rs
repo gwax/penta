@@ -447,6 +447,17 @@ impl Game {
                     });
                 self.schedule_extra_turns(players);
             }
+            EffectDef::SearchZonesAndExileRest {
+                player: recipient,
+                zones,
+                count,
+            } => {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.queue_search_zones_and_exile_rest(player, zones, usize::from(count));
+                    }
+                }
+            }
             EffectDef::PutIntoLibraryBeneathTop {
                 object: recipient,
                 depth,

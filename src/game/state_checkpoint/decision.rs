@@ -633,6 +633,15 @@ fn continuation_snapshot(
                 .map(|task| balance_task_snapshot(viewer, task))
                 .collect(),
         },
+        DecisionContinuation::SearchZonesAndExileRest {
+            player,
+            zones,
+            searched,
+        } => DecisionContinuationSnapshot::SearchZonesAndExileRest {
+            player: player.index(),
+            zones: zones.iter().copied().map(zone_kind_snapshot).collect(),
+            searched: ids(searched),
+        },
         DecisionContinuation::Vote {
             candidates,
             remaining,

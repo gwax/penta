@@ -646,3 +646,95 @@ fn unexpectedly_absent_buries_it_x_cards_deep() {
         );
     }
 }
+
+/// Five cards kept from library and graveyard together, everything else
+/// exiled, and the order they were picked is the order they are drawn.
+#[test]
+fn doomsday_stacks_five_cards_and_exiles_everything_else() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].library.clear();
+    game.players[0].graveyard.clear();
+    for id in 97_000..97_010 {
+        game.players[0]
+            .library
+            .push(card(id, cards::GRIZZLY_BEARS, PlayerId::One));
+    }
+    // One card in the graveyard, to prove the search reaches both zones.
+    game.players[0]
+        .graveyard
+        .push(card(97_020, cards::BLACK_LOTUS, PlayerId::One));
+    let doomsday = card(97_030, cards::DOOMSDAY, PlayerId::One);
+    let doomsday_id = doomsday.id;
+    game.players[0].hand.push(doomsday);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 3);
+    game.players[0].life = 20;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == doomsday_id))
+        .expect("three black mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_until_decision(&mut game);
+
+    let search = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the search asks which five to keep");
+    assert_eq!(
+        search.options.len(),
+        11,
+        "ten cards in the library and one in the graveyard, offered together",
+    );
+    assert_eq!((search.minimum, search.maximum), (5, 5));
+    // Pick the graveyard card first, so it must end up on top.
+    let lotus = search
+        .options
+        .iter()
+        .find(|option| option.label.contains("Lotus"))
+        .expect("the graveyard card is on offer");
+    let mut chosen = vec![lotus.id];
+    chosen.extend(
+        search
+            .options
+            .iter()
+            .filter(|option| option.id != lotus.id)
+            .take(4)
+            .map(|option| option.id),
+    );
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: search.id,
+            options: chosen,
+        },
+    )
+    .expect("keeping five is the only legal answer");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[0].library.len(), 5, "a five-card library");
+    // Doomsday itself is still on the stack while it resolves, so it was
+    // never searched and is not exiled -- it goes to the graveyard after.
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::DOOMSDAY],
+    );
+    assert_eq!(
+        game.players[0].exile.len(),
+        6,
+        "the other six cards are exiled",
+    );
+    // The library is stored bottom-first, so the last entry is drawn next.
+    assert_eq!(
+        game.players[0].library.last().map(|card| card.definition),
+        Some(cards::BLACK_LOTUS),
+        "the card chosen first is the card drawn first",
+    );
+    assert_eq!(game.players[0].life, 10, "and half the life is gone");
+}

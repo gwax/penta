@@ -64,6 +64,7 @@ mod control_changes;
 mod creature_characteristics;
 mod damage;
 mod decision;
+mod decision_doomsday;
 mod decision_offers;
 mod decision_permanent_choice;
 mod decision_piles;

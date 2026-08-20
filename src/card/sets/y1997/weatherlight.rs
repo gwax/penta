@@ -5,10 +5,10 @@ use crate::card::cards;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardRules, CardSet,
-    CardType, CounterKind, EffectDef, EffectPaymentDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    CardType, CounterKind, EffectDef, EffectPaymentDef, EffectRecipientDef, HalvedValueDef,
+    ManaColor, ObjectPredicateDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, RoundingDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -118,6 +118,42 @@ static VANDAL_TRADE: EffectDef = EffectDef::Sequence(&[
         duration: ResolvedEffectDurationDef::UntilEndOfTurn,
     },
 ]);
+
+/// Half the life you have, rounded up: at twenty that is ten, and the deck
+/// casting this intends to win before losing the other ten.
+static DOOMSDAY_LIFE: HalvedValueDef =
+    HalvedValueDef::new(ValueDef::LifeTotal(PlayerRelation::You), RoundingDef::Up);
+
+/// The search and the life are one clause resolving in order, and the order
+/// matters: the five cards are chosen while the library still exists.
+static DOOMSDAY_STEPS: [EffectDef; 2] = [
+    EffectDef::SearchZonesAndExileRest {
+        player: EffectRecipientDef::Controller,
+        zones: &DOOMSDAY_ZONES,
+        count: 5,
+    },
+    EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Halved(&DOOMSDAY_LIFE),
+    },
+];
+
+static DOOMSDAY_ZONES: [ZoneKind; 2] = [ZoneKind::Library, ZoneKind::Graveyard];
+
+// WTH 66 — Doomsday
+pub(in crate::card::sets) static DOOMSDAY: CardRecord = CardRecord::new(
+    cards::DOOMSDAY,
+    "Doomsday",
+    CardArt::new("5b3c6d87-9383-450b-bba5-33435b6b0d08", "Adrian Smith"),
+    CardSet::Weatherlight,
+    // A five-card library you built yourself, and half your life for it. The
+    // deck that plays it is not trying to survive the exile -- it is trying
+    // to draw the five cards it just stacked and win on the spot.
+    CardRules::new_sorcery(mana_cost!("{B}{B}{B}")).with_ability(AbilityDef::spell(
+        "Search your library and graveyard for five cards and exile the rest. Put the chosen cards on top of your library in any order. You lose half your life, rounded up.",
+        EffectDef::Sequence(&DOOMSDAY_STEPS),
+    )),
+);
 
 // WTH 105 — Goblin Vandal
 pub(in crate::card::sets) static GOBLIN_VANDAL: CardRecord = CardRecord::new(
@@ -274,6 +310,7 @@ static GEMSTONE_MINE_COSTS: [AbilityCostDef; 2] = [
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ABEYANCE,
     &AURA_OF_SILENCE,
+    &DOOMSDAY,
     &GOBLIN_VANDAL,
     &MIND_STONE,
     &PHYREXIAN_FURNACE,

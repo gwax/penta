@@ -153,6 +153,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A search that spans two zones and exiles what it leaves behind.**
+  Doomsday looks through your library and graveyard as one search, keeps
+  five, and exiles the rest; the order the five are chosen in is the order
+  they are drawn. What "the rest" means is fixed before anybody answers,
+  because the spell doing the searching reaches the graveyard while the
+  decision is still open and was never part of the search -- so it goes to
+  the graveyard afterward like any other sorcery rather than exiling itself.
+
 - **Infect, and a graveyard replacement that watches from anywhere.** Infect
   (CR 702.90) changes what a source's damage does rather than how much of it
   there is, so it is read after every prevention and limit has settled the

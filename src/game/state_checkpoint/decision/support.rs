@@ -139,6 +139,7 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
         | DecisionContinuation::SacrificeOfChoice { followup: None, .. }
         | DecisionContinuation::GrislySalvage { .. }
         | DecisionContinuation::Balance { .. }
+        | DecisionContinuation::SearchZonesAndExileRest { .. }
         | DecisionContinuation::Vote { .. }
         | DecisionContinuation::SylvanOffer { .. }
         | DecisionContinuation::SylvanSelect { .. }

@@ -570,6 +570,18 @@ pub enum EffectDef {
         then: &'static EffectDef,
         otherwise: &'static EffectDef,
     },
+    /// "Search your library and graveyard for N cards and exile the rest.
+    /// Put the chosen cards on top of your library in any order."
+    ///
+    /// Three things at once that an ordinary search is not: it looks in more
+    /// than one zone as a single search, the cards it does not take are
+    /// exiled rather than left where they were, and the order they are
+    /// chosen in is the order they end up in.
+    SearchZonesAndExileRest {
+        player: EffectRecipientDef,
+        zones: &'static [ZoneKind],
+        count: u8,
+    },
     /// "Put target nonland permanent into its owner's library just beneath
     /// the top N cards of that library." Neither top nor bottom: the depth
     /// is the whole point, and it is chosen as the spell is cast. A depth

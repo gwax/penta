@@ -94,7 +94,8 @@ fn validate_effect_target_shapes(
             validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
             validate_value_shape(amount, targets)
         }
-        EffectDef::ExileTopOfLibraryToPlay { player, .. }
+        EffectDef::SearchZonesAndExileRest { player, .. }
+        | EffectDef::ExileTopOfLibraryToPlay { player, .. }
         | EffectDef::MillUntil { player, .. }
         |         EffectDef::ShuffleLibrary { player }
         | EffectDef::EmptyManaPool { player }

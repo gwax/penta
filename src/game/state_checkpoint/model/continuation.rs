@@ -232,6 +232,11 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         task: BalanceTaskSnapshot,
         remaining: Vec<BalanceTaskSnapshot>,
     },
+    SearchZonesAndExileRest {
+        player: usize,
+        zones: Vec<ZoneKindSnapshot>,
+        searched: Vec<u32>,
+    },
     Vote {
         candidates: Vec<u32>,
         remaining: Vec<usize>,

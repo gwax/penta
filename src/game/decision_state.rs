@@ -368,6 +368,17 @@ pub(super) enum DecisionContinuation {
         task: BalanceTask,
         remaining: Vec<BalanceTask>,
     },
+    /// A Doomsday-style search in progress: the cards chosen go on top of
+    /// the library in the order they were chosen, and everything left in the
+    /// searched zones is exiled.
+    SearchZonesAndExileRest {
+        player: PlayerId,
+        zones: Vec<ZoneKind>,
+        /// Every card the search looked at, fixed before anybody answers:
+        /// the spell doing the searching reaches the graveyard while the
+        /// decision is still open, and it was never part of the search.
+        searched: Vec<GameObjectId>,
+    },
     /// A "will of the council" vote in progress. The candidates are frozen
     /// before the first vote is cast, so every voter sees the same ballot;
     /// a permanent that has left by the time the votes are counted simply

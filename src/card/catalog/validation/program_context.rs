@@ -482,6 +482,7 @@ fn validate_resolving_effect(
         | EffectDef::SacrificeOfChoice { then: None, .. }
         | EffectDef::ExileTopOfLibraryToPlay { .. }
         | EffectDef::Mill { .. }
+        | EffectDef::SearchZonesAndExileRest { .. }
         | EffectDef::MillUntil { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
@@ -902,6 +903,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::SacrificeOfChoice { .. } => "SacrificeOfChoice",
         EffectDef::ExileTopOfLibraryToPlay { .. } => "ExileTopOfLibraryToPlay",
         EffectDef::Mill { .. } => "Mill",
+        EffectDef::SearchZonesAndExileRest { .. } => "SearchZonesAndExileRest",
         EffectDef::MillUntil { .. } => "MillUntil",
         EffectDef::LookAtHand { .. } => "LookAtHand",
         EffectDef::RevealHand { .. } => "RevealHand",

@@ -218,6 +218,11 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::ExileTopOfLibraryToPlay {
             player: recipient, ..
         }
+        // Every card in the named zones is offered, so there is no predicate
+        // to check -- only who is searching.
+        | EffectDef::SearchZonesAndExileRest {
+            player: recipient, ..
+        }
         // The predicate is read against library cards, which the shared
         // walk already reads for a search.
         | EffectDef::MillUntil {

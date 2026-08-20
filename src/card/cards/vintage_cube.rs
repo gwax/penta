@@ -99,3 +99,4 @@ pub const WINDS_OF_ABANDON: CardDefinitionId = CardDefinitionId(2181);
 pub const UNEXPECTEDLY_ABSENT: CardDefinitionId = CardDefinitionId(2182);
 pub const BLIGHTSTEEL_COLOSSUS: CardDefinitionId = CardDefinitionId(2183);
 pub const FLAME_SLASH: CardDefinitionId = CardDefinitionId(2184);
+pub const DOOMSDAY: CardDefinitionId = CardDefinitionId(2185);
