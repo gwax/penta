@@ -476,6 +476,7 @@ impl Game {
             | EffectDef::ReplaceNextDrawThisTurn { .. }
             | EffectDef::IfFormat { .. }
             | EffectDef::Counter { .. }
+            | EffectDef::ReturnSpellToHand { .. }
             | EffectDef::CopyResolvingSpell { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::RemoveCounters { .. }

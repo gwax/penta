@@ -12,6 +12,35 @@ use crate::card::{
 };
 use crate::mana_cost;
 
+static REPRIEVE_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)];
+
+/// Returning the spell is not countering it, so a spell that cannot be
+/// countered is answered all the same -- and its controller keeps the card,
+/// which is the price. Drawing pays for the tempo either way.
+static REPRIEVE_EFFECTS: [EffectDef; 2] = [
+    EffectDef::ReturnSpellToHand {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+];
+
+// LTR 26 — Reprieve
+pub(in crate::card::sets) static REPRIEVE: CardRecord = CardRecord::new(
+    cards::REPRIEVE,
+    "Reprieve",
+    CardArt::new("1bd3fa8a-6c50-4f7f-9ae3-0810eec5e3db", "Justyna Dura"),
+    CardSet::LordOfTheRings,
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Return target spell to its owner's hand.\nDraw a card.",
+        &REPRIEVE_TARGET,
+        EffectDef::Sequence(&REPRIEVE_EFFECTS),
+    )),
+);
+
 /// "Power or toughness 2 or less" is a disjunction, not a pair of bounds: a
 /// 5/1 is small enough and a 1/5 is too. Written as "less than 3" because
 /// that is the comparison the predicate offers.
@@ -164,6 +193,7 @@ pub(in crate::card::sets) static FLAME_OF_ANOR: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &REPRIEVE,
     &STERN_SCOLDING,
     &DELIGHTED_HALFLING,
     &GENEROUS_ENT,

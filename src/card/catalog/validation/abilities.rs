@@ -742,6 +742,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::SearchZone { .. }
         | EffectDef::ChooseCards { .. }
         | EffectDef::Counter { .. }
+        | EffectDef::ReturnSpellToHand { .. }
         | EffectDef::CopyResolvingSpell { .. }
         | EffectDef::AddCounters { .. }
         | EffectDef::RemoveCounters { .. }
@@ -915,6 +916,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::SearchZone { .. }
         | EffectDef::ChooseCards { .. }
         | EffectDef::Counter { .. }
+        | EffectDef::ReturnSpellToHand { .. }
         | EffectDef::CopyResolvingSpell { .. }
         | EffectDef::AddCounters { .. }
         | EffectDef::RemoveCounters { .. }

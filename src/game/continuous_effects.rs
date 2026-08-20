@@ -488,6 +488,7 @@ impl Game {
                 | EffectDef::CreateEmblem { .. }
                 | EffectDef::Transform { .. }
                 | EffectDef::Counter { .. }
+                | EffectDef::ReturnSpellToHand { .. }
                 | EffectDef::CopyResolvingSpell { .. }
                 | EffectDef::AddCounters { .. }
                 | EffectDef::RemoveCounters { .. }

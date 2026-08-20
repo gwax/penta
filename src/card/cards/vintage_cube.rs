@@ -82,3 +82,4 @@ pub const TOXIC_DELUGE: CardDefinitionId = CardDefinitionId(2164);
 pub const BLOODCHIEFS_THIRST: CardDefinitionId = CardDefinitionId(2165);
 pub const WISHCLAW_TALISMAN: CardDefinitionId = CardDefinitionId(2166);
 pub const BONECRUSHER_GIANT: CardDefinitionId = CardDefinitionId(2167);
+pub const REPRIEVE: CardDefinitionId = CardDefinitionId(2168);

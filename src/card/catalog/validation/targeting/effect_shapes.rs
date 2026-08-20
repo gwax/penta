@@ -194,6 +194,7 @@ fn validate_effect_target_shapes(
         | EffectDef::Transform { object }
         | EffectDef::MoveToZone { object, .. }
         | EffectDef::Counter { object, .. }
+        | EffectDef::ReturnSpellToHand { object }
         | EffectDef::CreateTokenCopyOf { object } => {
             validate_recipient_shape(object, targets, RecipientExpectation::Object)
         }

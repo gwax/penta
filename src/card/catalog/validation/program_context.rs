@@ -487,6 +487,7 @@ fn validate_resolving_effect(
         | EffectDef::SearchZone { .. }
         | EffectDef::ChooseCards { .. }
         | EffectDef::Counter { .. }
+        | EffectDef::ReturnSpellToHand { .. }
         | EffectDef::CopyResolvingSpell { .. }
         | EffectDef::DrainLife { .. }
         | EffectDef::AddManaEqualTo { .. }
@@ -902,6 +903,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::ReplaceNextDrawThisTurn { .. } => "ReplaceNextDrawThisTurn",
         EffectDef::IfFormat { .. } => "IfFormat",
         EffectDef::Counter { .. } | EffectDef::CopyResolvingSpell { .. } => "Counter",
+        EffectDef::ReturnSpellToHand { .. } => "ReturnSpellToHand",
         EffectDef::DrainLife { .. } => "DrainLife",
         EffectDef::AddManaEqualTo { .. } => "AddManaEqualTo",
         EffectDef::AddCounters { .. } => "AddCounters",

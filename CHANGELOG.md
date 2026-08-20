@@ -153,6 +153,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Return target spell to its owner's hand."** Taking a spell off the stack
+  and putting it somewhere is what a counter does, so the engine only had the
+  countering version -- which checks "can't be countered" and is watched by
+  everything that cares about a countered spell. Returning a spell is neither:
+  Reprieve answers a spell that cannot be countered, and its controller keeps
+  the card. A spell cast via flashback is still exiled instead (CR 702.34a),
+  and a copy still ceases to exist.
+
 - **Adventure.** An Adventure card is castable from hand either way; the
   adventure half exiles itself on resolution rather than going to the
   graveyard, and its owner may then cast the creature half from exile

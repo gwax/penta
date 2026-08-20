@@ -384,6 +384,12 @@ pub enum EffectDef {
         destination: ZoneKind,
         placement: ZonePlacement,
     },
+    /// Return a spell from the stack to its owner's hand. Not a counter: the
+    /// spell is never countered, so "can't be countered" does not stop this
+    /// and nothing watching for a countered spell sees one.
+    ReturnSpellToHand {
+        object: EffectRecipientDef,
+    },
     /// Counter a spell and put its card into `zone`. Ordinary counters use
     /// the graveyard; replacement-style counters such as Dissipate use exile.
     Counter {

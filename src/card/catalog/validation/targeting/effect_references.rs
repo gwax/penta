@@ -169,6 +169,7 @@ fn validate_effect_references(
         | EffectDef::Transform { object }
         | EffectDef::MoveToZone { object, .. }
         | EffectDef::Counter { object, .. }
+        | EffectDef::ReturnSpellToHand { object }
         | EffectDef::CreateTokenCopyOf { object } => {
             validate_recipient_target_references(object, target_count, scope)
         }

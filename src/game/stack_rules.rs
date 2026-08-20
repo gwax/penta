@@ -119,6 +119,7 @@ impl Game {
             | EffectDef::ChooseCards { .. }
             | EffectDef::ReplaceNextDrawThisTurn { .. }
             | EffectDef::Counter { .. }
+            | EffectDef::ReturnSpellToHand { .. }
             | EffectDef::CopyResolvingSpell { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::RemoveCounters { .. }
@@ -239,6 +240,26 @@ impl Game {
         if !self.can_be_countered(&self.stack[index]) {
             return;
         }
+        self.remove_spell_from_stack(index, zone);
+    }
+
+    /// Returns a spell from the stack to its owner's hand.
+    ///
+    /// Not a counter. The spell is never countered, so "can't be countered"
+    /// does not stop this and nothing watching for a countered spell sees
+    /// one -- which is the whole reason Reprieve is played over a counter.
+    pub(super) fn return_spell_to_hand(&mut self, id: GameObjectId) {
+        let Some(index) = self.stack.iter().position(|object| object.id == id) else {
+            return;
+        };
+        self.remove_spell_from_stack(index, CounteredSpellZone::Hand);
+    }
+
+    /// Takes the stack object at `index` off the stack and puts its card
+    /// where it is going. A copy has no card and simply ceases to exist
+    /// (CR 707.10), and a spell cast via flashback is exiled wherever else
+    /// it would have gone (CR 702.34a).
+    fn remove_spell_from_stack(&mut self, index: usize, zone: CounteredSpellZone) {
         let object = self.stack.remove(index);
         self.retire_stack_object(&object);
         if object.kind == StackObjectKind::Spell && !object.is_copy {
@@ -251,6 +272,7 @@ impl Game {
             } {
                 CounteredSpellZone::Graveyard => self.put_card_into_graveyard(owner, card),
                 CounteredSpellZone::Exile => self.players[owner.index()].exile.push(card),
+                CounteredSpellZone::Hand => self.players[owner.index()].hand.push(card),
             }
         }
     }

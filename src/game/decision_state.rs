@@ -150,11 +150,14 @@ pub(super) struct BalanceTask {
     pub(super) cause: ZoneMoveCause,
 }
 
-/// Where a countered spell ends up.
+/// Where a spell taken off the stack ends up. A counter sends it to the
+/// graveyard, or to exile for the replacement-style counters; `Hand` is for
+/// the clauses that return a spell without countering it.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum CounteredSpellZone {
     Graveyard,
     Exile,
+    Hand,
 }
 
 #[derive(Clone, Debug)]

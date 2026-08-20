@@ -374,7 +374,10 @@ impl HandcraftedPolicy {
                         Some(drawn.saturating_sub(Self::policy_value(amount, x).unwrap_or(0)));
                 }
             }
-            EffectDef::Counter { object, .. } => {
+            // Returning a spell is not a counter, but it answers one the
+            // same way, so the policy weighs it as one.
+            EffectDef::ReturnSpellToHand { object }
+            | EffectDef::Counter { object, .. } => {
                 profile.mark(DeclarativeSpellProfile::COUNTERS);
                 profile.opponent_spell_sweep |= object.object_query().is_some_and(|query| {
                     query.object == ObjectPredicateDef::Spell

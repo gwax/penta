@@ -673,6 +673,13 @@ impl Game {
                     self.queue_copy_decision_chain(player, spell, None, "the copy", copies);
                 }
             }
+            EffectDef::ReturnSpellToHand { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Spell(spell) = target {
+                        self.return_spell_to_hand(spell);
+                    }
+                }
+            }
             EffectDef::Counter {
                 object: recipient,
                 zone,

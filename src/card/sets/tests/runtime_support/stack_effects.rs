@@ -334,7 +334,8 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         // The colour is named at resolution, so the declaration only has to
         // say who receives it and for how long.
         | EffectDef::ChooseColor { object, .. }
-        | EffectDef::BecomeCopyOf { object, .. } => shared_effect_recipient(object),
+        | EffectDef::BecomeCopyOf { object, .. }
+        | EffectDef::ReturnSpellToHand { object } => shared_effect_recipient(object),
         EffectDef::Counter { object, zone } => {
             matches!(zone, ZoneKind::Graveyard | ZoneKind::Exile) && shared_effect_recipient(object)
         }
