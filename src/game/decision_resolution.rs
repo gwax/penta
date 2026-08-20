@@ -373,6 +373,14 @@ impl Game {
                 self.consume_exile_play_permission(card);
                 self.resolve_declined_cast(&object, context, definition);
             }
+            DecisionContinuation::SpellLibraryEnd { spell, .. } => {
+                let placement = if options.contains(&1) {
+                    ZonePlacement::Bottom
+                } else {
+                    ZonePlacement::Top
+                };
+                self.put_spell_into_library(spell, placement);
+            }
             DecisionContinuation::OptionalEffect {
                 object,
                 context,

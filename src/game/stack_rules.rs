@@ -3,6 +3,7 @@ use super::{
     DeclarativeAbilityDef, EffectDef, EffectRecipientDef, Game, GameObjectId, StackObject,
     StackObjectKind, Target, ZoneKind, applicable_part_ids,
 };
+use crate::card::ZonePlacement;
 use crate::card::{ChooseDef, SplitIntoPilesDef};
 
 impl Game {
@@ -128,6 +129,7 @@ impl Game {
             | EffectDef::ReplaceNextDrawThisTurn { .. }
             | EffectDef::Counter { .. }
             | EffectDef::ReturnSpellToHand { .. }
+            | EffectDef::PutSpellIntoOwnersLibrary { .. }
             | EffectDef::CopyResolvingSpell { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::RemoveCounters { .. }
@@ -263,6 +265,16 @@ impl Game {
     /// Not a counter. The spell is never countered, so "can't be countered"
     /// does not stop this and nothing watching for a countered spell sees
     /// one -- which is the whole reason Reprieve is played over a counter.
+    /// "Its owner puts it on their choice of the top or bottom of their
+    /// library." Not a counter: a spell that cannot be countered goes there
+    /// all the same.
+    pub(super) fn put_spell_into_library(&mut self, id: GameObjectId, placement: ZonePlacement) {
+        let Some(index) = self.stack.iter().position(|object| object.id == id) else {
+            return;
+        };
+        self.remove_spell_from_stack(index, CounteredSpellZone::Library(placement));
+    }
+
     pub(super) fn return_spell_to_hand(&mut self, id: GameObjectId) {
         let Some(index) = self.stack.iter().position(|object| object.id == id) else {
             return;
@@ -288,6 +300,12 @@ impl Game {
                 CounteredSpellZone::Graveyard => self.put_card_into_graveyard(owner, card),
                 CounteredSpellZone::Exile => self.players[owner.index()].exile.push(card),
                 CounteredSpellZone::Hand => self.players[owner.index()].hand.push(card),
+                CounteredSpellZone::Library(ZonePlacement::Top) => {
+                    self.players[owner.index()].library.push(card);
+                }
+                CounteredSpellZone::Library(ZonePlacement::Bottom) => {
+                    self.players[owner.index()].library.insert(0, card);
+                }
             }
         }
     }

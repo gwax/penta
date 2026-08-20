@@ -174,6 +174,7 @@ fn validate_effect_references(
         | EffectDef::MoveToZone { object, .. }
         | EffectDef::Counter { object, .. }
         | EffectDef::ReturnSpellToHand { object }
+        | EffectDef::PutSpellIntoOwnersLibrary { object }
         | EffectDef::CreateTokenCopyOf { object } => {
             validate_recipient_target_references(object, target_count, scope)
         }

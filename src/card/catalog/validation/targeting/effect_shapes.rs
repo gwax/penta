@@ -215,6 +215,7 @@ fn validate_effect_target_shapes(
         | EffectDef::MoveToZone { object, .. }
         | EffectDef::Counter { object, .. }
         | EffectDef::ReturnSpellToHand { object }
+        | EffectDef::PutSpellIntoOwnersLibrary { object }
         | EffectDef::CreateTokenCopyOf { object } => {
             validate_recipient_shape(object, targets, RecipientExpectation::Object)
         }

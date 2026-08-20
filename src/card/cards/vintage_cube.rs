@@ -150,3 +150,4 @@ pub const STORMCHASERS_TALENT: CardDefinitionId = CardDefinitionId(2232);
 pub const FATAL_PUSH: CardDefinitionId = CardDefinitionId(2233);
 pub const OVERLORD_OF_THE_BALEMURK: CardDefinitionId = CardDefinitionId(2234);
 pub const OCCULT_EPIPHANY: CardDefinitionId = CardDefinitionId(2235);
+pub const SUBTLETY: CardDefinitionId = CardDefinitionId(2236);

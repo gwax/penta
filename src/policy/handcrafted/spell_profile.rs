@@ -377,6 +377,7 @@ impl HandcraftedPolicy {
             // Returning a spell is not a counter, but it answers one the
             // same way, so the policy weighs it as one.
             EffectDef::ReturnSpellToHand { object }
+            | EffectDef::PutSpellIntoOwnersLibrary { object }
             | EffectDef::Counter { object, .. } => {
                 profile.mark(DeclarativeSpellProfile::COUNTERS);
                 profile.opponent_spell_sweep |= object.object_query().is_some_and(|query| {

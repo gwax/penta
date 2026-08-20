@@ -745,6 +745,13 @@ impl Game {
                     }
                 }
             }
+            EffectDef::PutSpellIntoOwnersLibrary { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Spell(spell) = target {
+                        self.queue_spell_library_end_choice(spell);
+                    }
+                }
+            }
             EffectDef::Counter {
                 object: recipient,
                 zone,

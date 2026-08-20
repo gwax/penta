@@ -733,6 +733,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::IfFormat { .. }
                     | EffectDef::Counter { .. }
                     | EffectDef::ReturnSpellToHand { .. }
+                    | EffectDef::PutSpellIntoOwnersLibrary { .. }
                     | EffectDef::CopyResolvingSpell { .. }
                     | EffectDef::AddCounters { .. }
                     | EffectDef::RemoveCounters { .. }

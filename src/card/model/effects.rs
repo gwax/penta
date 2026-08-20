@@ -321,6 +321,13 @@ pub enum EffectDef {
     /// Return a spell from the stack to its owner's hand. Not a counter: the
     /// spell is never countered, so "can't be countered" does not stop this
     /// and nothing watching for a countered spell sees one.
+    /// "Its owner puts it on their choice of the top or bottom of their
+    /// library." The end is chosen by the spell's owner rather than by
+    /// whoever is resolving, and nothing is countered -- a spell that cannot
+    /// be countered goes there all the same.
+    PutSpellIntoOwnersLibrary {
+        object: EffectRecipientDef,
+    },
     ReturnSpellToHand {
         object: EffectRecipientDef,
     },

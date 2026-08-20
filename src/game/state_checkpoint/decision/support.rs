@@ -141,6 +141,7 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
         | DecisionContinuation::RecallDiscard { .. }
         | DecisionContinuation::RecallReturn { .. }
         | DecisionContinuation::MiracleReveal { .. }
+        | DecisionContinuation::SpellLibraryEnd { .. }
         | DecisionContinuation::SeparateIntoPiles { .. }
         | DecisionContinuation::ChoosePile { .. }
         | DecisionContinuation::SacrificeOfChoice { followup: None, .. }

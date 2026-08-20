@@ -777,6 +777,16 @@ fn parse_continuation(
                 card: GameObjectId(*card),
             }
         }
+        DecisionContinuationSnapshot::SpellLibraryEnd { owner, spell } => {
+            let owner = player(*owner)?;
+            if owner != observation.player {
+                return Err("a library-end choice names a player other than the deciding one".into());
+            }
+            DecisionContinuation::SpellLibraryEnd {
+                owner,
+                spell: GameObjectId(*spell),
+            }
+        }
         DecisionContinuationSnapshot::SeparateIntoPiles {
             resolving_controller,
             subject,

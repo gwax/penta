@@ -816,6 +816,7 @@ mod vintage_cube_spells;
 mod vintage_cube_static_prison;
 mod vintage_cube_stoneforge;
 mod vintage_cube_stormchasers_talent;
+mod vintage_cube_subtlety;
 mod vintage_cube_surveil_land;
 mod vintage_cube_sword_of_the_meek;
 mod vintage_cube_tamiyo;

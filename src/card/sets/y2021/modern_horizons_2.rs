@@ -135,6 +135,70 @@ static DAMN_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_perma
     ObjectPredicateDef::HasType(CardType::Creature),
 )];
 
+static EXILE_A_BLUE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::Color(ManaColor::Blue),
+    ZoneKind::Hand,
+    1,
+)
+.spent(SpendModeDef::Exile);
+
+/// A creature or planeswalker spell on the stack, anybody's. "Up to one"
+/// means a Subtlety with nothing worth answering still enters and still
+/// leaves a 3/3 behind.
+static SUBTLETY_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::HasType(CardType::Planeswalker),
+        ]),
+        zones: &[ZoneKind::Stack],
+        controller: None,
+        owner: None,
+    },
+    1,
+)];
+
+static SUBTLETY_ABILITIES: [AbilityDef; 5] = [
+    abilities::flash(),
+    abilities::flying(),
+    AbilityDef::triggered_with_targets(
+        "When this creature enters, choose up to one target creature spell or planeswalker \
+         spell. Its owner puts it on their choice of the top or bottom of their library.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        &SUBTLETY_TARGET,
+        EffectDef::PutSpellIntoOwnersLibrary {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    ),
+    AbilityDef::alternative_cast(
+        mana_cost!("{0}"),
+        AlternativeCastKindDef::AlternativeCost,
+        Some("Evoke—Exile a blue card from your hand."),
+        EffectDef::None,
+    )
+    .with_alternative_additional_cost(&EXILE_A_BLUE_CARD),
+    abilities::evoke_sacrifice("When this creature enters, if it was evoked, sacrifice it."),
+];
+
+// MH2 67 — Subtlety
+pub(in crate::card::sets) static SUBTLETY: CardRecord = CardRecord::new(
+    cards::SUBTLETY,
+    "Subtlety",
+    CardArt::new(
+        "701256d5-1389-48b7-9581-d6037209bd06",
+        "Anastasia Ovchinnikova",
+    ),
+    CardSet::ModernHorizons2,
+    // Free interaction that leaves a body when you have the mana, and a
+    // blue card off the top of your hand when you do not.
+    CardRules::new_creature(mana_cost!("{2}{U}{U}"), &["Elemental", "Incarnation"], 3, 3)
+        .with_abilities(&SUBTLETY_ABILITIES),
+);
+
 // MH2 76 — Bone Shards
 pub(in crate::card::sets) static BONE_SHARDS: CardRecord = CardRecord::new(
     cards::BONE_SHARDS,
@@ -288,6 +352,7 @@ pub(in crate::card::sets) static YAVIMAYA_CRADLE_OF_GROWTH: CardRecord = CardRec
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PRISMATIC_ENDING,
+    &SUBTLETY,
     &BONE_SHARDS,
     &DAMN,
     &FURY,

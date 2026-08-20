@@ -575,6 +575,12 @@ fn continuation_snapshot(
         DecisionContinuation::MiracleReveal { card } => {
             DecisionContinuationSnapshot::MiracleReveal { card: card.0 }
         }
+        DecisionContinuation::SpellLibraryEnd { owner, spell } => {
+            DecisionContinuationSnapshot::SpellLibraryEnd {
+                owner: owner.index(),
+                spell: spell.0,
+            }
+        }
         DecisionContinuation::SeparateIntoPiles {
             resolving_controller,
             subject,

@@ -245,6 +245,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::IfFormat { .. }
         | EffectDef::Counter { .. }
         | EffectDef::ReturnSpellToHand { .. }
+        | EffectDef::PutSpellIntoOwnersLibrary { .. }
         | EffectDef::CopyResolvingSpell { .. }
         | EffectDef::AddCounters { .. }
         | EffectDef::RemoveCounters { .. }

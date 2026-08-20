@@ -160,6 +160,10 @@ pub(super) enum CounteredSpellZone {
     Graveyard,
     Exile,
     Hand,
+    /// Onto one end of its owner's library. Subtlety puts a spell there
+    /// rather than countering it, which is why this enum covers more than
+    /// what its name says.
+    Library(ZonePlacement),
 }
 
 #[derive(Clone, Debug)]
@@ -329,6 +333,13 @@ pub(super) enum DecisionContinuation {
         /// that a rebuilt decision can check it is still the clause it says
         /// it is instead of trusting a detached fragment.
         definition: ScopedEffect,
+    },
+    /// "Its owner puts it on their choice of the top or bottom of their
+    /// library." The owner answers, not whoever is resolving, so the spell
+    /// waits on the stack until they have.
+    SpellLibraryEnd {
+        owner: PlayerId,
+        spell: GameObjectId,
     },
     /// A generic bounded non-targeting object choice. `candidates` is kept
     /// typed because a spell and a permanent are different objects even

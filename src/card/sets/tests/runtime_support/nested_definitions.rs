@@ -439,6 +439,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::ChooseCards { .. }
         | EffectDef::Counter { .. }
         | EffectDef::ReturnSpellToHand { .. }
+        | EffectDef::PutSpellIntoOwnersLibrary { .. }
         | EffectDef::CopyResolvingSpell { .. }
         | EffectDef::AddCounters { .. }
         | EffectDef::RemoveCounters { .. }

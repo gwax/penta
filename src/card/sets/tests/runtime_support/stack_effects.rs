@@ -372,6 +372,10 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::ChooseColor { object, .. }
         | EffectDef::BecomeCopyOf { object, .. }
         | EffectDef::ReturnSpellToHand { object } => shared_effect_recipient(object),
+        // The owner's answer is a deferred decision, the same as any other.
+        EffectDef::PutSpellIntoOwnersLibrary { object } => {
+            deferred_decision_allowed && shared_effect_recipient(object)
+        }
         EffectDef::Counter { object, zone } => {
             matches!(zone, ZoneKind::Graveyard | ZoneKind::Exile) && shared_effect_recipient(object)
         }

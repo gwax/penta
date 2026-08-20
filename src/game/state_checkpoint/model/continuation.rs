@@ -208,6 +208,10 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
     MiracleReveal {
         card: u32,
     },
+    SpellLibraryEnd {
+        owner: usize,
+        spell: u32,
+    },
     SeparateIntoPiles {
         resolving_controller: usize,
         subject: usize,

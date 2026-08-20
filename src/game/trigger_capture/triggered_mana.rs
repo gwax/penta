@@ -74,6 +74,7 @@ impl Game {
             | EffectDef::IfFormat { .. }
             | EffectDef::Counter { .. }
             | EffectDef::ReturnSpellToHand { .. }
+            | EffectDef::PutSpellIntoOwnersLibrary { .. }
             | EffectDef::CopyResolvingSpell { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::RemoveCounters { .. }
