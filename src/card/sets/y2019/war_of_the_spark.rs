@@ -2,10 +2,12 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, ComparisonDef, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TriggerConditionDef,
-    ValueDef, ZoneKind, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype,
+    CardType, CardTypeSet, ComparisonDef, CounterKind, CreatureTypeSetDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -93,6 +95,119 @@ pub(in crate::card::sets) static JACE_WIELDER_OF_MYSTERIES: CardRecord = CardRec
         .with_abilities(&JACE_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&JACE_WIELDER_OF_MYSTERIES];
+/// "You tap a Forest for mana" is the tap transition carrying its purpose,
+/// so an ordinary tap does not fire it and a mana tap does.
+static NISSA_FOREST: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+static NISSA_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Land),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+    1,
+)];
+
+static NISSA_VIGILANCE: AbilityDef = abilities::vigilance();
+
+static NISSA_HASTE: AbilityDef = abilities::haste();
+
+/// "Still a land" is why the types are added rather than set: the animated
+/// permanent keeps tapping for mana, and Nissa's own static doubles it.
+static NISSA_ANIMATION: [AppliedEffectDef; 5] = [
+    AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature)),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(0), ValueDef::Constant(0)),
+    AppliedEffectDef::add_creature_types(CreatureTypeSetDef::named(&["Elemental"])),
+    AppliedEffectDef::add_ability(&NISSA_VIGILANCE),
+    AppliedEffectDef::add_ability(&NISSA_HASTE),
+];
+
+/// The counters go on first, while the land is still a noncreature: the
+/// animation then sets a base of 0/0 and the three counters make it a 3/3.
+static NISSA_AWAKENS_A_LAND: [EffectDef; 3] = [
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::Untap {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::Composite(&NISSA_ANIMATION),
+        duration: ResolvedEffectDurationDef::Permanent,
+    },
+];
+
+/// "Any number" is every one there is, so the bound is how many the library
+/// actually holds rather than a printed number.
+static FORESTS_IN_YOUR_LIBRARY: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+    &[ZoneKind::Library],
+    PlayerRelation::You,
+);
+
+static NISSA_ULTIMATE: [EffectDef; 2] = [
+    EffectDef::CreateEmblem {
+        emblem: cards::NISSA_WHO_SHAKES_THE_WORLD_EMBLEM,
+    },
+    EffectDef::SearchZone {
+        player: EffectRecipientDef::Controller,
+        source: ZoneKind::Library,
+        object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+        minimum: 0,
+        maximum: ValueDef::CountMatchingObjects(&FORESTS_IN_YOUR_LIBRARY),
+        reveal: false,
+        destination: ZoneKind::Battlefield,
+        placement: ZonePlacement::Top,
+        shuffle: true,
+        enters_tapped: true,
+        binding: None,
+        then: None,
+    },
+];
+
+static NISSA_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::triggered_mana(
+        "Whenever you tap a Forest for mana, add an additional {G}.",
+        TriggerEventDef::tapped_for_mana(NISSA_FOREST),
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green)),
+    ),
+    AbilityDef::activated_with_targets(
+        "+1: Put three +1/+1 counters on up to one target noncreature land you control. Untap it. It becomes a 0/0 Elemental creature with vigilance and haste that's still a land.",
+        &[AbilityCostDef::Loyalty(1)],
+        &NISSA_TARGET,
+        EffectDef::Sequence(&NISSA_AWAKENS_A_LAND),
+    ),
+    AbilityDef::activated(
+        "−8: You get an emblem with \"Lands you control have indestructible.\" Search your library for any number of Forest cards, put them onto the battlefield tapped, then shuffle.",
+        &[AbilityCostDef::Loyalty(-8)],
+        EffectDef::Sequence(&NISSA_ULTIMATE),
+    ),
+];
+
+// WAR 169 — Nissa, Who Shakes the World
+pub(in crate::card::sets) static NISSA_WHO_SHAKES_THE_WORLD: CardRecord = CardRecord::new(
+    cards::NISSA_WHO_SHAKES_THE_WORLD,
+    "Nissa, Who Shakes the World",
+    CardArt::new("41e108a5-4e2f-42cf-9ea1-87bf3c0a2b7f", "Chris Rallis"),
+    CardSet::WarOfTheSpark,
+    // Doubling every Forest is the card: five mana becomes eight the turn
+    // after, and the +1 turns the spare land into a 3/3 that attacks at once.
+    CardRules::new_planeswalker(mana_cost!("{3}{G}{G}"), &["Nissa"], 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&NISSA_ABILITIES),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&JACE_WIELDER_OF_MYSTERIES, &NISSA_WHO_SHAKES_THE_WORLD];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

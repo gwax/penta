@@ -756,6 +756,7 @@ mod vintage_cube_library;
 mod vintage_cube_mana;
 mod vintage_cube_monarch;
 mod vintage_cube_more_spells;
+mod vintage_cube_nissa;
 mod vintage_cube_spells;
 mod wards;
 mod while_source_tapped;

@@ -549,6 +549,29 @@ pub(in crate::card::sets) static BLOOD_TOKEN: CardRecord = CardRecord::new(
     )),
 );
 
+static NISSA_LANDS_ARE_INDESTRUCTIBLE: AbilityDef = abilities::indestructible();
+
+/// Nissa's emblem. The lands it protects are the ones her +1 keeps turning
+/// into creatures, which is why an indestructible clause reads as removal
+/// protection rather than as a board wipe answer.
+pub(in crate::card::sets) static NISSA_WHO_SHAKES_THE_WORLD_EMBLEM: CardRecord = CardRecord::new(
+    cards::NISSA_WHO_SHAKES_THE_WORLD_EMBLEM,
+    "Nissa, Who Shakes the World emblem",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_emblem().with_ability(AbilityDef::static_ability(
+        "Lands you control have indestructible.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Land),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::add_ability(&NISSA_LANDS_ARE_INDESTRUCTIBLE),
+        },
+    )),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FACE_DOWN_CREATURE,
     &GERM_TOKEN_0_0_BLACK,
@@ -562,6 +585,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WOLVES_OF_THE_HUNT_TOKEN_1_1_GREEN,
     &WOLF_TOKEN_1_1_BLACK,
     &DOMRI_RADE_EMBLEM,
+    &NISSA_WHO_SHAKES_THE_WORLD_EMBLEM,
     &DJINN_TOKEN_5_5_COLORLESS,
     &TETRAVITE_TOKEN,
     &ASSASSIN_TOKEN_1_1_BLACK,

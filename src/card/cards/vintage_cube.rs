@@ -86,3 +86,5 @@ pub const REPRIEVE: CardDefinitionId = CardDefinitionId(2168);
 pub const BONE_SHARDS: CardDefinitionId = CardDefinitionId(2169);
 pub const LIGHTNING_GREAVES: CardDefinitionId = CardDefinitionId(2170);
 pub const PALACE_JAILER: CardDefinitionId = CardDefinitionId(2171);
+pub const NISSA_WHO_SHAKES_THE_WORLD: CardDefinitionId = CardDefinitionId(2172);
+pub const NISSA_WHO_SHAKES_THE_WORLD_EMBLEM: CardDefinitionId = CardDefinitionId(2173);

@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 168 are cataloged and 366 are not
+- 534 cards in the pool, of which 169 are cataloged and 365 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -233,7 +233,7 @@ lands are legal in every format and are not listed.
 - `Underworld Breach`
 - `Voldaren Epicure`
 
-### Green (45)
+### Green (44)
 
 - `Baloth Prime`
 - `Bristly Bill, Spine Sower`
@@ -258,7 +258,6 @@ lands are legal in every format and are not listed.
 - `Mightform Harmonizer`
 - `Mutagenic Growth`
 - `Natural Order`
-- `Nissa, Who Shakes the World`
 - `Noble Hierarch`
 - `Oath of Druids`
 - `Once Upon a Time`
@@ -425,7 +424,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 168 pool cards are in the catalog because an earlier format needed them.
+These 169 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -525,6 +524,7 @@ been played beside.
 - `Mox Sapphire`
 - `Mystical Tutor`
 - `Nettlecyst`
+- `Nissa, Who Shakes the World`
 - `Overgrown Tomb`
 - `Palace Jailer`
 - `Parallax Wave`
