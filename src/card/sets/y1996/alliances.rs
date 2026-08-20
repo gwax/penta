@@ -107,6 +107,45 @@ pub(in crate::card::sets) static ARCANE_DENIAL: CardRecord = CardRecord::new(
 static DENIAL_TARGET: [AbilityTargetDef; 1] =
     [AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)];
 
+static EXILE_A_BLUE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::Color(ManaColor::Blue),
+    ZoneKind::Hand,
+    1,
+)
+.spent(SpendModeDef::Exile);
+
+static FORCE_OF_WILL_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)];
+
+// ALL 28 — Force of Will
+pub(in crate::card::sets) static FORCE_OF_WILL: CardRecord = CardRecord::new(
+    cards::FORCE_OF_WILL,
+    "Force of Will",
+    CardArt::new("9a879b60-4381-447d-8a5a-8e0b6a1d49ca", "Terese Nielsen"),
+    CardSet::Alliances,
+    // Answering a spell for no mana is what makes an entire format possible:
+    // a deck can tap out and still not be dead to the one card that would
+    // have beaten it.
+    CardRules::new_instant(mana_cost!("{3}{U}{U}")).with_abilities(&[
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::AlternativeCost,
+            Some(
+                "You may pay 1 life and exile a blue card from your hand rather than pay this \
+                 spell's mana cost.",
+            ),
+            EffectDef::None,
+        )
+        .with_alternative_additional_cost(&EXILE_A_BLUE_CARD)
+        .with_alternative_life(1),
+        AbilityDef::spell_with_targets(
+            "Counter target spell.",
+            &FORCE_OF_WILL_TARGET,
+            EffectDef::counter_target(TargetIndex::PRIMARY),
+        ),
+    ]),
+);
+
 // ALL 78 — Pyrokinesis
 pub(in crate::card::sets) static PYROKINESIS: CardRecord = CardRecord::new(
     cards::PYROKINESIS,
@@ -195,7 +234,11 @@ pub(in crate::card::sets) static THAWING_GLACIERS: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&ARCANE_DENIAL, &PYROKINESIS, &THAWING_GLACIERS];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &ARCANE_DENIAL,
+    &FORCE_OF_WILL,
+    &PYROKINESIS,
+    &THAWING_GLACIERS,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

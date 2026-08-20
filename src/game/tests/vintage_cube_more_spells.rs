@@ -732,3 +732,123 @@ fn bone_shards_discards_its_price_and_destroys() {
         "and the Angel is destroyed",
     );
 }
+
+/// The free cast pays both halves: one life and a blue card out of hand,
+/// exiled rather than discarded.
+#[test]
+fn force_of_will_pays_a_life_and_exiles_a_blue_card() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let bears = card(86_000, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.id;
+    game.players[0].hand.push(bears);
+    let force = card(86_001, cards::FORCE_OF_WILL, PlayerId::Two);
+    let force_id = force.id;
+    game.players[1].hand.push(force);
+    let blue = card(86_002, cards::COUNTERSPELL, PlayerId::Two);
+    let blue_id = blue.id;
+    game.players[1].hand.push(blue);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 2);
+    let life = game.players[1].life;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == bears_id))
+        .expect("the Bears are castable");
+    game.apply(PlayerId::One, cast).expect("they are cast");
+    let spell = game.stack.last().expect("the Bears are on the stack").id;
+    game.apply(PlayerId::One, Action::PassPriority).unwrap();
+
+    // Player Two has no mana at all, so every Force cast on offer is the
+    // free one.
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell {
+                card,
+                choices,
+                sacrifices,
+            } => {
+                *card == force_id
+                    && sacrifices == &[blue_id]
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(spell))
+            }
+            _ => false,
+        })
+        .expect("the free cast exiles the blue card");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[1].life, life - 1, "one life is paid");
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::COUNTERSPELL),
+        "and the blue card is exiled rather than discarded",
+    );
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .all(|card| card.definition != cards::COUNTERSPELL),
+        "never reaching the graveyard",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+        "and the spell is countered",
+    );
+}
+
+/// A player with no blue card to exile has no free cast at all. The life
+/// half gates nothing in practice: life may be paid down to zero (CR 118.4),
+/// and a player already at zero has lost.
+#[test]
+fn force_of_will_needs_a_blue_card_to_exile() {
+    let free_cast_offered = |blue: bool| {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let bears = card(86_010, cards::GRIZZLY_BEARS, PlayerId::One);
+        let bears_id = bears.id;
+        game.players[0].hand.push(bears);
+        let force = card(86_011, cards::FORCE_OF_WILL, PlayerId::Two);
+        let force_id = force.id;
+        game.players[1].hand.push(force);
+        game.players[1].hand.push(card(
+            86_012,
+            if blue {
+                cards::COUNTERSPELL
+            } else {
+                cards::GRIZZLY_BEARS
+            },
+            PlayerId::Two,
+        ));
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 2);
+
+        let cast = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == bears_id))
+            .expect("the Bears are castable");
+        game.apply(PlayerId::One, cast).expect("they are cast");
+        game.apply(PlayerId::One, Action::PassPriority).unwrap();
+
+        game.legal_actions(PlayerId::Two)
+            .into_iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if card == force_id))
+    };
+
+    assert!(free_cast_offered(true), "a blue card pays for it");
+    assert!(
+        !free_cast_offered(false),
+        "and a green card cannot be the blue one",
+    );
+}
