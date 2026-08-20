@@ -243,6 +243,12 @@ impl Game {
             ValueDef::CardTypesAmongGraveyards(player) => {
                 self.card_types_among_graveyards(player, controller)
             }
+            // Counters on the effect's own source, which is plain state
+            // rather than anything derived: an Equipment that grows gives
+            // what it carries, and the bonus follows every counter.
+            ValueDef::CountersOnSource(kind) => {
+                i32::from(self.current_or_last_known_counters(source, kind))
+            }
             // A tally the turn keeps, read the same way: the creature
             // resizes as its controller draws.
             ValueDef::CardsDrawnThisTurn(relation) => [PlayerId::One, PlayerId::Two]

@@ -7,6 +7,42 @@
 // parent module's.
 
 impl Game {
+    /// Whether one chosen target answers a characteristic predicate.
+    ///
+    /// What is read depends on what the slot named: a permanent on the
+    /// battlefield, a spell on the stack, or a card in a zone that is not
+    /// either -- "if it was a permanent card" asks that of a card in a
+    /// graveyard, which is as public as the board.
+    fn chosen_target_matches(
+        &self,
+        target: Target,
+        predicate: ObjectPredicateDef,
+        source: GameObjectId,
+    ) -> bool {
+        let matched = match target {
+            Target::Permanent(id) => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == id)
+                .map(|permanent| self.trigger_event_object(permanent)),
+            Target::Spell(id) => self
+                .stack
+                .iter()
+                .find(|candidate| candidate.id == id)
+                .and_then(|candidate| self.stack_trigger_event_object(candidate)),
+            Target::Card(id) => {
+                return self.card_in_nonbattlefield_zone(id).is_some_and(|(zone, card)| {
+                    self.card_object_matches(predicate, card, zone, source)
+                });
+            }
+            // A player has no characteristics to read.
+            Target::Player(_) => None,
+        };
+        matched.is_some_and(|matched| {
+            self.trigger_object_matches(predicate, &matched, source, false)
+        })
+    }
+
     /// How many times this ability has been activated from this permanent so
     /// far this turn.
     /// One side of a two-value condition. The board-readable values a cost
@@ -313,30 +349,8 @@ impl Game {
                     slot,
                     object: predicate,
                 } => object.is_some_and(|(stack, scoped, _)| {
-                    Self::chosen_targets(stack, scoped.target_slot(*slot)).any(|target| {
-                        // A target is a permanent or a spell depending on
-                        // what the slot names, and "if its mana value is 2 or
-                        // less" is asked of either -- Prohibit reads a spell
-                        // on the stack where Overload reads a permanent.
-                        let matched = match target {
-                            Target::Permanent(id) => self
-                                .battlefield
-                                .iter()
-                                .find(|permanent| permanent.card.id == id)
-                                .map(|permanent| self.trigger_event_object(permanent)),
-                            Target::Spell(id) => self
-                                .stack
-                                .iter()
-                                .find(|candidate| candidate.id == id)
-                                .and_then(|candidate| self.stack_trigger_event_object(candidate)),
-                            // A card in a hidden zone has no continuous
-                            // effects to read; nothing targets one this way.
-                            Target::Player(_) | Target::Card(_) => None,
-                        };
-                        matched.is_some_and(|matched| {
-                            self.trigger_object_matches(*predicate, &matched, source, false)
-                        })
-                    })
+                    Self::chosen_targets(stack, scoped.target_slot(*slot))
+                        .any(|target| self.chosen_target_matches(target, *predicate, source))
                 }),
                 TriggerConditionDef::SourceDealtDamageToOpponentThisTurn => self
                     .battlefield

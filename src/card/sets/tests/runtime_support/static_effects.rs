@@ -416,7 +416,9 @@ fn static_stat_value(value: crate::card::ValueDef) -> bool {
         | crate::card::ValueDef::CardTypesAmongGraveyards(_)
         // A tally the game keeps for the turn, reachable from the layer walk
         // for the same reason.
-        | crate::card::ValueDef::CardsDrawnThisTurn(_) => true,
+        | crate::card::ValueDef::CardsDrawnThisTurn(_)
+        // Counters on the effect's own source: plain state the layer has.
+        | crate::card::ValueDef::CountersOnSource(_) => true,
         crate::card::ValueDef::Scaled(scaled) => static_stat_value(scaled.value),
         crate::card::ValueDef::Halved(halved) => static_stat_value(halved.value),
         _ => false,
