@@ -2,12 +2,12 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, CardArt, CardComposition, CardEffectStatus, CardPart, CardRules,
-    CardSet, CardStructure, CardSupertype, CardType, DamageEventMatcherDef, DamageKindDef,
-    DamageRecipientMatcherDef, DamageSourceMatcherDef, DoubleFacedKind, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef, PlayOptionDef, PlayerRelation,
-    ResolvedEffectDurationDef, SpellForm, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
-    abilities, cards,
+    AbilityCostDef, AbilityDef, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, CardArt,
+    CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype,
+    CardType, CounterKind, DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef,
+    DamageSourceMatcherDef, DoubleFacedKind, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectRefDef, PlayOptionDef, PlayerRelation, ResolvedEffectDurationDef,
+    SpellForm, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::{CardPartId, PlayOptionId, mana_cost};
 
@@ -173,6 +173,62 @@ pub(in crate::card::sets) static TIFA_LOCKHART: CardRecord = CardRecord::new(
         .with_abilities(&TIFA_DOUBLES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&CECIL_DARK_KNIGHT, &TIFA_LOCKHART];
+/// "Add X mana in any combination of {U} and/or {R}" divides one amount
+/// across two types, so the runtime offers the ability once per division.
+/// Vivi enters with no power at all, so the first activation worth making
+/// comes after a noncreature spell has grown it.
+static VIVI_MANA: AddManaEffectDef =
+    AddManaEffectDef::combination(&VIVI_COLORS, 0).with_variable_amount(ValueDef::SourcePower);
+
+static VIVI_COLORS: [ManaColor; 2] = [ManaColor::Blue, ManaColor::Red];
+
+static VIVI_COST: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{0}"))];
+
+/// The counter and the damage are one clause, and the counter comes first --
+/// so a Vivi that has just been cast at is already bigger by the time its own
+/// mana ability is next offered.
+static VIVI_PAYOFF: [EffectDef; 2] = [
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Opponent,
+        amount: ValueDef::Constant(1),
+    },
+];
+
+static VIVI_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::activated_mana(
+        "{0}: Add X mana in any combination of {U} and/or {R}, where X is this creature's power. Activate only during your turn and only once each turn.",
+        &VIVI_COST,
+        EffectDef::AddMana(VIVI_MANA),
+    )
+    .with_activation_timing(ActivationTimingDef::YourTurn)
+    .activations_each_turn(1),
+    AbilityDef::triggered(
+        "Whenever you cast a noncreature spell, put a +1/+1 counter on this creature and it deals 1 damage to each opponent.",
+        TriggerEventDef::SpellCast(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::NoncreatureSpell,
+            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+        ])),
+        EffectDef::Sequence(&VIVI_PAYOFF),
+    ),
+];
+
+// FIN 248 — Vivi Ornitier
+pub(in crate::card::sets) static VIVI_ORNITIER: CardRecord = CardRecord::new(
+    cards::VIVI_ORNITIER,
+    "Vivi Ornitier",
+    CardArt::new("ecc1027a-8c07-44a0-bdde-fa2844cff694", "Toni Infante"),
+    CardSet::FinalFantasy,
+    CardRules::new_creature(mana_cost!("{1}{U}{R}"), &["Wizard"], 0, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&VIVI_ABILITIES),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&CECIL_DARK_KNIGHT, &TIFA_LOCKHART, &VIVI_ORNITIER];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

@@ -42,6 +42,7 @@ fn activate(game: &mut Game, player: PlayerId, source: GameObjectId) {
             color,
             counters_removed: None,
             cost_object: None,
+            combination: None,
         },
     )
     .expect("the mana ability activates");
@@ -150,6 +151,7 @@ fn implements_of_sacrifice_offers_each_color_twice_over() {
             color: ManaColor::Black,
             counters_removed: None,
             cost_object: None,
+            combination: None,
         },
     )
     .expect("the mana ability activates");
@@ -214,6 +216,7 @@ fn standing_stones_spends_mana_a_tap_and_a_life() {
             color: ManaColor::Blue,
             counters_removed: None,
             cost_object: None,
+            combination: None,
         },
     )
     .expect("the mana ability activates");

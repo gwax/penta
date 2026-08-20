@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-use crate::card::BasicLandType;
+use crate::card::{BasicLandType, ManaSplit};
 use crate::casting::{CastChoices, TargetSelection};
 use crate::{
     AbilityId, CardDefinitionId, CardPartId, GameObjectId, GrantId, PlayOptionId, PlayerId,
@@ -108,6 +108,13 @@ pub enum Action {
         /// which to ask afterwards. `None` for every ability that sacrifices
         /// nothing but itself.
         cost_object: Option<GameObjectId>,
+        /// How the amount is divided, for an ability that adds mana "in any
+        /// combination of" more than one type. Source, ability, and colour
+        /// name one such ability once per division, so the division is part
+        /// of the action: like the two choices above, a mana ability resolves
+        /// without ever holding priority. `None` for every ability that
+        /// produces one type at a time.
+        combination: Option<ManaSplit>,
     },
     PayLifeForMana,
     CastSpell {

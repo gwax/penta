@@ -10,6 +10,7 @@ fn human_main_one_stops_even_when_only_mana_actions_are_available() {
             color: penta::ManaColor::Red,
             counters_removed: None,
             cost_object: None,
+            combination: None,
         },
         Action::PassPriority,
     ];
@@ -126,6 +127,7 @@ fn second_main_waits_for_spells_lands_and_non_mana_abilities() {
             color: penta::ManaColor::Red,
             counters_removed: None,
             cost_object: None,
+            combination: None,
         },
         Action::PassPriority,
     ];

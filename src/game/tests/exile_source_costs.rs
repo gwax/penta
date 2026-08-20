@@ -108,6 +108,7 @@ fn a_mana_ability_can_exile_its_source_and_pay_life() {
         color: ManaColor::Colorless,
         counters_removed: None,
         cost_object: None,
+        combination: None,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));
 

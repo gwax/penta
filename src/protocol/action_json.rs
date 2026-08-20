@@ -44,6 +44,7 @@ pub fn action_json(action: &Action) -> Value {
             color,
             counters_removed,
             cost_object,
+            combination,
         } => {
             let mut action = json!({
                 "type": "ActivateManaAbility",
@@ -61,6 +62,24 @@ pub fn action_json(action: &Action) -> Value {
             // some other permanent.
             if let Some(sacrificed) = cost_object {
                 action["costObject"] = json!(sacrificed.0);
+            }
+            // Likewise optional, and present only for an ability that adds
+            // mana "in any combination of" more than one type. Types the
+            // division produces none of are left out, and `color` names its
+            // first entry, so a bot that reads only `color` still sees a
+            // colour it will receive.
+            if let Some(division) = combination {
+                action["combination"] = Value::Object(
+                    division
+                        .iter()
+                        .map(|(color, amount)| {
+                            (
+                                super::json_common::mana_color_name(color).to_owned(),
+                                json!(amount),
+                            )
+                        })
+                        .collect(),
+                );
             }
             action
         }

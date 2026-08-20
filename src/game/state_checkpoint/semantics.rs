@@ -610,7 +610,8 @@ fn mana_effect_matches(effect: AddManaEffectDef, mana: Mana) -> bool {
         && effect.spend_effects == mana.spend_effects
         && match effect.mana {
             crate::card::ManaSelectionDef::One(color) => color == mana.color,
-            crate::card::ManaSelectionDef::Choice(colors) => colors.contains(&mana.color),
+            crate::card::ManaSelectionDef::Choice(colors)
+            | crate::card::ManaSelectionDef::Combination(colors) => colors.contains(&mana.color),
         }
 }
 

@@ -1,5 +1,5 @@
 use crate::action::{AbilityOrigin, ManaColor};
-use crate::card::{AbilityCostList, AddManaEffectDef, AppliedEffectDef, SpellForm};
+use crate::card::{AbilityCostList, AddManaEffectDef, AppliedEffectDef, ManaSplit, SpellForm};
 use crate::ids::{CardDefinitionId, GameObjectId, PlayerId};
 
 use super::{ManaPool, ManaSource};
@@ -36,6 +36,16 @@ pub(super) enum ManaPaymentPurpose {
     Other,
 }
 
+/// The choices that distinguish otherwise identical activations of one mana
+/// ability. A mana ability resolves without ever holding priority, so each is
+/// enumerated into the activation rather than asked afterwards.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(super) struct ManaActivationChoices {
+    pub(super) counters_removed: Option<u16>,
+    pub(super) cost_object: Option<GameObjectId>,
+    pub(super) combination: Option<ManaSplit>,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct ManaAbilityActivation {
     pub(super) source: GameObjectId,
@@ -54,20 +64,30 @@ pub(super) struct ManaAbilityActivation {
     /// asked afterwards -- a mana ability has no window in which to ask.
     /// `None` for every ability that sacrifices nothing but itself.
     pub(super) cost_object: Option<GameObjectId>,
+    /// How the amount is divided, for "add three mana in any combination of
+    /// {U} and/or {R}". Each division is its own activation for the same
+    /// reason the counter size above is: there is no window in which to ask.
+    /// `None` for every ability that produces one type at a time, which is
+    /// nearly all of them; `color` then carries the type by itself.
+    pub(super) combination: Option<ManaSplit>,
 }
 
 /// One enumerated output of a mana source: the ability, the colour, what it
-/// produces, whether that mana helps the payment at hand, and the two choices
-/// that distinguish otherwise identical activations -- the counter size and
-/// the sacrificed permanent.
-pub(super) type ManaSourceOutputs = Vec<(
-    AbilityOrigin,
-    ManaColor,
-    ManaPool,
-    bool,
-    Option<u16>,
-    Option<GameObjectId>,
-)>;
+/// produces, whether that mana helps the payment at hand, and the three
+/// choices that distinguish otherwise identical activations -- the counter
+/// size, the sacrificed permanent, and the division of a combined amount.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct ManaSourceOutput {
+    pub(super) ability: AbilityOrigin,
+    pub(super) color: ManaColor,
+    pub(super) production: ManaPool,
+    pub(super) benefits_payment: bool,
+    pub(super) counters_removed: Option<u16>,
+    pub(super) cost_object: Option<GameObjectId>,
+    pub(super) combination: Option<ManaSplit>,
+}
+
+pub(super) type ManaSourceOutputs = Vec<ManaSourceOutput>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct PlannedManaActivation {
@@ -84,6 +104,9 @@ pub(super) struct PlannedManaActivation {
     /// Which permanent this plan sacrifices, for a source that offers
     /// several. `None` for every ability that sacrifices nothing but itself.
     pub(super) cost_object: Option<GameObjectId>,
+    /// Which division of a combined amount this plan means. `None` for every
+    /// ability that produces one type at a time.
+    pub(super) combination: Option<ManaSplit>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

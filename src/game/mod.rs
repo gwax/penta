@@ -153,8 +153,8 @@ use decision_state::{
     SearchFollowUp, ZoneMoveCause,
 };
 use mana_state::{
-    AppliedStackEffect, FlexibleManaSource, ManaAbilityActivation, ManaPaymentPurpose,
-    ManaSourceOutputs, PlannedManaActivation,
+    AppliedStackEffect, FlexibleManaSource, ManaAbilityActivation, ManaActivationChoices,
+    ManaPaymentPurpose, ManaSourceOutput, ManaSourceOutputs, PlannedManaActivation,
 };
 use procedure_state::{DrawReplacement, PendingProcedure};
 use replacement_state::{

@@ -485,10 +485,18 @@ impl AbilityDef {
     /// carries an activation window.
     #[must_use]
     pub const fn with_activation_timing(mut self, timing: ActivationTimingDef) -> Self {
-        let DeclarativeAbilityDef::Activated(definition) = self.definition else {
-            panic!("only an activated ability has an activation window");
+        self.definition = match self.definition {
+            DeclarativeAbilityDef::Activated(definition) => {
+                DeclarativeAbilityDef::Activated(definition.with_timing(timing))
+            }
+            // A mana ability is enumerated elsewhere but is an activated
+            // ability all the same, and "activate only during your turn" is
+            // printed on some of them.
+            DeclarativeAbilityDef::ActivatedMana(definition) => {
+                DeclarativeAbilityDef::ActivatedMana(definition.with_timing(timing))
+            }
+            _ => panic!("only an activated ability has an activation window"),
         };
-        self.definition = DeclarativeAbilityDef::Activated(definition.with_timing(timing));
         self
     }
 
@@ -591,10 +599,15 @@ impl AbilityDef {
     /// Panics if the clause is not an activated ability.
     #[must_use]
     pub const fn activations_each_turn(mut self, limit: u8) -> Self {
-        let DeclarativeAbilityDef::Activated(definition) = self.definition else {
-            panic!("only an activated ability can be capped per turn");
+        self.definition = match self.definition {
+            DeclarativeAbilityDef::Activated(definition) => {
+                DeclarativeAbilityDef::Activated(definition.with_activation_limit(limit))
+            }
+            DeclarativeAbilityDef::ActivatedMana(definition) => {
+                DeclarativeAbilityDef::ActivatedMana(definition.with_activation_limit(limit))
+            }
+            _ => panic!("only an activated ability can be capped per turn"),
         };
-        self.definition = DeclarativeAbilityDef::Activated(definition.with_activation_limit(limit));
         self
     }
 

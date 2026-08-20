@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 158 are cataloged and 376 are not
+- 534 cards in the pool, of which 159 are cataloged and 375 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -288,7 +288,7 @@ lands are legal in every format and are not listed.
 - `Woodfall Primus`
 - `Worldspine Wurm`
 
-### Multicolor (53)
+### Multicolor (52)
 
 - `Ajani, Nacatl Pariah`
 - `Arwen, Mortal Queen`
@@ -338,7 +338,6 @@ lands are legal in every format and are not listed.
 - `Thopter Foundry`
 - `Torsten, Founder of Benalia`
 - `Uro, Titan of Nature's Wrath`
-- `Vivi Ornitier`
 - `Wight of the Reliquary`
 - `Witherbloom Apprentice`
 - `Wrenn and Six`
@@ -435,7 +434,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 158 pool cards are in the catalog because an earlier format needed them.
+These 159 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -586,6 +585,7 @@ been played beside.
 - `Vampiric Tutor`
 - `Verdant Catacombs`
 - `Vindicate`
+- `Vivi Ornitier`
 - `Volcanic Island`
 - `Wasteland`
 - `Watery Grave`

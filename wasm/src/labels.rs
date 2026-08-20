@@ -433,8 +433,24 @@ impl WebGame {
                 source,
                 color,
                 cost_object,
+                combination,
                 ..
             } => {
+                // "Add three in any combination" is offered once per
+                // division, and `color` names only the first type each one
+                // produces -- so the division is what the label has to name,
+                // or the choices read as duplicates.
+                if let Some(division) = combination {
+                    return format!(
+                        "Activate {} for {} mana",
+                        self.instance_name(observation, *source),
+                        division
+                            .iter()
+                            .map(|(color, amount)| format!("{amount} {}", readable_debug(color)))
+                            .collect::<Vec<_>>()
+                            .join(" and ")
+                    );
+                }
                 // An ability that sacrifices some other permanent is offered
                 // once per candidate, and the source and colour are the same
                 // every time -- so the sacrifice is what the label has to

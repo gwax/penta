@@ -103,6 +103,7 @@ fn a_counter_only_mana_ability_is_offered_and_pays_its_counter_cost() {
         color: ManaColor::Colorless,
         counters_removed: None,
         cost_object: None,
+        combination: None,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));
 

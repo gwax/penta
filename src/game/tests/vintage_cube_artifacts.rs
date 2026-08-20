@@ -87,6 +87,7 @@ fn the_monolith_makes_three_and_stays_tapped_until_it_is_bought_back() {
             color: ManaColor::Colorless,
             counters_removed: None,
             cost_object: None,
+            combination: None,
         },
     )
     .expect("it taps for mana");

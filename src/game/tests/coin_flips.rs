@@ -316,6 +316,7 @@ fn mana_crypt_taps_for_two_colorless() {
             color: ManaColor::Colorless,
             counters_removed: None,
             cost_object: None,
+            combination: None,
         },
     )
     .expect("it taps for mana");

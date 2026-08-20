@@ -17,6 +17,7 @@ fn tap_for(game: &mut Game, player: PlayerId, land: GameObjectId, color: ManaCol
         color,
         counters_removed: None,
         cost_object: None,
+        combination: None,
     };
     game.apply(player, action).expect("the land taps for mana");
 }

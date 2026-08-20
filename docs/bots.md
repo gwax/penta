@@ -471,9 +471,15 @@ resolves immediately because mana abilities never use the stack. It also
 carries an optional `countersRemoved` when, and only when, the ability's cost
 removes an open-ended number of counters: source, origin, and colour name the
 storage lands' ability once per size it could be paid at, so that number is
-what tells the offers apart. Every other mana ability omits the key. The engine
-does not infer that classification merely because an effect happens to produce
-mana.
+what tells the offers apart. Every other mana ability omits the key. It
+likewise carries an optional `combination` when, and only when, the ability
+adds mana "in any combination of" more than one type: an object mapping colour
+name to count, listing only the types that division actually produces. Source,
+origin, and colour name such an ability once per division, and `color` is the
+first type the division produces, so a bot that reads only `color` still sees
+a colour it will receive. Every other mana ability omits the key. The engine
+does not infer either classification merely because an effect happens to
+produce mana.
 
 Targets are tagged objects: a player is `{type: "player", seat}`, a card or
 permanent has an `objectId`, and a spell has its stack `objectId`. Legacy

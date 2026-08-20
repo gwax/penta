@@ -920,7 +920,7 @@ impl Game {
             }
             EffectDef::None
             | EffectDef::AddMana(AddManaEffectDef {
-                mana: ManaSelectionDef::Choice(_),
+                mana: ManaSelectionDef::Choice(_) | ManaSelectionDef::Combination(_),
                 ..
             })
             | EffectDef::CannotBeForcedToSacrifice

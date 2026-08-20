@@ -656,8 +656,7 @@ fn city_of_brass_produces_any_color_then_uses_the_stack_for_damage() {
         CardInstanceId(10_000),
         ability,
         ManaColor::Blue,
-        None,
-        None,
+        ManaActivationChoices::default(),
     );
 
     assert_eq!(game.players[0].mana_pool.blue, 1);

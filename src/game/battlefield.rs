@@ -751,7 +751,7 @@ impl Game {
                 player,
                 activation,
                 produced_mana,
-            } => self.complete_mana_ability(player, activation, produced_mana),
+            } => self.complete_mana_ability(player, &activation, produced_mana),
         }
     }
 

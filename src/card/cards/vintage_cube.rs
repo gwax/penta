@@ -76,3 +76,4 @@ pub const SNUFF_OUT: CardDefinitionId = CardDefinitionId(2158);
 pub const UNHOLY_HEAT: CardDefinitionId = CardDefinitionId(2159);
 pub const JACE_WIELDER_OF_MYSTERIES: CardDefinitionId = CardDefinitionId(2160);
 pub const DEEP_CAVERN_BAT: CardDefinitionId = CardDefinitionId(2161);
+pub const VIVI_ORNITIER: CardDefinitionId = CardDefinitionId(2162);

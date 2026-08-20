@@ -24,6 +24,7 @@ fn the_halflings_colored_mana_only_pays_for_legendary_spells() {
                 color: ManaColor::Green,
                 counters_removed: None,
                 cost_object: None,
+                combination: None,
             },
         )
         .expect("it taps for a colour");
@@ -63,6 +64,7 @@ fn a_legendary_spell_paid_with_halfling_mana_cannot_be_countered() {
             color: ManaColor::Green,
             counters_removed: None,
             cost_object: None,
+            combination: None,
         },
     )
     .expect("it taps for green");
@@ -133,6 +135,7 @@ fn the_halflings_colorless_mana_is_ordinary() {
             color: ManaColor::Colorless,
             counters_removed: None,
             cost_object: None,
+            combination: None,
         },
     )
     .expect("it taps for colourless");
@@ -173,6 +176,7 @@ fn mana_confluence_charges_a_life_as_a_cost_of_its_own_ability() {
                 color,
                 counters_removed: None,
                 cost_object: None,
+                combination: None,
             },
         )
         .unwrap_or_else(|error| panic!("it makes {color:?}: {error}"));
@@ -204,4 +208,134 @@ fn mana_confluence_costs_nothing_when_something_else_taps_it() {
 
     assert_eq!(game.players[PlayerId::One.index()].life, 20);
     assert_eq!(game.players[PlayerId::One.index()].mana_pool.total(), 0);
+}
+
+/// "Add X mana in any combination of {U} and/or {R}" is offered once per
+/// division of X, not once per colour: a Vivi with two power can make two
+/// blue, two red, or one of each.
+#[test]
+fn vivi_offers_every_division_of_its_power() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mut vivi = creature(75_000, cards::VIVI_ORNITIER, PlayerId::One);
+    vivi.add_counters(CounterKind::PlusOnePlusOne, 2);
+    let vivi_id = vivi.card.id;
+    game.battlefield.push(vivi);
+
+    let divisions = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility {
+                source,
+                combination: Some(division),
+                ..
+            } if source == vivi_id => {
+                Some((division.get(ManaColor::Blue), division.get(ManaColor::Red)))
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(divisions, vec![(0, 2), (1, 1), (2, 0)]);
+}
+
+/// The division the action names is the mana the pool receives, so one blue
+/// and one red pays a cost that neither two blue nor two red could.
+#[test]
+fn vivi_pays_a_two_colored_cost_with_one_activation() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mut vivi = creature(75_010, cards::VIVI_ORNITIER, PlayerId::One);
+    vivi.add_counters(CounterKind::PlusOnePlusOne, 2);
+    let vivi_id = vivi.card.id;
+    game.battlefield.push(vivi);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateManaAbility { source, combination: Some(division), .. }
+                    if *source == vivi_id
+                        && division.get(ManaColor::Blue) == 1
+                        && division.get(ManaColor::Red) == 1
+            )
+        })
+        .expect("one of each is a division of two");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[0].mana_pool.blue, 1);
+    assert_eq!(game.players[0].mana_pool.red, 1);
+}
+
+/// "Activate only during your turn and only once each turn" gates a mana
+/// ability the way it gates any other, even though mana abilities are
+/// enumerated on their own path.
+#[test]
+fn vivi_makes_mana_once_a_turn_and_only_on_its_own() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mut vivi = creature(75_020, cards::VIVI_ORNITIER, PlayerId::One);
+    vivi.add_counters(CounterKind::PlusOnePlusOne, 1);
+    let vivi_id = vivi.card.id;
+    game.battlefield.push(vivi);
+
+    let offers = |game: &Game, player| {
+        game.legal_actions(player)
+            .into_iter()
+            .any(|action| matches!(action, Action::ActivateManaAbility { source, .. } if source == vivi_id))
+    };
+
+    assert!(
+        offers(&game, PlayerId::One),
+        "its controller's turn is open"
+    );
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateManaAbility { source, .. } if *source == vivi_id))
+        .expect("the ability is offered");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    drain_pending(&mut game);
+    assert!(!offers(&game, PlayerId::One), "once each turn means once");
+
+    game.active_player = PlayerId::Two;
+    assert!(
+        !offers(&game, PlayerId::One),
+        "the window closes on the opponent's turn"
+    );
+}
+
+/// The trigger grows Vivi before it burns, so the mana ability the same turn
+/// reads the larger power.
+#[test]
+fn vivi_grows_and_burns_on_a_noncreature_spell() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let vivi = creature(75_030, cards::VIVI_ORNITIER, PlayerId::One);
+    let vivi_id = vivi.card.id;
+    game.battlefield.push(vivi);
+    game.players[0]
+        .hand
+        .push(card(75_031, cards::LIGHTNING_BOLT, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { .. }))
+        .expect("the Bolt is castable");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    drain_pending(&mut game);
+
+    let vivi = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == vivi_id)
+        .expect("Vivi survives its own trigger");
+    assert_eq!(vivi.counters(CounterKind::PlusOnePlusOne), 1);
+    assert!(game.players[1].life < 20, "the opponent takes the damage");
 }

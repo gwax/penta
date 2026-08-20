@@ -227,7 +227,14 @@ impl BasicLandType {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ManaSelectionDef {
     One(ManaColor),
+    /// One colour picked from a list, with the whole amount in that colour.
+    /// A dual land offers "add {W} or {U}", not a mixture.
     Choice(&'static [ManaColor]),
+    /// Every unit chosen independently from a list, which is what "in any
+    /// combination of" means. Each way of splitting the amount is a separate
+    /// activation, the way a counter size or a sacrificed permanent already
+    /// is: a mana ability has no window in which to ask afterwards.
+    Combination(&'static [ManaColor]),
 }
 
 /// A restriction carried by produced mana until that mana is spent.
@@ -317,6 +324,23 @@ impl AddManaEffectDef {
         let mut effect = Self::one(first);
         effect.also = Some(second);
         effect
+    }
+
+    /// "Add X mana in any combination of these colours."
+    #[must_use]
+    pub const fn combination(mana: &'static [ManaColor], amount: u16) -> Self {
+        Self {
+            mana: ManaSelectionDef::Combination(mana),
+            amount,
+            also: None,
+            restrictions: &[],
+            spend_effects: &[],
+            damage_to_controller: 0,
+            recipient: PlayerRefDef::EffectController,
+            variable_amount: None,
+            amount_override: None,
+            sacrifice_source_when_out_of: None,
+        }
     }
 
     #[must_use]

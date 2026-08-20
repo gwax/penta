@@ -5,9 +5,10 @@ use super::{
     AppliedEffectDef, CardBehavior, CardDefinitionId, CardInstance, CardType,
     CharacteristicContext, CharacteristicOperationDef, CostConfiguration, DeclarativeAbilityDef,
     EffectDef, EffectRecipientDef, FlexibleManaSource, Game, GameObjectId, HybridPair,
-    ManaAbilityActivation, ManaColor, ManaCost, ManaPaymentPurpose, ManaPool, ManaSourceOutputs,
-    Permanent, PlannedManaActivation, PlayActionKind, PlayOptionDef, PlayerId, SetOperationDef,
-    TriggerContext, ValueDef, ZoneKind, extra_target_cost,
+    ManaAbilityActivation, ManaActivationChoices, ManaColor, ManaCost, ManaPaymentPurpose,
+    ManaPool, ManaSourceOutput, ManaSourceOutputs, Permanent, PlannedManaActivation,
+    PlayActionKind, PlayOptionDef, PlayerId, SetOperationDef, TriggerContext, ValueDef, ZoneKind,
+    extra_target_cost,
 };
 
 impl Game {
@@ -303,9 +304,7 @@ impl Game {
         spare.total() >= cost.generic
     }
 
-    /// One planning tuple per enumerated activation. The last two members
-    /// are the choices that distinguish otherwise identical activations of
-    /// one source: the counter size and the sacrificed permanent.
+    /// One planning record per enumerated activation.
     fn planned_outputs(
         activations: &[ManaAbilityActivation],
         purpose: &ManaPaymentPurpose,
@@ -313,17 +312,18 @@ impl Game {
         activations
             .iter()
             .map(|activation| {
-                let benefits_payment = Self::mana_for_activation(*activation)
+                let benefits_payment = Self::mana_for_activation(activation)
                     .first()
                     .is_some_and(|mana| Self::mana_has_spend_effect_for(*mana, purpose));
-                (
-                    activation.ability,
-                    activation.color,
-                    Self::mana_production(*activation),
+                ManaSourceOutput {
+                    ability: activation.ability,
+                    color: activation.color,
+                    production: Self::mana_production(activation),
                     benefits_payment,
-                    activation.counters_removed,
-                    activation.cost_object,
-                )
+                    counters_removed: activation.counters_removed,
+                    cost_object: activation.cost_object,
+                    combination: activation.combination,
+                }
             })
             .collect()
     }
@@ -386,7 +386,7 @@ impl Game {
                         .costs
                         .iter()
                         .any(|cost| matches!(cost, AbilityCostDef::Mana(_)));
-                    Self::mana_for_activation(*activation)
+                    Self::mana_for_activation(activation)
                         .first()
                         .is_some_and(|mana| self.mana_can_pay_for(*mana, purpose))
                         && preserves_required_source
@@ -397,10 +397,10 @@ impl Game {
             // benefits this payment. Players can still manually choose a
             // different mana ability before casting.
             activations.sort_by_key(|activation| {
-                let benefits_payment = Self::mana_for_activation(*activation)
+                let benefits_payment = Self::mana_for_activation(activation)
                     .first()
                     .is_some_and(|mana| Self::mana_has_spend_effect_for(*mana, purpose));
-                let production = Self::mana_production(*activation);
+                let production = Self::mana_production(activation);
                 let pays_colored_symbol = colored_mana().into_iter().any(|color| {
                     production.amount(color) > 0
                         && (mana_cost_amount(cost, color) > 0 || hybrid_pays_with(cost, color))
@@ -410,18 +410,19 @@ impl Game {
             let outputs = Self::planned_outputs(&activations, purpose);
             match outputs.as_slice() {
                 [] => {}
-                [(ability, color, production, benefits_payment, counters_removed, cost_object)] => {
-                    pool.add(*production);
+                [output] => {
+                    pool.add(output.production);
                     assigned.push(PlannedManaActivation {
                         source: permanent.card.id,
-                        ability: *ability,
-                        color: *color,
-                        production: *production,
-                        benefits_payment: *benefits_payment,
+                        ability: output.ability,
+                        color: output.color,
+                        production: output.production,
+                        benefits_payment: output.benefits_payment,
                         flexibility: 1,
                         order,
-                        counters_removed: *counters_removed,
-                        cost_object: *cost_object,
+                        counters_removed: output.counters_removed,
+                        cost_object: output.cost_object,
+                        combination: output.combination,
                     });
                 }
                 _ => flexible.push(FlexibleManaSource {
@@ -595,7 +596,7 @@ impl Game {
                     .filter_map(|permanent| {
                         self.mana_ability_activations(permanent)
                             .into_iter()
-                            .map(Self::mana_production)
+                            .map(|activation| Self::mana_production(&activation))
                             .max_by_key(|production| production.total())
                     })
                     .map(ManaPool::total)
@@ -650,8 +651,11 @@ impl Game {
                 activation.source,
                 activation.ability,
                 activation.color,
-                activation.counters_removed,
-                activation.cost_object,
+                ManaActivationChoices {
+                    counters_removed: activation.counters_removed,
+                    cost_object: activation.cost_object,
+                    combination: activation.combination,
+                },
             );
         }
     }
@@ -744,7 +748,7 @@ pub(super) fn assign_flexible_mana_outputs(
             source
                 .outputs
                 .iter()
-                .map(|(_, _, output, _, _, _)| output.total())
+                .map(|output| output.production.total())
                 .max()
         })
         .fold(pool.total(), u16::saturating_add);
@@ -758,20 +762,20 @@ pub(super) fn assign_flexible_mana_outputs(
     let Some(source) = sources.get(index) else {
         return can_pay(pool, cost, x);
     };
-    for (ability, color, output, benefits_payment, counters_removed, cost_object) in &source.outputs
-    {
+    for output in &source.outputs {
         let mut next = pool;
-        next.add(*output);
+        next.add(output.production);
         assignment.push(PlannedManaActivation {
             source: source.source,
-            ability: *ability,
-            color: *color,
-            production: *output,
-            benefits_payment: *benefits_payment,
+            ability: output.ability,
+            color: output.color,
+            production: output.production,
+            benefits_payment: output.benefits_payment,
             flexibility: source.outputs.len(),
             order: source.order,
-            counters_removed: *counters_removed,
-            cost_object: *cost_object,
+            counters_removed: output.counters_removed,
+            cost_object: output.cost_object,
+            combination: output.combination,
         });
         if assign_flexible_mana_outputs(sources, index + 1, next, cost, x, assignment) {
             return true;

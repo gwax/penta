@@ -16,6 +16,7 @@ fn trigger_placement_preserves_the_nonactive_players_priority() {
             color: ManaColor::Blue,
             counters_removed: None,
             cost_object: None,
+            combination: None,
         },
     )
     .unwrap();
@@ -117,6 +118,7 @@ fn city_trigger_can_be_answered_when_mana_was_floated_first() {
             color: ManaColor::Red,
             counters_removed: None,
             cost_object: None,
+            combination: None,
         },
     )
     .unwrap();
@@ -467,6 +469,7 @@ fn workshop_mana_is_three_individual_values_restricted_to_artifact_spells() {
             color: ManaColor::Colorless,
             counters_removed: None,
             cost_object: None,
+            combination: None,
         },
     )
     .unwrap();

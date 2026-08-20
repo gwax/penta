@@ -11,6 +11,7 @@ fn mana_actions_publish_their_choices_only_when_there_is_one() {
         color: ManaColor::Red,
         counters_removed: None,
         cost_object: None,
+        combination: None,
     });
     assert!(plain.get("countersRemoved").is_none());
     assert!(
@@ -24,6 +25,7 @@ fn mana_actions_publish_their_choices_only_when_there_is_one() {
         color: ManaColor::Red,
         counters_removed: Some(2),
         cost_object: Some(GameObjectId(14)),
+        combination: None,
     });
     assert_eq!(sacrificing["countersRemoved"], 2);
     assert_eq!(
@@ -40,6 +42,7 @@ fn activated_actions_serialize_their_exact_ability_origin() {
         color: ManaColor::Red,
         counters_removed: None,
         cost_object: None,
+        combination: None,
     });
     assert_eq!(mana["ability"]["kind"], "intrinsicBasicLand");
     assert_eq!(mana["ability"]["landType"], "mountain");

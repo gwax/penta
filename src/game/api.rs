@@ -1,9 +1,9 @@
 use super::{
     AbilityDef, AbilityId, AbilityOrigin, Action, ActionError, CardBehavior, CardType,
     CharacteristicContext, CombatDamageStage, CounterKind, DecisionVisibility, EmblemObservation,
-    Game, GameEvent, GameObjectId, GameResult, KeywordAbility, ManaColor, Permanent,
-    PermanentObservation, PlayerId, PlayerObservation, Pregame, StackObservation, Step, WinReason,
-    ZoneKind, combinations, public_cards,
+    Game, GameEvent, GameObjectId, GameResult, KeywordAbility, ManaActivationChoices, ManaColor,
+    Permanent, PermanentObservation, PlayerId, PlayerObservation, Pregame, StackObservation, Step,
+    WinReason, ZoneKind, combinations, public_cards,
 };
 
 impl Game {
@@ -329,14 +329,18 @@ impl Game {
                 color,
                 counters_removed,
                 cost_object,
+                combination,
             } => {
                 self.activate_mana_source(
                     player,
                     source,
                     ability,
                     color,
-                    counters_removed,
-                    cost_object,
+                    ManaActivationChoices {
+                        counters_removed,
+                        cost_object,
+                        combination,
+                    },
                 );
             }
             Action::PayLifeForMana => {

@@ -157,6 +157,12 @@ impl Game {
     pub(super) fn mana_ability_value(&self, value: ValueDef, permanent: &Permanent) -> u16 {
         match value {
             ValueDef::CountersOnSource(kind) => permanent.counters(kind),
+            // "Where X is this creature's power" is read as the ability is
+            // offered, so a Vivi that has grown produces the larger amount
+            // and a negative power produces nothing at all.
+            ValueDef::SourcePower => self
+                .power(permanent)
+                .map_or(0, |power| u16::try_from(power.max(0)).unwrap_or(u16::MAX)),
             other => self.cost_reduction_value(other, permanent.controller, permanent.card.id),
         }
         // `cost_reduction_value` already answers constants and battlefield

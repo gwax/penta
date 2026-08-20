@@ -142,6 +142,23 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Mana "in any combination of" more than one type.** A mana ability that
+  divides one amount across several types is now offered once per division
+  rather than once per type, so Vivi Ornitier at two power can make two blue,
+  two red, or one of each. A mana ability resolves without ever holding
+  priority, so the division travels with the action the way a counter size
+  and a sacrificed permanent already do: `ActivateManaAbility` gained an
+  optional `combination` mapping colour name to count, present only for such
+  an ability, and `color` names the first type the division produces. An
+  optional member is additive, so the epoch does not move.
+
+  Two restrictions such an ability can print are now read on the mana path,
+  which enumerates its offers separately from every other activated ability:
+  "activate only during your turn" and "only once each turn". The second is
+  also what lets a mana ability whose only cost is mana be offered at all --
+  what an offered mana ability needs is a bound, and a printed per-turn cap
+  is one.
+
 - **Morph, and face-down permanents.** A card with morph may be cast face
   down for {3} as a 2/2 colourless creature with no name and no abilities
   (CR 708.2), and turned face up later by paying its morph cost. Turning it

@@ -251,7 +251,8 @@ pub(super) fn parse_mana(
                 .transpose()?;
             if payload.is_some_and(|payload| match payload.mana {
                 crate::card::ManaSelectionDef::One(expected) => expected != color,
-                crate::card::ManaSelectionDef::Choice(colors) => !colors.contains(&color),
+                crate::card::ManaSelectionDef::Choice(colors)
+                | crate::card::ManaSelectionDef::Combination(colors) => !colors.contains(&color),
             }) {
                 return Err("mana payload cannot produce its checkpoint color".into());
             }

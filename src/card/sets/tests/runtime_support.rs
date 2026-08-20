@@ -203,10 +203,25 @@ pub(super) fn shared_mana_effect(effect: EffectDef, choices_are_supported: bool)
     };
     let selection_is_supported = match mana.mana {
         ManaSelectionDef::One(_) => true,
-        ManaSelectionDef::Choice(colors) => choices_are_supported && !colors.is_empty(),
+        // Both selections offer a choice of type; a combination divides the
+        // amount across those types instead of picking one, and the runtime
+        // enumerates every division for the same reason it enumerates every
+        // colour.
+        ManaSelectionDef::Choice(colors) | ManaSelectionDef::Combination(colors) => {
+            choices_are_supported && !colors.is_empty()
+        }
     };
+    // "Where X is this creature's power" is resolved against the permanent
+    // as the ability is offered, exactly as the counted forms above are, so
+    // a printed amount of zero is the whole amount only when no value
+    // replaces it.
+    let amount_is_known = mana.amount > 0
+        || matches!(
+            mana.variable_amount,
+            Some(ValueDef::CountersOnSource(_) | ValueDef::SourcePower)
+        );
     selection_is_supported
-        && mana.amount > 0
+        && amount_is_known
         && mana
             .restrictions
             .iter()
@@ -544,18 +559,23 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             }
         }
         DeclarativeAbilityDef::ActivatedMana(definition) => {
-            fn spends_its_source(definition: ActivatedAbilityDef) -> bool {
-                definition.costs.iter().any(|cost| {
-                    matches!(
-                        cost,
-                        AbilityCostDef::TapSource
-                            | AbilityCostDef::SacrificeSource
-                            | AbilityCostDef::ExileSource
-                            // Sacrificing another permanent bounds the
-                            // ability the same way spending the source does.
-                            | AbilityCostDef::SacrificePermanent { .. }
-                    )
-                })
+            fn is_bounded(definition: ActivatedAbilityDef) -> bool {
+                // A printed "only once each turn" bounds the ability just as
+                // surely as a cost that spends the board does, which is what
+                // lets Vivi Ornitier's {0} be a cost at all.
+                definition.activation_limit.is_some()
+                    || definition.costs.iter().any(|cost| {
+                        matches!(
+                            cost,
+                            AbilityCostDef::TapSource
+                                | AbilityCostDef::SacrificeSource
+                                | AbilityCostDef::ExileSource
+                                // Sacrificing another permanent bounds the
+                                // ability the same way spending the source
+                                // does.
+                                | AbilityCostDef::SacrificePermanent { .. }
+                        )
+                    })
             }
 
             battlefield_only(definition.source_zones)
@@ -580,12 +600,12 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     ) || matches!(
                         cost,
                         // Mana is paid out of the pool, so the ability also
-                        // has to spend its source; hybrid and {X} would need
-                        // a choice the activation cannot carry.
+                        // has to be bounded some other way; hybrid and {X}
+                        // would need a choice the activation cannot carry.
                         AbilityCostDef::Mana(mana)
                             if !mana.variable_x
                                 && mana.hybrid.iter().all(|count| *count == 0)
-                                && spends_its_source(definition)
+                                && is_bounded(definition)
                     )
                 })
                 && definition

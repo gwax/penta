@@ -4,10 +4,11 @@ use super::{
     CardType, CardTypeSet, CastChoices, CastSignature, CastSourceZone, CommittedTriggerEvent,
     ControlFlow, DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility,
     DecisionZone, DeclarativeAbilityDef, EntryCompletion, Game, GameEvent, GameObjectId, Mana,
-    ManaColor, ManaCost, ManaPaymentPurpose, PendingBattlefieldEntry, Permanent, PlayActionKind,
-    PlayOptionDef, PlayOptionId, PlayRestriction, PlayerId, StackObject, StackObjectKind, Target,
-    TargetPredicate, TargetSlotDef, TargetSlotId, TriggerContext, ZoneKind, ZoneMoveCause,
-    ZonePlacement, add_generic, add_mana_cost, extra_target_cost, reduce_generic, remove_card,
+    ManaActivationChoices, ManaColor, ManaCost, ManaPaymentPurpose, PendingBattlefieldEntry,
+    Permanent, PlayActionKind, PlayOptionDef, PlayOptionId, PlayRestriction, PlayerId, StackObject,
+    StackObjectKind, Target, TargetPredicate, TargetSlotDef, TargetSlotId, TriggerContext,
+    ZoneKind, ZoneMoveCause, ZonePlacement, add_generic, add_mana_cost, extra_target_cost,
+    reduce_generic, remove_card,
 };
 use crate::card::{BattlefieldEntryScalarChoiceDef, CardSet, ScalarChoiceListDef, SpendModeDef};
 
@@ -218,24 +219,32 @@ impl Game {
         source: GameObjectId,
         ability: AbilityOrigin,
         color: ManaColor,
-        counters_removed: Option<u16>,
-        cost_object: Option<GameObjectId>,
+        choices: ManaActivationChoices,
     ) {
         let activation = self
             .battlefield
             .iter()
             .find(|permanent| permanent.card.id == source)
-            .and_then(|permanent| {
-                self.mana_ability_activation(
-                    permanent,
-                    ability,
-                    color,
-                    counters_removed,
-                    cost_object,
-                )
-            })
+            .and_then(|permanent| self.mana_ability_activation(permanent, ability, color, choices))
             .expect("legal mana action references a mana source");
-        let produced_mana = Self::mana_for_activation(activation);
+        let produced_mana = Self::mana_for_activation(&activation);
+        // Counted for the same reason an ordinary activation is: a printed
+        // "only once each turn" is read off this tally when the ability is
+        // next offered.
+        if let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == source)
+        {
+            match permanent
+                .activations_this_turn
+                .iter_mut()
+                .find(|(origin, _)| *origin == ability)
+            {
+                Some((_, count)) => *count = count.saturating_add(1),
+                None => permanent.activations_this_turn.push((ability, 1)),
+            }
+        }
         for cost in activation.costs.as_slice() {
             match cost {
                 AbilityCostDef::TapSource => {
@@ -308,7 +317,7 @@ impl Game {
                 return;
             }
         }
-        self.complete_mana_ability(player, activation, produced_mana);
+        self.complete_mana_ability(player, &activation, produced_mana);
     }
 
     /// Which alternative cast, if any, the chosen play option and paid costs
@@ -339,7 +348,7 @@ impl Game {
     pub(super) fn complete_mana_ability(
         &mut self,
         player: PlayerId,
-        activation: super::ManaAbilityActivation,
+        activation: &super::ManaAbilityActivation,
         produced_mana: Vec<Mana>,
     ) {
         self.add_mana(player, produced_mana);

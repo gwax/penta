@@ -162,7 +162,7 @@ fn every_catalog_mana_unit_that_needs_a_locator_has_one() {
 fn produced_mana(effect: AddManaEffectDef) -> Vec<Mana> {
     let colors = match effect.mana {
         ManaSelectionDef::One(color) => vec![color],
-        ManaSelectionDef::Choice(colors) => colors.to_vec(),
+        ManaSelectionDef::Choice(colors) | ManaSelectionDef::Combination(colors) => colors.to_vec(),
     };
     colors
         .into_iter()

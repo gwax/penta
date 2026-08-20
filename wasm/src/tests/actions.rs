@@ -110,6 +110,7 @@ fn a_sacrificing_mana_ability_names_what_it_eats() {
                 color: penta::ManaColor::Red,
                 counters_removed: None,
                 cost_object,
+                combination: None,
             },
         )
     };
@@ -501,6 +502,7 @@ fn ability_actions_expose_their_stable_origins() {
         color: penta::ManaColor::Red,
         counters_removed: None,
         cost_object: None,
+        combination: None,
     };
     assert_eq!(
         action_ability_origin(&mana_action),
