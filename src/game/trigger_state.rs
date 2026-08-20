@@ -236,6 +236,11 @@ pub(super) enum CommittedTriggerEvent {
     /// the hand -- a draw that was replaced never happened.
     DrewCard {
         player: PlayerId,
+        /// Whether this was the first card the player drew during their own
+        /// draw step. Orcish Bowmasters is the reason the event carries it:
+        /// nothing about the game state afterwards distinguishes the
+        /// turn-based draw from the one a Howling Mine added to it.
+        first_in_draw_step: bool,
     },
     /// An object became the target of a spell as that spell was cast. The
     /// object carried is the spell, so "that spell's controller" reads off
@@ -330,7 +335,7 @@ impl CommittedTriggerEvent {
             | Self::CommittedCrime { player }
             | Self::Discarded { player }
             | Self::BecameMonarch { player }
-            | Self::DrewCard { player } => TriggerContext {
+            | Self::DrewCard { player, .. } => TriggerContext {
                 object: None,
                 object_controller: None,
                 event_player: Some(*player),

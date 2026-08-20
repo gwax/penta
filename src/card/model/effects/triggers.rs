@@ -4,8 +4,9 @@
 
 use super::{
     AttackEventMatcherDef, DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef,
-    DamageSourceMatcherDef, EffectRecipientDef, ObjectPredicateDef, ObjectRefDef, PlayerRelation,
-    PlayerSetDef, TapEventMatcherDef, TurnStepDef, ZoneChangeEventMatcherDef, ZoneKind,
+    DamageSourceMatcherDef, DrawEventMatcherDef, EffectRecipientDef, ObjectPredicateDef,
+    ObjectRefDef, PlayerRelation, PlayerSetDef, TapEventMatcherDef, TurnStepDef,
+    ZoneChangeEventMatcherDef, ZoneKind,
 };
 
 /// The committed event observed by a triggered ability.
@@ -80,7 +81,7 @@ pub enum TriggerEventDef {
     LifeGained(PlayerRelation),
     /// A matching player drew a card. One trigger per card, so a spell that
     /// draws three fires this three times.
-    DrewCard(PlayerRelation),
+    DrewCard(DrawEventMatcherDef),
     /// A matching player became the monarch (CR 720). The crown passing
     /// from one player to another raises this once, for whoever received it.
     BecomesMonarch(PlayerRelation),

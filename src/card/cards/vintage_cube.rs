@@ -128,3 +128,5 @@ pub const SKELETON_TOKEN_4_1_BLACK: CardDefinitionId = CardDefinitionId(2210);
 pub const GUT_TRUE_SOUL_ZEALOT: CardDefinitionId = CardDefinitionId(2211);
 pub const THASSAS_ORACLE: CardDefinitionId = CardDefinitionId(2212);
 pub const BARROWGOYF: CardDefinitionId = CardDefinitionId(2213);
+pub const ORC_ARMY_TOKEN_0_0_BLACK: CardDefinitionId = CardDefinitionId(2214);
+pub const ORCISH_BOWMASTERS: CardDefinitionId = CardDefinitionId(2215);

@@ -492,6 +492,36 @@ pub enum TapPurposeDef {
     Mana,
 }
 
+/// A matcher over one card reaching a player's hand as a draw.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct DrawEventMatcherDef {
+    pub player: PlayerRelation,
+    /// Whether the card a player is handed at the start of their own draw
+    /// step is spared. Orcish Bowmasters prints "except the first one they
+    /// draw in each of their draw steps", which exempts the turn-based draw
+    /// and nothing else: a second card drawn in that same step is caught,
+    /// and so is every draw taken outside it.
+    pub except_first_in_draw_step: bool,
+}
+
+impl DrawEventMatcherDef {
+    #[must_use]
+    pub const fn any(player: PlayerRelation) -> Self {
+        Self {
+            player,
+            except_first_in_draw_step: false,
+        }
+    }
+
+    #[must_use]
+    pub const fn except_first_in_draw_step(player: PlayerRelation) -> Self {
+        Self {
+            player,
+            except_first_in_draw_step: true,
+        }
+    }
+}
+
 /// A matcher over one untapped-to-tapped transition.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TapEventMatcherDef {

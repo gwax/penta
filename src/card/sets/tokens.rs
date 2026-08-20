@@ -40,6 +40,18 @@ pub(in crate::card::sets) static GERM_TOKEN_0_0_BLACK: CardRecord = CardRecord::
         .printed_colors(&[ManaColor::Black]),
 );
 
+/// What amass makes when you control no Army yet. It arrives with no counters
+/// on it at all, so it is a creature that dies to state-based actions the
+/// moment the counters the amass promised fail to land.
+pub(in crate::card::sets) static ORC_ARMY_TOKEN_0_0_BLACK: CardRecord = CardRecord::new(
+    cards::ORC_ARMY_TOKEN_0_0_BLACK,
+    "Orc Army",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Orc", "Army"], 0, 0)
+        .printed_colors(&[ManaColor::Black]),
+);
+
 pub(in crate::card::sets) static BEAST_TOKEN_3_3_GREEN: CardRecord = CardRecord::new(
     cards::BEAST_TOKEN_3_3_GREEN,
     "Beast",
@@ -616,6 +628,7 @@ pub(in crate::card::sets) static NISSA_WHO_SHAKES_THE_WORLD_EMBLEM: CardRecord =
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FACE_DOWN_CREATURE,
     &GERM_TOKEN_0_0_BLACK,
+    &ORC_ARMY_TOKEN_0_0_BLACK,
     &BEAST_TOKEN_3_3_GREEN,
     &KNIGHT_TOKEN_2_2_WHITE,
     &SOLDIER_TOKEN_1_1_RED_WHITE,

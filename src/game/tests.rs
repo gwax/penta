@@ -790,6 +790,7 @@ mod vintage_cube_necromancy;
 mod vintage_cube_ninjutsu;
 mod vintage_cube_nissa;
 mod vintage_cube_oracle;
+mod vintage_cube_orcish_bowmasters;
 mod vintage_cube_path;
 mod vintage_cube_prismatic_ending;
 mod vintage_cube_relic;

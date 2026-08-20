@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, abilities,
-    cards,
+    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    DrawEventMatcherDef, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    TriggerEventDef, ValueDef, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -15,7 +15,7 @@ static SHEOLDRED_ABILITIES: [AbilityDef; 3] = [
     abilities::deathtouch(),
     AbilityDef::triggered(
         "Whenever you draw a card, you gain 2 life.",
-        TriggerEventDef::DrewCard(PlayerRelation::You),
+        TriggerEventDef::DrewCard(DrawEventMatcherDef::any(PlayerRelation::You)),
         EffectDef::GainLife {
             recipient: EffectRecipientDef::Controller,
             amount: ValueDef::Constant(2),
@@ -23,7 +23,7 @@ static SHEOLDRED_ABILITIES: [AbilityDef; 3] = [
     ),
     AbilityDef::triggered(
         "Whenever an opponent draws a card, they lose 2 life.",
-        TriggerEventDef::DrewCard(PlayerRelation::Opponent),
+        TriggerEventDef::DrewCard(DrawEventMatcherDef::any(PlayerRelation::Opponent)),
         EffectDef::LoseLife {
             recipient: EffectRecipientDef::EventPlayer,
             amount: ValueDef::Constant(2),

@@ -773,13 +773,28 @@ impl Game {
                 TriggerEventDef::DamageDealt(matcher),
                 damage @ CommittedTriggerEvent::DamageDealt { .. },
             ) => self.damage_trigger_matches(matcher, damage, source, controller),
+            (
+                TriggerEventDef::DrewCard(matcher),
+                CommittedTriggerEvent::DrewCard {
+                    player,
+                    first_in_draw_step,
+                },
+            ) => {
+                let controller = controller.unwrap_or(*player);
+                !(matcher.except_first_in_draw_step && *first_in_draw_step)
+                    && self.player_relation_matches(
+                        *player,
+                        matcher.player,
+                        controller,
+                        event.context(),
+                    )
+            }
             // Both name only the player the event happened to.
             (TriggerEventDef::Discarded(relation), CommittedTriggerEvent::Discarded { player })
             | (
                 TriggerEventDef::BecomesMonarch(relation),
                 CommittedTriggerEvent::BecameMonarch { player },
             )
-            | (TriggerEventDef::DrewCard(relation), CommittedTriggerEvent::DrewCard { player })
             | (
                 TriggerEventDef::CommittedCrime(relation),
                 CommittedTriggerEvent::CommittedCrime { player },

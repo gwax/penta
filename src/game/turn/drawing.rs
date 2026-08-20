@@ -6,7 +6,7 @@
 use super::super::{
     AlternativeCastKindDef, CardDefinitionId, CommittedTriggerEvent, DecisionContinuation,
     DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
-    Game, GameEvent, GameObjectId, GameResult, PendingProcedure, PlayerId, WinReason,
+    Game, GameEvent, GameObjectId, GameResult, PendingProcedure, PlayerId, Step, WinReason,
 };
 
 impl Game {
@@ -48,7 +48,18 @@ impl Game {
         }
         // Raised where the card actually reaches the hand: a draw that was
         // replaced above never happened, so nothing watching for one fires.
-        self.capture_battlefield_triggers(&CommittedTriggerEvent::DrewCard { player });
+        // Asked before the flag is set, so the draw that claims the
+        // exemption is the one that reports having it.
+        let first_in_draw_step = self.step == Step::Draw
+            && self.active_player == player
+            && !self.draw_step_draw_taken[player.index()];
+        if first_in_draw_step {
+            self.draw_step_draw_taken[player.index()] = true;
+        }
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::DrewCard {
+            player,
+            first_in_draw_step,
+        });
         Some(card_id)
     }
 

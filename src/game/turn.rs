@@ -261,6 +261,7 @@ impl Game {
         match self.step {
             Step::Upkeep => {
                 self.step = Step::Draw;
+                self.draw_step_draw_taken[self.active_player.index()] = false;
                 if !(self.turn == 1 && self.active_player == PlayerId::One) {
                     let _ = self.draw_card(self.active_player);
                     if !self.pending_decisions.is_empty() || !self.pending_events.is_empty() {

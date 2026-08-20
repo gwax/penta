@@ -2,15 +2,17 @@
 //! Vintage Cube pool.
 
 use super::{CardRecord, PrintingRecord};
-use crate::TargetIndex;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    ConditionDef, EffectDef, EffectRecipientDef, ManaColor, ManaRestrictionDef, ManaSpendEffectDef,
-    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, PlayerSetDef, TriggerEventDef, ValueDef,
-    ZoneKind, abilities, cards,
+    ChoiceVisibilityDef, ChooseDef, ComparisonDef, ConditionDef, CounterKind, CreatureTypeSetDef,
+    DrawEventMatcherDef, EffectDef, EffectRecipientDef, ManaColor, ManaRestrictionDef,
+    ManaSpendEffectDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::mana_cost;
+use crate::{ObjectSetBindingIndex, TargetIndex};
 
 static REPRIEVE_TARGET: [AbilityTargetDef; 1] =
     [AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)];
@@ -90,8 +92,108 @@ pub(in crate::card::sets) static STERN_SCOLDING: CardRecord = CardRecord::new(
     )),
 );
 
+static BOWMASTERS_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
+/// The enters clause and the draws clause are one printed ability with two
+/// ways to fire, not two abilities, so the damage and the amass are written
+/// once and both events reach them.
+static BOWMASTERS_EVENTS: [TriggerEventDef; 2] = [
+    TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Source,
+        None,
+        Some(ZoneKind::Battlefield),
+    ),
+    TriggerEventDef::DrewCard(DrawEventMatcherDef::except_first_in_draw_step(
+        PlayerRelation::Opponent,
+    )),
+];
+
+static AN_ARMY_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::controlled_by(
+    ObjectPredicateDef::Subtype("Army"),
+    &[ZoneKind::Battlefield],
+    PlayerSetDef::Related(PlayerRelation::You),
+);
+
+static NO_ARMY_YOU_CONTROL: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: AN_ARMY_YOU_CONTROL,
+    comparison: ComparisonDef::Equal,
+    amount: 0,
+};
+
+static AMASS_MAKES_AN_ARMY: EffectDef = EffectDef::CreateToken {
+    token: cards::ORC_ARMY_TOKEN_0_0_BLACK,
+    count: ValueDef::Constant(1),
+    tapped: false,
+    attacking: false,
+};
+
+static AMASSED_ARMY: ObjectSetBindingIndex = ObjectSetBindingIndex::PRIMARY;
+
+/// Amass chooses among the Armies you control, so the counter and the type
+/// both land on the same one -- and the type is added rather than set, which
+/// is what keeps an Army that was already something else both things.
+static AMASS_GROWS_THE_ARMY: EffectDef = EffectDef::Sequence(&[
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(AMASSED_ARMY)),
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::objects(ObjectSetDef::Binding(AMASSED_ARMY)),
+        effect: AppliedEffectDef::add_creature_types(CreatureTypeSetDef::named(&["Orc"])),
+        duration: ResolvedEffectDurationDef::Permanent,
+    },
+]);
+
+static BOWMASTERS_SHOOTS: [EffectDef; 3] = [
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(1),
+    },
+    // The token is made first so that the choice below always has something
+    // to find; with an Army already out, nothing new arrives.
+    EffectDef::IfCondition {
+        condition: &NO_ARMY_YOU_CONTROL,
+        then: &AMASS_MAKES_AN_ARMY,
+    },
+    EffectDef::Choose(ChooseDef {
+        binding: ObjectChoiceBindingDef::Objects(AMASSED_ARMY),
+        unchosen: None,
+        chooser: PlayerRefDef::EffectController,
+        candidates: ObjectSetDef::Query(AN_ARMY_YOU_CONTROL),
+        exclude: None,
+        minimum: 1,
+        maximum: 1,
+        visibility: ChoiceVisibilityDef::Public,
+        then: &AMASS_GROWS_THE_ARMY,
+    }),
+];
+
+static BOWMASTERS_ABILITIES: [AbilityDef; 2] = [
+    abilities::flash(),
+    AbilityDef::triggered_with_targets(
+        "When this creature enters and whenever an opponent draws a card except the first one they \
+         draw in each of their draw steps, this creature deals 1 damage to any target. Then amass \
+         Orcs 1.",
+        TriggerEventDef::AnyOf(&BOWMASTERS_EVENTS),
+        &BOWMASTERS_TARGETS,
+        EffectDef::Sequence(&BOWMASTERS_SHOOTS),
+    ),
+];
+
 // LTR 103 — Orcish Bowmasters
-// Audit: blocked — Needs two things. A trigger on an opponent drawing a card, which no event here raises, and which this card qualifies further: every draw except the first one in each of that player's draw steps, so the count has to be kept per player per turn. And amass, which is a conditional token creation followed by a chosen Army taking counters and gaining a creature type.
+pub(in crate::card::sets) static ORCISH_BOWMASTERS: CardRecord = CardRecord::new(
+    cards::ORCISH_BOWMASTERS,
+    "Orcish Bowmasters",
+    CardArt::new("adfd33cb-086c-48f4-b9fa-91b5e8f6f3d7", "Anna Podedworna"),
+    CardSet::LordOfTheRings,
+    // Flash makes the entry itself an ambush, and every extra card an
+    // opponent draws afterwards is another arrow and another counter.
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Orc", "Archer"], 1, 1)
+        .with_abilities(&BOWMASTERS_ABILITIES),
+);
 
 static HALFLING_MANA_RESTRICTIONS: [ManaRestrictionDef; 1] = [ManaRestrictionDef::CastSpell(
     ObjectPredicateDef::Supertype(CardSupertype::Legendary),
@@ -222,6 +324,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &REPRIEVE,
     &LORIEN_REVEALED,
     &STERN_SCOLDING,
+    &ORCISH_BOWMASTERS,
     &DELIGHTED_HALFLING,
     &GENEROUS_ENT,
     &FLAME_OF_ANOR,
