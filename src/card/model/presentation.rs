@@ -97,6 +97,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::Named(_)
+        | ObjectPredicateDef::HasChosenName
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)

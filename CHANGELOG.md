@@ -153,6 +153,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Can't cause you to discard cards."** The prohibition over being made to
+  sacrifice existed; the same prohibition over discarding did not. Both are
+  now one shape, and a static clause may state several of them in the one
+  printed sentence Tamiyo prints them in. Neither stops a player discarding
+  as a cost of their own spell: nobody caused that.
+
+  Sorting cards by a name chosen earlier in the same resolution is also new.
+  The name lives in the resolution rather than on the board, so the predicate
+  matches nothing wherever the resolution cannot be seen, and the one effect
+  that can see it reads it there.
+
 - **A search that spans two zones and exiles what it leaves behind.**
   Doomsday looks through your library and graveyard as one search, keeps
   five, and exiles the rest; the order the five are chosen in is the order

@@ -454,6 +454,7 @@ impl HandcraftedPolicy {
             | EffectDef::ChooseColor { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::CannotBeForcedToDiscard
             | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }

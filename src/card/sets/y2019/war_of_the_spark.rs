@@ -5,10 +5,11 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype,
     CardType, CardTypeSet, ComparisonDef, CounterKind, CreatureTypeSetDef, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRefDef,
+    PlayerRelation, ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
+use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
 
 /// Your own library, empty. Written as a count rather than a dedicated
@@ -207,7 +208,99 @@ pub(in crate::card::sets) static NISSA_WHO_SHAKES_THE_WORLD: CardRecord = CardRe
         .with_abilities(&NISSA_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&JACE_WIELDER_OF_MYSTERIES, &NISSA_WHO_SHAKES_THE_WORLD];
+/// Two prohibitions in one printed sentence, which is why they are a
+/// sequence rather than one effect: other cards state only one of them.
+static TAMIYO_PROTECTIONS: [EffectDef; 2] = [
+    EffectDef::CannotBeForcedToDiscard,
+    EffectDef::CannotBeForcedToSacrifice,
+];
+
+/// The name is chosen before the four cards are seen, so the reveal cannot
+/// be used to pick a name that is already there.
+static TAMIYO_SORT_THE_FOUR: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(4),
+    object: Some(ObjectPredicateDef::HasChosenName),
+    minimum: 0,
+    maximum: 4,
+    select_all_matching: true,
+    reveal_selected: true,
+    selected_zone: ZoneKind::Hand,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Graveyard,
+    rest_placement: ZonePlacement::Top,
+    selected_order_follows_choice: false,
+    then: None,
+};
+
+static TAMIYO_REVEAL: EffectDef = EffectDef::LookAtTopAndSelect {
+    player: EffectRecipientDef::Controller,
+    looker: EffectRecipientDef::Controller,
+    selection: &TAMIYO_SORT_THE_FOUR,
+};
+
+/// The binding the name-choice makes is unused here: what matches is decided
+/// among the four revealed cards rather than across a whole zone, so the
+/// selection reads the name itself.
+static TAMIYO_NAME_THEN_REVEAL: EffectDef = EffectDef::ChooseCardName {
+    chooser: PlayerRefDef::EffectController,
+    nonland_only: true,
+    matched_in: PlayerRefDef::EffectController,
+    zone: ZoneKind::Library,
+    binding: ObjectSetBindingIndex::PRIMARY,
+    then: &TAMIYO_REVEAL,
+};
+
+static TAMIYO_RETURN_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Any,
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: Some(PlayerRelation::You),
+    },
+)];
+
+static TAMIYO_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::static_ability(
+        "Spells and abilities your opponents control can't cause you to discard cards or sacrifice permanents.",
+        EffectDef::Sequence(&TAMIYO_PROTECTIONS),
+    ),
+    AbilityDef::activated(
+        "+1: Choose a nonland card name, then reveal the top four cards of your library. Put all cards with the chosen name from among them into your hand and the rest into your graveyard.",
+        &[AbilityCostDef::Loyalty(1)],
+        TAMIYO_NAME_THEN_REVEAL,
+    ),
+    AbilityDef::activated_with_targets(
+        "\u{2212}3: Return target card from your graveyard to your hand.",
+        &[AbilityCostDef::Loyalty(-3)],
+        &TAMIYO_RETURN_TARGET,
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            zone: ZoneKind::Hand,
+            controller: None,
+            placement: ZonePlacement::Top,
+            arrival_effect: None,
+        },
+    ),
+];
+
+// WAR 220 — Tamiyo, Collector of Tales
+pub(in crate::card::sets) static TAMIYO_COLLECTOR_OF_TALES: CardRecord = CardRecord::new(
+    cards::TAMIYO_COLLECTOR_OF_TALES,
+    "Tamiyo, Collector of Tales",
+    CardArt::new("786d89de-da0c-47af-80ae-2734dc0514fc", "Chase Stone"),
+    CardSet::WarOfTheSpark,
+    // The static is what the card is played for: it turns off every
+    // discard-based and sacrifice-based answer an opponent has, and the
+    // loyalty abilities are what it does while doing that.
+    CardRules::new_planeswalker(mana_cost!("{2}{G}{U}"), &["Tamiyo"], 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&TAMIYO_ABILITIES),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &JACE_WIELDER_OF_MYSTERIES,
+    &NISSA_WHO_SHAKES_THE_WORLD,
+    &TAMIYO_COLLECTOR_OF_TALES,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

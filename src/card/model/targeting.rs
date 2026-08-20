@@ -94,7 +94,9 @@ pub enum ObjectPredicateDef {
     Named(&'static str),
     /// Bears the card name chosen earlier in this resolution, by
     /// [`super::EffectDef::ChooseCardName`]. Nothing matches when no name was
-    /// chosen.
+    /// chosen, and nothing matches outside a resolution that chose one --
+    /// the name lives in the resolution rather than on the board.
+    HasChosenName,
     /// Matches the scalar the ability's source chose as it entered: the card
     /// name Meddling Mage locked out, or the creature type Engineered Plague
     /// named. The axis is the same one the entry choice was recorded on, so

@@ -77,6 +77,7 @@ impl Game {
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::May { .. }
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::CannotBeForcedToDiscard
             | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
             | EffectDef::CreateEmblem { .. }
             | EffectDef::Transform { .. }

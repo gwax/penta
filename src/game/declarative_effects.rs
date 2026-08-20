@@ -952,6 +952,7 @@ impl Game {
                 ..
             })
             | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::CannotBeForcedToDiscard
             | EffectDef::ReduceGenericCostBy(_)
             | EffectDef::IncreaseMatchingAbilityCostBy { .. }
             | EffectDef::IncreaseMatchingSpellCostBy { .. }

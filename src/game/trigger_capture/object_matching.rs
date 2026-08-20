@@ -188,6 +188,10 @@ impl Game {
             ObjectPredicateDef::Named(name) => self
                 .object_card_name(object.id)
                 .is_some_and(|actual| actual == name),
+            // The chosen name lives in the resolution that chose it, which
+            // nothing here can see, so this matches nothing rather than
+            // everything. The one effect that reads it does so itself.
+            ObjectPredicateDef::HasChosenName => false,
             ObjectPredicateDef::TargetsObjectMatching(predicate) => {
                 self.stack_object_targets_match(object.id, *predicate, source, controller)
             }
@@ -329,10 +333,12 @@ impl Game {
                 let name = self.object_card_name(object.id);
                 name.is_some() && name == self.object_card_name(source)
             }
-            // The three that read a value from somewhere other than the
-            // object's own characteristics: a printed name, a scalar the
-            // source chose on entry, or the targets something else has.
+            // The four that read a value from somewhere other than the
+            // object's own characteristics: a printed name, a name chosen in
+            // a resolution, a scalar the source chose on entry, or the
+            // targets something else has.
             ObjectPredicateDef::Named(_)
+            | ObjectPredicateDef::HasChosenName
             | ObjectPredicateDef::TargetsObjectMatching(_)
             | ObjectPredicateDef::HasSourcesChosenScalar(_) => {
                 self.indirect_predicate_matches(predicate, object, source, controller)

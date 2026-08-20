@@ -15,6 +15,7 @@ pub(in super::super) fn shared_static_non_apply_effect(
         // Both are read off the battlefield and neither carries anything
         // further to check: one names a land type, the other nothing at all.
         EffectDef::CannotBeForcedToSacrifice
+        | EffectDef::CannotBeForcedToDiscard
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::LandwalkCanBeBlocked(_) => battlefield_only(source_zones),
         // Read while attackers are declared, over the battlefield, so only
@@ -87,6 +88,7 @@ pub(in super::super) fn shared_static_non_apply_effect(
 pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: EffectDef) -> bool {
     match effect {
         EffectDef::CannotBeForcedToSacrifice
+        | EffectDef::CannotBeForcedToDiscard
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::ReduceGenericCostBy(_)
         | EffectDef::IncreaseMatchingAbilityCostBy { .. }

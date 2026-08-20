@@ -34,6 +34,7 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::Named(_)
+        | ObjectPredicateDef::HasChosenName
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
@@ -719,6 +720,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ChooseColor { .. }
                     | EffectDef::BecomeCopyOf { .. }
                     | EffectDef::CannotBeForcedToSacrifice
+                    | EffectDef::CannotBeForcedToDiscard
                     | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
                     | EffectDef::CreateEmblem { .. }
                     | EffectDef::Transform { .. }

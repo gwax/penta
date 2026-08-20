@@ -513,6 +513,7 @@ impl Game {
                 | EffectDef::IfCondition { .. }
                 | EffectDef::InstallTrigger(_)
                 | EffectDef::CannotBeForcedToSacrifice
+                | EffectDef::CannotBeForcedToDiscard
                 | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
                 | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::IncreaseMatchingAbilityCostBy { .. }

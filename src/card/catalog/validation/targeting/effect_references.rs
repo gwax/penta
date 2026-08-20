@@ -313,6 +313,7 @@ fn validate_effect_references(
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::CannotBeForcedToDiscard
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::CreateAttachedToken { .. }

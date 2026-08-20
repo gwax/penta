@@ -69,6 +69,9 @@ impl Game {
                         Target::Player(player) => Some(player),
                         Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
                     })
+                    // A player nobody can force to discard is simply not
+                    // among the ones asked to.
+                    .filter(|player| self.can_be_forced_to_discard(*player, object.controller))
                     .collect();
                 let follow_up = then.map(|follow_up| crate::game::DiscardFollowUp {
                     counted: follow_up.counted,
@@ -93,7 +96,9 @@ impl Game {
                     controller: object.controller,
                 };
                 for target in self.effect_recipients(recipient, object, context, scoped) {
-                    if let Target::Player(player) = target {
+                    if let Target::Player(player) = target
+                        && self.can_be_forced_to_discard(player, object.controller)
+                    {
                         self.discard_random(player, amount, cause);
                     }
                 }

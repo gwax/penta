@@ -291,6 +291,7 @@ fn validate_effect_target_shapes(
             | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::CannotBeForcedToSacrifice
+            | EffectDef::CannotBeForcedToDiscard
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::ScheduleTurnPhases(_)

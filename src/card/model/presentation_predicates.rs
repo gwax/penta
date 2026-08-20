@@ -52,6 +52,7 @@ pub(super) fn object_predicate_implies(
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::Named(_)
+        | ObjectPredicateDef::HasChosenName
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
@@ -107,6 +108,7 @@ pub(super) fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::Named(_)
+        | ObjectPredicateDef::HasChosenName
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
@@ -165,6 +167,7 @@ pub(super) fn predicate_color_count(predicate: ObjectPredicateDef) -> Option<u8>
         | ObjectPredicateDef::Color(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::Named(_)
+        | ObjectPredicateDef::HasChosenName
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
@@ -199,6 +202,7 @@ pub(super) fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'stati
             predicates.iter().copied().find_map(predicate_subtype)
         }
         ObjectPredicateDef::Named(_)
+        | ObjectPredicateDef::HasChosenName
         | ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
         | ObjectPredicateDef::Token
@@ -286,6 +290,7 @@ pub(super) fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::Named(_)
+        | ObjectPredicateDef::HasChosenName
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
@@ -353,6 +358,7 @@ pub(super) fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::Named(_)
+        | ObjectPredicateDef::HasChosenName
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
@@ -406,6 +412,7 @@ pub(super) fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Opt
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::Named(_)
+        | ObjectPredicateDef::HasChosenName
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
         | ObjectPredicateDef::PowerAtLeast(_)
@@ -464,6 +471,7 @@ pub(super) fn predicate_controller(predicate: ObjectPredicateDef) -> Option<Play
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::Named(_)
+        | ObjectPredicateDef::HasChosenName
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)

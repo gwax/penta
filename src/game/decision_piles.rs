@@ -36,6 +36,16 @@ impl Game {
             .iter()
             .filter(|card| {
                 selection.object.is_none_or(|predicate| {
+                    // The name a step earlier in this resolution chose is
+                    // read here, where the resolution is still in hand;
+                    // the shared matcher has no context to read it from.
+                    if predicate == ObjectPredicateDef::HasChosenName {
+                        return context.chosen_name.as_ref().is_some_and(|name| {
+                            self.catalog
+                                .get(card.definition)
+                                .is_some_and(|definition| definition.name == *name)
+                        });
+                    }
                     self.card_object_matches(predicate, card, ZoneKind::Library, source)
                 })
             })
@@ -489,6 +499,22 @@ impl Game {
     /// Whether a spell or ability an opponent of `player` controls can make
     /// them sacrifice a permanent. Sigarda says it cannot.
     pub(super) fn can_be_forced_to_sacrifice(&self, player: PlayerId, caused_by: PlayerId) -> bool {
+        self.can_be_forced_to(player, caused_by, EffectDef::CannotBeForcedToSacrifice)
+    }
+
+    /// The same question about discarding. A player who discards as a cost of
+    /// their own spell was not caused to by anybody, which is why the check
+    /// is on who is causing it rather than on who is discarding.
+    pub(super) fn can_be_forced_to_discard(&self, player: PlayerId, caused_by: PlayerId) -> bool {
+        self.can_be_forced_to(player, caused_by, EffectDef::CannotBeForcedToDiscard)
+    }
+
+    fn can_be_forced_to(
+        &self,
+        player: PlayerId,
+        caused_by: PlayerId,
+        prohibition: EffectDef,
+    ) -> bool {
         if caused_by == player {
             return true;
         }
@@ -501,11 +527,25 @@ impl Game {
                                 effective.ability.definition,
                                 DeclarativeAbilityDef::Static(_)
                             )
-                            && effective.ability.declarative_effect()
-                                == Some(EffectDef::CannotBeForcedToSacrifice)
+                            && effective
+                                .ability
+                                .declarative_effect()
+                                .is_some_and(|effect| Self::names_prohibition(effect, prohibition))
                     })
                     .is_some()
         })
+    }
+
+    /// Whether a static clause states this prohibition, on its own or as one
+    /// of several the same sentence states.
+    fn names_prohibition(effect: EffectDef, prohibition: EffectDef) -> bool {
+        match effect {
+            EffectDef::Sequence(effects) => effects
+                .iter()
+                .copied()
+                .any(|effect| Self::names_prohibition(effect, prohibition)),
+            other => other == prohibition,
+        }
     }
 
     /// Whether a loyalty ability can be activated right now. CR 606.3: only

@@ -346,6 +346,11 @@ pub enum EffectDef {
     /// A static prohibition: no spell or ability an opponent controls can
     /// make this ability's controller sacrifice a permanent.
     CannotBeForcedToSacrifice,
+    /// The same prohibition over discarding: no spell or ability an opponent
+    /// controls can make this ability's controller discard a card. A discard
+    /// they choose to make themselves, as a cost of their own spell, is not
+    /// something anyone caused them to do.
+    CannotBeForcedToDiscard,
     /// On resolution, choose two different basic land-type words and apply
     /// the resulting indefinite, noncopiable text change to the object.
     /// Ask a player to name a colour, then apply the named operation to the

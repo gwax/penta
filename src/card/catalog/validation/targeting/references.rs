@@ -305,6 +305,7 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::Named(_)
+        | ObjectPredicateDef::HasChosenName
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::PowerExactly(_)
@@ -358,6 +359,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::Named(_)
+        | ObjectPredicateDef::HasChosenName
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
