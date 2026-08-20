@@ -195,6 +195,7 @@ fn validate_effect_target_shapes(
         | EffectDef::GainControl { object, .. }
         | EffectDef::ExchangeControl { first: object, .. }
         | EffectDef::Transform { object }
+        | EffectDef::PutIntoLibraryBeneathTop { object, .. }
         | EffectDef::MoveToZone { object, .. }
         | EffectDef::Counter { object, .. }
         | EffectDef::ReturnSpellToHand { object }

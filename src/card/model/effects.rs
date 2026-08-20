@@ -570,6 +570,14 @@ pub enum EffectDef {
         then: &'static EffectDef,
         otherwise: &'static EffectDef,
     },
+    /// "Put target nonland permanent into its owner's library just beneath
+    /// the top N cards of that library." Neither top nor bottom: the depth
+    /// is the whole point, and it is chosen as the spell is cast. A depth
+    /// past the end of the library puts the card on the bottom.
+    PutIntoLibraryBeneathTop {
+        object: EffectRecipientDef,
+        depth: ValueDef,
+    },
     /// Ninjutsu's payoff (CR 702.49b): put the card this ability came from
     /// onto the battlefield from its owner's hand, tapped and attacking the
     /// same defender the returned creature was attacking.

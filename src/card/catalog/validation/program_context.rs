@@ -514,6 +514,7 @@ fn validate_resolving_effect(
         | EffectDef::TakeExtraTurn { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }
+        | EffectDef::PutIntoLibraryBeneathTop { .. }
         | EffectDef::MoveToZone { .. }
         | EffectDef::Apply { .. }
         | EffectDef::Special(_) => Ok(()),
@@ -948,6 +949,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::TakeExtraTurn { .. } => "TakeExtraTurn",
         EffectDef::CreateEmblem { .. } => "CreateEmblem",
         EffectDef::Transform { .. } => "Transform",
+        EffectDef::PutIntoLibraryBeneathTop { .. } => "PutIntoLibraryBeneathTop",
         EffectDef::MoveToZone { .. } => "MoveToZone",
         EffectDef::StaticApply { .. } => "StaticApply",
         EffectDef::Apply { .. } => "Apply",

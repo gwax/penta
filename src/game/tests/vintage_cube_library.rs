@@ -553,3 +553,96 @@ fn stock_up_takes_two_of_five_and_buries_the_rest() {
         "the rest went under what was already at the bottom",
     );
 }
+
+/// X=0 is the mode that matters: the permanent lands on top of its owner's
+/// library, where they will draw it instead of something else.
+#[test]
+fn unexpectedly_absent_for_zero_puts_it_on_top() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let bears = creature(94_000, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    game.players[1].library.clear();
+    for id in 94_001..94_004 {
+        game.players[1]
+            .library
+            .push(card(id, cards::FOREST, PlayerId::Two));
+    }
+    let absent = card(94_010, cards::UNEXPECTEDLY_ABSENT, PlayerId::One);
+    let absent_id = absent.id;
+    game.players[0].hand.push(absent);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 2);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => *card == absent_id && choices.x() == 0,
+            _ => false,
+        })
+        .expect("two mana casts it for X=0");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears_id),
+        "the permanent leaves the battlefield",
+    );
+    // The library is stored bottom-first, so the top is the last entry.
+    assert_eq!(
+        game.players[1].library.last().map(|card| card.definition),
+        Some(cards::GRIZZLY_BEARS),
+        "and lands on top, costing its controller their next draw",
+    );
+}
+
+/// A larger X buries it that many cards down, and an X past the end of the
+/// library puts it on the bottom.
+#[test]
+fn unexpectedly_absent_buries_it_x_cards_deep() {
+    for (x, expected_from_top) in [(2_u16, 2_usize), (9, 3)] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let bears = creature(94_020, cards::GRIZZLY_BEARS, PlayerId::Two);
+        game.battlefield.push(bears);
+        game.players[1].library.clear();
+        for id in 94_021..94_024 {
+            game.players[1]
+                .library
+                .push(card(id, cards::FOREST, PlayerId::Two));
+        }
+        let absent = card(94_030, cards::UNEXPECTEDLY_ABSENT, PlayerId::One);
+        let absent_id = absent.id;
+        game.players[0].hand.push(absent);
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 2);
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, x);
+
+        let cast = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => *card == absent_id && choices.x() == x,
+                _ => false,
+            })
+            .unwrap_or_else(|| panic!("X={x} is affordable"));
+        game.apply(PlayerId::One, cast).expect("it is cast");
+        pass_until_decision(&mut game);
+        drain_pending(&mut game);
+
+        let library = &game.players[1].library;
+        let position = library
+            .iter()
+            .position(|card| card.definition == cards::GRIZZLY_BEARS)
+            .expect("the permanent is in the library");
+        assert_eq!(
+            library.len() - 1 - position,
+            expected_from_top,
+            "X={x} should bury it {expected_from_top} cards from the top",
+        );
+    }
+}

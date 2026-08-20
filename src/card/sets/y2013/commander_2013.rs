@@ -2,16 +2,39 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
+    AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
+    EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
     SpellLifeCostDef, ValueDef, ZoneKind, cards,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 /// Every creature, whoever controls it, and the amount is the life its caster
 /// was willing to spend. Held behind a reference because a negated value is
 /// one word wider than the value it negates.
 static TOXIC_DELUGE_AMOUNT: ValueDef = ValueDef::Negate(&ValueDef::ChosenX);
+
+static ABSENT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+)];
+
+// C13 25 — Unexpectedly Absent
+pub(in crate::card::sets) static UNEXPECTEDLY_ABSENT: CardRecord = CardRecord::new(
+    cards::UNEXPECTEDLY_ABSENT,
+    "Unexpectedly Absent",
+    CardArt::new("6dff437b-ef68-48f7-afd3-3b72d3c56187", "Min Yum"),
+    CardSet::Commander2013,
+    // X=0 is the mode that matters: two mana puts anything on top of its
+    // owner's library, which answers a permanent nothing else can touch and
+    // costs its controller their draw step.
+    CardRules::new_instant(mana_cost!("{X}{W}{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Put target nonland permanent into its owner's library just beneath the top X cards of that library.",
+        &ABSENT_TARGET,
+        EffectDef::PutIntoLibraryBeneathTop {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            depth: ValueDef::ChosenX,
+        },
+    )),
+);
 
 // C13 96 — Toxic Deluge
 pub(in crate::card::sets) static TOXIC_DELUGE: CardRecord = CardRecord::new(
@@ -39,6 +62,6 @@ pub(in crate::card::sets) static TOXIC_DELUGE: CardRecord = CardRecord::new(
     ),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&TOXIC_DELUGE];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&UNEXPECTEDLY_ABSENT, &TOXIC_DELUGE];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

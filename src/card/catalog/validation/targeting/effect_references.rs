@@ -168,6 +168,7 @@ fn validate_effect_references(
         | EffectDef::GainControl { object, .. }
         | EffectDef::ExchangeControl { first: object, .. }
         | EffectDef::Transform { object }
+        | EffectDef::PutIntoLibraryBeneathTop { object, .. }
         | EffectDef::MoveToZone { object, .. }
         | EffectDef::Counter { object, .. }
         | EffectDef::ReturnSpellToHand { object }

@@ -418,6 +418,9 @@ impl Game {
         }
     }
 
+    // Long because the effect vocabulary is wide, not because the function
+    // does several things: every arm is one variant refused the same way.
+    #[allow(clippy::too_many_lines)]
     pub(super) fn resolve_triggered_mana_effect(
         &mut self,
         source: AbilitySourceRef,
@@ -511,6 +514,7 @@ impl Game {
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
             | EffectDef::CannotAttackIf(_)
+            | EffectDef::PutIntoLibraryBeneathTop { .. }
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
             | EffectDef::PhaseOut { .. }

@@ -225,6 +225,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::ChangeTextBasicLandType { .. }
         | EffectDef::ChooseColor { .. }
         | EffectDef::BecomeCopyOf { .. }
+        | EffectDef::PutIntoLibraryBeneathTop { .. }
         | EffectDef::MoveToZone { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }

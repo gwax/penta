@@ -731,6 +731,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::LandwalkCanBeBlocked(_)
                     | EffectDef::CannotAttackUnless(_)
                     | EffectDef::CannotAttackIf(_)
+                    | EffectDef::PutIntoLibraryBeneathTop { .. }
                     | EffectDef::MoveToZone { .. }
                     | EffectDef::StaticApply { .. }
                     | EffectDef::Apply { .. }

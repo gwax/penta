@@ -4,7 +4,7 @@ use super::{
     EffectResolutionContext, Game, GameResult, InstalledTrigger, InstalledTriggerLifetime, Mana,
     ManaPool, ManaSelectionDef, ManaSource, Permanent, ResolvedEffectPayment, SacrificeDeclined,
     SacrificeFollowup, ScopedEffect, StackAbilityResolver, StackObject, Target, TriggerCapture,
-    WinReason, ZoneKind, ZoneMoveCause,
+    WinReason, ZoneKind, ZoneMoveCause, ZonePlacement,
 };
 use crate::card::{EffectPaymentCostDef, InstalledTriggerLifetimeDef};
 
@@ -201,6 +201,9 @@ impl Game {
                 }
             }
             EffectDef::DestroyAtEndOfCombat { .. }
+            | EffectDef::AddCounters { .. }
+            | EffectDef::DoubleCounters { .. }
+            | EffectDef::RemoveCounters { .. }
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::PhaseOut { .. }
             | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
@@ -443,6 +446,35 @@ impl Game {
                         Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
                     });
                 self.schedule_extra_turns(players);
+            }
+            EffectDef::PutIntoLibraryBeneathTop {
+                object: recipient,
+                depth,
+            } => {
+                let depth = self
+                    .effect_value(depth, object, &context, scoped)
+                    .max(0)
+                    .try_into()
+                    .unwrap_or(usize::MAX);
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    let (Target::Permanent(id) | Target::Card(id)) = target else {
+                        continue;
+                    };
+                    let _ = self.move_target_to_zone(
+                        target,
+                        ZoneKind::Library,
+                        ZoneMoveCause::Effect {
+                            controller: object.controller,
+                        },
+                        None,
+                        ZonePlacement::Top,
+                    );
+                    // Leaving the battlefield makes a new object, so the card
+                    // now sitting on top of the library is the successor
+                    // rather than the permanent that was targeted.
+                    let moved = self.successors.get(&id).copied().unwrap_or(id);
+                    self.sink_library_card(moved, depth);
+                }
             }
             EffectDef::PutSourceOntoBattlefieldAttacking => {
                 self.put_ninja_onto_the_battlefield(object);
@@ -708,66 +740,6 @@ impl Game {
                 for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Spell(spell) = target {
                         self.counter_spell_into(spell, zone);
-                    }
-                }
-            }
-            EffectDef::AddCounters {
-                object: recipient,
-                kind,
-                amount,
-            } => {
-                let amount = self
-                    .effect_value(amount, object, &context, scoped)
-                    .max(0)
-                    .try_into()
-                    .unwrap_or(u16::MAX);
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Permanent(permanent) = target
-                        && let Some(permanent) = self
-                            .battlefield
-                            .iter_mut()
-                            .find(|candidate| candidate.card.id == permanent)
-                    {
-                        permanent.add_counters(kind, amount);
-                    }
-                }
-            }
-            EffectDef::DoubleCounters {
-                object: recipient,
-                kind,
-            } => {
-                // Each permanent's own count, read as that permanent is
-                // reached: doubling is not one amount handed to everybody.
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Permanent(permanent) = target
-                        && let Some(permanent) = self
-                            .battlefield
-                            .iter_mut()
-                            .find(|candidate| candidate.card.id == permanent)
-                    {
-                        let existing = permanent.counters(kind);
-                        permanent.add_counters(kind, existing);
-                    }
-                }
-            }
-            EffectDef::RemoveCounters {
-                object: recipient,
-                kind,
-                amount,
-            } => {
-                let amount = self
-                    .effect_value(amount, object, &context, scoped)
-                    .max(0)
-                    .try_into()
-                    .unwrap_or(u16::MAX);
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Permanent(permanent) = target
-                        && let Some(permanent) = self
-                            .battlefield
-                            .iter_mut()
-                            .find(|candidate| candidate.card.id == permanent)
-                    {
-                        permanent.remove_counters(kind, amount);
                     }
                 }
             }

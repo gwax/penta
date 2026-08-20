@@ -313,7 +313,11 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         }
         // Populate copies whatever the choice landed on, so like the rest of
         // these only its recipient has to be one the runtime understands.
-        EffectDef::CreateTokenCopyOf { object }
+        // The destination is always a library and the depth is an ordinary
+        // value the shared walk already resolves, so only the recipient is
+        // an open question.
+        EffectDef::PutIntoLibraryBeneathTop { object, .. }
+        | EffectDef::CreateTokenCopyOf { object }
         | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }
         | EffectDef::RemoveFromCombat { object }

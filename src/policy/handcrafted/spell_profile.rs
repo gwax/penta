@@ -477,6 +477,7 @@ impl HandcraftedPolicy {
             | EffectDef::LandwalkCanBeBlocked(_)
             | EffectDef::CannotAttackUnless(_)
             | EffectDef::CannotAttackIf(_)
+            | EffectDef::PutIntoLibraryBeneathTop { .. }
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
             | EffectDef::PhaseOut { .. }

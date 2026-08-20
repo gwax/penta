@@ -519,6 +519,7 @@ impl Game {
                 | EffectDef::ReduceMatchingSpellCostBy { .. }
                 | EffectDef::LandwalkCanBeBlocked(_)
                 | EffectDef::CannotAttackUnless(_)
+                | EffectDef::PutIntoLibraryBeneathTop { .. }
                 | EffectDef::MoveToZone { .. }
                 | EffectDef::Attach { .. }
                 | EffectDef::PhaseOut { .. }

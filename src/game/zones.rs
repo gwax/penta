@@ -184,6 +184,26 @@ impl Game {
         Ok(id)
     }
 
+    /// Moves a card already on top of its owner's library down to sit just
+    /// beneath the top `depth` cards. A library is stored bottom-first, so
+    /// the top is the end and the card lands `depth` places back from it; a
+    /// depth past the library's length puts it on the bottom.
+    pub(super) fn sink_library_card(&mut self, card: GameObjectId, depth: usize) {
+        let Some(owner) = self
+            .card_in_nonbattlefield_zone(card)
+            .map(|(_, card)| card.owner)
+        else {
+            return;
+        };
+        let library = &mut self.players[owner.index()].library;
+        let Some(position) = library.iter().position(|held| held.id == card) else {
+            return;
+        };
+        let held = library.remove(position);
+        let target = library.len().saturating_sub(depth);
+        library.insert(target, held);
+    }
+
     /// Puts a card into a player's graveyard directly, as a simulation and
     /// test entry point. Nothing died and nothing resolved, so no trigger sees
     /// this.
