@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, BasicLandType, CardArt,
-    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    TriggerEventDef, ValueDef, ZoneKind, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -54,6 +54,26 @@ pub(in crate::card::sets) static NYLEAS_PRESENCE: CardRecord = CardRecord::new(
         ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&NYLEAS_PRESENCE];
+// THS 180 — Sylvan Caryatid
+pub(in crate::card::sets) static SYLVAN_CARYATID: CardRecord = CardRecord::new(
+    cards::SYLVAN_CARYATID,
+    "Sylvan Caryatid",
+    CardArt::new("d40b65c1-b24d-492d-81b9-d8474ebdc08c", "Chase Stone"),
+    CardSet::Theros,
+    // Hexproof is what separates it from every other two-mana accelerant: the
+    // removal that answers a mana creature cannot be pointed at this one, and
+    // a 0/3 wall survives most of what is left.
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Plant"], 0, 3).with_abilities(&[
+        abilities::defender(),
+        abilities::hexproof(),
+        AbilityDef::activated_mana(
+            "{T}: Add one mana of any color.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::any_color()),
+        ),
+    ]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&NYLEAS_PRESENCE, &SYLVAN_CARYATID];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

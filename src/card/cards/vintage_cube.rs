@@ -142,3 +142,4 @@ pub const CAT_TOKEN_1_1_WHITE: CardDefinitionId = CardDefinitionId(2224);
 pub const OCELOT_PRIDE: CardDefinitionId = CardDefinitionId(2225);
 pub const THUNDERING_FALLS: CardDefinitionId = CardDefinitionId(2226);
 pub const PHLAGE_TITAN_OF_FIRES_FURY: CardDefinitionId = CardDefinitionId(2227);
+pub const SYLVAN_CARYATID: CardDefinitionId = CardDefinitionId(2228);
