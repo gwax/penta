@@ -407,6 +407,11 @@ const SET_MODULES: &[SetModule] = &[
         y2015::dragons_of_tarkir::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Commander2015,
+        y2015::commander_2015::CARDS,
+        y2015::commander_2015::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Ixalan,
         y2017::ixalan::CARDS,
         y2017::ixalan::ADDITIONAL_PRINTINGS,

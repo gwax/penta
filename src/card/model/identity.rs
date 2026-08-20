@@ -83,6 +83,7 @@ pub enum CardSet {
     Commander2014,
     KhansOfTarkir,
     DragonsOfTarkir,
+    Commander2015,
     ModernHorizons1,
     StrixhavenSchoolOfMages,
     ModernHorizons2,

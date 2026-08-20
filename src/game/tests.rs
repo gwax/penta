@@ -796,6 +796,7 @@ mod vintage_cube_manifold_key;
 mod vintage_cube_mastery;
 mod vintage_cube_monarch;
 mod vintage_cube_more_spells;
+mod vintage_cube_mystic_confluence;
 mod vintage_cube_necromancy;
 mod vintage_cube_ninjutsu;
 mod vintage_cube_nissa;
