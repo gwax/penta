@@ -52,6 +52,7 @@ pub enum CardSet {
     MirrodinBesieged,
     PlanarChaos,
     FutureSight,
+    Conflux,
     Zendikar,
     WarOfTheSpark,
     ThroneOfEldraine,

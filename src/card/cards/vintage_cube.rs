@@ -103,3 +103,4 @@ pub const DOOMSDAY: CardDefinitionId = CardDefinitionId(2185);
 pub const TAMIYO_COLLECTOR_OF_TALES: CardDefinitionId = CardDefinitionId(2186);
 pub const CORPSE_DANCE: CardDefinitionId = CardDefinitionId(2187);
 pub const UMEZAWAS_JITTE: CardDefinitionId = CardDefinitionId(2188);
+pub const PATH_TO_EXILE: CardDefinitionId = CardDefinitionId(2189);

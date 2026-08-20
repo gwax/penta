@@ -287,6 +287,11 @@ const SET_MODULES: &[SetModule] = &[
         y2011::mirrodin_besieged::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Conflux,
+        y2009::conflux::CARDS,
+        y2009::conflux::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Zendikar,
         y2009::zendikar::CARDS,
         y2009::zendikar::ADDITIONAL_PRINTINGS,

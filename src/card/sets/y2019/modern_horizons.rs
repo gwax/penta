@@ -38,7 +38,10 @@ static WINDS_SINGLE: [EffectDef; 2] = [
             TargetIndex::PRIMARY,
         ))),
         source: ZoneKind::Library,
-        object: ObjectPredicateDef::Supertype(CardSupertype::Basic),
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Land),
+            ObjectPredicateDef::Supertype(CardSupertype::Basic),
+        ]),
         minimum: 0,
         maximum: ValueDef::Constant(1),
         reveal: false,
@@ -71,7 +74,10 @@ static WINDS_OVERLOADED_STEPS: [EffectDef; 2] = [
     EffectDef::SearchZone {
         player: EffectRecipientDef::Opponent,
         source: ZoneKind::Library,
-        object: ObjectPredicateDef::Supertype(CardSupertype::Basic),
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Land),
+            ObjectPredicateDef::Supertype(CardSupertype::Basic),
+        ]),
         minimum: 0,
         maximum: ValueDef::BoundObjectCount(ObjectSetBindingIndex::PRIMARY),
         reveal: false,
