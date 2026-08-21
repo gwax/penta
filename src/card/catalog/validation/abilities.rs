@@ -258,21 +258,10 @@ fn collect_direct_ability_grants<'a>(ability: &'a AbilityDef, grants: &mut Vec<&
 }
 
 #[allow(clippy::too_many_lines)]
-fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilityValidationError> {
-    let mut grant_sites = program_ability_grant_sites(ability.effect.definition);
-    if let Some(modal) = ability.modal() {
-        grant_sites = modal
-            .modes
-            .iter()
-            .map(|mode| program_ability_grant_sites(mode.effect.definition))
-            .fold(grant_sites, usize::saturating_add);
-    }
-    if grant_sites > usize::from(u8::MAX) + 1 {
-        return Err(GrantedAbilityValidationError::TooManyGrantSites { count: grant_sites });
-    }
-    if ability.text.trim().is_empty() {
-        return Err(GrantedAbilityValidationError::EmptyText);
-    }
+/// What an ability's own coverage line has to say about it: a compatibility
+/// procedure needs a card-local resolver, and anything less than complete
+/// declarative execution needs an explanation of why.
+fn validate_ability_coverage(ability: &AbilityDef) -> Result<(), GrantedAbilityValidationError> {
     let uses_legacy_procedure = match ability.definition {
         DeclarativeAbilityDef::ActivatedMana(definition)
         | DeclarativeAbilityDef::Activated(definition) => {
@@ -305,6 +294,95 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
     {
         return Err(GrantedAbilityValidationError::MissingImplementationExplanation);
     }
+    Ok(())
+}
+
+/// The shape checks a triggered ability answers: a discoverable zone claim,
+/// an event the shared capture pass raises, and -- for a triggered mana
+/// ability -- a program that finishes without stopping to ask.
+fn validate_triggered_ability_shape(
+    ability: &AbilityDef,
+    target_count: usize,
+) -> Result<(), GrantedAbilityValidationError> {
+    let (DeclarativeAbilityDef::TriggeredMana(triggered)
+    | DeclarativeAbilityDef::Triggered(triggered)) = ability.definition
+    else {
+        return Ok(());
+    };
+    let is_mana = matches!(ability.definition, DeclarativeAbilityDef::TriggeredMana(_));
+    if triggered.procedure == AbilityProcedureDef::Shared
+        && (!trigger_source_zones_are_discoverable(triggered.source_zones, triggered.event)
+            || (triggered.event == crate::card::TriggerEventDef::StateCondition
+                && triggered.condition.is_none())
+            || (is_mana
+                && (triggered.condition.is_some()
+                    || !matches!(
+                        triggered.event,
+                        crate::card::TriggerEventDef::Tapped(matcher)
+                            if matcher.purpose == crate::card::TapPurposeDef::Mana
+                    ))))
+    {
+        return Err(GrantedAbilityValidationError::UnsupportedTriggerEvent {
+            event: triggered.event,
+        });
+    }
+    validate_ability_trigger_event(triggered.event, target_count)?;
+    if triggered.procedure == AbilityProcedureDef::Shared
+        && is_mana
+        && !matches!(
+            ability.effect.definition,
+            AbilityProgramDef::Effects(effect)
+                if triggered_mana_program_is_immediate(effect)
+        )
+    {
+        return Err(GrantedAbilityValidationError::UnsupportedTriggeredManaProgram);
+    }
+    Ok(())
+}
+
+/// Whether a shared trigger's zone claim is one some capture walk can
+/// actually find it from.
+///
+/// One zone is the ordinary case: a card is in one place, and the walk over
+/// that place finds it. Both zones is admitted for exactly one clause --
+/// "when this is put into a graveyard from anywhere" -- because that event
+/// is the one no single walk sees: a permanent dying is captured off a
+/// snapshot taken before it left the battlefield, when the graveyard walk
+/// cannot see it yet, and a card discarded or milled is captured after it
+/// lands, when the battlefield walk never held it. Every other event would
+/// simply be found from whichever zone the card happened to be in, which
+/// makes claiming both an authoring mistake rather than a listener.
+fn trigger_source_zones_are_discoverable(
+    source_zones: &[ZoneKind],
+    event: crate::card::TriggerEventDef,
+) -> bool {
+    match source_zones {
+        [ZoneKind::Battlefield | ZoneKind::Graveyard] => true,
+        [ZoneKind::Battlefield, ZoneKind::Graveyard] => matches!(
+            event,
+            crate::card::TriggerEventDef::ZoneChanged(matcher)
+                if matcher.from.is_none() && matcher.to == Some(ZoneKind::Graveyard)
+        ),
+        _ => false,
+    }
+}
+
+fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilityValidationError> {
+    let mut grant_sites = program_ability_grant_sites(ability.effect.definition);
+    if let Some(modal) = ability.modal() {
+        grant_sites = modal
+            .modes
+            .iter()
+            .map(|mode| program_ability_grant_sites(mode.effect.definition))
+            .fold(grant_sites, usize::saturating_add);
+    }
+    if grant_sites > usize::from(u8::MAX) + 1 {
+        return Err(GrantedAbilityValidationError::TooManyGrantSites { count: grant_sites });
+    }
+    if ability.text.trim().is_empty() {
+        return Err(GrantedAbilityValidationError::EmptyText);
+    }
+    validate_ability_coverage(ability)?;
     validate_ability_program(ability)?;
     let (source_zones, targets, is_mana_ability) = match &ability.definition {
         DeclarativeAbilityDef::Spell(spell) => (None, spell.targets(), false),
@@ -340,41 +418,7 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
         return Err(GrantedAbilityValidationError::ManaAbilityHasTargets);
     }
     if ability.is_executable() {
-        match ability.definition {
-            DeclarativeAbilityDef::TriggeredMana(triggered)
-            | DeclarativeAbilityDef::Triggered(triggered) => {
-                if triggered.procedure == AbilityProcedureDef::Shared
-                    && (!matches!(
-                        triggered.source_zones,
-                        [ZoneKind::Battlefield | ZoneKind::Graveyard]
-                    ) || (triggered.event == crate::card::TriggerEventDef::StateCondition
-                        && triggered.condition.is_none())
-                        || (matches!(ability.definition, DeclarativeAbilityDef::TriggeredMana(_))
-                            && (triggered.condition.is_some()
-                                || !matches!(
-                                    triggered.event,
-                                    crate::card::TriggerEventDef::Tapped(matcher)
-                                        if matcher.purpose == crate::card::TapPurposeDef::Mana
-                                ))))
-                {
-                    return Err(GrantedAbilityValidationError::UnsupportedTriggerEvent {
-                        event: triggered.event,
-                    });
-                }
-                validate_ability_trigger_event(triggered.event, targets.len())?;
-                if triggered.procedure == AbilityProcedureDef::Shared
-                    && matches!(ability.definition, DeclarativeAbilityDef::TriggeredMana(_))
-                    && !matches!(
-                        ability.effect.definition,
-                        AbilityProgramDef::Effects(effect)
-                            if triggered_mana_program_is_immediate(effect)
-                    )
-                {
-                    return Err(GrantedAbilityValidationError::UnsupportedTriggeredManaProgram);
-                }
-            }
-            _ => {}
-        }
+        validate_triggered_ability_shape(ability, targets.len())?;
     }
     if let Err(problem) = validate_ability_effect_context(ability) {
         return Err(

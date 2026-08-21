@@ -768,6 +768,7 @@ mod untap_skips;
 mod until_end_of_combat;
 mod urza_lands;
 mod venarian_gold;
+
 mod vintage_cube_adventure;
 mod vintage_cube_agathas_soul_cauldron;
 mod vintage_cube_ajani;
@@ -845,6 +846,7 @@ mod vintage_cube_ursine;
 mod vintage_cube_verge;
 mod vintage_cube_vote;
 mod vintage_cube_walking_ballista;
+mod vintage_cube_worldspine_wurm;
 mod wards;
 mod while_source_tapped;
 mod word_of_binding;

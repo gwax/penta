@@ -3009,8 +3009,70 @@ pub(in crate::card::sets) static TOWERING_INDRIK: CardRecord = keyword_creature(
 // RTR 139 — Wild Beastmaster
 // Audit: blocked — Needs this creature's power captured as X when the attack trigger resolves so the resulting bonus remains fixed for the turn.
 
+/// Both walks, because "from anywhere" needs both: the battlefield walk is
+/// what sees a permanent die, and only the graveyard walk sees a card that
+/// was milled or discarded. Neither sees the other's event, so the ability
+/// listening from both fires once either way.
+static WURM_GRAVEYARD_ZONES: [ZoneKind; 2] = [ZoneKind::Battlefield, ZoneKind::Graveyard];
+
+static WURM_SHUFFLES_ITSELF_BACK: [EffectDef; 2] = [
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::Source,
+        zone: ZoneKind::Library,
+        placement: ZonePlacement::Top,
+        controller: None,
+        arrival_effect: None,
+        attachment: None,
+    },
+    EffectDef::ShuffleLibrary {
+        player: EffectRecipientDef::players(PlayerSetDef::One(PlayerRefDef::OwnerOf(
+            ObjectRefDef::Source,
+        ))),
+    },
+];
+
+static WORLDSPINE_WURM_ABILITIES: [AbilityDef; 3] = [
+    abilities::trample(),
+    // A separate ability from the shuffle below, and it only watches the
+    // battlefield: a Wurm milled out of a library makes nothing.
+    AbilityDef::triggered(
+        "When this creature dies, create three 5/5 green Wurm creature tokens with trample.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            Some(ZoneKind::Battlefield),
+            Some(ZoneKind::Graveyard),
+        ),
+        EffectDef::CreateToken {
+            token: cards::WURM_TOKEN_5_5_GREEN,
+            count: ValueDef::Constant(3),
+            tapped: false,
+            attacking: false,
+            counters: None,
+        },
+    ),
+    // A trigger rather than a replacement, which is the whole reason the
+    // tokens happen: the Wurm reaches the graveyard, both abilities see it
+    // there, and only then does it go home.
+    AbilityDef::triggered(
+        "When Worldspine Wurm is put into a graveyard from anywhere, shuffle it into its owner's \
+         library.",
+        TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Graveyard)),
+        EffectDef::Sequence(&WURM_SHUFFLES_ITSELF_BACK),
+    )
+    .with_source_zones(&WURM_GRAVEYARD_ZONES),
+];
+
 // RTR 140 — Worldspine Wurm
-// Audit: blocked — Needs a graveyard-from-anywhere self-shuffle replacement plus the dies-trigger token behavior on the same card.
+pub(in crate::card::sets) static WORLDSPINE_WURM: CardRecord = CardRecord::new(
+    cards::WORLDSPINE_WURM,
+    "Worldspine Wurm",
+    CardArt::new("543d55cb-3a6b-4620-af25-10ae74ed32c4", "Richard Wright"),
+    CardSet::ReturnToRavnica,
+    // Eleven mana nobody pays: it is reanimated or put onto the battlefield
+    // some other way, and the shuffle is what stops that from being repeatable.
+    CardRules::new_creature(mana_cost!("{8}{G}{G}{G}"), &["Wurm"], 15, 15)
+        .with_abilities(&WORLDSPINE_WURM_ABILITIES),
+);
 
 // RTR 141 — Abrupt Decay
 pub(in crate::card::sets) static ABRUPT_DECAY: CardRecord = CardRecord::new(
@@ -5481,6 +5543,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SEEK_THE_HORIZON,
     &STONEFARE_CROCODILE,
     &TOWERING_INDRIK,
+    &WORLDSPINE_WURM,
     &ABRUPT_DECAY,
     &ARCHON_OF_THE_TRIUMVIRATE,
     &ARMADA_WURM,

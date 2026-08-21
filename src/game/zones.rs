@@ -592,7 +592,35 @@ impl Game {
         if shuffles && destination == ZoneKind::Library {
             self.rng.shuffle(&mut self.players[owner.index()].library);
         }
+        if destination == ZoneKind::Graveyard {
+            self.capture_nonbattlefield_graveyard_arrival(&card, from);
+        }
         Some((card, destination))
+    }
+
+    /// "When this is put into a graveyard from anywhere" for the halves that
+    /// are not a permanent dying: discarded from a hand, milled from a
+    /// library, exiled and then returned.
+    ///
+    /// Raised after the card has landed, which is what lets the graveyard
+    /// walk find the listener at all -- it reads the cards lying there. The
+    /// battlefield half is raised from the exit path instead, off a snapshot
+    /// taken before the permanent left, so no listener sees both.
+    fn capture_nonbattlefield_graveyard_arrival(&mut self, card: &CardInstance, from: ZoneKind) {
+        let Some(object) = self.printed_trigger_event_object(
+            card.id,
+            card.definition,
+            card.owner,
+            &CharacteristicContext::Graveyard,
+        ) else {
+            return;
+        };
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::ZoneChanged {
+            object,
+            from,
+            to: ZoneKind::Graveyard,
+            damage_sources: Vec::new(),
+        });
     }
 
     pub(super) fn discard_cards_with_cause(

@@ -173,3 +173,4 @@ pub const BLOODBRAID_CHALLENGER: CardDefinitionId = CardDefinitionId(2255);
 pub const PORTABLE_HOLE: CardDefinitionId = CardDefinitionId(2256);
 pub const INCUBATOR_TOKEN: CardDefinitionId = CardDefinitionId(2257);
 pub const SUNFALL: CardDefinitionId = CardDefinitionId(2258);
+pub const WORLDSPINE_WURM: CardDefinitionId = CardDefinitionId(2259);
