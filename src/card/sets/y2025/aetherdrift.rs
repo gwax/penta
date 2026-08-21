@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AddManaEffectDef, BasicLandType, CardArt, CardRules, CardSet,
-    ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    PlayerRelation, TopCardSelectionDef, TriggerConditionDef, ValueDef, ZoneKind, ZonePlacement,
-    cards,
+    CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, PlayerRelation, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::mana_cost;
 
@@ -46,6 +46,69 @@ pub(in crate::card::sets) static STOCK_UP: CardRecord = CardRecord::new(
     )),
 );
 
+/// "Artifact, creature, and/or enchantment cards with mana value 1 or less."
+/// The three types are alternatives and the mana value applies to all of
+/// them, so the bound is outside the choice rather than inside it.
+static A_CHEAP_PERMANENT_CARD: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::HasType(CardType::Artifact),
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::HasType(CardType::Enchantment),
+    ]),
+    ObjectPredicateDef::ManaValueAtMost(1),
+]);
+
+/// "Up to two" and revealed: a minimum of none, and everything taken is
+/// shown, which is what stops the search being private information.
+static GEARHULK_SEARCH: EffectDef = EffectDef::SearchZone {
+    player: EffectRecipientDef::Controller,
+    source: ZoneKind::Library,
+    object: A_CHEAP_PERMANENT_CARD,
+    minimum: 0,
+    maximum: ValueDef::Constant(2),
+    reveal: true,
+    destination: ZoneKind::Hand,
+    placement: ZonePlacement::Top,
+    shuffle: true,
+    enters_tapped: false,
+    binding: None,
+    then: None,
+};
+
+static BRIGHTGLASS_GEARHULK_ABILITIES: [AbilityDef; 3] = [
+    abilities::first_strike(),
+    abilities::trample(),
+    // "You may" on top of a search that already allows none: declining and
+    // finding nothing look the same from the outside, and the card offers
+    // both because a library nobody wants to shuffle is a real answer.
+    AbilityDef::triggered(
+        "When this creature enters, you may search your library for up to two artifact, creature, \
+         and/or enchantment cards with mana value 1 or less, reveal them, put them into your \
+         hand, then shuffle.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &GEARHULK_SEARCH,
+        },
+    ),
+];
+
+// DFT 191 — Brightglass Gearhulk
+pub(in crate::card::sets) static BRIGHTGLASS_GEARHULK: CardRecord = CardRecord::new(
+    cards::BRIGHTGLASS_GEARHULK,
+    "Brightglass Gearhulk",
+    CardArt::new("3dea5b45-925c-4732-8e9d-fa8232792736", "José Parodi"),
+    CardSet::Aetherdrift,
+    // A 4/4 first striker with trample that also finds the two one-drops the
+    // deck is built around, which is what four coloured pips buy.
+    CardRules::new_artifact_creature(mana_cost!("{G}{G}{W}{W}"), &["Construct"], 4, 4)
+        .with_abilities(&BRIGHTGLASS_GEARHULK_ABILITIES),
+);
+
 /// The verge condition: any land you control with either type answers it,
 /// so a Bayou is both halves at once and a land whose types were changed
 /// counts for what it is now rather than what it was printed as.
@@ -84,6 +147,7 @@ pub(in crate::card::sets) static WASTEWOOD_VERGE: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&STOCK_UP, &WASTEWOOD_VERGE];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&STOCK_UP, &BRIGHTGLASS_GEARHULK, &WASTEWOOD_VERGE];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

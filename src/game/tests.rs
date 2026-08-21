@@ -785,6 +785,7 @@ mod vintage_cube_bolass_citadel;
 mod vintage_cube_bountiful_landscape;
 mod vintage_cube_brainstorm;
 mod vintage_cube_breach;
+mod vintage_cube_brightglass_gearhulk;
 mod vintage_cube_cankerbloom;
 mod vintage_cube_caryatid;
 mod vintage_cube_cathar_commando;

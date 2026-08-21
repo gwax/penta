@@ -213,3 +213,4 @@ pub const TREASURE_TOKEN: CardDefinitionId = CardDefinitionId(2297);
 pub const MAGDA_BRAZEN_OUTLAW: CardDefinitionId = CardDefinitionId(2298);
 pub const DELAYED_BLAST_FIREBALL: CardDefinitionId = CardDefinitionId(2299);
 pub const NIGHTS_WHISPER: CardDefinitionId = CardDefinitionId(2300);
+pub const BRIGHTGLASS_GEARHULK: CardDefinitionId = CardDefinitionId(2301);
