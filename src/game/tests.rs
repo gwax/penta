@@ -788,6 +788,7 @@ mod vintage_cube_collective_brutality;
 mod vintage_cube_colonnade;
 mod vintage_cube_creatures;
 mod vintage_cube_crucible;
+mod vintage_cube_cryptic_command;
 mod vintage_cube_cut_down;
 mod vintage_cube_dack;
 mod vintage_cube_damn;

@@ -186,3 +186,4 @@ pub const FORCE_OF_NEGATION: CardDefinitionId = CardDefinitionId(2268);
 pub const EMPEROR_OF_BONES: CardDefinitionId = CardDefinitionId(2269);
 pub const ABHORRENT_OCULUS: CardDefinitionId = CardDefinitionId(2270);
 pub const UNDERWORLD_BREACH: CardDefinitionId = CardDefinitionId(2271);
+pub const CRYPTIC_COMMAND: CardDefinitionId = CardDefinitionId(2272);
