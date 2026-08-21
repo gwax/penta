@@ -118,6 +118,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::ExileTopOfLibraryToPlay { .. }
         | EffectDef::Mill { then: None, .. }
         | EffectDef::ExileTopAndMayCast { otherwise: None, .. }
+        | EffectDef::MayCastTargetWithoutPaying { .. }
         | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }
         | EffectDef::ExileFromTopUntil { .. }
@@ -319,6 +320,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::ExileTopOfLibraryToPlay { .. }
         | EffectDef::Mill { then: None, .. }
         | EffectDef::ExileTopAndMayCast { otherwise: None, .. }
+        | EffectDef::MayCastTargetWithoutPaying { .. }
         | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }
         | EffectDef::ExileFromTopUntil { .. }

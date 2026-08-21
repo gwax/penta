@@ -60,6 +60,7 @@ impl Game {
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }
             | EffectDef::ExileTopAndMayCast { .. }
+            | EffectDef::MayCastTargetWithoutPaying { .. }
             | EffectDef::Mill { .. }
             | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }

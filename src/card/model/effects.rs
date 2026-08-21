@@ -654,6 +654,18 @@ pub enum EffectDef {
         player: EffectRecipientDef,
         otherwise: Option<&'static EffectDef>,
     },
+    /// "You may cast target instant or sorcery card from your graveyard
+    /// without paying its mana cost."
+    ///
+    /// Unlike a granted flashback the permission is this resolution's alone:
+    /// the offer is the resolution, and a card left uncast keeps nothing. The
+    /// ability named here is what the card is lent while the offer stands,
+    /// which is also what says the cast is free and what exiles the card
+    /// afterwards.
+    MayCastTargetWithoutPaying {
+        object: EffectRecipientDef,
+        ability: &'static AbilityDef,
+    },
     MoveToZone {
         object: EffectRecipientDef,
         zone: ZoneKind,

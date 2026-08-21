@@ -727,6 +727,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::SacrificeOfChoice { .. }
                     | EffectDef::ExileTopOfLibraryToPlay { .. }
                     | EffectDef::ExileTopAndMayCast { .. }
+                    | EffectDef::MayCastTargetWithoutPaying { .. }
                     | EffectDef::Mill { .. }
                     | EffectDef::SearchZonesAndExileRest { .. }
                     | EffectDef::MillUntil { .. }
@@ -881,6 +882,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             // changes only where the card goes afterwards, and impending
             // changes only how the permanent arrives.
             AlternativeCastKindDef::Flashback
+            | AlternativeCastKindDef::WithoutPayingManaCost
             | AlternativeCastKindDef::Escape
             | AlternativeCastKindDef::Impending
             | AlternativeCastKindDef::Miracle

@@ -3,10 +3,10 @@ use super::{
     DecisionKind, DecisionObservation, DecisionOption, DecisionPreference, DecisionVisibility,
     DecisionZone, DeclarativeAbilityDef, EffectResolutionContext, FORK_COPY_COLOR, Game, ManaCost,
     PendingDecision, PlayerId, ResolvedEffectPayment, ScopedEffect, StackObject, Target,
-    TargetSelection, TargetSlotId, TriggerContext, ZoneKind, ZoneMoveCause, ZonePlacement,
-    flatten_target_selections, target_combinations,
+    TargetSelection, TargetSlotId, TemporaryAbilityGrant, TriggerContext, ZoneKind, ZoneMoveCause,
+    ZonePlacement, flatten_target_selections, target_combinations,
 };
-use crate::card::{ChoiceVisibilityDef, EffectDef, ObjectPredicateDef};
+use crate::card::{AbilityDef, ChoiceVisibilityDef, EffectDef, ObjectPredicateDef};
 use crate::ids::GameObjectId;
 
 pub(super) const fn effect_choice_visibility(
@@ -579,6 +579,73 @@ impl Game {
                 definition,
             },
         );
+    }
+
+    /// "You may cast target instant or sorcery card from your graveyard
+    /// without paying its mana cost."
+    ///
+    /// The card is lent `ability` for exactly as long as the offer stands.
+    /// Like the exile offer above, casting takes the decision away and
+    /// answering it is the decline; unlike that one there is nothing else to
+    /// do afterwards, so a card left uncast simply keeps nothing.
+    pub(super) fn offer_granted_cast(
+        &mut self,
+        player: PlayerId,
+        card: GameObjectId,
+        ability: &'static AbilityDef,
+    ) {
+        let Some((_, instance)) = self.card_in_nonbattlefield_zone(card) else {
+            return;
+        };
+        let printed = instance.definition;
+        let name = self
+            .catalog
+            .get(printed)
+            .map_or_else(|| "that card".to_owned(), |card| card.name.clone());
+        let grant = TemporaryAbilityGrant {
+            object: card,
+            ability: *ability,
+        };
+        self.temporary_ability_grants.push(grant);
+        let mut castable = Vec::new();
+        self.add_offered_cast_actions(player, card, &mut castable);
+        if castable.is_empty() {
+            self.revoke_temporary_grant(card, ability);
+            return;
+        }
+        self.queue_decision(
+            player,
+            format!("Cast {name} without paying its mana cost, or decline"),
+            DecisionVisibility::Public,
+            DecisionPreference::PreferOption(0),
+            1..=1,
+            false,
+            vec![DecisionOption {
+                id: 0,
+                label: "Decline".into(),
+                card: Some((card, printed)),
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::Graveyard,
+            }],
+            DecisionContinuation::MayCastGranted {
+                player,
+                card,
+                ability: *ability,
+            },
+        );
+    }
+
+    /// Takes back one lent ability. Only the exact pair goes: a card may be
+    /// carrying somebody else's grant as well.
+    pub(super) fn revoke_temporary_grant(&mut self, card: GameObjectId, ability: &AbilityDef) {
+        if let Some(index) = self
+            .temporary_ability_grants
+            .iter()
+            .position(|grant| grant.object == card && grant.ability == *ability)
+        {
+            self.temporary_ability_grants.remove(index);
+        }
     }
 
     /// What happens when the card is not cast, whether it was declined or

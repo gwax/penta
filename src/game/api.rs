@@ -158,6 +158,11 @@ impl Game {
                     player: caster,
                     card,
                     ..
+                }
+                | DecisionContinuation::MayCastGranted {
+                    player: caster,
+                    card,
+                    ..
                 } = &decision.continuation
                     && *caster == player
                 {

@@ -583,6 +583,15 @@ fn continuation_snapshot(
         DecisionContinuation::MiracleReveal { card } => {
             DecisionContinuationSnapshot::MiracleReveal { card: card.0 }
         }
+        DecisionContinuation::MayCastGranted {
+            player,
+            card,
+            ability,
+        } => DecisionContinuationSnapshot::MayCastGranted {
+            player: player.index(),
+            card: card.0,
+            ability: ability_locator(&game.catalog, |candidate| candidate == ability)?,
+        },
         DecisionContinuation::CascadeCast {
             player,
             card,

@@ -233,6 +233,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::SacrificeOfChoice { .. }
         | EffectDef::ExileTopOfLibraryToPlay { .. }
         | EffectDef::ExileTopAndMayCast { .. }
+        | EffectDef::MayCastTargetWithoutPaying { .. }
         | EffectDef::Mill { .. }
         | EffectDef::SearchZonesAndExileRest { .. }
         | EffectDef::MillUntil { .. }

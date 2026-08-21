@@ -100,7 +100,12 @@ impl Game {
                 else {
                     return None;
                 };
-                (alternative.kind == AlternativeCastKindDef::Flashback).then_some(alternative)
+                matches!(
+                    alternative.kind,
+                    AlternativeCastKindDef::Flashback
+                        | AlternativeCastKindDef::WithoutPayingManaCost
+                )
+                .then_some(alternative)
             });
         let alternative = temporary.or_else(|| self.granted_graveyard_alternative(card))?;
         alternative

@@ -376,6 +376,12 @@ impl Game {
                 }
                 self.bury_cards(player, to_graveyard);
             }
+            DecisionContinuation::MayCastGranted { card, ability, .. } => {
+                // Answering this decision is the decline: a cast would have
+                // taken the decision away instead of resolving it. Either
+                // way the lent ability goes back.
+                self.revoke_temporary_grant(card, &ability);
+            }
             DecisionContinuation::MayCastExiled {
                 card,
                 object,

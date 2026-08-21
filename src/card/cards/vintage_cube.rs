@@ -193,3 +193,4 @@ pub const COMMERCIAL_DISTRICT: CardDefinitionId = CardDefinitionId(2275);
 pub const PHANTASMAL_IMAGE: CardDefinitionId = CardDefinitionId(2276);
 pub const PSYCHIC_FROG: CardDefinitionId = CardDefinitionId(2277);
 pub const ECHO_OF_EONS: CardDefinitionId = CardDefinitionId(2278);
+pub const DREADHORDE_ARCANIST: CardDefinitionId = CardDefinitionId(2279);

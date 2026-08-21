@@ -186,7 +186,11 @@ impl Game {
             // which is nowhere else.
             (
                 CastSourceZone::Hand,
-                Some(AlternativeCastKindDef::Flashback | AlternativeCastKindDef::Escape),
+                Some(
+                    AlternativeCastKindDef::Flashback
+                    | AlternativeCastKindDef::Escape
+                    | AlternativeCastKindDef::WithoutPayingManaCost,
+                ),
             )
             | (
                 CastSourceZone::Graveyard,
@@ -228,7 +232,11 @@ impl Game {
             )
             | (
                 CastSourceZone::Graveyard,
-                Some(AlternativeCastKindDef::Flashback | AlternativeCastKindDef::Escape),
+                Some(
+                    AlternativeCastKindDef::Flashback
+                    | AlternativeCastKindDef::Escape
+                    | AlternativeCastKindDef::WithoutPayingManaCost,
+                ),
             )
             // A permission to play what is on top of your library says
             // nothing about how: the card is cast for whatever it prints,

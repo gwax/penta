@@ -209,7 +209,13 @@ impl Game {
                 // cast, so it only matters when the timing would refuse.
                 let granted_flash = types.contains(CardType::Sorcery)
                     && self.sorcery_flash_grants[player.index()] > 0;
-                if !types.contains(CardType::Instant)
+                // An offer made during a resolution is answered then or not
+                // at all (CR 608.2f), so it ignores the timing the card's
+                // type would otherwise impose -- which is the only way a
+                // cascaded sorcery, or one an Arcanist points at mid-combat,
+                // is ever cast at all.
+                if only.is_none()
+                    && !types.contains(CardType::Instant)
                     && !part_has_flash
                     && !granted_flash
                     && (player != self.active_player

@@ -1,8 +1,8 @@
 use crate::action::{ManaColor, Target};
 use crate::card::{
-    BattlefieldEntryScalarChoiceDef, CardType, CardTypeSet, ColorChoiceOperationDef, ColorSet,
-    EffectDef, ManaCost, ObjectChoiceBindingDef, ObjectPredicateDef, ReplacementEffectDef,
-    TopCardSelectionDef, TurnKindDef, ZoneKind, ZonePlacement,
+    AbilityDef, BattlefieldEntryScalarChoiceDef, CardType, CardTypeSet, ColorChoiceOperationDef,
+    ColorSet, EffectDef, ManaCost, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ReplacementEffectDef, TopCardSelectionDef, TurnKindDef, ZoneKind, ZonePlacement,
 };
 use crate::casting::TargetSelection;
 use crate::ids::{CardDefinitionId, GameObjectId, ObjectSetBindingIndex, PlayerId};
@@ -356,6 +356,14 @@ pub(super) enum DecisionContinuation {
         /// that a rebuilt decision can check it is still the clause it says
         /// it is instead of trusting a detached fragment.
         definition: ScopedEffect,
+    },
+    /// "You may cast target instant or sorcery card from your graveyard
+    /// without paying its mana cost." The card has not moved; what it holds
+    /// is a lent ability, and answering the decision takes it back.
+    MayCastGranted {
+        player: PlayerId,
+        card: GameObjectId,
+        ability: AbilityDef,
     },
     /// "Its owner puts it on their choice of the top or bottom of their
     /// library." The owner answers, not whoever is resolving, so the spell

@@ -541,6 +541,7 @@ fn validate_resolving_effect(
         | EffectDef::ExileFromTopUntil { .. }
         | EffectDef::ManifestDread { .. }
         | EffectDef::Cascade
+        | EffectDef::MayCastTargetWithoutPaying { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }
@@ -879,6 +880,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::SacrificeOfChoice { .. } => "SacrificeOfChoice",
         EffectDef::ExileTopOfLibraryToPlay { .. } => "ExileTopOfLibraryToPlay",
         EffectDef::ExileTopAndMayCast { .. } => "ExileTopAndMayCast",
+        EffectDef::MayCastTargetWithoutPaying { .. } => "MayCastTargetWithoutPaying",
         EffectDef::Mill { .. } => "Mill",
         EffectDef::SearchZonesAndExileRest { .. } => "SearchZonesAndExileRest",
         EffectDef::MillUntil { .. } => "MillUntil",

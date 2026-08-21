@@ -3,12 +3,12 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, CardTypeSet, ComparisonDef, CounterKind, CreatureTypeSetDef, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayActionMatcherDef,
-    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
-    TopCardSelectionDef, TopOfLibraryCostDef, TriggerConditionDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules,
+    CardSet, CardSupertype, CardType, CardTypeSet, ComparisonDef, CounterKind, CreatureTypeSetDef,
+    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ResolvedEffectDurationDef, TopCardSelectionDef, TopOfLibraryCostDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -254,6 +254,60 @@ pub(in crate::card::sets) static BOLASS_CITADEL: CardRecord = CardRecord::new(
         .with_abilities(&BOLASS_CITADEL_ABILITIES),
 );
 
+/// "Mana value less than or equal to this creature's power" is read live off
+/// the Arcanist, so a counter or a pump changes what it can reach.
+static ARCANIST_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Instant),
+                ObjectPredicateDef::HasType(CardType::Sorcery),
+            ]),
+            ObjectPredicateDef::ManaValueAtMostValue(ValueDef::SourcePower),
+        ]),
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: Some(PlayerRelation::You),
+    },
+)];
+
+/// What the card is lent while the offer stands. The kind says both halves
+/// of the printed clause at once: the cast costs nothing, and the card is
+/// exiled rather than buried afterwards.
+static ARCANIST_FREE_CAST: AbilityDef = AbilityDef::alternative_cast(
+    mana_cost!("{0}"),
+    AlternativeCastKindDef::WithoutPayingManaCost,
+    Some("Cast without paying its mana cost, then exile it."),
+    EffectDef::None,
+);
+
+static DREADHORDE_ARCANIST_ABILITIES: [AbilityDef; 2] = [
+    abilities::trample(),
+    AbilityDef::triggered_with_targets(
+        "Whenever this creature attacks, you may cast target instant or sorcery card with mana \
+         value less than or equal to this creature's power from your graveyard without paying \
+         its mana cost. If that spell would be put into your graveyard, exile it instead.",
+        TriggerEventDef::attacks(ObjectPredicateDef::Source),
+        &ARCANIST_TARGET,
+        EffectDef::MayCastTargetWithoutPaying {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            ability: &ARCANIST_FREE_CAST,
+        },
+    ),
+];
+
+// WAR 125 — Dreadhorde Arcanist
+pub(in crate::card::sets) static DREADHORDE_ARCANIST: CardRecord = CardRecord::new(
+    cards::DREADHORDE_ARCANIST,
+    "Dreadhorde Arcanist",
+    CardArt::new("fd97b3cf-924e-4f77-bb82-0bf19592389f", "G-host Lee"),
+    CardSet::WarOfTheSpark,
+    // A 1/3 that only buys back one-mana spells until something makes it
+    // bigger, which in the cube is most of what the deck is doing anyway.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Zombie", "Wizard"], 1, 3)
+        .with_abilities(&DREADHORDE_ARCANIST_ABILITIES),
+);
+
 // WAR 169 — Nissa, Who Shakes the World
 pub(in crate::card::sets) static NISSA_WHO_SHAKES_THE_WORLD: CardRecord = CardRecord::new(
     cards::NISSA_WHO_SHAKES_THE_WORLD,
@@ -424,6 +478,7 @@ pub(in crate::card::sets) static SAHEELI_SUBLIME_ARTIFICER: CardRecord = CardRec
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &JACE_WIELDER_OF_MYSTERIES,
     &BOLASS_CITADEL,
+    &DREADHORDE_ARCANIST,
     &NISSA_WHO_SHAKES_THE_WORLD,
     &TAMIYO_COLLECTOR_OF_TALES,
     &SAHEELI_SUBLIME_ARTIFICER,

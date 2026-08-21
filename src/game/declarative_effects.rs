@@ -525,6 +525,18 @@ impl Game {
                     }
                 }
             }
+            EffectDef::MayCastTargetWithoutPaying {
+                object: recipient,
+                ability,
+            } => {
+                if let Some(Target::Card(card)) = self
+                    .effect_recipients(recipient, object, &context, scoped)
+                    .into_iter()
+                    .next()
+                {
+                    self.offer_granted_cast(object.controller, card, ability);
+                }
+            }
             EffectDef::ExileGrantingOwnerPlay {
                 object: recipient,
                 surcharge,

@@ -20,7 +20,8 @@ impl Game {
             matches!(
                 pending.continuation,
                 DecisionContinuation::MayCastExiled { card, .. }
-                    | DecisionContinuation::CascadeCast { card, .. } if card == cast
+                    | DecisionContinuation::CascadeCast { card, .. }
+                    | DecisionContinuation::MayCastGranted { card, .. } if card == cast
             )
         });
         if !answered {

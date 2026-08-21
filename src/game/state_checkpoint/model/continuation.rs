@@ -224,6 +224,11 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         card: u32,
         exiled: Vec<u32>,
     },
+    MayCastGranted {
+        player: usize,
+        card: u32,
+        ability: AbilityLocator,
+    },
     SeparateIntoPiles {
         resolving_controller: usize,
         subject: usize,

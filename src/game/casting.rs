@@ -533,7 +533,12 @@ impl Game {
         let targets = signature.iter_targets().copied().collect::<Vec<_>>();
         let x = signature.x();
         let alternative_kind = self.cast_alternative_kind(player, card_id, &signature);
-        let cast_via_flashback = alternative_kind == Some(AlternativeCastKindDef::Flashback);
+        // Both say the same thing about where the card goes afterwards:
+        // exiled rather than buried, wherever it would otherwise have gone.
+        let cast_via_flashback = matches!(
+            alternative_kind,
+            Some(AlternativeCastKindDef::Flashback | AlternativeCastKindDef::WithoutPayingManaCost)
+        );
         let cast_face_down = alternative_kind == Some(AlternativeCastKindDef::FaceDown);
         let energy = self.exile_energy_cost(card_id, player).unwrap_or(0);
         // Read while the card is still on the library, which is the only

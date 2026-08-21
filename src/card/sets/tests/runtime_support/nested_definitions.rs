@@ -435,6 +435,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::ExileTopAndMayCast {
             otherwise: None, ..
         }
+        | EffectDef::MayCastTargetWithoutPaying { .. }
         | EffectDef::SearchZonesAndExileRest { .. }
         | EffectDef::MillUntil { .. }
         | EffectDef::ExileFromTopUntil { .. }

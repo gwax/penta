@@ -794,6 +794,7 @@ mod vintage_cube_cryptic_command;
 mod vintage_cube_cut_down;
 mod vintage_cube_dack;
 mod vintage_cube_damn;
+mod vintage_cube_dreadhorde_arcanist;
 mod vintage_cube_duelist;
 mod vintage_cube_echo_of_eons;
 mod vintage_cube_eldrazi;

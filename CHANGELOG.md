@@ -153,6 +153,16 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A cast offered during a resolution ignores the timing its type would
+  impose.** An offer made while something resolves is answered then or not at
+  all (CR 608.2f), which is the only way a cascaded sorcery, or one Dreadhorde
+  Arcanist points at mid-combat, is ever cast: the enumeration still refused
+  every sorcery outside a main phase with an empty stack, which is exactly the
+  moment such an offer is made. `WithoutPayingManaCost` joins the
+  alternative-cast kinds on the wire -- an open enum with a documented
+  fallback, so the epoch does not move -- and says both halves of that clause
+  at once: the cast is free, and the card is exiled rather than buried.
+
 - **A copy can keep something of its own.** "You may have this creature enter
   as a copy of any creature on the battlefield, except it's an Illusion in
   addition to its other types and it has ..." -- a copy took the other

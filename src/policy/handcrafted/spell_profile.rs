@@ -442,6 +442,7 @@ impl HandcraftedPolicy {
             | EffectDef::DiscardCards { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }
             | EffectDef::ExileTopAndMayCast { .. }
+            | EffectDef::MayCastTargetWithoutPaying { .. }
             | EffectDef::Mill { .. }
             | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }

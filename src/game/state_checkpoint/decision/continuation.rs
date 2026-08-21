@@ -784,6 +784,22 @@ fn parse_continuation(
                 card: GameObjectId(*card),
             }
         }
+        DecisionContinuationSnapshot::MayCastGranted {
+            player: seat,
+            card,
+            ability,
+        } => {
+            let seat = player(*seat)?;
+            if seat != observation.player {
+                return Err("a granted-cast offer names a player other than the deciding one".into());
+            }
+            DecisionContinuation::MayCastGranted {
+                player: seat,
+                card: GameObjectId(*card),
+                ability: catalog_ability(&game.catalog, ability)
+                    .ok_or("checkpoint granted-cast ability is absent from this catalog")?,
+            }
+        }
         DecisionContinuationSnapshot::CascadeCast {
             player: seat,
             card,

@@ -77,6 +77,12 @@ pub enum AlternativeCastKindDef {
     /// ordinary cast from hand for a different price; what it changes is how
     /// the permanent arrives, which the card's own clauses say.
     Impending,
+    /// Cast where it lies without paying its mana cost, and exiled rather
+    /// than buried afterwards. Dreadhorde Arcanist's clause is not flashback
+    /// -- it grants no keyword and lasts only for the resolution that
+    /// offered it -- but what it does to the cast and to the card afterwards
+    /// is the same pair of things.
+    WithoutPayingManaCost,
     /// Cast face down as a 2/2 creature with no name for {3} (CR 702.37a).
     /// The spell's own clauses are not what it does while face down -- it
     /// does nothing at all -- so this kind changes the object rather than
@@ -117,6 +123,7 @@ impl AlternativeCastKindDef {
             Self::AlternativeCost => "Alternative cost",
             Self::Escape => "Escape",
             Self::Impending => "Impending",
+            Self::WithoutPayingManaCost => "Without paying its mana cost",
             Self::FaceDown => "Morph",
         }
     }
@@ -128,6 +135,7 @@ impl AlternativeCastKindDef {
         [
             Self::Escape,
             Self::Impending,
+            Self::WithoutPayingManaCost,
             Self::Flashback,
             Self::Overload,
             Self::Miracle,
@@ -200,6 +208,11 @@ impl AlternativeCastAbilityDef {
             }
             // The card prints what is paid instead, so it supplies the text.
             (AlternativeCastKindDef::AlternativeCost, _) => "Alternative cost".into(),
+            // Never printed on the card being cast: whatever granted the
+            // permission said this, so its own text is the reminder.
+            (AlternativeCastKindDef::WithoutPayingManaCost, _) => self
+                .stack_text
+                .map_or_else(|| "Without paying its mana cost".into(), std::borrow::ToOwned::to_owned),
             // Morph is printed on the card that has it; casting face down is
             // the rule that applies to every such card, and the cost of doing
             // it is always {3}.
