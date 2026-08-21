@@ -4,7 +4,7 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
     CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, TriggerEventDef, ZoneKind,
+    PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
     ZonePlacement, cards,
 };
 use crate::{TargetIndex, mana_cost};
@@ -41,6 +41,34 @@ static WITNESS_MAY_RETURN: EffectDef = EffectDef::May {
         attachment: None,
     },
 };
+
+/// "You draw two cards and lose 2 life" is one sentence about you, so the
+/// life is not a cost and nothing stops it: a player at 2 who casts this
+/// draws the two cards and loses the game.
+static WHISPER_EFFECT: [EffectDef; 2] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+    EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+];
+
+// 5DN 55 — Night's Whisper
+pub(in crate::card::sets) static NIGHTS_WHISPER: CardRecord = CardRecord::new(
+    cards::NIGHTS_WHISPER,
+    "Night's Whisper",
+    CardArt::new("61f0c6f6-b90d-4eb1-a5db-86e0a3997501", "David Martin"),
+    CardSet::FifthDawn,
+    // Two mana and two life for two cards, which is the rate every black
+    // deck in the cube is happy to pay and no other colour is offered.
+    CardRules::new_sorcery(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell(
+        "You draw two cards and lose 2 life.",
+        EffectDef::Sequence(&WHISPER_EFFECT),
+    )),
+);
 
 // 5DN 86 — Eternal Witness
 pub(in crate::card::sets) static ETERNAL_WITNESS: CardRecord = CardRecord::new(
@@ -84,6 +112,7 @@ pub(in crate::card::sets) static CRUCIBLE_OF_WORLDS: CardRecord = CardRecord::ne
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&ETERNAL_WITNESS, &CRUCIBLE_OF_WORLDS];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&NIGHTS_WHISPER, &ETERNAL_WITNESS, &CRUCIBLE_OF_WORLDS];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
