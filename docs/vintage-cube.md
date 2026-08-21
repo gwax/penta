@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 274 are cataloged and 260 are not
+- 534 cards in the pool, of which 275 are cataloged and 259 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -126,7 +126,7 @@ lands are legal in every format and are not listed.
 - `Vampire Hexmage`
 - `Yawgmoth's Will`
 
-### Red (37)
+### Red (36)
 
 - `Abrade`
 - `Broadside Bombardiers`
@@ -151,7 +151,6 @@ lands are legal in every format and are not listed.
 - `Kari Zev, Skyship Raider`
 - `Kellan, Planar Trailblazer`
 - `Laelia, the Blade Reforged`
-- `Magda, Brazen Outlaw`
 - `Monstrous Rage`
 - `Oliphaunt`
 - `Orcish Lumberjack`
@@ -319,7 +318,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 274 pool cards are in the catalog because an earlier format needed them.
+These 275 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -456,6 +455,7 @@ been played beside.
 - `Lotus Petal`
 - `Lush Portico`
 - `Lórien Revealed`
+- `Magda, Brazen Outlaw`
 - `Mana Confluence`
 - `Mana Crypt`
 - `Mana Drain`

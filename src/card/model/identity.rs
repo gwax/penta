@@ -90,6 +90,7 @@ pub enum CardSet {
     DragonsOfTarkir,
     Commander2015,
     ModernHorizons1,
+    Kaldheim,
     StrixhavenSchoolOfMages,
     ModernHorizons2,
     AdventuresInTheForgottenRealms,

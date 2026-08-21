@@ -829,6 +829,7 @@ mod vintage_cube_legion_extruder;
 mod vintage_cube_library;
 mod vintage_cube_lion_sash;
 mod vintage_cube_lorien;
+mod vintage_cube_magda;
 mod vintage_cube_mana;
 mod vintage_cube_manamorphose;
 mod vintage_cube_manifold_key;

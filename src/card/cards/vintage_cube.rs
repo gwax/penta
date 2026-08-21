@@ -209,3 +209,5 @@ pub const MAP_TOKEN: CardDefinitionId = CardDefinitionId(2293);
 pub const GET_LOST: CardDefinitionId = CardDefinitionId(2294);
 pub const ELEMENTAL_TOKEN_5_3_GREEN: CardDefinitionId = CardDefinitionId(2295);
 pub const TITANIA_PROTECTOR_OF_ARGOTH: CardDefinitionId = CardDefinitionId(2296);
+pub const TREASURE_TOKEN: CardDefinitionId = CardDefinitionId(2297);
+pub const MAGDA_BRAZEN_OUTLAW: CardDefinitionId = CardDefinitionId(2298);

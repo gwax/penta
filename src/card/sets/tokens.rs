@@ -12,11 +12,11 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivationTimingDef, AppliedEffectDef, AppliedRuleDef, BandingQuality, CardArt,
-    CardComposition, CardPart, CardRules, CardSet, CardStructure, CardType, ControlDurationDef,
-    DoubleFacedKind, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef,
-    TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BandingQuality,
+    CardArt, CardComposition, CardPart, CardRules, CardSet, CardStructure, CardType,
+    ControlDurationDef, DoubleFacedKind, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::CardPartId;
 use crate::{TargetIndex, mana_cost};
@@ -461,6 +461,25 @@ static MAP_COST: [AbilityCostDef; 3] = [
 /// The Map is the whole of what Get Lost gives back, so it carries its
 /// printed ability rather than being a blank artifact: a card off the top
 /// when it is a land, and a bigger creature when it is not.
+static TREASURE_COST: [AbilityCostDef; 2] =
+    [AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource];
+
+/// A Treasure is one mana of any colour that has to be spent to be spent:
+/// tapping it is only half the cost, and the token goes with it.
+pub(in crate::card::sets) static TREASURE_TOKEN: CardRecord = CardRecord::new(
+    cards::TREASURE_TOKEN,
+    "Treasure",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_artifact_without_mana_cost(&["Treasure"]).with_ability(
+        AbilityDef::activated_mana(
+            "{T}, Sacrifice this artifact: Add one mana of any color.",
+            &TREASURE_COST,
+            EffectDef::AddMana(AddManaEffectDef::any_color()),
+        ),
+    ),
+);
+
 pub(in crate::card::sets) static ELEMENTAL_TOKEN_5_3_GREEN: CardRecord = CardRecord::new(
     cards::ELEMENTAL_TOKEN_5_3_GREEN,
     "Elemental",
@@ -879,6 +898,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DRAKE_TOKEN_2_2_BLUE,
     &GOBLIN_TOKEN_1_1_RED,
     &GOBLIN_TOKEN_1_1_RED_HASTE,
+    &TREASURE_TOKEN,
     &ELEMENTAL_TOKEN_5_3_GREEN,
     &MAP_TOKEN,
     &WARRIOR_TOKEN_1_1_RED,
