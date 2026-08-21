@@ -28,6 +28,7 @@ static GUT_MAKES_A_SKELETON: EffectDef = EffectDef::CreateToken {
     count: ValueDef::Constant(1),
     tapped: true,
     attacking: true,
+    counters: None,
 };
 
 /// "Whenever you attack" is one or more creatures you control attacking,

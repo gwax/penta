@@ -368,6 +368,7 @@ pub(in crate::card::sets) static ICATIAN_TOWN: CardRecord = CardRecord::new(
             count: ValueDef::Constant(4),
             tapped: false,
             attacking: false,
+            counters: None,
         },
     )]),
 );
@@ -791,6 +792,7 @@ pub(in crate::card::sets) static BREEDING_PIT: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
+                counters: None,
             },
         ),
     ]),
@@ -1460,7 +1462,7 @@ pub(in crate::card::sets) static ELVISH_FARMER: CardRecord = CardRecord::new(
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
-                },
+                counters: None,},
             ),
             AbilityDef::activated(
                 "Sacrifice a Saproling: You gain 2 life.",
@@ -1706,7 +1708,7 @@ pub(in crate::card::sets) static THALLID: CardRecord = CardRecord::new(
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
-                },
+                counters: None,},
             ),
         ]),
 );
@@ -1738,7 +1740,7 @@ pub(in crate::card::sets) static THALLID_DEVOURER: CardRecord = CardRecord::new(
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
-                },
+                counters: None,},
             ),
             AbilityDef::activated(
                 "Sacrifice a Saproling: This creature gets +1/+2 until end of turn.",

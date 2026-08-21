@@ -51,6 +51,7 @@ static JACKED_RABBIT_ABILITIES: [AbilityDef; 3] = [
             count: ValueDef::SourcePower,
             tapped: false,
             attacking: false,
+            counters: None,
         },
     ),
 ];

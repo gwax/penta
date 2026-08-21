@@ -101,6 +101,7 @@ pub enum CardSet {
     ConspiracyTakeTheCrown,
     Kaladesh,
     AetherRevolt,
+    MarchOfTheMachine,
     LordOfTheRings,
     WildsOfEldraine,
     LostCavernsOfIxalan,

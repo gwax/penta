@@ -16,6 +16,7 @@ mod move_to_zone;
 mod permanent_state;
 mod prevention;
 mod tapping;
+mod tokens;
 
 impl Game {
     #[allow(clippy::too_many_lines)]
@@ -245,47 +246,10 @@ impl Game {
                     }
                 }
             }
-            EffectDef::CreateToken {
-                token,
-                count,
-                tapped,
-                attacking,
-            } => {
-                // Two players, so the one opponent is the only thing an
-                // arriving attacker could be attacking (CR 506.3d).
-                let defender =
-                    attacking.then(|| crate::AttackDefender::Player(object.controller.opponent()));
-                for _ in 0..self.effect_value(count, object, &context, scoped).max(0) {
-                    self.create_token_arriving(object.controller, token, None, tapped, defender);
-                }
-            }
-            EffectDef::CreateAttachedToken { token } => {
-                if let Some(source) = object.source {
-                    self.create_attached_token(object.controller, token, source);
-                }
-            }
-            EffectDef::CreateTokenCopyOf { object: recipient } => {
-                let copies = self
-                    .effect_recipients(recipient, object, &context, scoped)
-                    .into_iter()
-                    .filter_map(|target| match target {
-                        Target::Permanent(id) => self
-                            .battlefield
-                            .iter()
-                            .find(|permanent| permanent.card.id == id)
-                            // A token that is itself a copy of something else
-                            // copies what it became, not what it was made as.
-                            .map(|permanent| {
-                                permanent
-                                    .copied_from
-                                    .map_or(permanent.card.definition, |(definition, _)| definition)
-                            }),
-                        _ => None,
-                    })
-                    .collect::<Vec<_>>();
-                for definition in copies {
-                    self.create_token(object.controller, definition);
-                }
+            EffectDef::CreateToken { .. }
+            | EffectDef::CreateAttachedToken { .. }
+            | EffectDef::CreateTokenCopyOf { .. } => {
+                self.resolve_token_effect(scoped, object, &context);
             }
             EffectDef::PreventDamage { .. } => {
                 self.resolve_prevention_effect(scoped, object, &context);

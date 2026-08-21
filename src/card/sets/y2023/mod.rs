@@ -2,6 +2,7 @@
 
 pub(super) mod lord_of_the_rings;
 pub(super) mod lost_caverns_of_ixalan;
+pub(super) mod march_of_the_machine;
 pub(super) mod wilds_of_eldraine;
 
 pub(super) use super::{CardRecord, PrintingRecord};

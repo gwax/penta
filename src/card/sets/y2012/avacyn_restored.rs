@@ -208,6 +208,7 @@ static COMMANDERS_AUTHORITY_UPKEEP: AbilityDef = AbilityDef::triggered(
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,
+        counters: None,
     },
 );
 
@@ -318,6 +319,7 @@ pub(in crate::card::sets) static ENTREAT_THE_ANGELS: CardRecord = CardRecord::ne
                 count: ValueDef::ChosenX,
                 tapped: false,
                 attacking: false,
+                counters: None,
             },
         ),
         abilities::miracle(mana_cost!("{X}{W}{W}")),
@@ -792,6 +794,7 @@ pub(in crate::card::sets) static VOICE_OF_THE_PROVINCES: CardRecord = CardRecord
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
+                counters: None,
             },
         ),
     ]),
@@ -1112,6 +1115,7 @@ pub(in crate::card::sets) static GEIST_SNATCH: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
+                counters: None,
             },
         ]),
     )),
@@ -1804,7 +1808,7 @@ pub(in crate::card::sets) static DEMONIC_RISING: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
-            },
+            counters: None,},
         ),
     ),
 );
@@ -2103,6 +2107,7 @@ pub(in crate::card::sets) static MAALFELD_TWINS: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(2),
                 tapped: false,
                 attacking: false,
+                counters: None,
             },
         ),
     ),

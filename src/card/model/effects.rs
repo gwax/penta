@@ -1,4 +1,5 @@
 mod composites;
+mod conditions;
 mod likelihood;
 mod replacements;
 mod triggers;
@@ -6,6 +7,7 @@ mod turn_structure;
 mod values;
 
 pub use composites::*;
+pub use conditions::*;
 pub use likelihood::*;
 pub use replacements::*;
 pub use triggers::*;
@@ -72,44 +74,6 @@ impl TurnKindDef {
     }
 }
 
-/// One place an effect may choose an owned card from.
-///
-/// Outside the game is deliberately not a [`ZoneKind`]: Magic's zones include
-/// exile, while a tournament sideboard remains outside the game until an
-/// effect brings one of its cards in.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum CardChoiceSourceDef {
-    Zone(ZoneKind),
-    OutsideGame,
-}
-
-/// A reusable condition evaluated in an effect's source and event context.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum ConditionDef {
-    /// At least one object matches this zone, controller, and object query.
-    Exists(ObjectQueryDef),
-    /// Every listed condition holds. An empty list is vacuously true, which
-    /// is what makes it safe to build one from a card's own list of named
-    /// permanents without a special case for the shortest one.
-    All(&'static [ConditionDef]),
-    /// How many objects the query matches, against a printed number. The
-    /// counting form of [`Self::Exists`], for the clauses that name a bound
-    /// rather than asking whether anything is there at all.
-    ///
-    /// Held behind a reference so that adding it does not widen every
-    /// condition, and with it the mana-ability activation this sits inside.
-    ObjectCount(&'static ObjectCountConditionDef),
-}
-
-/// The parts of a counting condition. Split out of [`ConditionDef`] so the
-/// enum stays the width of its smallest useful variant.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct ObjectCountConditionDef {
-    pub query: ObjectQueryDef,
-    pub comparison: ComparisonDef,
-    pub amount: u8,
-}
-
 /// What follows a discard, and what it counts among the cards that went.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct DiscardFollowUpDef {
@@ -167,6 +131,13 @@ pub struct TopCardSelectionDef {
     /// implementation detail rather than a decision a bot has to make.
     pub selected_order_follows_choice: bool,
     pub then: Option<&'static EffectDef>,
+}
+
+/// Counters a token is created with.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct TokenCountersDef {
+    pub kind: CounterKind,
+    pub amount: ValueDef,
 }
 
 /// Who may observe a pending choice and its available options.
@@ -400,6 +371,12 @@ pub enum EffectDef {
         /// attacker, so nothing that watches a declaration sees it, but it
         /// is an attacking creature in every other respect.
         attacking: bool,
+        /// Counters the token arrives carrying. Incubate makes a token with
+        /// X +1/+1 counters on it, where X is what the effect worked out
+        /// rather than anything the token prints: the same Incubator token
+        /// comes out of every Incubate. `None` for the ordinary token, which
+        /// arrives with nothing on it.
+        counters: Option<TokenCountersDef>,
     },
     /// Creates one token, then attaches the resolving permanent to that
     /// exact battlefield incarnation before state-based actions run. This is

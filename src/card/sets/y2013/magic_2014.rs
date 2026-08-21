@@ -313,6 +313,7 @@ pub(in crate::card::sets) static HIVE_STIRRINGS: CardRecord = CardRecord::new(
             count: ValueDef::Constant(2),
             tapped: false,
             attacking: false,
+            counters: None,
         },
     )),
 );
@@ -1301,6 +1302,7 @@ static TAPPED_ZOMBIE: EffectDef = EffectDef::CreateToken {
     count: ValueDef::Constant(1),
     tapped: true,
     attacking: false,
+    counters: None,
 };
 
 static LILIANAS_REAVER_STRIKE: [EffectDef; 2] = [
@@ -1810,7 +1812,7 @@ pub(in crate::card::sets) static DRAGON_EGG: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
-            },
+            counters: None,},
         ),
     ]),
 );
@@ -2185,7 +2187,7 @@ pub(in crate::card::sets) static YOUNG_PYROMANCER: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
-            },
+            counters: None,},
         ),
     ),
 );
@@ -2334,6 +2336,7 @@ pub(in crate::card::sets) static HOWL_OF_THE_NIGHT_PACK: CardRecord = CardRecord
             count: ValueDef::CountMatchingObjects(&M14_FORESTS_YOU_CONTROL),
             tapped: false,
             attacking: false,
+            counters: None,
         },
     )),
 );
@@ -2551,7 +2554,7 @@ pub(in crate::card::sets) static PRIMEVAL_BOUNTY: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
-            },
+            counters: None,},
         ),
         AbilityDef::triggered_with_targets("Whenever you cast a noncreature spell, put three +1/+1 counters on target creature you control.", TriggerEventDef::SpellCast(ObjectPredicateDef::All(&[
                 ObjectPredicateDef::NoncreatureSpell,
@@ -2688,7 +2691,7 @@ pub(in crate::card::sets) static SPOREMOUND: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
-            },
+            counters: None,},
         ),
     ),
 );

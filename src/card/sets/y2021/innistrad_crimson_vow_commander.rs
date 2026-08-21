@@ -15,6 +15,7 @@ static SPIRITS_FOR_THE_TYPES: EffectDef = EffectDef::CreateToken {
     count: ValueDef::MatchedCardTypes,
     tapped: false,
     attacking: false,
+    counters: None,
 };
 
 static EPIPHANY_DISCARD: DiscardFollowUpDef = DiscardFollowUpDef {

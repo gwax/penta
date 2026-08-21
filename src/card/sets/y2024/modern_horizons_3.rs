@@ -38,6 +38,7 @@ static OCELOT_END_STEP: [EffectDef; 2] = [
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,
+        counters: None,
     },
     // The blessing half is checked as this resolves rather than as it
     // triggers, so ascending in response still doubles.
@@ -363,6 +364,7 @@ static AJANI_MAKES_A_CAT_AND_MAY_BURN: [EffectDef; 2] = [
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,
+        counters: None,
     },
     EffectDef::IfCondition {
         condition: &A_RED_PERMANENT_BESIDES_AJANI,
@@ -407,6 +409,7 @@ static AJANI_PARIAH_ABILITIES: [AbilityDef; 2] = [
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,
+            counters: None,
         },
     ),
     // One trigger per Cat rather than one per batch. Several Cats dying at

@@ -12,11 +12,13 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, AppliedRuleDef, BandingQuality, CardArt, CardRules, CardSet, CardType,
-    ControlDurationDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
+    AppliedEffectDef, AppliedRuleDef, BandingQuality, CardArt, CardComposition, CardPart,
+    CardRules, CardSet, CardStructure, CardType, ControlDurationDef, DoubleFacedKind, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind,
+    abilities, cards,
 };
+use crate::ids::CardPartId;
 use crate::{TargetIndex, mana_cost};
 
 /// Not a token: the body a face-down permanent presents while it is face
@@ -635,6 +637,51 @@ pub(in crate::card::sets) static FOOD_TOKEN: CardRecord = CardRecord::new(
     )),
 );
 
+/// The one token in the catalog with two faces. Incubate makes it, the
+/// counters on it come from whatever made it, and two mana turns it over
+/// into a body the size of those counters -- a 0/0 with the counters still
+/// on it, which is the whole of what the back face is for.
+const fn incubator_front_rules() -> CardRules {
+    CardRules::new_artifact_without_mana_cost(&["Incubator"]).with_ability(AbilityDef::activated(
+        "{2}: Transform this token.",
+        &INCUBATOR_TRANSFORM_COST,
+        EffectDef::Transform {
+            object: EffectRecipientDef::Source,
+        },
+    ))
+}
+
+static INCUBATOR_TRANSFORM_COST: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{2}"))];
+
+fn incubator_composition() -> CardComposition {
+    CardComposition {
+        parts: vec![
+            CardPart::new(CardPartId::PRIMARY, "Incubator", incubator_front_rules()),
+            CardPart::new(
+                CardPartId(1),
+                "Phyrexian",
+                CardRules::new_artifact_creature_without_mana_cost(&["Phyrexian"], 0, 0),
+            ),
+        ],
+        structure: CardStructure::DoubleFaced {
+            front: CardPartId::PRIMARY,
+            back: CardPartId(1),
+            kind: DoubleFacedKind::Transforming,
+        },
+        // A token is never cast, so it has nothing to be cast as.
+        play_options: Vec::new(),
+    }
+}
+
+pub(in crate::card::sets) static INCUBATOR_TOKEN: CardRecord = CardRecord::new(
+    cards::INCUBATOR_TOKEN,
+    "Incubator",
+    CardArt::new("", ""),
+    CardSet::Token,
+    incubator_front_rules(),
+)
+.with_composition(incubator_composition);
+
 /// The body Gut makes out of anything else you were done with. Menace is
 /// what makes a 4/1 that arrives already attacking hard to answer.
 pub(in crate::card::sets) static SKELETON_TOKEN_4_1_BLACK: CardRecord = CardRecord::new(
@@ -714,6 +761,7 @@ pub(in crate::card::sets) static NISSA_WHO_SHAKES_THE_WORLD_EMBLEM: CardRecord =
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FACE_DOWN_CREATURE,
+    &INCUBATOR_TOKEN,
     &GERM_TOKEN_0_0_BLACK,
     &ORC_ARMY_TOKEN_0_0_BLACK,
     &BEAST_TOKEN_3_3_GREEN,

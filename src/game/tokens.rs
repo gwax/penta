@@ -6,8 +6,8 @@
 //! only the part that differs: minting the object.
 
 use super::{
-    CardDefinitionId, CardSet, CharacteristicSource, EntryCompletion, Game, GameObjectId,
-    PendingBattlefieldEntry, Permanent, PlayerId, ZoneKind,
+    CardDefinitionId, CardSet, CharacteristicSource, CounterKind, EntryCompletion, Game,
+    GameObjectId, PendingBattlefieldEntry, Permanent, PlayerId, ZoneKind,
 };
 
 impl Game {
@@ -36,7 +36,7 @@ impl Game {
         token: CardDefinitionId,
         creator: Option<GameObjectId>,
     ) {
-        self.create_token_arriving(controller, token, creator, false, None);
+        self.create_token_arriving(controller, token, creator, false, None, None);
     }
 
     /// Creates one token whose committed battlefield incarnation becomes the
@@ -69,6 +69,7 @@ impl Game {
     }
 
     /// The same, for a token whose card says it arrives tapped.
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn create_token_arriving(
         &mut self,
         controller: PlayerId,
@@ -76,6 +77,7 @@ impl Game {
         creator: Option<GameObjectId>,
         tapped: bool,
         attacking: Option<crate::AttackDefender>,
+        counters: Option<(CounterKind, u16)>,
     ) {
         let Some(definition) = self.catalog.get(token) else {
             return;
@@ -94,6 +96,12 @@ impl Game {
         // Set before entry replacements run, the same point an as-enters
         // clause would set it.
         permanent.tapped = tapped;
+        // "Create an Incubator token with X +1/+1 counters on it" is one
+        // instruction: the counters are on it as it arrives rather than put
+        // there afterwards, so an enters trigger reading its power sees them.
+        if let Some((kind, amount)) = counters {
+            permanent.add_counters(kind, amount);
+        }
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from: ZoneKind::Stack,

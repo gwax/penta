@@ -309,6 +309,7 @@ static EYES_IN_THE_SKIES_EFFECTS: [EffectDef; 2] = [
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,
+        counters: None,
     },
     abilities::populate(),
 ];
@@ -389,6 +390,7 @@ pub(in crate::card::sets) static KNIGHTLY_VALOR: CardRecord = CardRecord::new(
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
+                    counters: None,
                 },
             ),
             AbilityDef::static_ability(
@@ -488,7 +490,7 @@ pub(in crate::card::sets) static PRECINCT_CAPTAIN: CardRecord = CardRecord::new(
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
-                },
+                counters: None,},
             ),
         ]),
 );
@@ -596,6 +598,7 @@ pub(in crate::card::sets) static SELLER_OF_SONGBIRDS: CardRecord = CardRecord::n
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
+                counters: None,
             },
         ),
     ),
@@ -2109,6 +2112,7 @@ pub(in crate::card::sets) static GOBLIN_RALLY: CardRecord = CardRecord::new(
             count: ValueDef::Constant(4),
             tapped: false,
             attacking: false,
+            counters: None,
         },
     )),
 );
@@ -2418,6 +2422,7 @@ pub(in crate::card::sets) static SURVEY_THE_WRECKAGE: CardRecord = CardRecord::n
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
+                counters: None,
             },
         ]),
     )),
@@ -2489,7 +2494,7 @@ pub(in crate::card::sets) static UTVARA_HELLKITE: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
-            },
+            counters: None,},
         ),
     ]),
 );
@@ -2629,6 +2634,7 @@ pub(in crate::card::sets) static CENTAURS_HERALD: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
+                counters: None,
             },
         ),
     ),
@@ -2853,6 +2859,7 @@ static HORNCALLERS_CHANT_EFFECTS: [EffectDef; 2] = [
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,
+        counters: None,
     },
     abilities::populate(),
 ];
@@ -3084,6 +3091,7 @@ pub(in crate::card::sets) static ARMADA_WURM: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
+                counters: None,
             },
         ),
     ]),
@@ -3165,6 +3173,7 @@ pub(in crate::card::sets) static CALL_OF_THE_CONCLAVE: CardRecord = CardRecord::
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,
+            counters: None,
         },
     )),
 );
@@ -3353,6 +3362,7 @@ static COURSERS_ACCORD_EFFECTS: [EffectDef; 2] = [
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,
+        counters: None,
     },
     abilities::populate(),
 ];
@@ -3760,6 +3770,7 @@ static KOROZDA_GUILDMAGE_PAYOFF: EffectDef = EffectDef::CreateToken {
     count: ValueDef::TriggerEventAmount,
     tapped: false,
     attacking: false,
+    counters: None,
 };
 
 // RTR 176 — Korozda Guildmage
@@ -4107,7 +4118,7 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
-                },
+                counters: None,},
             ),
         ],
     )),
@@ -4437,6 +4448,7 @@ pub(in crate::card::sets) static VITU_GHAZI_GUILDMAGE: CardRecord = CardRecord::
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
+                counters: None,
             },
         ),
         AbilityDef::activated(
@@ -4486,6 +4498,7 @@ static VRASKA_ABILITIES: [AbilityDef; 3] = [
             count: ValueDef::Constant(3),
             tapped: false,
             attacking: false,
+            counters: None,
         },
     ),
 ];

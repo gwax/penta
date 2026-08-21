@@ -532,6 +532,11 @@ const SET_MODULES: &[SetModule] = &[
         y2017::aether_revolt::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::MarchOfTheMachine,
+        y2023::march_of_the_machine::CARDS,
+        y2023::march_of_the_machine::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::LordOfTheRings,
         y2023::lord_of_the_rings::CARDS,
         y2023::lord_of_the_rings::ADDITIONAL_PRINTINGS,
