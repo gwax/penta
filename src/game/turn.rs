@@ -423,6 +423,14 @@ impl Game {
                     .expiration
                     .survives_turn_start(self.active_player, turns_started)
             });
+            // A copy that named a duration ends with everything else that
+            // did; one that named none has no expiration to check.
+            if permanent.copy_expiration.is_some_and(|expiration| {
+                !expiration.survives_turn_start(self.active_player, turns_started)
+            }) {
+                permanent.copy_effect = None;
+                permanent.copy_expiration = None;
+            }
         }
         self.creature_died_this_turn = false;
         self.damage_cannot_be_prevented_this_turn = false;
@@ -676,6 +684,13 @@ impl Game {
                         ContinuousEffectExpiration::WhileSourceTapped
                     ) || still_tapped.contains(&effect.source.object))
             });
+            if permanent
+                .copy_expiration
+                .is_some_and(|expiration| !expiration.survives_cleanup())
+            {
+                permanent.copy_effect = None;
+                permanent.copy_expiration = None;
+            }
             // A control change held by a permanent outlives the turn; only
             // the turn-scoped form is ended here.
             if permanent.control_source.is_none()

@@ -127,6 +127,10 @@ struct Permanent {
     /// snapshot rather than a live pointer to the target, so later changes to
     /// that object cannot leak through and copy chains preserve exceptions.
     copy_effect: Option<CopiableCharacteristics>,
+    /// When the copy above ends. A printed copy effect almost never states a
+    /// duration and lasts indefinitely; Saheeli's does, so the copy has to
+    /// know how long it is one.
+    copy_expiration: Option<ContinuousEffectExpiration>,
     /// Whether this permanent entered as a copy. Transforming double-faced
     /// cards use this to distinguish their own back face from a copied one
     /// when determining mana value.
@@ -257,6 +261,7 @@ impl Permanent {
             exile_instead_of_dying: false,
             combat_damage_assignment: Vec::new(),
             copy_effect: None,
+            copy_expiration: None,
             copied_from: None,
             text_changes: Vec::new(),
             regeneration_shields: 0,

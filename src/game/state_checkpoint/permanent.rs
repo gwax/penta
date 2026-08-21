@@ -120,6 +120,7 @@ pub(super) fn permanent_snapshot(
         cast_at_instant_speed: permanent.cast_at_instant_speed,
         became_aura: permanent.became_aura,
         copy_effect: copy_effect.map(|(snapshot, _)| snapshot),
+        copy_expiration: permanent.copy_expiration.map(expiration_snapshot),
         copied_from: permanent
             .copied_from
             .map(|(definition, part)| CopiedFromSnapshot {

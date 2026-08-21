@@ -241,6 +241,19 @@ pub struct AbilityTargetDef {
     /// "divided as you choose". Every chosen target takes at least one, which
     /// is what makes the number of targets a consequence of the division.
     pub divided_total: Option<DividedTotal>,
+    /// "Another": this slot may not name anything an earlier slot already
+    /// named. Enforced as targets are chosen rather than checked afterwards,
+    /// because a declaration that repeats itself is not legal to begin with.
+    pub another: bool,
+}
+
+impl AbilityTargetDef {
+    /// The same slot, restricted to something no earlier slot named.
+    #[must_use]
+    pub const fn another(mut self) -> Self {
+        self.another = true;
+        self
+    }
 }
 
 /// How much a divided slot has to share out.
@@ -274,6 +287,7 @@ impl AbilityTargetDef {
             minimum: Self::CHOSEN_X,
             maximum: Self::CHOSEN_X,
             divided_total: None,
+            another: false,
         }
     }
 
@@ -313,6 +327,7 @@ impl AbilityTargetDef {
             minimum: 1,
             maximum: 1,
             divided_total: None,
+            another: false,
         }
     }
 
@@ -328,6 +343,7 @@ impl AbilityTargetDef {
             minimum: 1,
             maximum: Self::UNLIMITED,
             divided_total: None,
+            another: false,
         }
     }
 
@@ -340,6 +356,7 @@ impl AbilityTargetDef {
             minimum: 0,
             maximum,
             divided_total: None,
+            another: false,
         }
     }
 

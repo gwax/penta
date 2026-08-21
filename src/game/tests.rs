@@ -818,6 +818,7 @@ mod vintage_cube_phlage;
 mod vintage_cube_ponder;
 mod vintage_cube_prismatic_ending;
 mod vintage_cube_relic;
+mod vintage_cube_saheeli;
 mod vintage_cube_shieldbreaker;
 mod vintage_cube_spells;
 mod vintage_cube_static_prison;

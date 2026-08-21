@@ -798,7 +798,10 @@ impl Game {
             }
             EffectDef::BecomeCopyOf {
                 object: recipient,
+                copier,
                 retain_source_ability,
+                added_types,
+                duration,
             } => {
                 let Some(Target::Permanent(target)) = self
                     .effect_recipients(recipient, object, &context, scoped)
@@ -806,6 +809,19 @@ impl Game {
                     .next()
                 else {
                     return;
+                };
+                // "This becomes a copy" names nothing, so the source is what
+                // becomes one; a clause that points elsewhere says so.
+                let becomes = match copier {
+                    None => object.source,
+                    Some(copier) => match self
+                        .effect_recipients(copier, object, &context, scoped)
+                        .into_iter()
+                        .next()
+                    {
+                        Some(Target::Permanent(id)) => Some(id),
+                        _ => None,
+                    },
                 };
                 let Some(mut copy) = self
                     .battlefield
@@ -815,6 +831,7 @@ impl Game {
                 else {
                     return;
                 };
+                copy.added_types = copy.added_types.union(added_types);
                 if retain_source_ability
                     && let Some(payload) = &object.ability
                     && let Some(definition) = payload.definition.as_deref()
@@ -824,13 +841,21 @@ impl Game {
                         definition: *definition,
                     });
                 }
-                if let Some(source) = object.source
+                let expiration = duration.map(|duration| {
+                    Self::continuous_effect_expiration(
+                        duration,
+                        object.controller,
+                        self.turns_started[object.controller.index()],
+                    )
+                });
+                if let Some(becomes) = becomes
                     && let Some(permanent) = self
                         .battlefield
                         .iter_mut()
-                        .find(|permanent| permanent.card.id == source)
+                        .find(|permanent| permanent.card.id == becomes)
                 {
                     permanent.copy_effect = Some(copy);
+                    permanent.copy_expiration = expiration;
                 }
             }
             EffectDef::Apply {

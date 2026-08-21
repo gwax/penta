@@ -647,6 +647,7 @@ fn parse_permanent(
         .as_ref()
         .map(|copy| parse_copiable_characteristics(copy, catalog))
         .transpose()?;
+    permanent.copy_expiration = state.copy_expiration.map(parse_expiration).transpose()?;
     permanent.copied_from = state
         .copied_from
         .map(|copy| {

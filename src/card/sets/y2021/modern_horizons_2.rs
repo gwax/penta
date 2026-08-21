@@ -37,6 +37,7 @@ static FURY_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
     minimum: 1,
     maximum: AbilityTargetDef::UNLIMITED,
     divided_total: Some(DividedTotal::Fixed(4)),
+    another: false,
 }];
 
 static EXILE_A_RED_CARD: SpellAdditionalCostDef =

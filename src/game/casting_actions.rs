@@ -750,6 +750,11 @@ impl Game {
             let mut combined = Vec::new();
             for prefix in &selections {
                 for choice in &choices {
+                    // "Another" is a restriction on the declaration, so a
+                    // repeat is never offered rather than being caught later.
+                    if slot.another && names_an_earlier_target(prefix, choice) {
+                        continue;
+                    }
                     let mut selected = prefix.clone();
                     selected.push(choice.clone());
                     combined.push(selected);
@@ -759,6 +764,16 @@ impl Game {
         }
         selections
     }
+}
+
+/// Whether a slot's choice names anything the slots before it already did.
+fn names_an_earlier_target(prefix: &[TargetSelection], choice: &TargetSelection) -> bool {
+    prefix.iter().any(|earlier| {
+        earlier
+            .targets()
+            .iter()
+            .any(|target| choice.targets().contains(target))
+    })
 }
 
 include!("casting_actions/selected_clause.rs");

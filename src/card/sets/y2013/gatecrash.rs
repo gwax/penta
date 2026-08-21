@@ -2736,6 +2736,7 @@ pub(in crate::card::sets) static AURELIAS_FURY: CardRecord = CardRecord::new(
                 minimum: 0,
                 maximum: u8::MAX,
                 divided_total: Some(DividedTotal::ChosenX),
+                another: false,
             }],
             // Everything chosen took damage, so the tap and the lock are the
             // same set of targets read again; each ignores what it cannot
@@ -3003,7 +3004,7 @@ static DOMRI_ABILITIES: [AbilityDef; 3] = [
         ]),
     )
     .with_coverage(AbilityCoverageDef::partial(
-        "The damage events resolve sequentially, and the target declaration cannot enforce that the second creature is another creature.",
+        "The two damage events resolve one after the other rather than at the same time.",
     )),
     AbilityDef::activated(
         "−7: You get an emblem with \"Creatures you control have double strike, trample, hexproof, and haste.\"",
@@ -3026,11 +3027,12 @@ static DOMRI_FIGHT_TARGETS: [AbilityTargetDef; 2] = [
         zones: &[ZoneKind::Battlefield],
         controller: None,
         owner: None,
-    }),
+    })
+    .another(),
 ];
 
 // GTC 156 — Domri Rade
-// Audit: partial — The fight ability deals damage sequentially and cannot enforce that its second target is different; its other loyalty abilities are implemented.
+// Audit: partial — The fight ability deals its two damage sequentially rather than at once; its other loyalty abilities are implemented.
 pub(in crate::card::sets) static DOMRI_RADE: CardRecord = CardRecord::new(
     cards::DOMRI_RADE,
     "Domri Rade",
@@ -4636,7 +4638,10 @@ pub(in crate::card::sets) static THESPIANS_STAGE: CardRecord = CardRecord::new(
             )],
             EffectDef::BecomeCopyOf {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                copier: None,
                 retain_source_ability: true,
+                added_types: CardTypeSet::EMPTY,
+                duration: None,
             },
         ),
     ]),

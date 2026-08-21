@@ -410,7 +410,7 @@ fn domri_plus_one_reveals_a_top_creature_but_not_a_noncreature() {
 }
 
 #[test]
-fn domri_minus_two_records_its_distinct_target_limitation() {
+fn domri_minus_two_will_not_fight_a_creature_with_itself() {
     let mut game = planeswalker_game();
     let walker = planeswalker(10_000, cards::DOMRI_RADE, PlayerId::One, 3);
     let walker_id = walker.card.id;
@@ -430,8 +430,8 @@ fn domri_minus_two_records_its_distinct_target_limitation() {
         ],
     );
     assert!(
-        game.legal_actions(PlayerId::One).contains(&same_creature),
-        "the partial target model cannot yet require another creature"
+        !game.legal_actions(PlayerId::One).contains(&same_creature),
+        "\"another target creature\" is a different creature"
     );
 
     activate_loyalty(

@@ -748,6 +748,7 @@ pub(in crate::card::sets) static WAR_PRIEST_OF_THUNE: CardRecord = CardRecord::n
                 minimum: 0,
                 maximum: 1,
                 divided_total: None,
+                another: false,
             }],
             EffectDef::Destroy {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -2452,6 +2453,7 @@ pub(in crate::card::sets) static FLAMES_OF_THE_FIREBRAND: CardRecord = CardRecor
                 minimum: 1,
                 maximum: 3,
                 divided_total: Some(DividedTotal::Fixed(3)),
+                another: false,
             }],
             EffectDef::DealDamage {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),

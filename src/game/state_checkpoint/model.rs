@@ -322,6 +322,7 @@ pub(super) struct PermanentSnapshot {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) became_aura: bool,
     pub(super) copy_effect: Option<CopiableCharacteristicsSnapshot>,
+    pub(super) copy_expiration: Option<ContinuousEffectExpirationSnapshot>,
     pub(super) copied_from: Option<CopiedFromSnapshot>,
     pub(super) text_changes: Vec<BasicLandTypeChangeSnapshot>,
     pub(super) has_dynamic_characteristics: bool,

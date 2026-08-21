@@ -692,6 +692,7 @@ pub(in crate::card::sets) static ASHES_TO_ASHES: CardRecord = CardRecord::new(
                 minimum: 2,
                 maximum: 2,
                 divided_total: None,
+                another: false,
             }],
             EffectDef::Sequence(&[
                 EffectDef::MoveToZone {

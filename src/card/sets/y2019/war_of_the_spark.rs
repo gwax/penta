@@ -300,10 +300,73 @@ pub(in crate::card::sets) static TAMIYO_COLLECTOR_OF_TALES: CardRecord = CardRec
         .with_abilities(&TAMIYO_ABILITIES),
 );
 
+static A_NONCREATURE_SPELL_YOU_CAST: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::NoncreatureSpell,
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+/// "Another target artifact or creature you control": the second slot is a
+/// separate target, so the two cannot be the same permanent.
+static SAHEELI_TARGETS: [AbilityTargetDef; 2] = [
+    AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Artifact),
+        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+    ])),
+    AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[
+        ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Artifact),
+            ObjectPredicateDef::HasType(CardType::Creature),
+        ]),
+        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+    ]))
+    .another(),
+];
+
+static SAHEELI_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::triggered(
+        "Whenever you cast a noncreature spell, create a 1/1 colorless Servo artifact creature \
+         token.",
+        TriggerEventDef::SpellCast(A_NONCREATURE_SPELL_YOU_CAST),
+        EffectDef::CreateToken {
+            token: cards::SERVO_TOKEN_1_1_COLORLESS,
+            count: ValueDef::Constant(1),
+            tapped: false,
+            attacking: false,
+        },
+    ),
+    AbilityDef::activated_with_targets(
+        "−2: Target artifact you control becomes a copy of another target artifact or creature \
+         you control until end of turn, except it's an artifact in addition to its other types.",
+        &[AbilityCostDef::Loyalty(-2)],
+        &SAHEELI_TARGETS,
+        EffectDef::BecomeCopyOf {
+            object: EffectRecipientDef::Target(TargetIndex(1)),
+            copier: Some(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
+            retain_source_ability: false,
+            added_types: CardTypeSet::single(CardType::Artifact),
+            duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
+        },
+    ),
+];
+
+// WAR 234 — Saheeli, Sublime Artificer
+pub(in crate::card::sets) static SAHEELI_SUBLIME_ARTIFICER: CardRecord = CardRecord::new(
+    cards::SAHEELI_SUBLIME_ARTIFICER,
+    "Saheeli, Sublime Artificer",
+    CardArt::new("5a10b543-d5d4-42a8-9ee8-dada59a2ad7e", "Wesley Burt"),
+    CardSet::WarOfTheSpark,
+    // A planeswalker that never has to be activated: three mana, five
+    // loyalty, and a body for every spell the deck was casting anyway.
+    CardRules::new_planeswalker(mana_cost!("{1}{U/R}{U/R}"), &["Saheeli"], 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&SAHEELI_ABILITIES),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &JACE_WIELDER_OF_MYSTERIES,
     &NISSA_WHO_SHAKES_THE_WORLD,
     &TAMIYO_COLLECTOR_OF_TALES,
+    &SAHEELI_SUBLIME_ARTIFICER,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

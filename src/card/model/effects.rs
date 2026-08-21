@@ -2,12 +2,14 @@ mod composites;
 mod likelihood;
 mod replacements;
 mod triggers;
+mod turn_structure;
 mod values;
 
 pub use composites::*;
 pub use likelihood::*;
 pub use replacements::*;
 pub use triggers::*;
+pub use turn_structure::*;
 pub use values::*;
 
 use super::payments::{EffectPaymentDef, PayOrDef};
@@ -253,8 +255,19 @@ pub enum EffectDef {
     /// Some copy effects, such as Thespian's Stage, retain the resolving
     /// ability as an exception to the copied values.
     BecomeCopyOf {
+        /// What is copied.
         object: EffectRecipientDef,
+        /// What becomes the copy. `None` is the source itself, which is what
+        /// "this land becomes a copy of target land" means; a clause that
+        /// points at something else names it here.
+        copier: Option<EffectRecipientDef>,
         retain_source_ability: bool,
+        /// Types the copy has on top of what it copied, for "except it's an
+        /// artifact in addition to its other types".
+        added_types: CardTypeSet,
+        /// How long the copy lasts. A copy with no stated duration is
+        /// indefinite, which is what almost every printed one is.
+        duration: Option<ResolvedEffectDurationDef>,
     },
     /// A static attack restriction: this creature cannot be declared as an
     /// attacker unless the query matches. The query carries its own controller
@@ -965,36 +978,4 @@ impl EffectDef {
             can_regenerate,
         }
     }
-}
-
-/// A major turn phase that a resolving effect can insert.
-///
-/// This is intentionally narrower than [`TurnStepDef`]. Steps remain trigger
-/// labels inside a phase, and the untap procedure remains part of ordinary
-/// turn startup rather than an independently scheduled step.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum TurnPhaseDef {
-    Combat,
-    PostcombatMain,
-}
-
-/// Observable turn steps used by beginning/end-of-step trigger declarations.
-/// Untap is an engine procedure before upkeep, and cleanup has no ordinary
-/// priority window, so neither is an authored trigger label.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum TurnStepDef {
-    Upkeep,
-    Draw,
-    PrecombatMain,
-    BeginningOfCombat,
-    DeclareAttackers,
-    DeclareBlockers,
-    CombatDamage,
-    EndOfCombat,
-    PostcombatMain,
-    End,
-    /// CR 514. Nothing is cast here and nobody receives priority unless
-    /// something triggers, which is what "at the beginning of the next
-    /// cleanup step" is buying.
-    Cleanup,
 }
