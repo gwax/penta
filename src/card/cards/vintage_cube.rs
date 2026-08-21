@@ -207,3 +207,5 @@ pub const JACE_THE_MIND_SCULPTOR: CardDefinitionId = CardDefinitionId(2291);
 pub const CANKERBLOOM: CardDefinitionId = CardDefinitionId(2292);
 pub const MAP_TOKEN: CardDefinitionId = CardDefinitionId(2293);
 pub const GET_LOST: CardDefinitionId = CardDefinitionId(2294);
+pub const ELEMENTAL_TOKEN_5_3_GREEN: CardDefinitionId = CardDefinitionId(2295);
+pub const TITANIA_PROTECTOR_OF_ARGOTH: CardDefinitionId = CardDefinitionId(2296);

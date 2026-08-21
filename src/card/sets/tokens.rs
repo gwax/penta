@@ -461,6 +461,15 @@ static MAP_COST: [AbilityCostDef; 3] = [
 /// The Map is the whole of what Get Lost gives back, so it carries its
 /// printed ability rather than being a blank artifact: a card off the top
 /// when it is a land, and a bigger creature when it is not.
+pub(in crate::card::sets) static ELEMENTAL_TOKEN_5_3_GREEN: CardRecord = CardRecord::new(
+    cards::ELEMENTAL_TOKEN_5_3_GREEN,
+    "Elemental",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Elemental"], 5, 3)
+        .printed_colors(&[ManaColor::Green]),
+);
+
 pub(in crate::card::sets) static MAP_TOKEN: CardRecord = CardRecord::new(
     cards::MAP_TOKEN,
     "Map",
@@ -870,6 +879,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DRAKE_TOKEN_2_2_BLUE,
     &GOBLIN_TOKEN_1_1_RED,
     &GOBLIN_TOKEN_1_1_RED_HASTE,
+    &ELEMENTAL_TOKEN_5_3_GREEN,
     &MAP_TOKEN,
     &WARRIOR_TOKEN_1_1_RED,
     &SPIRIT_TOKEN_1_1_WHITE_BLACK,

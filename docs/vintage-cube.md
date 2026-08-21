@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 273 are cataloged and 261 are not
+- 534 cards in the pool, of which 274 are cataloged and 260 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -166,7 +166,7 @@ lands are legal in every format and are not listed.
 - `Tersa Lightshatter`
 - `Voldaren Epicure`
 
-### Green (38)
+### Green (37)
 
 - `Baloth Prime`
 - `Courser of Kruphix`
@@ -200,7 +200,6 @@ lands are legal in every format and are not listed.
 - `Springheart Nantuko`
 - `Tear Asunder`
 - `Tireless Tracker`
-- `Titania, Protector of Argoth`
 - `Traveling Chocobo`
 - `Ulvenwald Oddity`
 - `Vaultborn Tyrant`
@@ -320,7 +319,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 273 pool cards are in the catalog because an earlier format needed them.
+These 274 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -563,6 +562,7 @@ been played beside.
 - `Time Walk`
 - `Time Warp`
 - `Timetwister`
+- `Titania, Protector of Argoth`
 - `Tolarian Academy`
 - `Toxic Deluge`
 - `Tropical Island`
