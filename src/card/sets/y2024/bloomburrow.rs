@@ -35,6 +35,7 @@ static AN_INSTANT_OR_SORCERY_IN_YOUR_GRAVEYARD: [AbilityTargetDef; 1] =
 
 static MAKE_AN_OTTER: EffectDef = EffectDef::CreateToken {
     token: cards::OTTER_TOKEN_1_1_BLUE_RED,
+    controller: None,
     count: ValueDef::Constant(1),
     tapped: false,
     attacking: false,

@@ -224,6 +224,7 @@ pub(in crate::card::sets) static DOOMED_TRAVELER: CardRecord = CardRecord::new(
             ),
             EffectDef::CreateToken {
                 token: cards::SPIRIT_TOKEN_1_1_WHITE,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -420,6 +421,7 @@ pub(in crate::card::sets) static GEIST_HONORED_MONK: CardRecord = CardRecord::ne
                 TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)),
                 EffectDef::CreateToken {
                     token: cards::SPIRIT_TOKEN_1_1_WHITE,
+                    controller: None,
                     count: ValueDef::Constant(2),
                     tapped: false,
                     attacking: false,
@@ -511,6 +513,7 @@ pub(in crate::card::sets) static MAUSOLEUM_GUARD: CardRecord = CardRecord::new(
             ),
             EffectDef::CreateToken {
                 token: cards::SPIRIT_TOKEN_1_1_WHITE,
+                controller: None,
                 count: ValueDef::Constant(2),
                 tapped: false,
                 attacking: false,
@@ -573,6 +576,7 @@ pub(in crate::card::sets) static MIDNIGHT_HAUNTING: CardRecord = CardRecord::new
         "Create two 1/1 white Spirit creature tokens with flying.",
         EffectDef::CreateToken {
             token: cards::SPIRIT_TOKEN_1_1_WHITE,
+            controller: None,
             count: ValueDef::Constant(2),
             tapped: false,
             attacking: false,
@@ -1684,6 +1688,7 @@ pub(in crate::card::sets) static STITCHERS_APPRENTICE: CardRecord = CardRecord::
             EffectDef::Sequence(&[
                 EffectDef::CreateToken {
                     token: cards::HOMUNCULUS_TOKEN_2_2_BLUE,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
@@ -1833,6 +1838,7 @@ pub(in crate::card::sets) static ARMY_OF_THE_DAMNED: CardRecord = CardRecord::ne
             "Create thirteen tapped 2/2 black Zombie creature tokens.",
             EffectDef::CreateToken {
                 token: cards::ZOMBIE_TOKEN_2_2_BLACK,
+                controller: None,
                 count: ValueDef::Constant(13),
                 tapped: true,
                 attacking: false,
@@ -2013,6 +2019,7 @@ pub(in crate::card::sets) static ENDLESS_RANKS_OF_THE_DEAD: CardRecord = CardRec
         },
         EffectDef::CreateToken {
             token: cards::ZOMBIE_TOKEN_2_2_BLACK,
+            controller: None,
             count: ValueDef::Halved(&ENDLESS_RANKS_COUNT),
             tapped: false,
             attacking: false,
@@ -2319,6 +2326,7 @@ pub(in crate::card::sets) static MOAN_OF_THE_UNHALLOWED: CardRecord = CardRecord
             "Create two 2/2 black Zombie creature tokens.",
             EffectDef::CreateToken {
                 token: cards::ZOMBIE_TOKEN_2_2_BLACK,
+                controller: None,
                 count: ValueDef::Constant(2),
                 tapped: false,
                 attacking: false,
@@ -3999,6 +4007,7 @@ static GARRUK_FRONT_ABILITIES: [AbilityDef; 3] = [
         &[AbilityCostDef::Loyalty(0)],
         EffectDef::CreateToken {
             token: cards::WOLF_TOKEN_2_2_GREEN,
+            controller: None,
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,
@@ -4049,6 +4058,7 @@ static GARRUK_BACK_ABILITIES: [AbilityDef; 3] = [
         &[AbilityCostDef::Loyalty(1)],
         EffectDef::CreateToken {
             token: cards::WOLF_TOKEN_1_1_BLACK,
+            controller: None,
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,
@@ -4407,6 +4417,7 @@ static HOWLPACK_ALPHA_ABILITIES: [AbilityDef; 3] = [
         },
         EffectDef::CreateToken {
             token: cards::WOLF_TOKEN_2_2_GREEN,
+            controller: None,
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,
@@ -4592,6 +4603,7 @@ pub(in crate::card::sets) static SPIDER_SPAWNING: CardRecord = CardRecord::new(
             "Create a 1/2 green Spider creature token with reach for each creature card in your graveyard.",
             EffectDef::CreateToken {
                 token: cards::SPIDER_TOKEN_1_2_GREEN,
+                controller: None,
                 count: ValueDef::CountMatchingObjects(&CREATURE_CARDS_IN_YOUR_GRAVEYARD),
                 tapped: false,
                 attacking: false,
@@ -5404,6 +5416,7 @@ pub(in crate::card::sets) static MOORLAND_HAUNT: CardRecord = CardRecord::new(
             ],
             EffectDef::CreateToken {
                 token: cards::SPIRIT_TOKEN_1_1_WHITE,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,

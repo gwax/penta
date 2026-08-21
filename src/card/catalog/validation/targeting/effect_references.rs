@@ -143,6 +143,7 @@ fn validate_effect_references(
             validate_value_target_references(amount, target_count, scope)
         }
         EffectDef::MayCastTargetWithoutPaying { object, .. }
+        | EffectDef::Explore { object }
         | EffectDef::LoseTheGame { player: object }
         | EffectDef::WinTheGame { player: object }
         | EffectDef::ShuffleLibrary { player: object }

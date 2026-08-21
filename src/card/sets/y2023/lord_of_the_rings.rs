@@ -124,6 +124,7 @@ static NO_ARMY_YOU_CONTROL: TriggerConditionDef = TriggerConditionDef::ObjectCou
 
 static AMASS_MAKES_AN_ARMY: EffectDef = EffectDef::CreateToken {
     token: cards::ORC_ARMY_TOKEN_0_0_BLACK,
+    controller: None,
     count: ValueDef::Constant(1),
     tapped: false,
     attacking: false,
@@ -245,6 +246,7 @@ pub(in crate::card::sets) static GENEROUS_ENT: CardRecord = CardRecord::new(
             ),
             EffectDef::CreateToken {
                 token: cards::FOOD_TOKEN,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,

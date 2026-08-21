@@ -396,10 +396,12 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::ChooseColor { object, .. }
         | EffectDef::BecomeCopyOf { object, .. }
         | EffectDef::ReturnSpellToHand { object } => shared_effect_recipient(object),
-        // Both wait on a deferred decision, the same as any other: one for
-        // the owner's answer, one for the offer to cast what was pointed at.
+        // Each waits on a deferred decision, the same as any other: the
+        // owner's answer, the offer to cast what was pointed at, and the
+        // "top of library or graveyard" a nonland explore ends in.
         EffectDef::PutSpellIntoOwnersLibrary { object }
-        | EffectDef::MayCastTargetWithoutPaying { object, .. } => {
+        | EffectDef::MayCastTargetWithoutPaying { object, .. }
+        | EffectDef::Explore { object } => {
             deferred_decision_allowed && shared_effect_recipient(object)
         }
         EffectDef::Counter { object, zone } => {

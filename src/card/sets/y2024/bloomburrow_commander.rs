@@ -48,6 +48,7 @@ static JACKED_RABBIT_ABILITIES: [AbilityDef; 3] = [
         TriggerEventDef::attacks(ObjectPredicateDef::Source),
         EffectDef::CreateToken {
             token: cards::RABBIT_TOKEN_1_1_WHITE,
+            controller: None,
             count: ValueDef::SourcePower,
             tapped: false,
             attacking: false,

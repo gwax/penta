@@ -124,6 +124,7 @@ impl Game {
             | EffectDef::ManifestDread { .. }
             | EffectDef::Cascade
             | EffectDef::Proliferate
+            | EffectDef::Explore { .. }
             | EffectDef::SearchZone { then: None, .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }

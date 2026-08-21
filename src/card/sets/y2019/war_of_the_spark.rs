@@ -441,6 +441,7 @@ static SAHEELI_ABILITIES: [AbilityDef; 2] = [
         TriggerEventDef::SpellCast(A_NONCREATURE_SPELL_YOU_CAST),
         EffectDef::CreateToken {
             token: cards::SERVO_TOKEN_1_1_COLORLESS,
+            controller: None,
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,

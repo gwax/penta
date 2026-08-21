@@ -357,6 +357,13 @@ pub(super) enum DecisionContinuation {
         /// it is instead of trusting a detached fragment.
         definition: ScopedEffect,
     },
+    /// "Put that card back on top of your library or into your graveyard."
+    /// The counter is already on the creature by the time this is asked, so
+    /// nothing but the card's destination is left.
+    ExploredCardPlacement {
+        player: PlayerId,
+        revealed: GameObjectId,
+    },
     /// "Choose any number of permanents and/or players, then give each
     /// another counter of each kind already there." Nothing is bound: what
     /// each chosen thing gets is read off it when the answer comes back.

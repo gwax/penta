@@ -5152,6 +5152,7 @@ pub(in crate::card::sets) static THE_HIVE: CardRecord = CardRecord::new(
         ],
         EffectDef::CreateToken {
             token: cards::WASP_TOKEN_1_1_COLORLESS,
+            controller: None,
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,

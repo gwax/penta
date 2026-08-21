@@ -784,6 +784,16 @@ fn parse_continuation(
                 card: GameObjectId(*card),
             }
         }
+        DecisionContinuationSnapshot::ExploredCardPlacement { player: seat, revealed } => {
+            let seat = player(*seat)?;
+            if seat != observation.player {
+                return Err("an explore placement names a player other than the deciding one".into());
+            }
+            DecisionContinuation::ExploredCardPlacement {
+                player: seat,
+                revealed: GameObjectId(*revealed),
+            }
+        }
         DecisionContinuationSnapshot::Proliferate { candidates } => {
             // Rebuilt rather than trusted: what a proliferate could add to
             // is a fact of the board, so a checkpoint naming anything else

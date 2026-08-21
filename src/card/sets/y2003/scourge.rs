@@ -18,6 +18,7 @@ static GOBLIN_SPELLS: ObjectPredicateDef = ObjectPredicateDef::Subtype("Goblin")
 /// the branch that makes the tokens reads back what was actually paid.
 static DECREE_SOLDIERS: EffectDef = EffectDef::CreateToken {
     token: cards::SOLDIER_TOKEN_1_1_WHITE,
+    controller: None,
     count: ValueDef::PaidAmount,
     tapped: false,
     attacking: false,
@@ -47,6 +48,7 @@ pub(in crate::card::sets) static DECREE_OF_JUSTICE: CardRecord = CardRecord::new
             "Create X 4/4 white Angel creature tokens with flying.",
             EffectDef::CreateToken {
                 token: cards::ANGEL_TOKEN_4_4_WHITE,
+                controller: None,
                 count: ValueDef::ChosenX,
                 tapped: false,
                 attacking: false,
@@ -384,6 +386,7 @@ pub(in crate::card::sets) static SIEGE_GANG_COMMANDER: CardRecord = CardRecord::
             ),
             EffectDef::CreateToken {
                 token: cards::GOBLIN_TOKEN_1_1_RED,
+                controller: None,
                 count: ValueDef::Constant(3),
                 tapped: false,
                 attacking: false,

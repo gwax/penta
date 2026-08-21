@@ -365,6 +365,7 @@ pub(in crate::card::sets) static ICATIAN_TOWN: CardRecord = CardRecord::new(
         "Create four 1/1 white Citizen creature tokens.",
         EffectDef::CreateToken {
             token: cards::CITIZEN_TOKEN_1_1_WHITE,
+            controller: None,
             count: ValueDef::Constant(4),
             tapped: false,
             attacking: false,
@@ -790,6 +791,7 @@ pub(in crate::card::sets) static BREEDING_PIT: CardRecord = CardRecord::new(
             },
             EffectDef::CreateToken {
                 token: cards::THRULL_TOKEN_0_1_BLACK,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -1462,6 +1464,7 @@ pub(in crate::card::sets) static ELVISH_FARMER: CardRecord = CardRecord::new(
                 &REMOVE_THREE_SPORES,
                 EffectDef::CreateToken {
                     token: cards::SAPROLING_TOKEN_1_1_GREEN,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
@@ -1709,6 +1712,7 @@ pub(in crate::card::sets) static THALLID: CardRecord = CardRecord::new(
                 &REMOVE_THREE_SPORES,
                 EffectDef::CreateToken {
                     token: cards::SAPROLING_TOKEN_1_1_GREEN,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
@@ -1742,6 +1746,7 @@ pub(in crate::card::sets) static THALLID_DEVOURER: CardRecord = CardRecord::new(
                 &REMOVE_THREE_SPORES,
                 EffectDef::CreateToken {
                     token: cards::SAPROLING_TOKEN_1_1_GREEN,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,

@@ -71,6 +71,7 @@ pub(in crate::card::sets) static AJANI_CALLER_OF_THE_PRIDE: CardRecord = CardRec
                 &[AbilityCostDef::Loyalty(-8)],
                 EffectDef::CreateToken {
                     token: cards::CAT_TOKEN_2_2_WHITE,
+                    controller: None,
                     count: ValueDef::LifeTotal(PlayerRelation::You),
                     tapped: false,
                     attacking: false,
@@ -138,6 +139,7 @@ pub(in crate::card::sets) static ATTENDED_KNIGHT: CardRecord = CardRecord::new(
             ),
             EffectDef::CreateToken {
                 token: cards::SOLDIER_TOKEN_1_1_WHITE,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -223,6 +225,7 @@ pub(in crate::card::sets) static CAPTAIN_OF_THE_WATCH: CardRecord = CardRecord::
                 ),
                 EffectDef::CreateToken {
                     token: cards::SOLDIER_TOKEN_1_1_WHITE,
+                    controller: None,
                     count: ValueDef::Constant(3),
                     tapped: false,
                     attacking: false,
@@ -244,6 +247,7 @@ pub(in crate::card::sets) static CAPTAINS_CALL: CardRecord = CardRecord::new(
         "Create three 1/1 white Soldier creature tokens.",
         EffectDef::CreateToken {
             token: cards::SOLDIER_TOKEN_1_1_WHITE,
+            controller: None,
             count: ValueDef::Constant(3),
             tapped: false,
             attacking: false,
@@ -1359,6 +1363,7 @@ pub(in crate::card::sets) static TALRAND_SKY_SUMMONER: CardRecord = CardRecord::
         ])),
         EffectDef::CreateToken {
             token: cards::DRAKE_TOKEN_2_2_BLUE,
+            controller: None,
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,
@@ -1377,6 +1382,7 @@ pub(in crate::card::sets) static TALRANDS_INVOCATION: CardRecord = CardRecord::n
         "Create two 2/2 blue Drake creature tokens with flying.",
         EffectDef::CreateToken {
             token: cards::DRAKE_TOKEN_2_2_BLUE,
+            controller: None,
             count: ValueDef::Constant(2),
             tapped: false,
             attacking: false,
@@ -2228,6 +2234,7 @@ pub(in crate::card::sets) static VILE_REBIRTH: CardRecord = CardRecord::new(
             },
             EffectDef::CreateToken {
                 token: cards::ZOMBIE_TOKEN_2_2_BLACK,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -2655,6 +2662,7 @@ pub(in crate::card::sets) static KRENKO_MOB_BOSS: CardRecord = CardRecord::new(
         &[AbilityCostDef::TapSource],
         EffectDef::CreateToken {
             token: cards::GOBLIN_TOKEN_1_1_RED,
+            controller: None,
             count: ValueDef::CountMatchingObjects(&KRENKO_GOBLINS),
             tapped: false,
             attacking: false,
@@ -2673,6 +2681,7 @@ pub(in crate::card::sets) static KRENKOS_COMMAND: CardRecord = CardRecord::new(
         "Create two 1/1 red Goblin creature tokens.",
         EffectDef::CreateToken {
             token: cards::GOBLIN_TOKEN_1_1_RED,
+            controller: None,
             count: ValueDef::Constant(2),
             tapped: false,
             attacking: false,
@@ -3295,6 +3304,7 @@ pub(in crate::card::sets) static FUNGAL_SPROUTING: CardRecord = CardRecord::new(
         "Create X 1/1 green Saproling creature tokens, where X is the greatest power among creatures you control.",
         EffectDef::CreateToken {
             token: cards::SAPROLING_TOKEN_1_1_GREEN,
+            controller: None,
             count: ValueDef::GreatestPowerAmong(&GREATEST_POWER_YOU_CONTROL),
             tapped: false,
             attacking: false,
@@ -3326,6 +3336,7 @@ pub(in crate::card::sets) static GARRUK_PRIMAL_HUNTER: CardRecord = CardRecord::
                 &[AbilityCostDef::Loyalty(1)],
                 EffectDef::CreateToken {
                     token: cards::BEAST_TOKEN_3_3_GREEN,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
@@ -3346,6 +3357,7 @@ pub(in crate::card::sets) static GARRUK_PRIMAL_HUNTER: CardRecord = CardRecord::
                 &[AbilityCostDef::Loyalty(-6)],
                 EffectDef::CreateToken {
                     token: cards::WURM_TOKEN_6_6_GREEN,
+                    controller: None,
                     count: ValueDef::CountMatchingObjects(&LANDS_YOU_CONTROL),
                     tapped: false,
                     attacking: false,
@@ -3623,6 +3635,7 @@ pub(in crate::card::sets) static THRAGTUSK: CardRecord = CardRecord::new(
             ),
             EffectDef::CreateToken {
                 token: cards::BEAST_TOKEN_3_3_GREEN,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,

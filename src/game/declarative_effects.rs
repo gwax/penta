@@ -220,6 +220,13 @@ impl Game {
                 self.resolve_hand_and_library_effect(scoped, object, &context);
             }
             EffectDef::Proliferate => self.offer_proliferate(object),
+            EffectDef::Explore { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Permanent(creature) = target {
+                        self.explore(creature);
+                    }
+                }
+            }
             EffectDef::LoseLife { recipient, amount } => {
                 let amount = self
                     .effect_value(amount, object, &context, scoped)

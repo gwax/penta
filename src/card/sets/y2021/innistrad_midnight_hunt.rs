@@ -51,6 +51,7 @@ static ADELINE_ABILITIES: [AbilityDef; 3] = [
         WHENEVER_YOU_ATTACK,
         EffectDef::CreateToken {
             token: cards::HUMAN_TOKEN_1_1_WHITE,
+            controller: None,
             count: ValueDef::Constant(1),
             tapped: true,
             attacking: true,

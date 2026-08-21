@@ -12,11 +12,11 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, AppliedRuleDef, BandingQuality, CardArt, CardComposition, CardPart,
-    CardRules, CardSet, CardStructure, CardType, ControlDurationDef, DoubleFacedKind, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind,
-    abilities, cards,
+    ActivationTimingDef, AppliedEffectDef, AppliedRuleDef, BandingQuality, CardArt,
+    CardComposition, CardPart, CardRules, CardSet, CardStructure, CardType, ControlDurationDef,
+    DoubleFacedKind, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef,
+    TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::ids::CardPartId;
 use crate::{TargetIndex, mana_cost};
@@ -443,6 +443,42 @@ pub(in crate::card::sets) static GOBLIN_TOKEN_1_1_RED_HASTE: CardRecord = CardRe
         .with_ability(abilities::haste()),
 );
 
+static A_CREATURE_YOU_CONTROL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
+static MAP_COST: [AbilityCostDef; 3] = [
+    AbilityCostDef::Mana(mana_cost!("{1}")),
+    AbilityCostDef::TapSource,
+    AbilityCostDef::SacrificeSource,
+];
+
+/// The Map is the whole of what Get Lost gives back, so it carries its
+/// printed ability rather than being a blank artifact: a card off the top
+/// when it is a land, and a bigger creature when it is not.
+pub(in crate::card::sets) static MAP_TOKEN: CardRecord = CardRecord::new(
+    cards::MAP_TOKEN,
+    "Map",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_artifact_without_mana_cost(&[]).with_ability(
+        AbilityDef::activated_with_targets(
+            "{1}, {T}, Sacrifice this token: Target creature you control explores.",
+            &MAP_COST,
+            &A_CREATURE_YOU_CONTROL,
+            EffectDef::Explore {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        )
+        .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+    ),
+);
+
 pub(in crate::card::sets) static WARRIOR_TOKEN_1_1_RED: CardRecord = CardRecord::new(
     cards::WARRIOR_TOKEN_1_1_RED,
     "Warrior",
@@ -834,6 +870,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DRAKE_TOKEN_2_2_BLUE,
     &GOBLIN_TOKEN_1_1_RED,
     &GOBLIN_TOKEN_1_1_RED_HASTE,
+    &MAP_TOKEN,
     &WARRIOR_TOKEN_1_1_RED,
     &SPIRIT_TOKEN_1_1_WHITE_BLACK,
     &SLIVER_TOKEN_1_1_COLORLESS,

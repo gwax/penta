@@ -456,6 +456,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::ManifestDread { .. }
         | EffectDef::Cascade
         | EffectDef::Proliferate
+        | EffectDef::Explore { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }

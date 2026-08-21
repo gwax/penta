@@ -36,6 +36,7 @@ static OCELOT_DOUBLES_THEM: EffectDef = EffectDef::CreateTokenCopyOf {
 static OCELOT_END_STEP: [EffectDef; 2] = [
     EffectDef::CreateToken {
         token: cards::CAT_TOKEN_1_1_WHITE,
+        controller: None,
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,
@@ -477,6 +478,7 @@ static A_RED_PERMANENT_BESIDES_AJANI: TriggerConditionDef = TriggerConditionDef:
 static AJANI_MAKES_A_CAT_AND_MAY_BURN: [EffectDef; 2] = [
     EffectDef::CreateToken {
         token: cards::CAT_WARRIOR_TOKEN_2_1_WHITE,
+        controller: None,
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,
@@ -523,6 +525,7 @@ static AJANI_PARIAH_ABILITIES: [AbilityDef; 2] = [
         ),
         EffectDef::CreateToken {
             token: cards::CAT_WARRIOR_TOKEN_2_1_WHITE,
+            controller: None,
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,

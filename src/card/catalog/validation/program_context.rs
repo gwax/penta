@@ -545,6 +545,7 @@ fn validate_resolving_effect(
         | EffectDef::ManifestDread { .. }
         | EffectDef::Cascade
         | EffectDef::Proliferate
+        | EffectDef::Explore { .. }
         | EffectDef::MayCastTargetWithoutPaying { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
@@ -892,6 +893,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::ManifestDread { .. } => "ManifestDread",
         EffectDef::Cascade => "Cascade",
         EffectDef::Proliferate => "Proliferate",
+        EffectDef::Explore { .. } => "Explore",
         EffectDef::LookAtHand { .. } => "LookAtHand",
         EffectDef::RevealHand { .. } => "RevealHand",
         EffectDef::RevealAtRandomFromHand { .. } => "RevealAtRandomFromHand",

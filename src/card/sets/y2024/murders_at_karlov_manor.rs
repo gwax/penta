@@ -35,6 +35,7 @@ pub(in crate::card::sets) static FORENSIC_GADGETEER: CardRecord = CardRecord::ne
                 TriggerEventDef::SpellCast(AN_ARTIFACT_SPELL_YOU_CAST),
                 EffectDef::CreateToken {
                     token: cards::CLUE_TOKEN,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,

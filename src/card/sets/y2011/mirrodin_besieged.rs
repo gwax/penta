@@ -20,6 +20,7 @@ pub(in crate::card::sets) static WHITE_SUNS_ZENITH: CardRecord = CardRecord::new
             "Create X 2/2 white Cat creature tokens. Shuffle White Sun's Zenith into its owner's library.",
             EffectDef::CreateToken {
                 token: cards::CAT_TOKEN_2_2_WHITE,
+                controller: None,
                 count: ValueDef::ChosenX,
                 tapped: false,
                 attacking: false,

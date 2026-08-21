@@ -376,6 +376,9 @@ impl Game {
                 }
                 self.bury_cards(player, to_graveyard);
             }
+            DecisionContinuation::ExploredCardPlacement { player, revealed } => {
+                self.place_explored_card(player, revealed, options.contains(&1));
+            }
             DecisionContinuation::Proliferate { candidates } => {
                 let chosen = pending
                     .observation

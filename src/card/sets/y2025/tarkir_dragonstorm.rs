@@ -37,6 +37,7 @@ static MOBILIZE_TWO: AbilityDef = AbilityDef::triggered(
     TriggerEventDef::attacks(ObjectPredicateDef::Source),
     EffectDef::CreateToken {
         token: cards::WARRIOR_TOKEN_1_1_RED,
+        controller: None,
         count: ValueDef::Constant(2),
         tapped: true,
         attacking: true,

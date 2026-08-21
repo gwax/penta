@@ -153,6 +153,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Explore, and tokens that arrive under somebody else's control.** Explore
+  is a procedure of its own for the same reason proliferate is: what happens
+  to the revealed card and whether the creature grows both turn on a card type
+  nobody knows until the card is revealed, and the branch that does not take
+  it ends in a choice. "Its controller creates two Map tokens" is the other
+  half -- creating a token now names who gets them, defaulting to the
+  resolving object's controller as every clause before it meant.
+
 - **Proliferate.** A procedure of its own rather than a composition: the
   choice runs over permanents and players at once, which no object set can
   say, and what each chosen thing gets is read off what is already on it

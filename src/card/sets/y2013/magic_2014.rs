@@ -310,6 +310,7 @@ pub(in crate::card::sets) static HIVE_STIRRINGS: CardRecord = CardRecord::new(
         "Create two 1/1 colorless Sliver creature tokens.",
         EffectDef::CreateToken {
             token: cards::SLIVER_TOKEN_1_1_COLORLESS,
+            controller: None,
             count: ValueDef::Constant(2),
             tapped: false,
             attacking: false,
@@ -1300,6 +1301,7 @@ pub(in crate::card::sets) static LIFEBANE_ZOMBIE: CardRecord = CardRecord::new(
 
 static TAPPED_ZOMBIE: EffectDef = EffectDef::CreateToken {
     token: cards::ZOMBIE_TOKEN_2_2_BLACK,
+    controller: None,
     count: ValueDef::Constant(1),
     tapped: true,
     attacking: false,
@@ -1811,6 +1813,7 @@ pub(in crate::card::sets) static DRAGON_EGG: CardRecord = CardRecord::new(
             TriggerEventDef::zone_changed(ObjectPredicateDef::Source, Some(ZoneKind::Battlefield), Some(ZoneKind::Graveyard)),
             EffectDef::CreateToken {
                 token: cards::DRAGON_TOKEN_2_2_RED,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -2187,6 +2190,7 @@ pub(in crate::card::sets) static YOUNG_PYROMANCER: CardRecord = CardRecord::new(
             ])),
             EffectDef::CreateToken {
                 token: cards::ELEMENTAL_TOKEN_1_1_RED,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -2337,6 +2341,7 @@ pub(in crate::card::sets) static HOWL_OF_THE_NIGHT_PACK: CardRecord = CardRecord
         "Create a 2/2 green Wolf creature token for each Forest you control.",
         EffectDef::CreateToken {
             token: cards::WOLF_TOKEN_2_2_GREEN,
+            controller: None,
             count: ValueDef::CountMatchingObjects(&M14_FORESTS_YOU_CONTROL),
             tapped: false,
             attacking: false,
@@ -2557,6 +2562,7 @@ pub(in crate::card::sets) static PRIMEVAL_BOUNTY: CardRecord = CardRecord::new(
             ])),
             EffectDef::CreateToken {
                 token: cards::BEAST_TOKEN_3_3_GREEN,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -2695,6 +2701,7 @@ pub(in crate::card::sets) static SPOREMOUND: CardRecord = CardRecord::new(
                 ]), None, Some(ZoneKind::Battlefield)),
             EffectDef::CreateToken {
                 token: cards::SAPROLING_TOKEN_1_1_GREEN,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,

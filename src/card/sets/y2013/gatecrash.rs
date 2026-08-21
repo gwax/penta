@@ -346,6 +346,7 @@ pub(in crate::card::sets) static KNIGHT_WATCH: CardRecord = CardRecord::new(
         "Create two 2/2 white Knight creature tokens with vigilance.",
         EffectDef::CreateToken {
             token: cards::KNIGHT_TOKEN_2_2_WHITE,
+            controller: None,
             count: ValueDef::Constant(2),
             tapped: false,
             attacking: false,
@@ -430,6 +431,7 @@ pub(in crate::card::sets) static MURDER_INVESTIGATION: CardRecord = CardRecord::
                 ENCHANTED_CREATURE_DIES,
                 EffectDef::CreateToken {
                     token: cards::SOLDIER_TOKEN_1_1_WHITE,
+                    controller: None,
                     count: ValueDef::TriggeringObjectPower,
                     tapped: false,
                     attacking: false,
@@ -541,6 +543,7 @@ pub(in crate::card::sets) static URBIS_PROTECTOR: CardRecord = CardRecord::new(
             ),
             EffectDef::CreateToken {
                 token: cards::ANGEL_TOKEN_4_4_WHITE,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -1492,6 +1495,7 @@ pub(in crate::card::sets) static OGRE_SLUMLORD: CardRecord = CardRecord::new(
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::CreateToken {
                     token: cards::RAT_TOKEN_1_1_BLACK,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
@@ -2689,6 +2693,7 @@ pub(in crate::card::sets) static ASSEMBLE_THE_LEGION: CardRecord = CardRecord::n
                 },
                 EffectDef::CreateToken {
                     token: cards::SOLDIER_TOKEN_1_1_RED_WHITE,
+                    controller: None,
                     count: ValueDef::CountersOnSource(CounterKind::Muster),
                     tapped: false,
                     attacking: false,
@@ -3788,6 +3793,7 @@ pub(in crate::card::sets) static SUNHOME_GUILDMAGE: CardRecord = CardRecord::new
             &[AbilityCostDef::Mana(mana_cost!("{2}{R}{W}"))],
             EffectDef::CreateToken {
                 token: cards::SOLDIER_TOKEN_1_1_RED_WHITE,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -3971,6 +3977,7 @@ pub(in crate::card::sets) static BECKON_APPARITION: CardRecord = CardRecord::new
                 },
                 EffectDef::CreateToken {
                     token: cards::SPIRIT_TOKEN_1_1_WHITE_BLACK,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,

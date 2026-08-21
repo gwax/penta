@@ -12,6 +12,7 @@ use crate::mana_cost;
 /// the types between them rather than the cards.
 static SPIRITS_FOR_THE_TYPES: EffectDef = EffectDef::CreateToken {
     token: cards::SPIRIT_TOKEN_1_1_WHITE,
+    controller: None,
     count: ValueDef::MatchedCardTypes,
     tapped: false,
     attacking: false,

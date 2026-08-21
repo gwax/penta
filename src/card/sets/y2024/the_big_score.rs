@@ -48,6 +48,7 @@ static LEGION_EXTRUDER_ABILITIES: [AbilityDef; 2] = [
         &EXTRUDER_GOLEM_COST,
         EffectDef::CreateToken {
             token: cards::GOLEM_TOKEN_3_3_COLORLESS,
+            controller: None,
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,

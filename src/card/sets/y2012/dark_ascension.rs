@@ -185,6 +185,7 @@ pub(in crate::card::sets) static ELGAUD_INQUISITOR: CardRecord = CardRecord::new
             ),
             EffectDef::CreateToken {
                 token: cards::SPIRIT_TOKEN_1_1_WHITE,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -214,6 +215,7 @@ pub(in crate::card::sets) static GATHER_THE_TOWNSFOLK: CardRecord = CardRecord::
          life, create five of those tokens instead.",
         EffectDef::CreateToken {
             token: cards::HUMAN_TOKEN_1_1_WHITE,
+            controller: None,
             count: ValueDef::IfControllerLifeAtMost(&GATHER_THE_TOWNSFOLK_COUNT),
             tapped: false,
             attacking: false,
@@ -272,6 +274,7 @@ pub(in crate::card::sets) static LINGERING_SOULS: CardRecord = CardRecord::new(
             "Create two 1/1 white Spirit creature tokens with flying.",
             EffectDef::CreateToken {
                 token: cards::SPIRIT_TOKEN_1_1_WHITE,
+                controller: None,
                 count: ValueDef::Constant(2),
                 tapped: false,
                 attacking: false,
@@ -406,6 +409,7 @@ pub(in crate::card::sets) static REQUIEM_ANGEL: CardRecord = CardRecord::new(
                 ]), Some(ZoneKind::Battlefield), Some(ZoneKind::Graveyard)),
             EffectDef::CreateToken {
                 token: cards::SPIRIT_TOKEN_1_1_WHITE,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -523,6 +527,7 @@ pub(in crate::card::sets) static THRABEN_DOOMSAYER: CardRecord = CardRecord::new
             &[AbilityCostDef::TapSource],
             EffectDef::CreateToken {
                 token: cards::HUMAN_TOKEN_1_1_WHITE,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -797,6 +802,7 @@ pub(in crate::card::sets) static HAVENGUL_RUNEBINDER: CardRecord = CardRecord::n
             EffectDef::Sequence(&[
                 EffectDef::CreateToken {
                     token: cards::ZOMBIE_TOKEN_2_2_BLACK,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
@@ -1354,6 +1360,7 @@ pub(in crate::card::sets) static REAP_THE_SEAGRAF: CardRecord = CardRecord::new(
             "Create a 2/2 black Zombie creature token.",
             EffectDef::CreateToken {
                 token: cards::ZOMBIE_TOKEN_2_2_BLACK,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -1506,6 +1513,7 @@ pub(in crate::card::sets) static WAKEDANCER: CardRecord = CardRecord::new(
             &MORBID_A_CREATURE_DIED,
             EffectDef::CreateToken {
                 token: cards::ZOMBIE_TOKEN_2_2_BLACK,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -2155,6 +2163,7 @@ pub(in crate::card::sets) static DERANGED_OUTCAST: CardRecord = CardRecord::new(
 /// Wall: the pack it makes is worth far more than what fed it.
 static FEED_THE_PACK_PAYOFF: EffectDef = EffectDef::CreateToken {
     token: cards::WOLF_TOKEN_2_2_GREEN,
+    controller: None,
     count: ValueDef::TriggerEventAmount,
     tapped: false,
     attacking: false,
@@ -2629,6 +2638,7 @@ static HUNTMASTER_FRONT_ABILITIES: [AbilityDef; 3] = [
 static HUNTMASTER_WOLF_AND_LIFE: EffectDef = EffectDef::Sequence(&[
     EffectDef::CreateToken {
         token: cards::WOLF_TOKEN_2_2_GREEN,
+        controller: None,
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,

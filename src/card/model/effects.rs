@@ -30,59 +30,7 @@ use super::{
 // consumed by both resolving and continuously applied effects below.
 include!("effects/recipients_and_matchers.rs");
 include!("effects/applied.rs");
-/// Which characteristic of a sacrificed permanent a follow-up reads.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum SacrificedAmountDef {
-    Power,
-    Toughness,
-}
-
-/// A reusable selector for ability-removing continuous effects.
-///
-/// `Any` supports ordinary "loses all abilities" effects. The keyword form is
-/// also the seam needed by text-changing cards that replace one landwalk
-/// ability with another without treating the whole rules box as opaque text.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum AbilityPredicateDef {
-    Any,
-    Keyword(KeywordAbility),
-    /// Every "bands with other" ability, whatever quality it names. Two cards
-    /// strip them all at once, and neither says which qualities it means.
-    AnyBandsWithOther,
-}
-/// An event that a replacement ability can modify before it is committed.
-///
-/// Replacement events deliberately have their own vocabulary rather than
-/// reusing [`TriggerEventDef`]: triggers observe events that have already
-/// happened, while replacement abilities inspect and modify prospective
-/// events.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum TurnKindDef {
-    /// Match a regular or extra turn.
-    Any,
-    /// Match only the next turn in the ordinary turn order.
-    Regular,
-    /// Match only a turn created by a spell or ability.
-    Extra,
-}
-
-impl TurnKindDef {
-    #[must_use]
-    pub const fn matches(self, turn: Self) -> bool {
-        matches!(
-            (self, turn),
-            (Self::Any, _) | (Self::Regular, Self::Regular) | (Self::Extra, Self::Extra)
-        )
-    }
-}
-
-/// Who may observe a pending choice and its available options.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum ChoiceVisibilityDef {
-    Public,
-    Private,
-}
-
+include!("effects/vocabulary.rs");
 /// Declarative effect primitives interpreted by the rules engine.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EffectDef {
@@ -300,6 +248,11 @@ pub enum EffectDef {
     /// object's controller.
     CreateToken {
         token: CardDefinitionId,
+        /// Who the tokens arrive under. `None` is the resolving object's own
+        /// controller, which is what "create a token" means; a clause that
+        /// hands them to somebody else -- "its controller creates two Map
+        /// tokens" -- names that player instead.
+        controller: Option<PlayerRefDef>,
         count: ValueDef,
         /// Whether the created token arrives tapped.
         tapped: bool,
@@ -792,6 +745,19 @@ pub enum EffectDef {
     ReplaceNextDrawThisTurn {
         player: EffectRecipientDef,
         effect: &'static EffectDef,
+    },
+    /// Explore (CR 701.40a). Reveal the top card of that creature's
+    /// controller's library. Put that card into their hand if it is a land
+    /// card. Otherwise put a +1/+1 counter on the creature, then put the
+    /// card back on top of the library or into the graveyard, at that
+    /// player's choice.
+    ///
+    /// A procedure of its own rather than a composition: what happens to the
+    /// revealed card and whether the creature grows both turn on a card type
+    /// nobody knows until the card is revealed, and the branch that does not
+    /// take it ends in a choice.
+    Explore {
+        object: EffectRecipientDef,
     },
     /// Proliferate (CR 701.28a). Choose any number of permanents and/or
     /// players, then give each another counter of each kind already there.

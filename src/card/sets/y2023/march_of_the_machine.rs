@@ -31,6 +31,7 @@ static SUNFALL_STEPS: [EffectDef; 2] = [
     // one: the keyword creates the token unconditionally.
     EffectDef::CreateToken {
         token: cards::INCUBATOR_TOKEN,
+        controller: None,
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,

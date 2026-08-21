@@ -450,6 +450,7 @@ impl HandcraftedPolicy {
         | EffectDef::ManifestDread { .. }
         | EffectDef::Cascade
         | EffectDef::Proliferate
+        | EffectDef::Explore { .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }

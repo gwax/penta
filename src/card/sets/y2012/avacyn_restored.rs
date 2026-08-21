@@ -205,6 +205,7 @@ static COMMANDERS_AUTHORITY_UPKEEP: AbilityDef = AbilityDef::triggered(
     },
     EffectDef::CreateToken {
         token: cards::HUMAN_TOKEN_1_1_WHITE,
+        controller: None,
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,
@@ -317,6 +318,7 @@ pub(in crate::card::sets) static ENTREAT_THE_ANGELS: CardRecord = CardRecord::ne
             "Create X 4/4 white Angel creature tokens with flying.",
             EffectDef::CreateToken {
                 token: cards::ANGEL_TOKEN_4_4_WHITE,
+                controller: None,
                 count: ValueDef::ChosenX,
                 tapped: false,
                 attacking: false,
@@ -796,6 +798,7 @@ pub(in crate::card::sets) static VOICE_OF_THE_PROVINCES: CardRecord = CardRecord
             ),
             EffectDef::CreateToken {
                 token: cards::HUMAN_TOKEN_1_1_WHITE,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -1118,6 +1121,7 @@ pub(in crate::card::sets) static GEIST_SNATCH: CardRecord = CardRecord::new(
             },
             EffectDef::CreateToken {
                 token: cards::SPIRIT_TOKEN_1_1_BLUE,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -1815,6 +1819,7 @@ pub(in crate::card::sets) static DEMONIC_RISING: CardRecord = CardRecord::new(
             &EXACTLY_ONE_CREATURE,
             EffectDef::CreateToken {
                 token: cards::DEMON_TOKEN_5_5_BLACK,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -2115,6 +2120,7 @@ pub(in crate::card::sets) static MAALFELD_TWINS: CardRecord = CardRecord::new(
             ),
             EffectDef::CreateToken {
                 token: cards::ZOMBIE_TOKEN_2_2_BLACK,
+                controller: None,
                 count: ValueDef::Constant(2),
                 tapped: false,
                 attacking: false,

@@ -740,6 +740,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ReturnWithHasteAndFinality { .. }
                     | EffectDef::Cascade
                     | EffectDef::Proliferate
+                    | EffectDef::Explore { .. }
                     | EffectDef::LookAtTopAndSelect { .. }
                     | EffectDef::LookAtHand { .. }
                     | EffectDef::RevealAtRandomFromHand { .. }

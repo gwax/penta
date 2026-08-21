@@ -5,7 +5,8 @@ use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet, CardType,
     ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef, InstalledTriggerDef,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerEventDef, ZoneKind, abilities, cards,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    cards,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -80,6 +81,54 @@ static DEEP_CAVERN_BAT_ABILITIES: [AbilityDef; 3] = [
     ),
 ];
 
+static A_CREATURE_ENCHANTMENT_OR_PLANESWALKER: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::HasType(CardType::Enchantment),
+            ObjectPredicateDef::HasType(CardType::Planeswalker),
+        ]),
+    )];
+
+/// "Its controller creates two Map tokens." The Maps are theirs, not yours,
+/// and the permanent is already destroyed by the time they arrive -- so the
+/// player is read from what the target was rather than from where it is.
+static TWO_MAPS_FOR_ITS_CONTROLLER: EffectDef = EffectDef::CreateToken {
+    token: cards::MAP_TOKEN,
+    controller: Some(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
+        TargetIndex::PRIMARY,
+    ))),
+    count: ValueDef::Constant(2),
+    tapped: false,
+    attacking: false,
+    counters: None,
+    created: None,
+};
+
+static GET_LOST_EFFECT: [EffectDef; 2] = [
+    EffectDef::Destroy {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        can_regenerate: true,
+    },
+    TWO_MAPS_FOR_ITS_CONTROLLER,
+];
+
+// LCI 14 — Get Lost
+pub(in crate::card::sets) static GET_LOST: CardRecord = CardRecord::new(
+    cards::GET_LOST,
+    "Get Lost",
+    CardArt::new("522aa72b-2b8c-484c-872b-f082101cee35", "Eli Minaya"),
+    CardSet::LostCavernsOfIxalan,
+    // Two mana that answers three card types at instant speed, and the two
+    // Maps are what it pays for that: real cards, but slow ones.
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target creature, enchantment, or planeswalker. Its controller creates two Map \
+         tokens.",
+        &A_CREATURE_ENCHANTMENT_OR_PLANESWALKER,
+        EffectDef::Sequence(&GET_LOST_EFFECT),
+    )),
+);
+
 // LCI 102 — Deep-Cavern Bat
 pub(in crate::card::sets) static DEEP_CAVERN_BAT: CardRecord = CardRecord::new(
     cards::DEEP_CAVERN_BAT,
@@ -90,6 +139,6 @@ pub(in crate::card::sets) static DEEP_CAVERN_BAT: CardRecord = CardRecord::new(
         .with_abilities(&DEEP_CAVERN_BAT_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&DEEP_CAVERN_BAT];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&GET_LOST, &DEEP_CAVERN_BAT];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

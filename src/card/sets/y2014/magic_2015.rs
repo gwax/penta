@@ -52,6 +52,7 @@ static GOBLIN_RABBLEMASTER_ABILITIES: [AbilityDef; 3] = [
         },
         EffectDef::CreateToken {
             token: cards::GOBLIN_TOKEN_1_1_RED_HASTE,
+            controller: None,
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,

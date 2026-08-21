@@ -232,6 +232,10 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
     Proliferate {
         candidates: Vec<TargetSnapshot>,
     },
+    ExploredCardPlacement {
+        player: usize,
+        revealed: u32,
+    },
     SeparateIntoPiles {
         resolving_controller: usize,
         subject: usize,

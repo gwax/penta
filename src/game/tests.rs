@@ -811,6 +811,7 @@ mod vintage_cube_fatal_push;
 mod vintage_cube_figure_of_destiny;
 mod vintage_cube_force_of_negation;
 mod vintage_cube_gadgeteer;
+mod vintage_cube_get_lost;
 mod vintage_cube_ghost_vacuum;
 mod vintage_cube_goblin_rabblemaster;
 mod vintage_cube_graveyard;

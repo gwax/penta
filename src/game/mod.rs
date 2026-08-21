@@ -82,6 +82,7 @@ mod entry_replacements;
 mod error;
 mod event;
 mod exile_permission;
+mod explore;
 mod face_down;
 mod land_type_layers;
 mod land_type_substitution;

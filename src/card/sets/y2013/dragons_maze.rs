@@ -224,6 +224,7 @@ pub(in crate::card::sets) static SUNSPIRE_GATEKEEPERS: CardRecord = CardRecord::
             &TWO_GATES_CONDITION,
             EffectDef::CreateToken {
                 token: cards::KNIGHT_TOKEN_2_2_WHITE,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -968,6 +969,7 @@ pub(in crate::card::sets) static ADVENT_OF_THE_WURM: CardRecord = CardRecord::ne
         "Create a 5/5 green Wurm creature token with trample.",
         EffectDef::CreateToken {
             token: cards::WURM_TOKEN_5_5_GREEN,
+            controller: None,
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,
@@ -1906,6 +1908,7 @@ pub(in crate::card::sets) static TROSTANIS_SUMMONER: CardRecord = CardRecord::ne
             EffectDef::Sequence(&[
                 EffectDef::CreateToken {
                     token: cards::KNIGHT_TOKEN_2_2_WHITE,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
@@ -1913,6 +1916,7 @@ pub(in crate::card::sets) static TROSTANIS_SUMMONER: CardRecord = CardRecord::ne
                 created: None,},
                 EffectDef::CreateToken {
                     token: cards::CENTAUR_TOKEN_3_3_GREEN,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
@@ -1920,6 +1924,7 @@ pub(in crate::card::sets) static TROSTANIS_SUMMONER: CardRecord = CardRecord::ne
                 created: None,},
                 EffectDef::CreateToken {
                     token: cards::RHINO_TOKEN_4_4_GREEN,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
@@ -2006,6 +2011,7 @@ static VOICE_OF_RESURGENCE_DURING_YOUR_TURN: TriggerConditionDef =
 
 static VOICE_OF_RESURGENCE_TOKEN: EffectDef = EffectDef::CreateToken {
     token: cards::ELEMENTAL_TOKEN_GREEN_WHITE,
+    controller: None,
     count: ValueDef::Constant(1),
     tapped: false,
     attacking: false,

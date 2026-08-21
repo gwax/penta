@@ -25,6 +25,7 @@ static ANOTHER_CREATURE_OR_AN_ARTIFACT: ObjectPredicateDef = ObjectPredicateDef:
 /// still connects this combat.
 static GUT_MAKES_A_SKELETON: EffectDef = EffectDef::CreateToken {
     token: cards::SKELETON_TOKEN_4_1_BLACK,
+    controller: None,
     count: ValueDef::Constant(1),
     tapped: true,
     attacking: true,

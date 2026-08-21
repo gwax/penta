@@ -129,6 +129,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::ManifestDread { .. }
         | EffectDef::Cascade
         | EffectDef::Proliferate
+        | EffectDef::Explore { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }
@@ -336,6 +337,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::ManifestDread { .. }
         | EffectDef::Cascade
         | EffectDef::Proliferate
+        | EffectDef::Explore { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }

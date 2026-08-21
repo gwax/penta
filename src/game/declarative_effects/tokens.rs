@@ -19,16 +19,25 @@ impl Game {
         match scoped.effect {
             EffectDef::CreateToken {
                 token,
+                controller,
                 count,
                 tapped,
                 attacking,
                 counters,
                 created,
             } => {
+                // "Its controller creates two Map tokens": the tokens are
+                // that player's, and everything else about them -- including
+                // who an arriving attacker attacks -- follows from that.
+                let controller = controller
+                    .and_then(|player| {
+                        self.effect_player_reference(player, object, context, scoped)
+                    })
+                    .unwrap_or(object.controller);
                 // Two players, so the one opponent is the only thing an
                 // arriving attacker could be attacking (CR 506.3d).
                 let defender =
-                    attacking.then(|| crate::AttackDefender::Player(object.controller.opponent()));
+                    attacking.then(|| crate::AttackDefender::Player(controller.opponent()));
                 // Worked out once, before any token is made: the number is
                 // what the effect found, not what the board looks like part
                 // way through creating them.
@@ -46,12 +55,7 @@ impl Game {
                 for _ in 0..self.effect_value(count, object, context, scoped).max(0) {
                     minted.extend(
                         self.create_token_arriving(
-                            object.controller,
-                            token,
-                            None,
-                            tapped,
-                            defender,
-                            counters,
+                            controller, token, None, tapped, defender, counters,
                         )
                         .map(Target::Permanent),
                     );

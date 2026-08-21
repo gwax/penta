@@ -241,6 +241,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::ManifestDread { .. }
         | EffectDef::Cascade
         | EffectDef::Proliferate
+        | EffectDef::Explore { .. }
         | EffectDef::LookAtTopAndSelect { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealAtRandomFromHand { .. }

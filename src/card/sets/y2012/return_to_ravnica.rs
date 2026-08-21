@@ -278,6 +278,7 @@ pub(in crate::card::sets) static ETHEREAL_ARMOR: CardRecord = CardRecord::new(
 static EYES_IN_THE_SKIES_EFFECTS: [EffectDef; 2] = [
     EffectDef::CreateToken {
         token: cards::BIRD_TOKEN_1_1_WHITE,
+        controller: None,
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,
@@ -360,6 +361,7 @@ pub(in crate::card::sets) static KNIGHTLY_VALOR: CardRecord = CardRecord::new(
                 ),
                 EffectDef::CreateToken {
                     token: cards::KNIGHT_TOKEN_2_2_WHITE,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
@@ -461,6 +463,7 @@ pub(in crate::card::sets) static PRECINCT_CAPTAIN: CardRecord = CardRecord::new(
                 TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
                 EffectDef::CreateToken {
                     token: cards::SOLDIER_TOKEN_1_1_WHITE,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
@@ -570,6 +573,7 @@ pub(in crate::card::sets) static SELLER_OF_SONGBIRDS: CardRecord = CardRecord::n
             ),
             EffectDef::CreateToken {
                 token: cards::BIRD_TOKEN_1_1_WHITE,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -2085,6 +2089,7 @@ pub(in crate::card::sets) static GOBLIN_RALLY: CardRecord = CardRecord::new(
         "Create four 1/1 red Goblin creature tokens.",
         EffectDef::CreateToken {
             token: cards::GOBLIN_TOKEN_1_1_RED,
+            controller: None,
             count: ValueDef::Constant(4),
             tapped: false,
             attacking: false,
@@ -2396,6 +2401,7 @@ pub(in crate::card::sets) static SURVEY_THE_WRECKAGE: CardRecord = CardRecord::n
             },
             EffectDef::CreateToken {
                 token: cards::GOBLIN_TOKEN_1_1_RED,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -2469,6 +2475,7 @@ pub(in crate::card::sets) static UTVARA_HELLKITE: CardRecord = CardRecord::new(
             ])),
             EffectDef::CreateToken {
                 token: cards::DRAGON_TOKEN_6_6_RED,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -2610,6 +2617,7 @@ pub(in crate::card::sets) static CENTAURS_HERALD: CardRecord = CardRecord::new(
             ],
             EffectDef::CreateToken {
                 token: cards::CENTAUR_TOKEN_3_3_GREEN,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -2836,6 +2844,7 @@ pub(in crate::card::sets) static GOLGARI_DECOY: CardRecord = CardRecord::new(
 static HORNCALLERS_CHANT_EFFECTS: [EffectDef; 2] = [
     EffectDef::CreateToken {
         token: cards::RHINO_TOKEN_4_4_GREEN,
+        controller: None,
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,
@@ -3025,6 +3034,7 @@ static WORLDSPINE_WURM_ABILITIES: [AbilityDef; 3] = [
         ),
         EffectDef::CreateToken {
             token: cards::WURM_TOKEN_5_5_GREEN,
+            controller: None,
             count: ValueDef::Constant(3),
             tapped: false,
             attacking: false,
@@ -3132,6 +3142,7 @@ pub(in crate::card::sets) static ARMADA_WURM: CardRecord = CardRecord::new(
             ),
             EffectDef::CreateToken {
                 token: cards::WURM_TOKEN_5_5_GREEN,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -3215,6 +3226,7 @@ pub(in crate::card::sets) static CALL_OF_THE_CONCLAVE: CardRecord = CardRecord::
         "Create a 3/3 green Centaur creature token.",
         EffectDef::CreateToken {
             token: cards::CENTAUR_TOKEN_3_3_GREEN,
+            controller: None,
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,
@@ -3405,6 +3417,7 @@ pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new(
 static COURSERS_ACCORD_EFFECTS: [EffectDef; 2] = [
     EffectDef::CreateToken {
         token: cards::CENTAUR_TOKEN_3_3_GREEN,
+        controller: None,
         count: ValueDef::Constant(1),
         tapped: false,
         attacking: false,
@@ -3817,6 +3830,7 @@ pub(in crate::card::sets) static IZZET_STATICASTER: CardRecord = CardRecord::new
 /// One Saproling per point of toughness the sacrifice had.
 static KOROZDA_GUILDMAGE_PAYOFF: EffectDef = EffectDef::CreateToken {
     token: cards::SAPROLING_TOKEN_1_1_GREEN,
+    controller: None,
     count: ValueDef::TriggerEventAmount,
     tapped: false,
     attacking: false,
@@ -4166,6 +4180,7 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
                 "Create a 2/2 white Knight creature token with vigilance",
                 EffectDef::CreateToken {
                     token: cards::KNIGHT_TOKEN_2_2_WHITE,
+                    controller: None,
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
@@ -4497,6 +4512,7 @@ pub(in crate::card::sets) static VITU_GHAZI_GUILDMAGE: CardRecord = CardRecord::
             &[AbilityCostDef::Mana(mana_cost!("{4}{G}{W}"))],
             EffectDef::CreateToken {
                 token: cards::CENTAUR_TOKEN_3_3_GREEN,
+                controller: None,
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
@@ -4548,6 +4564,7 @@ static VRASKA_ABILITIES: [AbilityDef; 3] = [
         &[AbilityCostDef::Loyalty(-7)],
         EffectDef::CreateToken {
             token: cards::ASSASSIN_TOKEN_1_1_BLACK,
+            controller: None,
             count: ValueDef::Constant(3),
             tapped: false,
             attacking: false,

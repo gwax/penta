@@ -95,6 +95,7 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
                     .flat_map(draw_replacement_referenced_object_ids),
             );
         }
+        DecisionContinuation::ExploredCardPlacement { revealed, .. } => ids.push(*revealed),
         DecisionContinuation::Proliferate { candidates } => {
             ids.extend(candidates.iter().copied().filter_map(target_object_id));
         }

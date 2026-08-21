@@ -27,6 +27,7 @@ static IVORA_ABILITIES: [AbilityDef; 3] = [
         TriggerEventDef::AnyOf(&IVORA_MAKES_BLOOD),
         EffectDef::CreateToken {
             token: cards::BLOOD_TOKEN,
+            controller: None,
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,
