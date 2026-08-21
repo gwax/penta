@@ -249,6 +249,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("commander_2013.rs") => source(CardSet::Commander2013, "C13"),
         Some("journey_into_nyx.rs") => source(CardSet::JourneyIntoNyx, "JOU"),
         Some("conspiracy.rs") => source(CardSet::Conspiracy, "CNS"),
+        Some("magic_2015.rs") => source(CardSet::Magic2015, "M15"),
         Some("commander_2014.rs") => source(CardSet::Commander2014, "C14"),
         Some("commander_2015.rs") => source(CardSet::Commander2015, "C15"),
         Some("khans_of_tarkir.rs") => source(CardSet::KhansOfTarkir, "KTK"),

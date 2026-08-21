@@ -123,6 +123,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::Commander2013 => "commander-2013",
         CardSet::JourneyIntoNyx => "journey-into-nyx",
         CardSet::Conspiracy => "conspiracy",
+        CardSet::Magic2015 => "magic-2015",
         CardSet::Commander2014 => "commander-2014",
         CardSet::Commander2015 => "commander-2015",
         CardSet::KhansOfTarkir => "khans-of-tarkir",

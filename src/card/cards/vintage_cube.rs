@@ -176,3 +176,5 @@ pub const SUNFALL: CardDefinitionId = CardDefinitionId(2258);
 pub const WORLDSPINE_WURM: CardDefinitionId = CardDefinitionId(2259);
 pub const FIGURE_OF_DESTINY: CardDefinitionId = CardDefinitionId(2260);
 pub const MINE_COLLAPSE: CardDefinitionId = CardDefinitionId(2261);
+pub const GOBLIN_TOKEN_1_1_RED_HASTE: CardDefinitionId = CardDefinitionId(2262);
+pub const GOBLIN_RABBLEMASTER: CardDefinitionId = CardDefinitionId(2263);

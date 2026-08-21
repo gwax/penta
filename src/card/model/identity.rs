@@ -83,6 +83,7 @@ pub enum CardSet {
     Commander2013,
     JourneyIntoNyx,
     Conspiracy,
+    Magic2015,
     Commander2014,
     KhansOfTarkir,
     DragonsOfTarkir,

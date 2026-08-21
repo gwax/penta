@@ -422,6 +422,19 @@ pub(in crate::card::sets) static GOBLIN_TOKEN_1_1_RED: CardRecord = CardRecord::
     CardRules::new_creature_without_mana_cost(&["Goblin"], 1, 1).printed_colors(&[ManaColor::Red]),
 );
 
+/// The same body as the plain Goblin next door, with the haste Rabblemaster
+/// prints on it: a token made at the beginning of combat is worth nothing
+/// without it.
+pub(in crate::card::sets) static GOBLIN_TOKEN_1_1_RED_HASTE: CardRecord = CardRecord::new(
+    cards::GOBLIN_TOKEN_1_1_RED_HASTE,
+    "Goblin",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Goblin"], 1, 1)
+        .printed_colors(&[ManaColor::Red])
+        .with_ability(abilities::haste()),
+);
+
 pub(in crate::card::sets) static SPIRIT_TOKEN_1_1_WHITE_BLACK: CardRecord = CardRecord::new(
     cards::SPIRIT_TOKEN_1_1_WHITE_BLACK,
     "Spirit",
@@ -803,6 +816,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SOLDIER_TOKEN_1_1_WHITE,
     &DRAKE_TOKEN_2_2_BLUE,
     &GOBLIN_TOKEN_1_1_RED,
+    &GOBLIN_TOKEN_1_1_RED_HASTE,
     &SPIRIT_TOKEN_1_1_WHITE_BLACK,
     &SLIVER_TOKEN_1_1_COLORLESS,
     &DRAGON_TOKEN_2_2_RED,

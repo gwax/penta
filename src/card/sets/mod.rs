@@ -407,6 +407,11 @@ const SET_MODULES: &[SetModule] = &[
         y2014::conspiracy::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Magic2015,
+        y2014::magic_2015::CARDS,
+        y2014::magic_2015::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Commander2014,
         y2014::commander_2014::CARDS,
         y2014::commander_2014::ADDITIONAL_PRINTINGS,
