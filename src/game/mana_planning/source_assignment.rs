@@ -16,6 +16,7 @@ struct ManaPlanningRequest<'a> {
     life_available: u16,
 }
 
+#[allow(dead_code)]
 struct ManaPlanSelection {
     available: Vec<PlannedManaActivation>,
     selected: Vec<PlannedManaActivation>,
@@ -24,6 +25,7 @@ struct ManaPlanSelection {
     avoid: Option<GameObjectId>,
 }
 
+#[allow(dead_code)]
 impl ManaPlanSelection {
     fn new(
         available: Vec<PlannedManaActivation>,
@@ -192,6 +194,7 @@ impl ManaPlanSelection {
 }
 
 impl Game {
+    #[allow(dead_code)]
     pub(super) fn assigned_mana_activations_for(
         &self,
         player: PlayerId,
@@ -255,13 +258,19 @@ impl Game {
             _ => None,
         };
         let sources = self.flexible_mana_sources(request, cost, uses_convoke, barred);
-        let mut search = PaymentAssignmentSearch::new(&sources, cost, x, channel_enabled);
+        let mut search = PaymentAssignmentSearch::new(
+            &sources,
+            cost,
+            x,
+            channel_enabled,
+            request.options.avoid,
+        );
         let found = if uses_convoke {
             search.assign_convoke(0, starting_pool, request.life_available)
         } else {
             search.assign_flexible(0, starting_pool, request.life_available)
         };
-        found.then_some(search.assignment)
+        found.then_some(search.best_assignment.unwrap_or_default())
     }
 
     fn flexible_mana_sources(
@@ -412,18 +421,13 @@ fn can_cover_payment(capacity: PaymentCapacity, cost: ManaCost, x: u16) -> bool 
     if capacity.generic == 0 {
         return can_pay(capacity.mana, cost, x);
     }
-    let pool = capacity.mana;
-    pool.white >= cost.white
-        && pool.blue >= cost.blue
-        && pool.black >= cost.black
-        && pool.red >= cost.red
-        && pool.green >= cost.green
-        && pool.colorless >= cost.colorless
-        && can_cover_hybrid_cost(pool, cost)
-        && capacity.total()
-            >= colored_cost_total(cost)
-                .saturating_add(cost.generic)
-                .saturating_add(x.saturating_mul(cost.x_multiplier))
+    let mut mana_only = cost;
+    mana_only.generic = cost
+        .generic
+        .saturating_add(x.saturating_mul(cost.x_multiplier))
+        .saturating_sub(capacity.generic);
+    mana_only.variable_x = false;
+    can_pay(capacity.mana, mana_only, 0)
 }
 
 fn with_channel_capacity(
@@ -434,17 +438,31 @@ fn with_channel_capacity(
     if channel_enabled {
         capacity
             .mana
-            .add_color(ManaColor::Colorless, life_available.saturating_sub(1));
+            .add_color(ManaColor::Colorless, life_available);
     }
     capacity
 }
+
+type PaymentAssignmentRank = (
+    u16,
+    usize,
+    usize,
+    usize,
+    usize,
+    Vec<(usize, GameObjectId)>,
+    usize,
+    u16,
+);
 
 struct PaymentAssignmentSearch<'a> {
     sources: &'a [FlexibleManaSource],
     cost: ManaCost,
     x: u16,
     channel_enabled: bool,
+    avoid: Option<GameObjectId>,
     assignment: Vec<PlannedManaActivation>,
+    best_assignment: Option<Vec<PlannedManaActivation>>,
+    best_rank: Option<PaymentAssignmentRank>,
     consumed: Vec<GameObjectId>,
     convokers: Vec<GameObjectId>,
 }
@@ -455,16 +473,70 @@ impl<'a> PaymentAssignmentSearch<'a> {
         cost: ManaCost,
         x: u16,
         channel_enabled: bool,
+        avoid: Option<GameObjectId>,
     ) -> Self {
         Self {
             sources,
             cost,
             x,
             channel_enabled,
+            avoid,
             assignment: Vec::new(),
+            best_assignment: None,
+            best_rank: None,
             consumed: Vec::new(),
             convokers: Vec::new(),
         }
+    }
+
+    fn channel_needed(&self, pool: PaymentCapacity, life_available: u16) -> Option<u16> {
+        let maximum = if self.channel_enabled { life_available } else { 0 };
+        (0..=maximum).find(|amount| {
+            let mut capacity = pool;
+            capacity.mana.add_color(ManaColor::Colorless, *amount);
+            can_cover_payment(capacity, self.cost, self.x)
+        })
+    }
+
+    fn consider_solution(&mut self, pool: PaymentCapacity, life_available: u16) -> bool {
+        let Some(channel) = self.channel_needed(pool, life_available) else {
+            return false;
+        };
+        let source_life = self
+            .assignment
+            .iter()
+            .map(|payment| payment.life_payment)
+            .fold(0_u16, u16::saturating_add);
+        let rank = (
+            source_life.saturating_add(channel),
+            self.assignment
+                .iter()
+                .filter(|payment| Some(payment.source) == self.avoid)
+                .count(),
+            self.assignment
+                .iter()
+                .filter(|payment| payment.kind.cost_object().is_some())
+                .count(),
+            self.assignment.len(),
+            self.assignment
+                .iter()
+                .filter(|payment| !payment.benefits_payment)
+                .count(),
+            self.assignment
+                .iter()
+                .map(|payment| (payment.order, payment.source))
+                .collect(),
+            self.assignment.iter().map(|payment| payment.flexibility).sum(),
+            self.assignment
+                .iter()
+                .map(|payment| payment.production.total())
+                .fold(0_u16, u16::saturating_add),
+        );
+        if self.best_rank.as_ref().is_none_or(|best| rank < *best) {
+            self.best_rank = Some(rank);
+            self.best_assignment = Some(self.assignment.clone());
+        }
+        true
     }
 
     fn can_still_cover(&self, index: usize, payment_capacity: PaymentCapacity) -> bool {
@@ -513,13 +585,10 @@ impl<'a> PaymentAssignmentSearch<'a> {
         pool: PaymentCapacity,
         life_available: u16,
     ) -> bool {
-        let payment_capacity =
-            with_channel_capacity(pool, self.channel_enabled, life_available);
-        if can_cover_payment(payment_capacity, self.cost, self.x) {
-            return true;
-        }
-        if !self.can_still_cover(index, payment_capacity) || index == self.sources.len() {
-            return false;
+        let mut found = self.consider_solution(pool, life_available);
+        let payment_capacity = with_channel_capacity(pool, self.channel_enabled, life_available);
+        if index == self.sources.len() || !self.can_still_cover(index, payment_capacity) {
+            return found;
         }
 
         let output_count = self.sources[index].outputs.len();
@@ -537,15 +606,13 @@ impl<'a> PaymentAssignmentSearch<'a> {
             if let Some(object) = cost_object {
                 self.consumed.push(object);
             }
-            if self.assign_flexible(index + 1, next, life_available - output.life_payment) {
-                return true;
-            }
+            found |= self.assign_flexible(index + 1, next, life_available - output.life_payment);
             if cost_object.is_some() {
                 self.consumed.pop();
             }
             self.assignment.pop();
         }
-        self.assign_flexible(index + 1, pool, life_available)
+        found | self.assign_flexible(index + 1, pool, life_available)
     }
 }
 
@@ -608,13 +675,10 @@ impl PaymentAssignmentSearch<'_> {
         pool: PaymentCapacity,
         life_available: u16,
     ) -> bool {
-        let payment_capacity =
-            with_channel_capacity(pool, self.channel_enabled, life_available);
-        if can_cover_payment(payment_capacity, self.cost, self.x) {
-            return true;
-        }
-        if !self.can_still_cover(index, payment_capacity) || index == self.sources.len() {
-            return false;
+        let mut found = self.consider_solution(pool, life_available);
+        let payment_capacity = with_channel_capacity(pool, self.channel_enabled, life_available);
+        if index == self.sources.len() || !self.can_still_cover(index, payment_capacity) {
+            return found;
         }
 
         let source_id = self.sources[index].source;
@@ -641,9 +705,7 @@ impl PaymentAssignmentSearch<'_> {
             if let Some(object) = cost_object {
                 self.consumed.push(object);
             }
-            if self.assign_convoke(index + 1, next, life_available - output.life_payment) {
-                return true;
-            }
+            found |= self.assign_convoke(index + 1, next, life_available - output.life_payment);
             if cost_object.is_some() {
                 self.consumed.pop();
             }
@@ -653,7 +715,7 @@ impl PaymentAssignmentSearch<'_> {
             self.assignment.pop();
         }
 
-        self.assign_convoke(index + 1, pool, life_available)
+        found | self.assign_convoke(index + 1, pool, life_available)
     }
 }
 
@@ -663,6 +725,7 @@ impl PaymentAssignmentSearch<'_> {
 /// order and therefore no plan.
 fn order_mana_activations_before_consumption(
     mut activations: Vec<PlannedManaActivation>,
+    cost: ManaCost,
 ) -> Option<Vec<PlannedManaActivation>> {
     if activations.iter().any(|activation| {
         activation.kind.cost_object().is_some_and(|object| {
@@ -676,23 +739,53 @@ fn order_mana_activations_before_consumption(
 
     let mut ordered = Vec::with_capacity(activations.len());
     while !activations.is_empty() {
-        let next = (0..activations.len()).find(|activation_index| {
-            let activation = &activations[*activation_index];
-            activation.kind.cost_object().is_none_or(|object| {
-                !activations
-                    .iter()
-                    .enumerate()
-                    .any(|(candidate_index, candidate)| {
-                        candidate_index != *activation_index && candidate.source == object
-                    })
+        let next = (0..activations.len())
+            .filter(|activation_index| {
+                let activation = &activations[*activation_index];
+                activation.kind.cost_object().is_none_or(|object| {
+                    !activations
+                        .iter()
+                        .enumerate()
+                        .any(|(candidate_index, candidate)| {
+                            candidate_index != *activation_index && candidate.source == object
+                        })
+                })
             })
-        })?;
+            .min_by_key(|activation_index| {
+                payment_activation_priority(activations[*activation_index], cost)
+            })?;
         ordered.push(activations.remove(next));
     }
     Some(ordered)
 }
 
-fn unique_payment_source_ids(plan: Vec<PlannedManaActivation>) -> Vec<GameObjectId> {
+fn payment_activation_priority(
+    activation: PlannedManaActivation,
+    cost: ManaCost,
+) -> (u8, usize, usize) {
+    for (index, color) in ManaColor::ALL.into_iter().enumerate() {
+        if mana_cost_amount(cost, color) > 0 && activation.payment_amount(color) > 0 {
+            return (0, index, activation.order);
+        }
+    }
+    for (symbol_index, symbol) in FlexibleManaSymbol::ALL.into_iter().enumerate() {
+        if cost.flexible_count(symbol) == 0 {
+            continue;
+        }
+        for (option_index, color) in symbol.mana_options().iter().copied().enumerate() {
+            if activation.payment_amount(color) > 0 {
+                return (
+                    1,
+                    symbol_index.saturating_mul(2).saturating_add(option_index),
+                    activation.order,
+                );
+            }
+        }
+    }
+    (2, 0, activation.order)
+}
+
+pub(super) fn unique_payment_source_ids(plan: Vec<PlannedManaActivation>) -> Vec<GameObjectId> {
     let mut sources = Vec::new();
     for payment in plan {
         if !sources.contains(&payment.source) {
