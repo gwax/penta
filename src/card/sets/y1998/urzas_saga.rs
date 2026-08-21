@@ -5,7 +5,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt,
     CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, DiscardSelectionDef,
     EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    PlayerSetDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -164,6 +165,38 @@ pub(in crate::card::sets) static GILDED_DRAKE: CardRecord = CardRecord::new(
     ]),
 );
 
+/// Each player looks only at their own graveyard, and what they find arrives
+/// under their own control: the choice is asked of each of them in turn
+/// rather than made once by the caster.
+static EXHUME_EACH_GRAVEYARD: [CardChoiceSourceDef; 1] =
+    [CardChoiceSourceDef::Zone(ZoneKind::Graveyard)];
+
+// USG 134 — Exhume
+pub(in crate::card::sets) static EXHUME: CardRecord = CardRecord::new(
+    cards::EXHUME,
+    "Exhume",
+    CardArt::new("a88b23ce-ce19-47da-b9f2-055a4d6bdc79", "Carl Critchlow"),
+    CardSet::UrzasSaga,
+    // Two mana for the biggest thing anybody has discarded, and the reason
+    // the deck playing it discarded something bigger than the other one has.
+    CardRules::new_sorcery(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell(
+        "Each player puts a creature card from their graveyard onto the battlefield.",
+        EffectDef::ChooseCards {
+            player: EffectRecipientDef::players(PlayerSetDef::All),
+            sources: &EXHUME_EACH_GRAVEYARD,
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            // Not a "may": a player with a creature card down there has to
+            // put one back, and one with none is never asked.
+            minimum: 1,
+            maximum: 1,
+            reveal: false,
+            destination: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            arrival_effect: None,
+        },
+    )),
+);
+
 // USG 190 — Goblin Lackey
 pub(in crate::card::sets) static GOBLIN_LACKEY: CardRecord = CardRecord::new(
     cards::GOBLIN_LACKEY,
@@ -307,6 +340,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANNUL,
     &ATTUNEMENT,
     &GILDED_DRAKE,
+    &EXHUME,
     &GOBLIN_LACKEY,
     &GOBLIN_MATRON,
     &GOBLIN_PATROL,

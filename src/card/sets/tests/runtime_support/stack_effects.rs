@@ -312,7 +312,9 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
                     matches!(
                         source,
                         CardChoiceSourceDef::OutsideGame
-                            | CardChoiceSourceDef::Zone(ZoneKind::Exile | ZoneKind::Hand)
+                            | CardChoiceSourceDef::Zone(
+                                ZoneKind::Exile | ZoneKind::Graveyard | ZoneKind::Hand
+                            )
                     )
                 })
                 // An outside-game import has one destination the runtime
