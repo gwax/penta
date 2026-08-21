@@ -51,6 +51,41 @@ pub(in crate::card::sets) static SPELL_PIERCE: CardRecord = CardRecord::new(
     )),
 );
 
+// ZEN 201 — Expedition Map
+pub(in crate::card::sets) static EXPEDITION_MAP: CardRecord = CardRecord::new(
+    cards::EXPEDITION_MAP,
+    "Expedition Map",
+    CardArt::new("c55bee97-593f-441f-b96c-a998d5212a55", "Franz Vohwinkel"),
+    CardSet::Zendikar,
+    // Three mana over two turns for any land in the deck, which is a
+    // terrible rate and exactly what a deck built around one land wants.
+    CardRules::new_artifact(mana_cost!("{1}")).with_ability(AbilityDef::activated(
+        "{2}, {T}, Sacrifice this artifact: Search your library for a land card, reveal it, put \
+         it into your hand, then shuffle.",
+        &EXPEDITION_MAP_COST,
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::HasType(CardType::Land),
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: true,
+            destination: ZoneKind::Hand,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+            binding: None,
+            then: None,
+        },
+    )),
+);
+
+static EXPEDITION_MAP_COST: [AbilityCostDef; 3] = [
+    AbilityCostDef::Mana(mana_cost!("{2}")),
+    AbilityCostDef::TapSource,
+    AbilityCostDef::SacrificeSource,
+];
+
 // ZEN 211 — Arid Mesa
 pub(in crate::card::sets) static ARID_MESA: CardRecord = CardRecord::new(
     cards::ARID_MESA,
@@ -113,6 +148,7 @@ pub(in crate::card::sets) static VERDANT_CATACOMBS: CardRecord = CardRecord::new
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPELL_PIERCE,
+    &EXPEDITION_MAP,
     &ARID_MESA,
     &MARSH_FLATS,
     &MISTY_RAINFOREST,
