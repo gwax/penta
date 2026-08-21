@@ -208,6 +208,17 @@ impl TriggerEventDef {
         })
     }
 
+    /// "Whenever this creature deals combat damage to a player or
+    /// planeswalker." One event either way, so one trigger rather than two.
+    #[must_use]
+    pub const fn combat_damage_to_player_or_planeswalker(source: ObjectPredicateDef) -> Self {
+        Self::DamageDealt(DamageEventMatcherDef {
+            kind: DamageKindDef::Combat,
+            source: Self::damage_source(source),
+            recipient: DamageRecipientMatcherDef::PlayerOrPlaneswalker,
+        })
+    }
+
     #[must_use]
     pub const fn combat_damage_to_source(source: ObjectPredicateDef) -> Self {
         Self::DamageDealt(DamageEventMatcherDef {

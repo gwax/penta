@@ -191,3 +191,4 @@ pub const CATHAR_COMMANDO: CardDefinitionId = CardDefinitionId(2273);
 pub const ELITE_SPELLBINDER: CardDefinitionId = CardDefinitionId(2274);
 pub const COMMERCIAL_DISTRICT: CardDefinitionId = CardDefinitionId(2275);
 pub const PHANTASMAL_IMAGE: CardDefinitionId = CardDefinitionId(2276);
+pub const PSYCHIC_FROG: CardDefinitionId = CardDefinitionId(2277);

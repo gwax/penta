@@ -231,7 +231,9 @@ fn validate_damage_matcher_references(
         DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player) => {
             validate_player_reference(player, target_count, scope)
         }
-        DamageRecipientMatcherDef::Any | DamageRecipientMatcherDef::AffectedObject => Ok(()),
+        DamageRecipientMatcherDef::Any
+        | DamageRecipientMatcherDef::AffectedObject
+        | DamageRecipientMatcherDef::PlayerOrPlaneswalker => Ok(()),
     }
 }
 
@@ -479,7 +481,9 @@ fn validate_trigger_damage_matcher(
         }
     }
     match matcher.recipient {
-        DamageRecipientMatcherDef::Any => Ok(()),
+        DamageRecipientMatcherDef::Any | DamageRecipientMatcherDef::PlayerOrPlaneswalker => {
+            Ok(())
+        }
         DamageRecipientMatcherDef::Recipients(EffectRecipientDef(
             EffectRecipientSetDef::Objects(ObjectSetDef::One(reference)),
         )) => validate_trigger_object_reference(reference, event, target_count, scope),

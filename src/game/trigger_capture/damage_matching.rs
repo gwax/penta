@@ -145,6 +145,14 @@ impl Game {
                     )
                 }
             },
+            // A player or a planeswalker: one event goes to one of the two,
+            // and the printed clause does not care which.
+            DamageRecipientMatcherDef::PlayerOrPlaneswalker => match recipient {
+                Target::Player(_) => true,
+                Target::Permanent(_) => recipient_object
+                    .is_some_and(|object| object.types.contains(CardType::Planeswalker)),
+                Target::Card(_) | Target::Spell(_) => false,
+            },
             DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player) => {
                 let Some(player) =
                     self.trigger_event_player_reference(player, ability_source, controller, event)

@@ -124,6 +124,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                         | ObjectRefDef::TriggeringObject
                 ),
                 DamageRecipientMatcherDef::Any
+                | DamageRecipientMatcherDef::PlayerOrPlaneswalker
                 | DamageRecipientMatcherDef::Recipients(EffectRecipientDef(
                     EffectRecipientSetDef::Players(_),
                 ))

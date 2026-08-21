@@ -820,7 +820,8 @@ fn static_damage_matcher_supported(matcher: DamageEventMatcherDef) -> bool {
         DamageRecipientMatcherDef::Recipients(recipients) => recipients
             .object_reference()
             .is_some_and(static_damage_object_reference_supported),
-        DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(_) => false,
+        DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(_)
+        | DamageRecipientMatcherDef::PlayerOrPlaneswalker => false,
     };
     source && recipient
 }

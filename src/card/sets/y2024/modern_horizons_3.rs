@@ -8,9 +8,9 @@ use crate::card::{
     ChooseDef, ComparisonDef, CounterKind, DoubleFacedKind, EffectDef, EffectPaymentCostDef,
     EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayOptionDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, SpellAdditionalCostDef, SpellForm, SpendModeDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SpellAdditionalCostDef,
+    SpellForm, SpendModeDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, ObjectBindingIndex, ObjectSetBindingIndex, PlayOptionId};
 use crate::{TargetIndex, mana_cost};
@@ -696,6 +696,53 @@ pub(in crate::card::sets) static PHLAGE_TITAN_OF_FIRES_FURY: CardRecord = CardRe
         .with_abilities(&PHLAGE_ABILITIES),
 );
 
+static PSYCHIC_FROG_ABILITIES: [AbilityDef; 3] = [
+    // A player or a planeswalker: the Frog is happy to be chumped by neither.
+    AbilityDef::triggered(
+        "Whenever this creature deals combat damage to a player or planeswalker, draw a card.",
+        TriggerEventDef::combat_damage_to_player_or_planeswalker(ObjectPredicateDef::Source),
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    // No mana in either cost, and no tap: the Frog grows as often as the hand
+    // allows and flies as often as the graveyard does.
+    AbilityDef::activated(
+        "Discard a card: Put a +1/+1 counter on this creature.",
+        &[AbilityCostDef::DiscardCardMatching(ObjectPredicateDef::Any)],
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::Source,
+            kind: CounterKind::PlusOnePlusOne,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    AbilityDef::activated(
+        "Exile three cards from your graveyard: This creature gains flying until end of turn.",
+        &[AbilityCostDef::ExileCardsFromGraveyard {
+            object: ObjectPredicateDef::Any,
+            count: 3,
+        }],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::add_ability(&abilities::flying()),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    ),
+];
+
+// MH3 199 — Psychic Frog
+pub(in crate::card::sets) static PSYCHIC_FROG: CardRecord = CardRecord::new(
+    cards::PSYCHIC_FROG,
+    "Psychic Frog",
+    CardArt::new("68924203-c3d9-41ce-8ca8-c6dd491eb3ca", "Pete Venters"),
+    CardSet::ModernHorizons3,
+    // Two mana that turns a full hand into a big evasive body and a full
+    // graveyard into the evasion, and draws a card every time it connects.
+    CardRules::new_creature(mana_cost!("{U}{B}"), &["Frog"], 1, 2)
+        .with_abilities(&PSYCHIC_FROG_ABILITIES),
+);
+
 /// A basic one, not merely a card with the type: the tri-fetch cycle names
 /// three basics and finds nothing else, which is what separates it from the
 /// fetchlands that read "a Mountain or Plains card".
@@ -768,6 +815,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &COLOSSAL_DREADMASK,
     &SOWING_MYCOSPAWN,
     &PHLAGE_TITAN_OF_FIRES_FURY,
+    &PSYCHIC_FROG,
     &BOUNTIFUL_LANDSCAPE,
     &AJANI_NACATL_PARIAH,
 ];

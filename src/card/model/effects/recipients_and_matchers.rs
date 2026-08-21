@@ -403,6 +403,11 @@ pub enum DamageRecipientMatcherDef {
     /// A player resolved when the prevention is created, plus creatures that
     /// player controls when damage would be dealt.
     PlayerAndCreaturesControlledBy(PlayerRefDef),
+    /// Any player, or any planeswalker. "Deals combat damage to a player or
+    /// planeswalker" is one clause rather than two, and the two halves are
+    /// not the same kind of thing, so neither a player set nor an object
+    /// query can say it on its own.
+    PlayerOrPlaneswalker,
 }
 
 /// How much damage a limiting rule lets through.

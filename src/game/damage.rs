@@ -277,7 +277,10 @@ impl Game {
                             .recipient_object
                             .is_some_and(|object| object.id == recipient)
                     }),
-                DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(_) => false,
+                // Both exist for trigger matching rather than for a static
+                // shield, and the validation above refuses either here.
+                DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(_)
+                | DamageRecipientMatcherDef::PlayerOrPlaneswalker => false,
             }
     }
 

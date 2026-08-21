@@ -384,7 +384,9 @@ fn validate_damage_matcher_shape(
         DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player) => {
             validate_player_reference_shape(player, targets)
         }
-        DamageRecipientMatcherDef::Any | DamageRecipientMatcherDef::AffectedObject => Ok(()),
+        DamageRecipientMatcherDef::Any
+        | DamageRecipientMatcherDef::AffectedObject
+        | DamageRecipientMatcherDef::PlayerOrPlaneswalker => Ok(()),
     }
 }
 

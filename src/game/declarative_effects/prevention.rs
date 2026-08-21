@@ -183,6 +183,13 @@ impl Game {
                 );
                 Vec::new()
             }
+            DamageRecipientMatcherDef::PlayerOrPlaneswalker => {
+                debug_assert!(
+                    false,
+                    "PlayerOrPlaneswalker is only meaningful for a trigger"
+                );
+                Vec::new()
+            }
             DamageRecipientMatcherDef::Recipients(recipients) => self
                 .effect_recipients(recipients, object, context, scoped)
                 .into_iter()
