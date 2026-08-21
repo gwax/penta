@@ -121,7 +121,45 @@ pub(in crate::card::sets) static BRISTLY_BILL_SPINE_SOWER: CardRecord = CardReco
         .with_abilities(&BILL_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&DUELIST_OF_THE_MIND, &BRISTLY_BILL_SPINE_SOWER];
+/// Ward reads as one clause on the Boots, so the granted ability carries the
+/// whole of the printed reminder rather than a paraphrase of it.
+static LAVASPUR_WARD: AbilityDef = abilities::ward(
+    1,
+    "Ward {1} (Whenever this creature becomes the target of a spell or ability an opponent \
+     controls, counter it unless that player pays {1}.)",
+);
+
+// OTJ 243 — Lavaspur Boots
+pub(in crate::card::sets) static LAVASPUR_BOOTS: CardRecord = CardRecord::new(
+    cards::LAVASPUR_BOOTS,
+    "Lavaspur Boots",
+    CardArt::new("e50709de-e6ef-4dbc-af1e-290fed279f34", "Mila Pesic"),
+    CardSet::OutlawsOfThunderJunction,
+    CardRules::new_artifact(mana_cost!("{1}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +1/+0 and has haste and ward {1}.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(1),
+                            ValueDef::Constant(0),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::haste()),
+                        AppliedEffectDef::add_ability(&LAVASPUR_WARD),
+                    ]),
+                },
+            ),
+            abilities::equip(mana_cost!("{1}"), "Equip {1}"),
+        ]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &DUELIST_OF_THE_MIND,
+    &BRISTLY_BILL_SPINE_SOWER,
+    &LAVASPUR_BOOTS,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

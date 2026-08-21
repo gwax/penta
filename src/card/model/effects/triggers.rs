@@ -61,6 +61,11 @@ pub enum TriggerEventDef {
     /// however many of its slots name the same object (CR 115.7c). Activated
     /// abilities target too, and this is not about them.
     BecomesTargetOfSpell(ObjectPredicateDef),
+    /// This object became the target of a spell or of an ability, which is
+    /// the pair ward asks about. Raised where each locks its targets in --
+    /// as the spell is cast, or as the ability goes onto the stack -- and
+    /// once per targeting object however many of its slots name this one.
+    BecomesTargetOfSpellOrAbility(ObjectPredicateDef),
     StepBegins {
         step: TurnStepDef,
         player: PlayerRelation,

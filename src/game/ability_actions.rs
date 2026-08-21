@@ -145,6 +145,7 @@ impl Game {
             chosen_permanents: event_chosen_permanents,
         });
         self.capture_crime_triggers(controller, &crime_targets);
+        self.capture_ability_targeting_triggers(id);
         id
     }
 

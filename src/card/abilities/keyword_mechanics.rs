@@ -140,3 +140,29 @@ static EVOLVE_BIGGER: [ObjectPredicateDef; 2] = [
     ObjectPredicateDef::PowerGreaterThan(ValueDef::SourcePower),
     ObjectPredicateDef::ToughnessGreaterThan(ValueDef::SourceToughness),
 ];
+
+/// A spell or ability an opponent controls, which is the half of the stack
+/// ward answers.
+static AN_OPPONENTS_SPELL_OR_ABILITY: ObjectPredicateDef =
+    ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent);
+
+/// Ward (CR 702.21): "Whenever this permanent becomes the target of a spell
+/// or ability an opponent controls, counter it unless that player pays
+/// `amount`."
+///
+/// Written out as the triggered ability it abbreviates, for the same reason
+/// prowess is: nothing in the rules reads "has ward" the way combat reads
+/// flying, so the clause is the whole of it. The text is the caller's
+/// because a card that grants ward prints the reminder in its own voice.
+#[must_use]
+pub const fn ward(amount: u16, text: &'static str) -> AbilityDef {
+    AbilityDef::triggered(
+        text,
+        TriggerEventDef::BecomesTargetOfSpellOrAbility(AN_OPPONENTS_SPELL_OR_ABILITY),
+        pay_or_counter(
+            PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject),
+            ValueDef::Constant(amount as i32),
+            &COUNTER_TRIGGERING_SPELL,
+        ),
+    )
+}

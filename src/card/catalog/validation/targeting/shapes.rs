@@ -34,7 +34,9 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         | TriggerEventDef::Transforms(_) => Some(ZoneKind::Battlefield),
         // Both name the spell rather than what it points at, and a spell
         // is on the stack.
-        TriggerEventDef::SpellCast(_) | TriggerEventDef::BecomesTargetOfSpell(_) => {
+        TriggerEventDef::SpellCast(_)
+        | TriggerEventDef::BecomesTargetOfSpell(_)
+        | TriggerEventDef::BecomesTargetOfSpellOrAbility(_) => {
             Some(ZoneKind::Stack)
         }
         // The cycled card is in the graveyard by the time the trigger goes

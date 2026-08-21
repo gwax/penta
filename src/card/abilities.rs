@@ -399,14 +399,16 @@ const fn ward_clauses(color: usize) -> [EffectDef; 2] {
     ]
 }
 
-/// One Ward's whole granted clause. The card supplies its own rules text,
-/// which names the colour and prints the exception in one sentence.
+/// One Ward Aura's whole granted clause -- the Alpha cycle of Auras named
+/// "<colour> Ward", which have nothing to do with the ward keyword. The card
+/// supplies its own rules text, which names the colour and prints the
+/// exception in one sentence.
 ///
 /// # Panics
 ///
-/// Panics when `color` is colorless, which no Ward is printed with.
+/// Panics when `color` is colorless, which no Ward Aura is printed with.
 #[must_use]
-pub const fn ward(color: ManaColor, text: &'static str) -> AbilityDef {
+pub const fn ward_aura_protection(color: ManaColor, text: &'static str) -> AbilityDef {
     let clauses = match color {
         ManaColor::White => &WARD_CLAUSES[0],
         ManaColor::Blue => &WARD_CLAUSES[1],

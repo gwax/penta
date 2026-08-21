@@ -115,6 +115,40 @@ impl Game {
         self.capture_battlefield_triggers_from_snapshot(&listeners, event);
     }
 
+    /// "Whenever this becomes the target of a spell or ability", for the
+    /// ability half. Raised once the ability is on the stack, which is where
+    /// its targets are locked in, and once per targeting ability however many
+    /// of its slots name the same permanent (CR 115.7c) -- the same rule the
+    /// cast side follows.
+    pub(super) fn capture_ability_targeting_triggers(&mut self, ability: GameObjectId) {
+        let Some(object) = self.stack.iter().find(|object| object.id == ability) else {
+            return;
+        };
+        let Some(event) = self.stack_object_event_object(object) else {
+            return;
+        };
+        let mut targeted = Vec::new();
+        for target in object
+            .ability
+            .as_ref()
+            .into_iter()
+            .flat_map(|payload| payload.targets.iter())
+            .flat_map(crate::TargetSelection::targets)
+        {
+            if let Target::Permanent(id) | Target::Card(id) = target
+                && !targeted.contains(id)
+            {
+                targeted.push(*id);
+            }
+        }
+        for target in targeted {
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::BecameTargetOfAbility {
+                target,
+                object: event.clone(),
+            });
+        }
+    }
+
     /// "When you cycle this card" (CR 702.29b), raised as the cycling ability
     /// is activated. Only the cycled card can carry the clause, so its own
     /// printed abilities are the entire listener list -- there is no zone to
@@ -712,6 +746,11 @@ impl Game {
             (
                 TriggerEventDef::BecomesTargetOfSpell(predicate),
                 CommittedTriggerEvent::BecameTargetOfSpell { target, object },
+            )
+            | (
+                TriggerEventDef::BecomesTargetOfSpellOrAbility(predicate),
+                CommittedTriggerEvent::BecameTargetOfSpell { target, object }
+                | CommittedTriggerEvent::BecameTargetOfAbility { target, object },
             ) => {
                 *target == source
                     && self.trigger_object_matches_for_controller(

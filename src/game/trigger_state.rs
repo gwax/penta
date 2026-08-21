@@ -259,6 +259,15 @@ pub(super) enum CommittedTriggerEvent {
         target: GameObjectId,
         object: TriggerEventObject,
     },
+    /// An object became the target of an activated or triggered ability as
+    /// that ability was put onto the stack. Kept apart from
+    /// [`Self::BecameTargetOfSpell`] because the printed clauses do: "becomes
+    /// the target of a spell" is not answered by an ability, and ward is
+    /// answered by both.
+    BecameTargetOfAbility {
+        target: GameObjectId,
+        object: TriggerEventObject,
+    },
     Transformed {
         object: TriggerEventObject,
     },
@@ -332,14 +341,14 @@ impl CommittedTriggerEvent {
                 event_player: Some(*player),
                 amount: Some(i32::from(*amount)),
             },
-            Self::BecameTargetOfSpell { object, .. } | Self::SpellCast { object } => {
-                TriggerContext {
-                    object: Some(object.id),
-                    object_controller: Some(object.controller),
-                    event_player: Some(object.controller),
-                    amount: None,
-                }
-            }
+            Self::BecameTargetOfSpell { object, .. }
+            | Self::BecameTargetOfAbility { object, .. }
+            | Self::SpellCast { object } => TriggerContext {
+                object: Some(object.id),
+                object_controller: Some(object.controller),
+                event_player: Some(object.controller),
+                amount: None,
+            },
             Self::BecameLevel { object, .. } => TriggerContext {
                 object: Some(*object),
                 object_controller: None,

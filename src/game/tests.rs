@@ -799,6 +799,7 @@ mod vintage_cube_infect;
 mod vintage_cube_jacked_rabbit;
 mod vintage_cube_jitte;
 mod vintage_cube_lands;
+mod vintage_cube_lavaspur_boots;
 mod vintage_cube_library;
 mod vintage_cube_lion_sash;
 mod vintage_cube_lorien;

@@ -134,7 +134,7 @@ pub(in crate::card::sets) static BLACK_WARD: CardRecord = CardRecord::new(
         .with_subtypes(&["Aura"])
         .with_abilities(&[
             aura_spell("Enchant creature", &ENCHANT_CREATURE_TARGET),
-            abilities::ward(
+            abilities::ward_aura_protection(
                 ManaColor::Black,
                 "Enchanted creature has protection from black. This effect doesn't remove \
                  this Aura.",
@@ -213,7 +213,7 @@ pub(in crate::card::sets) static BLUE_WARD: CardRecord = CardRecord::new(
         .with_subtypes(&["Aura"])
         .with_abilities(&[
             aura_spell("Enchant creature", &ENCHANT_CREATURE_TARGET),
-            abilities::ward(
+            abilities::ward_aura_protection(
                 ManaColor::Blue,
                 "Enchanted creature has protection from blue. This effect doesn't remove \
                  this Aura.",
@@ -459,7 +459,7 @@ pub(in crate::card::sets) static GREEN_WARD: CardRecord = CardRecord::new(
         .with_subtypes(&["Aura"])
         .with_abilities(&[
             aura_spell("Enchant creature", &ENCHANT_CREATURE_TARGET),
-            abilities::ward(
+            abilities::ward_aura_protection(
                 ManaColor::Green,
                 "Enchanted creature has protection from green. This effect doesn't remove \
                  this Aura.",
@@ -701,7 +701,7 @@ pub(in crate::card::sets) static RED_WARD: CardRecord = CardRecord::new(
         .with_subtypes(&["Aura"])
         .with_abilities(&[
             aura_spell("Enchant creature", &ENCHANT_CREATURE_TARGET),
-            abilities::ward(
+            abilities::ward_aura_protection(
                 ManaColor::Red,
                 "Enchanted creature has protection from red. This effect doesn't remove \
                  this Aura.",
@@ -926,7 +926,7 @@ pub(in crate::card::sets) static WHITE_WARD: CardRecord = CardRecord::new(
         .with_subtypes(&["Aura"])
         .with_abilities(&[
             aura_spell("Enchant creature", &ENCHANT_CREATURE_TARGET),
-            abilities::ward(
+            abilities::ward_aura_protection(
                 ManaColor::White,
                 "Enchanted creature has protection from white. This effect doesn't remove \
                  this Aura.",

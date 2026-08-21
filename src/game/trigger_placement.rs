@@ -365,5 +365,6 @@ impl Game {
             source: trigger.source.object,
             definition: trigger.definition,
         });
+        self.capture_ability_targeting_triggers(object);
     }
 }
