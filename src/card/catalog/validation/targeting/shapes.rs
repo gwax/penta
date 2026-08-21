@@ -438,6 +438,7 @@ fn validate_trigger_condition_shape(
             validate_object_predicate_shape(object, targets)
         }
         TriggerConditionDef::ControllerHadPermanentLeaveThisTurn
+        | TriggerConditionDef::ControllerHadCardLeaveGraveyardThisTurn
         | TriggerConditionDef::ControllerHasCitysBlessing
         | TriggerConditionDef::ControllerGainedLifeThisTurn
         | TriggerConditionDef::CreatureDiedThisTurn

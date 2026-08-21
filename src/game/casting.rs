@@ -551,6 +551,9 @@ impl Game {
         let card = match source_zone {
             CastSourceZone::Hand => remove_card(&mut self.players[player.index()].hand, card_id),
             CastSourceZone::Graveyard => {
+                // Cast out of a graveyard is a card leaving it, which the
+                // clauses that ask about the turn have to see.
+                self.note_card_left_graveyard(player);
                 remove_card(&mut self.players[player.index()].graveyard, card_id)
             }
             CastSourceZone::Exile => {
@@ -759,7 +762,10 @@ impl Game {
                 }
             }
         }
-        self.capture_cards_exiled(&exiled_from_graveyard, ZoneKind::Graveyard);
+        if !exiled_from_graveyard.is_empty() {
+            self.capture_cards_exiled(&exiled_from_graveyard, ZoneKind::Graveyard);
+            self.note_card_left_graveyard(stack_object.controller);
+        }
         if !remaining_sacrifices.is_empty() {
             let sacrificed = remaining_sacrifices.remove(0);
             self.move_permanents_to_graveyard_then(

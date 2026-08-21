@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 280 are cataloged and 254 are not
+- 534 cards in the pool, of which 281 are cataloged and 253 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -125,7 +125,7 @@ lands are legal in every format and are not listed.
 - `Vampire Hexmage`
 - `Yawgmoth's Will`
 
-### Red (34)
+### Red (33)
 
 - `Abrade`
 - `Broadside Bombardiers`
@@ -140,7 +140,6 @@ lands are legal in every format and are not listed.
 - `Fiery Confluence`
 - `Galvanic Blast`
 - `Galvanic Discharge`
-- `Gau, Feral Youth`
 - `Generous Plunderer`
 - `Glorybringer`
 - `Goldspan Dragon`
@@ -313,7 +312,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 280 pool cards are in the catalog because an earlier format needed them.
+These 281 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -415,6 +414,7 @@ been played beside.
 - `Frantic Search`
 - `Fury`
 - `Gaea's Cradle`
+- `Gau, Feral Youth`
 - `Generous Ent`
 - `Get Lost`
 - `Ghost Vacuum`

@@ -443,6 +443,7 @@ impl Game {
         self.cards_drawn_this_turn = [0; 2];
         self.life_gained_this_turn = [0; 2];
         self.permanent_left_battlefield_this_turn = [false; 2];
+        self.card_left_graveyard_this_turn = [false; 2];
         self.drawn_this_turn = [Vec::new(), Vec::new()];
         self.miracle_window = None;
         self.step = Step::Upkeep;

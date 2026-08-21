@@ -794,6 +794,7 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
             static_object_predicate_supported(object)
         }
         TriggerConditionDef::ControllerHadPermanentLeaveThisTurn
+        | TriggerConditionDef::ControllerHadCardLeaveGraveyardThisTurn
         | TriggerConditionDef::ControllerHasCitysBlessing
         | TriggerConditionDef::ControllerGainedLifeThisTurn
         | TriggerConditionDef::CreatureDiedThisTurn

@@ -672,6 +672,11 @@ pub struct Game {
     /// board afterwards cannot tell: a permanent that left and was replaced
     /// leaves a battlefield that looks untouched.
     permanent_left_battlefield_this_turn: [bool; 2],
+    /// Whether a card has left each player's graveyard this turn. "If a card
+    /// left your graveyard this turn" is a fact about the turn rather than
+    /// about any card, and by the time an end step asks, the card it is
+    /// about is somewhere else entirely.
+    card_left_graveyard_this_turn: [bool; 2],
     /// Which players have the city's blessing (CR 702.131a). It is gained for
     /// the rest of the game, so this only ever turns on.
     citys_blessing: [bool; 2],

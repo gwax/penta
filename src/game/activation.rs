@@ -59,6 +59,7 @@ impl Game {
             std::slice::from_ref(&exiled),
             crate::card::ZoneKind::Graveyard,
         );
+        self.note_card_left_graveyard(player);
     }
 
     fn activate_graveyard_ability(
@@ -488,7 +489,10 @@ impl Game {
                                 moved.push(card);
                             }
                         }
-                        self.capture_cards_exiled(&moved, crate::card::ZoneKind::Graveyard);
+                        if !moved.is_empty() {
+                            self.capture_cards_exiled(&moved, crate::card::ZoneKind::Graveyard);
+                            self.note_card_left_graveyard(player);
+                        }
                     }
                     AbilityCostDef::Loyalty(change) => {
                         if let Some(permanent) = self

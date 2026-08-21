@@ -700,6 +700,7 @@ fn validate_trigger_condition(
             validate_target_index(slot, target_count)
         }
         TriggerConditionDef::ControllerHadPermanentLeaveThisTurn
+        | TriggerConditionDef::ControllerHadCardLeaveGraveyardThisTurn
         | TriggerConditionDef::ControllerHasCitysBlessing
         | TriggerConditionDef::ControllerGainedLifeThisTurn
         | TriggerConditionDef::CreatureDiedThisTurn

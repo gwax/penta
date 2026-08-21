@@ -661,6 +661,11 @@ const SET_MODULES: &[SetModule] = &[
         y2025::final_fantasy::CARDS,
         y2025::final_fantasy::ADDITIONAL_PRINTINGS,
     ),
+    SetModule::new(
+        CardSet::FinalFantasyCommander,
+        y2025::final_fantasy_commander::CARDS,
+        y2025::final_fantasy_commander::ADDITIONAL_PRINTINGS,
+    ),
 ];
 
 pub(super) fn definitions() -> Vec<CardDefinition> {

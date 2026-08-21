@@ -105,6 +105,11 @@ pub(super) struct GameSnapshot {
     pub(super) cards_drawn_this_turn: [u16; 2],
     pub(super) citys_blessing: [bool; 2],
     pub(super) permanent_left_battlefield_this_turn: [bool; 2],
+    /// Additive: a checkpoint written before the turn tracked it restores
+    /// with nobody's graveyard having lost a card, which is what every turn
+    /// starts as anyway.
+    #[serde(default)]
+    pub(super) card_left_graveyard_this_turn: [bool; 2],
     pub(super) life_gained_this_turn: [u16; 2],
     pub(super) draw_step_draw_taken: [bool; 2],
     pub(super) drawn_this_turn: [Vec<u32>; 2],

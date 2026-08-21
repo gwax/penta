@@ -607,6 +607,9 @@ impl Game {
         if destination == ZoneKind::Exile {
             self.capture_cards_exiled(std::slice::from_ref(&card), from);
         }
+        if from == ZoneKind::Graveyard {
+            self.note_card_left_graveyard(owner);
+        }
         Some((card, destination))
     }
 
@@ -633,6 +636,14 @@ impl Game {
             to: ZoneKind::Graveyard,
             damage_sources: Vec::new(),
         });
+    }
+
+    /// "If a card left your graveyard this turn." Recorded rather than
+    /// reconstructed: by the time an end step asks, the card it is about is
+    /// somewhere else entirely and nothing left behind says where it came
+    /// from.
+    pub(super) fn note_card_left_graveyard(&mut self, owner: PlayerId) {
+        self.card_left_graveyard_this_turn[owner.index()] = true;
     }
 
     /// "Whenever one or more cards are put into exile from ...": one event

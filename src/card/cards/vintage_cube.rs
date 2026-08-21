@@ -216,3 +216,4 @@ pub const NIGHTS_WHISPER: CardDefinitionId = CardDefinitionId(2300);
 pub const BRIGHTGLASS_GEARHULK: CardDefinitionId = CardDefinitionId(2301);
 pub const LAELIA_THE_BLADE_REFORGED: CardDefinitionId = CardDefinitionId(2302);
 pub const METICULOUS_ARCHIVE: CardDefinitionId = CardDefinitionId(2303);
+pub const GAU_FERAL_YOUTH: CardDefinitionId = CardDefinitionId(2304);

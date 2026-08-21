@@ -167,6 +167,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::TarkirDragonstorm => "tarkir-dragonstorm",
         CardSet::Aetherdrift => "aetherdrift",
         CardSet::FinalFantasy => "final-fantasy",
+        CardSet::FinalFantasyCommander => "final-fantasy-commander",
         CardSet::Token => "token",
     }
 }

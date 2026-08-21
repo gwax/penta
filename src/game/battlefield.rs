@@ -400,7 +400,11 @@ impl Game {
         let card = self.take_card_from_zone(owner, zone, id)?;
         let (card, _zone_change) = self.zone_change_card(card);
         let exiled = card.id;
-        self.players[owner.index()].exile.push(card);
+        self.players[owner.index()].exile.push(card.clone());
+        self.capture_cards_exiled(std::slice::from_ref(&card), zone);
+        if zone == ZoneKind::Graveyard {
+            self.note_card_left_graveyard(owner);
+        }
         Some(exiled)
     }
 

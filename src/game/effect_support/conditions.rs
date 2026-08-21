@@ -273,6 +273,9 @@ impl Game {
                 TriggerConditionDef::ControllerHadPermanentLeaveThisTurn => {
                     self.permanent_left_battlefield_this_turn[controller.index()]
                 }
+                TriggerConditionDef::ControllerHadCardLeaveGraveyardThisTurn => {
+                    self.card_left_graveyard_this_turn[controller.index()]
+                }
                 TriggerConditionDef::CreatureDiedThisTurn => self.creature_died_this_turn,
                 // A dies-trigger asks about the permanent that died, which
                 // is no longer there to look at. "If it was a creature" has

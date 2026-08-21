@@ -429,6 +429,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
             shared_object_predicate(object)
         }
         TriggerConditionDef::ControllerHadPermanentLeaveThisTurn
+        | TriggerConditionDef::ControllerHadCardLeaveGraveyardThisTurn
         | TriggerConditionDef::ControllerHasCitysBlessing
         | TriggerConditionDef::ControllerGainedLifeThisTurn
         | TriggerConditionDef::CreatureDiedThisTurn

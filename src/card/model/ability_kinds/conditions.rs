@@ -144,6 +144,10 @@ pub enum TriggerConditionDef {
     /// the same reason the life gain above is: the board afterwards cannot
     /// tell a permanent that left from one that was never there.
     ControllerHadPermanentLeaveThisTurn,
+    /// "If a card left your graveyard this turn." A fact about the turn
+    /// rather than about any card: by the time an end step asks, the card it
+    /// is about is somewhere else entirely.
+    ControllerHadCardLeaveGraveyardThisTurn,
     /// Whether a creature has gone to a graveyard this turn. The condition
     /// form of the morbid value, for the intervening-ifs that ask rather than
     /// pick an amount.

@@ -194,6 +194,7 @@ impl Game {
             cards_drawn_this_turn: [0; 2],
             citys_blessing: [false; 2],
             permanent_left_battlefield_this_turn: [false; 2],
+            card_left_graveyard_this_turn: [false; 2],
             life_gained_this_turn: [0; 2],
             draw_step_draw_taken: [false; 2],
             drawn_this_turn: [Vec::new(), Vec::new()],

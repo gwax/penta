@@ -305,6 +305,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("tarkir_dragonstorm.rs") => source(CardSet::TarkirDragonstorm, "TDM"),
         Some("aetherdrift.rs") => source(CardSet::Aetherdrift, "DFT"),
         Some("final_fantasy.rs") => source(CardSet::FinalFantasy, "FIN"),
+        Some("final_fantasy_commander.rs") => source(CardSet::FinalFantasyCommander, "FIC"),
         Some(name) => panic!(
             "{}: add {name} to the official set-code map",
             path.display()
