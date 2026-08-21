@@ -317,6 +317,11 @@ const SET_MODULES: &[SetModule] = &[
         y2008::shadowmoor::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Eventide,
+        y2008::eventide::CARDS,
+        y2008::eventide::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::ShardsOfAlara,
         y2008::shards_of_alara::CARDS,
         y2008::shards_of_alara::ADDITIONAL_PRINTINGS,

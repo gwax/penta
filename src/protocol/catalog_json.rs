@@ -103,6 +103,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::TherosBeyondDeath => "theros-beyond-death",
         CardSet::ZendikarRising => "zendikar-rising",
         CardSet::Shadowmoor => "shadowmoor",
+        CardSet::Eventide => "eventide",
         CardSet::ShardsOfAlara => "shards-of-alara",
         CardSet::Ixalan => "ixalan",
         CardSet::Battlebond => "battlebond",

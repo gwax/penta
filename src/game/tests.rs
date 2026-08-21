@@ -794,6 +794,7 @@ mod vintage_cube_eldrazi;
 mod vintage_cube_enduring_innocence;
 mod vintage_cube_expedition_map;
 mod vintage_cube_fatal_push;
+mod vintage_cube_figure_of_destiny;
 mod vintage_cube_gadgeteer;
 mod vintage_cube_graveyard;
 mod vintage_cube_gut;
