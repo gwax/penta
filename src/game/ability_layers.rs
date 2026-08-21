@@ -1,6 +1,7 @@
 use std::cell::Cell;
 
 use crate::card::AbilityPredicateDef;
+use crate::ids::GrantId;
 
 use super::{
     AbilityDef, AbilityId, AbilityLayerOperation, AbilityLayerOperationKind, AbilityOperationDef,
@@ -215,9 +216,7 @@ impl Game {
             return operations;
         };
         let mut visit_static = |applied: StaticAppliedEffect| {
-            if let Some(operation) = Self::static_ability_layer_operation(applied) {
-                operations.push(operation);
-            }
+            self.push_static_ability_layer_operations(applied, &mut operations);
             ControlFlow::Continue(())
         };
         let result = if let Some(prospective) = prospective {
@@ -289,6 +288,80 @@ impl Game {
             }
             AbilityLayerOperationKind::Remove(predicate) => {
                 abilities.retain(|ability| !Self::ability_predicate_matches(predicate, ability));
+            }
+        }
+    }
+
+    /// The layer-6 operations one static applied effect contributes. Every
+    /// written-down operation contributes exactly one; a grant that reads the
+    /// exile pile contributes one per ability it finds there, which is why
+    /// this fills a list rather than returning a single operation.
+    fn push_static_ability_layer_operations(
+        &self,
+        applied: StaticAppliedEffect,
+        operations: &mut Vec<AbilityLayerOperation>,
+    ) {
+        if matches!(
+            applied.effect,
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::AddActivatedAbilitiesOfLinkedExiles,
+            ))
+        ) {
+            self.push_linked_exile_ability_grants(applied, operations);
+            return;
+        }
+        operations.extend(Self::static_ability_layer_operation(applied));
+    }
+
+    /// One Add operation for each activated ability of each creature card
+    /// exiled with the granting object, in exile order. The grant identity is
+    /// that position, which is stable because the pile only ever grows while
+    /// the granting object is on the battlefield: an ability keeps the same
+    /// identity from the moment it appears until the whole pile goes home.
+    fn push_linked_exile_ability_grants(
+        &self,
+        applied: StaticAppliedEffect,
+        operations: &mut Vec<AbilityLayerOperation>,
+    ) {
+        let mut position = 0_usize;
+        for (_, exiled) in self
+            .linked_exiles
+            .iter()
+            .filter(|(source, _)| *source == applied.source)
+        {
+            let Some(rules) = self
+                .card_in_nonbattlefield_zone(*exiled)
+                .and_then(|(_, card)| self.catalog.get(card.definition))
+                .map(|definition| &definition.rules)
+                .filter(|rules| rules.has_type(CardType::Creature))
+            else {
+                continue;
+            };
+            for attached in rules.indexed_abilities() {
+                if !matches!(
+                    attached.definition.definition,
+                    DeclarativeAbilityDef::Activated(_)
+                ) {
+                    continue;
+                }
+                let Some(grant) = GrantId::from_index(position) else {
+                    return;
+                };
+                position += 1;
+                operations.push(AbilityLayerOperation {
+                    timestamp: applied.timestamp,
+                    order: applied.component_order,
+                    kind: AbilityLayerOperationKind::Add {
+                        origin: AbilityOrigin::Granted {
+                            source: applied.source,
+                            source_definition: applied.source_definition,
+                            source_part: applied.source_part,
+                            source_ability: applied.source_ability,
+                            grant,
+                        },
+                        ability: attached.definition,
+                    },
+                });
             }
         }
     }

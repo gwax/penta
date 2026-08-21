@@ -332,6 +332,34 @@ impl ManaCost {
         }
     }
 
+    /// The same cost with every coloured requirement turned generic, for a
+    /// payment allowed to spend mana as though it were mana of any colour.
+    ///
+    /// Hybrid symbols come along, since a symbol any colour pays is already
+    /// satisfied by a permission that makes every colour interchangeable.
+    /// `{C}` does not: colourless is not a colour, so a permission that
+    /// speaks about colours leaves those symbols exactly where they were.
+    #[must_use]
+    pub const fn as_any_color(self) -> Self {
+        let mut generic = self.generic;
+        generic += self.white + self.blue + self.black + self.red + self.green;
+        let mut pair = 0;
+        while pair < HybridPair::COUNT {
+            generic += self.hybrid[pair];
+            pair += 1;
+        }
+        Self {
+            generic,
+            white: 0,
+            blue: 0,
+            black: 0,
+            red: 0,
+            green: 0,
+            hybrid: [0; HybridPair::COUNT],
+            ..self
+        }
+    }
+
     #[must_use]
     pub const fn colored_x(white: u16, blue: u16, black: u16, red: u16, green: u16) -> Self {
         Self {

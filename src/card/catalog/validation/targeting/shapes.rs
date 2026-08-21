@@ -645,6 +645,7 @@ fn validate_applied_effect_shapes(
         // Each names a player and carries nothing else.
         AppliedEffectDef::Rule(
             AppliedRuleDef::Ascend
+            | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary,
         ) => validate_recipient_shape(recipient, targets, RecipientExpectation::Player),

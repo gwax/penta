@@ -483,6 +483,14 @@ impl Game {
             CharacteristicOperationDef::Abilities(AbilityOperationDef::Remove(predicate)) => {
                 ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Remove(predicate))
             }
+            // A grant read off the exile pile is answered by the layer walk
+            // every time it is asked, because the pile it reads keeps
+            // changing. Freezing one into a resolved effect would fix it at
+            // whatever the pile held the moment it resolved, so no resolving
+            // effect produces this shape.
+            CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::AddActivatedAbilitiesOfLinkedExiles,
+            ) => return None,
             CharacteristicOperationDef::BasicLandTypes(operation) => {
                 ResolvedContinuousEffectKind::BasicLandTypes(operation)
             }

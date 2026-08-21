@@ -408,6 +408,11 @@ impl Game {
                             .iter()
                             .find(|permanent| permanent.card.id == source)
                             .map_or(*cost, |permanent| self.ability_mana_cost(permanent, *cost));
+                        let payment_purpose = ManaPaymentPurpose::Ability {
+                            source,
+                            taps_source,
+                            leaves_source,
+                        };
                         self.activate_mana_for_cost_avoiding_for(
                             player,
                             cost,
@@ -416,13 +421,12 @@ impl Game {
                             // tapped creature, so auto-payment leaves it
                             // alone even though the tap itself is legal.
                             (taps_source || animates_source).then_some(source),
-                            &ManaPaymentPurpose::Ability {
-                                source,
-                                taps_source,
-                                leaves_source,
-                            },
+                            &payment_purpose,
                         );
-                        let _ = self.pay_player_cost(player, cost, x);
+                        // The same purpose the mana was raised under. Paying
+                        // under a different one would price the cost
+                        // differently from the offer it came from.
+                        let _ = self.pay_player_cost_for(player, cost, x, &payment_purpose);
                     }
                     AbilityCostDef::TapSource => {
                         let _ = self.tap_permanent(source);

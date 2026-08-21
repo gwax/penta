@@ -40,6 +40,12 @@ impl CreatureTypeSetDef {
 pub enum AbilityOperationDef {
     Add(&'static AbilityDef),
     Remove(AbilityPredicateDef),
+    /// Every activated ability of every creature card exiled with the
+    /// granting object. Agatha's Soul Cauldron hands out a set the board
+    /// decides rather than a clause anyone could write down, so unlike
+    /// [`Self::Add`] the abilities are read at the moment the layer is walked
+    /// and each one keeps its own grant identity.
+    AddActivatedAbilitiesOfLinkedExiles,
 }
 
 /// One layer-7 operation over power and toughness.
@@ -117,6 +123,15 @@ pub enum AppliedRuleDef {
     /// against the same action and object the prohibition names, so a card
     /// that widens it to spells later says so in the same vocabulary.
     MayPlayFromGraveyard(PlayRestrictionDef),
+    /// "You may spend mana as though it were mana of any color to activate
+    /// abilities of creatures you control." A player rule, found the same way
+    /// [`Self::NoMaximumHandSize`] is found, whose scope is part of what it
+    /// says: it reaches the activation costs of creatures that player
+    /// controls and nothing else. The two other printed permissions this
+    /// engine knows of -- North Star's and Grumgully's -- speak about spells
+    /// and about one turn, so they will name their own scopes rather than
+    /// widening this one.
+    MaySpendManaAsAnyColorForCreatureAbilities,
     /// The affected player has no maximum hand size, so the cleanup step
     /// never asks them to discard. A player rule rather than an object one:
     /// it is found by walking the battlefield for statics naming that player.

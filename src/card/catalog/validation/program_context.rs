@@ -274,8 +274,11 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
             static_object_predicate_supported(predicate)
         }
         // Read by the cleanup step, by the same walk and for the same reason.
+        // The colour permission is read the same way, from the mana payment
+        // rather than the cleanup step.
         AppliedEffectDef::Rule(
             AppliedRuleDef::Ascend
+            | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary,
         ) => true,
@@ -365,6 +368,7 @@ fn static_object_applied_effect_supported(
             AppliedRuleDef::CannotBeCountered
             // Ascend belongs to a player, so nothing about an object reads it.
             | AppliedRuleDef::Ascend
+            | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary
             | AppliedRuleDef::CannotPlay(_)

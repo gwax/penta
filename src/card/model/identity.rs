@@ -101,6 +101,7 @@ pub enum CardSet {
     Kaladesh,
     AetherRevolt,
     LordOfTheRings,
+    WildsOfEldraine,
     LostCavernsOfIxalan,
     MurdersAtKarlovManor,
     RavnicaClueEdition,

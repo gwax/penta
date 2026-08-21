@@ -5,12 +5,13 @@ use super::{
     ManaAbilityActivation, ManaActivationChoices, ManaColor, ManaCost, ManaPaymentPurpose,
     ManaPool, ManaRestrictionDef, ManaSelectionDef, ManaSource, ManaSpendEffectDef,
     ObjectCountConditionDef, Permanent, PlayerId, RetiredObject, StackObject, TriggerContext,
-    TriggerEventObject, ZoneKind, fold_restricted_x, pay_cost_with_generic_strategy,
+    TriggerEventObject, ZoneKind, pay_cost_with_generic_strategy,
 };
 use crate::AbilityProgramDef;
 use crate::card::{AbilityCostList, ManaSplit};
 
 mod eligibility;
+mod pricing;
 
 impl Game {
     pub(super) fn mana_ability_activations(
@@ -645,26 +646,6 @@ impl Game {
                 }
                 Some(RetiredObject::Card(_) | RetiredObject::Stack(_)) | None => None,
             })
-    }
-
-    /// The colour a spell's printed cost demands for X, if it prints such a
-    /// restriction. Read from the compatibility primary-part view: no
-    /// multi-part card prints one today.
-    pub(super) fn x_spend_restriction(&self, purpose: &ManaPaymentPurpose) -> Option<ManaColor> {
-        let ManaPaymentPurpose::Spell { definition, .. } = purpose else {
-            return None;
-        };
-        self.catalog.get(*definition)?.rules.x_spend_restriction()
-    }
-
-    pub(super) fn restrict_x(
-        &self,
-        cost: ManaCost,
-        x: u16,
-        purpose: &ManaPaymentPurpose,
-    ) -> (ManaCost, u16) {
-        self.x_spend_restriction(purpose)
-            .map_or((cost, x), |color| fold_restricted_x(cost, x, color))
     }
 
     pub(super) fn mana_can_pay_for(&self, mana: Mana, purpose: &ManaPaymentPurpose) -> bool {

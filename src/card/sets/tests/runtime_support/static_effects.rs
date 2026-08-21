@@ -385,8 +385,15 @@ pub(in super::super) fn shared_static_applied_effect(
                 && shared_object_predicate(restriction.object)
         }
         // A switch reads nothing, so there is no value to gate on.
+        // A linked-exile grant hands out whatever the exiled creature cards
+        // print, so there is nothing here to check ahead of time the way a
+        // written-down grant is checked. Each ability it finds already passed
+        // the catalog's own validation as an ability of its own card.
         AppliedEffectDef::Characteristic(
-            CharacteristicOperationDef::Abilities(AbilityOperationDef::Remove(_))
+            CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::AddActivatedAbilitiesOfLinkedExiles
+                | AbilityOperationDef::Remove(_),
+            )
             | CharacteristicOperationDef::PowerToughness(PowerToughnessOperationDef::Switch),
         )
         | AppliedEffectDef::Rule(_) => true,

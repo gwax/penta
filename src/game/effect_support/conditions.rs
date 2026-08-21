@@ -30,7 +30,16 @@ impl Game {
                 .iter()
                 .find(|candidate| candidate.id == id)
                 .and_then(|candidate| self.stack_trigger_event_object(candidate)),
+            // A card that has already moved during this resolution is still
+            // the card the activation named -- "when a creature card is
+            // exiled this way" asks about the card that just left the
+            // graveyard -- so follow the move rather than finding nothing.
             Target::Card(id) => {
+                let id = if self.card_in_nonbattlefield_zone(id).is_some() {
+                    id
+                } else {
+                    self.successors.get(&id).copied().unwrap_or(id)
+                };
                 return self.card_in_nonbattlefield_zone(id).is_some_and(|(zone, card)| {
                     self.card_object_matches(predicate, card, zone, source)
                 });

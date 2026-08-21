@@ -165,3 +165,4 @@ pub const SAHEELI_SUBLIME_ARTIFICER: CardDefinitionId = CardDefinitionId(2247);
 pub const LUSH_PORTICO: CardDefinitionId = CardDefinitionId(2248);
 pub const RABBIT_TOKEN_1_1_WHITE: CardDefinitionId = CardDefinitionId(2249);
 pub const JACKED_RABBIT: CardDefinitionId = CardDefinitionId(2250);
+pub const AGATHAS_SOUL_CAULDRON: CardDefinitionId = CardDefinitionId(2251);

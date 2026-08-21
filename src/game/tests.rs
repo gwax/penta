@@ -228,6 +228,9 @@ pub(super) fn attach_constant_resolved_characteristics(
             CharacteristicOperationDef::Abilities(AbilityOperationDef::Remove(predicate)) => {
                 ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Remove(predicate))
             }
+            CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::AddActivatedAbilitiesOfLinkedExiles,
+            ) => panic!("a linked-exile grant is a static shape, not a resolved one"),
             CharacteristicOperationDef::BasicLandTypes(operation) => {
                 ResolvedContinuousEffectKind::BasicLandTypes(operation)
             }
@@ -766,6 +769,7 @@ mod until_end_of_combat;
 mod urza_lands;
 mod venarian_gold;
 mod vintage_cube_adventure;
+mod vintage_cube_agathas_soul_cauldron;
 mod vintage_cube_ajani;
 mod vintage_cube_amped_raptor;
 mod vintage_cube_arrival;
