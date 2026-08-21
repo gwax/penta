@@ -8,13 +8,14 @@ use super::model::{
     ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef,
     AppliedRuleDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef, CardType,
     ChoiceVisibilityDef, ChooseDef, ComparisonDef, ConditionDef, CounterKind,
-    DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef, EffectDef,
-    EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaCost,
-    ObjectChoiceBindingDef, ObjectCountConditionDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ProtectedCreatureType, ReplacementAbilityDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef, SplitIntoPilesDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef, DiscardFollowUpDef,
+    DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility,
+    ManaColor, ManaCost, ObjectChoiceBindingDef, ObjectCountConditionDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ProtectedCreatureType, ReplacementAbilityDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef,
+    SplitIntoPilesDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -594,6 +595,39 @@ static POPULATE_CANDIDATE: [ObjectPredicateDef; 2] = [
     ObjectPredicateDef::HasType(CardType::Creature),
     ObjectPredicateDef::Token,
 ];
+
+/// Connive, on the permanent doing it: draw a card, then discard a card, and
+/// take a +1/+1 counter for the discard if what went was not a land.
+///
+/// The counter count is how many of the discarded cards were nonland rather
+/// than a yes-or-no, which for a connive-one is the same 0 or 1 the printed
+/// clause means and which is already what connive N says for larger numbers.
+#[must_use]
+pub const fn connive() -> EffectDef {
+    EffectDef::Sequence(&CONNIVE_STEPS)
+}
+
+static CONNIVE_STEPS: [EffectDef; 2] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+        selection: DiscardSelectionDef::RecipientChooses,
+        then: Some(CONNIVE_COUNTERS),
+    },
+];
+
+static CONNIVE_COUNTERS: DiscardFollowUpDef = DiscardFollowUpDef {
+    counted: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+    effect: &EffectDef::AddCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::MatchedCount,
+    },
+};
 
 /// Scavenge, whose printed cost is the card's own exile from its owner's
 /// graveyard and whose counter count is the exiled card's power. Reminder

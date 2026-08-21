@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 266 are cataloged and 268 are not
+- 534 cards in the pool, of which 267 are cataloged and 267 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -62,7 +62,7 @@ lands are legal in every format and are not listed.
 - `Virtue of Loyalty`
 - `Witch Enchanter`
 
-### Blue (35)
+### Blue (34)
 
 - `Astrologian's Planisphere`
 - `Brainsurge`
@@ -79,7 +79,6 @@ lands are legal in every format and are not listed.
 - `Jace, the Mind Sculptor`
 - `Kappa Cannoneer`
 - `Kitsa, Otterball Elite`
-- `Ledger Shredder`
 - `Lose Focus`
 - `Malcolm, Alluring Scoundrel`
 - `Memory Lapse`
@@ -327,7 +326,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 266 pool cards are in the catalog because an earlier format needed them.
+These 267 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -447,6 +446,7 @@ been played beside.
 - `Ketria Triome`
 - `Kitesail Freebooter`
 - `Lavaspur Boots`
+- `Ledger Shredder`
 - `Library of Alexandria`
 - `Life // Death`
 - `Lightning Bolt`

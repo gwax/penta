@@ -198,3 +198,4 @@ pub const ADELINE_RESPLENDENT_CATHAR: CardDefinitionId = CardDefinitionId(2280);
 pub const WARRIOR_TOKEN_1_1_RED: CardDefinitionId = CardDefinitionId(2281);
 pub const VOICE_OF_VICTORY: CardDefinitionId = CardDefinitionId(2282);
 pub const HORIZON_CANOPY: CardDefinitionId = CardDefinitionId(2285);
+pub const LEDGER_SHREDDER: CardDefinitionId = CardDefinitionId(2286);
