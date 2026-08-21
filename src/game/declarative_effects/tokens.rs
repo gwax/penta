@@ -23,6 +23,7 @@ impl Game {
                 tapped,
                 attacking,
                 counters,
+                created,
             } => {
                 // Two players, so the one opponent is the only thing an
                 // arriving attacker could be attacking (CR 506.3d).
@@ -41,15 +42,26 @@ impl Game {
                         .unwrap_or(u16::MAX),
                     )
                 });
+                let mut minted = Vec::new();
                 for _ in 0..self.effect_value(count, object, context, scoped).max(0) {
-                    self.create_token_arriving(
-                        object.controller,
-                        token,
-                        None,
-                        tapped,
-                        defender,
-                        counters,
+                    minted.extend(
+                        self.create_token_arriving(
+                            object.controller,
+                            token,
+                            None,
+                            tapped,
+                            defender,
+                            counters,
+                        )
+                        .map(Target::Permanent),
                     );
+                }
+                // Bound after every one is made, so a clause naming them
+                // names the whole batch rather than the last of them.
+                if let Some(created) = created {
+                    let mut context = context.clone();
+                    context.bind_object_group(created.binding, minted);
+                    self.resolve_effect_def(scoped.with_effect(*created.then), object, context);
                 }
             }
             EffectDef::CreateAttachedToken { token } => {

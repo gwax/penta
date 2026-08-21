@@ -31,6 +31,7 @@ static IVORA_ABILITIES: [AbilityDef; 3] = [
             tapped: false,
             attacking: false,
             counters: None,
+            created: None,
         },
     ),
     // Any discard, including one paid as a cost -- which is how her own Blood

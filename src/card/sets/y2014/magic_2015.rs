@@ -56,6 +56,7 @@ static GOBLIN_RABBLEMASTER_ABILITIES: [AbilityDef; 3] = [
             tapped: false,
             attacking: false,
             counters: None,
+            created: None,
         },
     ),
     AbilityDef::triggered(

@@ -98,13 +98,6 @@ pub enum DiscardSelectionDef {
     RandomMatching(&'static ObjectPredicateDef),
 }
 
-/// Counters a token is created with.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct TokenCountersDef {
-    pub kind: CounterKind,
-    pub amount: ValueDef,
-}
-
 /// Who may observe a pending choice and its available options.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ChoiceVisibilityDef {
@@ -342,6 +335,11 @@ pub enum EffectDef {
         /// comes out of every Incubate. `None` for the ordinary token, which
         /// arrives with nothing on it.
         counters: Option<TokenCountersDef>,
+        /// What to do with the tokens this made, when a following clause has
+        /// to name exactly them. Mobilize sacrifices the tokens it created
+        /// and no others, and by the time the delayed clause fires nothing
+        /// about the board could tell them apart.
+        created: Option<CreatedTokensDef>,
     },
     /// Creates one token, then attaches the resolving permanent to that
     /// exact battlefield incarnation before state-based actions run. This is

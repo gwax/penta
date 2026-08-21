@@ -1,11 +1,12 @@
 //! The composite shapes an effect carries: a bounded choice among objects,
-//! a partition into piles, and a triggered ability installed by a
-//! resolution. Each is a small vocabulary of its own that several effects
-//! reach for, rather than a variant of any one of them.
+//! a partition into piles, a triggered ability installed by a resolution,
+//! and what a token clause puts on the tokens it makes. Each is a small
+//! vocabulary of its own that several effects reach for, rather than a
+//! variant of any one of them.
 
 use super::super::{
-    AbilityDef, ChoiceVisibilityDef, EffectDef, ObjectRefDef, ObjectSetDef, PlayerRefDef,
-    PlayerSetDef, ValueDef,
+    AbilityDef, ChoiceVisibilityDef, CounterKind, EffectDef, ObjectRefDef, ObjectSetDef,
+    PlayerRefDef, PlayerSetDef, ValueDef,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 
@@ -101,4 +102,23 @@ impl InstalledTriggerDef {
             lifetime: InstalledTriggerLifetimeDef::UntilNextTurn(player),
         }
     }
+}
+
+/// Counters a token is created with.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct TokenCountersDef {
+    pub kind: CounterKind,
+    pub amount: ValueDef,
+}
+
+/// What happens next to the tokens a clause just created.
+///
+/// A sequence hands each component its own copy of the resolution context,
+/// so a binding made in one component is gone by the next. A clause that has
+/// to name exactly the tokens it made therefore nests its continuation the
+/// way every other binding clause does.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct CreatedTokensDef {
+    pub binding: ObjectSetBindingIndex,
+    pub then: &'static EffectDef,
 }

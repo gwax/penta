@@ -38,7 +38,8 @@ pub(in crate::card::sets) static FORENSIC_GADGETEER: CardRecord = CardRecord::ne
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
-                counters: None,},
+                counters: None,
+                created: None,},
             ),
             AbilityDef::static_ability(
                 "Activated abilities of artifacts you control cost {1} less to activate. This effect can't reduce the mana in that cost to less than one mana.",

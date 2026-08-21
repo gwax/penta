@@ -372,6 +372,10 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         EffectDef::SplitIntoPiles(partition) => {
             assert_nested_definition_abilities(card_name, *partition.then);
         }
+        EffectDef::CreateToken {
+            created: Some(created),
+            ..
+        } => assert_nested_definition_abilities(card_name, *created.then),
         EffectDef::May { effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::ExileTopAndMayCast {
@@ -433,9 +437,9 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::ReturnAttached { .. }
         | EffectDef::Reconfigure { .. }
         | EffectDef::PairWithSource { .. }
-        | EffectDef::CreateToken { .. }
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }
+        | EffectDef::CreateToken { created: None, .. }
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeKeepingOnePerType { .. }

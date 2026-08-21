@@ -16,6 +16,7 @@ static SPIRITS_FOR_THE_TYPES: EffectDef = EffectDef::CreateToken {
     tapped: false,
     attacking: false,
     counters: None,
+    created: None,
 };
 
 static EPIPHANY_DISCARD: DiscardFollowUpDef = DiscardFollowUpDef {

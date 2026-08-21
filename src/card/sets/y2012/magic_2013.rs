@@ -75,6 +75,7 @@ pub(in crate::card::sets) static AJANI_CALLER_OF_THE_PRIDE: CardRecord = CardRec
                     tapped: false,
                     attacking: false,
                     counters: None,
+                    created: None,
                 },
             ),
         ]),
@@ -141,6 +142,7 @@ pub(in crate::card::sets) static ATTENDED_KNIGHT: CardRecord = CardRecord::new(
                 tapped: false,
                 attacking: false,
                 counters: None,
+                created: None,
             },
         ),
     ]),
@@ -225,6 +227,7 @@ pub(in crate::card::sets) static CAPTAIN_OF_THE_WATCH: CardRecord = CardRecord::
                     tapped: false,
                     attacking: false,
                     counters: None,
+                    created: None,
                 },
             ),
         ],
@@ -245,6 +248,7 @@ pub(in crate::card::sets) static CAPTAINS_CALL: CardRecord = CardRecord::new(
             tapped: false,
             attacking: false,
             counters: None,
+            created: None,
         },
     )),
 );
@@ -1355,7 +1359,8 @@ pub(in crate::card::sets) static TALRAND_SKY_SUMMONER: CardRecord = CardRecord::
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,
-        counters: None,},
+        counters: None,
+        created: None,},
     )),
 );
 
@@ -1373,6 +1378,7 @@ pub(in crate::card::sets) static TALRANDS_INVOCATION: CardRecord = CardRecord::n
             tapped: false,
             attacking: false,
             counters: None,
+            created: None,
         },
     )),
 );
@@ -2223,6 +2229,7 @@ pub(in crate::card::sets) static VILE_REBIRTH: CardRecord = CardRecord::new(
                 tapped: false,
                 attacking: false,
                 counters: None,
+                created: None,
             },
         ]),
     )),
@@ -2648,7 +2655,8 @@ pub(in crate::card::sets) static KRENKO_MOB_BOSS: CardRecord = CardRecord::new(
             count: ValueDef::CountMatchingObjects(&KRENKO_GOBLINS),
             tapped: false,
             attacking: false,
-        counters: None,},
+        counters: None,
+        created: None,},
     )),
 );
 
@@ -2666,6 +2674,7 @@ pub(in crate::card::sets) static KRENKOS_COMMAND: CardRecord = CardRecord::new(
             tapped: false,
             attacking: false,
             counters: None,
+            created: None,
         },
     )),
 );
@@ -3286,7 +3295,8 @@ pub(in crate::card::sets) static FUNGAL_SPROUTING: CardRecord = CardRecord::new(
             count: ValueDef::GreatestPowerAmong(&GREATEST_POWER_YOU_CONTROL),
             tapped: false,
             attacking: false,
-        counters: None,},
+        counters: None,
+        created: None,},
     )),
 );
 
@@ -3317,6 +3327,7 @@ pub(in crate::card::sets) static GARRUK_PRIMAL_HUNTER: CardRecord = CardRecord::
                     tapped: false,
                     attacking: false,
                     counters: None,
+                    created: None,
                 },
             ),
             AbilityDef::activated(
@@ -3336,6 +3347,7 @@ pub(in crate::card::sets) static GARRUK_PRIMAL_HUNTER: CardRecord = CardRecord::
                     tapped: false,
                     attacking: false,
                     counters: None,
+                    created: None,
                 },
             ),
         ]),
@@ -3612,6 +3624,7 @@ pub(in crate::card::sets) static THRAGTUSK: CardRecord = CardRecord::new(
                 tapped: false,
                 attacking: false,
                 counters: None,
+                created: None,
             },
         ),
     ]),

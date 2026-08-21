@@ -5172,6 +5172,7 @@ pub(in crate::card::sets) static THE_HIVE: CardRecord = CardRecord::new(
             tapped: false,
             attacking: false,
             counters: None,
+            created: None,
         },
     )),
 );

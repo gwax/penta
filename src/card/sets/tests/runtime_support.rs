@@ -486,6 +486,10 @@ fn shared_static_trigger_condition(condition: TriggerConditionDef) -> bool {
             // fateful-hour clause switches off again when life goes back up.
             | TriggerConditionDef::ControllerLifeAtMost(_)
             | TriggerConditionDef::ControllerLifeAtMostHalfStartingLife
+            // Whose turn it is comes off the game rather than out of the
+            // layer being computed, so a static clause may gate on it:
+            // "during your turn" is a condition, not a recipient.
+            | TriggerConditionDef::ActivePlayer(_)
     )
 }
 

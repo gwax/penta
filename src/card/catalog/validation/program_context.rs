@@ -456,6 +456,10 @@ fn validate_resolving_effect(
         | EffectDef::IfCondition { then: effect, .. } => {
             validate_resolving_effect(*effect, source_zones)
         }
+        EffectDef::CreateToken { created, .. } => match created {
+            Some(created) => validate_resolving_effect(*created.then, source_zones),
+            None => Ok(()),
+        },
         EffectDef::ExileTopAndMayCast { otherwise, .. } => match otherwise {
             Some(effect) => validate_resolving_effect(*effect, source_zones),
             None => Ok(()),
@@ -519,7 +523,6 @@ fn validate_resolving_effect(
         | EffectDef::Tap { .. }
         | EffectDef::RemoveFromCombat { .. }
         | EffectDef::Untap { .. }
-        | EffectDef::CreateToken { .. }
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }
         | EffectDef::Attach { .. }

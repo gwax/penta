@@ -22,6 +22,7 @@ static DECREE_SOLDIERS: EffectDef = EffectDef::CreateToken {
     tapped: false,
     attacking: false,
     counters: None,
+    created: None,
 };
 
 static DECREE_CYCLING_TRIGGER: EffectDef = EffectDef::PayOr(PayOrDef::optional(
@@ -49,7 +50,8 @@ pub(in crate::card::sets) static DECREE_OF_JUSTICE: CardRecord = CardRecord::new
                 count: ValueDef::ChosenX,
                 tapped: false,
                 attacking: false,
-            counters: None,},
+            counters: None,
+            created: None,},
         ),
         abilities::cycling(
             "Cycling {2}{W} ({2}{W}, Discard this card: Draw a card.)",
@@ -386,6 +388,7 @@ pub(in crate::card::sets) static SIEGE_GANG_COMMANDER: CardRecord = CardRecord::
                 tapped: false,
                 attacking: false,
                 counters: None,
+                created: None,
             },
         ),
         AbilityDef::activated_with_targets(

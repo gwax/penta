@@ -52,6 +52,7 @@ static JACKED_RABBIT_ABILITIES: [AbilityDef; 3] = [
             tapped: false,
             attacking: false,
             counters: None,
+            created: None,
         },
     ),
 ];

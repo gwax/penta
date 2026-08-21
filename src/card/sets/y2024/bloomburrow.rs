@@ -39,6 +39,7 @@ static MAKE_AN_OTTER: EffectDef = EffectDef::CreateToken {
     tapped: false,
     attacking: false,
     counters: None,
+    created: None,
 };
 
 /// A Class is level 1 with no counters on it, so climbing to two takes one

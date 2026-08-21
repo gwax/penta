@@ -181,8 +181,17 @@ fn validate_effect_references(
         | EffectDef::CreateTokenCopyOf { object } => {
             validate_recipient_target_references(object, target_count, scope)
         }
-        EffectDef::CreateToken { count, .. }
-        | EffectDef::ReduceGenericCostBy(count)
+        EffectDef::CreateToken { count, created, .. } => {
+            validate_value_target_references(count, target_count, scope)?;
+            match created {
+                Some(created) => {
+                    let nested = scope.with_object_set(created.binding)?;
+                    validate_effect_references(*created.then, target_count, nested)
+                }
+                None => Ok(()),
+            }
+        }
+        EffectDef::ReduceGenericCostBy(count)
         | EffectDef::ReduceMatchingSpellCostBy { amount: count, .. } => {
             validate_value_target_references(count, target_count, scope)
         }

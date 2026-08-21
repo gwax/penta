@@ -78,10 +78,8 @@ impl Game {
         tapped: bool,
         attacking: Option<crate::AttackDefender>,
         counters: Option<(CounterKind, u16)>,
-    ) {
-        let Some(definition) = self.catalog.get(token) else {
-            return;
-        };
+    ) -> Option<GameObjectId> {
+        let definition = self.catalog.get(token)?;
         let presented = definition.primary_part_id();
         // A token has no physical card behind it, which is exactly what an
         // unbacked object is.
@@ -102,6 +100,7 @@ impl Game {
         if let Some((kind, amount)) = counters {
             permanent.add_counters(kind, amount);
         }
+        let prospective = permanent.card.id;
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from: ZoneKind::Stack,
@@ -111,5 +110,16 @@ impl Game {
             },
             redirected_to: None,
         });
+        // A permanent takes a fresh identity as it actually arrives, so what
+        // the caller gets back is the object that ended up on the
+        // battlefield rather than the prospective one it was handed. An
+        // entry still waiting on a decision has no successor yet, and gives
+        // back the only id there is.
+        Some(
+            self.successors
+                .get(&prospective)
+                .copied()
+                .unwrap_or(prospective),
+        )
     }
 }

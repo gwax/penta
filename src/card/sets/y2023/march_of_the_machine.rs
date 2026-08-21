@@ -38,6 +38,7 @@ static SUNFALL_STEPS: [EffectDef; 2] = [
             kind: CounterKind::PlusOnePlusOne,
             amount: ValueDef::BoundObjectCount(ObjectSetBindingIndex::PRIMARY),
         }),
+        created: None,
     },
 ];
 

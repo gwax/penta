@@ -445,6 +445,7 @@ static SAHEELI_ABILITIES: [AbilityDef; 2] = [
             tapped: false,
             attacking: false,
             counters: None,
+            created: None,
         },
     ),
     AbilityDef::activated_with_targets(

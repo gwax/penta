@@ -435,6 +435,14 @@ pub(in crate::card::sets) static GOBLIN_TOKEN_1_1_RED_HASTE: CardRecord = CardRe
         .with_ability(abilities::haste()),
 );
 
+pub(in crate::card::sets) static WARRIOR_TOKEN_1_1_RED: CardRecord = CardRecord::new(
+    cards::WARRIOR_TOKEN_1_1_RED,
+    "Warrior",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Warrior"], 1, 1).printed_colors(&[ManaColor::Red]),
+);
+
 pub(in crate::card::sets) static SPIRIT_TOKEN_1_1_WHITE_BLACK: CardRecord = CardRecord::new(
     cards::SPIRIT_TOKEN_1_1_WHITE_BLACK,
     "Spirit",
@@ -817,6 +825,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DRAKE_TOKEN_2_2_BLUE,
     &GOBLIN_TOKEN_1_1_RED,
     &GOBLIN_TOKEN_1_1_RED_HASTE,
+    &WARRIOR_TOKEN_1_1_RED,
     &SPIRIT_TOKEN_1_1_WHITE_BLACK,
     &SLIVER_TOKEN_1_1_COLORLESS,
     &DRAGON_TOKEN_2_2_RED,

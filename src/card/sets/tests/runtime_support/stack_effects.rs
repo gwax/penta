@@ -408,10 +408,14 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         // it has no recipient to check either.
         // Cascade names nothing and asks nothing: the spell it is printed on
         // supplies the bound, the controller, and the library.
+        // What a token clause does next runs in the same resolution with the
+        // tokens bound, so it is checked here rather than trusted.
+        EffectDef::CreateToken { created, .. } => created.is_none_or(|created| {
+            shared_stack_effect_at_position(*created.then, deferred_decision_allowed)
+        }),
         EffectDef::Cascade
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::AddManaEqualTo { .. }
-        | EffectDef::CreateToken { .. }
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }

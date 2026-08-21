@@ -189,6 +189,7 @@ pub(in crate::card::sets) static ELGAUD_INQUISITOR: CardRecord = CardRecord::new
                 tapped: false,
                 attacking: false,
                 counters: None,
+                created: None,
             },
         ),
     ]),
@@ -217,6 +218,7 @@ pub(in crate::card::sets) static GATHER_THE_TOWNSFOLK: CardRecord = CardRecord::
             tapped: false,
             attacking: false,
             counters: None,
+            created: None,
         },
     )),
 );
@@ -274,6 +276,7 @@ pub(in crate::card::sets) static LINGERING_SOULS: CardRecord = CardRecord::new(
                 tapped: false,
                 attacking: false,
                 counters: None,
+                created: None,
             },
         ),
         abilities::flashback(mana_cost!("{1}{B}")),
@@ -406,7 +409,8 @@ pub(in crate::card::sets) static REQUIEM_ANGEL: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
-            counters: None,},
+            counters: None,
+            created: None,},
         ),
     ]),
 );
@@ -523,6 +527,7 @@ pub(in crate::card::sets) static THRABEN_DOOMSAYER: CardRecord = CardRecord::new
                 tapped: false,
                 attacking: false,
                 counters: None,
+                created: None,
             },
         ),
         AbilityDef::static_ability(
@@ -795,7 +800,8 @@ pub(in crate::card::sets) static HAVENGUL_RUNEBINDER: CardRecord = CardRecord::n
                     count: ValueDef::Constant(1),
                     tapped: false,
                     attacking: false,
-                counters: None,},
+                counters: None,
+                created: None,},
                 EffectDef::AddCounters {
                     object: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
@@ -1352,6 +1358,7 @@ pub(in crate::card::sets) static REAP_THE_SEAGRAF: CardRecord = CardRecord::new(
                 tapped: false,
                 attacking: false,
                 counters: None,
+                created: None,
             },
         ),
         abilities::flashback(mana_cost!("{4}{U}")),
@@ -1503,6 +1510,7 @@ pub(in crate::card::sets) static WAKEDANCER: CardRecord = CardRecord::new(
                 tapped: false,
                 attacking: false,
                 counters: None,
+                created: None,
             },
         ),
     ),
@@ -2151,6 +2159,7 @@ static FEED_THE_PACK_PAYOFF: EffectDef = EffectDef::CreateToken {
     tapped: false,
     attacking: false,
     counters: None,
+    created: None,
 };
 
 // DKA 114 — Feed the Pack
@@ -2624,6 +2633,7 @@ static HUNTMASTER_WOLF_AND_LIFE: EffectDef = EffectDef::Sequence(&[
         tapped: false,
         attacking: false,
         counters: None,
+        created: None,
     },
     EffectDef::GainLife {
         recipient: EffectRecipientDef::Controller,

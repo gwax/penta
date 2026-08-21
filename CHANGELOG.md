@@ -153,6 +153,16 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A clause can name the tokens it just made.** Mobilize sacrifices exactly
+  the tokens that attack created and no others, and by the time the delayed
+  clause fires nothing about the board can tell them apart from the pair the
+  last attack made. `CreateToken` now takes an optional binding and a nested
+  continuation, the way every other binding clause does -- a sequence hands
+  each component its own copy of the resolution context, so a binding made in
+  one component would be gone by the next. Creating a token also hands back
+  the identity it actually arrived with rather than the prospective one, which
+  a battlefield entry replaces as it commits.
+
 - **"Whenever you attack" is one trigger for the whole declaration.** It was
   being read as the per-attacker `Attacks` event with a size condition on it,
   so Gut, True Soul Zealot offered its sacrifice once per attacking creature

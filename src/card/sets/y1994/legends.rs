@@ -3459,6 +3459,7 @@ pub(in crate::card::sets) static MASTER_OF_THE_HUNT: CardRecord = CardRecord::ne
                 tapped: false,
                 attacking: false,
                 counters: None,
+                created: None,
             },
         ),
     ),
@@ -4022,6 +4023,7 @@ pub(in crate::card::sets) static BORIS_DEVILBOON: CardRecord = CardRecord::new(
                 tapped: false,
                 attacking: false,
                 counters: None,
+                created: None,
             },
         )),
 );
@@ -5309,7 +5311,8 @@ pub(in crate::card::sets) static SERPENT_GENERATOR: CardRecord = CardRecord::new
             count: ValueDef::Constant(1),
             tapped: false,
             attacking: false,
-        counters: None,},
+        counters: None,
+        created: None,},
     )),
 );
 

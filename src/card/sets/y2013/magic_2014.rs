@@ -314,6 +314,7 @@ pub(in crate::card::sets) static HIVE_STIRRINGS: CardRecord = CardRecord::new(
             tapped: false,
             attacking: false,
             counters: None,
+            created: None,
         },
     )),
 );
@@ -1303,6 +1304,7 @@ static TAPPED_ZOMBIE: EffectDef = EffectDef::CreateToken {
     tapped: true,
     attacking: false,
     counters: None,
+    created: None,
 };
 
 static LILIANAS_REAVER_STRIKE: [EffectDef; 2] = [
@@ -1812,7 +1814,8 @@ pub(in crate::card::sets) static DRAGON_EGG: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
-            counters: None,},
+            counters: None,
+            created: None,},
         ),
     ]),
 );
@@ -2187,7 +2190,8 @@ pub(in crate::card::sets) static YOUNG_PYROMANCER: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
-            counters: None,},
+            counters: None,
+            created: None,},
         ),
     ),
 );
@@ -2337,6 +2341,7 @@ pub(in crate::card::sets) static HOWL_OF_THE_NIGHT_PACK: CardRecord = CardRecord
             tapped: false,
             attacking: false,
             counters: None,
+            created: None,
         },
     )),
 );
@@ -2555,7 +2560,8 @@ pub(in crate::card::sets) static PRIMEVAL_BOUNTY: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
-            counters: None,},
+            counters: None,
+            created: None,},
         ),
         AbilityDef::triggered_with_targets("Whenever you cast a noncreature spell, put three +1/+1 counters on target creature you control.", TriggerEventDef::SpellCast(ObjectPredicateDef::All(&[
                 ObjectPredicateDef::NoncreatureSpell,
@@ -2692,7 +2698,8 @@ pub(in crate::card::sets) static SPOREMOUND: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
-            counters: None,},
+            counters: None,
+            created: None,},
         ),
     ),
 );

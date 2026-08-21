@@ -42,6 +42,10 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         EffectDef::SplitIntoPiles(partition) => {
             collect_ability_grants(*partition.then, grants);
         }
+        EffectDef::CreateToken {
+            created: Some(created),
+            ..
+        } => collect_ability_grants(*created.then, grants),
         EffectDef::May { effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::ExileTopAndMayCast {
@@ -108,9 +112,9 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::ReturnAttached { .. }
         | EffectDef::Reconfigure { .. }
         | EffectDef::PairWithSource { .. }
-        | EffectDef::CreateToken { .. }
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }
+        | EffectDef::CreateToken { created: None, .. }
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeKeepingOnePerType { .. }
@@ -253,6 +257,10 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
             .map(|effect| ability_grant_sites(**effect))
             .fold(0, usize::saturating_add),
         EffectDef::SplitIntoPiles(partition) => ability_grant_sites(*partition.then),
+        EffectDef::CreateToken {
+            created: Some(created),
+            ..
+        } => ability_grant_sites(*created.then),
         EffectDef::May { effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::ExileTopAndMayCast {
@@ -310,9 +318,9 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::ReturnAttached { .. }
         | EffectDef::Reconfigure { .. }
         | EffectDef::PairWithSource { .. }
-        | EffectDef::CreateToken { .. }
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }
+        | EffectDef::CreateToken { created: None, .. }
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeKeepingOnePerType { .. }

@@ -55,6 +55,7 @@ static ADELINE_ABILITIES: [AbilityDef; 3] = [
             tapped: true,
             attacking: true,
             counters: None,
+            created: None,
         },
     ),
 ];

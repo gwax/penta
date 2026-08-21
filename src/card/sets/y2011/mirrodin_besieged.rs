@@ -23,7 +23,8 @@ pub(in crate::card::sets) static WHITE_SUNS_ZENITH: CardRecord = CardRecord::new
                 count: ValueDef::ChosenX,
                 tapped: false,
                 attacking: false,
-            counters: None,},
+            counters: None,
+            created: None,},
         )
         .with_resolution_destination(SpellResolutionDestinationDef::LibraryShuffled),
     ),

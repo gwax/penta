@@ -128,6 +128,7 @@ static AMASS_MAKES_AN_ARMY: EffectDef = EffectDef::CreateToken {
     tapped: false,
     attacking: false,
     counters: None,
+    created: None,
 };
 
 static AMASSED_ARMY: ObjectSetBindingIndex = ObjectSetBindingIndex::PRIMARY;
@@ -247,7 +248,8 @@ pub(in crate::card::sets) static GENEROUS_ENT: CardRecord = CardRecord::new(
                 count: ValueDef::Constant(1),
                 tapped: false,
                 attacking: false,
-            counters: None,},
+            counters: None,
+            created: None,},
         ),
         // Six mana is not what this card is for. Forestcycling is: one mana
         // from hand, and the Ent becomes the land the draw did not give you.

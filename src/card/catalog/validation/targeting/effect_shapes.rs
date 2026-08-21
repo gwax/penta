@@ -227,8 +227,16 @@ fn validate_effect_target_shapes(
             validate_recipient_shape(object, targets, RecipientExpectation::Object)?;
             validate_value_shape(amount, targets)
         }
-        EffectDef::CreateToken { count, .. }
-        | EffectDef::ReduceGenericCostBy(count)
+        EffectDef::CreateToken { count, created, .. } => {
+            validate_value_shape(count, targets)?;
+            match created {
+                Some(created) => {
+                    validate_effect_target_shapes(*created.then, targets, triggering_object_zone)
+                }
+                None => Ok(()),
+            }
+        }
+        EffectDef::ReduceGenericCostBy(count)
         | EffectDef::ReduceMatchingSpellCostBy { amount: count, .. }
         | EffectDef::AddManaEqualTo { amount: count, .. } => validate_value_shape(count, targets),
         EffectDef::IfCondition { condition, then } => {
