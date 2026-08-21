@@ -189,3 +189,4 @@ pub const UNDERWORLD_BREACH: CardDefinitionId = CardDefinitionId(2271);
 pub const CRYPTIC_COMMAND: CardDefinitionId = CardDefinitionId(2272);
 pub const CATHAR_COMMANDO: CardDefinitionId = CardDefinitionId(2273);
 pub const ELITE_SPELLBINDER: CardDefinitionId = CardDefinitionId(2274);
+pub const COMMERCIAL_DISTRICT: CardDefinitionId = CardDefinitionId(2275);

@@ -95,6 +95,20 @@ const fn surveil_land(types: &'static [&'static str]) -> CardRules {
     CardRules::new_land(types).with_abilities(&SURVEIL_LAND_ABILITIES)
 }
 
+// MKM 259 — Commercial District
+pub(in crate::card::sets) static COMMERCIAL_DISTRICT: CardRecord = CardRecord::new(
+    cards::COMMERCIAL_DISTRICT,
+    "Commercial District",
+    CardArt::new(
+        "bf220c06-3cce-4bdd-aa58-83940c223e9c",
+        "Julian Kok Joon Wen",
+    ),
+    CardSet::MurdersAtKarlovManor,
+    // The red-green half, which wants the graveyard less than the others and
+    // plays it anyway because a tapped dual is what the mana costs.
+    surveil_land(&["Mountain", "Forest"]),
+);
+
 // MKM 263 — Lush Portico
 pub(in crate::card::sets) static LUSH_PORTICO: CardRecord = CardRecord::new(
     cards::LUSH_PORTICO,
@@ -117,7 +131,11 @@ pub(in crate::card::sets) static THUNDERING_FALLS: CardRecord = CardRecord::new(
     surveil_land(&["Island", "Mountain"]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&FORENSIC_GADGETEER, &LUSH_PORTICO, &THUNDERING_FALLS];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &FORENSIC_GADGETEER,
+    &COMMERCIAL_DISTRICT,
+    &LUSH_PORTICO,
+    &THUNDERING_FALLS,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
