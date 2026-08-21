@@ -153,6 +153,11 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **`revealedLibraryTop` on the observation.** Null unless something lets you
+  look at the top card of your own library, and a one-card list in the same
+  shape as `hand` when it does. An additive optional member, so the epoch does
+  not move; an old consumer that ignores it sees exactly what it saw before.
+
 - **Energy counters.** A player resource rather than a clock: nothing checks
   how much of it anyone has, it persists between turns, and it leaves only by
   being spent. `energy` joins `poison` on the observation as a two-element

@@ -142,6 +142,13 @@ impl Game {
                         card.id == card_id && self.exile_play_permission(card_id, player).is_some()
                     })
                     .map(|card| (card, CastSourceZone::Exile))
+            })
+            .or_else(|| {
+                state
+                    .library
+                    .last()
+                    .filter(|card| card.id == card_id)
+                    .map(|card| (card, CastSourceZone::LibraryTop))
             })?;
         let definition = self.catalog.get(card.definition)?;
         let option = definition
@@ -159,6 +166,15 @@ impl Game {
             && !self.exile_play_is_permitted(definition, option, card_id, player)
         {
             return None;
+        }
+        if source_zone == CastSourceZone::LibraryTop {
+            self.library_top_play_cost(card, player, option)?;
+            if self
+                .library_top_life_cost(card, player, option)
+                .is_some_and(|life| i64::from(life) > i64::from(self.players[player.index()].life))
+            {
+                return None;
+            }
         }
         if !self.play_timing_allows(player, option.restriction) {
             return None;

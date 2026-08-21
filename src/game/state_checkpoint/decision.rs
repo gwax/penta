@@ -813,7 +813,11 @@ fn continuation_snapshot(
         // An entry paused mid-flight carries a prospective permanent that
         // this format has no place for yet.
         | DecisionContinuation::BattlefieldEntryExile { .. }
-        | DecisionContinuation::BattlefieldExitReplacement { .. } => return None,
+        | DecisionContinuation::BattlefieldExitReplacement { .. }
+        // An activation paused mid-payment carries the whole of what it
+        // chose -- its frozen ability text, targets, and modes -- which this
+        // format has no place for yet.
+        | DecisionContinuation::ActivationCostSacrifice { .. } => return None,
     };
     Some(value)
 }

@@ -152,6 +152,10 @@ pub struct PlayerObservation {
     pub opponent_hand_size: usize,
     pub last_seen_hand: Option<(PlayerId, Vec<(GameObjectId, CardDefinitionId)>)>,
     pub library_sizes: [usize; 2],
+    /// The top card of the viewer's own library, when something lets them
+    /// look at it. `None` in the ordinary game, where a library is face
+    /// down to everyone including its owner.
+    pub revealed_library_top: Option<(GameObjectId, CardDefinitionId)>,
     pub graveyards: [Vec<(GameObjectId, CardDefinitionId)>; 2],
     pub exiles: [Vec<(GameObjectId, CardDefinitionId)>; 2],
     pub battlefield: Vec<PermanentObservation>,

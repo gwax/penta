@@ -260,7 +260,8 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
         }
         AppliedEffectDef::Rule(
             AppliedRuleDef::CannotPlay(restriction)
-            | AppliedRuleDef::MayPlayFromGraveyard(restriction),
+            | AppliedRuleDef::MayPlayFromGraveyard(restriction)
+            | AppliedRuleDef::MayPlayFromTopOfLibrary { restriction, .. },
         ) => static_object_predicate_supported(restriction.object),
         // A damage limit protecting a player is read by its own walk over the
         // battlefield, since nothing about the damage event points back at
@@ -278,6 +279,7 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
         // rather than the cleanup step.
         AppliedEffectDef::Rule(
             AppliedRuleDef::Ascend
+            | AppliedRuleDef::MayLookAtTopOfLibrary
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary,
@@ -368,11 +370,13 @@ fn static_object_applied_effect_supported(
             AppliedRuleDef::CannotBeCountered
             // Ascend belongs to a player, so nothing about an object reads it.
             | AppliedRuleDef::Ascend
+            | AppliedRuleDef::MayLookAtTopOfLibrary
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary
             | AppliedRuleDef::CannotPlay(_)
             | AppliedRuleDef::MayPlayFromGraveyard(_)
+            | AppliedRuleDef::MayPlayFromTopOfLibrary { .. }
             | AppliedRuleDef::UntapAtMostOne(_)
             | AppliedRuleDef::RedirectDamageFromTo { .. },
         ) => false,

@@ -123,6 +123,15 @@ pub enum AppliedRuleDef {
     /// against the same action and object the prohibition names, so a card
     /// that widens it to spells later says so in the same vocabulary.
     MayPlayFromGraveyard(PlayRestrictionDef),
+    /// "You may play lands and cast spells from the top of your library."
+    /// The same permission as [`Self::MayPlayFromGraveyard`] pointed at a
+    /// different zone, plus what casting that way costs: Bolas's Citadel
+    /// prints the replacement in the same sentence as the permission, and a
+    /// permission without it would be a different card.
+    MayPlayFromTopOfLibrary {
+        restriction: PlayRestrictionDef,
+        cost: TopOfLibraryCostDef,
+    },
     /// "You may spend mana as though it were mana of any color to activate
     /// abilities of creatures you control." A player rule, found the same way
     /// [`Self::NoMaximumHandSize`] is found, whose scope is part of what it
@@ -132,6 +141,13 @@ pub enum AppliedRuleDef {
     /// and about one turn, so they will name their own scopes rather than
     /// widening this one.
     MaySpendManaAsAnyColorForCreatureAbilities,
+    /// "You may look at the top card of your library any time." A player
+    /// rule found the same way [`Self::NoMaximumHandSize`] is found, and
+    /// separate from [`Self::MayPlayFromTopOfLibrary`] because the printed
+    /// cards keep them separate: Oracle of Mul Daya lets you look without
+    /// letting you cast, and a permission to play is not by itself a
+    /// permission to look at what you are not playing.
+    MayLookAtTopOfLibrary,
     /// The affected player has no maximum hand size, so the cleanup step
     /// never asks them to discard. A player rule rather than an object one:
     /// it is found by walking the battlefield for statics naming that player.
@@ -301,6 +317,21 @@ impl PlayActionMatcherDef {
 pub struct PlayRestrictionDef {
     pub action: PlayActionMatcherDef,
     pub object: ObjectPredicateDef,
+}
+
+/// What a spell cast off the top of a library costs its caster.
+///
+/// A land played from up there costs nothing either way: only spells have a
+/// mana cost for this to replace.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum TopOfLibraryCostDef {
+    /// Its own cost, as printed. Future Sight's permission says no more than
+    /// that you may play what is up there.
+    Printed,
+    /// "Pay life equal to its mana value rather than pay its mana cost."
+    /// The mana cost goes away and the life takes its place, so a spell
+    /// nobody has the life for is not castable this way at all.
+    LifeEqualToManaValue,
 }
 
 impl PlayRestrictionDef {

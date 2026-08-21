@@ -617,7 +617,8 @@ fn validate_applied_effect_shapes(
         }
         AppliedEffectDef::Rule(
             AppliedRuleDef::CannotPlay(restriction)
-            | AppliedRuleDef::MayPlayFromGraveyard(restriction),
+            | AppliedRuleDef::MayPlayFromGraveyard(restriction)
+            | AppliedRuleDef::MayPlayFromTopOfLibrary { restriction, .. },
         ) => {
             validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
             validate_object_predicate_shape(restriction.object, targets)?;
@@ -647,6 +648,7 @@ fn validate_applied_effect_shapes(
         // Each names a player and carries nothing else.
         AppliedEffectDef::Rule(
             AppliedRuleDef::Ascend
+            | AppliedRuleDef::MayLookAtTopOfLibrary
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary,

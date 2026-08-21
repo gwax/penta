@@ -45,6 +45,7 @@ mod ability_actions;
 mod ability_layers;
 mod ability_targeting;
 mod activation;
+mod activation_sacrifice;
 mod activation_state;
 mod api;
 mod attachments;
@@ -82,7 +83,6 @@ mod error;
 mod event;
 mod exile_permission;
 mod face_down;
-mod graveyard_play;
 mod land_type_layers;
 mod land_type_substitution;
 mod legacy_resolution;
@@ -95,6 +95,7 @@ mod monarch;
 mod ninjutsu;
 mod observation;
 mod phasing;
+mod play_permissions;
 mod prevention_state;
 mod procedure_state;
 mod prospective_x;
@@ -140,7 +141,8 @@ pub(crate) use card_runtime::{
 
 use observation::{LastSeenHand, PublicCard};
 
-use activation_state::{ActivationChoices, FrozenActivatedAbility};
+use activation_sacrifice::SacrificeQuota;
+use activation_state::{ActivationChoices, FrozenActivatedAbility, PendingActivation};
 use casting_state::{CastSourceZone, SelectedSpellPlan};
 use characteristic_state::{
     BasicLandTypeChange, BattlefieldExitSnapshot, CharacteristicSource, CopiableAbility,

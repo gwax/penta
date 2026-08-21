@@ -38,6 +38,19 @@ pub enum CostDef {
         object: ObjectPredicateDef,
         controller: PlayerRelation,
     },
+    /// Sacrifice that many matching permanents, chosen one at a time as the
+    /// ability is activated.
+    ///
+    /// Unlike [`Self::SacrificePermanent`] the choices are not enumerated
+    /// into the action: Bolas's Citadel asks for ten of them, and a board of
+    /// twenty would name nearly two hundred thousand ways to pay one cost.
+    /// A decision bounds the same selection the way the decision model
+    /// already bounds every other large one.
+    SacrificePermanents {
+        object: ObjectPredicateDef,
+        controller: PlayerRelation,
+        count: u8,
+    },
     /// Ninjutsu's cost: return an unblocked attacker you control to its
     /// owner's hand. Which one is chosen as the ability is activated, and
     /// what makes a creature eligible is combat state rather than any

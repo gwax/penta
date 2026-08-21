@@ -301,6 +301,7 @@ impl Game {
                         | AbilityCostDef::ReturnSourceToHand
                         | AbilityCostDef::ExileSource
                         | AbilityCostDef::SacrificePermanent { .. }
+                        | AbilityCostDef::SacrificePermanents { .. }
                         | AbilityCostDef::ReturnUnblockedAttackerToHand
                 | AbilityCostDef::TapPermanent { .. }
                         // Payability is decided by whether any card qualifies,
@@ -336,6 +337,7 @@ impl Game {
                     matches!(
                         cost,
                         AbilityCostDef::SacrificePermanent { .. }
+                            | AbilityCostDef::SacrificePermanents { .. }
                             | AbilityCostDef::ReturnUnblockedAttackerToHand
                             | AbilityCostDef::TapPermanent { .. }
                             | AbilityCostDef::ExileCardsFromGraveyard { .. }
@@ -418,6 +420,37 @@ impl Game {
                     })
                     .map(|card| vec![card.id])
                     .collect(),
+                    // Paid by a decision rather than by enumeration, so the
+                    // activation names none of them: one offer stands for
+                    // however many ways there are to pay it.
+                    Some(AbilityCostDef::SacrificePermanents {
+                        object,
+                        controller,
+                        count,
+                    }) => {
+                        let available = self
+                            .battlefield
+                            .iter()
+                            .filter(|candidate| {
+                                self.player_relation_matches(
+                                    candidate.controller,
+                                    *controller,
+                                    player,
+                                    TriggerContext::empty(),
+                                ) && self.trigger_object_matches(
+                                    *object,
+                                    &self.trigger_event_object(candidate),
+                                    permanent.card.id,
+                                    false,
+                                )
+                            })
+                            .count();
+                        if available >= usize::from(*count) {
+                            vec![Vec::new()]
+                        } else {
+                            Vec::new()
+                        }
+                    }
                     Some(_) => unreachable!("the filter admits only object costs"),
                 };
                 if cost_object_choices.is_empty() {
@@ -633,6 +666,7 @@ impl Game {
                         | AbilityCostDef::DiscardCardMatching(_)
                         | AbilityCostDef::DiscardCardsAtRandom(_)
                         | AbilityCostDef::SacrificePermanent { .. }
+                        | AbilityCostDef::SacrificePermanents { .. }
                         | AbilityCostDef::TapPermanent { .. }
                         | AbilityCostDef::ExileSource
                         | AbilityCostDef::Loyalty(_)
@@ -740,6 +774,7 @@ impl Game {
                             | AbilityCostDef::DiscardCardMatching(_)
                             | AbilityCostDef::DiscardCardsAtRandom(_)
                             | AbilityCostDef::SacrificePermanent { .. }
+                            | AbilityCostDef::SacrificePermanents { .. }
                             | AbilityCostDef::ReturnUnblockedAttackerToHand
                             | AbilityCostDef::TapPermanent { .. }
                             | AbilityCostDef::Loyalty(_)

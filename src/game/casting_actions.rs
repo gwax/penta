@@ -11,7 +11,7 @@ use super::{
     target_combinations,
 };
 
-use crate::card::{AlternateSpellKind, CardStructure, ModeSetDef, SpellForm};
+use crate::card::{AlternateSpellKind, CardStructure, ModeSetDef, SpellForm, ZoneKind};
 
 mod cost_configurations;
 
@@ -28,11 +28,19 @@ impl Game {
         // A graveyard is walked too, for the permissions that reach into it.
         // Nothing there is playable without one, so the ordinary game pays
         // only the cost of the filter below.
-        for (card, from_graveyard) in state
+        // The top of the library is walked for the same reason, and named
+        // one card at a time.
+        for (card, zone) in state
             .hand
             .iter()
-            .map(|card| (card, false))
-            .chain(state.graveyard.iter().map(|card| (card, true)))
+            .map(|card| (card, ZoneKind::Hand))
+            .chain(
+                state
+                    .graveyard
+                    .iter()
+                    .map(|card| (card, ZoneKind::Graveyard)),
+            )
+            .chain(state.library.last().map(|card| (card, ZoneKind::Library)))
         {
             let Some(definition) = self.catalog.get(card.definition) else {
                 continue;
@@ -43,8 +51,14 @@ impl Game {
                     .iter()
                     .filter(|option| option.action == PlayActionKind::PlayLand)
                     .filter(|option| !self.play_is_prohibited(card, player, option))
-                    .filter(|option| {
-                        !from_graveyard || self.graveyard_play_is_permitted(card, player, option)
+                    .filter(|option| match zone {
+                        ZoneKind::Graveyard => {
+                            self.graveyard_play_is_permitted(card, player, option)
+                        }
+                        ZoneKind::Library => {
+                            self.library_top_play_cost(card, player, option).is_some()
+                        }
+                        _ => true,
                     })
                     .filter(|option| match &option.form {
                         crate::card::SpellForm::Part(part) => definition
@@ -105,6 +119,14 @@ impl Game {
                     .filter(|card| self.exile_play_permission(card.id, player).is_some())
                     .map(|card| (card, CastSourceZone::Exile)),
             )
+            // The top card of the caster's own library, which the
+            // permissions that reach up there name one at a time.
+            .chain(
+                state
+                    .library
+                    .last()
+                    .map(|card| (card, CastSourceZone::LibraryTop)),
+            )
         {
             if only.is_some_and(|only| only != card.id) {
                 continue;
@@ -137,6 +159,22 @@ impl Game {
                     && !self.exile_play_is_permitted(definition, option, card.id, player)
                 {
                     continue;
+                }
+                if source_zone == CastSourceZone::LibraryTop {
+                    if self.library_top_play_cost(card, player, option).is_none() {
+                        continue;
+                    }
+                    // Life replaces the mana cost rather than joining it, so
+                    // a spell nobody has the life for is not castable this
+                    // way at all. Paying down to exactly zero is allowed.
+                    if self
+                        .library_top_life_cost(card, player, option)
+                        .is_some_and(|life| {
+                            i64::from(life) > i64::from(self.players[player.index()].life)
+                        })
+                    {
+                        continue;
+                    }
                 }
                 if only.is_none() && !self.play_timing_allows(player, option.restriction) {
                     continue;

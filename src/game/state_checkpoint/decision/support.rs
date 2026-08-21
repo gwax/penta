@@ -98,6 +98,21 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
         DecisionContinuation::BattlefieldExitReplacement { batch, candidates } => {
             extend_battlefield_exit_ids(&mut ids, batch, candidates);
         }
+        DecisionContinuation::ActivationCostSacrifice {
+            pending, chosen, ..
+        } => {
+            ids.push(pending.source);
+            ids.push(pending.source_card.id);
+            ids.extend(pending.chosen_permanents.iter().copied());
+            ids.extend(
+                pending
+                    .targets
+                    .iter()
+                    .flat_map(crate::TargetSelection::targets)
+                    .filter_map(|target| target_object_id(*target)),
+            );
+            ids.extend(chosen.iter().copied());
+        }
         DecisionContinuation::TriggerOrder { batch, remaining } => {
             extend_trigger_batch_ids(&mut ids, batch);
             for batch in remaining {

@@ -35,3 +35,21 @@ pub(super) struct FrozenActivatedAbility {
     /// ability will resolve with.
     pub(super) x: u16,
 }
+
+/// One activation whose costs are not finished being paid.
+///
+/// Every choice the activation made travels here so a cost that asks a
+/// question can be answered and the activation resumed exactly where it
+/// stopped: nothing is on the stack until the last of its costs is paid.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) struct PendingActivation {
+    pub(super) source: GameObjectId,
+    pub(super) source_card: super::CardInstance,
+    pub(super) controller: crate::ids::PlayerId,
+    pub(super) frozen: FrozenActivatedAbility,
+    pub(super) targets: Vec<TargetSelection>,
+    pub(super) chosen_permanents: Vec<GameObjectId>,
+    /// Permanents an earlier cost already committed to sacrifice, which go
+    /// with whatever the paused cost names.
+    pub(super) remaining_sacrifices: Vec<GameObjectId>,
+}

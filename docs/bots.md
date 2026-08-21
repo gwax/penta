@@ -366,6 +366,7 @@ world it can search.
 | `monarch` | who holds the crown (CR 720) as `"p1"` or `"p2"`, or null while nobody does. The monarch draws a card at the beginning of their end step, and a creature that deals combat damage to them hands the crown to its controller |
 | `hand` | your cards: `{objectId, instance, definition, name}`; `instance` is a compatibility alias for `objectId` |
 | `opponentHandSize` | their current hidden hand as a count; learned snapshots are reported separately in `lastSeenHand` |
+| `revealedLibraryTop` | null unless something lets you look at the top card of your own library, such as Bolas's Citadel; a one-card list in the same shape as `hand` when it does |
 | `lastSeenHand` | null or the most recently revealed hand snapshot as `{seat, cards}`; it records known information and can outlive later hand changes |
 | `battlefield` | every permanent, including its current-zone object ID, canonical definition, and presented card-part ID; a planeswalker also reports `loyalty` and `loyaltyAbilityUsedThisTurn` |
 | `checkpoint` | the hidden-safe typed rules snapshot used by `Game.from_observation`, including its independent `version` and `simulationFingerprint`, deferred execution, dynamic objects, exact mana units, and reachable LKI; it never contains host RNG state or hidden-zone card identities |

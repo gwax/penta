@@ -10,9 +10,9 @@ use crate::ids::{CardDefinitionId, GameObjectId, ObjectSetBindingIndex, PlayerId
 use super::{
     AbilitySourceRef, ApplicableReplacement, ApplicableZoneMoveReplacement, CardInstance,
     DecisionObservation, DecisionOption, DecisionZone, DrawReplacement, EffectResolutionContext,
-    Mana, PendingBattlefieldExitBatch, PendingTrigger, PileChosen, PileSplit, PilesSeparated,
-    ReplacementEffectContext, ResolvedEffectDurationDef, SacrificedAmountDef, ScopedEffect,
-    StackObject, TriggerPlacementBatch,
+    Mana, PendingActivation, PendingBattlefieldExitBatch, PendingTrigger, PileChosen, PileSplit,
+    PilesSeparated, ReplacementEffectContext, ResolvedEffectDurationDef, SacrificeQuota,
+    SacrificedAmountDef, ScopedEffect, StackObject, TriggerPlacementBatch,
 };
 
 /// Fork repaints its copy, so the copy is red and nothing else.
@@ -204,6 +204,20 @@ pub(super) enum DecisionContinuation {
         /// bound. Boxed because most searches have none and the variant
         /// would otherwise carry a stack object for all of them.
         follow_up: Option<Box<SearchFollowUp>>,
+    },
+    /// An activation cost paid by sacrificing a printed number of
+    /// permanents, asked one at a time. The activation itself waits: its
+    /// costs are not finished, so nothing is on the stack yet.
+    ActivationCostSacrifice {
+        player: PlayerId,
+        /// What is still owed and what may pay it.
+        quota: SacrificeQuota,
+        /// Everything the activation already chose, boxed for the same
+        /// reason every other suspended procedure boxes it.
+        pending: Box<PendingActivation>,
+        /// What has been named so far, sacrificed together once the last one
+        /// is chosen.
+        chosen: Vec<GameObjectId>,
     },
     /// A cost paid by sacrificing creatures until their power reaches a
     /// total, asked one creature at a time.

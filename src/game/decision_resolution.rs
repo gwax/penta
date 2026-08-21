@@ -286,6 +286,20 @@ impl Game {
                     self.resolve_nested_effect_before_later(effect, &object, context);
                 }
             }
+            DecisionContinuation::ActivationCostSacrifice {
+                player,
+                quota,
+                pending,
+                chosen,
+            } => {
+                // The option ids are positions in the candidate list the
+                // offer was built from, which is rebuilt the same way.
+                let answer = options
+                    .first()
+                    .copied()
+                    .and_then(|option| usize::try_from(option).ok());
+                self.continue_activation_sacrifice(player, quota, *pending, chosen, answer);
+            }
             DecisionContinuation::SacrificeToTotalPower {
                 player,
                 remaining,

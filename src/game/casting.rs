@@ -21,19 +21,19 @@ impl Game {
         option_id: PlayOptionId,
     ) {
         // A land is ordinarily played from hand; a permission can also
-        // offer one out of its owner's graveyard.
-        let from = if self.players[player.index()]
-            .hand
-            .iter()
-            .any(|card| card.id == card_id)
-        {
-            ZoneKind::Hand
-        } else {
-            ZoneKind::Graveyard
-        };
+        // offer one out of its owner's graveyard, or off the top of their
+        // library.
         let state = &self.players[player.index()];
+        let from = if state.hand.iter().any(|card| card.id == card_id) {
+            ZoneKind::Hand
+        } else if state.graveyard.iter().any(|card| card.id == card_id) {
+            ZoneKind::Graveyard
+        } else {
+            ZoneKind::Library
+        };
         let definition_id = match from {
             ZoneKind::Graveyard => &state.graveyard,
+            ZoneKind::Library => &state.library,
             _ => &state.hand,
         }
         .iter()
@@ -61,6 +61,7 @@ impl Game {
         let state = &mut self.players[player.index()];
         let source_zone = match from {
             ZoneKind::Graveyard => &mut state.graveyard,
+            ZoneKind::Library => &mut state.library,
             _ => &mut state.hand,
         };
         let card = remove_card(source_zone, card_id)
@@ -280,6 +281,7 @@ impl Game {
                 | AbilityCostDef::ReturnSourceToHand
                 | AbilityCostDef::ExileSource
                 | AbilityCostDef::SacrificePermanent { .. }
+                | AbilityCostDef::SacrificePermanents { .. }
                 | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_) => {}
                 AbilityCostDef::RemoveCountersFromSource { kind, amount } => {
                     self.battlefield
@@ -472,6 +474,48 @@ impl Game {
         u16::try_from(self.players[player.index()].life.max(0)).unwrap_or(u16::MAX)
     }
 
+    /// The life a cast owes for the way it was paid for: what the chosen
+    /// alternative names, plus what the spell prints as an additional cost.
+    fn cast_life_payment(
+        &self,
+        definition: CardDefinitionId,
+        stack_object: &StackObject,
+        x: u16,
+    ) -> u16 {
+        self.selected_alternative_life(definition, stack_object)
+            + self
+                .catalog
+                .get(definition)
+                .and_then(|definition| {
+                    let option = stack_object
+                        .signature
+                        .as_ref()
+                        .and_then(|signature| definition.play_option(signature.play_option()))?;
+                    Some(Self::spell_life_payment(definition, option, x))
+                })
+                .unwrap_or(0)
+    }
+
+    /// The life a spell cast off the top of a library owes, read while it
+    /// is still up there.
+    fn library_top_life_for_cast(
+        &self,
+        player: PlayerId,
+        card_id: GameObjectId,
+        choices: &CastChoices,
+    ) -> u16 {
+        self.players[player.index()]
+            .library
+            .last()
+            .filter(|top| top.id == card_id)
+            .and_then(|top| {
+                let definition = self.catalog.get(top.definition)?;
+                let option = definition.play_option(choices.play_option())?;
+                self.library_top_life_cost(top, player, option)
+            })
+            .unwrap_or(0)
+    }
+
     pub(super) fn cast_spell(
         &mut self,
         player: PlayerId,
@@ -488,6 +532,13 @@ impl Game {
         let cast_via_flashback = alternative_kind == Some(AlternativeCastKindDef::Flashback);
         let cast_face_down = alternative_kind == Some(AlternativeCastKindDef::FaceDown);
         let energy = self.exile_energy_cost(card_id, player).unwrap_or(0);
+        // Read while the card is still on the library, which is the only
+        // place the permission reaching it can be found.
+        let library_top_life = if source_zone == CastSourceZone::LibraryTop {
+            self.library_top_life_for_cast(player, card_id, choices)
+        } else {
+            0
+        };
         let card = match source_zone {
             CastSourceZone::Hand => remove_card(&mut self.players[player.index()].hand, card_id),
             CastSourceZone::Graveyard => {
@@ -499,6 +550,9 @@ impl Game {
                 // exile of the player casting it.
                 remove_card(&mut self.players[0].exile, card_id)
                     .or_else(|| remove_card(&mut self.players[1].exile, card_id))
+            }
+            CastSourceZone::LibraryTop => {
+                remove_card(&mut self.players[player.index()].library, card_id)
             }
         }
         .expect("legal cast action references a card in its validated source zone");
@@ -557,21 +611,10 @@ impl Game {
                 .form()
                 .clone(),
         };
-        // Life named by the chosen alternative, or by the spell's own
-        // additional cost, is paid alongside its mana, before the spell is
-        // finished on the stack.
-        let mut life = self.selected_alternative_life(definition, &stack_object);
-        life += self
-            .catalog
-            .get(definition)
-            .and_then(|definition| {
-                let option = stack_object
-                    .signature
-                    .as_ref()
-                    .and_then(|signature| definition.play_option(signature.play_option()))?;
-                Some(Self::spell_life_payment(definition, option, x))
-            })
-            .unwrap_or(0);
+        // Life named by the chosen alternative, by the spell's own additional
+        // cost, or by the permission that let it be cast off a library, is
+        // paid alongside its mana, before the spell is finished on the stack.
+        let life = self.cast_life_payment(definition, &stack_object, x) + library_top_life;
         if life > 0 {
             self.lose_life(player, life);
         }

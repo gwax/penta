@@ -250,6 +250,9 @@ pub fn observation_json_for_format(
             "cards": card_list_json(catalog, cards),
         })),
         "librarySizes": observation.library_sizes,
+        "revealedLibraryTop": observation
+            .revealed_library_top
+            .map(|card| card_list_json(catalog, &[card])),
         "graveyards": [
             card_list_json(catalog, &observation.graveyards[0]),
             card_list_json(catalog, &observation.graveyards[1]),

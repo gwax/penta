@@ -379,7 +379,8 @@ pub(in super::super) fn shared_static_applied_effect(
         }
         AppliedEffectDef::Rule(
             AppliedRuleDef::CannotPlay(restriction)
-            | AppliedRuleDef::MayPlayFromGraveyard(restriction),
+            | AppliedRuleDef::MayPlayFromGraveyard(restriction)
+            | AppliedRuleDef::MayPlayFromTopOfLibrary { restriction, .. },
         ) => {
             matches!(recipient.0, EffectRecipientSetDef::Players(_))
                 && shared_object_predicate(restriction.object)

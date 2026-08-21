@@ -5,9 +5,10 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype,
     CardType, CardTypeSet, ComparisonDef, CounterKind, CreatureTypeSetDef, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRefDef,
-    PlayerRelation, ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
+    TopCardSelectionDef, TopOfLibraryCostDef, TriggerConditionDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -197,6 +198,62 @@ static NISSA_ABILITIES: [AbilityDef; 3] = [
     ),
 ];
 
+/// Anything at all, which is what "lands and spells" comes to once the top
+/// of the library is the only place being named.
+static CITADEL_PERMISSION: PlayRestrictionDef =
+    PlayRestrictionDef::new(PlayActionMatcherDef::Any, ObjectPredicateDef::Any);
+
+static CITADEL_SACRIFICE: [AbilityCostDef; 2] = [
+    AbilityCostDef::TapSource,
+    AbilityCostDef::SacrificePermanents {
+        object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+        controller: PlayerRelation::You,
+        count: 10,
+    },
+];
+
+static BOLASS_CITADEL_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::static_ability(
+        "You may look at the top card of your library any time.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::You)),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::MayLookAtTopOfLibrary),
+        },
+    ),
+    AbilityDef::static_ability(
+        "You may play lands and cast spells from the top of your library. If you cast a spell \
+         this way, pay life equal to its mana value rather than pay its mana cost.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::You)),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromTopOfLibrary {
+                restriction: CITADEL_PERMISSION,
+                cost: TopOfLibraryCostDef::LifeEqualToManaValue,
+            }),
+        },
+    ),
+    AbilityDef::activated(
+        "{T}, Sacrifice ten nonland permanents: Each opponent loses 10 life.",
+        &CITADEL_SACRIFICE,
+        EffectDef::LoseLife {
+            recipient: EffectRecipientDef::Opponent,
+            amount: ValueDef::Constant(10),
+        },
+    ),
+];
+
+// WAR 79 — Bolas's Citadel
+pub(in crate::card::sets) static BOLASS_CITADEL: CardRecord = CardRecord::new(
+    cards::BOLASS_CITADEL,
+    "Bolas's Citadel",
+    CardArt::new("d2124603-d20e-40eb-97f0-a66323397ac2", "Jonas De Ro"),
+    CardSet::WarOfTheSpark,
+    // Six mana to turn a library into a hand and a life total into mana.
+    // The ten-permanent ability is the finish, not the plan.
+    CardRules::new_artifact(mana_cost!("{3}{B}{B}{B}"))
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&BOLASS_CITADEL_ABILITIES),
+);
+
 // WAR 169 — Nissa, Who Shakes the World
 pub(in crate::card::sets) static NISSA_WHO_SHAKES_THE_WORLD: CardRecord = CardRecord::new(
     cards::NISSA_WHO_SHAKES_THE_WORLD,
@@ -364,6 +421,7 @@ pub(in crate::card::sets) static SAHEELI_SUBLIME_ARTIFICER: CardRecord = CardRec
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &JACE_WIELDER_OF_MYSTERIES,
+    &BOLASS_CITADEL,
     &NISSA_WHO_SHAKES_THE_WORLD,
     &TAMIYO_COLLECTOR_OF_TALES,
     &SAHEELI_SUBLIME_ARTIFICER,

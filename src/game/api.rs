@@ -575,6 +575,10 @@ impl Game {
             opponent_hand_size: opponent.hand.len(),
             last_seen_hand: self.last_seen_hands[viewer.index()].clone(),
             library_sizes: [self.players[0].library.len(), self.players[1].library.len()],
+            revealed_library_top: self
+                .player_rule_applies(viewer, crate::card::AppliedRuleDef::MayLookAtTopOfLibrary)
+                .then(|| player.library.last().map(|card| (card.id, card.definition)))
+                .flatten(),
             graveyards: [
                 public_cards(&self.players[0].graveyard),
                 public_cards(&self.players[1].graveyard),

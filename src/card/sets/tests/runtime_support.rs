@@ -373,7 +373,10 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
             // The discard reads the payer's hand rather than the
             // battlefield, but the shape is the same: a permanent to activate
             // from and a predicate the shared walk can read.
+            // The many-at-once form is paid by a decision rather than by
+            // enumeration, which asks the same question of the same walk.
             AbilityCostDef::SacrificePermanent { object, .. }
+            | AbilityCostDef::SacrificePermanents { object, .. }
             | AbilityCostDef::TapPermanent { object, .. }
             | AbilityCostDef::ExileCardsFromGraveyard { object, .. }
             | AbilityCostDef::DiscardCardMatching(object) => {

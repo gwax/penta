@@ -196,7 +196,11 @@ impl Game {
             // A card coming back from an adventure is cast for what
             // its creature half prints, which is the permission the
             // adventure gave. Nothing else about it changes.
-            | (CastSourceZone::Exile, _) => false,
+            | (CastSourceZone::Exile, _)
+            // A permission to play what is on top of your library says
+            // nothing about how: the card is cast for whatever it prints,
+            // or for what the permission charges instead.
+            | (CastSourceZone::LibraryTop, Some(_)) => false,
             // A kicked spell, and one paid for some other way, are both
             // cast from hand like any other; only what they cost and what
             // they do are different.
@@ -217,7 +221,11 @@ impl Game {
             | (
                 CastSourceZone::Graveyard,
                 Some(AlternativeCastKindDef::Flashback | AlternativeCastKindDef::Escape),
-            ) => true,
+            )
+            // A permission to play what is on top of your library says
+            // nothing about how: the card is cast for whatever it prints,
+            // or for what the permission charges instead.
+            | (CastSourceZone::LibraryTop, None) => true,
             // Only in the window the draw opened, and only for the card
             // that was drawn.
             (CastSourceZone::Hand, Some(AlternativeCastKindDef::Miracle)) => {
@@ -236,15 +244,17 @@ impl Game {
         mut visitor: impl FnMut(CostConfiguration) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         let mut selected_additional = Vec::with_capacity(option.additional_costs.len());
-        if matches!(source_zone, CastSourceZone::Hand | CastSourceZone::Exile)
-            && Self::visit_additional_cost_configurations(
-                option,
-                None,
-                option.additional_costs.len(),
-                &mut selected_additional,
-                &mut visitor,
-            )
-            .is_break()
+        if matches!(
+            source_zone,
+            CastSourceZone::Hand | CastSourceZone::Exile | CastSourceZone::LibraryTop
+        ) && Self::visit_additional_cost_configurations(
+            option,
+            None,
+            option.additional_costs.len(),
+            &mut selected_additional,
+            &mut visitor,
+        )
+        .is_break()
         {
             return ControlFlow::Break(());
         }
@@ -381,7 +391,7 @@ impl Game {
         // alternatives printed on it, so they are applied here, after
         // everything the card itself asks for. Additional costs still apply
         // (CR 601.2h); only the mana cost is replaced.
-        if self.card_mana_cost_is_replaced(card) {
+        if self.card_mana_cost_is_replaced(card) || self.library_top_cost_is_life(card, option) {
             cost = ManaCost {
                 variable_x: cost.variable_x,
                 x_multiplier: cost.x_multiplier,
@@ -389,6 +399,21 @@ impl Game {
             };
         }
         Some(cost)
+    }
+
+    /// Whether this card is the top of somebody's library and the
+    /// permission reaching it charges life instead of mana. Only the topmost
+    /// card of a player's own library can be, so the library it is sitting
+    /// on names the player being asked.
+    fn library_top_cost_is_life(&self, card: GameObjectId, option: &PlayOptionDef) -> bool {
+        [PlayerId::One, PlayerId::Two].into_iter().any(|player| {
+            self.players[player.index()]
+                .library
+                .last()
+                .is_some_and(|top| {
+                    top.id == card && self.library_top_life_cost(top, player, option).is_some()
+                })
+        })
     }
 
     /// Whether whoever is playing this card pays something other than its

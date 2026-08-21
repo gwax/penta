@@ -2,8 +2,8 @@ use super::{
     AbilityCostDef, AbilityOrigin, AbilityProcedureDef, ActivationChoices, ActivationTimingDef,
     BattlefieldExitCompletion, CardBehavior, CardInstance, CharacteristicContext, CounterKind,
     DeclarativeAbilityDef, FrozenActivatedAbility, Game, GameEvent, GameObjectId, ManaCost,
-    ManaPaymentPurpose, PlayRestriction, PlayerId, Step, Target, TargetSelection, ZoneKind,
-    ZoneMoveCause, ZonePlacement, remove_card,
+    ManaPaymentPurpose, PendingActivation, PlayRestriction, PlayerId, SacrificeQuota, Step, Target,
+    TargetSelection, ZoneKind, ZoneMoveCause, ZonePlacement, remove_card,
 };
 
 impl Game {
@@ -127,6 +127,7 @@ impl Game {
                 | AbilityCostDef::DiscardCardMatching(_)
                 | AbilityCostDef::DiscardCardsAtRandom(_)
                 | AbilityCostDef::SacrificePermanent { .. }
+                | AbilityCostDef::SacrificePermanents { .. }
                 | AbilityCostDef::ReturnUnblockedAttackerToHand
                 | AbilityCostDef::TapPermanent { .. }
                 | AbilityCostDef::Loyalty(_)
@@ -267,6 +268,7 @@ impl Game {
                     | AbilityCostDef::DiscardCardMatching(_)
                     | AbilityCostDef::DiscardCardsAtRandom(_)
                     | AbilityCostDef::SacrificePermanent { .. }
+                    | AbilityCostDef::SacrificePermanents { .. }
                     | AbilityCostDef::TapPermanent { .. }
                     | AbilityCostDef::ExileSource
                     | AbilityCostDef::Loyalty(_)
@@ -439,7 +441,8 @@ impl Game {
                     | AbilityCostDef::SacrificeSource
                     | AbilityCostDef::ReturnSourceToHand
                     | AbilityCostDef::ExileSource
-                    | AbilityCostDef::SacrificePermanent { .. } => {
+                    | AbilityCostDef::SacrificePermanent { .. }
+                    | AbilityCostDef::SacrificePermanents { .. } => {
                         // A tap of a chosen permanent was paid above, ahead of
                         // mana. The rest are deferred until mana and
                         // source-dependent costs have been paid: a chosen
@@ -541,6 +544,39 @@ impl Game {
                 if !chosen_permanents.contains(chosen) {
                     chosen_permanents.push(*chosen);
                 }
+            }
+            // A cost that takes a printed number of permanents names them
+            // by decision, so the activation waits here with everything it
+            // has already chosen and paid.
+            if let Some(AbilityCostDef::SacrificePermanents {
+                object,
+                controller,
+                count,
+            }) = definition
+                .costs
+                .iter()
+                .find(|cost| matches!(cost, AbilityCostDef::SacrificePermanents { .. }))
+            {
+                self.queue_activation_sacrifice(
+                    player,
+                    SacrificeQuota {
+                        remaining: *count,
+                        object: *object,
+                        controller: *controller,
+                    },
+                    PendingActivation {
+                        source,
+                        source_card,
+                        controller: player,
+                        frozen: frozen_ability,
+                        targets: frozen_targets,
+                        chosen_permanents,
+                        remaining_sacrifices,
+                    },
+                    Vec::new(),
+                );
+                self.consecutive_passes = 0;
+                return;
             }
             self.continue_activated_ability_costs(
                 source,

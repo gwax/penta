@@ -20,6 +20,7 @@ fn observation_json_carries_interwave_state_and_presented_card_part() {
         opponent_hand_size: 0,
         last_seen_hand: None,
         library_sizes: [0, 0],
+        revealed_library_top: None,
         graveyards: [Vec::new(), Vec::new()],
         exiles: [Vec::new(), Vec::new()],
         emblems: Vec::new(),
