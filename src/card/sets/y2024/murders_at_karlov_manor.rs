@@ -122,6 +122,17 @@ pub(in crate::card::sets) static LUSH_PORTICO: CardRecord = CardRecord::new(
     surveil_land(&["Forest", "Plains"]),
 );
 
+// MKM 264 — Meticulous Archive
+pub(in crate::card::sets) static METICULOUS_ARCHIVE: CardRecord = CardRecord::new(
+    cards::METICULOUS_ARCHIVE,
+    "Meticulous Archive",
+    CardArt::new("652236c2-84ef-45e4-b5fc-ed6170bc3d6c", "Sam Burley"),
+    CardSet::MurdersAtKarlovManor,
+    // The white-blue half, which wants the graveyard least of the cycle and
+    // is played for the dual land the tempo decks cannot otherwise have.
+    surveil_land(&["Plains", "Island"]),
+);
+
 // MKM 269 — Thundering Falls
 pub(in crate::card::sets) static THUNDERING_FALLS: CardRecord = CardRecord::new(
     cards::THUNDERING_FALLS,
@@ -137,6 +148,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FORENSIC_GADGETEER,
     &COMMERCIAL_DISTRICT,
     &LUSH_PORTICO,
+    &METICULOUS_ARCHIVE,
     &THUNDERING_FALLS,
 ];
 

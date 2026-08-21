@@ -220,3 +220,36 @@ fn it_taps_for_either_colour() {
     assert!(colors.contains(&ManaColor::Blue), "Island");
     assert!(colors.contains(&ManaColor::Red), "Mountain");
 }
+
+/// And the white-blue one, which completes the half of the cycle the cube
+/// wants. The cycle is one card with three pairs of colours, so what is left
+/// to check on each is only which two.
+#[test]
+fn the_white_blue_land_taps_for_its_own_two() {
+    let (mut game, land) = staged_with(cards::METICULOUS_ARCHIVE, cards::LIGHTNING_BOLT);
+    play_and_surveil(&mut game, land, false);
+    let id = the_land_named(&game, cards::METICULOUS_ARCHIVE)
+        .expect("it is on the battlefield")
+        .card
+        .id;
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == id)
+    {
+        permanent.tapped = false;
+    }
+
+    let colors = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility { source, color, .. } if source == id => Some(color),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert!(colors.contains(&ManaColor::White), "Plains");
+    assert!(colors.contains(&ManaColor::Blue), "Island");
+    assert_eq!(colors.len(), 2, "and nothing else");
+}
