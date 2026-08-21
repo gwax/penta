@@ -812,6 +812,7 @@ mod vintage_cube_mana;
 mod vintage_cube_manamorphose;
 mod vintage_cube_manifold_key;
 mod vintage_cube_mastery;
+mod vintage_cube_mine_collapse;
 mod vintage_cube_monarch;
 mod vintage_cube_more_spells;
 mod vintage_cube_mystic_confluence;

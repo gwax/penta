@@ -275,6 +275,63 @@ static UNHOLY_HEAT_AMOUNT: GraveyardTypeConditionDef = GraveyardTypeConditionDef
     otherwise: ValueDef::Constant(2),
 };
 
+/// A Mountain, not a red source: what the cost names is the land type, so a
+/// Sacred Foundry pays it and a Mountain that has stopped being one does not.
+static SACRIFICE_A_MOUNTAIN: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
+    ZoneKind::Battlefield,
+    1,
+);
+
+/// "If it's your turn" gates only the free cast. The printed cost is always
+/// available, which is why this is a condition on the alternative rather
+/// than a restriction on the card.
+static YOUR_TURN: TriggerConditionDef = TriggerConditionDef::ActivePlayer(PlayerRelation::You);
+
+static MINE_COLLAPSE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::HasType(CardType::Planeswalker),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
+// MH2 135 — Mine Collapse
+pub(in crate::card::sets) static MINE_COLLAPSE: CardRecord = CardRecord::new(
+    cards::MINE_COLLAPSE,
+    "Mine Collapse",
+    CardArt::new("56e2e8b5-660d-4469-a4fe-2367dfadb709", "Bud Cook"),
+    CardSet::ModernHorizons2,
+    // Nobody pays four mana for this. What it is worth is a land off an
+    // already-flooded board on your own turn, which is why the free half is
+    // the half that reads "if it's your turn".
+    CardRules::new_instant(mana_cost!("{3}{R}")).with_abilities(&[
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::AlternativeCost,
+            Some(
+                "If it's your turn, you may sacrifice a Mountain rather than pay this spell's \
+                 mana cost.",
+            ),
+            EffectDef::None,
+        )
+        .with_alternative_additional_cost(&SACRIFICE_A_MOUNTAIN)
+        .with_alternative_condition(&YOUR_TURN),
+        AbilityDef::spell_with_targets(
+            "Mine Collapse deals 5 damage to target creature or planeswalker.",
+            &MINE_COLLAPSE_TARGET,
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(5),
+            },
+        ),
+    ]),
+);
+
 static UNHOLY_HEAT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::Object {
         object: ObjectPredicateDef::AnyOf(&[
@@ -357,6 +414,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BONE_SHARDS,
     &DAMN,
     &FURY,
+    &MINE_COLLAPSE,
     &UNHOLY_HEAT,
     &NETTLECYST,
     &YAVIMAYA_CRADLE_OF_GROWTH,

@@ -175,3 +175,4 @@ pub const INCUBATOR_TOKEN: CardDefinitionId = CardDefinitionId(2257);
 pub const SUNFALL: CardDefinitionId = CardDefinitionId(2258);
 pub const WORLDSPINE_WURM: CardDefinitionId = CardDefinitionId(2259);
 pub const FIGURE_OF_DESTINY: CardDefinitionId = CardDefinitionId(2260);
+pub const MINE_COLLAPSE: CardDefinitionId = CardDefinitionId(2261);
