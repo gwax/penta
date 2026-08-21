@@ -776,6 +776,7 @@ mod vintage_cube_arrival;
 mod vintage_cube_artifacts;
 mod vintage_cube_barrowgoyf;
 mod vintage_cube_bolass_citadel;
+mod vintage_cube_brainstorm;
 mod vintage_cube_breach;
 mod vintage_cube_caryatid;
 mod vintage_cube_chandra;

@@ -3,12 +3,49 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    AppliedRuleDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
-    InstalledTriggerDef, ManaColor, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
-    TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    AppliedRuleDef, CardArt, CardChoiceSourceDef, CardRules, CardSet, CardType, EffectDef,
+    EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef, PlayerRelation,
+    ResolvedEffectDurationDef, TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
+
+/// "Put two cards from your hand on top of your library in any order." The
+/// arrangement is the order the two are named in: each is placed on top of
+/// the last, so the card named second is the one drawn first.
+static BRAINSTORM_PUT_BACK: [EffectDef; 2] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::ChooseCards {
+        player: EffectRecipientDef::Controller,
+        sources: &[CardChoiceSourceDef::Zone(ZoneKind::Hand)],
+        object: ObjectPredicateDef::Any,
+        minimum: 2,
+        maximum: 2,
+        reveal: false,
+        destination: ZoneKind::Library,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+    },
+];
+
+// ICE 61 — Brainstorm
+pub(in crate::card::sets) static BRAINSTORM: CardRecord = CardRecord::new(
+    cards::BRAINSTORM,
+    "Brainstorm",
+    CardArt::new("8d42d7aa-7f53-4cfc-842a-086aab2448d1", "Christopher Rush"),
+    CardSet::IceAge,
+    // One mana, no card advantage, and the best blue card in the format:
+    // what it buys is the top of the library, and a fetchland turns the two
+    // cards put back into two cards nobody has to draw.
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell(
+        "Draw three cards, then put two cards from your hand on top of your library in any \
+             order.",
+        EffectDef::Sequence(&BRAINSTORM_PUT_BACK),
+    )),
+);
 
 // ICE 72 — Hydroblast
 pub(in crate::card::sets) static HYDROBLAST: CardRecord = CardRecord::new(
@@ -198,6 +235,7 @@ pub(in crate::card::sets) static UNDERGROUND_RIVER: CardRecord = CardRecord::new
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &BRAINSTORM,
     &HYDROBLAST,
     &PORTENT,
     &INCINERATE,

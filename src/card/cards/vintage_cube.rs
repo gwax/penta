@@ -168,3 +168,4 @@ pub const JACKED_RABBIT: CardDefinitionId = CardDefinitionId(2250);
 pub const AGATHAS_SOUL_CAULDRON: CardDefinitionId = CardDefinitionId(2251);
 pub const LAVASPUR_BOOTS: CardDefinitionId = CardDefinitionId(2252);
 pub const BOLASS_CITADEL: CardDefinitionId = CardDefinitionId(2253);
+pub const BRAINSTORM: CardDefinitionId = CardDefinitionId(2254);
