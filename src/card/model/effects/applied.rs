@@ -123,6 +123,19 @@ pub enum AppliedRuleDef {
     /// against the same action and object the prohibition names, so a card
     /// that widens it to spells later says so in the same vocabulary.
     MayPlayFromGraveyard(PlayRestrictionDef),
+    /// "Each nonland card in your graveyard has escape. The escape cost is
+    /// equal to the card's mana cost plus exile three other cards from your
+    /// graveyard."
+    ///
+    /// A grant rather than a permission: what the affected cards gain is an
+    /// alternative way to be cast, which the ability names in full because
+    /// the cost is the card's own mana cost plus something the grant adds.
+    /// It reaches cards in a graveyard, where nothing has a layer walk, so
+    /// it is found by asking the battlefield rather than by asking the card.
+    GrantsAlternativeCastFromGraveyard {
+        object: ObjectPredicateDef,
+        ability: &'static AbilityDef,
+    },
     /// "You may play lands and cast spells from the top of your library."
     /// The same permission as [`Self::MayPlayFromGraveyard`] pointed at a
     /// different zone, plus what casting that way costs: Bolas's Citadel

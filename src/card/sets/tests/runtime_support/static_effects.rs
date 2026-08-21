@@ -324,14 +324,42 @@ pub(in super::super) fn shared_static_applied_effect(
                 SetOperationDef::Add(_) | SetOperationDef::Remove(_),
             )
             | CharacteristicOperationDef::CreatureTypes(_),
-        )
-        | AppliedEffectDef::Rule(AppliedRuleDef::RedirectDamageFromTo { .. }) => false,
+        ) => false,
         // A blocking restriction is read off the ordinary static-effect walk
         // over the attacker, so a group recipient works exactly as a
         // self-applied one does: Bower Passage names every creature you
         // control rather than only itself. The other restriction keeps the
         // narrower list because no card applies it to a group.
-        AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedBy(predicate)) => {
+        AppliedEffectDef::Rule(rule) => shared_static_applied_rule(recipient, rule),
+        // A switch reads nothing, so there is no value to gate on.
+        // A linked-exile grant hands out whatever the exiled creature cards
+        // print, so there is nothing here to check ahead of time the way a
+        // written-down grant is checked. Each ability it finds already passed
+        // the catalog's own validation as an ability of its own card.
+        AppliedEffectDef::Characteristic(
+            CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::AddActivatedAbilitiesOfLinkedExiles
+                | AbilityOperationDef::Remove(_),
+            )
+            | CharacteristicOperationDef::PowerToughness(PowerToughnessOperationDef::Switch),
+        ) => true,
+    }
+}
+
+/// The rules a static ability may hand to what it affects. Split from the
+/// characteristic changes above because the two ask different questions: a
+/// characteristic change has to be something the layer walk can evaluate,
+/// while a rule has to be something the place that reads it knows to look
+/// for.
+fn shared_static_applied_rule(recipient: EffectRecipientDef, rule: AppliedRuleDef) -> bool {
+    match rule {
+        AppliedRuleDef::RedirectDamageFromTo { .. } => false,
+        // A blocking restriction is read off the ordinary static-effect walk
+        // over the attacker, so a group recipient works exactly as a
+        // self-applied one does: Bower Passage names every creature you
+        // control rather than only itself. The other restriction keeps the
+        // narrower list because no card applies it to a group.
+        AppliedRuleDef::CannotBeBlockedBy(predicate) => {
             (matches!(
                 recipient.object_reference(),
                 Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
@@ -341,9 +369,7 @@ pub(in super::super) fn shared_static_applied_effect(
         // A requirement is read off the attacker on the same walk as the
         // prohibition above, but no card applies one to a group, so the
         // recipient list stays as narrow as the restriction's.
-        AppliedEffectDef::Rule(
-            AppliedRuleDef::CanBlockOnly(predicate) | AppliedRuleDef::MustBeBlockedBy(predicate),
-        ) => {
+        AppliedRuleDef::CanBlockOnly(predicate) | AppliedRuleDef::MustBeBlockedBy(predicate) => {
             matches!(
                 recipient.object_reference(),
                 Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
@@ -351,13 +377,13 @@ pub(in super::super) fn shared_static_applied_effect(
         }
         // The redirection names a group rather than a predicate, and it can
         // only be aimed at a permanent whose controller it protects.
-        AppliedEffectDef::Rule(AppliedRuleDef::RedirectPlayerDamageToThis(_)) => {
+        AppliedRuleDef::RedirectPlayerDamageToThis(_) => {
             matches!(
                 recipient.object_reference(),
                 Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
             ) || recipient.object_query().is_some()
         }
-        AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(matcher)) => {
+        AppliedRuleDef::PreventDamage(matcher) => {
             // The shield is looked up on the permanent it was applied to, so a
             // query recipient installs one on each match and nothing has to
             // rewrite the matcher.
@@ -378,30 +404,24 @@ pub(in super::super) fn shared_static_applied_effect(
         }
         // Read only off the Aura whose attachment it is defending, which is
         // the source of the ability granting the protection.
-        AppliedEffectDef::Rule(AppliedRuleDef::RemainsAttachedThroughProtection) => {
-            recipient == EffectRecipientDef::Source
+        AppliedRuleDef::RemainsAttachedThroughProtection => recipient == EffectRecipientDef::Source,
+        // Read where a graveyard cast is enumerated, by the same walk the
+        // permissions below go through.
+        AppliedRuleDef::GrantsAlternativeCastFromGraveyard { object, ability } => {
+            matches!(recipient.0, EffectRecipientSetDef::Players(_))
+                && shared_object_predicate(object)
+                && matches!(
+                    ability.definition,
+                    DeclarativeAbilityDef::AlternativeCast(_)
+                )
         }
-        AppliedEffectDef::Rule(
-            AppliedRuleDef::CannotPlay(restriction)
-            | AppliedRuleDef::MayPlayFromGraveyard(restriction)
-            | AppliedRuleDef::MayPlayFromTopOfLibrary { restriction, .. },
-        ) => {
+        AppliedRuleDef::CannotPlay(restriction)
+        | AppliedRuleDef::MayPlayFromGraveyard(restriction)
+        | AppliedRuleDef::MayPlayFromTopOfLibrary { restriction, .. } => {
             matches!(recipient.0, EffectRecipientSetDef::Players(_))
                 && shared_object_predicate(restriction.object)
         }
-        // A switch reads nothing, so there is no value to gate on.
-        // A linked-exile grant hands out whatever the exiled creature cards
-        // print, so there is nothing here to check ahead of time the way a
-        // written-down grant is checked. Each ability it finds already passed
-        // the catalog's own validation as an ability of its own card.
-        AppliedEffectDef::Characteristic(
-            CharacteristicOperationDef::Abilities(
-                AbilityOperationDef::AddActivatedAbilitiesOfLinkedExiles
-                | AbilityOperationDef::Remove(_),
-            )
-            | CharacteristicOperationDef::PowerToughness(PowerToughnessOperationDef::Switch),
-        )
-        | AppliedEffectDef::Rule(_) => true,
+        _ => true,
     }
 }
 

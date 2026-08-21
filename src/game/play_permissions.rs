@@ -12,7 +12,7 @@ use super::{
     AppliedEffectDef, AppliedRuleDef, CardInstance, CharacteristicContext, DeclarativeAbilityDef,
     Game, GameObjectId, PlayActionKind, PlayOptionDef, PlayerId,
 };
-use crate::card::{PlayRestrictionDef, TopOfLibraryCostDef};
+use crate::card::{AbilityDef, ObjectPredicateDef, PlayRestrictionDef, TopOfLibraryCostDef};
 
 /// One printed permission to play a card from a zone the ordinary rules
 /// would not allow, and what playing it that way costs.
@@ -23,12 +23,22 @@ pub(super) enum PlayPermission {
         restriction: PlayRestrictionDef,
         cost: TopOfLibraryCostDef,
     },
+    /// Not a permission to play from a zone but a way to be cast out of one:
+    /// the card is already castable from a graveyard by this clause, and
+    /// what the grant supplies is the cost.
+    GraveyardAlternativeCast {
+        object: ObjectPredicateDef,
+        ability: &'static AbilityDef,
+    },
 }
 
 impl PlayPermission {
-    const fn restriction(self) -> PlayRestrictionDef {
+    const fn restriction(self) -> Option<PlayRestrictionDef> {
         match self {
-            Self::Graveyard(restriction) | Self::TopOfLibrary { restriction, .. } => restriction,
+            Self::Graveyard(restriction) | Self::TopOfLibrary { restriction, .. } => {
+                Some(restriction)
+            }
+            Self::GraveyardAlternativeCast { .. } => None,
         }
     }
 }
@@ -57,7 +67,7 @@ impl Game {
     ) -> Option<TopOfLibraryCostDef> {
         self.matching_play_permission(card, player, option, |permission| match permission {
             PlayPermission::TopOfLibrary { cost, .. } => Some(cost),
-            PlayPermission::Graveyard(_) => None,
+            PlayPermission::Graveyard(_) | PlayPermission::GraveyardAlternativeCast { .. } => None,
         })
     }
 
@@ -87,6 +97,43 @@ impl Game {
         )
     }
 
+    /// The alternative way to cast this card out of its owner's graveyard
+    /// that a static ability on the battlefield grants it, if any.
+    ///
+    /// Read where the cast is enumerated rather than off the card: nothing
+    /// modifies a card lying in a graveyard the way a layer walk modifies a
+    /// permanent, so the grant is found by asking the battlefield.
+    pub(super) fn granted_graveyard_alternative_cast(
+        &self,
+        card: &CardInstance,
+        player: PlayerId,
+    ) -> Option<&'static AbilityDef> {
+        if card.owner != player {
+            return None;
+        }
+        let object = self.printed_trigger_event_object(
+            card.id,
+            card.definition,
+            player,
+            &CharacteristicContext::Graveyard,
+        )?;
+        let mut found = None;
+        let _ = self.visit_play_permissions(player, |source, permission| {
+            if let PlayPermission::GraveyardAlternativeCast {
+                object: predicate,
+                ability,
+            } = permission
+                && ability.is_executable()
+                && self.trigger_object_matches(predicate, &object, source, false)
+            {
+                found = Some(ability);
+                return ControlFlow::Break(());
+            }
+            ControlFlow::Continue(())
+        });
+        found
+    }
+
     /// The first live permission that names this card and this play option,
     /// as whatever `wanted` reads off it.
     fn matching_play_permission<T>(
@@ -111,7 +158,9 @@ impl Game {
             self.printed_trigger_event_object(card.id, card.definition, player, &context)?;
         let mut found = None;
         let _ = self.visit_play_permissions(player, |source, permission| {
-            let restriction = permission.restriction();
+            let Some(restriction) = permission.restriction() else {
+                return ControlFlow::Continue(());
+            };
             if restriction.action.matches(option.action)
                 && self.trigger_object_matches(
                     restriction.object,
@@ -183,6 +232,12 @@ impl Game {
                 cost,
             }) => {
                 visitor(PlayPermission::TopOfLibrary { restriction, cost });
+            }
+            AppliedEffectDef::Rule(AppliedRuleDef::GrantsAlternativeCastFromGraveyard {
+                object,
+                ability,
+            }) => {
+                visitor(PlayPermission::GraveyardAlternativeCast { object, ability });
             }
             _ => {}
         }

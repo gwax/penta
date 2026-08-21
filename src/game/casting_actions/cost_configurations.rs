@@ -43,6 +43,14 @@ impl Game {
             .and_then(|(_, ability, _)| match ability.definition {
                 DeclarativeAbilityDef::AlternativeCast(alternative) => alternative.additional_cost,
                 _ => None,
+            })
+            // A granted alternative has no printed clause to read, so the
+            // cost it adds comes off the grant itself.
+            .or_else(|| {
+                (costs.alternative() == Self::temporary_alternative_cost_id(option))
+                    .then(|| self.granted_alternative_cast(card.id, option))
+                    .flatten()
+                    .and_then(|(alternative, _)| alternative.additional_cost)
             });
         let cost = selected.or_else(|| {
             definition
@@ -305,7 +313,7 @@ impl Game {
             }
         }
         if source_zone == CastSourceZone::Graveyard
-            && self.granted_flashback(card, option).is_some()
+            && self.granted_alternative_cast(card, option).is_some()
             && let Some(granted) = Self::temporary_alternative_cost_id(option)
             && Self::visit_additional_cost_configurations(
                 option,
@@ -364,18 +372,18 @@ impl Game {
         configuration: &CostConfiguration,
     ) -> Option<ManaCost> {
         let granted = Self::temporary_alternative_cost_id(option);
-        let granted_flashback = (configuration.alternative().is_some()
+        let granted_alternative = (configuration.alternative().is_some()
             && configuration.alternative() == granted)
-            .then(|| self.granted_flashback(card, option))
+            .then(|| self.granted_alternative_cast(card, option))
             .flatten();
-        let mut cost = granted_flashback.map_or_else(
+        let mut cost = granted_alternative.map_or_else(
             || configured_mana_cost(option, configuration),
             |(_, mana_cost)| Some(mana_cost),
         )?;
         // `configured_mana_cost` already included additional costs for every
         // printed alternative and the normal cost. Runtime-granted
         // alternatives need them folded in here.
-        if granted_flashback.is_some() {
+        if granted_alternative.is_some() {
             for selected in configuration.additional() {
                 let additional = option
                     .additional_costs

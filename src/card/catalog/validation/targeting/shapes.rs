@@ -620,6 +620,15 @@ fn validate_applied_effect_shapes(
             }
             Ok(())
         }
+        // A grant over a whole graveyard names the player whose graveyard
+        // it is, the same way the permissions below name a player.
+        AppliedEffectDef::Rule(AppliedRuleDef::GrantsAlternativeCastFromGraveyard {
+            object,
+            ..
+        }) => {
+            validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
+            validate_object_predicate_shape(object, targets)
+        }
         AppliedEffectDef::Rule(
             AppliedRuleDef::CannotPlay(restriction)
             | AppliedRuleDef::MayPlayFromGraveyard(restriction)

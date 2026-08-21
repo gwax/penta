@@ -263,6 +263,18 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
             | AppliedRuleDef::MayPlayFromGraveyard(restriction)
             | AppliedRuleDef::MayPlayFromTopOfLibrary { restriction, .. },
         ) => static_object_predicate_supported(restriction.object),
+        // Read where a graveyard cast is enumerated, by the same walk that
+        // answers the permissions above.
+        AppliedEffectDef::Rule(AppliedRuleDef::GrantsAlternativeCastFromGraveyard {
+            object,
+            ability,
+        }) => {
+            static_object_predicate_supported(object)
+                && matches!(
+                    ability.definition,
+                    crate::card::DeclarativeAbilityDef::AlternativeCast(_)
+                )
+        }
         // A damage limit protecting a player is read by its own walk over the
         // battlefield, since nothing about the damage event points back at
         // the permanent carrying the rule.
@@ -377,6 +389,7 @@ fn static_object_applied_effect_supported(
             | AppliedRuleDef::CannotPlay(_)
             | AppliedRuleDef::MayPlayFromGraveyard(_)
             | AppliedRuleDef::MayPlayFromTopOfLibrary { .. }
+            | AppliedRuleDef::GrantsAlternativeCastFromGraveyard { .. }
             | AppliedRuleDef::UntapAtMostOne(_)
             | AppliedRuleDef::RedirectDamageFromTo { .. },
         ) => false,

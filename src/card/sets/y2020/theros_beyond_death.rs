@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, CardArt, CardRules, CardSet, ComparisonDef, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement,
-    cards,
+    AbilityCoverageDef, AbilityDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef,
+    CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, PlayerRelation, PlayerSetDef, SpellAdditionalCostDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
+    ZonePlacement, cards,
 };
 use crate::mana_cost;
 
@@ -83,6 +84,63 @@ pub(in crate::card::sets) static THASSAS_ORACLE: CardRecord = CardRecord::new(
     ),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&THASSAS_ORACLE];
+/// Three cards out of your own graveyard, exiled to pay. The card being cast
+/// is on the stack by the time costs are paid, so "other" takes care of
+/// itself: it is not there to be chosen.
+static EXILE_THREE_OTHER_CARDS: SpellAdditionalCostDef =
+    SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Graveyard, 3);
+
+/// The escape the Breach hands out. Its mana cost is the card's own, which
+/// is what "equal to the card's mana cost" means, and the three cards are
+/// what the grant adds on top.
+static BREACH_ESCAPE: AbilityDef = AbilityDef::alternative_cast_for_card_mana_cost(
+    AlternativeCastKindDef::Escape,
+    Some("Escape\u{2014}the card's mana cost, Exile three other cards from your graveyard."),
+    EffectDef::None,
+)
+.with_alternative_additional_cost(&EXILE_THREE_OTHER_CARDS);
+
+static A_NONLAND_CARD: ObjectPredicateDef =
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land));
+
+static UNDERWORLD_BREACH_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::static_ability(
+        "Each nonland card in your graveyard has escape. The escape cost is equal to the card's \
+         mana cost plus exile three other cards from your graveyard. (You may cast cards from \
+         your graveyard for their escape cost.)",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::You)),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::GrantsAlternativeCastFromGraveyard {
+                object: A_NONLAND_CARD,
+                ability: &BREACH_ESCAPE,
+            }),
+        },
+    ),
+    // Each end step, not just yours: the Breach is one turn's worth of
+    // graveyard however many turns you take.
+    AbilityDef::triggered(
+        "At the beginning of the end step, sacrifice this enchantment.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::Any,
+        },
+        EffectDef::Sacrifice {
+            object: EffectRecipientDef::Source,
+        },
+    ),
+];
+
+// THB 161 — Underworld Breach
+pub(in crate::card::sets) static UNDERWORLD_BREACH: CardRecord = CardRecord::new(
+    cards::UNDERWORLD_BREACH,
+    "Underworld Breach",
+    CardArt::new("0e51d796-7279-4c06-87f0-37adbdaa41df", "Lie Setiawan"),
+    CardSet::TherosBeyondDeath,
+    // Two mana that turns a graveyard into a hand for one turn, which is as
+    // long as anything playing it needs.
+    CardRules::new_enchantment(mana_cost!("{1}{R}")).with_abilities(&UNDERWORLD_BREACH_ABILITIES),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&THASSAS_ORACLE, &UNDERWORLD_BREACH];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

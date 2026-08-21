@@ -57,9 +57,9 @@ impl Game {
     ) -> Option<AlternativeCastKindDef> {
         let selected = costs.alternative()?;
         if Some(selected) == Self::temporary_alternative_cost_id(option)
-            && self.granted_flashback(card, option).is_some()
+            && let Some((alternative, _)) = self.granted_alternative_cast(card, option)
         {
-            return Some(AlternativeCastKindDef::Flashback);
+            return Some(alternative.kind);
         }
         Self::alternative_cast_ability(definition, option, selected).map(|(_, _, kind)| kind)
     }
@@ -78,12 +78,18 @@ impl Game {
             })
     }
 
-    pub(super) fn granted_flashback(
+    /// The one alternative way to cast this card that something other than
+    /// the card itself supplies: a temporary grant hung on the object, or a
+    /// static ability on the battlefield speaking about a whole graveyard.
+    /// A card in a graveyard has no layer walk, so both are found by asking
+    /// elsewhere rather than by asking the card.
+    pub(super) fn granted_alternative_cast(
         &self,
         card: GameObjectId,
         option: &PlayOptionDef,
     ) -> Option<(AlternativeCastAbilityDef, ManaCost)> {
-        self.temporary_ability_grants
+        let temporary = self
+            .temporary_ability_grants
             .iter()
             .filter(|grant| grant.object == card)
             .find_map(|grant| {
@@ -94,11 +100,33 @@ impl Game {
                 else {
                     return None;
                 };
-                (alternative.kind == AlternativeCastKindDef::Flashback)
-                    .then(|| alternative.mana_cost.resolve(option.mana_cost))
-                    .flatten()
-                    .map(|mana_cost| (alternative, mana_cost))
-            })
+                (alternative.kind == AlternativeCastKindDef::Flashback).then_some(alternative)
+            });
+        let alternative = temporary.or_else(|| self.granted_graveyard_alternative(card))?;
+        alternative
+            .mana_cost
+            .resolve(option.mana_cost)
+            .map(|mana_cost| (alternative, mana_cost))
+    }
+
+    /// The alternative cast a static ability grants to this card while it
+    /// lies in its owner's graveyard.
+    fn granted_graveyard_alternative(
+        &self,
+        card: GameObjectId,
+    ) -> Option<AlternativeCastAbilityDef> {
+        let (owner, instance) = [PlayerId::One, PlayerId::Two].into_iter().find_map(|player| {
+            self.players[player.index()]
+                .graveyard
+                .iter()
+                .find(|candidate| candidate.id == card)
+                .map(|candidate| (player, candidate))
+        })?;
+        let ability = self.granted_graveyard_alternative_cast(instance, owner)?;
+        match ability.definition {
+            DeclarativeAbilityDef::AlternativeCast(alternative) => Some(alternative),
+            _ => None,
+        }
     }
     pub(super) fn spell_custom_followup(
         definition: &CardDefinition,
