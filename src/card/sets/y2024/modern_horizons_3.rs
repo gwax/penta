@@ -3,13 +3,13 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    AppliedEffectDef, AppliedRuleDef, CardArt, CardComposition, CardEffectStatus, CardPart,
-    CardRules, CardSet, CardStructure, CardSupertype, CardType, ComparisonDef, CounterKind,
-    DoubleFacedKind, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
-    InstalledTriggerDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PayOrDef,
-    PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, SpellAdditionalCostDef, SpellForm,
-    SpendModeDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardComposition, CardEffectStatus,
+    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, ComparisonDef,
+    CounterKind, DoubleFacedKind, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
+    EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    ObjectSetDef, PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    SpellAdditionalCostDef, SpellForm, SpendModeDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::{CardPartId, PlayOptionId};
 use crate::{TargetIndex, mana_cost};
@@ -587,6 +587,60 @@ pub(in crate::card::sets) static PHLAGE_TITAN_OF_FIRES_FURY: CardRecord = CardRe
         .with_abilities(&PHLAGE_ABILITIES),
 );
 
+/// A basic one, not merely a card with the type: the tri-fetch cycle names
+/// three basics and finds nothing else, which is what separates it from the
+/// fetchlands that read "a Mountain or Plains card".
+static A_BASIC_TRIOME_LAND: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Supertype(CardSupertype::Basic),
+    ObjectPredicateDef::HasAnyBasicLandType(&[
+        BasicLandType::Forest,
+        BasicLandType::Island,
+        BasicLandType::Mountain,
+    ]),
+]);
+
+static LANDSCAPE_FETCH_COST: [AbilityCostDef; 2] =
+    [AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource];
+
+static BOUNTIFUL_LANDSCAPE_ABILITIES: [AbilityDef; 3] = [
+    abilities::tap_for(ManaColor::Colorless),
+    AbilityDef::activated(
+        "{T}, Sacrifice this land: Search your library for a basic Forest, Island, or Mountain \
+         card, put it onto the battlefield tapped, then shuffle.",
+        &LANDSCAPE_FETCH_COST,
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: A_BASIC_TRIOME_LAND,
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: false,
+            destination: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: true,
+            binding: None,
+            then: None,
+        },
+    ),
+    abilities::cycling(
+        "Cycling {G}{U}{R} ({G}{U}{R}, Discard this card: Draw a card.)",
+        mana_cost!("{G}{U}{R}"),
+    ),
+];
+
+// MH3 217 — Bountiful Landscape
+pub(in crate::card::sets) static BOUNTIFUL_LANDSCAPE: CardRecord = CardRecord::new(
+    cards::BOUNTIFUL_LANDSCAPE,
+    "Bountiful Landscape",
+    CardArt::new("b277752b-430a-4f09-8a98-b72f813dd52e", "Mark Poole"),
+    CardSet::ModernHorizons3,
+    // A land that taps for nothing useful and fetches a tapped basic, which
+    // is worth a slot only because it is also a cycling card and because
+    // what it finds is a land drop somebody else paid for.
+    CardRules::new_land(&[]).with_abilities(&BOUNTIFUL_LANDSCAPE_ABILITIES),
+);
+
 // MH3 237 — Ajani, Nacatl Pariah
 pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::new(
     cards::AJANI_NACATL_PARIAH,
@@ -604,6 +658,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &COLOSSAL_DREADMASK,
     &SOWING_MYCOSPAWN,
     &PHLAGE_TITAN_OF_FIRES_FURY,
+    &BOUNTIFUL_LANDSCAPE,
     &AJANI_NACATL_PARIAH,
 ];
 

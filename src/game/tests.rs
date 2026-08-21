@@ -778,6 +778,7 @@ mod vintage_cube_artifacts;
 mod vintage_cube_barrowgoyf;
 mod vintage_cube_bloodbraid_challenger;
 mod vintage_cube_bolass_citadel;
+mod vintage_cube_bountiful_landscape;
 mod vintage_cube_brainstorm;
 mod vintage_cube_breach;
 mod vintage_cube_caryatid;
