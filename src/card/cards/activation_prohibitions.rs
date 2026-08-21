@@ -2,5 +2,5 @@
 
 use crate::CardDefinitionId;
 
-pub const NULL_ROD: CardDefinitionId = CardDefinitionId(2279);
-pub const COLLECTOR_OUPHE: CardDefinitionId = CardDefinitionId(2280);
+pub const NULL_ROD: CardDefinitionId = CardDefinitionId(2283);
+pub const COLLECTOR_OUPHE: CardDefinitionId = CardDefinitionId(2284);
