@@ -156,3 +156,40 @@ fn gut_is_not_a_legal_sacrifice() {
     );
     assert!(skeleton(&game).is_none(), "and made nothing");
 }
+
+/// "Whenever you attack" is the declaration, not each attacker: attacking
+/// with Gut and two others still offers the sacrifice once.
+#[test]
+fn a_wide_attack_triggers_it_once() {
+    let (mut game, gut) = staged(&[cards::BLACK_LOTUS, cards::SAVANNAH_LIONS]);
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SAVANNAH_LIONS)
+        .expect("it is here")
+        .card
+        .id;
+    for attacker in [gut, lions] {
+        game.apply(
+            PlayerId::One,
+            Action::DeclareAttacker {
+                attacker,
+                defender: AttackDefender::Player(PlayerId::Two),
+            },
+        )
+        .expect("it attacks");
+    }
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+    settle(&mut game, true);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::SKELETON_TOKEN_4_1_BLACK)
+            .count(),
+        1,
+        "two attackers, one trigger, one Skeleton",
+    );
+}

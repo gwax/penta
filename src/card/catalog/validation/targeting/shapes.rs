@@ -26,6 +26,7 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         TriggerEventDef::ZoneChanged(matcher) => matcher.to,
         TriggerEventDef::Tapped(_)
         | TriggerEventDef::Attacks(_)
+        | TriggerEventDef::AttackDeclared { .. }
         | TriggerEventDef::AttacksAndIsNotBlocked { .. }
         | TriggerEventDef::BecomesBlocked(_)
         | TriggerEventDef::BlocksOrBecomesBlockedBy { .. }

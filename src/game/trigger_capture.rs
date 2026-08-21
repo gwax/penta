@@ -1,4 +1,7 @@
-use crate::card::{BattlefieldEntryChoiceDestinationDef, DamageSourceGroupDef};
+use crate::card::{
+    AttackDeclarationRangeDef, AttackEventMatcherDef, BattlefieldEntryChoiceDestinationDef,
+    DamageSourceGroupDef,
+};
 
 use crate::CharacteristicContext;
 
@@ -834,29 +837,33 @@ impl Game {
                     )
             }
             (
+                TriggerEventDef::AttackDeclared {
+                    attacker,
+                    declaration,
+                },
+                CommittedTriggerEvent::AttackersDeclared { attackers },
+            ) => self.attack_declaration_matches(
+                attacker,
+                declaration,
+                attackers,
+                source,
+                controller,
+            ),
+            (
                 TriggerEventDef::Attacks(matcher),
                 CommittedTriggerEvent::Attacks {
                     object,
                     declaration_size,
                     attack_number,
                 },
-            ) => {
-                *declaration_size >= matcher.declaration.minimum
-                    && matcher
-                        .declaration
-                        .maximum
-                        .is_none_or(|maximum| *declaration_size <= maximum)
-                    && matcher
-                        .attack_number
-                        .is_none_or(|number| *attack_number == number)
-                    && self.trigger_object_matches_for_controller(
-                        matcher.attacker,
-                        object,
-                        source,
-                        false,
-                        controller,
-                    )
-            }
+            ) => self.attacker_matches(
+                matcher,
+                object,
+                *declaration_size,
+                *attack_number,
+                source,
+                controller,
+            ),
             (
                 TriggerEventDef::DamageDealt(matcher),
                 damage @ CommittedTriggerEvent::DamageDealt { .. },
@@ -957,25 +964,6 @@ impl Game {
         }
     }
 
-    fn trigger_event_object_reference(
-        &self,
-        reference: ObjectRefDef,
-        ability_source: GameObjectId,
-        event: &CommittedTriggerEvent,
-    ) -> Option<GameObjectId> {
-        match reference {
-            ObjectRefDef::Source => Some(ability_source),
-            ObjectRefDef::AttachedToSource => {
-                self.current_or_last_known_attached_host(ability_source)
-            }
-            ObjectRefDef::TriggeringObject => event.context().object,
-            ObjectRefDef::ResolvingObject
-            | ObjectRefDef::Binding(_)
-            | ObjectRefDef::Target(_)
-            | ObjectRefDef::SourceOfTargetedStackObject(_) => None,
-        }
-    }
-
     /// Who controls an object, whether it is still on the battlefield or has
     /// left and is only remembered.
     pub(super) fn controller_of_object(&self, object: GameObjectId) -> Option<PlayerId> {
@@ -992,6 +980,7 @@ impl Game {
     }
 }
 
+include!("trigger_capture/attack_matching.rs");
 include!("trigger_capture/damage_matching.rs");
 include!("trigger_capture/triggered_mana.rs");
 include!("trigger_capture/object_matching.rs");

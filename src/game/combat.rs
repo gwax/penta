@@ -189,6 +189,19 @@ impl Game {
                     attack_number: permanent.attacks_this_turn,
                 })
         }));
+        // And the declaration itself, once: "whenever you attack" is one
+        // trigger however many creatures were declared (CR 508.1).
+        events.push(CommittedTriggerEvent::AttackersDeclared {
+            attackers: attackers
+                .iter()
+                .filter_map(|attacker| {
+                    self.battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == *attacker)
+                        .map(|permanent| self.trigger_event_object(permanent))
+                })
+                .collect(),
+        });
         self.capture_battlefield_trigger_batch_from_snapshot(&listeners, &events);
     }
 

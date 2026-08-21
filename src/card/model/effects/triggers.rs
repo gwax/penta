@@ -3,10 +3,10 @@
 //! Split out of the parent module for the source-size budget.
 
 use super::{
-    AttackEventMatcherDef, DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef,
-    DamageSourceMatcherDef, DrawEventMatcherDef, EffectRecipientDef, ObjectPredicateDef,
-    ObjectRefDef, PlayerRelation, PlayerSetDef, TapEventMatcherDef, TurnStepDef,
-    ZoneChangeEventMatcherDef, ZoneKind,
+    AttackDeclarationRangeDef, AttackEventMatcherDef, DamageEventMatcherDef, DamageKindDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, DrawEventMatcherDef, EffectRecipientDef,
+    ObjectPredicateDef, ObjectRefDef, PlayerRelation, PlayerSetDef, TapEventMatcherDef,
+    TurnStepDef, ZoneChangeEventMatcherDef, ZoneKind,
 };
 
 /// The committed event observed by a triggered ability.
@@ -69,6 +69,15 @@ pub enum TriggerEventDef {
     StepBegins {
         step: TurnStepDef,
         player: PlayerRelation,
+    },
+    /// "Whenever you attack." One declaration, one trigger, however many
+    /// creatures were declared (CR 508.1). Distinct from [`Self::Attacks`]
+    /// because the event is the declaration rather than any creature in it:
+    /// the predicate says which attackers count toward the size, not which
+    /// of them the trigger is about.
+    AttackDeclared {
+        attacker: ObjectPredicateDef,
+        declaration: AttackDeclarationRangeDef,
     },
     /// One actual, unprevented damage event. The source, recipient, combat
     /// status, damaged player, and amount all come from the same committed
@@ -156,6 +165,19 @@ impl TriggerEventDef {
     #[must_use]
     pub const fn attacks_first_time_this_turn(attacker: ObjectPredicateDef) -> Self {
         Self::Attacks(AttackEventMatcherDef::first(attacker))
+    }
+
+    /// "Whenever you attack", counted once for the whole declaration.
+    #[must_use]
+    pub const fn attack_declared(
+        attacker: ObjectPredicateDef,
+        minimum: u8,
+        maximum: Option<u8>,
+    ) -> Self {
+        Self::AttackDeclared {
+            attacker,
+            declaration: AttackDeclarationRangeDef::between(minimum, maximum),
+        }
     }
 
     #[must_use]

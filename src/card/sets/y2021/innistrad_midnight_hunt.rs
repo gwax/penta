@@ -2,10 +2,75 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    ObjectPredicateDef, abilities, cards,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt,
+    CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
+    ObjectQueryDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::{TargetIndex, mana_cost};
+
+static CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+/// "Whenever you attack" is one or more creatures you control attacking,
+/// counted once for the declaration rather than once per attacker.
+static WHENEVER_YOU_ATTACK: TriggerEventDef = TriggerEventDef::attack_declared(
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+    1,
+    None,
+);
+
+static ADELINE_ABILITIES: [AbilityDef; 3] = [
+    abilities::vigilance(),
+    AbilityDef::static_ability(
+        "Adeline's power is equal to the number of creatures you control.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Source,
+            // The printed power is zero, so the count is the whole of it.
+            // Adeline is a creature you control, so she counts herself, and
+            // every token she makes adds one more before damage.
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL),
+                ValueDef::Constant(0),
+            ),
+        },
+    )
+    .with_coverage(AbilityCoverageDef::partial(
+        "A characteristic-defining ability sets power in every zone. This is a battlefield-only \
+         continuous effect, so the value is right wherever the card is played and absent for \
+         anything reading it in another zone.",
+    )),
+    // The token was never declared as an attacker, so nothing watching a
+    // declaration sees it -- and with two players the one opponent is the
+    // only thing it could be attacking.
+    AbilityDef::triggered(
+        "Whenever you attack, for each opponent, create a 1/1 white Human creature token that's \
+         tapped and attacking that player or a planeswalker they control.",
+        WHENEVER_YOU_ATTACK,
+        EffectDef::CreateToken {
+            token: cards::HUMAN_TOKEN_1_1_WHITE,
+            count: ValueDef::Constant(1),
+            tapped: true,
+            attacking: true,
+            counters: None,
+        },
+    ),
+];
+
+// MID 1 — Adeline, Resplendent Cathar
+pub(in crate::card::sets) static ADELINE_RESPLENDENT_CATHAR: CardRecord = CardRecord::new(
+    cards::ADELINE_RESPLENDENT_CATHAR,
+    "Adeline, Resplendent Cathar",
+    CardArt::new("18092f68-b96e-4084-9eba-b240d2195d81", "Bryan Sola"),
+    CardSet::InnistradMidnightHunt,
+    // Three mana that attacks for four the turn after it lands and for more
+    // every turn after that, because each token it makes makes it bigger.
+    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Human", "Knight"], 0, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&ADELINE_ABILITIES),
+);
 
 static AN_ARTIFACT_OR_ENCHANTMENT: [AbilityTargetDef; 1] =
     [AbilityTargetDef::exactly_one_permanent(
@@ -37,6 +102,7 @@ pub(in crate::card::sets) static CATHAR_COMMANDO: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&CATHAR_COMMANDO];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&ADELINE_RESPLENDENT_CATHAR, &CATHAR_COMMANDO];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

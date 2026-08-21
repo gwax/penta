@@ -1,4 +1,23 @@
 impl Game {
+    fn trigger_event_object_reference(
+        &self,
+        reference: ObjectRefDef,
+        ability_source: GameObjectId,
+        event: &CommittedTriggerEvent,
+    ) -> Option<GameObjectId> {
+        match reference {
+            ObjectRefDef::Source => Some(ability_source),
+            ObjectRefDef::AttachedToSource => {
+                self.current_or_last_known_attached_host(ability_source)
+            }
+            ObjectRefDef::TriggeringObject => event.context().object,
+            ObjectRefDef::ResolvingObject
+            | ObjectRefDef::Binding(_)
+            | ObjectRefDef::Target(_)
+            | ObjectRefDef::SourceOfTargetedStackObject(_) => None,
+        }
+    }
+
     /// Whether a card's owner stands in this relation to the asker. Owning is
     /// not controlling: a stolen permanent goes back to the hand of whoever
     /// it came from, so the owner is looked up wherever the card presently is

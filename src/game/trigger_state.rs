@@ -200,6 +200,12 @@ pub(super) enum CommittedTriggerEvent {
         declaration_size: u8,
         attack_number: u8,
     },
+    /// One whole attack declaration, published once however many creatures
+    /// were declared. "Whenever you attack" watches this rather than any of
+    /// the attackers in it (CR 508.1).
+    AttackersDeclared {
+        attackers: Vec<TriggerEventObject>,
+    },
     BecomesBlocked {
         object: TriggerEventObject,
         /// Blockers beyond the first, so a clause reading the trigger amount
@@ -307,6 +313,14 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: None,
                 amount: None,
+            },
+            // The event is the declaration rather than any creature in it,
+            // so nothing here names one.
+            Self::AttackersDeclared { attackers } => TriggerContext {
+                object: None,
+                object_controller: attackers.first().map(|attacker| attacker.controller),
+                event_player: attackers.first().map(|attacker| attacker.controller),
+                amount: Some(i32::try_from(attackers.len()).unwrap_or(i32::MAX)),
             },
             Self::Tapped { object, for_mana } => TriggerContext {
                 object: Some(object.id),

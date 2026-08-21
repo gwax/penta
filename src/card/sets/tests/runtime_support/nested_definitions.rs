@@ -63,6 +63,16 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                 })
         }
         TriggerEventDef::Tapped(matcher) => shared_object_predicate(matcher.object),
+        TriggerEventDef::AttackDeclared {
+            attacker,
+            declaration,
+        } => {
+            shared_object_predicate(attacker)
+                && declaration.minimum > 0
+                && declaration
+                    .maximum
+                    .is_none_or(|maximum| declaration.minimum <= maximum)
+        }
         TriggerEventDef::Attacks(matcher) => {
             shared_object_predicate(matcher.attacker)
                 && matcher.declaration.minimum > 0

@@ -33,7 +33,7 @@ static GUT_MAKES_A_SKELETON: EffectDef = EffectDef::CreateToken {
 
 /// "Whenever you attack" is one or more creatures you control attacking,
 /// counted once for the declaration rather than once per attacker.
-static WHENEVER_YOU_ATTACK: TriggerEventDef = TriggerEventDef::attacks_in_declaration(
+static WHENEVER_YOU_ATTACK: TriggerEventDef = TriggerEventDef::attack_declared(
     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
     1,
     None,

@@ -499,6 +499,16 @@ fn validate_trigger_damage_matcher(
     }
 }
 
+/// A range no declaration could satisfy: a clause that asks for none, or for
+/// more than it will accept, is not a clause about attacking.
+const fn declaration_range_is_empty(range: crate::card::AttackDeclarationRangeDef) -> bool {
+    range.minimum == 0
+        || match range.maximum {
+            Some(maximum) => range.minimum > maximum,
+            None => false,
+        }
+}
+
 fn validate_trigger_event_references(
     event: TriggerEventDef,
     target_count: usize,
@@ -553,14 +563,17 @@ fn validate_trigger_event_references(
         TriggerEventDef::Tapped(matcher) => {
             validate_trigger_object_predicate(matcher.object, event, target_count, scope)
         }
+        TriggerEventDef::AttackDeclared {
+            attacker,
+            declaration,
+        } => {
+            if declaration_range_is_empty(declaration) {
+                return Err(unsupported_trigger_event(event));
+            }
+            validate_trigger_object_predicate(attacker, event, target_count, scope)
+        }
         TriggerEventDef::Attacks(matcher) => {
-            if matcher.declaration.minimum == 0
-                || matcher
-                    .declaration
-                    .maximum
-                    .is_some_and(|maximum| matcher.declaration.minimum > maximum)
-                || matcher.attack_number == Some(0)
-            {
+            if declaration_range_is_empty(matcher.declaration) || matcher.attack_number == Some(0) {
                 return Err(unsupported_trigger_event(event));
             }
             validate_trigger_object_predicate(matcher.attacker, event, target_count, scope)

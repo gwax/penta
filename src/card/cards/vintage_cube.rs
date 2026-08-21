@@ -194,3 +194,4 @@ pub const PHANTASMAL_IMAGE: CardDefinitionId = CardDefinitionId(2276);
 pub const PSYCHIC_FROG: CardDefinitionId = CardDefinitionId(2277);
 pub const ECHO_OF_EONS: CardDefinitionId = CardDefinitionId(2278);
 pub const DREADHORDE_ARCANIST: CardDefinitionId = CardDefinitionId(2279);
+pub const ADELINE_RESPLENDENT_CATHAR: CardDefinitionId = CardDefinitionId(2280);

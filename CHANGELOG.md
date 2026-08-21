@@ -153,6 +153,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Whenever you attack" is one trigger for the whole declaration.** It was
+  being read as the per-attacker `Attacks` event with a size condition on it,
+  so Gut, True Soul Zealot offered its sacrifice once per attacking creature
+  rather than once (CR 508.1). The declaration is now its own committed event,
+  published once, and `AttackDeclared` counts the attackers matching its
+  predicate rather than matching any one of them. "Whenever a creature you
+  control attacks alone" is unchanged: that clause really is about a creature,
+  and a declaration of one has only the one to be about.
+
 - **A cast offered during a resolution ignores the timing its type would
   impose.** An offer made while something resolves is answered then or not at
   all (CR 608.2f), which is the only way a cascaded sorcery, or one Dreadhorde
