@@ -783,6 +783,7 @@ mod vintage_cube_bountiful_landscape;
 mod vintage_cube_brainstorm;
 mod vintage_cube_breach;
 mod vintage_cube_caryatid;
+mod vintage_cube_cathar_commando;
 mod vintage_cube_chandra;
 mod vintage_cube_collective_brutality;
 mod vintage_cube_colonnade;

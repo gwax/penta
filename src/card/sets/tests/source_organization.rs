@@ -264,6 +264,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("adventures_in_the_forgotten_realms.rs") => {
             source(CardSet::AdventuresInTheForgottenRealms, "AFR")
         }
+        Some("innistrad_midnight_hunt.rs") => source(CardSet::InnistradMidnightHunt, "MID"),
         Some("innistrad_crimson_vow_commander.rs") => {
             source(CardSet::InnistradCrimsonVowCommander, "VOC")
         }

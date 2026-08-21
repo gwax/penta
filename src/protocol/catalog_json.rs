@@ -132,6 +132,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::StrixhavenSchoolOfMages => "strixhaven-school-of-mages",
         CardSet::AdventuresInTheForgottenRealms => "adventures-in-the-forgotten-realms",
         CardSet::ModernHorizons2 => "modern-horizons-2",
+        CardSet::InnistradMidnightHunt => "innistrad-midnight-hunt",
         CardSet::InnistradCrimsonVowCommander => "innistrad-crimson-vow-commander",
         CardSet::Ikoria => "ikoria",
         CardSet::KamigawaNeonDynasty => "kamigawa-neon-dynasty",
