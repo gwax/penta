@@ -575,6 +575,15 @@ fn continuation_snapshot(
         DecisionContinuation::MiracleReveal { card } => {
             DecisionContinuationSnapshot::MiracleReveal { card: card.0 }
         }
+        DecisionContinuation::CascadeCast {
+            player,
+            card,
+            exiled,
+        } => DecisionContinuationSnapshot::CascadeCast {
+            player: player.index(),
+            card: card.0,
+            exiled: exiled.iter().map(|card| card.0).collect(),
+        },
         DecisionContinuation::SpellLibraryEnd { owner, spell } => {
             DecisionContinuationSnapshot::SpellLibraryEnd {
                 owner: owner.index(),

@@ -206,6 +206,7 @@ impl Game {
             | EffectDef::ExileTopAndMayCast { .. }
             | EffectDef::MillUntil { .. }
             | EffectDef::ExileFromTopUntil { .. }
+            | EffectDef::Cascade
             | EffectDef::LookAtHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }
             | EffectDef::RevealHand { .. }

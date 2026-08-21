@@ -2,9 +2,10 @@
 //! through a player's hand and library.
 
 use super::super::{
+    DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
     DiscardSelectionDef, DrawReplacement, EffectDef, EffectResolutionContext, Game, GameEvent,
     GameObjectId, PlayerId, ScopedEffect, StackObject, Target, ZoneKind, ZoneMoveCause,
-    public_cards,
+    public_cards, remove_card,
 };
 use crate::card::ObjectPredicateDef;
 
@@ -40,6 +41,104 @@ impl Game {
         let exiled = card.id;
         self.players[player.index()].exile.push(card);
         self.permit_energy_cast(exiled, caster);
+    }
+
+    /// Cascade (CR 702.85), whole. The bound is the cascading spell's own
+    /// mana value, read off the stack object the trigger came from, so a
+    /// spell that has left the stack cascades into nothing rather than into
+    /// everything.
+    fn cascade(&mut self, object: &StackObject) {
+        let player = object.controller;
+        let Some(limit) = self.cascading_spell_mana_value(object) else {
+            return;
+        };
+        let mut exiled = Vec::new();
+        let mut matched = None;
+        while let Some(card) = self.players[player.index()].library.pop() {
+            let qualifies = self.catalog.get(card.definition).is_some_and(|definition| {
+                !definition.rules.has_type(crate::card::CardType::Land)
+                    && definition.rules.printed_mana_cost().mana_value() < limit
+            });
+            let (card, _zone_change) = self.zone_change_card(card);
+            let id = card.id;
+            self.players[player.index()].exile.push(card);
+            exiled.push(id);
+            if qualifies {
+                matched = Some(id);
+                break;
+            }
+        }
+        let Some(matched) = matched else {
+            self.bury_cascade_exiles(player, &exiled);
+            return;
+        };
+        self.permit_free_play_this_turn(matched, player);
+        let mut castable = Vec::new();
+        self.add_offered_cast_actions(player, matched, &mut castable);
+        if castable.is_empty() {
+            self.consume_exile_play_permission(matched);
+            self.bury_cascade_exiles(player, &exiled);
+            return;
+        }
+        let name = self
+            .card_in_nonbattlefield_zone(matched)
+            .and_then(|(_, card)| self.catalog.get(card.definition))
+            .map_or_else(|| "that card".to_owned(), |card| card.name.clone());
+        self.queue_decision(
+            player,
+            format!("Cast {name} without paying its mana cost, or decline"),
+            DecisionVisibility::Public,
+            DecisionPreference::PreferOption(0),
+            1..=1,
+            false,
+            vec![DecisionOption {
+                id: 0,
+                label: "Decline".into(),
+                card: self
+                    .card_in_nonbattlefield_zone(matched)
+                    .map(|(_, card)| (matched, card.definition)),
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::Exile,
+            }],
+            DecisionContinuation::CascadeCast {
+                player,
+                card: matched,
+                exiled,
+            },
+        );
+    }
+
+    /// The mana value of the spell a cascade trigger came from. The trigger
+    /// is a separate object, so this reads the spell it names.
+    fn cascading_spell_mana_value(&self, object: &StackObject) -> Option<u16> {
+        let source = object.source.unwrap_or(object.id);
+        self.stack
+            .iter()
+            .find(|candidate| candidate.id == source)
+            .and_then(|candidate| self.stack_object_event_object(candidate))
+            .map(|event| event.mana_value)
+    }
+
+    /// "Then put all cards exiled this way on the bottom of your library in
+    /// a random order." A card that is no longer in exile -- the one that
+    /// was cast -- simply is not among them.
+    pub(in crate::game) fn bury_cascade_exiles(
+        &mut self,
+        player: PlayerId,
+        exiled: &[GameObjectId],
+    ) {
+        let mut returning = Vec::new();
+        for id in exiled {
+            if let Some(card) = remove_card(&mut self.players[player.index()].exile, *id) {
+                let (card, _zone_change) = self.zone_change_card(card);
+                returning.push(card);
+            }
+        }
+        self.rng.shuffle(&mut returning);
+        for card in returning.into_iter().rev() {
+            self.players[player.index()].library.insert(0, card);
+        }
     }
 
     #[allow(clippy::too_many_lines)]
@@ -198,6 +297,7 @@ impl Game {
                     }
                 }
             }
+            EffectDef::Cascade => self.cascade(object),
             EffectDef::ExileFromTopUntil {
                 player: recipient,
                 object: predicate,

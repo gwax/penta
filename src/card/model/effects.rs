@@ -639,6 +639,19 @@ pub enum EffectDef {
         player: EffectRecipientDef,
         object: ObjectPredicateDef,
     },
+    /// Cascade (CR 702.85). Exile cards from the top of the controller's
+    /// library until a nonland card with mana value less than this spell's
+    /// is exiled, offer to cast that card without paying its mana cost, then
+    /// put every card exiled this way on the bottom of the library in a
+    /// random order.
+    ///
+    /// One effect rather than three composed ones, because the three cannot
+    /// be written apart: the bound is read off the spell the keyword is
+    /// printed on, the offer belongs to this resolution rather than to a
+    /// window afterwards, and the pile goes home whether or not anything was
+    /// cast. It carries nothing because the card names nothing -- everything
+    /// it asks about is the spell it is printed on.
+    Cascade,
     /// Put that many cards from the top of a library into its owner's
     /// graveyard.
     Mill {

@@ -235,6 +235,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::SearchZonesAndExileRest { .. }
         | EffectDef::MillUntil { .. }
         | EffectDef::ExileFromTopUntil { .. }
+        | EffectDef::Cascade
         | EffectDef::LookAtTopAndSelect { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealAtRandomFromHand { .. }

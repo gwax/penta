@@ -19,11 +19,26 @@ impl Game {
         let answered = self.pending_decisions.first().is_some_and(|pending| {
             matches!(
                 pending.continuation,
-                DecisionContinuation::MayCastExiled { card, .. } if card == cast
+                DecisionContinuation::MayCastExiled { card, .. }
+                    | DecisionContinuation::CascadeCast { card, .. } if card == cast
             )
         });
-        if answered {
-            self.pending_decisions.remove(0);
+        if !answered {
+            return;
+        }
+        let taken = self.pending_decisions.remove(0);
+        // Cascade's pile goes to the bottom whether the card it turned up
+        // was cast or declined, so the accepted half is finished here rather
+        // than in the resolution the decline takes. The card being cast is
+        // left where it is: this runs before the cast lifts it out of exile,
+        // and a card on the stack is no longer one of the cards exiled this
+        // way.
+        if let DecisionContinuation::CascadeCast { player, exiled, .. } = taken.continuation {
+            let rest = exiled
+                .into_iter()
+                .filter(|card| *card != cast)
+                .collect::<Vec<_>>();
+            self.bury_cascade_exiles(player, &rest);
         }
     }
 

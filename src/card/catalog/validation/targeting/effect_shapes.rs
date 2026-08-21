@@ -316,6 +316,7 @@ fn validate_effect_target_shapes(
         | EffectDef::DamageCannotBePreventedThisTurn
             | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ReturnLinkedExiles { .. }
+        | EffectDef::Cascade
         | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CannotBeForcedToDiscard
             | EffectDef::GainClassLevel { .. }

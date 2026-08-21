@@ -153,10 +153,15 @@ impl Game {
                     player: caster,
                     card,
                     ..
-                } = decision.continuation
-                    && caster == player
+                }
+                | DecisionContinuation::CascadeCast {
+                    player: caster,
+                    card,
+                    ..
+                } = &decision.continuation
+                    && *caster == player
                 {
-                    self.add_offered_cast_actions(player, card, &mut actions);
+                    self.add_offered_cast_actions(player, *card, &mut actions);
                 }
             }
             return actions;

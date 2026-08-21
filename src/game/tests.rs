@@ -775,6 +775,7 @@ mod vintage_cube_amped_raptor;
 mod vintage_cube_arrival;
 mod vintage_cube_artifacts;
 mod vintage_cube_barrowgoyf;
+mod vintage_cube_bloodbraid_challenger;
 mod vintage_cube_bolass_citadel;
 mod vintage_cube_brainstorm;
 mod vintage_cube_breach;

@@ -212,6 +212,11 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         owner: usize,
         spell: u32,
     },
+    CascadeCast {
+        player: usize,
+        card: u32,
+        exiled: Vec<u32>,
+    },
     SeparateIntoPiles {
         resolving_controller: usize,
         subject: usize,

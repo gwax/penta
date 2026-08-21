@@ -166,3 +166,18 @@ pub const fn ward(amount: u16, text: &'static str) -> AbilityDef {
         ),
     )
 }
+
+/// Cascade (CR 702.85). A triggered ability that fires on the cast, like
+/// storm, and whose whole procedure is one effect: the bound it digs to is
+/// the cascading spell's own mana value, so nothing about it is written down
+/// on the card beyond the word.
+#[must_use]
+pub const fn cascade() -> AbilityDef {
+    AbilityDef::triggered(
+        "Cascade (When you cast this spell, exile cards from the top of your library until you \
+         exile a nonland card that costs less. You may cast it without paying its mana cost. Put \
+         the exiled cards on the bottom of your library in a random order.)",
+        TriggerEventDef::SpellCast(ObjectPredicateDef::Source),
+        EffectDef::Cascade,
+    )
+}

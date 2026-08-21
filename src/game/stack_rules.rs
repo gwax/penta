@@ -120,6 +120,7 @@ impl Game {
             | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }
             | EffectDef::ExileFromTopUntil { .. }
+            | EffectDef::Cascade
             | EffectDef::SearchZone { then: None, .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }

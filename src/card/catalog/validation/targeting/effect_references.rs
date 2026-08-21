@@ -340,6 +340,7 @@ fn validate_effect_references(
         | EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::ReturnLinkedExiles { .. }
+        | EffectDef::Cascade
         | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CannotBeForcedToDiscard
             | EffectDef::GainClassLevel { .. }

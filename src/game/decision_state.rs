@@ -205,6 +205,15 @@ pub(super) enum DecisionContinuation {
         /// would otherwise carry a stack object for all of them.
         follow_up: Option<Box<SearchFollowUp>>,
     },
+    /// Cascade's offer: the card the dig turned up, and the whole pile it
+    /// walked through. However the offer ends -- cast or declined -- the
+    /// pile goes to the bottom of the library in a random order, which is
+    /// why the ids travel with it rather than being recomputed.
+    CascadeCast {
+        player: PlayerId,
+        card: GameObjectId,
+        exiled: Vec<GameObjectId>,
+    },
     /// An activation cost paid by sacrificing a printed number of
     /// permanents, asked one at a time. The activation itself waits: its
     /// costs are not finished, so nothing is on the stack yet.

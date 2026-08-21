@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef,
-    EffectRecipientDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectSetDef, PlayerRefDef,
-    PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
+    ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectSetDef, PlayerRefDef, PlayerRelation, SpellAdditionalCostDef,
+    SpendModeDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -149,6 +150,41 @@ pub(in crate::card::sets) static PYROGOYF: CardRecord = CardRecord::new(
         .with_abilities(&PYROGOYF_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&BARROWGOYF, &PYROGOYF];
+/// Three cards out of your own graveyard, exiled to pay. The card being cast
+/// is on the stack by the time costs are paid, so "other" takes care of
+/// itself: it is not there to be chosen.
+static EXILE_THREE_OTHER_CARDS: SpellAdditionalCostDef =
+    SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Graveyard, 3)
+        .spent(SpendModeDef::Exile);
+
+static BLOODBRAID_CHALLENGER_ABILITIES: [AbilityDef; 3] = [
+    abilities::cascade(),
+    abilities::haste(),
+    AbilityDef::alternative_cast(
+        mana_cost!("{3}{R}{G}"),
+        AlternativeCastKindDef::Escape,
+        Some(
+            "Escape—{3}{R}{G}, Exile three other cards from your graveyard. (You may cast this \
+             card from your graveyard for its escape cost.)",
+        ),
+        EffectDef::None,
+    )
+    .with_alternative_additional_cost(&EXILE_THREE_OTHER_CARDS),
+];
+
+// M3C 70 — Bloodbraid Challenger
+pub(in crate::card::sets) static BLOODBRAID_CHALLENGER: CardRecord = CardRecord::new(
+    cards::BLOODBRAID_CHALLENGER,
+    "Bloodbraid Challenger",
+    CardArt::new("4b39d43d-2a02-4edb-915a-6a7c002c945f", "Lie Setiawan"),
+    CardSet::ModernHorizons3Commander,
+    // Five mana for a hasty 4/3 and a free spell, and the graveyard keeps
+    // handing it back for five more.
+    CardRules::new_creature(mana_cost!("{3}{R}{G}"), &["Elf", "Berserker"], 4, 3)
+        .with_abilities(&BLOODBRAID_CHALLENGER_ABILITIES),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&BARROWGOYF, &PYROGOYF, &BLOODBRAID_CHALLENGER];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

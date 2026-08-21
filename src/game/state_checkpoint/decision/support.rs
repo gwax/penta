@@ -95,6 +95,10 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
                     .flat_map(draw_replacement_referenced_object_ids),
             );
         }
+        DecisionContinuation::CascadeCast { card, exiled, .. } => {
+            ids.push(*card);
+            ids.extend(exiled.iter().copied());
+        }
         DecisionContinuation::BattlefieldExitReplacement { batch, candidates } => {
             extend_battlefield_exit_ids(&mut ids, batch, candidates);
         }

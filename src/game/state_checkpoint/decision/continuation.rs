@@ -777,6 +777,21 @@ fn parse_continuation(
                 card: GameObjectId(*card),
             }
         }
+        DecisionContinuationSnapshot::CascadeCast {
+            player: seat,
+            card,
+            exiled,
+        } => {
+            let seat = player(*seat)?;
+            if seat != observation.player {
+                return Err("a cascade offer names a player other than the deciding one".into());
+            }
+            DecisionContinuation::CascadeCast {
+                player: seat,
+                card: GameObjectId(*card),
+                exiled: exiled.iter().copied().map(GameObjectId).collect(),
+            }
+        }
         DecisionContinuationSnapshot::SpellLibraryEnd { owner, spell } => {
             let owner = player(*owner)?;
             if owner != observation.player {
