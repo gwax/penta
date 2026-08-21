@@ -252,3 +252,28 @@ const fn parse_turn_phase_resume(value: TurnPhaseResumeSnapshot) -> TurnPhaseRes
         TurnPhaseResumeSnapshot::NextTurn => TurnPhaseResume::NextTurn,
     }
 }
+
+/// One copied ability written down, or `None` when the catalog no longer
+/// holds it -- which is what marks a checkpoint as carrying state it cannot
+/// write.
+fn copiable_ability_snapshot(
+    catalog: &CardCatalog,
+    ability: &CopiableAbility,
+) -> Option<CopiableAbilitySnapshot> {
+    Some(CopiableAbilitySnapshot {
+        origin: ability_origin_snapshot(ability.origin),
+        ability: ability_locator(catalog, |candidate| *candidate == ability.definition)?,
+    })
+}
+
+/// The inverse of [`copiable_ability_snapshot`].
+fn parse_copiable_ability(
+    snapshot: &CopiableAbilitySnapshot,
+    catalog: &CardCatalog,
+) -> Result<CopiableAbility, String> {
+    Ok(CopiableAbility {
+        origin: ability_origin_from_snapshot(snapshot.origin),
+        definition: catalog_ability(catalog, &snapshot.ability)
+            .ok_or_else(|| "checkpoint copied ability locator is absent from this catalog".to_owned())?,
+    })
+}

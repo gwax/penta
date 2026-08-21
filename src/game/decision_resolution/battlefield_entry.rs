@@ -85,6 +85,8 @@ impl Game {
             DecisionContinuation::BattlefieldEntryCopy {
                 choices,
                 added_types,
+                retain_printed_subtypes,
+                added_abilities,
             } => {
                 let copied = options
                     .first()
@@ -99,6 +101,8 @@ impl Game {
                     .map(|permanent| {
                         let mut copy = Self::copiable_characteristics(permanent);
                         copy.added_types = copy.added_types.union(added_types);
+                        copy.retain_printed_subtypes = retain_printed_subtypes;
+                        copy.added_abilities.extend(added_abilities);
                         copy
                     });
                 if let Some(mut pending) = self.pending_events.pop_front() {

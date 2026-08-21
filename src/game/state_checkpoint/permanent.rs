@@ -18,14 +18,7 @@ pub(super) fn permanent_snapshot(
         let added_abilities = copy
             .added_abilities
             .iter()
-            .filter_map(|ability| {
-                Some(CopiableAbilitySnapshot {
-                    origin: ability_origin_snapshot(ability.origin),
-                    ability: ability_locator(catalog, |candidate| {
-                        *candidate == ability.definition
-                    })?,
-                })
-            })
+            .filter_map(|ability| copiable_ability_snapshot(catalog, ability))
             .collect::<Vec<_>>();
         let complete = added_abilities.len() == copy.added_abilities.len();
         (
@@ -34,6 +27,7 @@ pub(super) fn permanent_snapshot(
                 part_id: copy.base.1.0,
                 added_types: CardType::ALL.map(|card_type| copy.added_types.contains(card_type)),
                 added_abilities,
+                retain_printed_subtypes: copy.retain_printed_subtypes,
             },
             complete,
         )

@@ -577,40 +577,29 @@ impl Game {
         operations
     }
 
-    fn effective_subtypes_with_operations(
-        &self,
-        permanent: &Permanent,
+    /// The copying card's own printed subtypes, when the copy effect kept
+    /// them: "except it's an Illusion in addition to its other types" names
+    /// the subtype line the card already prints.
+    fn retained_printed_subtypes(&self, permanent: &Permanent) -> &'static [&'static str] {
+        permanent
+            .copy_effect
+            .as_ref()
+            .filter(|copy| copy.retain_printed_subtypes)
+            .and_then(|_| self.catalog.get(permanent.card.definition))
+            .and_then(|card| card.part(permanent.presented))
+            .map_or(&[], |part| part.rules.subtypes())
+    }
+
+    /// Applies the subtype layer's operations in timestamp order. Split
+    /// from the reader above because the two are different jobs: one works
+    /// out the starting line, and this one edits it.
+    fn apply_subtype_operations(
+        subtypes: &mut Vec<&'static str>,
         operations: Vec<(ContinuousEffectTimestamp, u16, SubtypeLayerOperation)>,
-    ) -> Cow<'static, [&'static str]> {
+    ) {
         fn is_land_subtype(subtype: &str) -> bool {
             LAND_SUBTYPES.contains(&subtype)
         }
-
-        let Some(rules) = self.effective_rules(permanent) else {
-            return Cow::Borrowed(&[]);
-        };
-        if permanent.text_changes.is_empty() && operations.is_empty() {
-            return Cow::Borrowed(rules.subtypes());
-        }
-
-        let mut subtypes = rules.subtypes().to_vec();
-        for change in &permanent.text_changes {
-            for subtype in &mut subtypes {
-                if BasicLandType::from_subtype(subtype) == Some(change.from) {
-                    *subtype = change.to.subtype();
-                }
-            }
-        }
-
-        let mut seen = [false; BasicLandType::ALL.len()];
-        subtypes.retain(|subtype| {
-            let Some(land_type) = BasicLandType::from_subtype(subtype) else {
-                return true;
-            };
-            let keep = !seen[land_type.index()];
-            seen[land_type.index()] = true;
-            keep
-        });
 
         for (_, _, operation) in operations {
             match operation {
@@ -685,6 +674,46 @@ impl Game {
                 }
             }
         }
+    }
+
+    fn effective_subtypes_with_operations(
+        &self,
+        permanent: &Permanent,
+        operations: Vec<(ContinuousEffectTimestamp, u16, SubtypeLayerOperation)>,
+    ) -> Cow<'static, [&'static str]> {
+        let Some(rules) = self.effective_rules(permanent) else {
+            return Cow::Borrowed(&[]);
+        };
+        let retained = self.retained_printed_subtypes(permanent);
+        if permanent.text_changes.is_empty() && operations.is_empty() && retained.is_empty() {
+            return Cow::Borrowed(rules.subtypes());
+        }
+
+        let mut subtypes = rules.subtypes().to_vec();
+        for subtype in retained {
+            if !subtypes.contains(subtype) {
+                subtypes.push(subtype);
+            }
+        }
+        for change in &permanent.text_changes {
+            for subtype in &mut subtypes {
+                if BasicLandType::from_subtype(subtype) == Some(change.from) {
+                    *subtype = change.to.subtype();
+                }
+            }
+        }
+
+        let mut seen = [false; BasicLandType::ALL.len()];
+        subtypes.retain(|subtype| {
+            let Some(land_type) = BasicLandType::from_subtype(subtype) else {
+                return true;
+            };
+            let keep = !seen[land_type.index()];
+            seen[land_type.index()] = true;
+            keep
+        });
+
+        Self::apply_subtype_operations(&mut subtypes, operations);
         Cow::Owned(subtypes)
     }
 

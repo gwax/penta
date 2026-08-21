@@ -81,6 +81,7 @@ impl Game {
                 base: (permanent.card.definition, permanent.presented),
                 added_types: CardTypeSet::empty(),
                 added_abilities: Vec::new(),
+                retain_printed_subtypes: false,
             })
     }
 

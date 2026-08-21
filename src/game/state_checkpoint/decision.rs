@@ -45,8 +45,9 @@ use super::stack::{
 use super::{
     DeclarativeAbilityDef, Game, ReplacementEffectContext, ReplacementEffectDef, ZoneMoveCause,
     ability_origin_from_snapshot, ability_origin_snapshot, applicable_replacement_snapshot, array,
-    bool_field, card, field, parse_applicable_replacement, parse_zone_kind, seat_value, str_field,
-    u32_field, usize_field, zone_kind_snapshot,
+    bool_field, card, copiable_ability_snapshot, field, parse_applicable_replacement,
+    parse_copiable_ability, parse_zone_kind, seat_value, str_field, u32_field, usize_field,
+    zone_kind_snapshot,
 };
 
 pub(super) fn decision_snapshot(
@@ -523,9 +524,16 @@ fn continuation_snapshot(
         DecisionContinuation::BattlefieldEntryCopy {
             choices,
             added_types,
+            retain_printed_subtypes,
+            added_abilities,
         } => DecisionContinuationSnapshot::BattlefieldEntryCopy {
             choices: ids(choices),
             added_types: CardType::ALL.map(|card_type| added_types.contains(card_type)),
+            retain_printed_subtypes: *retain_printed_subtypes,
+            added_abilities: added_abilities
+                .iter()
+                .map(|ability| copiable_ability_snapshot(&game.catalog, ability))
+                .collect::<Option<Vec<_>>>()?,
         },
         DecisionContinuation::TriggerOrder { batch, remaining } => {
             DecisionContinuationSnapshot::TriggerOrder {

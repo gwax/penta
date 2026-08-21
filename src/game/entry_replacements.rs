@@ -183,10 +183,37 @@ impl Game {
         pending: PendingEvent,
         object: ObjectPredicateDef,
         added_types: CardTypeSet,
+        retain_printed_subtypes: bool,
+        retained_abilities: &'static [crate::AbilityId],
     ) -> Option<PendingEvent> {
         let player = Self::pending_event_controller(&pending);
         let ReplaceableEvent::BattlefieldEntry(entry) = &pending.event;
         let entering = entry.permanent.card.id;
+        // Read off the card that is entering, which is where an "except it
+        // has ..." clause is printed. A copy takes the other permanent's
+        // abilities wholesale, so this is how its own come back.
+        let definition = entry.permanent.card.definition;
+        let part = entry.permanent.presented;
+        let kept = self
+            .catalog
+            .get(definition)
+            .and_then(|card| card.part(part))
+            .map(|part_rules| {
+                retained_abilities
+                    .iter()
+                    .filter_map(|id| {
+                        Some(super::CopiableAbility {
+                            origin: crate::AbilityOrigin::Printed {
+                                definition,
+                                part,
+                                ability: *id,
+                            },
+                            definition: *part_rules.rules.ability(*id)?,
+                        })
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
         let choices = self
             .battlefield
             .iter()
@@ -205,7 +232,7 @@ impl Game {
             return Some(pending);
         }
         self.pending_events.push_front(pending);
-        self.queue_entry_copy_choice(player, choices, added_types);
+        self.queue_entry_copy_choice(player, choices, added_types, retain_printed_subtypes, kept);
         None
     }
 
@@ -225,7 +252,15 @@ impl Game {
             ReplacementEffectDef::CopyEntering {
                 object,
                 added_types,
-            } => self.offer_entry_copy(pending, object, added_types),
+                retain_printed_subtypes,
+                retained_abilities,
+            } => self.offer_entry_copy(
+                pending,
+                object,
+                added_types,
+                retain_printed_subtypes,
+                retained_abilities,
+            ),
             // With two players every relation this appears on names exactly
             // one candidate, so the choice is recorded rather than asked.
             // Any number of cards, so this one has to be asked rather than

@@ -153,6 +153,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A copy can keep something of its own.** "You may have this creature enter
+  as a copy of any creature on the battlefield, except it's an Illusion in
+  addition to its other types and it has ..." -- a copy took the other
+  permanent's characteristics wholesale, so an "except it has" clause had
+  nothing to hand back. Both exceptions read the copying card's own printed
+  line, so `CopyEntering` names them by position rather than restating them:
+  the subtype line it already prints, and the abilities it already carries.
+  Checkpoints gain an optional `retainPrintedSubtypes` beside each copy
+  effect -- additive, so one written before this restores a copy that keeps
+  nothing, which is what every copy did then.
+
 - **A permission to play a card from exile can carry its own tax.** Elite
   Spellbinder leaves the card with its owner and charges {2} for it, and the
   charge outlives the Spellbinder: it lives on the exile permission rather

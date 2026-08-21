@@ -113,6 +113,8 @@ impl Game {
         player: PlayerId,
         choices: Vec<GameObjectId>,
         added_types: CardTypeSet,
+        retain_printed_subtypes: bool,
+        added_abilities: Vec<super::CopiableAbility>,
     ) {
         let mut options = vec![DecisionOption {
             id: 0,
@@ -151,6 +153,8 @@ impl Game {
             DecisionContinuation::BattlefieldEntryCopy {
                 choices,
                 added_types,
+                retain_printed_subtypes,
+                added_abilities,
             },
         );
     }

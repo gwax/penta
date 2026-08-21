@@ -553,6 +553,8 @@ pub(super) enum DecisionContinuation {
     BattlefieldEntryCopy {
         choices: Vec<GameObjectId>,
         added_types: CardTypeSet,
+        retain_printed_subtypes: bool,
+        added_abilities: Vec<super::CopiableAbility>,
     },
     TriggerOrder {
         batch: TriggerPlacementBatch,

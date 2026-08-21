@@ -421,6 +421,10 @@ pub(super) struct CopiableCharacteristicsSnapshot {
     pub(super) part_id: u8,
     pub(super) added_types: [bool; crate::card::CardType::COUNT],
     pub(super) added_abilities: Vec<CopiableAbilitySnapshot>,
+    /// Additive: a checkpoint written before a copy could keep its own
+    /// subtypes restores without them, which is what every copy did then.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) retain_printed_subtypes: bool,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

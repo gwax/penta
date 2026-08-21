@@ -50,6 +50,10 @@ pub(super) struct CopiableCharacteristics {
     pub(super) base: (CardDefinitionId, CardPartId),
     pub(super) added_types: CardTypeSet,
     pub(super) added_abilities: Vec<CopiableAbility>,
+    /// Whether the copying card's own printed subtypes stand beside the ones
+    /// it copied, which is what "except it's an Illusion in addition to its
+    /// other types" says.
+    pub(super) retain_printed_subtypes: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

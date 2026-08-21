@@ -73,6 +73,7 @@ pub enum CardSet {
     Innistrad,
     DarkAscension,
     AvacynRestored,
+    Magic2012,
     Magic2013,
     ReturnToRavnica,
     Gatecrash,

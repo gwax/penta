@@ -723,9 +723,16 @@ fn parse_continuation(
         DecisionContinuationSnapshot::BattlefieldEntryCopy {
             choices,
             added_types,
+            retain_printed_subtypes,
+            added_abilities,
         } => DecisionContinuation::BattlefieldEntryCopy {
             choices: game_ids(choices),
             added_types: parse_card_type_set(*added_types),
+            retain_printed_subtypes: *retain_printed_subtypes,
+            added_abilities: added_abilities
+                .iter()
+                .map(|ability| parse_copiable_ability(ability, &game.catalog))
+                .collect::<Result<Vec<_>, String>>()?,
         },
         DecisionContinuationSnapshot::TriggerOrder { batch, remaining } => {
             DecisionContinuation::TriggerOrder {

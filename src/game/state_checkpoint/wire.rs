@@ -729,17 +729,11 @@ pub(super) fn parse_copiable_characteristics(
     Ok(CopiableCharacteristics {
         base: (definition, part),
         added_types,
+        retain_printed_subtypes: snapshot.retain_printed_subtypes,
         added_abilities: snapshot
             .added_abilities
             .iter()
-            .map(|ability| {
-                Ok(CopiableAbility {
-                    origin: ability_origin_from_snapshot(ability.origin),
-                    definition: catalog_ability(catalog, &ability.ability).ok_or_else(|| {
-                        "checkpoint copied ability locator is absent from this catalog".to_owned()
-                    })?,
-                })
-            })
+            .map(|ability| parse_copiable_ability(ability, catalog))
             .collect::<Result<Vec<_>, String>>()?,
     })
 }

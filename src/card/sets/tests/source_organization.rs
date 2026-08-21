@@ -239,6 +239,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("innistrad.rs") => source(CardSet::Innistrad, "ISD"),
         Some("avacyn_restored.rs") => source(CardSet::AvacynRestored, "AVR"),
         Some("dark_ascension.rs") => source(CardSet::DarkAscension, "DKA"),
+        Some("magic_2012.rs") => source(CardSet::Magic2012, "M12"),
         Some("magic_2013.rs") => source(CardSet::Magic2013, "M13"),
         Some("return_to_ravnica.rs") => source(CardSet::ReturnToRavnica, "RTR"),
         Some("dragons_maze.rs") => source(CardSet::DragonsMaze, "DGM"),

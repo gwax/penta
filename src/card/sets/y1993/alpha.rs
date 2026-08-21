@@ -1038,6 +1038,8 @@ pub(in crate::card::sets) static CLONE: CardRecord = CardRecord::new(
             ReplacementEffectDef::CopyEntering {
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 added_types: CardTypeSet::empty(),
+                retain_printed_subtypes: false,
+                retained_abilities: &[],
             },
         ),
     ]),
@@ -1086,6 +1088,8 @@ pub(in crate::card::sets) static COPY_ARTIFACT: CardRecord = CardRecord::new(
         ReplacementEffectDef::CopyEntering {
             object: ObjectPredicateDef::HasType(CardType::Artifact),
             added_types: CardTypeSet::single(CardType::Enchantment),
+            retain_printed_subtypes: false,
+            retained_abilities: &[],
         },
     )]),
 );

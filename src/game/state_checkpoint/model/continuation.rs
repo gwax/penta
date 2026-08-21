@@ -187,6 +187,13 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
     BattlefieldEntryCopy {
         choices: Vec<u32>,
         added_types: [bool; crate::card::CardType::COUNT],
+        /// Additive: a checkpoint written before a copy could keep anything
+        /// of its own restores with a copy that keeps nothing, which is what
+        /// every copy did then.
+        #[serde(default)]
+        retain_printed_subtypes: bool,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        added_abilities: Vec<super::CopiableAbilitySnapshot>,
     },
     TriggerOrder {
         batch: TriggerPlacementBatchSnapshot,
