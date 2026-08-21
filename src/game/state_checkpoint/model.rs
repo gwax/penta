@@ -19,6 +19,11 @@ pub(super) struct ExilePlayPermissionSnapshot {
     /// Elite Spellbinder's carries anyway.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) surcharge: Option<ManaCostSnapshot>,
+    /// Additive: a checkpoint written before a permission could name the
+    /// earliest turn it may be used restores without one, which is what
+    /// every permission but a foretell carries anyway.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) not_before_turn: Option<(usize, u32)>,
 }
 
 /// Taken by reference because that is the signature serde's
@@ -292,7 +297,11 @@ pub(super) struct PermanentSnapshot {
     /// order of a catalog enum.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) cast_alternative: Option<String>,
-    pub(super) cast_from_hand: bool,
+    /// Which zone this spell was cast from, by its stable label. Additive:
+    /// a checkpoint written before the zone was recorded restores as
+    /// nothing, which is what a permanent nobody cast carries anyway.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) cast_from_zone: Option<String>,
     pub(super) destroy_at_end: bool,
     pub(super) counters: Vec<u16>,
     pub(super) attached_to: Option<u32>,

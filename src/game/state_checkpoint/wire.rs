@@ -598,7 +598,10 @@ fn parse_permanent(
         .map(super::super::ContinuousEffectTimestamp);
     permanent.chosen_player = state.chosen_player.map(player_from_index).transpose()?;
     permanent.cast_x = state.cast_x;
-    permanent.cast_from_hand = state.cast_from_hand;
+    permanent.cast_from_zone = state
+        .cast_from_zone
+        .as_deref()
+        .and_then(cast_source_zone_from_label);
     permanent.cast_alternative = state
         .cast_alternative
         .as_deref()

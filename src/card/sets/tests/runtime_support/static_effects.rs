@@ -129,7 +129,9 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                         && shared_object_predicate(query.object)
                         && shared_static_query(query)
                 }
-                EffectRecipientSetDef::LegalTargets(_)
+                // A static clause names one kind of thing or the other.
+                EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_)
+                | EffectRecipientSetDef::LegalTargets(_)
                 | EffectRecipientSetDef::Objects(
                     ObjectSetDef::One(
                         ObjectRefDef::ResolvingObject

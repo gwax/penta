@@ -273,6 +273,7 @@ impl Game {
         self.add_spell_actions(player, &mut actions);
         self.add_ability_actions(player, &mut actions);
         self.add_face_up_actions(player, &mut actions);
+        self.add_foretell_actions(player, &mut actions);
         actions
     }
 
@@ -344,6 +345,7 @@ impl Game {
             Action::CancelDecision { decision } => self.cancel_decision(decision),
             Action::ChooseUntap { permanents } => self.choose_untap(player, &permanents),
             Action::TurnFaceUp { permanent } => self.turn_face_up(player, permanent),
+            Action::Foretell { card } => self.foretell(player, card),
             Action::PassPriority => self.pass_priority(player),
             Action::PlayLand { card, option } => self.play_land(player, card, option),
             Action::ActivateManaAbility {
@@ -593,9 +595,17 @@ impl Game {
                 public_cards(&self.players[0].graveyard),
                 public_cards(&self.players[1].graveyard),
             ],
+            // A foretold card lies face down, so the opponent's is left out
+            // of the list entirely and counted instead -- the same way a
+            // hand is a size rather than a list. Your own are listed: you
+            // know what you exiled.
             exiles: [
-                public_cards(&self.players[0].exile),
-                public_cards(&self.players[1].exile),
+                self.observed_exile(PlayerId::One, viewer),
+                self.observed_exile(PlayerId::Two, viewer),
+            ],
+            face_down_exile_sizes: [
+                self.face_down_exile_size(PlayerId::One),
+                self.face_down_exile_size(PlayerId::Two),
             ],
             // Phased-out permanents come last and carry a flag: they are
             // visible to both players, and only the rules treat them as

@@ -119,7 +119,11 @@ impl Game {
                         | Target::Spell(object) => object == expected,
                         Target::Player(_) => false,
                     }),
-                EffectRecipientSetDef::LegalTargets(_)
+                // A clause that names both kinds at once is not something a
+                // trigger points back at: nothing about a committed damage
+                // event names a pair.
+                EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_)
+                | EffectRecipientSetDef::LegalTargets(_)
                 | EffectRecipientSetDef::Objects(
                     ObjectSetDef::Binding(_)
                     | ObjectSetDef::MatchingBinding { .. }

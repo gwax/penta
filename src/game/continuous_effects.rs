@@ -825,8 +825,10 @@ impl Game {
                     )
             }
             // None of these name a permanent a static effect could apply to;
-            // a static effect has no chosen target either.
+            // a static effect has no chosen target either, and the mixed
+            // recipient belongs to a resolving damage clause.
             EffectRecipientSetDef::LegalTargets(_)
+            | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_)
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::One(
                     ObjectRefDef::Binding(_)

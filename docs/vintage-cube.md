@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 275 are cataloged and 259 are not
+- 534 cards in the pool, of which 276 are cataloged and 258 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -126,7 +126,7 @@ lands are legal in every format and are not listed.
 - `Vampire Hexmage`
 - `Yawgmoth's Will`
 
-### Red (36)
+### Red (35)
 
 - `Abrade`
 - `Broadside Bombardiers`
@@ -134,7 +134,6 @@ lands are legal in every format and are not listed.
 - `Chainsaw`
 - `Cori-Steel Cutter`
 - `Death-Greeter's Champion`
-- `Delayed Blast Fireball`
 - `Detective's Phoenix`
 - `Dragon's Rage Channeler`
 - `Fable of the Mirror-Breaker`
@@ -318,7 +317,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 275 pool cards are in the catalog because an earlier format needed them.
+These 276 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -386,6 +385,7 @@ been played beside.
 - `Daze`
 - `Deathrite Shaman`
 - `Deep-Cavern Bat`
+- `Delayed Blast Fireball`
 - `Delighted Halfling`
 - `Demonic Tutor`
 - `Doomsday`

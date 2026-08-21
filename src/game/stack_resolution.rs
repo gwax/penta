@@ -93,7 +93,7 @@ impl Game {
                 self.selected_alternative_kind(card, option, object.id, signature.costs())
             });
             permanent.cast_at_instant_speed = object.cast_at_instant_speed;
-            permanent.cast_from_hand = object.cast_from_hand;
+            permanent.cast_from_zone = object.cast_from_zone;
             permanent.text_changes = object.text_changes;
             permanent.attached_to = aura_host;
             self.enqueue_battlefield_entry(PendingBattlefieldEntry {

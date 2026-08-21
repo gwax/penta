@@ -20,6 +20,10 @@ pub(super) enum ExilePlayCost {
     /// its mana cost." The mana cost goes away and the energy takes its
     /// place, so a card nobody has the energy for is not castable at all.
     EnergyEqualToManaValue,
+    /// Foretell: the card's own foretell cost, which the card prints as an
+    /// alternative cast. A foretold card lies face down, so until it is cast
+    /// only its owner knows what it is.
+    Foretell,
 }
 
 /// One card in exile somebody may play from there.
@@ -43,6 +47,11 @@ pub(super) struct ExilePlayPermission {
     /// [`Self::cost`] already says. Empty for every permission that adds
     /// nothing, which is all of them but Elite Spellbinder's.
     pub(super) surcharge: ManaCost,
+    /// The earliest turn this permission may be used, as the turn count of
+    /// the player whose turn it will be. Foretell is the only thing that
+    /// sets it: a card exiled this turn is castable on a later one, and
+    /// "later" is the whole cost of the two mana.
+    pub(super) not_before_turn: Option<(PlayerId, u32)>,
 }
 
 impl ExilePlayCost {
@@ -53,6 +62,7 @@ impl ExilePlayCost {
             Self::Printed => "printed",
             Self::Free => "free",
             Self::EnergyEqualToManaValue => "energyEqualToManaValue",
+            Self::Foretell => "foretell",
         }
     }
 
@@ -63,6 +73,7 @@ impl ExilePlayCost {
             "printed" => Some(Self::Printed),
             "free" => Some(Self::Free),
             "energyEqualToManaValue" => Some(Self::EnergyEqualToManaValue),
+            "foretell" => Some(Self::Foretell),
             _ => None,
         }
     }
@@ -99,6 +110,11 @@ impl Game {
                     && permission.until_end_of_turn.is_none_or(|(owner, turn)| {
                         self.turns_started[owner.index()] == turn && self.active_player == owner
                     })
+                    // "Cast it on a later turn": the turn it was exiled on
+                    // is not one of them, however long that turn runs.
+                    && permission.not_before_turn.is_none_or(|(owner, turn)| {
+                        self.turns_started[owner.index()] > turn || self.active_player != owner
+                    })
             })
     }
 
@@ -113,6 +129,7 @@ impl Game {
             until_end_of_turn: None,
             adventure_return_only: true,
             surcharge: ManaCost::default(),
+            not_before_turn: None,
         });
     }
 
@@ -127,6 +144,7 @@ impl Game {
             until_end_of_turn: Some((active, self.turns_started[active.index()])),
             adventure_return_only: false,
             surcharge: ManaCost::default(),
+            not_before_turn: None,
         });
     }
 
@@ -142,6 +160,7 @@ impl Game {
             until_end_of_turn: Some((active, self.turns_started[active.index()])),
             adventure_return_only: false,
             surcharge: ManaCost::default(),
+            not_before_turn: None,
         });
     }
 
@@ -156,6 +175,7 @@ impl Game {
             until_end_of_turn: None,
             adventure_return_only: false,
             surcharge: ManaCost::default(),
+            not_before_turn: None,
         });
     }
 
@@ -178,7 +198,57 @@ impl Game {
             until_end_of_turn: None,
             adventure_return_only: false,
             surcharge,
+            not_before_turn: None,
         });
+    }
+
+    /// "Exile this card from your hand face down. Cast it on a later turn
+    /// for its foretell cost."
+    pub(super) fn permit_foretold_cast(&mut self, card: GameObjectId, owner: PlayerId) {
+        let turn = self.turns_started[owner.index()];
+        self.exile_play_permissions.push(ExilePlayPermission {
+            card,
+            player: owner,
+            cost: ExilePlayCost::Foretell,
+            until_end_of_turn: None,
+            adventure_return_only: false,
+            surcharge: ManaCost::default(),
+            not_before_turn: Some((owner, turn)),
+        });
+    }
+
+    /// Whether this exiled card is lying face down, which today means it was
+    /// foretold. Its owner knows what it is; nobody else does.
+    pub(super) fn exiled_card_is_face_down(&self, card: GameObjectId) -> bool {
+        self.exile_play_permissions
+            .iter()
+            .any(|permission| permission.card == card && permission.cost == ExilePlayCost::Foretell)
+    }
+
+    /// One player's exile as another sees it. A card lying face down is
+    /// absent from the list rather than shown, unless the viewer is the one
+    /// who put it there.
+    pub(super) fn observed_exile(
+        &self,
+        owner: PlayerId,
+        viewer: PlayerId,
+    ) -> Vec<super::PublicCard> {
+        self.players[owner.index()]
+            .exile
+            .iter()
+            .filter(|card| viewer == owner || !self.exiled_card_is_face_down(card.id))
+            .map(|card| (card.id, card.definition))
+            .collect()
+    }
+
+    /// How many cards are lying face down in one player's exile. Both
+    /// players may count them; only their owner knows what they are.
+    pub(super) fn face_down_exile_size(&self, owner: PlayerId) -> usize {
+        self.players[owner.index()]
+            .exile
+            .iter()
+            .filter(|card| self.exiled_card_is_face_down(card.id))
+            .count()
     }
 
     /// What this player owes on top of a card's own cost to play it out of

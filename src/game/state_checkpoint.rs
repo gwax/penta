@@ -16,7 +16,7 @@ use super::{
     ResolvedDamageSourceMatcher, ResolvedPlayRestriction, ResolvedPowerToughnessOperation,
     RetiredObject, ScopedEffect, StackAbilityPayload, StackAbilityResolver, StackObject,
     StackObjectKind, Step, TemporaryAbilityGrant, TriggerCapture, TriggerContext, TurnPhaseResume,
-    ZoneMoveCause,
+    ZoneMoveCause, cast_source_zone_from_label,
 };
 use crate::card::ManaCost;
 use crate::card::{
@@ -410,7 +410,7 @@ impl Game {
                     colors_of_mana_spent: object.colors_of_mana_spent.to_flags(),
                     cast_via_flashback: object.cast_via_flashback,
                     cast_at_instant_speed: object.cast_at_instant_speed,
-                    cast_from_hand: object.cast_from_hand,
+                    cast_from_zone: object.cast_from_zone.map(|zone| zone.label().to_owned()),
                     is_copy: object.is_copy,
                 }
             })
@@ -465,6 +465,9 @@ impl Game {
                     adventure_return_only: permission.adventure_return_only,
                     surcharge: (permission.surcharge != ManaCost::default())
                         .then(|| mana_cost_snapshot(permission.surcharge)),
+                    not_before_turn: permission
+                        .not_before_turn
+                        .map(|(player, turn)| (player.index(), turn)),
                 })
                 .collect(),
             monarch: self.monarch.map(PlayerId::index),
@@ -807,6 +810,10 @@ impl Game {
                             .surcharge
                             .as_ref()
                             .map_or_else(ManaCost::default, mana_cost_from_snapshot),
+                        not_before_turn: match permission.not_before_turn {
+                            Some((player, turn)) => Some((player_from_index(player)?, turn)),
+                            None => None,
+                        },
                     })
                 })
                 .collect::<Result<Vec<_>, String>>()?,

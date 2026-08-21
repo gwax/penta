@@ -30,7 +30,7 @@ struct Permanent {
     /// Whether the spell this permanent came from was cast from its
     /// controller's hand. Amped Raptor's second clause asks, and a permanent
     /// that was never a spell at all answers no.
-    cast_from_hand: bool,
+    cast_from_zone: Option<CastSourceZone>,
     /// Whether this permanent has become an Aura. Necromancy is not one as
     /// it enters -- its own trigger makes it one, in the same resolution
     /// that attaches it -- so the window between entering and reanimating
@@ -240,7 +240,7 @@ impl Permanent {
             damage: 0,
             cast_x: 0,
             cast_alternative: None,
-            cast_from_hand: false,
+            cast_from_zone: None,
             cast_at_instant_speed: false,
             became_aura: false,
             attacking: false,

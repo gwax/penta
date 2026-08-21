@@ -107,7 +107,11 @@ pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
             | ObjectSetDef::SharingNameWithBinding { .. }
             | ObjectSetDef::TopOfGraveyardMatching { .. },
         )
-        | EffectRecipientSetDef::Players(_) => true,
+        // Both kinds at once is shared for the same reason each half is:
+        // the players come from a relation, and the creatures they control
+        // from the ordinary battlefield walk.
+        | EffectRecipientSetDef::Players(_)
+        | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_) => true,
     }
 }
 
@@ -435,7 +439,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceIsPaired
         | TriggerConditionDef::ActivePlayer(_)
         | TriggerConditionDef::SourceCastWith(_)
-        | TriggerConditionDef::SourceCastFromHand
+        | TriggerConditionDef::SourceCastFrom(_)
         | TriggerConditionDef::SourceCastAtInstantSpeed
         | TriggerConditionDef::ValueComparison(_)
         | TriggerConditionDef::SourceLoyalty { .. }
@@ -889,6 +893,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             // changes only how the permanent arrives.
             AlternativeCastKindDef::Flashback
             | AlternativeCastKindDef::WithoutPayingManaCost
+            | AlternativeCastKindDef::Foretell
             | AlternativeCastKindDef::Escape
             | AlternativeCastKindDef::Impending
             | AlternativeCastKindDef::Miracle

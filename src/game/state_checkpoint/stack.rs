@@ -14,8 +14,9 @@ use super::{
     GameObjectId, GameStack, GrantId, ManaSource, ModeId, PlayOptionId, PlayerId, RetiredObject,
     SpellForm, StackAbilityPayload, StackObject, StackObjectKind, Target, TargetSelection,
     TriggerContext, Value, ability_locator, ability_origin_from_snapshot, ability_origin_snapshot,
-    ability_target_defs, array, card, catalog_ability, field, optional_id, parse_basic_land_type,
-    parse_cast_signature, parse_ids, seat_value, str_field, u8_field, u32_field, usize_field,
+    ability_target_defs, array, card, cast_source_zone_from_label, catalog_ability, field,
+    optional_id, parse_basic_land_type, parse_cast_signature, parse_ids, seat_value, str_field,
+    u8_field, u32_field, usize_field,
 };
 use crate::card::{ColorSet, ManaColor};
 
@@ -124,7 +125,7 @@ pub(super) fn detached_stack_snapshot_allowing(
         colors_of_mana_spent: object.colors_of_mana_spent.to_flags(),
         cast_via_flashback: object.cast_via_flashback,
         cast_at_instant_speed: object.cast_at_instant_speed,
-        cast_from_hand: object.cast_from_hand,
+        cast_from_zone: object.cast_from_zone.map(|zone| zone.label().to_owned()),
         is_copy: object.is_copy,
     })
 }
@@ -564,7 +565,10 @@ pub(super) fn parse_stack(
             colors_of_mana_spent: color_set_from_flags(state.colors_of_mana_spent),
             cast_via_flashback: state.cast_via_flashback,
             cast_at_instant_speed: state.cast_at_instant_speed,
-            cast_from_hand: state.cast_from_hand,
+            cast_from_zone: state
+                .cast_from_zone
+                .as_deref()
+                .and_then(cast_source_zone_from_label),
             cast_face_down: false,
             is_copy: state.is_copy,
         });
@@ -629,7 +633,10 @@ pub(super) fn parse_detached_stack(
         colors_of_mana_spent: color_set_from_flags(state.colors_of_mana_spent),
         cast_via_flashback: state.cast_via_flashback,
         cast_at_instant_speed: state.cast_at_instant_speed,
-        cast_from_hand: state.cast_from_hand,
+        cast_from_zone: state
+            .cast_from_zone
+            .as_deref()
+            .and_then(cast_source_zone_from_label),
         cast_face_down: false,
         is_copy: state.is_copy,
     })

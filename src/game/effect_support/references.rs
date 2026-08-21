@@ -306,6 +306,25 @@ impl Game {
                 .into_iter()
                 .map(Target::Player)
                 .collect(),
+            // "Each opponent and each creature they control": both kinds in
+            // one list, players first, which is the order the clause reads.
+            EffectRecipientSetDef::PlayersAndCreaturesTheyControl(players) => {
+                let players = self.players_in_set(players, object, context, scoped);
+                let mut recipients =
+                    players.iter().copied().map(Target::Player).collect::<Vec<_>>();
+                recipients.extend(
+                    self.battlefield
+                        .iter()
+                        .filter(|permanent| players.contains(&permanent.controller))
+                        .filter(|permanent| {
+                            self.permanent_types(permanent).is_some_and(|types| {
+                                types.contains(crate::card::CardType::Creature)
+                            })
+                        })
+                        .map(|permanent| Target::Permanent(permanent.card.id)),
+                );
+                recipients
+            }
         }
     }
 

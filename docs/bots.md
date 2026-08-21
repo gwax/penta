@@ -372,7 +372,8 @@ world it can search.
 | `checkpoint` | the hidden-safe typed rules snapshot used by `Game.from_observation`, including its independent `version` and `simulationFingerprint`, deferred execution, dynamic objects, exact mana units, and reachable LKI; it never contains host RNG state or hidden-zone card identities |
 | `emblems` | command-zone emblems, each with its controller, name, granting ability, and clause texts |
 | `stack` | pending spells, activated abilities, and triggered abilities, bottom to top; entries expose the source object ID, creating definition and ability origin/text, controller, counterability, targets, chosen permanents, X, and a locked cast signature when applicable |
-| `graveyards`, `exiles` | public zones, both players |
+| `graveyards`, `exiles` | public zones, both players; a card lying face down in exile is absent from the owner's own opponent's view rather than shown, and counted by `faceDownExileSizes` instead |
+| `faceDownExileSizes` | how many cards lie face down in each player's exile, the way `opponentHandSize` counts a hand; only their owner knows what they are |
 | `decision` | a pending choice (see below), or null |
 | `result` | null while running, else `{winner, reason}`; `reason` is `OpponentConceded`, `OpponentLostAllLife`, `OpponentTriedToDrawFromEmptyLibrary`, `OpponentLostToAnEffect`, `OpponentRanOutOfTime`, or `OpponentPoisoned` |
 | `legalActions` | what you can do, each with an `index` |
@@ -414,7 +415,7 @@ per legal casting choice), `ActivateAbility`, `ActivateManaAbility`, `PayLifeFor
 `FinishDeclaringAttackers`, `DeclareBlocker`,
 `FinishDeclaringBlockers`, `AssignCombatDamage`, `DiscardCards`,
 `ChooseUntap`, `ChooseDecision`, `CancelDecision`, `PassPriority`,
-`TurnFaceUp` (with `permanent`).
+`TurnFaceUp` (with `permanent`), `Foretell` (with `card`).
 
 The `type` vocabulary is **open**, and the safe fallback is the one every bot
 already uses: choose by `index`. A bot that does not recognize a `type` may

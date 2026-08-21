@@ -26,6 +26,9 @@ pub fn action_json(action: &Action) -> Value {
         Action::CancelDecision { decision } => {
             json!({ "type": "CancelDecision", "decision": decision })
         }
+        Action::Foretell { card } => {
+            json!({ "type": "Foretell", "card": card.0 })
+        }
         Action::TurnFaceUp { permanent } => {
             json!({ "type": "TurnFaceUp", "permanent": permanent.0 })
         }

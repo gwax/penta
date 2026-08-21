@@ -32,7 +32,11 @@ pub(in crate::game::state_checkpoint) struct StackSnapshot {
     /// false, which is what an ordinary sorcery-speed cast means anyway.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(in crate::game::state_checkpoint) cast_at_instant_speed: bool,
-    pub(in crate::game::state_checkpoint) cast_from_hand: bool,
+    /// Which zone this spell was cast from, by its stable label. Additive:
+    /// a checkpoint written before the zone was recorded restores as
+    /// nothing, which is what a permanent nobody cast carries anyway.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(in crate::game::state_checkpoint) cast_from_zone: Option<String>,
     pub(in crate::game::state_checkpoint) is_copy: bool,
 }
 
@@ -82,7 +86,11 @@ pub(in crate::game::state_checkpoint) struct DetachedStackSnapshot {
     /// false, which is what an ordinary sorcery-speed cast means anyway.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(in crate::game::state_checkpoint) cast_at_instant_speed: bool,
-    pub(in crate::game::state_checkpoint) cast_from_hand: bool,
+    /// Which zone this spell was cast from, by its stable label. Additive:
+    /// a checkpoint written before the zone was recorded restores as
+    /// nothing, which is what a permanent nobody cast carries anyway.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(in crate::game::state_checkpoint) cast_from_zone: Option<String>,
     pub(in crate::game::state_checkpoint) is_copy: bool,
 }
 

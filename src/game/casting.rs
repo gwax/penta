@@ -604,7 +604,7 @@ impl Game {
             colors: None,
             cast_via_flashback,
             cast_at_instant_speed,
-            cast_from_hand: source_zone == CastSourceZone::Hand,
+            cast_from_zone: Some(source_zone),
             cast_face_down,
             colors_of_mana_spent: crate::card::ColorSet::empty(),
             is_copy: false,

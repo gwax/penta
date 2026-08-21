@@ -151,6 +151,25 @@ distinguishes snapshots of the covered source and build inputs.
   The existing coverage left the creature flagged as attacking into the end
   step, which no game does, and so passed either way.
 
+- **Foretell, and a `Foretell` action.** Two halves that meet in exile: a
+  special action that pays {2} to exile a card from your hand face down, and
+  the alternative cast the card prints, taken from exile on a later turn. A
+  foretold card is absent from the opponent's `exiles` rather than shown
+  there, and counted by the additive `faceDownExileSizes` -- the same way a
+  hand is a size rather than a list. Both are additive, so the epoch does not
+  move; a consumer that ignores the count sees one fewer exiled card, which
+  is what its player sees too.
+
+- **Damage can name a player and their creatures at once.** "Each opponent
+  and each creature they control" is one clause and one damage event; neither
+  an object set nor a player set can say it alone. The damage *matcher*
+  beside it already drew the same pair for the other direction.
+
+- **A spell records which zone it was cast from**, replacing the
+  cast-from-hand flag. "If you cast it from your hand" and "if this spell was
+  cast from exile" are the same question asked of different zones, and one
+  field answers both. Checkpoints carry it as an additive optional label.
+
 ### Added
 
 - **Explore, and tokens that arrive under somebody else's control.** Explore

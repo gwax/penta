@@ -170,6 +170,22 @@ impl Game {
         combinations
     }
 
+    /// Whether the card's own printed cost is one of the ways to cast it
+    /// from this zone. A foretold card is the exception: what put it in
+    /// exile was a permission to cast it for its foretell cost, and for
+    /// nothing else.
+    fn printed_cost_is_available_from(
+        &self,
+        source_zone: CastSourceZone,
+        card: GameObjectId,
+        player: PlayerId,
+    ) -> bool {
+        source_zone != CastSourceZone::Exile
+            || self
+                .exile_play_permission(card, player)
+                .is_none_or(|permission| permission.cost != ExilePlayCost::Foretell)
+    }
+
     /// Whether an alternative of this kind may be used on a card being cast
     /// from this zone. What separates them is where the permission lets the
     /// card be cast from: flashback and escape are permissions to cast it
@@ -182,71 +198,44 @@ impl Game {
         card: GameObjectId,
     ) -> bool {
         match (source_zone, kind) {
-            // Both are permission to cast the card where it lies,
-            // which is nowhere else.
-            (
-                CastSourceZone::Hand,
-                Some(
-                    AlternativeCastKindDef::Flashback
-                    | AlternativeCastKindDef::Escape
-                    | AlternativeCastKindDef::WithoutPayingManaCost,
-                ),
-            )
-            | (
-                CastSourceZone::Graveyard,
-                Some(
-            AlternativeCastKindDef::Overload
-            | AlternativeCastKindDef::Miracle
-            | AlternativeCastKindDef::Kicked
-            | AlternativeCastKindDef::Buyback
-            | AlternativeCastKindDef::AlternativeCost
-            | AlternativeCastKindDef::Impending
-            | AlternativeCastKindDef::FaceDown,
-                )
-                | None,
-            )
-            // A card coming back from an adventure is cast for what
-            // its creature half prints, which is the permission the
-            // adventure gave. Nothing else about it changes.
-            | (CastSourceZone::Exile, _)
-            // A permission to play what is on top of your library says
-            // nothing about how: the card is cast for whatever it prints,
-            // or for what the permission charges instead.
-            | (CastSourceZone::LibraryTop, Some(_)) => false,
-            // A kicked spell, and one paid for some other way, are both
-            // cast from hand like any other; only what they cost and what
-            // they do are different.
-            (
-                CastSourceZone::Hand,
-                Some(
-            AlternativeCastKindDef::Overload
-            | AlternativeCastKindDef::Kicked
-            | AlternativeCastKindDef::Buyback
-            | AlternativeCastKindDef::AlternativeCost
-            | AlternativeCastKindDef::Impending
-            // Face down is a way of casting the card from
-            // hand, not a permission to cast it elsewhere.
-            | AlternativeCastKindDef::FaceDown,
-                )
-                | None,
-            )
-            | (
-                CastSourceZone::Graveyard,
-                Some(
-                    AlternativeCastKindDef::Flashback
-                    | AlternativeCastKindDef::Escape
-                    | AlternativeCastKindDef::WithoutPayingManaCost,
-                ),
-            )
-            // A permission to play what is on top of your library says
-            // nothing about how: the card is cast for whatever it prints,
-            // or for what the permission charges instead.
-            | (CastSourceZone::LibraryTop, None) => true,
-            // Only in the window the draw opened, and only for the card
-            // that was drawn.
+            // Flashback, escape, foretell, and a free cast off somebody
+            // else's clause are permissions to cast the card where it lies,
+            // which is nowhere else -- and each lies somewhere different.
             (CastSourceZone::Hand, Some(AlternativeCastKindDef::Miracle)) => {
+                // Only in the window the draw opened, and only for the card
+                // that was drawn.
                 self.miracle_window == Some(card)
             }
+            (CastSourceZone::Hand, kind) => matches!(
+                kind,
+                None | Some(
+                    AlternativeCastKindDef::Overload
+                        | AlternativeCastKindDef::Kicked
+                        | AlternativeCastKindDef::Buyback
+                        | AlternativeCastKindDef::AlternativeCost
+                        | AlternativeCastKindDef::Impending
+                        // Face down is a way of casting the card from hand,
+                        // not a permission to cast it elsewhere.
+                        | AlternativeCastKindDef::FaceDown
+                )
+            ),
+            (CastSourceZone::Graveyard, kind) => matches!(
+                kind,
+                Some(
+                    AlternativeCastKindDef::Flashback
+                        | AlternativeCastKindDef::Escape
+                        | AlternativeCastKindDef::WithoutPayingManaCost
+                )
+            ),
+            // A card coming back from an adventure is cast for what its
+            // creature half prints, which is the permission the adventure
+            // gave; a foretold card is cast for what foretell charges.
+            (CastSourceZone::Exile, kind) => {
+                matches!(kind, Some(AlternativeCastKindDef::Foretell))
+            }
+            // A permission to play what is on top of your library says
+            // nothing about how: the card is cast for whatever it prints.
+            (CastSourceZone::LibraryTop, kind) => kind.is_none(),
         }
     }
 
@@ -263,14 +252,15 @@ impl Game {
         if matches!(
             source_zone,
             CastSourceZone::Hand | CastSourceZone::Exile | CastSourceZone::LibraryTop
-        ) && Self::visit_additional_cost_configurations(
-            option,
-            None,
-            option.additional_costs.len(),
-            &mut selected_additional,
-            &mut visitor,
-        )
-        .is_break()
+        ) && self.printed_cost_is_available_from(source_zone, card, player)
+            && Self::visit_additional_cost_configurations(
+                option,
+                None,
+                option.additional_costs.len(),
+                &mut selected_additional,
+                &mut visitor,
+            )
+            .is_break()
         {
             return ControlFlow::Break(());
         }

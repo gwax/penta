@@ -152,6 +152,13 @@ pub enum Action {
     TurnFaceUp {
         permanent: GameObjectId,
     },
+    /// Foretell a card in hand: pay {2} and exile it face down, to be cast
+    /// on a later turn for its foretell cost (CR 702.143a). A special action
+    /// like the one above -- no stack, nothing to respond to, and only
+    /// during your own turn.
+    Foretell {
+        card: GameObjectId,
+    },
     DeclareAttacker {
         attacker: GameObjectId,
         defender: AttackDefender,

@@ -342,16 +342,22 @@ impl Game {
                             .find(|candidate| candidate.id == source)
                             .is_some_and(|candidate| candidate.cast_at_instant_speed)
                 }
-                TriggerConditionDef::SourceCastFromHand => {
-                    self.battlefield
+                TriggerConditionDef::SourceCastFrom(zone) => {
+                    // The spell asking is the one resolving, and a resolving
+                    // spell is off the stack while it resolves -- so the
+                    // object in hand is the only place left to read it.
+                    object.is_some_and(|(resolving, _, _)| {
+                        resolving.id == source
+                            && resolving.cast_from_zone.is_some_and(|from| from.zone() == *zone)
+                    }) || self.battlefield
                         .iter()
                         .find(|permanent| permanent.card.id == source)
-                        .is_some_and(|permanent| permanent.cast_from_hand)
+                        .is_some_and(|permanent| permanent.cast_from_zone.is_some_and(|from| from.zone() == *zone))
                         || self
                             .stack
                             .iter()
                             .find(|candidate| candidate.id == source)
-                            .is_some_and(|candidate| candidate.cast_from_hand)
+                            .is_some_and(|candidate| candidate.cast_from_zone.is_some_and(|from| from.zone() == *zone))
                 }
                 TriggerConditionDef::SourceCastWith(kind) => {
                     self.battlefield

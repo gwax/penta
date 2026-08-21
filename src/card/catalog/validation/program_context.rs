@@ -211,6 +211,11 @@ fn validate_static_apply(
         return Err("StaticApply from unsupported source zones");
     }
     match recipient.0 {
+        // A static clause names one kind of thing or the other; the mixed
+        // recipient exists for a resolving damage clause.
+        EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_) => {
+            Err("StaticApply with a mixed player-and-creature recipient")
+        }
         EffectRecipientSetDef::Players(players) => {
             if !static_player_set_supported(players) {
                 return Err("StaticApply with an unavailable static player recipient");
@@ -799,7 +804,7 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceIsPaired
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::SourceCastWith(_)
-        | TriggerConditionDef::SourceCastFromHand
+        | TriggerConditionDef::SourceCastFrom(_)
         | TriggerConditionDef::SourceCastAtInstantSpeed
         | TriggerConditionDef::ValueComparison(_)
         | TriggerConditionDef::SourceLoyalty { .. }

@@ -186,7 +186,7 @@ static RAPTOR_ENTERS: [EffectDef; 2] = [
         amount: ValueDef::Constant(2),
     },
     EffectDef::IfCondition {
-        condition: &TriggerConditionDef::SourceCastFromHand,
+        condition: &TriggerConditionDef::SourceCastFrom(ZoneKind::Hand),
         then: &RAPTOR_DIGS,
     },
 ];

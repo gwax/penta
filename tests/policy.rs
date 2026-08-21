@@ -54,6 +54,7 @@ fn policy_observation(
         revealed_library_top: None,
         graveyards: [Vec::new(), Vec::new()],
         exiles: [Vec::new(), Vec::new()],
+        face_down_exile_sizes: [0, 0],
         battlefield,
         emblems: Vec::new(),
         stack: Vec::new(),

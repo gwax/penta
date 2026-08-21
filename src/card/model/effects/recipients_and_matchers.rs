@@ -113,6 +113,11 @@ pub enum EffectRecipientSetDef {
     LegalTargets(TargetIndex),
     Objects(ObjectSetDef),
     Players(PlayerSetDef),
+    /// "Each opponent and each creature they control." One clause naming
+    /// both kinds at once, which neither of the two above can say: an object
+    /// set names objects, and a player set names players. The damage matcher
+    /// beside it already draws the same pair for the other direction.
+    PlayersAndCreaturesTheyControl(PlayerSetDef),
 }
 
 /// An object or player set affected by an effect.
@@ -128,6 +133,11 @@ impl EffectRecipientDef {
     pub const Controller: Self = Self::player(PlayerRefDef::EffectController);
     pub const Opponent: Self = Self::players(PlayerSetDef::Related(PlayerRelation::Opponent));
     pub const EachPlayer: Self = Self::players(PlayerSetDef::All);
+    pub const EachOpponentAndTheirCreatures: Self = Self(
+        EffectRecipientSetDef::PlayersAndCreaturesTheyControl(PlayerSetDef::Related(
+            PlayerRelation::Opponent,
+        )),
+    );
     pub const TriggeringObject: Self = Self::object(ObjectRefDef::TriggeringObject);
     pub const ControllerOfTriggeringObject: Self =
         Self::player(PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject));
@@ -167,7 +177,9 @@ impl EffectRecipientDef {
     pub const fn legal_target(self) -> Option<TargetIndex> {
         match self.0 {
             EffectRecipientSetDef::LegalTargets(target) => Some(target),
-            EffectRecipientSetDef::Objects(_) | EffectRecipientSetDef::Players(_) => None,
+            EffectRecipientSetDef::Objects(_)
+            | EffectRecipientSetDef::Players(_)
+            | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_) => None,
         }
     }
 
@@ -176,6 +188,7 @@ impl EffectRecipientDef {
         match self.0 {
             EffectRecipientSetDef::Objects(ObjectSetDef::One(reference)) => Some(reference),
             EffectRecipientSetDef::LegalTargets(_)
+            | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_)
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::Binding(_)
                 | ObjectSetDef::MatchingBinding { .. }
@@ -209,7 +222,8 @@ impl EffectRecipientDef {
                 | ObjectSetDef::SharingNameWithBinding { .. }
                 | ObjectSetDef::TopOfGraveyardMatching { .. },
             )
-            | EffectRecipientSetDef::Players(_) => None,
+            | EffectRecipientSetDef::Players(_)
+            | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_) => None,
         }
     }
 

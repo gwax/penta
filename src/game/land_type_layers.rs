@@ -419,7 +419,8 @@ impl Game {
                     )
                     && self.land_type_object_predicate_matches(query.object, source, affected)
             }
-            EffectRecipientSetDef::LegalTargets(_)
+            EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_)
+            | EffectRecipientSetDef::LegalTargets(_)
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::One(
                     ObjectRefDef::Binding(_)

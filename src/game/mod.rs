@@ -84,6 +84,7 @@ mod event;
 mod exile_permission;
 mod explore;
 mod face_down;
+mod foretell;
 mod land_type_layers;
 mod land_type_substitution;
 mod legacy_resolution;
@@ -145,7 +146,7 @@ use observation::{LastSeenHand, PublicCard};
 
 use activation_sacrifice::SacrificeQuota;
 use activation_state::{ActivationChoices, FrozenActivatedAbility, PendingActivation};
-use casting_state::{CastSourceZone, SelectedSpellPlan};
+use casting_state::{CastSourceZone, SelectedSpellPlan, cast_source_zone_from_label};
 use characteristic_state::{
     BasicLandTypeChange, BattlefieldExitSnapshot, CharacteristicSource, CopiableAbility,
     CopiableCharacteristics, EffectiveAbility, LandTypeOperation, PermanentLastKnownInformation,
@@ -299,7 +300,7 @@ struct StackObject {
     /// it from your hand" distinguishes the ordinary cast from one made off
     /// the top of a library or out of a graveyard, and by the time the
     /// permanent's own trigger resolves nothing else remembers.
-    cast_from_hand: bool,
+    cast_from_zone: Option<CastSourceZone>,
     /// Whether this spell was cast face down. The permanent it becomes
     /// enters face down, and until it resolves only its controller may know
     /// which card it is.

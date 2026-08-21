@@ -255,6 +255,17 @@ fn validate_recipient_shape(
             }
             validate_object_set_shape(objects, targets)
         }
+        // Naming both kinds at once is neither an object recipient nor a
+        // player one, so a clause expecting either alone refuses it.
+        EffectRecipientSetDef::PlayersAndCreaturesTheyControl(players) => {
+            if !matches!(expected, RecipientExpectation::Any) {
+                return Err(GrantedAbilityValidationError::EffectRecipientKindMismatch {
+                    recipient,
+                    expected: EffectSubjectKind::Player,
+                });
+            }
+            validate_player_set_shape(players, targets)
+        }
         EffectRecipientSetDef::Players(players) => {
             if matches!(expected, RecipientExpectation::Object) {
                 return Err(GrantedAbilityValidationError::EffectRecipientKindMismatch {
@@ -438,7 +449,7 @@ fn validate_trigger_condition_shape(
         | TriggerConditionDef::SpellsCastThisTurn { .. }
         | TriggerConditionDef::SpellsCastLastTurn { .. }
         | TriggerConditionDef::SourceCastWith(_)
-        | TriggerConditionDef::SourceCastFromHand
+        | TriggerConditionDef::SourceCastFrom(_)
         | TriggerConditionDef::SourceCastAtInstantSpeed
         | TriggerConditionDef::ValueComparison(_)
         | TriggerConditionDef::SourceLoyalty { .. }
@@ -556,6 +567,9 @@ fn recipient_may_name_nonbattlefield_object(
             | ObjectSetDef::PermanentsTargetedBy(_)
             | ObjectSetDef::SharingNameWith(_),
         )
+        // Players and the creatures they control: nothing outside the
+        // battlefield is named either way.
+        | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_)
         | EffectRecipientSetDef::Players(_) => false,
     }
 }
@@ -606,6 +620,7 @@ fn recipient_nonbattlefield_zones_support_flashback(
             | ObjectSetDef::PermanentsTargetedBy(_)
             | ObjectSetDef::SharingNameWith(_),
         )
+        | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_)
         | EffectRecipientSetDef::Players(_) => true,
     }
 }

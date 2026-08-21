@@ -401,7 +401,7 @@ fn spell(id: u32, definition: CardDefinitionId, controller: PlayerId, x: u16) ->
         colors: None,
         cast_via_flashback: false,
         cast_at_instant_speed: false,
-        cast_from_hand: false,
+        cast_from_zone: None,
         cast_face_down: false,
         colors_of_mana_spent: ColorSet::empty(),
         is_copy: false,
@@ -797,6 +797,7 @@ mod vintage_cube_cryptic_command;
 mod vintage_cube_cut_down;
 mod vintage_cube_dack;
 mod vintage_cube_damn;
+mod vintage_cube_delayed_blast_fireball;
 mod vintage_cube_dreadhorde_arcanist;
 mod vintage_cube_duelist;
 mod vintage_cube_echo_of_eons;

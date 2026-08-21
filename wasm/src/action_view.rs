@@ -363,7 +363,9 @@ pub(super) fn animated_action_kind(action: &Action) -> &'static str {
         Action::CastSpell { .. } => "spell",
         // Turning a permanent face up changes what a permanent is, which
         // reads as an ability being used rather than a bare choice.
-        Action::ActivateAbility { .. } | Action::TurnFaceUp { .. } => "ability",
+        Action::ActivateAbility { .. } | Action::TurnFaceUp { .. } | Action::Foretell { .. } => {
+            "ability"
+        }
         Action::DeclareAttacker { .. }
         | Action::BandAttackers { .. }
         | Action::DeclareBlocker { .. }

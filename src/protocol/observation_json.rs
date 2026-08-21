@@ -261,6 +261,10 @@ pub fn observation_json_for_format(
             card_list_json(catalog, &observation.exiles[0]),
             card_list_json(catalog, &observation.exiles[1]),
         ],
+        // A card lying face down in exile is absent from the list above
+        // rather than shown, so it is counted here instead -- the same way a
+        // hand is a size rather than a list.
+        "faceDownExileSizes": observation.face_down_exile_sizes,
         "battlefield": observation.battlefield.iter().map(|permanent| permanent_observation_json(catalog, permanent)).collect::<Vec<_>>(),
         "emblems": observation.emblems.iter().map(emblem_observation_json).collect::<Vec<_>>(),
         "stack": observation

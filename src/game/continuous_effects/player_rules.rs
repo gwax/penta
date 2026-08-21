@@ -359,6 +359,7 @@ impl Game {
                 ),
             EffectRecipientSetDef::LegalTargets(_)
             | EffectRecipientSetDef::Objects(_)
+            | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_)
             | EffectRecipientSetDef::Players(
                 PlayerSetDef::LegalTargets(_)
                 | PlayerSetDef::One(

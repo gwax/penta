@@ -211,3 +211,4 @@ pub const ELEMENTAL_TOKEN_5_3_GREEN: CardDefinitionId = CardDefinitionId(2295);
 pub const TITANIA_PROTECTOR_OF_ARGOTH: CardDefinitionId = CardDefinitionId(2296);
 pub const TREASURE_TOKEN: CardDefinitionId = CardDefinitionId(2297);
 pub const MAGDA_BRAZEN_OUTLAW: CardDefinitionId = CardDefinitionId(2298);
+pub const DELAYED_BLAST_FIREBALL: CardDefinitionId = CardDefinitionId(2299);

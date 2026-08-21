@@ -83,6 +83,11 @@ pub enum AlternativeCastKindDef {
     /// offered it -- but what it does to the cast and to the card afterwards
     /// is the same pair of things.
     WithoutPayingManaCost,
+    /// Cast from exile for its foretell cost (CR 702.143a). The card got
+    /// there by the foretell special action, which exiles it face down for
+    /// {2} during its owner's turn; this is the other half, and it may not
+    /// be taken until a later turn.
+    Foretell,
     /// Cast face down as a 2/2 creature with no name for {3} (CR 702.37a).
     /// The spell's own clauses are not what it does while face down -- it
     /// does nothing at all -- so this kind changes the object rather than
@@ -123,6 +128,7 @@ impl AlternativeCastKindDef {
             Self::AlternativeCost => "Alternative cost",
             Self::Escape => "Escape",
             Self::Impending => "Impending",
+            Self::Foretell => "Foretell",
             Self::WithoutPayingManaCost => "Without paying its mana cost",
             Self::FaceDown => "Morph",
         }
@@ -134,6 +140,7 @@ impl AlternativeCastKindDef {
     pub fn from_label(label: &str) -> Option<Self> {
         [
             Self::Escape,
+            Self::Foretell,
             Self::Impending,
             Self::WithoutPayingManaCost,
             Self::Flashback,
@@ -208,6 +215,15 @@ impl AlternativeCastAbilityDef {
             }
             // The card prints what is paid instead, so it supplies the text.
             (AlternativeCastKindDef::AlternativeCost, _) => "Alternative cost".into(),
+            (AlternativeCastKindDef::Foretell, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
+                format!(
+                    "Foretell {mana_cost} (During your turn, you may pay {{2}} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+                )
+            }
+            // No card prints a foretell cost equal to its own mana cost.
+            (AlternativeCastKindDef::Foretell, AlternativeCastManaCostDef::ThisCardManaCost) => {
+                "Foretell".into()
+            }
             // Never printed on the card being cast: whatever granted the
             // permission said this, so its own text is the reminder.
             (AlternativeCastKindDef::WithoutPayingManaCost, _) => self

@@ -5,7 +5,7 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCoverageDef, AbilityDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, SacrificedAmountDef,
-    TriggerEventDef, ValueDef, cards,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities, cards,
 };
 use crate::mana_cost;
 
@@ -75,6 +75,56 @@ pub(in crate::card::sets) static GUT_TRUE_SOUL_ZEALOT: CardRecord = CardRecord::
         ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&GUT_TRUE_SOUL_ZEALOT];
+/// Two damage as the baseline and five when it was foretold, which is the
+/// whole of the card: the two mana spent a turn earlier buy three damage and
+/// one mana off the price.
+static FIREBALL_FOR_TWO: EffectDef = EffectDef::DealDamage {
+    recipient: EffectRecipientDef::EachOpponentAndTheirCreatures,
+    amount: ValueDef::Constant(2),
+};
+
+static FIREBALL_FOR_FIVE: EffectDef = EffectDef::DealDamage {
+    recipient: EffectRecipientDef::EachOpponentAndTheirCreatures,
+    amount: ValueDef::Constant(5),
+};
+
+static CAST_FROM_EXILE: TriggerConditionDef = TriggerConditionDef::SourceCastFrom(ZoneKind::Exile);
+
+/// "Instead": the two branches are exclusive, so each names the condition
+/// and the smaller one names its negation. Written this way rather than as
+/// one conditional with an else because that is what the card says -- a
+/// baseline, and a replacement for it.
+static DELAYED_BLAST_FIREBALL_EFFECT: [EffectDef; 2] = [
+    EffectDef::IfCondition {
+        condition: &CAST_FROM_EXILE,
+        then: &FIREBALL_FOR_FIVE,
+    },
+    EffectDef::IfCondition {
+        condition: &TriggerConditionDef::Not(&CAST_FROM_EXILE),
+        then: &FIREBALL_FOR_TWO,
+    },
+];
+
+// CLB 630 — Delayed Blast Fireball
+pub(in crate::card::sets) static DELAYED_BLAST_FIREBALL: CardRecord = CardRecord::new(
+    cards::DELAYED_BLAST_FIREBALL,
+    "Delayed Blast Fireball",
+    CardArt::new("400c76c6-f677-4e7e-87ad-2e526d4b498a", "Andreas Zafiratos"),
+    CardSet::CommanderLegendsBattleForBaldursGate,
+    // A one-sided sweeper that costs a turn of setup, which is the trade the
+    // cube's aggressive decks are least able to make and the slow ones most.
+    CardRules::new_instant(mana_cost!("{1}{R}{R}")).with_abilities(&[
+        AbilityDef::spell(
+            "Delayed Blast Fireball deals 2 damage to each opponent and each creature they \
+             control. If this spell was cast from exile, it deals 5 damage to each opponent and \
+             each creature they control instead.",
+            EffectDef::Sequence(&DELAYED_BLAST_FIREBALL_EFFECT),
+        ),
+        abilities::foretell(mana_cost!("{4}{R}{R}")),
+    ]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&GUT_TRUE_SOUL_ZEALOT, &DELAYED_BLAST_FIREBALL];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

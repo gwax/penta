@@ -23,6 +23,7 @@ fn observation_json_carries_interwave_state_and_presented_card_part() {
         revealed_library_top: None,
         graveyards: [Vec::new(), Vec::new()],
         exiles: [Vec::new(), Vec::new()],
+        face_down_exile_sizes: [0, 0],
         emblems: Vec::new(),
         battlefield: vec![crate::game::PermanentObservation {
             id: GameObjectId(30),

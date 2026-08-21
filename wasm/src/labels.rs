@@ -182,6 +182,7 @@ impl WebGame {
             | Action::CancelDecision { .. }
             | Action::ChooseUntap { .. }
             | Action::TurnFaceUp { .. }
+            | Action::Foretell { .. }
             | Action::PassPriority
             | Action::PlayLand { .. }
             | Action::ActivateManaAbility { .. }
@@ -454,6 +455,9 @@ impl WebGame {
                 "Turn {} face up",
                 self.instance_name(observation, *permanent)
             ),
+            Action::Foretell { card } => {
+                format!("Foretell {}", self.instance_name(observation, *card))
+            }
             Action::ChooseUntap { permanents } => format!(
                 "Untap {}",
                 permanents

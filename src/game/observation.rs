@@ -157,7 +157,12 @@ pub struct PlayerObservation {
     /// down to everyone including its owner.
     pub revealed_library_top: Option<(GameObjectId, CardDefinitionId)>,
     pub graveyards: [Vec<(GameObjectId, CardDefinitionId)>; 2],
+    /// Each player's exile as this viewer sees it. A card lying face down
+    /// is absent rather than shown, unless the viewer is its owner.
     pub exiles: [Vec<(GameObjectId, CardDefinitionId)>; 2],
+    /// How many cards lie face down in each player's exile. Both players may
+    /// count them; only their owner knows what they are.
+    pub face_down_exile_sizes: [usize; 2],
     pub battlefield: Vec<PermanentObservation>,
     pub emblems: Vec<EmblemObservation>,
     pub stack: Vec<StackObservation>,

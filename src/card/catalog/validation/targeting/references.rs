@@ -712,7 +712,7 @@ fn validate_trigger_condition(
         | TriggerConditionDef::AttachedPermanentMatches { .. }
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::SourceCastWith(_)
-        | TriggerConditionDef::SourceCastFromHand
+        | TriggerConditionDef::SourceCastFrom(_)
         | TriggerConditionDef::SourceCastAtInstantSpeed
         | TriggerConditionDef::ValueComparison(_)
         | TriggerConditionDef::SourceLoyalty { .. }
@@ -762,7 +762,8 @@ fn validate_recipient_target_references(
             | ObjectSetDef::SharingNameWithBinding { player, .. }
             | ObjectSetDef::TopOfGraveyardMatching { player, .. },
         ) => validate_player_reference(player, target_count, scope),
-        EffectRecipientSetDef::Players(players) => {
+        EffectRecipientSetDef::Players(players)
+        | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(players) => {
             validate_player_set(players, target_count, scope)
         }
     }

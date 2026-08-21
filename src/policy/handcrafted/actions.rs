@@ -130,6 +130,9 @@ impl HandcraftedPolicy {
             // Worth doing when it is affordable: a 2/2 becoming the card it
             // really is only improves the board.
             Action::TurnFaceUp { .. } => 600,
+            // Two mana now for a discount later is real, but never worth
+            // more than doing something this turn.
+            Action::Foretell { .. } => 120,
             Action::ChooseDecision { options, .. } => {
                 let selected_value = observation.decision.as_ref().map_or(0, |decision| {
                     decision

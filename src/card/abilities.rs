@@ -434,6 +434,19 @@ pub const fn ward_aura_protection(color: ManaColor, text: &'static str) -> Abili
 
 /// A printed flashback clause. Its attached ability identity becomes the
 /// spell play option's alternative-cost identity.
+/// Foretell: an alternative cast taken from exile, where the special action
+/// that costs {2} put the card. The reminder text is generated from the cost
+/// the card prints, the same way flashback's is.
+#[must_use]
+pub const fn foretell(mana_cost: ManaCost) -> AbilityDef {
+    AbilityDef::alternative_cast(
+        mana_cost,
+        AlternativeCastKindDef::Foretell,
+        None,
+        EffectDef::None,
+    )
+}
+
 #[must_use]
 pub const fn flashback(mana_cost: ManaCost) -> AbilityDef {
     AbilityDef::alternative_cast(
