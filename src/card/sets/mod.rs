@@ -477,6 +477,11 @@ const SET_MODULES: &[SetModule] = &[
         y2021::modern_horizons_2::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::AdventuresInTheForgottenRealms,
+        y2021::adventures_in_the_forgotten_realms::CARDS,
+        y2021::adventures_in_the_forgotten_realms::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::InnistradCrimsonVowCommander,
         y2021::innistrad_crimson_vow_commander::CARDS,
         y2021::innistrad_crimson_vow_commander::ADDITIONAL_PRINTINGS,

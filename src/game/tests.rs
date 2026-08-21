@@ -825,6 +825,7 @@ mod vintage_cube_paradoxical_outcome;
 mod vintage_cube_path;
 mod vintage_cube_phlage;
 mod vintage_cube_ponder;
+mod vintage_cube_portable_hole;
 mod vintage_cube_prismatic_ending;
 mod vintage_cube_relic;
 mod vintage_cube_saheeli;
