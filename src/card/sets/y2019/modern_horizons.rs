@@ -150,6 +150,55 @@ static FORCE_OF_VIGOR_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
     2,
 )];
 
+/// Exiled rather than discarded, the same way the green half of the cycle
+/// spends its card: what pays is gone without ever becoming a graveyard
+/// card.
+static EXILE_A_BLUE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::Color(ManaColor::Blue),
+    ZoneKind::Hand,
+    1,
+)
+.spent(SpendModeDef::Exile);
+
+static A_NONCREATURE_SPELL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_spell(
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+)];
+
+// MH1 52 — Force of Negation
+pub(in crate::card::sets) static FORCE_OF_NEGATION: CardRecord = CardRecord::new(
+    cards::FORCE_OF_NEGATION,
+    "Force of Negation",
+    CardArt::new("e9be371c-c688-44ad-ab71-bd4c9f242d58", "Paul Scott Canavan"),
+    CardSet::ModernHorizons1,
+    // Free interaction that only answers the half of the format worth
+    // answering for free, and only on the turn somebody else is using it.
+    CardRules::new_instant(mana_cost!("{1}{U}{U}")).with_abilities(&[
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::AlternativeCost,
+            Some(
+                "If it's not your turn, you may exile a blue card from your hand rather than pay \
+                 this spell's mana cost.",
+            ),
+            EffectDef::None,
+        )
+        .with_alternative_additional_cost(&EXILE_A_BLUE_CARD)
+        .with_alternative_condition(&NOT_YOUR_TURN),
+        AbilityDef::spell_with_targets(
+            "Counter target noncreature spell. If that spell is countered this way, exile it \
+             instead of putting it into its owner's graveyard.",
+            &A_NONCREATURE_SPELL,
+            // The destination is part of the counter rather than a second
+            // clause: a spell countered this way never reaches a graveyard,
+            // so nothing watching one sees it arrive.
+            EffectDef::Counter {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Exile,
+            },
+        ),
+    ]),
+);
+
 // MH1 164 — Force of Vigor
 pub(in crate::card::sets) static FORCE_OF_VIGOR: CardRecord = CardRecord::new(
     cards::FORCE_OF_VIGOR,
@@ -263,6 +312,7 @@ pub(in crate::card::sets) static SUNBAKED_CANYON: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WINDS_OF_ABANDON,
+    &FORCE_OF_NEGATION,
     &FORCE_OF_VIGOR,
     &FALLEN_SHINOBI,
     &SUNBAKED_CANYON,

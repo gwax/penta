@@ -182,3 +182,4 @@ pub const OMNATH_LOCUS_OF_CREATION: CardDefinitionId = CardDefinitionId(2264);
 pub const BOUNTIFUL_LANDSCAPE: CardDefinitionId = CardDefinitionId(2265);
 pub const ETERNAL_WITNESS: CardDefinitionId = CardDefinitionId(2266);
 pub const EXHUME: CardDefinitionId = CardDefinitionId(2267);
+pub const FORCE_OF_NEGATION: CardDefinitionId = CardDefinitionId(2268);

@@ -798,6 +798,7 @@ mod vintage_cube_exhume;
 mod vintage_cube_expedition_map;
 mod vintage_cube_fatal_push;
 mod vintage_cube_figure_of_destiny;
+mod vintage_cube_force_of_negation;
 mod vintage_cube_gadgeteer;
 mod vintage_cube_goblin_rabblemaster;
 mod vintage_cube_graveyard;
