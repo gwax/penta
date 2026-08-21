@@ -3,8 +3,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
     ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
     SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
     ZonePlacement, abilities, cards,
@@ -329,43 +329,10 @@ pub(in crate::card::sets) static FALLEN_SHINOBI: CardRecord = CardRecord::new(
         .with_abilities(&SHINOBI_ABILITIES),
 );
 
-/// The horizon-land cycle: two colours for a life apiece, and when the game
-/// has gone long enough that the land is dead weight it cashes itself in for
-/// a card. What it never does is make colourless mana for free, which is the
-/// whole of the tradeoff.
-const fn horizon_mana(mana_text: &'static str, colors: &'static [ManaColor]) -> AbilityDef {
-    AbilityDef::activated_mana(
-        mana_text,
-        &HORIZON_MANA_COST,
-        EffectDef::AddMana(AddManaEffectDef::choice(colors)),
-    )
-}
-
-/// The same on every land in the cycle, down to the printed text.
-static HORIZON_CASH_IN: AbilityDef = AbilityDef::activated(
-    "{1}, {T}, Sacrifice this land: Draw a card.",
-    &HORIZON_CASH_IN_COST,
-    EffectDef::DrawCards {
-        recipient: EffectRecipientDef::Controller,
-        amount: ValueDef::Constant(1),
-    },
-);
-
-static HORIZON_MANA_COST: [AbilityCostDef; 2] =
-    [AbilityCostDef::TapSource, AbilityCostDef::PayLife(1)];
-
-static HORIZON_CASH_IN_COST: [AbilityCostDef; 3] = [
-    AbilityCostDef::Mana(mana_cost!("{1}")),
-    AbilityCostDef::TapSource,
-    AbilityCostDef::SacrificeSource,
-];
-
 static SUNBAKED_CANYON_COLORS: [ManaColor; 2] = [ManaColor::Red, ManaColor::White];
 
-static SUNBAKED_CANYON_ABILITIES: [AbilityDef; 2] = [
-    horizon_mana("{T}, Pay 1 life: Add {R} or {W}.", &SUNBAKED_CANYON_COLORS),
-    HORIZON_CASH_IN,
-];
+static SUNBAKED_CANYON_ABILITIES: [AbilityDef; 2] =
+    abilities::horizon_land("{T}, Pay 1 life: Add {R} or {W}.", &SUNBAKED_CANYON_COLORS);
 
 // MH1 247 — Sunbaked Canyon
 pub(in crate::card::sets) static SUNBAKED_CANYON: CardRecord = CardRecord::new(

@@ -197,3 +197,4 @@ pub const DREADHORDE_ARCANIST: CardDefinitionId = CardDefinitionId(2279);
 pub const ADELINE_RESPLENDENT_CATHAR: CardDefinitionId = CardDefinitionId(2280);
 pub const WARRIOR_TOKEN_1_1_RED: CardDefinitionId = CardDefinitionId(2281);
 pub const VOICE_OF_VICTORY: CardDefinitionId = CardDefinitionId(2282);
+pub const HORIZON_CANOPY: CardDefinitionId = CardDefinitionId(2285);

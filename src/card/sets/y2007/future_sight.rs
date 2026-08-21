@@ -209,12 +209,30 @@ pub(in crate::card::sets) static DRYAD_ARBOR: CardRecord = CardRecord::new(
         .printed_colors(&[ManaColor::Green]),
 );
 
+static HORIZON_CANOPY_COLORS: [ManaColor; 2] = [ManaColor::Green, ManaColor::White];
+
+static HORIZON_CANOPY_ABILITIES: [AbilityDef; 2] =
+    abilities::horizon_land("{T}, Pay 1 life: Add {G} or {W}.", &HORIZON_CANOPY_COLORS);
+
+// FUT 177 — Horizon Canopy
+pub(in crate::card::sets) static HORIZON_CANOPY: CardRecord = CardRecord::new(
+    cards::HORIZON_CANOPY,
+    "Horizon Canopy",
+    CardArt::new("d5dfc25d-a17b-4ead-9484-e8a18b8fa176", "Michael Komarck"),
+    CardSet::FutureSight,
+    // The original of the cycle Modern Horizons finished twelve years later,
+    // and still the one the cube wants: a dual that costs life to use and a
+    // card when there is nothing left to use it on.
+    CardRules::new_land(&[]).with_abilities(&HORIZON_CANOPY_ABILITIES),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &REALITY_STROBE,
     &COALITION_RELIC,
     &SWORD_OF_THE_MEEK,
     &DARKSTEEL_GARRISON,
     &DRYAD_ARBOR,
+    &HORIZON_CANOPY,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

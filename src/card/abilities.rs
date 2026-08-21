@@ -649,35 +649,6 @@ pub const fn tap_for(mana: ManaColor) -> AbilityDef {
     )
 }
 
-/// The two mana abilities shared by the allied- and enemy-color painlands.
-#[must_use]
-pub const fn pain_land(
-    colored_text: &'static str,
-    colors: &'static [ManaColor],
-) -> [AbilityDef; 2] {
-    [
-        tap_for(ManaColor::Colorless),
-        AbilityDef::activated_mana(
-            colored_text,
-            &[AbilityCostDef::TapSource],
-            EffectDef::AddMana(AddManaEffectDef::choice(colors).with_damage_to_controller(1)),
-        ),
-    ]
-}
-
-/// The shared replacement clause printed on shock lands.
-#[must_use]
-pub const fn shock_land_enters() -> AbilityDef {
-    AbilityDef::as_enters(
-        "As this land enters, you may pay 2 life. If you don't, it enters tapped.",
-        ReplacementEffectDef::PayOr {
-            payment: EffectPaymentDef::life(PlayerSetDef::Related(PlayerRelation::You), 2),
-            if_paid: &[],
-            if_declined: &ENTER_TAPPED,
-        },
-    )
-}
-
 /// An unconditional battlefield-entry replacement shared by permanents that
 /// enter tapped.
 #[must_use]
@@ -917,67 +888,7 @@ pub const fn cannot_be_blocked(text: &'static str) -> AbilityDef {
     )
 }
 
-/// A shared checkland-style entry clause backed by the general object-query
-/// condition vocabulary.
-#[must_use]
-pub const fn check_land_enters(
-    text: &'static str,
-    land_types: &'static [BasicLandType],
-) -> AbilityDef {
-    enters_tapped_unless_you_control(text, ObjectPredicateDef::HasAnyBasicLandType(land_types))
-}
-
-/// An as-enters clause whose untapped branch depends on any controlled
-/// battlefield object matching `object`.
-#[must_use]
-pub const fn enters_tapped_unless_you_control(
-    text: &'static str,
-    object: ObjectPredicateDef,
-) -> AbilityDef {
-    AbilityDef::as_enters(
-        text,
-        ReplacementEffectDef::Conditional {
-            condition: ConditionDef::Exists(ObjectQueryDef::matching(
-                object,
-                &[ZoneKind::Battlefield],
-                PlayerRelation::You,
-            )),
-            if_true: &[],
-            if_false: &ENTER_TAPPED,
-        },
-    )
-}
-
-static TWO_OR_FEWER_OTHER_LANDS: ObjectCountConditionDef = ObjectCountConditionDef {
-    query: ObjectQueryDef::matching(
-        ObjectPredicateDef::All(&[
-            ObjectPredicateDef::HasType(CardType::Land),
-            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-        ]),
-        &[ZoneKind::Battlefield],
-        PlayerRelation::You,
-    ),
-    comparison: ComparisonDef::LessOrEqual,
-    amount: 2,
-};
-
-/// "This land enters tapped unless you control two or fewer other lands."
-///
-/// The bound is on the lands already there, so the land entering is excluded
-/// from its own count -- which is what makes the clause read the board as it
-/// was rather than as it is about to be.
-#[must_use]
-pub const fn fast_land_enters(text: &'static str) -> AbilityDef {
-    AbilityDef::as_enters(
-        text,
-        ReplacementEffectDef::Conditional {
-            condition: ConditionDef::ObjectCount(&TWO_OR_FEWER_OTHER_LANDS),
-            if_true: &[],
-            if_false: &ENTER_TAPPED,
-        },
-    )
-}
-
+include!("abilities/lands.rs");
 include!("abilities/keyword_mechanics.rs");
 include!("abilities/attachment.rs");
 include!("abilities/tests.rs");

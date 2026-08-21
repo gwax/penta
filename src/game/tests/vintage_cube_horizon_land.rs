@@ -1,5 +1,6 @@
-//! Sunbaked Canyon: two colours that cost a life apiece, and a land that
-//! turns into a card once it has nothing left to pay for.
+//! The horizon lands: two colours that cost a life apiece, and a land that
+//! turns into a card once it has nothing left to pay for. Sunbaked Canyon
+//! stands for the cycle; the others differ only in which two colours.
 
 use super::*;
 
@@ -107,6 +108,54 @@ fn it_can_be_cashed_in_for_a_card() {
         game.battlefield.is_empty(),
         "the land sacrificed itself as a cost",
     );
+    assert_eq!(game.players[0].hand.len(), before + 1);
+    assert_eq!(game.players[0].life, 20, "and cost no life to do it");
+}
+
+/// Horizon Canopy is the original of the cycle and the same card: only the
+/// pair of colours is different.
+#[test]
+fn the_canopy_offers_its_own_two_colours() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let canopy = game
+        .put_onto_battlefield(PlayerId::One, cards::HORIZON_CANOPY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let colors = mana_colors(&game, canopy);
+
+    assert!(colors.contains(&ManaColor::Green), "Forest half");
+    assert!(colors.contains(&ManaColor::White), "Plains half");
+    assert_eq!(colors.len(), 2, "no colourless and no third colour");
+}
+
+/// And it cashes itself in the same way, which is what makes the shared
+/// clause shared rather than copied.
+#[test]
+fn the_canopy_cashes_itself_in_too() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let canopy = game
+        .put_onto_battlefield(PlayerId::One, cards::HORIZON_CANOPY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    let before = game.players[0].hand.len();
+
+    let cash_in = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == canopy),
+        )
+        .expect("one mana and a tap buys a card");
+    game.apply(PlayerId::One, cash_in)
+        .expect("the ability activates");
+    drain_pending(&mut game);
+
+    assert!(game.battlefield.is_empty(), "the land sacrificed itself");
     assert_eq!(game.players[0].hand.len(), before + 1);
     assert_eq!(game.players[0].life, 20, "and cost no life to do it");
 }
