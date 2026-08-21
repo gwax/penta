@@ -65,6 +65,7 @@ static OPT_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     rest_placement: ZonePlacement::Top,
     selected_order_follows_choice: false,
     then: Some(&OPT_DRAW),
+    selected_face_down: false,
 };
 
 // INV 64 — Opt

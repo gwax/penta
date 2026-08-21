@@ -2989,6 +2989,7 @@ static DOMRI_ABILITIES: [AbilityDef; 3] = [
                 rest_placement: ZonePlacement::Top,
                 selected_order_follows_choice: false,
                 then: None,
+                selected_face_down: false,
             },
         },
     ),

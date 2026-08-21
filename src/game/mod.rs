@@ -489,6 +489,14 @@ pub(super) struct BattlefieldArrival {
     /// enters is a new object, and a following effect would have nothing
     /// left to name.
     pub(super) transformed: bool,
+    /// Whether the permanent arrives manifested: face down as a 2/2 with no
+    /// name, no types beyond creature, and no abilities, and turnable face
+    /// up for its own mana cost if the card under it is a creature card
+    /// (CR 701.34c). It belongs to the arrival because a card put onto the
+    /// battlefield face down was never face up there. Casting a morph face
+    /// down is the other way to arrive face down, and it does not come
+    /// through here.
+    pub(super) manifested: bool,
 }
 
 impl BattlefieldArrival {
@@ -498,6 +506,19 @@ impl BattlefieldArrival {
             tapped: false,
             transformed: false,
             attachment: None,
+            manifested: false,
+        }
+    }
+
+    /// Manifested: face down as a 2/2, and turnable face up for its mana
+    /// cost if the card under it is a creature card.
+    pub(super) const fn manifested_under(controller: PlayerId) -> Self {
+        Self {
+            controller,
+            tapped: false,
+            transformed: false,
+            attachment: None,
+            manifested: true,
         }
     }
 
@@ -507,6 +528,7 @@ impl BattlefieldArrival {
             tapped: true,
             transformed: false,
             attachment: None,
+            manifested: false,
         }
     }
 
@@ -516,6 +538,7 @@ impl BattlefieldArrival {
             tapped: false,
             transformed: true,
             attachment: None,
+            manifested: false,
         }
     }
 

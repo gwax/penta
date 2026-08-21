@@ -31,6 +31,7 @@ static PREORDAIN_SCRY: TopCardSelectionDef = TopCardSelectionDef {
     rest_placement: ZonePlacement::Bottom,
     selected_order_follows_choice: true,
     then: Some(&PREORDAIN_DRAW),
+    selected_face_down: false,
 };
 
 // M11 70 — Preordain

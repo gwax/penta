@@ -42,6 +42,7 @@ static PONDER_LOOK: TopCardSelectionDef = TopCardSelectionDef {
     rest_placement: ZonePlacement::Top,
     selected_order_follows_choice: true,
     then: Some(&PONDER_SHUFFLE_AND_DRAW),
+    selected_face_down: false,
 };
 
 // LRW 79 — Ponder

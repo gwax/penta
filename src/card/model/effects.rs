@@ -2,6 +2,7 @@ mod composites;
 mod conditions;
 mod likelihood;
 mod replacements;
+mod selection;
 mod triggers;
 mod turn_structure;
 mod values;
@@ -10,6 +11,7 @@ pub use composites::*;
 pub use conditions::*;
 pub use likelihood::*;
 pub use replacements::*;
+pub use selection::*;
 pub use triggers::*;
 pub use turn_structure::*;
 pub use values::*;
@@ -94,43 +96,6 @@ pub enum DiscardSelectionDef {
     /// creature card at random" leaves everything else where it is, and
     /// discards nothing when the hand holds none.
     RandomMatching(&'static ObjectPredicateDef),
-}
-
-/// A private look at the top of a library followed by one bounded card
-/// selection. Selected and unselected cards can go to different zones; an
-/// optional follow-up resumes only after the choice is complete. This covers
-/// both selection spells such as Impulse and scry-then-draw sequencing.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct TopCardSelectionDef {
-    pub count: ValueDef,
-    /// Restrict the cards that may be selected while still looking at and
-    /// placing every card in the inspected group.
-    pub object: Option<ObjectPredicateDef>,
-    pub minimum: u8,
-    pub maximum: u8,
-    /// Take every inspected card the predicate matches, asking nothing.
-    ///
-    /// "Put all Goblin cards revealed this way into your hand" is mandatory
-    /// and has no printed bound: a minimum and maximum could only approximate
-    /// it, and any maximum small enough to be safe would let a player decline
-    /// cards the card does not let them decline. The bounds above are ignored
-    /// when this is set.
-    pub select_all_matching: bool,
-    /// Reveal selected cards before moving them, for effects that instruct
-    /// the player to reveal what they took.
-    pub reveal_selected: bool,
-    pub selected_zone: ZoneKind,
-    pub selected_placement: ZonePlacement,
-    pub rest_zone: ZoneKind,
-    pub rest_placement: ZonePlacement,
-    /// The selected cards are placed in the order they were chosen rather
-    /// than the order they were drawn out of the library. This is what "put
-    /// them back in any order" asks for: with every inspected card selected,
-    /// the sequence of the choice is the arrangement. Ordinary digs leave it
-    /// off, so which of two cards went to the graveyard first stays an
-    /// implementation detail rather than a decision a bot has to make.
-    pub selected_order_follows_choice: bool,
-    pub then: Option<&'static EffectDef>,
 }
 
 /// Counters a token is created with.
@@ -615,6 +580,18 @@ pub enum EffectDef {
     ExileFromTopUntil {
         player: EffectRecipientDef,
         object: ObjectPredicateDef,
+    },
+    /// Manifest dread (CR 701.34, 702.169). Look at the top two cards of
+    /// your library, put one onto the battlefield face down as a 2/2
+    /// creature, and put the other into your graveyard.
+    ///
+    /// One effect rather than a top-card selection with a flag, because
+    /// what it puts down is not a card arriving in a zone but a body: the
+    /// permanent has no name, no types beyond creature, and no abilities
+    /// while it is face down, and what turns it up is its own mana cost
+    /// rather than anything the selection could say.
+    ManifestDread {
+        player: EffectRecipientDef,
     },
     /// Cascade (CR 702.85). Exile cards from the top of the controller's
     /// library until a nonland card with mana value less than this spell's

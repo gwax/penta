@@ -503,6 +503,10 @@ pub(super) struct DetachedPermanentSnapshot {
     /// before face-down permanents existed, which is the same as not one.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) face_down: bool,
+    /// Additive: a payload written before anything manifested restores this
+    /// as false, which is what a face-down morph means anyway.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) manifested: bool,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]

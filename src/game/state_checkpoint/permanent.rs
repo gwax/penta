@@ -292,5 +292,6 @@ pub(super) fn detached_permanent_snapshot(
         chosen_creature_type: permanent.chosen_creature_type.clone(),
         chosen_card_name: permanent.chosen_card_name.clone(),
         face_down: permanent.face_down,
+        manifested: permanent.manifested,
     }
 }

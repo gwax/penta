@@ -93,6 +93,11 @@ struct Permanent {
     /// card is unchanged: `card.definition` still names it, which is what
     /// lets it be turned face up and what it goes to the graveyard as.
     face_down: bool,
+    /// Whether this face-down permanent was manifested rather than cast face
+    /// down. What it changes is the cost to turn it up: a morph pays the
+    /// morph cost its card prints, and a manifested creature card pays its
+    /// mana cost (CR 701.34c).
+    manifested: bool,
     destroy_at_end: bool,
     temporary_keywords: Vec<KeywordAbility>,
     /// Resolved noncopiable characteristic changes and rules modifications,
@@ -256,6 +261,7 @@ impl Permanent {
             chosen_creature_type: None,
             chosen_card_name: None,
             face_down: false,
+            manifested: false,
             destroy_at_end: false,
             temporary_keywords: Vec::new(),
             resolved_continuous_effects: Vec::new(),

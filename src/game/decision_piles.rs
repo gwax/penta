@@ -155,12 +155,25 @@ impl Game {
                     definition: card.definition,
                 }));
         }
-        self.place_revealed_remainder(
-            player,
-            chosen,
-            selection.selected_zone,
-            selection.selected_placement,
-        );
+        if selection.selected_face_down {
+            // Manifested rather than placed: what goes down is a body, and
+            // the card under it is what the mana cost to turn it up reads.
+            for card in chosen {
+                self.put_card_onto_battlefield_from(
+                    card,
+                    ZoneKind::Library,
+                    super::BattlefieldArrival::manifested_under(player),
+                    None,
+                );
+            }
+        } else {
+            self.place_revealed_remainder(
+                player,
+                chosen,
+                selection.selected_zone,
+                selection.selected_placement,
+            );
+        }
         self.place_revealed_remainder(player, rest, selection.rest_zone, selection.rest_placement);
     }
 

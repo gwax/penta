@@ -526,6 +526,7 @@ fn validate_resolving_effect(
         | EffectDef::SearchZonesAndExileRest { .. }
         | EffectDef::MillUntil { .. }
         | EffectDef::ExileFromTopUntil { .. }
+        | EffectDef::ManifestDread { .. }
         | EffectDef::Cascade
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
@@ -867,6 +868,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::SearchZonesAndExileRest { .. } => "SearchZonesAndExileRest",
         EffectDef::MillUntil { .. } => "MillUntil",
         EffectDef::ExileFromTopUntil { .. } => "ExileFromTopUntil",
+        EffectDef::ManifestDread { .. } => "ManifestDread",
         EffectDef::Cascade => "Cascade",
         EffectDef::LookAtHand { .. } => "LookAtHand",
         EffectDef::RevealHand { .. } => "RevealHand",

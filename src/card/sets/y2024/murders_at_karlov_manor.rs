@@ -67,6 +67,7 @@ static SURVEIL_ONE: TopCardSelectionDef = TopCardSelectionDef {
     rest_placement: ZonePlacement::Top,
     selected_order_follows_choice: false,
     then: None,
+    selected_face_down: false,
 };
 
 static SURVEIL_LAND_ABILITIES: [AbilityDef; 2] = [

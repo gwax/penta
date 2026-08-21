@@ -731,6 +731,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::SearchZonesAndExileRest { .. }
                     | EffectDef::MillUntil { .. }
                     | EffectDef::ExileFromTopUntil { .. }
+                    | EffectDef::ManifestDread { .. }
                     | EffectDef::ReturnWithHasteAndFinality { .. }
                     | EffectDef::Cascade
                     | EffectDef::LookAtTopAndSelect { .. }

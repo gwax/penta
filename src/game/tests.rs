@@ -769,6 +769,7 @@ mod until_end_of_combat;
 mod urza_lands;
 mod venarian_gold;
 
+mod vintage_cube_abhorrent_oculus;
 mod vintage_cube_adventure;
 mod vintage_cube_agathas_soul_cauldron;
 mod vintage_cube_ajani;

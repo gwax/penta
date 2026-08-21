@@ -501,6 +501,10 @@ impl Game {
         // Set before entry replacements run, the same way an as-enters clause
         // would, so nothing observes the permanent arriving untapped first.
         permanent.tapped = arrival.tapped;
+        // A manifested card was never face up on the battlefield, so this is
+        // part of the arrival rather than something turned over afterwards.
+        permanent.face_down = arrival.manifested;
+        permanent.manifested = arrival.manifested;
         self.initialize_battlefield_entry(&mut permanent);
         if let Some(keyword) = grant {
             permanent.temporary_keywords.push(keyword);

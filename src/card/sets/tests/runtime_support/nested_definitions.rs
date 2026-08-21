@@ -437,6 +437,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::SearchZonesAndExileRest { .. }
         | EffectDef::MillUntil { .. }
         | EffectDef::ExileFromTopUntil { .. }
+        | EffectDef::ManifestDread { .. }
         | EffectDef::Cascade
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }

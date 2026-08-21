@@ -6,8 +6,8 @@ use crate::card::{
     CardRules, CardSet, CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef, CounterKind,
     EffectDef, EffectRecipientDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
     ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementConditionDef,
-    ReplacementEffectDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, cards,
+    ReplacementEffectDef, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::mana_cost;
@@ -180,6 +180,46 @@ static OVERLORD_ABILITIES: [AbilityDef; 4] = [
     ),
 ];
 
+/// Six cards out of your own graveyard, exiled to pay. Nothing is chosen
+/// after the fact: the additional cost travels with the cast.
+static EXILE_SIX_CARDS: SpellAdditionalCostDef =
+    SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Graveyard, 6)
+        .spent(SpendModeDef::Exile);
+
+static OCULUS_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::spell_with_additional_cost(
+        "As an additional cost to cast this spell, exile six cards from your graveyard.",
+        &[],
+        EXILE_SIX_CARDS,
+        EffectDef::None,
+    ),
+    abilities::flying(),
+    AbilityDef::triggered(
+        "At the beginning of each opponent's upkeep, manifest dread. (Look at the top two cards \
+         of your library. Put one onto the battlefield face down as a 2/2 creature and the other \
+         into your graveyard. Turn it face up any time for its mana cost if it's a creature \
+         card.)",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::Opponent,
+        },
+        EffectDef::ManifestDread {
+            player: EffectRecipientDef::Controller,
+        },
+    ),
+];
+
+// DSK 42 — Abhorrent Oculus
+pub(in crate::card::sets) static ABHORRENT_OCULUS: CardRecord = CardRecord::new(
+    cards::ABHORRENT_OCULUS,
+    "Abhorrent Oculus",
+    CardArt::new("d2705b43-a94a-44c0-8740-82e0b296820c", "Bryan Sola"),
+    CardSet::DuskmournHouseOfHorror,
+    // A three-mana 5/5 flier for a deck that filled its own graveyard on
+    // purpose, and a body every turn afterwards for nothing.
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Eye"], 5, 5).with_abilities(&OCULUS_ABILITIES),
+);
+
 // DSK 113 — Overlord of the Balemurk
 pub(in crate::card::sets) static OVERLORD_OF_THE_BALEMURK: CardRecord = CardRecord::new(
     cards::OVERLORD_OF_THE_BALEMURK,
@@ -192,7 +232,10 @@ pub(in crate::card::sets) static OVERLORD_OF_THE_BALEMURK: CardRecord = CardReco
         .with_abilities(&OVERLORD_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&ENDURING_INNOCENCE, &OVERLORD_OF_THE_BALEMURK];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &ENDURING_INNOCENCE,
+    &ABHORRENT_OCULUS,
+    &OVERLORD_OF_THE_BALEMURK,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

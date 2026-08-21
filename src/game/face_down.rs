@@ -23,13 +23,37 @@ impl Game {
             .morph_cost()
     }
 
+    /// What turning this permanent face up costs, or `None` when nothing
+    /// can. A morph pays what its card prints as a morph cost; a manifested
+    /// permanent pays the card's own mana cost, and only if the card under
+    /// it is a creature card (CR 701.34c).
+    pub(super) fn face_up_cost(
+        &self,
+        permanent: &super::Permanent,
+    ) -> Option<crate::card::ManaCost> {
+        if let Some(cost) = self.printed_morph_cost(permanent) {
+            return Some(cost);
+        }
+        if !permanent.manifested {
+            return None;
+        }
+        let part = self
+            .catalog
+            .get(permanent.card.definition)?
+            .part(permanent.presented)?;
+        part.rules
+            .has_type(crate::card::CardType::Creature)
+            .then(|| part.rules.mana_cost())
+            .flatten()
+    }
+
     pub(super) fn add_face_up_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
         for permanent in self
             .battlefield
             .iter()
             .filter(|permanent| permanent.face_down && permanent.controller == player)
         {
-            let Some(cost) = self.printed_morph_cost(permanent) else {
+            let Some(cost) = self.face_up_cost(permanent) else {
                 continue;
             };
             if self.can_pay_cost_for(player, cost, 0, &ManaPaymentPurpose::Other) {
@@ -45,7 +69,7 @@ impl Game {
             .battlefield
             .iter()
             .find(|candidate| candidate.card.id == permanent)
-            .and_then(|candidate| self.printed_morph_cost(candidate))
+            .and_then(|candidate| self.face_up_cost(candidate))
         else {
             return;
         };

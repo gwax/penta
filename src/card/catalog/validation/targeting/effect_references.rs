@@ -217,6 +217,7 @@ fn validate_effect_references(
         | EffectDef::ExileTopOfLibraryToPlay { player, .. }
         | EffectDef::MillUntil { player, .. }
         | EffectDef::ExileFromTopUntil { player, .. }
+        | EffectDef::ManifestDread { player }
         | EffectDef::ChooseCards { player, .. }
         | EffectDef::SacrificeKeepingOnePerType { player, .. }
         | EffectDef::TakeExtraTurn { player }

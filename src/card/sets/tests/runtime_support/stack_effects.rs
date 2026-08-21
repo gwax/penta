@@ -251,6 +251,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::LoseTheGame { player: recipient }
         | EffectDef::WinTheGame { player: recipient }
         | EffectDef::LookAtHand { player: recipient }
+        | EffectDef::ManifestDread { player: recipient }
         | EffectDef::RevealHand { player: recipient } => shared_effect_recipient(recipient),
         // Everything it does belongs to the arrival, so what is left to
         // check is that the card it takes is one the shared walk can name

@@ -696,7 +696,7 @@ pub(in crate::card::sets) static GLIMPSE_THE_FUTURE: CardRecord = CardRecord::ne
                 rest_placement: ZonePlacement::Top,
                 selected_order_follows_choice: false,
                 then: None,
-            },
+            selected_face_down: false,},
         },
     )),
 );
@@ -2360,6 +2360,7 @@ static INTO_THE_WILDS_LOOK: TopCardSelectionDef = TopCardSelectionDef {
     rest_placement: ZonePlacement::Top,
     selected_order_follows_choice: false,
     then: None,
+    selected_face_down: false,
 };
 
 // M14 180 — Into the Wilds

@@ -9,6 +9,25 @@ use super::super::{
 };
 use crate::card::ObjectPredicateDef;
 
+/// Manifest dread (CR 701.34, 702.169): look at the top two, one goes down
+/// face down as a 2/2 and the other goes to the graveyard. The procedure is
+/// fixed, so the card names the keyword and this states it once.
+static MANIFEST_DREAD: crate::card::TopCardSelectionDef = crate::card::TopCardSelectionDef {
+    count: crate::card::ValueDef::Constant(2),
+    object: None,
+    minimum: 1,
+    maximum: 1,
+    select_all_matching: false,
+    reveal_selected: false,
+    selected_zone: ZoneKind::Battlefield,
+    selected_placement: crate::card::ZonePlacement::Top,
+    selected_face_down: true,
+    rest_zone: ZoneKind::Graveyard,
+    rest_placement: crate::card::ZonePlacement::Top,
+    selected_order_follows_choice: false,
+    then: None,
+};
+
 impl Game {
     /// "Exile cards from the top of your library until you exile a nonland
     /// card." Everything walked past is exiled with it; only the card that
@@ -298,6 +317,20 @@ impl Game {
                 }
             }
             EffectDef::Cascade => self.cascade(object),
+            EffectDef::ManifestDread { player: recipient } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.queue_top_card_selection(
+                            player,
+                            player,
+                            &MANIFEST_DREAD,
+                            object,
+                            context.clone(),
+                            scoped,
+                        );
+                    }
+                }
+            }
             EffectDef::ExileFromTopUntil {
                 player: recipient,
                 object: predicate,

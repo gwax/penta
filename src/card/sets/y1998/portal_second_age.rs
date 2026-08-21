@@ -20,6 +20,7 @@ static SLEIGHT_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     rest_placement: ZonePlacement::Bottom,
     selected_order_follows_choice: false,
     then: None,
+    selected_face_down: false,
 };
 
 // P02 46 — Sleight of Hand
