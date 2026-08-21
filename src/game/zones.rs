@@ -604,6 +604,9 @@ impl Game {
         if destination == ZoneKind::Graveyard {
             self.capture_nonbattlefield_graveyard_arrival(&card, from);
         }
+        if destination == ZoneKind::Exile {
+            self.capture_cards_exiled(std::slice::from_ref(&card), from);
+        }
         Some((card, destination))
     }
 
@@ -630,6 +633,51 @@ impl Game {
             to: ZoneKind::Graveyard,
             damage_sources: Vec::new(),
         });
+    }
+
+    /// "Whenever one or more cards are put into exile from ...": one event
+    /// for the whole move, published once however many cards it took.
+    ///
+    /// Raised only where the cards came out of a hidden or public zone that
+    /// a clause can name -- a permanent exiled from the battlefield is a
+    /// zone change of its own and is published there.
+    pub(super) fn capture_cards_exiled(&mut self, cards: &[CardInstance], from: ZoneKind) {
+        let Some(owner) = cards.first().map(|card| card.owner) else {
+            return;
+        };
+        let objects = cards
+            .iter()
+            .filter_map(|card| {
+                self.printed_trigger_event_object(
+                    card.id,
+                    card.definition,
+                    card.owner,
+                    &CharacteristicContext::Exile,
+                )
+            })
+            .collect::<Vec<_>>();
+        if objects.is_empty() {
+            return;
+        }
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::CardsExiled {
+            cards: objects,
+            from,
+            owner,
+        });
+    }
+
+    /// Raises the exile event for cards already sitting in exile, for the
+    /// tests that need one without an effect to make it.
+    #[cfg(test)]
+    pub(super) fn capture_exile_for_test(&mut self, cards: &[GameObjectId], from: ZoneKind) {
+        let moved = cards
+            .iter()
+            .filter_map(|id| {
+                self.card_in_nonbattlefield_zone(*id)
+                    .map(|(_, card)| card.clone())
+            })
+            .collect::<Vec<_>>();
+        self.capture_cards_exiled(&moved, from);
     }
 
     pub(super) fn discard_cards_with_cause(

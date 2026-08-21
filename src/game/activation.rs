@@ -46,6 +46,21 @@ impl Game {
     /// Activates an ability printed to work from its owner's graveyard. The
     /// card is not a permanent and never becomes one, so the only cost it can
     /// pay with itself is exile, and the ability on the stack outlives it.
+    /// Scavenge's cost, and the only one a card pays out of its own
+    /// graveyard. Retiring the old identity here is what later lets the
+    /// resolving ability read the card's power: by then it is in exile under
+    /// a new one.
+    fn exile_graveyard_source(&mut self, player: PlayerId, source: GameObjectId) {
+        let exiled = remove_card(&mut self.players[player.index()].graveyard, source)
+            .expect("a legal graveyard activation still has its source");
+        let (exiled, _zone_change) = self.zone_change_card(exiled);
+        self.players[player.index()].exile.push(exiled.clone());
+        self.capture_cards_exiled(
+            std::slice::from_ref(&exiled),
+            crate::card::ZoneKind::Graveyard,
+        );
+    }
+
     fn activate_graveyard_ability(
         &mut self,
         player: PlayerId,
@@ -106,15 +121,7 @@ impl Game {
                     );
                     let _ = self.pay_player_cost_for(player, *cost, x, &payment_purpose);
                 }
-                AbilityCostDef::ExileSource => {
-                    let exiled = remove_card(&mut self.players[player.index()].graveyard, source)
-                        .expect("a legal graveyard activation still has its source");
-                    // Retiring the old identity here is what later lets the
-                    // resolving ability read the card's power: by then it is
-                    // in exile under a new one.
-                    let (exiled, _zone_change) = self.zone_change_card(exiled);
-                    self.players[player.index()].exile.push(exiled);
-                }
+                AbilityCostDef::ExileSource => self.exile_graveyard_source(player, source),
                 AbilityCostDef::TapSource
                 | AbilityCostDef::UntapSource
                 | AbilityCostDef::SacrificeSource
@@ -469,14 +476,19 @@ impl Game {
                     // The cost names as many cards as it prints, and the
                     // activation carried every one of them.
                     AbilityCostDef::ExileCardsFromGraveyard { .. } => {
+                        // One move for the whole cost, however many cards it
+                        // spends, which is what "one or more" reads.
+                        let mut moved = Vec::new();
                         for chosen in cost_objects {
                             if let Some(card) =
                                 remove_card(&mut self.players[player.index()].graveyard, *chosen)
                             {
                                 let (card, _zone_change) = self.zone_change_card(card);
-                                self.players[player.index()].exile.push(card);
+                                self.players[player.index()].exile.push(card.clone());
+                                moved.push(card);
                             }
                         }
+                        self.capture_cards_exiled(&moved, crate::card::ZoneKind::Graveyard);
                     }
                     AbilityCostDef::Loyalty(change) => {
                         if let Some(permanent) = self

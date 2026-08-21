@@ -839,6 +839,14 @@ impl Game {
                     )
             }
             (
+                TriggerEventDef::CardsExiled { zones, owner },
+                CommittedTriggerEvent::CardsExiled {
+                    cards,
+                    from,
+                    owner: exiled_by,
+                },
+            ) => self.exile_move_matches(zones, owner, cards, *from, *exiled_by, controller),
+            (
                 TriggerEventDef::AttackDeclared {
                     attacker,
                     declaration,

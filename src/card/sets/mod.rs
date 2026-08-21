@@ -487,6 +487,11 @@ const SET_MODULES: &[SetModule] = &[
         y2021::kaldheim::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Commander2021,
+        y2021::commander_2021::CARDS,
+        y2021::commander_2021::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::StrixhavenSchoolOfMages,
         y2021::strixhaven_school_of_mages::CARDS,
         y2021::strixhaven_school_of_mages::ADDITIONAL_PRINTINGS,

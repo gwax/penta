@@ -70,6 +70,17 @@ pub enum TriggerEventDef {
         step: TurnStepDef,
         player: PlayerRelation,
     },
+    /// "Whenever one or more cards are put into exile from your library
+    /// and/or your graveyard." One trigger for the whole move, however many
+    /// cards it took, and the pair of zones is one clause rather than two.
+    ///
+    /// The event is the exiling rather than any card in it, which is what
+    /// "one or more" means: a clause that fired once per card would give a
+    /// three-card exile three counters.
+    CardsExiled {
+        zones: &'static [ZoneKind],
+        owner: PlayerRelation,
+    },
     /// "Whenever you attack." One declaration, one trigger, however many
     /// creatures were declared (CR 508.1). Distinct from [`Self::Attacks`]
     /// because the event is the declaration rather than any creature in it:

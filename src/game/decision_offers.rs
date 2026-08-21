@@ -547,7 +547,8 @@ impl Game {
             .catalog
             .get(printed)
             .map_or_else(|| "that card".to_owned(), |card| card.name.clone());
-        self.players[player.index()].exile.push(card);
+        self.players[player.index()].exile.push(card.clone());
+        self.capture_cards_exiled(std::slice::from_ref(&card), ZoneKind::Library);
         self.permit_cast_this_turn(exiled, player);
         let mut castable = Vec::new();
         self.add_offered_cast_actions(player, exiled, &mut castable);

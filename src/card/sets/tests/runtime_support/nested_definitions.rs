@@ -63,6 +63,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                 })
         }
         TriggerEventDef::Tapped(matcher) => shared_object_predicate(matcher.object),
+        // The zones are printed constants and the owner a relation, so
+        // there is nothing here that could read the board.
+        TriggerEventDef::CardsExiled { zones, .. } => !zones.is_empty(),
         TriggerEventDef::AttackDeclared {
             attacker,
             declaration,

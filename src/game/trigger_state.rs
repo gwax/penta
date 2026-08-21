@@ -200,6 +200,14 @@ pub(super) enum CommittedTriggerEvent {
         declaration_size: u8,
         attack_number: u8,
     },
+    /// One whole move of cards into exile, published once however many
+    /// cards it took. "Whenever one or more cards are put into exile" reads
+    /// this rather than any card in it.
+    CardsExiled {
+        cards: Vec<TriggerEventObject>,
+        from: ZoneKind,
+        owner: PlayerId,
+    },
     /// One whole attack declaration, published once however many creatures
     /// were declared. "Whenever you attack" watches this rather than any of
     /// the attackers in it (CR 508.1).
@@ -313,6 +321,14 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: None,
                 amount: None,
+            },
+            // The event is the move rather than any card in it, so nothing
+            // here names one; how many there were is the amount.
+            Self::CardsExiled { cards, owner, .. } => TriggerContext {
+                object: None,
+                object_controller: Some(*owner),
+                event_player: Some(*owner),
+                amount: Some(i32::try_from(cards.len()).unwrap_or(i32::MAX)),
             },
             // The event is the declaration rather than any creature in it,
             // so nothing here names one.

@@ -563,6 +563,9 @@ fn validate_trigger_event_references(
         TriggerEventDef::Tapped(matcher) => {
             validate_trigger_object_predicate(matcher.object, event, target_count, scope)
         }
+        // The zones and the owner are printed constants, so there is no
+        // reference in the clause to validate -- only that it names a zone
+        // at all.
         TriggerEventDef::AttackDeclared {
             attacker,
             declaration,
@@ -602,9 +605,9 @@ fn validate_trigger_event_references(
         TriggerEventDef::DamageDealt(matcher) => {
             validate_trigger_damage_matcher(matcher, event, target_count, scope)
         }
-        TriggerEventDef::LifeGained(PlayerRelation::ChosenPlayer) => {
-            Err(unsupported_trigger_event(event))
-        }
+        // A clause that names no zone at all is not a clause about exiling.
+        TriggerEventDef::LifeGained(PlayerRelation::ChosenPlayer)
+        | TriggerEventDef::CardsExiled { zones: &[], .. } => Err(unsupported_trigger_event(event)),
         TriggerEventDef::CommittedCrime(_)
         | TriggerEventDef::BecomesLevel(_)
         | TriggerEventDef::Cycled
@@ -613,6 +616,7 @@ fn validate_trigger_event_references(
         | TriggerEventDef::BecomesMonarch(_)
         | TriggerEventDef::DrewCard(_)
         | TriggerEventDef::Discarded(_)
+        | TriggerEventDef::CardsExiled { .. }
         | TriggerEventDef::StateCondition => Ok(()),
     }
 }

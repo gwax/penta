@@ -151,6 +151,18 @@ distinguishes snapshots of the covered source and build inputs.
   The existing coverage left the creature flagged as attacking into the end
   step, which no game does, and so passed either way.
 
+- **"Whenever one or more cards are put into exile."** One event for the
+  whole move, published once however many cards it took, so a clause reading
+  it gives one counter for a three-card exile rather than three. The zones
+  are a list on the matcher, because "from your library and/or your
+  graveyard" is one clause rather than two.
+
+  It is raised where cards leave a hidden or public zone for exile -- the
+  generic nonbattlefield move, an impulse off the top, cascade, exile-until,
+  a graveyard-exiling activation cost, and a spell's additional cost. A
+  permanent exiled from the battlefield is a zone change of its own and is
+  published there.
+
 - **Foretell, and a `Foretell` action.** Two halves that meet in exile: a
   special action that pays {2} to exile a card from your hand face down, and
   the alternative cast the card prints, taken from exile on a later turn. A

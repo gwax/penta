@@ -49,16 +49,23 @@ impl Game {
             }
             passed.push(card);
         }
+        // One move however many cards it walked past, so a clause reading
+        // "one or more cards" sees the whole of it at once.
+        let mut moved = Vec::new();
         for card in passed {
             let (card, _zone_change) = self.zone_change_card(card);
-            self.players[player.index()].exile.push(card);
+            self.players[player.index()].exile.push(card.clone());
+            moved.push(card);
         }
         let Some(card) = matched else {
+            self.capture_cards_exiled(&moved, ZoneKind::Library);
             return;
         };
         let (card, _zone_change) = self.zone_change_card(card);
         let exiled = card.id;
-        self.players[player.index()].exile.push(card);
+        self.players[player.index()].exile.push(card.clone());
+        moved.push(card);
+        self.capture_cards_exiled(&moved, ZoneKind::Library);
         self.permit_energy_cast(exiled, caster);
     }
 
@@ -72,6 +79,7 @@ impl Game {
             return;
         };
         let mut exiled = Vec::new();
+        let mut moved = Vec::new();
         let mut matched = None;
         while let Some(card) = self.players[player.index()].library.pop() {
             let qualifies = self.catalog.get(card.definition).is_some_and(|definition| {
@@ -80,13 +88,15 @@ impl Game {
             });
             let (card, _zone_change) = self.zone_change_card(card);
             let id = card.id;
-            self.players[player.index()].exile.push(card);
+            self.players[player.index()].exile.push(card.clone());
+            moved.push(card);
             exiled.push(id);
             if qualifies {
                 matched = Some(id);
                 break;
             }
         }
+        self.capture_cards_exiled(&moved, ZoneKind::Library);
         let Some(matched) = matched else {
             self.bury_cascade_exiles(player, &exiled);
             return;
@@ -388,12 +398,15 @@ impl Game {
                 let controller = object.controller;
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Player(player) = target {
+                        let mut moved = Vec::new();
                         for card in self.take_top_of_library(player, count) {
                             let (card, _zone_change) = self.zone_change_card(card);
                             let exiled = card.id;
-                            self.players[player.index()].exile.push(card);
+                            self.players[player.index()].exile.push(card.clone());
+                            moved.push(card);
                             self.permit_free_play_this_turn(exiled, controller);
                         }
+                        self.capture_cards_exiled(&moved, ZoneKind::Library);
                     }
                 }
             }

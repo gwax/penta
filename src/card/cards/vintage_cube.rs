@@ -214,3 +214,4 @@ pub const MAGDA_BRAZEN_OUTLAW: CardDefinitionId = CardDefinitionId(2298);
 pub const DELAYED_BLAST_FIREBALL: CardDefinitionId = CardDefinitionId(2299);
 pub const NIGHTS_WHISPER: CardDefinitionId = CardDefinitionId(2300);
 pub const BRIGHTGLASS_GEARHULK: CardDefinitionId = CardDefinitionId(2301);
+pub const LAELIA_THE_BLADE_REFORGED: CardDefinitionId = CardDefinitionId(2302);

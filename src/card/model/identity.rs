@@ -91,6 +91,7 @@ pub enum CardSet {
     Commander2015,
     ModernHorizons1,
     Kaldheim,
+    Commander2021,
     StrixhavenSchoolOfMages,
     ModernHorizons2,
     AdventuresInTheForgottenRealms,

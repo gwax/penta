@@ -727,6 +727,9 @@ impl Game {
                 );
             }
         }
+        // One move for the whole cost, however many cards it spends out of a
+        // graveyard, which is what "one or more cards" reads.
+        let mut exiled_from_graveyard = Vec::new();
         while let Some(&spent) = remaining_sacrifices.first() {
             if self
                 .battlefield
@@ -739,7 +742,8 @@ impl Game {
             let owner = stack_object.controller;
             if let Some(card) = remove_card(&mut self.players[owner.index()].graveyard, spent) {
                 let (card, _zone_change) = self.zone_change_card(card);
-                self.players[owner.index()].exile.push(card);
+                self.players[owner.index()].exile.push(card.clone());
+                exiled_from_graveyard.push(card);
             } else if let Some(card) = remove_card(&mut self.players[owner.index()].hand, spent) {
                 let definition = card.definition;
                 let (card, _zone_change) = self.zone_change_card(card);
@@ -755,6 +759,7 @@ impl Game {
                 }
             }
         }
+        self.capture_cards_exiled(&exiled_from_graveyard, ZoneKind::Graveyard);
         if !remaining_sacrifices.is_empty() {
             let sacrificed = remaining_sacrifices.remove(0);
             self.move_permanents_to_graveyard_then(
