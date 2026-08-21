@@ -162,3 +162,4 @@ pub const COLLECTIVE_BRUTALITY: CardDefinitionId = CardDefinitionId(2244);
 pub const EXPEDITION_MAP: CardDefinitionId = CardDefinitionId(2245);
 pub const SERVO_TOKEN_1_1_COLORLESS: CardDefinitionId = CardDefinitionId(2246);
 pub const SAHEELI_SUBLIME_ARTIFICER: CardDefinitionId = CardDefinitionId(2247);
+pub const LUSH_PORTICO: CardDefinitionId = CardDefinitionId(2248);

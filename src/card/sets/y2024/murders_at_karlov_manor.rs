@@ -94,6 +94,17 @@ const fn surveil_land(types: &'static [&'static str]) -> CardRules {
     CardRules::new_land(types).with_abilities(&SURVEIL_LAND_ABILITIES)
 }
 
+// MKM 263 — Lush Portico
+pub(in crate::card::sets) static LUSH_PORTICO: CardRecord = CardRecord::new(
+    cards::LUSH_PORTICO,
+    "Lush Portico",
+    CardArt::new("c17816e8-28b1-4295-a637-efb0e5c18873", "Kamila Szutenberg"),
+    CardSet::MurdersAtKarlovManor,
+    // The green-white half of the cycle, which the decks that want it are
+    // playing for the fixing rather than for the graveyard.
+    surveil_land(&["Forest", "Plains"]),
+);
+
 // MKM 269 — Thundering Falls
 pub(in crate::card::sets) static THUNDERING_FALLS: CardRecord = CardRecord::new(
     cards::THUNDERING_FALLS,
@@ -105,6 +116,7 @@ pub(in crate::card::sets) static THUNDERING_FALLS: CardRecord = CardRecord::new(
     surveil_land(&["Island", "Mountain"]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&FORENSIC_GADGETEER, &THUNDERING_FALLS];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&FORENSIC_GADGETEER, &LUSH_PORTICO, &THUNDERING_FALLS];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

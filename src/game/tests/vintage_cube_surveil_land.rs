@@ -5,6 +5,11 @@ use super::*;
 
 /// Player One with a Thundering Falls in hand and a known card on top.
 fn staged(top: CardDefinitionId) -> (Game, GameObjectId) {
+    staged_with(cards::THUNDERING_FALLS, top)
+}
+
+/// The same, for any land in the cycle.
+fn staged_with(land: CardDefinitionId, top: CardDefinitionId) -> (Game, GameObjectId) {
     let mut game = ready_game();
     game.battlefield.clear();
     game.players[0].library.clear();
@@ -16,7 +21,7 @@ fn staged(top: CardDefinitionId) -> (Game, GameObjectId) {
         .expect("one card");
     game.players[0].library.push(card);
     let land = game
-        .build_zone(PlayerId::One, &[cards::THUNDERING_FALLS])
+        .build_zone(PlayerId::One, &[land])
         .expect("cataloged")
         .into_iter()
         .next()
@@ -76,9 +81,13 @@ fn play_and_surveil(game: &mut Game, land: GameObjectId, bin: bool) {
 }
 
 fn the_land(game: &Game) -> Option<&Permanent> {
+    the_land_named(game, cards::THUNDERING_FALLS)
+}
+
+fn the_land_named(game: &Game, definition: CardDefinitionId) -> Option<&Permanent> {
     game.battlefield
         .iter()
-        .find(|permanent| permanent.card.definition == cards::THUNDERING_FALLS)
+        .find(|permanent| permanent.card.definition == definition)
 }
 
 /// It arrives tapped, whatever you do with the surveil.
@@ -118,6 +127,38 @@ fn surveil_may_leave_the_card_on_top() {
         game.players[0].graveyard.is_empty(),
         "and nothing was binned",
     );
+}
+
+/// Every land in the cycle is the same card with different types, so one
+/// more of them needs only its colours checked.
+#[test]
+fn another_land_in_the_cycle_taps_for_its_own_two() {
+    let (mut game, land) = staged_with(cards::LUSH_PORTICO, cards::LIGHTNING_BOLT);
+    play_and_surveil(&mut game, land, false);
+    let id = the_land_named(&game, cards::LUSH_PORTICO)
+        .expect("it is on the battlefield")
+        .card
+        .id;
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == id)
+    {
+        permanent.tapped = false;
+    }
+
+    let colors = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility { source, color, .. } if source == id => Some(color),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert!(colors.contains(&ManaColor::Green), "Forest");
+    assert!(colors.contains(&ManaColor::White), "Plains");
+    assert_eq!(colors.len(), 2, "and nothing else");
 }
 
 /// The mana abilities come from the basic land types rather than a printed

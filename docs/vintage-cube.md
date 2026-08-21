@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 234 are cataloged and 300 are not
+- 534 cards in the pool, of which 235 are cataloged and 299 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -321,7 +321,7 @@ lands are legal in every format and are not listed.
 - `Ugin, Eye of the Storms`
 - `Urza's Bauble`
 
-### Lands (33)
+### Lands (32)
 
 - `Arena of Glory`
 - `Blazemire Verge`
@@ -336,7 +336,6 @@ lands are legal in every format and are not listed.
 - `Field of the Dead`
 - `Hedge Maze`
 - `Horizon Canopy`
-- `Lush Portico`
 - `Meticulous Archive`
 - `Multiversal Passage`
 - `Otawara, Soaring City`
@@ -359,7 +358,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 234 pool cards are in the catalog because an earlier format needed them.
+These 235 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -466,6 +465,7 @@ been played beside.
 - `Lion Sash`
 - `Llanowar Elves`
 - `Lotus Petal`
+- `Lush Portico`
 - `Lórien Revealed`
 - `Mana Confluence`
 - `Mana Crypt`
