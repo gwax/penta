@@ -817,6 +817,7 @@ mod vintage_cube_gut;
 mod vintage_cube_hand_attack;
 mod vintage_cube_horizon_land;
 mod vintage_cube_infect;
+mod vintage_cube_jace_the_mind_sculptor;
 mod vintage_cube_jacked_rabbit;
 mod vintage_cube_jitte;
 mod vintage_cube_lands;

@@ -6,13 +6,13 @@
 use super::model::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef,
-    AppliedRuleDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef, CardType,
-    ChoiceVisibilityDef, ChooseDef, ComparisonDef, ConditionDef, CounterKind,
-    DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef, DiscardFollowUpDef,
-    DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility,
-    ManaColor, ManaCost, ObjectChoiceBindingDef, ObjectCountConditionDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ProtectedCreatureType, ReplacementAbilityDef,
+    AppliedRuleDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef,
+    CardChoiceSourceDef, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, ConditionDef,
+    CounterKind, DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef,
+    DiscardFollowUpDef, DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
+    KeywordAbility, ManaColor, ManaCost, ObjectChoiceBindingDef, ObjectCountConditionDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PayOrDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ProtectedCreatureType, ReplacementAbilityDef,
     ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef,
     SplitIntoPilesDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
     ZonePlacement,
@@ -607,40 +607,6 @@ static POPULATE_CANDIDATE: [ObjectPredicateDef; 2] = [
     ObjectPredicateDef::Token,
 ];
 
-/// The wheel: each player shuffles their hand and graveyard into their
-/// library, then draws seven cards. Timetwister, Echo of Eons, and Time
-/// Spiral print the same three steps word for word.
-///
-/// The spell doing it is on the stack while this resolves, so it is not
-/// among the cards that go back; where it lands afterwards is the card's own
-/// resolution destination.
-#[must_use]
-pub const fn shuffle_back_and_draw_seven() -> EffectDef {
-    EffectDef::Sequence(&WHEEL_STEPS)
-}
-
-static WHEEL_STEPS: [EffectDef; 3] = [
-    EffectDef::MoveToZone {
-        object: EffectRecipientDef::matching_objects(
-            ObjectPredicateDef::Any,
-            &[ZoneKind::Hand, ZoneKind::Graveyard],
-            PlayerRelation::Any,
-        ),
-        zone: ZoneKind::Library,
-        placement: ZonePlacement::Top,
-        arrival_effect: None,
-        attachment: None,
-        controller: None,
-    },
-    EffectDef::ShuffleLibrary {
-        player: EffectRecipientDef::EachPlayer,
-    },
-    EffectDef::DrawCards {
-        recipient: EffectRecipientDef::EachPlayer,
-        amount: ValueDef::Constant(7),
-    },
-];
-
 /// Connive, on the permanent doing it: draw a card, then discard a card, and
 /// take a +1/+1 counter for the discard if what went was not a land.
 ///
@@ -968,6 +934,7 @@ pub const fn cannot_be_blocked(text: &'static str) -> AbilityDef {
 }
 
 include!("abilities/lands.rs");
+include!("abilities/repeated_clauses.rs");
 include!("abilities/keyword_mechanics.rs");
 include!("abilities/attachment.rs");
 include!("abilities/tests.rs");
