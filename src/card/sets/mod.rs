@@ -572,6 +572,11 @@ const SET_MODULES: &[SetModule] = &[
         y2024::bloomburrow::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::BloomburrowCommander,
+        y2024::bloomburrow_commander::CARDS,
+        y2024::bloomburrow_commander::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::DuskmournHouseOfHorror,
         y2024::duskmourn_house_of_horror::CARDS,
         y2024::duskmourn_house_of_horror::ADDITIONAL_PRINTINGS,

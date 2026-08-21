@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 235 are cataloged and 299 are not
+- 534 cards in the pool, of which 236 are cataloged and 298 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -33,7 +33,7 @@ leaves empty so nothing reads it as a set window by accident.
 Grouped by color so a tranche can be scoped to one part of the pool. Basic
 lands are legal in every format and are not listed.
 
-### White (33)
+### White (32)
 
 - `Adeline, Resplendent Cathar`
 - `Cathar Commando`
@@ -49,7 +49,6 @@ lands are legal in every format and are not listed.
 - `Giver of Runes`
 - `Glimmer Lens`
 - `Guide of Souls`
-- `Jacked Rabbit`
 - `Leyline Binding`
 - `Loran of the Third Path`
 - `Luminarch Aspirant`
@@ -358,7 +357,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 235 pool cards are in the catalog because an earlier format needed them.
+These 236 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -452,6 +451,7 @@ been played beside.
 - `Inspiring Vantage`
 - `Ivora, Insatiable Heir`
 - `Jace, Wielder of Mysteries`
+- `Jacked Rabbit`
 - `Jetmir's Garden`
 - `Karakas`
 - `Ketria Triome`

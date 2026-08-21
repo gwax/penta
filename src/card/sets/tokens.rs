@@ -169,6 +169,15 @@ pub(in crate::card::sets) static DJINN_TOKEN_5_5_COLORLESS: CardRecord = CardRec
 );
 
 /// Tetravus detaches these, and can exile its own back to rebuild itself.
+pub(in crate::card::sets) static RABBIT_TOKEN_1_1_WHITE: CardRecord = CardRecord::new(
+    cards::RABBIT_TOKEN_1_1_WHITE,
+    "Rabbit",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Rabbit"], 1, 1)
+        .printed_colors(&[ManaColor::White]),
+);
+
 pub(in crate::card::sets) static SERVO_TOKEN_1_1_COLORLESS: CardRecord = CardRecord::new(
     cards::SERVO_TOKEN_1_1_COLORLESS,
     "Servo",
@@ -721,6 +730,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DOMRI_RADE_EMBLEM,
     &NISSA_WHO_SHAKES_THE_WORLD_EMBLEM,
     &DJINN_TOKEN_5_5_COLORLESS,
+    &RABBIT_TOKEN_1_1_WHITE,
     &SERVO_TOKEN_1_1_COLORLESS,
     &TETRAVITE_TOKEN,
     &ASSASSIN_TOKEN_1_1_BLACK,

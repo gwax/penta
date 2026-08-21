@@ -59,6 +59,15 @@ impl Game {
             crate::card::ValueDef::DevotionTo(_) | crate::card::ValueDef::LibrarySize(_) => {
                 self.player_readable_value(value, controller)
             }
+            // The X its own spell was cast for, which the permanent recorded
+            // as it arrived. An intervening "if X is 5 or more" asks about
+            // that number, so it has to be readable here and not only where a
+            // counter count is being handed to an entry replacement.
+            crate::card::ValueDef::SourceCastX => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == source)
+                .map_or(0, |permanent| i32::from(permanent.cast_x)),
             other => i32::from(self.cost_reduction_value(other, controller, source)),
         }
     }
