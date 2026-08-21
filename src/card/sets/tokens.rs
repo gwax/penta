@@ -188,6 +188,14 @@ pub(in crate::card::sets) static SERVO_TOKEN_1_1_COLORLESS: CardRecord = CardRec
     CardRules::new_creature_without_mana_cost(&["Servo"], 1, 1).with_type(CardType::Artifact),
 );
 
+pub(in crate::card::sets) static GOLEM_TOKEN_3_3_COLORLESS: CardRecord = CardRecord::new(
+    cards::GOLEM_TOKEN_3_3_COLORLESS,
+    "Golem",
+    CardArt::new("", ""),
+    CardSet::Token,
+    CardRules::new_creature_without_mana_cost(&["Golem"], 3, 3).with_type(CardType::Artifact),
+);
+
 pub(in crate::card::sets) static TETRAVITE_TOKEN: CardRecord = CardRecord::new(
     cards::TETRAVITE_TOKEN,
     "Tetravite",
@@ -801,6 +809,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DJINN_TOKEN_5_5_COLORLESS,
     &RABBIT_TOKEN_1_1_WHITE,
     &SERVO_TOKEN_1_1_COLORLESS,
+    &GOLEM_TOKEN_3_3_COLORLESS,
     &TETRAVITE_TOKEN,
     &ASSASSIN_TOKEN_1_1_BLACK,
     &BIRD_TOKEN_4_4_RED,

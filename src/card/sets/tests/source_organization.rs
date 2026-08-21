@@ -290,6 +290,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("fallout.rs") => source(CardSet::Fallout, "PIP"),
         Some("modern_horizons_3.rs") => source(CardSet::ModernHorizons3, "MH3"),
         Some("outlaws_of_thunder_junction.rs") => source(CardSet::OutlawsOfThunderJunction, "OTJ"),
+        Some("the_big_score.rs") => source(CardSet::TheBigScore, "BIG"),
         Some("modern_horizons_3_commander.rs") => source(CardSet::ModernHorizons3Commander, "M3C"),
         Some("bloomburrow.rs") => source(CardSet::Bloomburrow, "BLB"),
         Some("bloomburrow_commander.rs") => source(CardSet::BloomburrowCommander, "BLC"),

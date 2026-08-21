@@ -114,6 +114,7 @@ pub enum CardSet {
     Fallout,
     ModernHorizons3,
     OutlawsOfThunderJunction,
+    TheBigScore,
     ModernHorizons3Commander,
     Bloomburrow,
     BloomburrowCommander,

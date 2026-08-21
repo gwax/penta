@@ -597,6 +597,11 @@ const SET_MODULES: &[SetModule] = &[
         y2024::outlaws_of_thunder_junction::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::TheBigScore,
+        y2024::the_big_score::CARDS,
+        y2024::the_big_score::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::ModernHorizons3Commander,
         y2024::modern_horizons_3_commander::CARDS,
         y2024::modern_horizons_3_commander::ADDITIONAL_PRINTINGS,
