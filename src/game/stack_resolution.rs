@@ -35,6 +35,12 @@ impl Game {
         self.retire_stack_object(&object);
         match object.kind {
             StackObjectKind::ActivatedAbility | StackObjectKind::TriggeredAbility => {
+                // Counted as the resolution begins rather than after it, so
+                // an ability asking whether this is the first time it has
+                // resolved this turn counts the one asking. A resolution
+                // that suspends on a decision resumes at the finish, never
+                // here, so nothing is counted twice.
+                self.record_ability_resolution(&object);
                 let pending_before = self.pending_decisions.len();
                 let resolved = self.resolve_stack_ability(&object);
                 if self.defer_stack_resolution(pending_before, &object, resolved) {
@@ -124,6 +130,33 @@ impl Game {
             }
         }
         self.finish_stack_resolution(&object, !spell_fizzled);
+    }
+
+    /// Records that one of a permanent's abilities is resolving, for the
+    /// cards that count their own resolutions.
+    fn record_ability_resolution(&mut self, object: &StackObject) {
+        let Some(payload) = object.ability.as_ref() else {
+            return;
+        };
+        let Some(source) = object.source else {
+            return;
+        };
+        let origin = payload.origin;
+        let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == source)
+        else {
+            return;
+        };
+        match permanent
+            .resolutions_this_turn
+            .iter_mut()
+            .find(|(recorded, _)| *recorded == origin)
+        {
+            Some((_, count)) => *count = count.saturating_add(1),
+            None => permanent.resolutions_this_turn.push((origin, 1)),
+        }
     }
 
     pub(super) fn finish_stack_resolution(&mut self, object: &StackObject, resolved: bool) {

@@ -441,6 +441,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::ControlsGreatestPowerCreature
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
+        | TriggerConditionDef::SourceResolutionsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::SourceIsTapped
         | TriggerConditionDef::SourceIsUntapped

@@ -756,6 +756,9 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
             player: relation, ..
         } => static_player_relation_supported(relation),
         TriggerConditionDef::SourceActivationsThisTurn { .. }
+        // Both count something about a resolution, which a static walk is
+        // not one of.
+        | TriggerConditionDef::SourceResolutionsThisTurn { .. }
         | TriggerConditionDef::TargetMatches { .. }
         | TriggerConditionDef::ControlsGreatestPowerCreature => false,
         TriggerConditionDef::SourceMatches { object }

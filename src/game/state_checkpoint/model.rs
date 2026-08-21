@@ -315,6 +315,10 @@ pub(super) struct PermanentSnapshot {
     /// triggering carries none, which is a turn in which none has.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) triggers_this_turn: Vec<AbilityActivationSnapshot>,
+    /// Absent from a payload written before any ability counted its own
+    /// resolutions, which is why it defaults rather than being required.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) resolutions_this_turn: Vec<AbilityActivationSnapshot>,
     /// Additive: a payload written before either flag existed restores both
     /// as false, which is what an ordinary permanent means anyway.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]

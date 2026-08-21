@@ -640,6 +640,16 @@ fn parse_permanent(
             )
         })
         .collect();
+    permanent.resolutions_this_turn = state
+        .resolutions_this_turn
+        .iter()
+        .map(|resolved| {
+            (
+                ability_origin_from_snapshot(resolved.origin),
+                resolved.count,
+            )
+        })
+        .collect();
     permanent.cast_at_instant_speed = state.cast_at_instant_speed;
     permanent.became_aura = state.became_aura;
     permanent.copy_effect = state

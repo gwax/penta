@@ -438,6 +438,7 @@ fn validate_trigger_condition_shape(
         | TriggerConditionDef::ValueComparison(_)
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
+        | TriggerConditionDef::SourceResolutionsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::SourceIsTapped
         | TriggerConditionDef::SourceIsUntapped

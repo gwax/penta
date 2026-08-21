@@ -117,6 +117,14 @@ pub(super) fn permanent_snapshot(
                 count: *count,
             })
             .collect(),
+        resolutions_this_turn: permanent
+            .resolutions_this_turn
+            .iter()
+            .map(|(origin, count)| AbilityActivationSnapshot {
+                origin: ability_origin_snapshot(*origin),
+                count: *count,
+            })
+            .collect(),
         cast_at_instant_speed: permanent.cast_at_instant_speed,
         became_aura: permanent.became_aura,
         copy_effect: copy_effect.map(|(snapshot, _)| snapshot),

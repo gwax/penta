@@ -106,6 +106,12 @@ struct Permanent {
     /// triggered this turn, for the ones that print "this ability triggers
     /// only once each turn". Cleared alongside the activations above.
     triggers_this_turn: Vec<(AbilityOrigin, u8)>,
+    /// How many times each of this permanent's abilities has *resolved* this
+    /// turn. Distinct from the triggers above: a countered trigger triggered
+    /// and never resolved, and Omnath counts resolutions. Counted as the
+    /// resolution begins, so an ability asking whether this is the first
+    /// time counts itself. Cleared alongside the two above.
+    resolutions_this_turn: Vec<(AbilityOrigin, u8)>,
     /// Every kind of counter this permanent carries, indexed by
     /// [`CounterKind::index`]. Only +1/+1 counters have rules meaning on their
     /// own; the rest are markers the cards that place them interpret.
@@ -255,6 +261,7 @@ impl Permanent {
             resolved_continuous_effects: Vec::new(),
             activations_this_turn: Vec::new(),
             triggers_this_turn: Vec::new(),
+            resolutions_this_turn: Vec::new(),
             counters: [0; CounterKind::COUNT],
             attached_to: None,
             reconfigured_timestamp: None,

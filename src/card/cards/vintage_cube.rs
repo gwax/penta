@@ -178,3 +178,4 @@ pub const FIGURE_OF_DESTINY: CardDefinitionId = CardDefinitionId(2260);
 pub const MINE_COLLAPSE: CardDefinitionId = CardDefinitionId(2261);
 pub const GOBLIN_TOKEN_1_1_RED_HASTE: CardDefinitionId = CardDefinitionId(2262);
 pub const GOBLIN_RABBLEMASTER: CardDefinitionId = CardDefinitionId(2263);
+pub const OMNATH_LOCUS_OF_CREATION: CardDefinitionId = CardDefinitionId(2264);

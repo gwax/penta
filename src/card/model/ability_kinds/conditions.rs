@@ -98,6 +98,14 @@ pub enum TriggerConditionDef {
         comparison: ComparisonDef,
         amount: u8,
     },
+    /// How many times this ability has resolved this turn, counting the
+    /// resolution asking. Omnath's landfall does a different thing the
+    /// first, second, and third time, and a trigger that was countered
+    /// never resolved and never counted.
+    SourceResolutionsThisTurn {
+        comparison: ComparisonDef,
+        amount: u8,
+    },
     /// Whether this ability's own source has dealt damage to an opponent of
     /// its controller at any point this turn, by any means.
     SourceDealtDamageToOpponentThisTurn,

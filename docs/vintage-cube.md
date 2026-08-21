@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 247 are cataloged and 287 are not
+- 534 cards in the pool, of which 248 are cataloged and 286 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -227,7 +227,7 @@ lands are legal in every format and are not listed.
 - `Walk-In Closet // Forgotten Cellar`
 - `Woodfall Primus`
 
-### Multicolor (42)
+### Multicolor (41)
 
 - `Arwen, Mortal Queen`
 - `Atraxa, Grand Unifier`
@@ -253,7 +253,6 @@ lands are legal in every format and are not listed.
 - `Nadu, Winged Wisdom`
 - `No More Lies`
 - `Oko, Thief of Crowns`
-- `Omnath, Locus of Creation`
 - `Otharri, Suns' Glory`
 - `Pillage the Bog`
 - `Psychic Frog`
@@ -346,7 +345,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 247 pool cards are in the catalog because an earlier format needed them.
+These 248 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -492,6 +491,7 @@ been played beside.
 - `Nissa, Who Shakes the World`
 - `Occult Epiphany`
 - `Ocelot Pride`
+- `Omnath, Locus of Creation`
 - `Orcish Bowmasters`
 - `Overgrown Tomb`
 - `Overlord of the Balemurk`

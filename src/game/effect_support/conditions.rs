@@ -81,6 +81,26 @@ impl Game {
         }
     }
 
+    /// How many times this object's copy of one ability has resolved this
+    /// turn, including the resolution asking: the count is recorded as a
+    /// resolution begins, so "the first time" reads one.
+    pub(super) fn ability_resolutions_this_turn(
+        &self,
+        source: GameObjectId,
+        ability: AbilityOrigin,
+    ) -> u8 {
+        self.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source)
+            .and_then(|permanent| {
+                permanent
+                    .resolutions_this_turn
+                    .iter()
+                    .find(|(origin, _)| *origin == ability)
+            })
+            .map_or(0, |(_, count)| *count)
+    }
+
     pub(super) fn ability_activations_this_turn(
         &self,
         source: GameObjectId,
@@ -357,6 +377,14 @@ impl Game {
                     .is_some_and(|origin| {
                         compare(
                             &self.ability_activations_this_turn(source, origin),
+                            *comparison,
+                            amount,
+                        )
+                    }),
+                TriggerConditionDef::SourceResolutionsThisTurn { comparison, amount } => ability
+                    .is_some_and(|origin| {
+                        compare(
+                            &self.ability_resolutions_this_turn(source, origin),
                             *comparison,
                             amount,
                         )
