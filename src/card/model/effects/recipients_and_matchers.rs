@@ -98,6 +98,11 @@ pub enum ObjectSetDef {
     /// card of target player's graveyard" names. Nothing is chosen: a
     /// graveyard has one bottom card, and an empty one has none.
     BottomOfGraveyard(PlayerRefDef),
+    /// The cards exiled with the ability's own source that match this
+    /// predicate. "A creature card exiled with this creature" names a pile
+    /// no query can find: what puts a card in it is which permanent exiled
+    /// it, not where it is or what it looks like.
+    LinkedExiles(ObjectPredicateDef),
 }
 
 /// The typed subject of an effect. A target slot remains its own category
@@ -175,6 +180,7 @@ impl EffectRecipientDef {
                 ObjectSetDef::Binding(_)
                 | ObjectSetDef::MatchingBinding { .. }
                 | ObjectSetDef::PermanentsTargetedBy(_)
+                | ObjectSetDef::LinkedExiles(_)
                 | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::Query(_)
@@ -196,6 +202,7 @@ impl EffectRecipientDef {
                 | ObjectSetDef::Binding(_)
             | ObjectSetDef::MatchingBinding { .. }
                 | ObjectSetDef::PermanentsTargetedBy(_)
+                | ObjectSetDef::LinkedExiles(_)
                 | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::SharingNameWith(_)

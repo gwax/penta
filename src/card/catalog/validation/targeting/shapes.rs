@@ -31,6 +31,7 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         | TriggerEventDef::BlocksOrBecomesBlockedBy { .. }
         | TriggerEventDef::Blocks { .. }
         | TriggerEventDef::BecomesBlockedBy { .. }
+        | TriggerEventDef::CountersPlaced { .. }
         | TriggerEventDef::Transforms(_) => Some(ZoneKind::Battlefield),
         // Both name the spell rather than what it points at, and a spell
         // is on the stack.
@@ -228,7 +229,8 @@ fn validate_object_set_shape(
         }
         ObjectSetDef::Binding(_)
                 | ObjectSetDef::MatchingBinding { .. }
-        | ObjectSetDef::BottomOfGraveyard(_)
+        | ObjectSetDef::LinkedExiles(_)
+            | ObjectSetDef::BottomOfGraveyard(_)
         | ObjectSetDef::SharingNameWithBinding { .. }
         | ObjectSetDef::TopOfGraveyardMatching { .. } => Ok(()),
     }
@@ -529,6 +531,7 @@ fn recipient_may_name_nonbattlefield_object(
             | ObjectSetDef::MatchingBinding { .. }
             // A graveyard is not the battlefield, which is the whole point of
             // naming a card at either end of it.
+            | ObjectSetDef::LinkedExiles(_)
             | ObjectSetDef::BottomOfGraveyard(_)
             | ObjectSetDef::TopOfGraveyardMatching { .. },
         ) => true,
@@ -585,6 +588,7 @@ fn recipient_nonbattlefield_zones_support_flashback(
             ObjectSetDef::One(ObjectRefDef::Binding(_))
             | ObjectSetDef::Binding(_)
             | ObjectSetDef::MatchingBinding { .. }
+            | ObjectSetDef::LinkedExiles(_)
             | ObjectSetDef::BottomOfGraveyard(_)
             | ObjectSetDef::SharingNameWithBinding { .. }
             | ObjectSetDef::TopOfGraveyardMatching { .. },

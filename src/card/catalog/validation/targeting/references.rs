@@ -576,6 +576,9 @@ fn validate_trigger_event_references(
         | TriggerEventDef::SpellCast(predicate)
         | TriggerEventDef::BecomesTargetOfSpell(predicate)
         | TriggerEventDef::BecomesTargetOfSpellOrAbility(predicate)
+        | TriggerEventDef::CountersPlaced {
+            object: predicate, ..
+        }
         | TriggerEventDef::Transforms(predicate) => {
             validate_trigger_object_predicate(predicate, event, target_count, scope)
         }
@@ -734,6 +737,9 @@ fn validate_recipient_target_references(
         EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => {
             validate_query(query, target_count, scope)
         }
+        // The pile is named by which permanent exiled the cards, so there is
+        // no player or target reference in it to validate.
+        EffectRecipientSetDef::Objects(ObjectSetDef::LinkedExiles(_)) => Ok(()),
         EffectRecipientSetDef::Objects(
             ObjectSetDef::BottomOfGraveyard(player)
             | ObjectSetDef::SharingNameWithBinding { player, .. }

@@ -369,6 +369,28 @@ impl Game {
             .unwrap_or_default()
     }
 
+    /// The cards exiled with `source` that match. Which permanent exiled
+    /// them, not where they are: the pile is read off the link the exile
+    /// recorded rather than found by looking.
+    fn linked_exile_targets(
+        &self,
+        predicate: ObjectPredicateDef,
+        source: GameObjectId,
+    ) -> Vec<Target> {
+        self.linked_exiles
+            .iter()
+            .filter(|(exiled_by, _)| *exiled_by == source)
+            .map(|(_, exiled)| *exiled)
+            .filter(|exiled| {
+                self.card_in_nonbattlefield_zone(*exiled)
+                    .is_some_and(|(zone, card)| {
+                        self.card_object_matches(predicate, card, zone, source)
+                    })
+            })
+            .map(Target::Card)
+            .collect()
+    }
+
     pub(super) fn effect_objects(
         &self,
         objects: ObjectSetDef,
@@ -457,6 +479,9 @@ impl Game {
                     .map(|card| Target::Card(card.id))
                     .into_iter()
                     .collect()
+            }
+            ObjectSetDef::LinkedExiles(predicate) => {
+                self.linked_exile_targets(predicate, object.source.unwrap_or(object.id))
             }
             // The front of the vector is the oldest card, which is the one at
             // the bottom of the pile.

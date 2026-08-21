@@ -68,10 +68,15 @@ pub enum CounterKind {
     /// it and one level higher for each counter (CR 717.3), so what the card
     /// prints as "Level 2" is one counter here.
     Level,
+    /// A finality counter (CR 122.1c). Unlike the markers above this one has
+    /// a rules meaning of its own: a creature carrying it is exiled rather
+    /// than put into a graveyard when it would die, which is what stops a
+    /// reanimated body from being reanimated again.
+    Finality,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 26;
+    pub const COUNT: usize = 27;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -100,6 +105,7 @@ impl CounterKind {
         Self::Depletion,
         Self::Wish,
         Self::Level,
+        Self::Finality,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -133,7 +139,8 @@ impl CounterKind {
             | Self::Fade
             | Self::Depletion
             | Self::Wish
-            | Self::Level => (0, 0),
+            | Self::Level
+            | Self::Finality => (0, 0),
         }
     }
 
@@ -166,6 +173,7 @@ impl CounterKind {
             Self::Depletion => 23,
             Self::Wish => 24,
             Self::Level => 25,
+            Self::Finality => 26,
         }
     }
 
@@ -198,6 +206,7 @@ impl CounterKind {
             Self::Depletion => "depletion",
             Self::Wish => "wish",
             Self::Level => "level",
+            Self::Finality => "finality",
         }
     }
 }

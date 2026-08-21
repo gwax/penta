@@ -402,6 +402,15 @@ impl Game {
                     }
                 }
             }
+            EffectDef::ReturnWithHasteAndFinality {
+                object: recipient,
+                binding,
+                then,
+            } => {
+                self.return_with_haste_and_finality(
+                    recipient, binding, then, object, context, scoped,
+                );
+            }
             EffectDef::Transform { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Permanent(id) = target {

@@ -839,6 +839,7 @@ impl Game {
                 | ObjectSetDef::MatchingBinding { .. }
                 | ObjectSetDef::LegalTargets(_)
                 | ObjectSetDef::PermanentsTargetedBy(_)
+                | ObjectSetDef::LinkedExiles(_)
                 | ObjectSetDef::BottomOfGraveyard(_)
                 | ObjectSetDef::SharingNameWith(_)
                 | ObjectSetDef::SharingNameWithBinding { .. }

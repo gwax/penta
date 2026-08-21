@@ -4,14 +4,15 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
     AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardComposition, CardEffectStatus,
-    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, ComparisonDef,
-    CounterKind, DoubleFacedKind, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
-    EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    ObjectSetDef, PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    SpellAdditionalCostDef, SpellForm, SpendModeDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, ChoiceVisibilityDef,
+    ChooseDef, ComparisonDef, CounterKind, DoubleFacedKind, EffectDef, EffectPaymentCostDef,
+    EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayOptionDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, SpellAdditionalCostDef, SpellForm, SpendModeDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, cards,
 };
-use crate::ids::{CardPartId, PlayOptionId};
+use crate::ids::{CardPartId, ObjectBindingIndex, ObjectSetBindingIndex, PlayOptionId};
 use crate::{TargetIndex, mana_cost};
 
 /// "Until this enchantment leaves the battlefield" is one printed ability,
@@ -200,6 +201,114 @@ static AMPED_RAPTOR_ABILITIES: [AbilityDef; 2] = [
         EffectDef::Sequence(&RAPTOR_ENTERS),
     ),
 ];
+
+/// Anybody's graveyard, and "up to one": an Emperor with nothing worth
+/// taking still gets its combat trigger, and simply exiles nothing.
+static EMPEROR_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Any,
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: None,
+    },
+    1,
+)];
+
+/// Adapt is a conditional rather than a cost: the ability always resolves,
+/// and finding a counter already there is what makes it do nothing.
+static EMPEROR_ADAPTS: EffectDef = EffectDef::IfCondition {
+    condition: &TriggerConditionDef::SourceCounters {
+        kind: CounterKind::PlusOnePlusOne,
+        comparison: ComparisonDef::LessOrEqual,
+        amount: 0,
+    },
+    then: &EffectDef::AddCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(2),
+    },
+};
+
+static EMPEROR_ADAPT_COST: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{1}{B}"))];
+
+/// "A creature card exiled with this creature": a pile no query can find,
+/// because what puts a card in it is which permanent exiled it.
+static A_CREATURE_CARD_THE_EMPEROR_TOOK: ObjectSetDef =
+    ObjectSetDef::LinkedExiles(ObjectPredicateDef::HasType(CardType::Creature));
+
+static EMPEROR_SACRIFICES_IT: AbilityDef = AbilityDef::triggered(
+    "At the beginning of the next end step, sacrifice that creature.",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+    },
+    EffectDef::Sacrifice {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(EMPEROR_ARRIVAL)),
+    },
+);
+
+const EMPEROR_ARRIVAL: ObjectSetBindingIndex = ObjectSetBindingIndex::PRIMARY;
+
+static EMPEROR_REANIMATES: EffectDef = EffectDef::ReturnWithHasteAndFinality {
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    binding: EMPEROR_ARRIVAL,
+    then: &EffectDef::InstallTrigger(InstalledTriggerDef::once(&EMPEROR_SACRIFICES_IT)),
+};
+
+static EMPEROR_CHOOSES: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: A_CREATURE_CARD_THE_EMPEROR_TOOK,
+    exclude: None,
+    minimum: 1,
+    maximum: 1,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &EMPEROR_REANIMATES,
+});
+
+static EMPEROR_OF_BONES_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::triggered_with_targets(
+        "At the beginning of combat on your turn, exile up to one target card from a graveyard.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::BeginningOfCombat,
+            player: PlayerRelation::You,
+        },
+        &EMPEROR_TARGET,
+        EffectDef::ExileLinkedToSource {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    ),
+    AbilityDef::activated(
+        "{1}{B}: Adapt 2. (If this creature has no +1/+1 counters on it, put two +1/+1 counters \
+         on it.)",
+        &EMPEROR_ADAPT_COST,
+        EMPEROR_ADAPTS,
+    ),
+    AbilityDef::triggered(
+        "Whenever one or more +1/+1 counters are put on this creature, put a creature card exiled \
+         with this creature onto the battlefield under your control with a finality counter on \
+         it. It gains haste. Sacrifice it at the beginning of the next end step.",
+        TriggerEventDef::CountersPlaced {
+            object: ObjectPredicateDef::Source,
+            kind: CounterKind::PlusOnePlusOne,
+        },
+        EMPEROR_CHOOSES,
+    ),
+];
+
+// MH3 90 — Emperor of Bones
+pub(in crate::card::sets) static EMPEROR_OF_BONES: CardRecord = CardRecord::new(
+    cards::EMPEROR_OF_BONES,
+    "Emperor of Bones",
+    CardArt::new("df9d9075-2d1e-4848-b661-816d539e05eb", "Josh Hass"),
+    CardSet::ModernHorizons3,
+    // Two mana that eats a graveyard one card a turn and then rents the best
+    // of them back for an attack, which is what makes the adapt cost worth
+    // paying twice.
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Skeleton", "Noble"], 2, 2)
+        .with_abilities(&EMPEROR_OF_BONES_ABILITIES),
+);
 
 // MH3 114 — Amped Raptor
 pub(in crate::card::sets) static AMPED_RAPTOR: CardRecord = CardRecord::new(
@@ -654,6 +763,7 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::n
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &OCELOT_PRIDE,
     &STATIC_PRISON,
+    &EMPEROR_OF_BONES,
     &AMPED_RAPTOR,
     &COLOSSAL_DREADMASK,
     &SOWING_MYCOSPAWN,

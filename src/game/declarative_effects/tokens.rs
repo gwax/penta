@@ -83,4 +83,52 @@ impl Game {
             _ => unreachable!("the caller admits only token-making clauses"),
         }
     }
+
+    /// "Put that card onto the battlefield under your control with a
+    /// finality counter on it. It gains haste. Sacrifice it at the beginning
+    /// of the next end step."
+    ///
+    /// Everything after the first clause names the permanent that just
+    /// entered, which is a new object: the counter, the haste, and the
+    /// delayed sacrifice all read the identity the arrival minted rather
+    /// than the card that was in exile.
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn return_with_haste_and_finality(
+        &mut self,
+        recipient: crate::card::EffectRecipientDef,
+        binding: crate::ObjectSetBindingIndex,
+        then: &'static EffectDef,
+        object: &StackObject,
+        context: EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) {
+        let controller = object.controller;
+        let mut arrivals = Vec::new();
+        for target in self.effect_recipients(recipient, object, &context, scoped) {
+            let Some(arrived) = self.move_target_to_zone(
+                target,
+                crate::card::ZoneKind::Battlefield,
+                super::super::ZoneMoveCause::Effect { controller },
+                Some(super::super::BattlefieldArrival::under(controller)),
+                crate::card::ZonePlacement::Top,
+            ) else {
+                continue;
+            };
+            if let Some(permanent) = self
+                .battlefield
+                .iter_mut()
+                .find(|permanent| permanent.card.id == arrived)
+            {
+                permanent.add_counters(crate::card::CounterKind::Finality, 1);
+                permanent
+                    .temporary_keywords
+                    .push(crate::card::KeywordAbility::Haste);
+            }
+            self.capture_counters_placed(&[arrived], crate::card::CounterKind::Finality, 1);
+            arrivals.push(Target::Permanent(arrived));
+        }
+        let mut context = context;
+        context.bind_object_group(binding, arrivals);
+        self.resolve_effect_def(scoped.with_effect(*then), object, context);
+    }
 }

@@ -169,6 +169,7 @@ fn validate_effect_references(
         | EffectDef::Detain { object }
         | EffectDef::GainControl { object, .. }
         | EffectDef::ExchangeControl { first: object, .. }
+        | EffectDef::ReturnWithHasteAndFinality { object, .. }
         | EffectDef::Transform { object }
         | EffectDef::PutIntoLibraryBeneathTop { object, .. }
         | EffectDef::MoveToZone { object, .. }

@@ -183,3 +183,4 @@ pub const BOUNTIFUL_LANDSCAPE: CardDefinitionId = CardDefinitionId(2265);
 pub const ETERNAL_WITNESS: CardDefinitionId = CardDefinitionId(2266);
 pub const EXHUME: CardDefinitionId = CardDefinitionId(2267);
 pub const FORCE_OF_NEGATION: CardDefinitionId = CardDefinitionId(2268);
+pub const EMPEROR_OF_BONES: CardDefinitionId = CardDefinitionId(2269);

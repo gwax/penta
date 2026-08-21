@@ -140,6 +140,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                     )
                     | ObjectSetDef::Binding(_)
                     | ObjectSetDef::MatchingBinding { .. }
+                    | ObjectSetDef::LinkedExiles(_)
                     | ObjectSetDef::BottomOfGraveyard(_)
                     | ObjectSetDef::LegalTargets(_)
                     | ObjectSetDef::PermanentsTargetedBy(_)
@@ -256,6 +257,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::PutIntoLibraryBeneathTop { .. }
         | EffectDef::MoveToZone { .. }
         | EffectDef::CreateEmblem { .. }
+        | EffectDef::ReturnWithHasteAndFinality { .. }
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }

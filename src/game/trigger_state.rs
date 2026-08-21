@@ -271,6 +271,14 @@ pub(super) enum CommittedTriggerEvent {
     Transformed {
         object: TriggerEventObject,
     },
+    /// Counters were put on an object. The amount is carried so a clause
+    /// that asks how many can read it, though the trigger itself fires once
+    /// however many arrived at once.
+    CountersPlaced {
+        object: TriggerEventObject,
+        kind: crate::card::CounterKind,
+        amount: u16,
+    },
     /// A player committed a crime. Only who did it is carried: the printed
     /// clauses ask whether it was you, never what you pointed at.
     CommittedCrime {
@@ -339,6 +347,12 @@ impl CommittedTriggerEvent {
                 object: None,
                 object_controller: None,
                 event_player: Some(*player),
+                amount: Some(i32::from(*amount)),
+            },
+            Self::CountersPlaced { object, amount, .. } => TriggerContext {
+                object: Some(object.id),
+                object_controller: Some(object.controller),
+                event_player: None,
                 amount: Some(i32::from(*amount)),
             },
             Self::BecameTargetOfSpell { object, .. }

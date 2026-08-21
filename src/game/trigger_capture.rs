@@ -115,6 +115,35 @@ impl Game {
         self.capture_battlefield_triggers_from_snapshot(&listeners, event);
     }
 
+    /// "Whenever one or more counters are put on this permanent." One event
+    /// per permanent the placement touched, and one per placement rather
+    /// than one per counter: two at once is one event carrying two.
+    pub(in crate::game) fn capture_counters_placed(
+        &mut self,
+        permanents: &[GameObjectId],
+        kind: crate::card::CounterKind,
+        amount: u16,
+    ) {
+        if amount == 0 {
+            return;
+        }
+        for permanent in permanents {
+            let Some(object) = self
+                .battlefield
+                .iter()
+                .find(|candidate| candidate.card.id == *permanent)
+                .map(|candidate| self.trigger_event_object(candidate))
+            else {
+                continue;
+            };
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::CountersPlaced {
+                object,
+                kind,
+                amount,
+            });
+        }
+    }
+
     /// "Whenever this becomes the target of a spell or ability", for the
     /// ability half. Raised once the ability is on the stack, which is where
     /// its targets are locked in, and once per targeting ability however many
@@ -723,6 +752,22 @@ impl Game {
                         source,
                         false,
                         controller,
+                    )
+            }
+            (
+                TriggerEventDef::CountersPlaced {
+                    object: predicate,
+                    kind,
+                },
+                CommittedTriggerEvent::CountersPlaced {
+                    object,
+                    kind: placed,
+                    ..
+                },
+            ) => {
+                kind == *placed
+                    && self.trigger_object_matches_for_controller(
+                        predicate, object, source, false, controller,
                     )
             }
             (

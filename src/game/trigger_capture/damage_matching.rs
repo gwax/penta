@@ -126,7 +126,8 @@ impl Game {
                     | ObjectSetDef::LegalTargets(_)
                     | ObjectSetDef::Query(_)
                     | ObjectSetDef::PermanentsTargetedBy(_)
-                    | ObjectSetDef::BottomOfGraveyard(_)
+                    | ObjectSetDef::LinkedExiles(_)
+                | ObjectSetDef::BottomOfGraveyard(_)
                     | ObjectSetDef::SharingNameWith(_)
                     | ObjectSetDef::SharingNameWithBinding { .. }
                     | ObjectSetDef::TopOfGraveyardMatching { .. },

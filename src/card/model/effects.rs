@@ -943,6 +943,25 @@ pub enum EffectDef {
     Tap {
         object: EffectRecipientDef,
     },
+    /// "Put that card onto the battlefield under your control with a
+    /// finality counter on it. It gains haste. Sacrifice it at the beginning
+    /// of the next end step."
+    ///
+    /// One effect rather than four, because three of the four name the
+    /// permanent that just entered: what enters is a new object, and a
+    /// following clause in a sequence would have nothing left to point at.
+    /// The card it takes is named by an earlier choice in the same
+    /// resolution.
+    ReturnWithHasteAndFinality {
+        object: EffectRecipientDef,
+        /// Where the permanent that arrived is saved. What enters is a new
+        /// object, so the clause after it -- "sacrifice it at the beginning
+        /// of the next end step" -- cannot name the card that was in exile.
+        binding: ObjectSetBindingIndex,
+        /// What that clause is. Scoped to the binding the same way every
+        /// other effect that introduces one scopes its follow-up.
+        then: &'static EffectDef,
+    },
     /// Turns a double-faced permanent over to its other face.
     Transform {
         object: EffectRecipientDef,

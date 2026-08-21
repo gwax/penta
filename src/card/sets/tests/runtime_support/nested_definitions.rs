@@ -72,7 +72,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                     .is_none_or(|maximum| matcher.declaration.minimum <= maximum)
                 && matcher.attack_number.is_none_or(|number| number > 0)
         }
-        TriggerEventDef::BecomesBlocked(object) | TriggerEventDef::Transforms(object) => {
+        TriggerEventDef::BecomesBlocked(object)
+        | TriggerEventDef::CountersPlaced { object, .. }
+        | TriggerEventDef::Transforms(object) => {
             shared_object_predicate(object)
         }
         // Both read the spell rather than the battlefield, and a spell on
@@ -454,6 +456,7 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
         | EffectDef::GainClassLevel { .. }
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::CreateEmblem { .. }
+        | EffectDef::ReturnWithHasteAndFinality { .. }
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }

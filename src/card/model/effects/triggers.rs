@@ -97,6 +97,14 @@ pub enum TriggerEventDef {
     /// "When this Class becomes level N." Only the Class carrying the clause
     /// can raise it, so the event names the level and nothing else.
     BecomesLevel(u8),
+    /// One or more counters of this kind were put on a matching object.
+    /// One event per placement rather than one per counter: "whenever one
+    /// or more +1/+1 counters are put on this creature" fires once for a
+    /// pair of them, which is what the wording is for.
+    CountersPlaced {
+        object: ObjectPredicateDef,
+        kind: crate::card::CounterKind,
+    },
     /// "When you cycle this card" (CR 702.29b). Cycling is an activation, so
     /// this fires when the ability is activated rather than when it resolves,
     /// and the card is already in the graveyard by then. Only the cycled card

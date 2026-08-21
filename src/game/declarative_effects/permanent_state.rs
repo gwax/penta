@@ -135,6 +135,7 @@ impl Game {
                     .max(0)
                     .try_into()
                     .unwrap_or(u16::MAX);
+                let mut placed = Vec::new();
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Permanent(permanent) = target
                         && let Some(permanent) = self
@@ -143,8 +144,10 @@ impl Game {
                             .find(|candidate| candidate.card.id == permanent)
                     {
                         permanent.add_counters(kind, amount);
+                        placed.push(permanent.card.id);
                     }
                 }
+                self.capture_counters_placed(&placed, kind, amount);
             }
             EffectDef::DoubleCounters {
                 object: recipient,

@@ -559,6 +559,7 @@ fn validate_resolving_effect(
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::TakeExtraTurn { .. }
         | EffectDef::CreateEmblem { .. }
+        | EffectDef::ReturnWithHasteAndFinality { .. }
         | EffectDef::Transform { .. }
         | EffectDef::PutIntoLibraryBeneathTop { .. }
         | EffectDef::MoveToZone { .. }
@@ -623,6 +624,7 @@ fn static_object_set_supported(objects: ObjectSetDef) -> bool {
         | ObjectSetDef::Binding(_)
         | ObjectSetDef::MatchingBinding { .. }
         | ObjectSetDef::PermanentsTargetedBy(_)
+        | ObjectSetDef::LinkedExiles(_)
         | ObjectSetDef::BottomOfGraveyard(_)
         | ObjectSetDef::SharingNameWith(_)
         | ObjectSetDef::SharingNameWithBinding { .. }
@@ -915,6 +917,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::ScheduleTurnPhases(_) => "ScheduleTurnPhases",
         EffectDef::TakeExtraTurn { .. } => "TakeExtraTurn",
         EffectDef::CreateEmblem { .. } => "CreateEmblem",
+        EffectDef::ReturnWithHasteAndFinality { .. } => "ReturnWithHasteAndFinality",
         EffectDef::Transform { .. } => "Transform",
         EffectDef::PutIntoLibraryBeneathTop { .. } => "PutIntoLibraryBeneathTop",
         EffectDef::MoveToZone { .. } => "MoveToZone",

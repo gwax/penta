@@ -268,7 +268,13 @@ impl Game {
                     .map(|permanent| PendingBattlefieldExitMove {
                         object: *id,
                         controller: permanent.controller,
-                        destination: if permanent.exile_instead_of_dying {
+                        // A finality counter says the same thing a
+                        // turn-long exile-instead effect says (CR 122.1c),
+                        // and outlasts it: the counter is on the permanent
+                        // rather than on the turn.
+                        destination: if permanent.exile_instead_of_dying
+                            || permanent.counters(CounterKind::Finality) > 0
+                        {
                             ZoneKind::Exile
                         } else {
                             ZoneKind::Graveyard

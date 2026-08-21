@@ -100,6 +100,7 @@ pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
             | ObjectSetDef::PermanentsTargetedBy(_)
             | ObjectSetDef::Binding(_)
             | ObjectSetDef::MatchingBinding { .. }
+            | ObjectSetDef::LinkedExiles(_)
             | ObjectSetDef::BottomOfGraveyard(_)
             | ObjectSetDef::LegalTargets(_)
             | ObjectSetDef::SharingNameWith(_)
@@ -730,6 +731,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::SearchZonesAndExileRest { .. }
                     | EffectDef::MillUntil { .. }
                     | EffectDef::ExileFromTopUntil { .. }
+                    | EffectDef::ReturnWithHasteAndFinality { .. }
                     | EffectDef::Cascade
                     | EffectDef::LookAtTopAndSelect { .. }
                     | EffectDef::LookAtHand { .. }
