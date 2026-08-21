@@ -278,6 +278,20 @@ pub enum CardStructure {
         /// The play option that combines the parts, if the card has one.
         fused: Option<PlayOptionId>,
     },
+    /// A Room (CR 714): a split enchantment whose halves are doors that
+    /// unlock one at a time and stay on the same permanent.
+    ///
+    /// The doors are the halves as printed, and the other two parts are the
+    /// states the permanent can be in that no single door describes. A Room
+    /// on the battlefield has the characteristics of its unlocked doors
+    /// combined, so `combined` is that combination rather than a third
+    /// printed face, and `locked` is the enchantment with neither door open
+    /// -- which is what a Room that entered from anywhere but the stack is.
+    Room {
+        doors: Vec<CardPartId>,
+        combined: CardPartId,
+        locked: CardPartId,
+    },
     Flip {
         normal: CardPartId,
         flipped: CardPartId,

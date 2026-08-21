@@ -108,6 +108,34 @@ impl Game {
         self.commit_battlefield_exit_batch(batch);
     }
 
+    /// Whether the permanent about to leave is one this replacement's
+    /// wording covers: whose graveyard it is headed for, and whether a token
+    /// counts as the "card" the clause names.
+    fn exiting_object_matches_owner_and_kind(
+        &self,
+        object: GameObjectId,
+        controller: PlayerId,
+        owner: PlayerRelation,
+        tokens: bool,
+    ) -> bool {
+        let Some(permanent) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == object)
+        else {
+            return false;
+        };
+        if !tokens && self.is_token(permanent.card.definition) {
+            return false;
+        }
+        self.player_relation_matches(
+            permanent.card.owner,
+            owner,
+            controller,
+            TriggerContext::empty(),
+        )
+    }
+
     fn applicable_battlefield_exit_replacements(
         &self,
         batch: &PendingBattlefieldExitBatch,
@@ -145,7 +173,15 @@ impl Game {
                     to,
                     cause: ZoneMoveCauseDef::Any,
                 } => replacement.source.object == proposed.object && to == proposed.destination,
-                ReplacementEventDef::AnyObjectWouldMove { to } => to == proposed.destination,
+                ReplacementEventDef::AnyObjectWouldMove { to, owner, tokens } => {
+                    to == proposed.destination
+                        && self.exiting_object_matches_owner_and_kind(
+                            proposed.object,
+                            replacement.controller,
+                            owner,
+                            tokens,
+                        )
+                }
                 _ => false,
             })
             .map(|replacement| ApplicableZoneMoveReplacement {

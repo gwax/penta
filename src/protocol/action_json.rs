@@ -29,6 +29,9 @@ pub fn action_json(action: &Action) -> Value {
         Action::Foretell { card } => {
             json!({ "type": "Foretell", "card": card.0 })
         }
+        Action::UnlockDoor { room, door } => {
+            json!({ "type": "UnlockDoor", "room": room.0, "door": door.0 })
+        }
         Action::TurnFaceUp { permanent } => {
             json!({ "type": "TurnFaceUp", "permanent": permanent.0 })
         }

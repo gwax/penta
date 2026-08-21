@@ -504,6 +504,8 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new(
             "If a card or token would be put into a graveyard from anywhere, exile it instead.",
             ReplacementEventDef::AnyObjectWouldMove {
                 to: ZoneKind::Graveyard,
+                owner: PlayerRelation::Any,
+                tokens: true,
             },
             ReplacementEffectDef::MoveToZone(ZoneKind::Exile),
         ),

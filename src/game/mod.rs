@@ -103,6 +103,7 @@ mod procedure_state;
 mod proliferate;
 mod prospective_x;
 mod replacement_state;
+mod rooms;
 mod sacrifice_to_total;
 mod stack_resolution;
 mod stack_rules;
@@ -155,9 +156,9 @@ use combat_state::CombatDamageStage;
 use continuous_state::{
     AbilityLayerOperation, AbilityLayerOperationKind, AppliedPlayRestriction, AppliedRuleEffect,
     ContinuousEffectExpiration, ContinuousEffectTimestamp, ResolvedAbilityOperation,
-    ResolvedContinuousEffect, ResolvedContinuousEffectKind, ResolvedPlayRestriction,
-    ResolvedPowerToughnessOperation, StaticAppliedEffect, StaticEffectTraversal,
-    TemporaryAbilityGrant,
+    ResolvedContinuousEffect, ResolvedContinuousEffectKind, ResolvedPlayPermission,
+    ResolvedPlayRestriction, ResolvedPowerToughnessOperation, StaticAppliedEffect,
+    StaticEffectTraversal, TemporaryAbilityGrant,
 };
 use decision_state::{
     ApplicableBeginTurnReplacement, BalanceAction, BalancePhase, BalanceTask, CounteredSpellZone,
@@ -715,6 +716,11 @@ pub struct Game {
     /// Resolving play prohibitions in creation/component order. Static
     /// prohibitions remain source-derived from battlefield abilities.
     resolved_play_restrictions: Vec<ResolvedPlayRestriction>,
+    /// Resolving play permissions, the mirror of the prohibitions above.
+    /// "You may cast spells from your graveyard this turn" is aimed at a
+    /// player and lasts no longer than the turn, so nothing on the
+    /// battlefield can be asked for it afterwards.
+    resolved_play_permissions: Vec<ResolvedPlayPermission>,
     /// Emblems, which are objects with abilities and no zone. They are kept
     /// beside the battlefield rather than on it: only the static-effect walk
     /// reads them, and nothing can target, tap, or destroy one.

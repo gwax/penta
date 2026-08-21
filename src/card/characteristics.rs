@@ -129,6 +129,13 @@ fn outside_stack_parts(structure: &CardStructure) -> Vec<CardPartId> {
     match structure {
         CardStructure::Single { main } | CardStructure::AlternateSpell { main, .. } => vec![*main],
         CardStructure::Split { parts, .. } => parts.clone(),
+        // A Room's doors, and only its doors: outside the battlefield a Room
+        // card is the combination of the two halves as printed, which is why
+        // Walk-In Closet // Forgotten Cellar has mana value 8 in a library.
+        // The combined and locked parts describe a permanent's state rather
+        // than anything printed, so nothing outside the battlefield uses
+        // them.
+        CardStructure::Room { doors, .. } => doors.clone(),
         CardStructure::Flip { normal, .. } => vec![*normal],
         CardStructure::DoubleFaced { front, .. } | CardStructure::MeldPart { front, .. } => {
             vec![*front]
@@ -147,6 +154,11 @@ fn structure_contains(structure: &CardStructure, wanted: CardPartId) -> bool {
     match structure {
         CardStructure::Single { main } => *main == wanted,
         CardStructure::Split { parts, .. } => parts.contains(&wanted),
+        CardStructure::Room {
+            doors,
+            combined,
+            locked,
+        } => doors.contains(&wanted) || *combined == wanted || *locked == wanted,
         CardStructure::Flip { normal, flipped } => *normal == wanted || *flipped == wanted,
         CardStructure::DoubleFaced { front, back, .. } => *front == wanted || *back == wanted,
         CardStructure::AlternateSpell {

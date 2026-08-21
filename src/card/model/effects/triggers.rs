@@ -114,6 +114,16 @@ pub enum TriggerEventDef {
     /// trigger per card, so "whenever you discard a card" fires twice for a
     /// discard of two -- and a discard paid as a cost is still a discard.
     Discarded(PlayerRelation),
+    /// "When you unlock this door" (CR 714.4c). A door becomes unlocked
+    /// either on the battlefield, for the unlock special action, or as the
+    /// Room enters because you cast that half.
+    ///
+    /// Raised at the door rather than at the permanent: a Room with both
+    /// doors open has both doors' abilities, and only the one that just
+    /// opened is the one this is about. Nothing publishes it as an ordinary
+    /// committed event for that reason -- the unlock hands it to the door it
+    /// belongs to, which is also why Panharmonicon does not double it.
+    DoorUnlocked,
     /// "When this Class becomes level N." Only the Class carrying the clause
     /// can raise it, so the event names the level and nothing else.
     BecomesLevel(u8),

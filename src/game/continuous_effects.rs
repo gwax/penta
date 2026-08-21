@@ -49,7 +49,7 @@ impl Game {
         self.continuous_effect_expiration_is_active(effect.expiration, effect.source.object)
     }
 
-    fn continuous_effect_expiration_is_active(
+    pub(super) fn continuous_effect_expiration_is_active(
         &self,
         expiration: ContinuousEffectExpiration,
         source: GameObjectId,

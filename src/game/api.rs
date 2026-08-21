@@ -274,6 +274,7 @@ impl Game {
         self.add_ability_actions(player, &mut actions);
         self.add_face_up_actions(player, &mut actions);
         self.add_foretell_actions(player, &mut actions);
+        self.add_unlock_door_actions(player, &mut actions);
         actions
     }
 
@@ -346,6 +347,7 @@ impl Game {
             Action::ChooseUntap { permanents } => self.choose_untap(player, &permanents),
             Action::TurnFaceUp { permanent } => self.turn_face_up(player, permanent),
             Action::Foretell { card } => self.foretell(player, card),
+            Action::UnlockDoor { room, door } => self.unlock_door(player, room, door),
             Action::PassPriority => self.pass_priority(player),
             Action::PlayLand { card, option } => self.play_land(player, card, option),
             Action::ActivateManaAbility {

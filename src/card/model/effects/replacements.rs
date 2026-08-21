@@ -48,7 +48,17 @@ pub enum ReplacementEventDef {
     /// Any object anywhere would be put into this zone. Unlike
     /// [`Self::WouldMove`] this does not describe the moving object's own
     /// ability: the replacement source watches from the battlefield.
-    AnyObjectWouldMove { to: ZoneKind },
+    AnyObjectWouldMove {
+        to: ZoneKind,
+        /// Whose zone, relative to this ability's controller. Rest in Peace
+        /// says "a graveyard" and means everyone's; Forgotten Cellar says
+        /// "your graveyard" and means one.
+        owner: PlayerRelation,
+        /// Whether tokens count. "A card or token" is Rest in Peace's
+        /// wording; a clause that says only "a card" leaves tokens to go to
+        /// the graveyard and cease to exist there as they always would.
+        tokens: bool,
+    },
     /// A narrow, named event that is not yet part of the shared vocabulary.
     Special(&'static str),
 }

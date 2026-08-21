@@ -184,6 +184,31 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Rooms, and the special action that opens one.** A Room is a split
+  enchantment whose halves are doors: you cast one of them, that door is
+  unlocked as the permanent enters, and the other stays shut until somebody
+  pays its printed cost. What the permanent is at any moment is the
+  combination of its unlocked doors, so a Room's parts are the two doors, the
+  pair of them, and neither of them -- a Room that arrived from anywhere but
+  the stack has no name and no abilities at all.
+
+  Unlocking is a special action: it uses no stack, cannot be responded to, and
+  is available only in your own main phase with the stack empty. On the wire
+  it is the additive action `UnlockDoor`, naming the `room` and the `door`
+  part id, and the catalog gains the additive structure kind `room`. Both are
+  open vocabularies with the fallbacks bots already use, so neither moves the
+  epoch. "When you unlock this door" is handed to the door that opened rather
+  than published as an event, which is why an effect that doubles enter
+  triggers leaves it alone.
+
+- **A permission to play from a graveyard can be granted for a turn.**
+  "You may cast spells from your graveyard this turn" is aimed at a player and
+  outlives nothing but the turn, so it is stored beside the resolved play
+  prohibitions rather than derived from a permanent's printed text. A card in
+  a graveyard is now castable for what it prints while something says so;
+  flashback and escape are unchanged, because those are permissions to cast it
+  for *their* cost and leave the printed one where it was.
+
 - **Explore, and tokens that arrive under somebody else's control.** Explore
   is a procedure of its own for the same reason proliferate is: what happens
   to the revealed card and whether the creature grows both turn on a card type

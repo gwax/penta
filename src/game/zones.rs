@@ -1,6 +1,6 @@
 use super::{
     ArrivalAttachment, BattlefieldArrival, CardDefinitionId, CardInstance, CardPartId,
-    CharacteristicContext, CharacteristicSource, CommittedTriggerEvent, CounterKind,
+    CardStructure, CharacteristicContext, CharacteristicSource, CommittedTriggerEvent, CounterKind,
     DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EntryCompletion, Game, GameEvent,
     GameObjectId, KeywordAbility, ObjectBacking, PendingBattlefieldEntry, Permanent, PlayerId,
     PublicCard, ReplacementEffectDef, ReplacementEventDef, Target, TriggerContext, ZoneCard,
@@ -165,7 +165,7 @@ impl Game {
         let Some(card) = self.catalog.get(definition) else {
             return Err(ZoneError::UnknownCard(definition));
         };
-        let presented = card.primary_part_id();
+        let presented = card.battlefield_entry_part();
         let built = self.build_zone(player, &[definition])?;
         let card = built
             .into_iter()
@@ -312,7 +312,12 @@ impl Game {
     /// Where a card headed for one zone actually goes, when a permanent on the
     /// battlefield replaces every such move. Rest in Peace is the example:
     /// nothing reaches a graveyard while it is out, from any zone at all.
-    pub(super) fn external_zone_move_replacement(&self, to: ZoneKind) -> Option<ZoneKind> {
+    pub(super) fn external_zone_move_replacement(
+        &self,
+        to: ZoneKind,
+        owner: PlayerId,
+        is_token: bool,
+    ) -> Option<ZoneKind> {
         let mut replacement = None;
         for permanent in &self.battlefield {
             self.for_each_effective_ability(permanent, |effective| {
@@ -323,7 +328,23 @@ impl Game {
                 let DeclarativeAbilityDef::Replacement(definition) = ability.definition else {
                     return;
                 };
-                if definition.event != (ReplacementEventDef::AnyObjectWouldMove { to }) {
+                let ReplacementEventDef::AnyObjectWouldMove {
+                    to: watched,
+                    owner: watched_owner,
+                    tokens,
+                } = definition.event
+                else {
+                    return;
+                };
+                if watched != to
+                    || (!tokens && is_token)
+                    || !self.player_relation_matches(
+                        owner,
+                        watched_owner,
+                        permanent.controller,
+                        TriggerContext::empty(),
+                    )
+                {
                     return;
                 }
                 if let Some(ReplacementEffectDef::MoveToZone(zone)) =
@@ -342,7 +363,8 @@ impl Game {
     /// The one way a card reaches a graveyard, so a replacement that sends it
     /// somewhere else has a single place to apply.
     pub(super) fn put_card_into_graveyard(&mut self, owner: PlayerId, card: CardInstance) {
-        match self.external_zone_move_replacement(ZoneKind::Graveyard) {
+        let is_token = self.is_token(card.definition);
+        match self.external_zone_move_replacement(ZoneKind::Graveyard, owner, is_token) {
             Some(ZoneKind::Exile) => self.players[owner.index()].exile.push(card),
             _ => self.players[owner.index()].graveyard.push(card),
         }
@@ -484,6 +506,13 @@ impl Game {
             .ok()
             .and_then(|parts| parts.first().copied())
             .unwrap_or(CardPartId::PRIMARY);
+        // A Room that arrives from anywhere but the stack has had no door
+        // chosen for it, so it arrives with both of them locked.
+        let front = if matches!(definition.structure, CardStructure::Room { .. }) {
+            definition.battlefield_entry_part()
+        } else {
+            front
+        };
         // A card told to arrive transformed enters showing its other face.
         // A single-faced card has no other face and simply ignores it.
         let presented = if arrival.transformed {

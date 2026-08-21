@@ -13,10 +13,10 @@ use super::{
     ReplacementEffectContext, ReplayRng, ResolvedAbilityOperation, ResolvedContinuousEffect,
     ResolvedContinuousEffectKind, ResolvedDamagePrevention, ResolvedDamagePreventionCapacity,
     ResolvedDamagePreventionCoverage, ResolvedDamageRecipientMatcher, ResolvedDamageRedirect,
-    ResolvedDamageSourceMatcher, ResolvedPlayRestriction, ResolvedPowerToughnessOperation,
-    RetiredObject, ScopedEffect, StackAbilityPayload, StackAbilityResolver, StackObject,
-    StackObjectKind, Step, TemporaryAbilityGrant, TriggerCapture, TriggerContext, TurnPhaseResume,
-    ZoneMoveCause, cast_source_zone_from_label,
+    ResolvedDamageSourceMatcher, ResolvedPlayPermission, ResolvedPlayRestriction,
+    ResolvedPowerToughnessOperation, RetiredObject, ScopedEffect, StackAbilityPayload,
+    StackAbilityResolver, StackObject, StackObjectKind, Step, TemporaryAbilityGrant,
+    TriggerCapture, TriggerContext, TurnPhaseResume, ZoneMoveCause, cast_source_zone_from_label,
 };
 use crate::card::ManaCost;
 use crate::card::{
@@ -234,6 +234,11 @@ impl Game {
                     .map(|restriction| restriction.source.object),
             )
             .chain(
+                self.resolved_play_permissions
+                    .iter()
+                    .map(|permission| permission.source.object),
+            )
+            .chain(
                 self.damage_redirects
                     .iter()
                     .copied()
@@ -357,6 +362,16 @@ impl Game {
             .collect::<Vec<_>>();
         let has_unlocated_play_restriction =
             resolved_play_restrictions.len() != self.resolved_play_restrictions.len();
+        let resolved_play_permissions = self
+            .resolved_play_permissions
+            .iter()
+            .copied()
+            .filter_map(|permission| {
+                play_restriction::resolved_play_permission_snapshot(&self.catalog, permission)
+            })
+            .collect::<Vec<_>>();
+        let has_unlocated_play_restriction = has_unlocated_play_restriction
+            || resolved_play_permissions.len() != self.resolved_play_permissions.len();
         // Phased-out permanents follow the battlefield in the observation,
         // so they follow it here too: the two lists are zipped by position.
         let battlefield = self
@@ -480,6 +495,7 @@ impl Game {
                 .collect(),
             turn_phase_resume: self.turn_phase_resume.map(turn_phase_resume_snapshot),
             resolved_play_restrictions,
+            resolved_play_permissions,
             spells_cast_this_turn: self.spells_cast_this_turn,
             spells_cast_last_turn: self.spells_cast_last_turn,
             cards_drawn_this_turn: self.cards_drawn_this_turn,
@@ -745,6 +761,13 @@ impl Game {
                 play_restriction::parse_resolved_play_restriction(&catalog, restriction)
             })
             .collect::<Result<Vec<_>, _>>()?;
+        let resolved_play_permissions = checkpoint
+            .resolved_play_permissions
+            .iter()
+            .map(|permission| {
+                play_restriction::parse_resolved_play_permission(&catalog, permission)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
         let mut game = Self {
             format,
             arrived: None,
@@ -833,6 +856,7 @@ impl Game {
                 .collect(),
             turn_phase_resume: checkpoint.turn_phase_resume.map(parse_turn_phase_resume),
             resolved_play_restrictions,
+            resolved_play_permissions,
             emblems: Vec::new(),
             spells_cast_this_turn: checkpoint.spells_cast_this_turn,
             spells_cast_last_turn: checkpoint.spells_cast_last_turn,

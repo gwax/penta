@@ -171,19 +171,32 @@ impl Game {
     }
 
     /// Whether the card's own printed cost is one of the ways to cast it
-    /// from this zone. A foretold card is the exception: what put it in
-    /// exile was a permission to cast it for its foretell cost, and for
-    /// nothing else.
+    /// from this zone.
+    ///
+    /// Two zones answer with something other than yes. A foretold card was
+    /// put into exile by a permission to cast it for its foretell cost and
+    /// for nothing else. A card in a graveyard is castable for what it
+    /// prints only while something says so -- flashback and escape are
+    /// permissions to cast it for *their* cost, and they leave the printed
+    /// one where it was.
     fn printed_cost_is_available_from(
         &self,
         source_zone: CastSourceZone,
         card: GameObjectId,
         player: PlayerId,
+        option: &PlayOptionDef,
     ) -> bool {
-        source_zone != CastSourceZone::Exile
-            || self
+        match source_zone {
+            CastSourceZone::Exile => self
                 .exile_play_permission(card, player)
-                .is_none_or(|permission| permission.cost != ExilePlayCost::Foretell)
+                .is_none_or(|permission| permission.cost != ExilePlayCost::Foretell),
+            CastSourceZone::Graveyard => self.players[player.index()]
+                .graveyard
+                .iter()
+                .find(|candidate| candidate.id == card)
+                .is_some_and(|instance| self.graveyard_play_is_permitted(instance, player, option)),
+            CastSourceZone::Hand | CastSourceZone::LibraryTop => true,
+        }
     }
 
     /// Whether an alternative of this kind may be used on a card being cast
@@ -249,10 +262,7 @@ impl Game {
         mut visitor: impl FnMut(CostConfiguration) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         let mut selected_additional = Vec::with_capacity(option.additional_costs.len());
-        if matches!(
-            source_zone,
-            CastSourceZone::Hand | CastSourceZone::Exile | CastSourceZone::LibraryTop
-        ) && self.printed_cost_is_available_from(source_zone, card, player)
+        if self.printed_cost_is_available_from(source_zone, card, player, option)
             && Self::visit_additional_cost_configurations(
                 option,
                 None,

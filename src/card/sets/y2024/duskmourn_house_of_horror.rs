@@ -1,15 +1,17 @@
 //! Duskmourn: House of Horror cards cataloged for the Vintage Cube pool.
 
 use super::{CardRecord, PrintingRecord};
+use crate::card::CardComposition;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AlternativeCastKindDef, AppliedEffectDef, BattlefieldEntryModificationDef, CardArt, CardRules,
-    CardSet, CardType, CardTypeSet, CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef,
-    CounterKind, CreatureTypeSetDef, EffectDef, EffectRecipientDef, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementConditionDef, ReplacementEffectDef, SetOperationDef, SpellAdditionalCostDef,
-    SpendModeDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, cards,
+    AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef,
+    CardArt, CardRules, CardSet, CardType, CardTypeSet, CharacteristicOperationDef,
+    ChoiceVisibilityDef, ChooseDef, CounterKind, CreatureTypeSetDef, EffectDef, EffectRecipientDef,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementConditionDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef,
+    SpellAdditionalCostDef, SpendModeDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -298,6 +300,107 @@ static GHOST_VACUUM_ABILITIES: [AbilityDef; 2] = [
     .with_activation_timing(ActivationTimingDef::SorcerySpeed),
 ];
 
+/// Crucible of Worlds' line, and the door of the pair that asks nothing of
+/// you afterwards: a permission in the same vocabulary a prohibition uses.
+static CLOSET_PERMISSION: PlayRestrictionDef = PlayRestrictionDef::new(
+    PlayActionMatcherDef::PlayLand,
+    ObjectPredicateDef::HasType(CardType::Land),
+);
+
+const WALK_IN_CLOSET_DOOR: AbilityDef = AbilityDef::static_ability(
+    "You may play lands from your graveyard.",
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::Controller,
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(CLOSET_PERMISSION)),
+    },
+);
+
+/// The other half's permission, for the turn it lasts. Spells rather than
+/// lands: the cellar opens onto everything the closet does not.
+static CELLAR_PERMISSION: PlayRestrictionDef =
+    PlayRestrictionDef::new(PlayActionMatcherDef::CastSpell, ObjectPredicateDef::Any);
+
+/// "A card", not "a card or token": a token put into a graveyard goes there
+/// and ceases to exist as it always would, which is what keeps this from
+/// quietly turning every token into an exiled one.
+static CELLAR_EXILES_INSTEAD: AbilityDef = AbilityDef::replacement_for(
+    "If a card would be put into your graveyard from anywhere, exile it instead.",
+    ReplacementEventDef::AnyObjectWouldMove {
+        to: ZoneKind::Graveyard,
+        owner: PlayerRelation::You,
+        tokens: false,
+    },
+    ReplacementEffectDef::MoveToZone(ZoneKind::Exile),
+);
+
+/// Both clauses last the turn, and they are one sentence because they need
+/// each other: casting from a graveyard that keeps filling up is a worse
+/// deal than casting from one that empties into exile behind you.
+///
+/// The permission is aimed at the player, where a permission belongs. The
+/// replacement is granted to the Room, which is the one place this differs
+/// from the printed card: a Room that leaves the battlefield before the turn
+/// ends stops exiling, where the printed effect would go on without it.
+static CELLAR_UNLOCKS: [EffectDef; 2] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Controller,
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(CELLAR_PERMISSION)),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::add_ability(&CELLAR_EXILES_INSTEAD),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+];
+
+const FORGOTTEN_CELLAR_DOOR: AbilityDef = AbilityDef::triggered(
+    "When you unlock this door, you may cast spells from your graveyard this turn, and if a card \
+     would be put into your graveyard from anywhere this turn, exile it instead.",
+    TriggerEventDef::DoorUnlocked,
+    EffectDef::Sequence(&CELLAR_UNLOCKS),
+);
+
+static WALK_IN_CLOSET_ABILITIES: [AbilityDef; 1] = [WALK_IN_CLOSET_DOOR];
+static FORGOTTEN_CELLAR_ABILITIES: [AbilityDef; 1] = [FORGOTTEN_CELLAR_DOOR];
+/// What the permanent is once both doors are open: the two text boxes at
+/// once, for the two costs added up (CR 714.2b).
+static BOTH_DOORS_ABILITIES: [AbilityDef; 2] = [WALK_IN_CLOSET_DOOR, FORGOTTEN_CELLAR_DOOR];
+
+const fn walk_in_closet_rules() -> CardRules {
+    CardRules::new_enchantment(mana_cost!("{2}{G}"))
+        .with_subtypes(&["Room"])
+        .with_abilities(&WALK_IN_CLOSET_ABILITIES)
+}
+
+fn walk_in_closet_composition() -> CardComposition {
+    CardComposition::room(
+        "Walk-In Closet // Forgotten Cellar",
+        "Walk-In Closet",
+        walk_in_closet_rules(),
+        "Forgotten Cellar",
+        CardRules::new_enchantment(mana_cost!("{3}{G}{G}"))
+            .with_subtypes(&["Room"])
+            .with_abilities(&FORGOTTEN_CELLAR_ABILITIES),
+        CardRules::new_enchantment(mana_cost!("{5}{G}{G}{G}"))
+            .with_subtypes(&["Room"])
+            .with_abilities(&BOTH_DOORS_ABILITIES),
+    )
+}
+
+// DSK 205 — Walk-In Closet // Forgotten Cellar
+pub(in crate::card::sets) static WALK_IN_CLOSET_FORGOTTEN_CELLAR: CardRecord = CardRecord::new(
+    cards::WALK_IN_CLOSET_FORGOTTEN_CELLAR,
+    "Walk-In Closet // Forgotten Cellar",
+    CardArt::new("0adcd4e5-d542-4293-8774-ace2305ef820", "Mikl\u{f3}s Ligeti"),
+    CardSet::DuskmournHouseOfHorror,
+    // Three mana for Crucible of Worlds, and five more whenever the game
+    // gives you nothing better to do -- which is what a Room is for: a card
+    // that is cheap early and still has something left late.
+    walk_in_closet_rules(),
+)
+.with_composition(walk_in_closet_composition);
+
 // DSK 248 — Ghost Vacuum
 pub(in crate::card::sets) static GHOST_VACUUM: CardRecord = CardRecord::new(
     cards::GHOST_VACUUM,
@@ -314,6 +417,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ENDURING_INNOCENCE,
     &ABHORRENT_OCULUS,
     &OVERLORD_OF_THE_BALEMURK,
+    &WALK_IN_CLOSET_FORGOTTEN_CELLAR,
     &GHOST_VACUUM,
 ];
 

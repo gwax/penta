@@ -844,6 +844,7 @@ impl Game {
             to: ZoneKind::Battlefield,
             damage_sources: Vec::new(),
         });
+        self.capture_room_entry_unlock(permanent_id);
         self.apply_legend_rule();
 
         if let EntryCompletion::SpellResolved { card, definition } = entry.completion {

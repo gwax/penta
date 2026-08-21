@@ -159,6 +159,13 @@ pub enum Action {
     Foretell {
         card: GameObjectId,
     },
+    /// Unlock a locked door of a Room you control by paying that door's mana
+    /// cost (CR 714.4a). A special action like the two above: no stack,
+    /// nothing to respond to, and only in your own main phase.
+    UnlockDoor {
+        room: GameObjectId,
+        door: CardPartId,
+    },
     DeclareAttacker {
         attacker: GameObjectId,
         defender: AttackDefender,

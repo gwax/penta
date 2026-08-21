@@ -197,6 +197,16 @@ fn structure_json(structure: &CardStructure) -> Value {
             "partIds": parts.iter().map(|part| part.0).collect::<Vec<_>>(),
             "fusedPlayOptionId": fused.map(|option| option.0),
         }),
+        CardStructure::Room {
+            doors,
+            combined,
+            locked,
+        } => json!({
+            "kind": "room",
+            "doors": doors.iter().map(|part| part.0).collect::<Vec<_>>(),
+            "combined": combined.0,
+            "locked": locked.0,
+        }),
         CardStructure::Flip { normal, flipped } => json!({
             "kind": "flip",
             "normalPartId": normal.0,

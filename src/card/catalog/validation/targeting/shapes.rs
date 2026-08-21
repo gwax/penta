@@ -48,6 +48,7 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         TriggerEventDef::CommittedCrime(_)
         | TriggerEventDef::BecomesLevel(_)
         | TriggerEventDef::Cycled
+        | TriggerEventDef::DoorUnlocked
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::DamageDealt(_)
         | TriggerEventDef::StateCondition

@@ -21,6 +21,16 @@ pub(super) fn structure_parts(
             }
             parts.clone()
         }
+        CardStructure::Room {
+            doors,
+            combined,
+            locked,
+        } => {
+            let mut parts = doors.clone();
+            parts.push(*combined);
+            parts.push(*locked);
+            parts
+        }
         CardStructure::Flip { normal, flipped } => vec![*normal, *flipped],
         CardStructure::DoubleFaced { front, back, .. } => vec![*front, *back],
         CardStructure::AlternateSpell {

@@ -4,7 +4,7 @@ use super::{
     CounterKind, DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility,
     DecisionZone, DeclarativeAbilityDef, EffectDef, EntryCompletion, FrozenZoneMoveReplacement,
     Game, GameEvent, GameObjectId, KeywordAbility, PendingBattlefieldEntry,
-    PendingBattlefieldExitBatch, PendingBattlefieldExitMove, Permanent, PlayerId,
+    PendingBattlefieldExitBatch, PendingBattlefieldExitMove, Permanent, PlayerId, PlayerRelation,
     ReplacementConditionDef, ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef,
     RetiredObject, ScopedEffect, StackObject, StackObjectKind, Step, Target, TargetSlotId,
     TriggerContext, ZoneKind, ZoneMoveCauseDef, ZonePlacement, remove_card,

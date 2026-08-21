@@ -296,6 +296,17 @@ impl CardRules {
         rules
     }
 
+    /// An enchantment with no mana cost, which is what a Room with both
+    /// doors locked is: it was never cast for anything, and until a door
+    /// opens there is nothing to pay for.
+    #[must_use]
+    pub const fn new_enchantment_without_mana_cost() -> Self {
+        Self::base(
+            CardTypeSet::single(CardType::Enchantment),
+            PrintedManaCost::None,
+        )
+    }
+
     #[must_use]
     pub const fn new_enchantment(mana_cost: ManaCost) -> Self {
         Self::base(

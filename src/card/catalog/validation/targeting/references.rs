@@ -611,6 +611,7 @@ fn validate_trigger_event_references(
         TriggerEventDef::CommittedCrime(_)
         | TriggerEventDef::BecomesLevel(_)
         | TriggerEventDef::Cycled
+        | TriggerEventDef::DoorUnlocked
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
         | TriggerEventDef::BecomesMonarch(_)

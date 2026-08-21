@@ -188,6 +188,7 @@ impl Game {
             turn_phase_queue: VecDeque::new(),
             turn_phase_resume: None,
             resolved_play_restrictions: Vec::new(),
+            resolved_play_permissions: Vec::new(),
             emblems: Vec::new(),
             spells_cast_this_turn: [0; 2],
             spells_cast_last_turn: [0; 2],

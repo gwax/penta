@@ -285,6 +285,8 @@ fn replacement_events_reject_programs_their_runtime_would_ignore() {
         (
             ReplacementEventDef::AnyObjectWouldMove {
                 to: ZoneKind::Graveyard,
+                owner: PlayerRelation::Any,
+                tokens: true,
             },
             ReplacementEffectDef::MultiplyEventAmount(2),
             "MultiplyEventAmount",
@@ -365,6 +367,8 @@ fn replacement_event_validation_accepts_each_supported_program_family() {
         (
             ReplacementEventDef::AnyObjectWouldMove {
                 to: ZoneKind::Graveyard,
+                owner: PlayerRelation::Any,
+                tokens: true,
             },
             ReplacementEffectDef::MoveToZone(ZoneKind::Exile),
         ),

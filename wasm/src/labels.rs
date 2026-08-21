@@ -183,6 +183,7 @@ impl WebGame {
             | Action::ChooseUntap { .. }
             | Action::TurnFaceUp { .. }
             | Action::Foretell { .. }
+            | Action::UnlockDoor { .. }
             | Action::PassPriority
             | Action::PlayLand { .. }
             | Action::ActivateManaAbility { .. }
@@ -458,6 +459,19 @@ impl WebGame {
             Action::Foretell { card } => {
                 format!("Foretell {}", self.instance_name(observation, *card))
             }
+            // Named for the door rather than for the Room: "Unlock Forgotten
+            // Cellar" says which half is being bought, and the Room's own
+            // name is the pair of them.
+            Action::UnlockDoor { room, door } => format!(
+                "Unlock {}",
+                Self::instance_definition(observation, *room)
+                    .and_then(|definition| self.catalog.get(definition))
+                    .and_then(|card| card.part(*door))
+                    .map_or_else(
+                        || self.instance_name(observation, *room),
+                        |part| part.name.clone()
+                    )
+            ),
             Action::ChooseUntap { permanents } => format!(
                 "Untap {}",
                 permanents

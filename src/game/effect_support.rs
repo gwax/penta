@@ -7,10 +7,10 @@ use super::{
     GrantId, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, Permanent,
     PlayerId, PlayerRefDef, PlayerSetDef, PowerToughnessOperationDef, QuantifierDef,
     ResolvedAbilityOperation, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
-    ResolvedDamageRedirect, ResolvedEffectDurationDef, ResolvedPlayRestriction,
-    ResolvedPowerToughnessOperation, ScopedEffect, StackObject, StackObjectKind, Target,
-    TargetIndex, TargetSelection, TargetSlotId, TemporaryAbilityGrant, TriggerConditionDef,
-    TriggerContext, ZoneKind, abilities,
+    ResolvedDamageRedirect, ResolvedEffectDurationDef, ResolvedPlayPermission,
+    ResolvedPlayRestriction, ResolvedPowerToughnessOperation, ScopedEffect, StackObject,
+    StackObjectKind, Target, TargetIndex, TargetSelection, TargetSlotId, TemporaryAbilityGrant,
+    TriggerConditionDef, TriggerContext, ZoneKind, abilities,
 };
 
 #[derive(Clone, Copy)]
@@ -340,20 +340,7 @@ impl Game {
                     ability: AbilityId::PRIMARY,
                 }),
         };
-        if let AppliedRuleDef::CannotPlay(restriction) = rule {
-            let Target::Player(affected_player) = target else {
-                return;
-            };
-            self.resolved_play_restrictions
-                .push(ResolvedPlayRestriction {
-                    definition,
-                    source,
-                    affected_player,
-                    timestamp: resolution.timestamp,
-                    component_order: resolution.component_order,
-                    expiration,
-                    restriction,
-                });
+        if self.apply_player_play_rule(target, definition, rule, &resolution, source, expiration) {
             return;
         }
         let Target::Permanent(target) = target else {
@@ -374,6 +361,52 @@ impl Game {
                     expiration,
                     kind: ResolvedContinuousEffectKind::Rule(rule),
                 });
+        }
+    }
+
+    /// The rules whose subject is a player rather than a permanent: what they
+    /// may not play, and what they may play that the ordinary rules would
+    /// refuse. Returns whether the rule was one of them.
+    fn apply_player_play_rule(
+        &mut self,
+        target: Target,
+        definition: AppliedEffectDef,
+        rule: AppliedRuleDef,
+        resolution: &ResolvedAppliedEffect<'_>,
+        source: AbilitySourceRef,
+        expiration: ContinuousEffectExpiration,
+    ) -> bool {
+        match rule {
+            AppliedRuleDef::MayPlayFromGraveyard(_)
+            | AppliedRuleDef::MayPlayFromTopOfLibrary { .. }
+            | AppliedRuleDef::GrantsAlternativeCastFromGraveyard { .. } => {
+                if let Target::Player(affected_player) = target {
+                    self.resolved_play_permissions.push(ResolvedPlayPermission {
+                        definition,
+                        source,
+                        affected_player,
+                        expiration,
+                        rule,
+                    });
+                }
+                true
+            }
+            AppliedRuleDef::CannotPlay(restriction) => {
+                if let Target::Player(affected_player) = target {
+                    self.resolved_play_restrictions
+                        .push(ResolvedPlayRestriction {
+                            definition,
+                            source,
+                            affected_player,
+                            timestamp: resolution.timestamp,
+                            component_order: resolution.component_order,
+                            expiration,
+                            restriction,
+                        });
+                }
+                true
+            }
+            _ => false,
         }
     }
 

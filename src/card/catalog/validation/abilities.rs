@@ -526,6 +526,7 @@ fn validate_replacement_program_for_event(
         }
         ReplacementEventDef::AnyObjectWouldMove {
             to: ZoneKind::Graveyard,
+            ..
         } if effect == ReplacementEffectDef::MoveToZone(ZoneKind::Exile) => Ok(()),
         ReplacementEventDef::WouldMove { .. }
         | ReplacementEventDef::WouldGainLife(_)

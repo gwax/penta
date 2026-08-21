@@ -183,6 +183,30 @@ impl Game {
         affected_player: PlayerId,
         mut visitor: impl FnMut(GameObjectId, PlayPermission) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
+        // A permission that resolved rather than one printed on a permanent:
+        // "you may cast spells from your graveyard this turn" is aimed at a
+        // player and outlives nothing but the turn, so it is stored on the
+        // game the way a resolved prohibition is.
+        for resolved in &self.resolved_play_permissions {
+            if resolved.affected_player != affected_player
+                || !self.continuous_effect_expiration_is_active(
+                    resolved.expiration,
+                    resolved.source.object,
+                )
+            {
+                continue;
+            }
+            let mut found = ControlFlow::Continue(());
+            Self::visit_play_permission_components(
+                AppliedEffectDef::Rule(resolved.rule),
+                &mut |permission| {
+                    if found.is_continue() {
+                        found = visitor(resolved.source.object, permission);
+                    }
+                },
+            );
+            found?;
+        }
         for source in self.battlefield.iter().chain(self.emblems.iter()) {
             let Some(rules) = self.effective_rules(source) else {
                 continue;

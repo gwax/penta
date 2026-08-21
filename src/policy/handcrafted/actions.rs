@@ -133,6 +133,9 @@ impl HandcraftedPolicy {
             // Two mana now for a discount later is real, but never worth
             // more than doing something this turn.
             Action::Foretell { .. } => 120,
+            // The second half of a Room is a whole other card for its own
+            // cost, and it is there whenever nothing better presents itself.
+            Action::UnlockDoor { .. } => 500,
             Action::ChooseDecision { options, .. } => {
                 let selected_value = observation.decision.as_ref().map_or(0, |decision| {
                     decision

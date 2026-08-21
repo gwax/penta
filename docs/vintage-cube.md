@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 281 are cataloged and 253 are not
+- 534 cards in the pool, of which 282 are cataloged and 252 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -161,7 +161,7 @@ lands are legal in every format and are not listed.
 - `Tersa Lightshatter`
 - `Voldaren Epicure`
 
-### Green (37)
+### Green (36)
 
 - `Baloth Prime`
 - `Courser of Kruphix`
@@ -198,7 +198,6 @@ lands are legal in every format and are not listed.
 - `Traveling Chocobo`
 - `Ulvenwald Oddity`
 - `Vaultborn Tyrant`
-- `Walk-In Closet // Forgotten Cellar`
 - `Woodfall Primus`
 
 ### Multicolor (39)
@@ -312,7 +311,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 281 pool cards are in the catalog because an earlier format needed them.
+These 282 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -582,6 +581,7 @@ been played beside.
 - `Vivi Ornitier`
 - `Voice of Victory`
 - `Volcanic Island`
+- `Walk-In Closet // Forgotten Cellar`
 - `Walking Ballista`
 - `Wasteland`
 - `Wastewood Verge`

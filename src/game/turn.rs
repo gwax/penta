@@ -417,6 +417,11 @@ impl Game {
                 .expiration
                 .survives_turn_start(self.active_player, turns_started)
         });
+        self.resolved_play_permissions.retain(|permission| {
+            permission
+                .expiration
+                .survives_turn_start(self.active_player, turns_started)
+        });
         for permanent in &mut self.battlefield {
             permanent.resolved_continuous_effects.retain(|effect| {
                 effect
@@ -530,6 +535,8 @@ impl Game {
             .retain(|redirect| redirect.expiration.survives_untap_step(active));
         self.resolved_play_restrictions
             .retain(|restriction| restriction.expiration.survives_untap_step(active));
+        self.resolved_play_permissions
+            .retain(|permission| permission.expiration.survives_untap_step(active));
         for permanent in &mut self.battlefield {
             permanent
                 .resolved_continuous_effects
@@ -576,6 +583,8 @@ impl Game {
             .retain(|redirect| redirect.expiration.survives_end_of_combat());
         self.resolved_play_restrictions
             .retain(|restriction| restriction.expiration.survives_end_of_combat());
+        self.resolved_play_permissions
+            .retain(|permission| permission.expiration.survives_end_of_combat());
     }
 
     fn destroy_end_of_combat_permanents(&mut self) {
@@ -656,6 +665,8 @@ impl Game {
         self.sorcery_flash_grants = [0; 2];
         self.resolved_play_restrictions
             .retain(|restriction| restriction.expiration.survives_cleanup());
+        self.resolved_play_permissions
+            .retain(|permission| permission.expiration.survives_cleanup());
         self.channel_active = [false; 2];
         self.miracle_window = None;
         self.damage_preventions

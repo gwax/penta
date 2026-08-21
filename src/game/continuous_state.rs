@@ -140,6 +140,21 @@ pub(super) struct ResolvedPlayRestriction {
     pub(super) restriction: PlayRestrictionDef,
 }
 
+/// A permission to play from an unusual zone that resolved rather than being
+/// printed on a permanent.
+///
+/// The mirror of [`ResolvedPlayRestriction`], and stored the same way for the
+/// same reason: its subject is a player, so there is no object to hang it on
+/// and no layer walk that would find it.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct ResolvedPlayPermission {
+    pub(super) definition: AppliedEffectDef,
+    pub(super) source: AbilitySourceRef,
+    pub(super) affected_player: PlayerId,
+    pub(super) expiration: ContinuousEffectExpiration,
+    pub(super) rule: AppliedRuleDef,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 // Ability definitions are immutable catalog values with static references.
 // Keeping this operation Copy avoids allocation in the hot ability-layer walk.

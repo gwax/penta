@@ -103,6 +103,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         TriggerEventDef::CommittedCrime(_)
         | TriggerEventDef::BecomesLevel(_)
         | TriggerEventDef::Cycled
+        | TriggerEventDef::DoorUnlocked
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
         | TriggerEventDef::Discarded(_)
@@ -313,7 +314,7 @@ pub(super) fn shared_replacement_event(event: ReplacementEventDef) -> bool {
         ReplacementEventDef::WouldMove { cause, .. } => shared_zone_move_cause(cause),
         // Only graveyard placement funnels through one procedure the
         // replacement can sit in front of.
-        ReplacementEventDef::AnyObjectWouldMove { to } => to == ZoneKind::Graveyard,
+        ReplacementEventDef::AnyObjectWouldMove { to, .. } => to == ZoneKind::Graveyard,
         ReplacementEventDef::Special(_) => false,
     }
 }
