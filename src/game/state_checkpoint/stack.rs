@@ -23,6 +23,9 @@ use super::{
 };
 use crate::card::{ColorSet, ManaColor};
 
+mod ability_kind;
+use ability_kind::{StackAbilityCondition, stack_ability_condition};
+
 pub(super) fn stack_ability_snapshot(
     game: &Game,
     viewer: PlayerId,
@@ -38,6 +41,12 @@ pub(super) fn stack_ability_snapshot_allowing(
     visible_rebindings: &[GameObjectId],
 ) -> Option<StackAbilitySnapshot> {
     let payload = object.ability.as_ref()?;
+    if object.source.is_some_and(|source| {
+        object_reference_requires_hidden_rebinding(game, viewer, source)
+            && !visible_rebindings.contains(&source)
+    }) {
+        return None;
+    }
     if stack_payload_has_unrebindable_hidden_reference_except(
         game,
         viewer,
@@ -72,14 +81,6 @@ pub(super) fn stack_ability_snapshot_allowing(
             .collect::<Option<Vec<_>>>()?,
         x: payload.x,
     })
-}
-
-pub(super) fn detached_stack_snapshot(
-    game: &Game,
-    viewer: PlayerId,
-    object: &StackObject,
-) -> Option<DetachedStackSnapshot> {
-    detached_stack_snapshot_allowing(game, viewer, object, &[])
 }
 
 pub(super) fn detached_stack_snapshot_allowing(
@@ -217,9 +218,12 @@ pub(super) fn stack_object_has_unrebindable_hidden_reference(
     viewer: PlayerId,
     object: &StackObject,
 ) -> bool {
-    object.ability.as_ref().is_some_and(|payload| {
-        stack_payload_has_unrebindable_hidden_reference_except(game, viewer, payload, &[])
-    })
+    object
+        .source
+        .is_some_and(|source| object_reference_requires_hidden_rebinding(game, viewer, source))
+        || object.ability.as_ref().is_some_and(|payload| {
+            stack_payload_has_unrebindable_hidden_reference_except(game, viewer, payload, &[])
+        })
 }
 
 pub(super) fn referenced_object_ids(object: &StackObject) -> impl Iterator<Item = GameObjectId> {
@@ -358,11 +362,18 @@ fn stack_payload_matches(
     if let Some(definition) = payload.definition.as_deref() {
         return definition == candidate;
     }
-    let DeclarativeAbilityDef::Triggered(triggered) = candidate.definition else {
-        return false;
+    let condition = match candidate.definition {
+        DeclarativeAbilityDef::Triggered(triggered) => triggered.condition,
+        DeclarativeAbilityDef::AlternativeCast(alternative)
+            if candidate.is_executable()
+                && alternative.kind == crate::card::AlternativeCastKindDef::Miracle =>
+        {
+            None
+        }
+        _ => return false,
     };
     payload.text == Some(candidate.text)
-        && payload.condition == triggered.condition
+        && payload.condition == condition
         && payload.resolver == Game::ability_resolver(payload.origin, candidate)
 }
 
@@ -502,19 +513,12 @@ pub(super) fn parse_stack(
                     .ok_or_else(|| {
                         "stack ability locator is absent from this catalog".to_owned()
                     })?;
-                let condition = match (kind, definition_snapshot.definition) {
-                    (StackObjectKind::ActivatedAbility, DeclarativeAbilityDef::Activated(_)) => {
-                        None
-                    }
-                    (
-                        StackObjectKind::TriggeredAbility,
-                        DeclarativeAbilityDef::Triggered(triggered),
-                    ) => triggered.condition,
-                    _ => {
-                        return Err(
-                            "stack ability locator does not match the observed ability kind".into(),
-                        );
-                    }
+                let StackAbilityCondition::Supported(condition) =
+                    stack_ability_condition(kind, &definition_snapshot)
+                else {
+                    return Err(
+                        "stack ability locator does not match the observed ability kind".into(),
+                    );
                 };
                 let target_definition = payload_state
                     .target_definition_locator
@@ -736,12 +740,9 @@ fn parse_ability_payload(
         .ok_or("stack ability lacks a catalog locator")?;
     let definition = catalog_ability(&game.catalog, locator)
         .ok_or_else(|| "stack ability locator is absent from this catalog".to_owned())?;
-    let condition = match (kind, definition.definition) {
-        (StackObjectKind::ActivatedAbility, DeclarativeAbilityDef::Activated(_)) => None,
-        (StackObjectKind::TriggeredAbility, DeclarativeAbilityDef::Triggered(triggered)) => {
-            triggered.condition
-        }
-        _ => return Err("stack ability locator does not match its ability kind".into()),
+    let StackAbilityCondition::Supported(condition) = stack_ability_condition(kind, &definition)
+    else {
+        return Err("stack ability locator does not match its ability kind".into());
     };
     let target_definition = state
         .target_definition_locator

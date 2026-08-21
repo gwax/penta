@@ -8,13 +8,16 @@
 //! depend on.
 
 use super::super::ScopedEffect;
+use super::super::model::AbilityLocator;
 use super::super::semantics::{
     ability_locator, applied_effect_locator, applied_effects, catalog_ability,
     catalog_applied_effect, catalog_mana_payload, catalog_replacement_effect,
     catalog_scoped_effect, child_abilities, mana_effects, mana_payload_locator,
     replacement_effect_locator, replacement_effects, scoped_effect_snapshot,
 };
-use crate::card::{AbilityDef, AbilityProgramDef, AddManaEffectDef, ManaSelectionDef};
+use crate::card::{
+    AbilityDef, AbilityProgramDef, AddManaEffectDef, EffectDef, ManaSelectionDef, cards,
+};
 use crate::game::Mana;
 use crate::{CardCatalog, CardDefinitionId, CardPartId};
 
@@ -75,6 +78,37 @@ fn every_catalog_ability_has_a_locator_that_rebuilds_it() {
         unaddressable.is_empty(),
         "abilities without a stable checkpoint locator: {unaddressable:#?}"
     );
+}
+
+#[test]
+fn one_shot_cast_grant_has_a_stable_locator() {
+    let catalog = crate::poc::catalog().expect("catalog builds");
+    let definition = catalog
+        .get(cards::DREADHORDE_ARCANIST)
+        .expect("Dreadhorde Arcanist is in the catalog");
+    let (source_ability, granted) = definition
+        .rules
+        .indexed_abilities()
+        .find_map(|attached| match attached.definition.effect.definition {
+            AbilityProgramDef::Effects(EffectDef::MayCastTargetWithoutPaying {
+                ability, ..
+            }) => Some((attached.id, ability)),
+            _ => None,
+        })
+        .expect("Dreadhorde Arcanist has a one-shot cast grant");
+
+    let locator = ability_locator(&catalog, |candidate| std::ptr::eq(candidate, granted))
+        .expect("the exact granted ability has a locator");
+    assert_eq!(
+        locator,
+        AbilityLocator::Card {
+            definition: cards::DREADHORDE_ARCANIST.0,
+            part_id: CardPartId::PRIMARY.0,
+            ability_id: source_ability.0,
+            nested: vec![0],
+        }
+    );
+    assert_eq!(catalog_ability(&catalog, &locator), Some(*granted));
 }
 
 #[test]
