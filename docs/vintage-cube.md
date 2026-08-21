@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 249 are cataloged and 285 are not
+- 534 cards in the pool, of which 250 are cataloged and 284 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -184,7 +184,7 @@ lands are legal in every format and are not listed.
 - `Underworld Breach`
 - `Voldaren Epicure`
 
-### Green (40)
+### Green (39)
 
 - `Baloth Prime`
 - `Cankerbloom`
@@ -192,7 +192,6 @@ lands are legal in every format and are not listed.
 - `Elvish Reclaimer`
 - `Endurance`
 - `Esika's Chariot`
-- `Eternal Witness`
 - `Exploration`
 - `Fanatic of Rhonas`
 - `Fastbond`
@@ -344,7 +343,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 249 pool cards are in the catalog because an earlier format needed them.
+These 250 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -415,6 +414,7 @@ been played beside.
 - `Embereth Shieldbreaker`
 - `Enduring Innocence`
 - `Entomb`
+- `Eternal Witness`
 - `Expedition Map`
 - `Faithless Looting`
 - `Fallen Shinobi`

@@ -2,16 +2,67 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayActionMatcherDef, PlayRestrictionDef, cards,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
+    CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
+    PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, TriggerEventDef, ZoneKind,
+    ZonePlacement, cards,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 /// A permission rather than a prohibition, in the same vocabulary: which
 /// action it opens, and which cards it opens it for.
 static CRUCIBLE_PERMISSION: PlayRestrictionDef = PlayRestrictionDef::new(
     PlayActionMatcherDef::PlayLand,
     ObjectPredicateDef::HasType(CardType::Land),
+);
+
+/// Your own graveyard, and any card in it: a land comes back as readily as
+/// the spell that killed the Witness.
+static A_CARD_IN_YOUR_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Any,
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: Some(PlayerRelation::You),
+    },
+)];
+
+/// The target is chosen as the trigger goes on the stack; the "may" is
+/// answered as it resolves. A Witness whose card was exiled in response
+/// still asks, and taking it back is what the answer refuses.
+static WITNESS_MAY_RETURN: EffectDef = EffectDef::May {
+    player: EffectRecipientDef::Controller,
+    effect: &EffectDef::MoveToZone {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        zone: ZoneKind::Hand,
+        placement: ZonePlacement::Top,
+        controller: None,
+        arrival_effect: None,
+        attachment: None,
+    },
+};
+
+// 5DN 86 — Eternal Witness
+pub(in crate::card::sets) static ETERNAL_WITNESS: CardRecord = CardRecord::new(
+    cards::ETERNAL_WITNESS,
+    "Eternal Witness",
+    CardArt::new("c7e10ca7-1e5d-4224-82cf-798a4d436d72", "Terese Nielsen"),
+    CardSet::FifthDawn,
+    // A 2/1 body nobody plays it for. What it is worth is the card, and
+    // every way of making it enter again is worth another one.
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Human", "Shaman"], 2, 1).with_ability(
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, you may return target card from your graveyard to your \
+             hand.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &A_CARD_IN_YOUR_GRAVEYARD,
+            WITNESS_MAY_RETURN,
+        ),
+    ),
 );
 
 // 5DN 114 — Crucible of Worlds
@@ -33,6 +84,6 @@ pub(in crate::card::sets) static CRUCIBLE_OF_WORLDS: CardRecord = CardRecord::ne
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&CRUCIBLE_OF_WORLDS];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&ETERNAL_WITNESS, &CRUCIBLE_OF_WORLDS];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
