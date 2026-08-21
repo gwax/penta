@@ -795,6 +795,7 @@ mod vintage_cube_cut_down;
 mod vintage_cube_dack;
 mod vintage_cube_damn;
 mod vintage_cube_duelist;
+mod vintage_cube_echo_of_eons;
 mod vintage_cube_eldrazi;
 mod vintage_cube_elite_spellbinder;
 mod vintage_cube_emperor_of_bones;

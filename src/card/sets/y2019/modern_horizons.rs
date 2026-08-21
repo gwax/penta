@@ -6,7 +6,7 @@ use crate::card::{
     AddManaEffectDef, AlternativeCastKindDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
     ObjectSetDef, PlayerRefDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, cards,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -119,6 +119,50 @@ pub(in crate::card::sets) static WINDS_OF_ABANDON: CardRecord = CardRecord::new(
             Some("Exile each creature you don't control. For each creature exiled this way, its controller searches their library for a basic land card. Those players put those cards onto the battlefield tapped, then shuffle."),
             WINDS_OVERLOADED,
         ),
+    ]),
+);
+
+/// Timetwister's effect, one word at a time: everything from both hidden
+/// zones goes back, both libraries are shuffled, and both players draw. The
+/// Echo itself is on the stack while this resolves, so it is not among the
+/// cards that go back.
+static ECHO_OF_EONS_EFFECT: [EffectDef; 3] = [
+    EffectDef::MoveToZone {
+        object: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::Any,
+            &[ZoneKind::Hand, ZoneKind::Graveyard],
+            PlayerRelation::Any,
+        ),
+        zone: ZoneKind::Library,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        attachment: None,
+        controller: None,
+    },
+    EffectDef::ShuffleLibrary {
+        player: EffectRecipientDef::EachPlayer,
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::EachPlayer,
+        amount: ValueDef::Constant(7),
+    },
+];
+
+// MH1 46 — Echo of Eons
+pub(in crate::card::sets) static ECHO_OF_EONS: CardRecord = CardRecord::new(
+    cards::ECHO_OF_EONS,
+    "Echo of Eons",
+    CardArt::new("ff590af2-2d6c-4f16-a9b8-1a6dab6e9ad5", "Terese Nielsen"),
+    CardSet::ModernHorizons1,
+    // Six mana nobody pays: the card is here for the flashback, which turns a
+    // graveyard full of rituals into a fresh seven for three.
+    CardRules::new_sorcery(mana_cost!("{4}{U}{U}")).with_abilities(&[
+        AbilityDef::spell(
+            "Each player shuffles their hand and graveyard into their library, then draws seven \
+             cards.",
+            EffectDef::Sequence(&ECHO_OF_EONS_EFFECT),
+        ),
+        abilities::flashback(mana_cost!("{2}{U}")),
     ]),
 );
 
@@ -312,6 +356,7 @@ pub(in crate::card::sets) static SUNBAKED_CANYON: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WINDS_OF_ABANDON,
+    &ECHO_OF_EONS,
     &FORCE_OF_NEGATION,
     &FORCE_OF_VIGOR,
     &FALLEN_SHINOBI,
