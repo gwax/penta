@@ -123,32 +123,6 @@ pub(in crate::card::sets) static WINDS_OF_ABANDON: CardRecord = CardRecord::new(
     ]),
 );
 
-/// Timetwister's effect, one word at a time: everything from both hidden
-/// zones goes back, both libraries are shuffled, and both players draw. The
-/// Echo itself is on the stack while this resolves, so it is not among the
-/// cards that go back.
-static ECHO_OF_EONS_EFFECT: [EffectDef; 3] = [
-    EffectDef::MoveToZone {
-        object: EffectRecipientDef::matching_objects(
-            ObjectPredicateDef::Any,
-            &[ZoneKind::Hand, ZoneKind::Graveyard],
-            PlayerRelation::Any,
-        ),
-        zone: ZoneKind::Library,
-        placement: ZonePlacement::Top,
-        arrival_effect: None,
-        attachment: None,
-        controller: None,
-    },
-    EffectDef::ShuffleLibrary {
-        player: EffectRecipientDef::EachPlayer,
-    },
-    EffectDef::DrawCards {
-        recipient: EffectRecipientDef::EachPlayer,
-        amount: ValueDef::Constant(7),
-    },
-];
-
 // MH1 46 — Echo of Eons
 pub(in crate::card::sets) static ECHO_OF_EONS: CardRecord = CardRecord::new(
     cards::ECHO_OF_EONS,
@@ -161,7 +135,7 @@ pub(in crate::card::sets) static ECHO_OF_EONS: CardRecord = CardRecord::new(
         AbilityDef::spell(
             "Each player shuffles their hand and graveyard into their library, then draws seven \
              cards.",
-            EffectDef::Sequence(&ECHO_OF_EONS_EFFECT),
+            abilities::shuffle_back_and_draw_seven(),
         ),
         abilities::flashback(mana_cost!("{2}{U}")),
     ]),

@@ -202,3 +202,4 @@ pub const LEDGER_SHREDDER: CardDefinitionId = CardDefinitionId(2286);
 pub const GOLEM_TOKEN_3_3_COLORLESS: CardDefinitionId = CardDefinitionId(2287);
 pub const LEGION_EXTRUDER: CardDefinitionId = CardDefinitionId(2288);
 pub const GHOST_VACUUM: CardDefinitionId = CardDefinitionId(2289);
+pub const TIME_SPIRAL: CardDefinitionId = CardDefinitionId(2290);

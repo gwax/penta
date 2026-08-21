@@ -1646,23 +1646,7 @@ pub(in crate::card::sets) static TIMETWISTER: CardRecord = CardRecord::new(
     CardSet::Alpha,
     CardRules::new_sorcery(mana_cost!("{2}{U}")).with_abilities(&[AbilityDef::spell(
         "Each player shuffles their hand and graveyard into their library, then draws seven cards. (Then put Timetwister into its owner's graveyard.)",
-        EffectDef::Sequence(&[
-            EffectDef::MoveToZone {
-                object: EffectRecipientDef::matching_objects(ObjectPredicateDef::Any, &[ZoneKind::Hand, ZoneKind::Graveyard], PlayerRelation::Any),
-                zone: ZoneKind::Library,
-                placement: ZonePlacement::Top,
-                arrival_effect: None,
-                attachment: None,
-                controller: None,
-            },
-            EffectDef::ShuffleLibrary {
-                player: EffectRecipientDef::EachPlayer,
-            },
-            EffectDef::DrawCards {
-                recipient: EffectRecipientDef::EachPlayer,
-                amount: ValueDef::Constant(7),
-            },
-        ]),
+        abilities::shuffle_back_and_draw_seven(),
     )]),
 );
 

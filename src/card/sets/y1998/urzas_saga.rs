@@ -3,11 +3,13 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt,
-    CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, DiscardSelectionDef,
-    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    PlayerSetDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, cards,
+    CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef,
+    ChooseDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, SpellResolutionDestinationDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
 };
+use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
 
 // USG 21 — Monk Realist
@@ -171,6 +173,27 @@ pub(in crate::card::sets) static GILDED_DRAKE: CardRecord = CardRecord::new(
 static EXHUME_EACH_GRAVEYARD: [CardChoiceSourceDef; 1] =
     [CardChoiceSourceDef::Zone(ZoneKind::Graveyard)];
 
+// USG 103 — Time Spiral
+pub(in crate::card::sets) static TIME_SPIRAL: CardRecord = CardRecord::new(
+    cards::TIME_SPIRAL,
+    "Time Spiral",
+    CardArt::new("f3d62dbd-63db-4ac9-950f-9852627f23f2", "Michael Sutfin"),
+    CardSet::UrzasSaga,
+    // Six mana that gives back six, so the wheel is free and the seven new
+    // cards arrive with the mana to cast them still up.
+    CardRules::new_sorcery(mana_cost!("{4}{U}{U}")).with_ability(
+        AbilityDef::spell(
+            "Exile Time Spiral. Each player shuffles their hand and graveyard into their \
+             library, then draws seven cards. You untap up to six lands.",
+            EffectDef::Sequence(&TIME_SPIRAL_EFFECT),
+        )
+        // "Exile Time Spiral" is the first thing printed and the last thing
+        // that happens: the card is on the stack while the rest resolves, so
+        // what the clause settles is where it goes afterwards.
+        .with_resolution_destination(SpellResolutionDestinationDef::Exile),
+    ),
+);
+
 // USG 134 — Exhume
 pub(in crate::card::sets) static EXHUME: CardRecord = CardRecord::new(
     cards::EXHUME,
@@ -247,6 +270,34 @@ pub(in crate::card::sets) static GOBLIN_MATRON: CardRecord = CardRecord::new(
         ),
     ),
 );
+
+static UNTAP_THE_CHOSEN_LANDS: EffectDef = EffectDef::Untap {
+    object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+};
+
+/// "Up to six", and not your own: the lands are chosen as the spell resolves
+/// rather than targeted, and nothing in the clause says who controls them.
+/// A minimum of none is what "up to" means.
+static UNTAP_UP_TO_SIX_LANDS: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
+        ObjectPredicateDef::HasType(CardType::Land),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::Any,
+    )),
+    exclude: None,
+    minimum: 0,
+    maximum: 6,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &UNTAP_THE_CHOSEN_LANDS,
+});
+
+static TIME_SPIRAL_EFFECT: [EffectDef; 2] = [
+    abilities::shuffle_back_and_draw_seven(),
+    UNTAP_UP_TO_SIX_LANDS,
+];
 
 // USG 193 — Goblin Patrol
 pub(in crate::card::sets) static GOBLIN_PATROL: CardRecord = CardRecord::new(
@@ -340,6 +391,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANNUL,
     &ATTUNEMENT,
     &GILDED_DRAKE,
+    &TIME_SPIRAL,
     &EXHUME,
     &GOBLIN_LACKEY,
     &GOBLIN_MATRON,
