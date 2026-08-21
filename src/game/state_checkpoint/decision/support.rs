@@ -705,7 +705,7 @@ pub(super) const fn parse_zone_placement(placement: ZonePlacementSnapshot) -> Zo
     }
 }
 
-pub(super) fn mana_cost_snapshot(cost: ManaCost) -> ManaCostSnapshot {
+pub(in crate::game::state_checkpoint) fn mana_cost_snapshot(cost: ManaCost) -> ManaCostSnapshot {
     ManaCostSnapshot {
         generic: cost.generic,
         white: cost.white,
@@ -717,6 +717,30 @@ pub(super) fn mana_cost_snapshot(cost: ManaCost) -> ManaCostSnapshot {
         hybrid: cost.hybrid.to_vec(),
         variable_x: cost.variable_x,
         x_multiplier: cost.x_multiplier,
+    }
+}
+
+/// The inverse of [`mana_cost_snapshot`]. A hybrid list shorter than the
+/// engine's is read as far as it goes and zero beyond, so a checkpoint
+/// written before a pair existed restores without one.
+pub(in crate::game::state_checkpoint) fn mana_cost_from_snapshot(
+    snapshot: &ManaCostSnapshot,
+) -> ManaCost {
+    let mut hybrid = [0; crate::card::HybridPair::COUNT];
+    for (slot, amount) in hybrid.iter_mut().zip(snapshot.hybrid.iter()) {
+        *slot = *amount;
+    }
+    ManaCost {
+        generic: snapshot.generic,
+        white: snapshot.white,
+        blue: snapshot.blue,
+        black: snapshot.black,
+        red: snapshot.red,
+        green: snapshot.green,
+        colorless: snapshot.colorless,
+        hybrid,
+        variable_x: snapshot.variable_x,
+        x_multiplier: snapshot.x_multiplier,
     }
 }
 

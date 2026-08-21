@@ -151,6 +151,7 @@ fn collect_ability_grants(effect: EffectDef, grants: &mut Vec<&AbilityDef>) {
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
+        | EffectDef::ExileGrantingOwnerPlay { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::Detain { .. }
         | EffectDef::GainControl { .. }
@@ -351,6 +352,7 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
+        | EffectDef::ExileGrantingOwnerPlay { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::Detain { .. }
         | EffectDef::GainControl { .. }

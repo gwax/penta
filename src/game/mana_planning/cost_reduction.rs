@@ -81,7 +81,14 @@ impl Game {
         let Some((zone, card)) = self.card_in_nonbattlefield_zone(source) else {
             return ManaCost::default();
         };
-        let mut increase = ManaCost::default();
+        // A permission to play a card out of exile can carry its own tax,
+        // which lives on the card rather than on any permanent: Elite
+        // Spellbinder's is still owed long after the Spellbinder is dead.
+        let mut increase = if zone == ZoneKind::Exile {
+            self.exile_play_surcharge(source, player)
+        } else {
+            ManaCost::default()
+        };
         for permanent in &self.battlefield {
             let Some(rules) = self.effective_rules(permanent) else {
                 continue;

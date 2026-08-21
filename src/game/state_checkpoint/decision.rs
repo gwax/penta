@@ -902,4 +902,6 @@ use begin_turn::*;
 pub(super) use support::decision_referenced_object_ids;
 #[allow(clippy::wildcard_imports)]
 use support::*;
-pub(super) use support::{parse_pending_trigger, pending_trigger_snapshot};
+pub(super) use support::{
+    mana_cost_from_snapshot, mana_cost_snapshot, parse_pending_trigger, pending_trigger_snapshot,
+};

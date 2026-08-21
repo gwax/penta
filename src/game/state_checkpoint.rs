@@ -18,6 +18,7 @@ use super::{
     StackObjectKind, Step, TemporaryAbilityGrant, TriggerCapture, TriggerContext, TurnPhaseResume,
     ZoneMoveCause,
 };
+use crate::card::ManaCost;
 use crate::card::{
     AbilityOperationDef, AppliedEffectDef, BasicLandType, CardType, CardTypeSet,
     CharacteristicOperationDef, DeclarativeAbilityDef, PowerToughnessOperationDef,
@@ -49,8 +50,8 @@ mod wire;
 mod wire_decision;
 
 use decision::{
-    decision_referenced_object_ids, decision_snapshot, parse_pending_decision,
-    parse_pending_trigger, pending_trigger_snapshot,
+    decision_referenced_object_ids, decision_snapshot, mana_cost_from_snapshot, mana_cost_snapshot,
+    parse_pending_decision, parse_pending_trigger, pending_trigger_snapshot,
 };
 use emblem::{emblem_snapshot, parse_emblems};
 use event::{
@@ -462,6 +463,8 @@ impl Game {
                         .until_end_of_turn
                         .map(|(player, turn)| (player.index(), turn)),
                     adventure_return_only: permission.adventure_return_only,
+                    surcharge: (permission.surcharge != ManaCost::default())
+                        .then(|| mana_cost_snapshot(permission.surcharge)),
                 })
                 .collect(),
             monarch: self.monarch.map(PlayerId::index),
@@ -800,6 +803,10 @@ impl Game {
                             None => None,
                         },
                         adventure_return_only: permission.adventure_return_only,
+                        surcharge: permission
+                            .surcharge
+                            .as_ref()
+                            .map_or_else(ManaCost::default, mana_cost_from_snapshot),
                     })
                 })
                 .collect::<Result<Vec<_>, String>>()?,

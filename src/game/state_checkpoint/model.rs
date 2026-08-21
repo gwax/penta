@@ -14,6 +14,11 @@ pub(super) struct ExilePlayPermissionSnapshot {
     pub(super) cost: String,
     pub(super) until_end_of_turn: Option<(usize, u32)>,
     pub(super) adventure_return_only: bool,
+    /// Additive: a checkpoint written before a permission could charge for
+    /// itself restores with no surcharge, which is what every permission but
+    /// Elite Spellbinder's carries anyway.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) surcharge: Option<ManaCostSnapshot>,
 }
 
 /// Taken by reference because that is the signature serde's

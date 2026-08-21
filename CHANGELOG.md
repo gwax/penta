@@ -153,6 +153,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A permission to play a card from exile can carry its own tax.** Elite
+  Spellbinder leaves the card with its owner and charges {2} for it, and the
+  charge outlives the Spellbinder: it lives on the exile permission rather
+  than on any permanent. Checkpoints gain an optional `surcharge` beside each
+  exile-play permission -- additive, so a checkpoint written without one
+  restores with nothing owed, which is what every other permission carries.
+
 - **`revealedLibraryTop` on the observation.** Null unless something lets you
   look at the top card of your own library, and a one-card list in the same
   shape as `hand` when it does. An additive optional member, so the epoch does

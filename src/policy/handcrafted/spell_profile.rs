@@ -476,6 +476,7 @@ impl HandcraftedPolicy {
             | EffectDef::DamageCannotBePreventedThisTurn
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
+            | EffectDef::ExileGrantingOwnerPlay { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::Detain { .. }
             | EffectDef::GainControl { .. }

@@ -3,10 +3,78 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, CardArt,
-    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    TriggerConditionDef, ValueDef, ZoneKind, ZonePlacement, cards,
+    CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerConditionDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
+use crate::ids::ObjectBindingIndex;
 use crate::{TargetIndex, mana_cost};
+
+/// Not linked to the Spellbinder: killing it does not give the card back,
+/// and the tax outlives it. What the owner keeps is the card itself, one
+/// turn later and two mana worse.
+static SPELLBINDER_EXILE: EffectDef = EffectDef::ExileGrantingOwnerPlay {
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    surcharge: mana_cost!("{2}"),
+};
+
+/// "You may exile" -- a minimum of none, so a hand of nothing worth taking
+/// is looked at and left alone.
+static SPELLBINDER_TAKES_A_CARD: [EffectDef; 2] = [
+    EffectDef::LookAtHand {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::Choose(ChooseDef {
+        binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        unchosen: None,
+        chooser: PlayerRefDef::EffectController,
+        candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+            ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+            &[ZoneKind::Hand],
+            PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+        )),
+        exclude: None,
+        minimum: 0,
+        maximum: 1,
+        // The card lands in exile face up, so which one was taken stops
+        // being private the moment it is taken.
+        visibility: ChoiceVisibilityDef::Public,
+        then: &SPELLBINDER_EXILE,
+    }),
+];
+
+static AN_OPPONENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+)];
+
+static ELITE_SPELLBINDER_ABILITIES: [AbilityDef; 2] = [
+    abilities::flying(),
+    AbilityDef::triggered_with_targets(
+        "When this creature enters, look at target opponent's hand. You may exile a nonland card \
+         from it. For as long as that card remains exiled, its owner may play it. A spell cast \
+         this way costs {2} more to cast.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        &AN_OPPONENT,
+        EffectDef::Sequence(&SPELLBINDER_TAKES_A_CARD),
+    ),
+];
+
+// STX 17 — Elite Spellbinder
+pub(in crate::card::sets) static ELITE_SPELLBINDER: CardRecord = CardRecord::new(
+    cards::ELITE_SPELLBINDER,
+    "Elite Spellbinder",
+    CardArt::new("9d3a7998-ccac-45ad-a4e9-3a2cb057f63b", "Ryan Pancoast"),
+    CardSet::StrixhavenSchoolOfMages,
+    // A three-mana 3/1 flier that also buys a turn: the card comes back, but
+    // a turn later and two mana worse, which is often the whole game.
+    CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Cleric"], 3, 1)
+        .with_abilities(&ELITE_SPELLBINDER_ABILITIES),
+);
 
 static MASTERY_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::Object {
@@ -73,6 +141,6 @@ pub(in crate::card::sets) static BALEFUL_MASTERY: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&BALEFUL_MASTERY];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&ELITE_SPELLBINDER, &BALEFUL_MASTERY];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

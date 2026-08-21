@@ -525,6 +525,26 @@ impl Game {
                     }
                 }
             }
+            EffectDef::ExileGrantingOwnerPlay {
+                object: recipient,
+                surcharge,
+            } => {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    let exiled = match target {
+                        Target::Permanent(id) => self.exile_permanent_returning_card(id),
+                        Target::Card(id) => self.exile_card_returning_card(id),
+                        Target::Player(_) | Target::Spell(_) => None,
+                    };
+                    // Its owner, not the exiler: what the clause hands back
+                    // is the card's own player's ability to play it.
+                    if let Some(exiled) = exiled
+                        && let Some((_, instance)) = self.card_in_nonbattlefield_zone(exiled)
+                    {
+                        let owner = instance.owner;
+                        self.permit_owner_play_while_exiled(exiled, owner, surcharge);
+                    }
+                }
+            }
             EffectDef::ReturnLinkedExiles {
                 zone,
                 grant,

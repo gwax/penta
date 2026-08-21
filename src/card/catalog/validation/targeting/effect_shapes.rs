@@ -209,6 +209,7 @@ fn validate_effect_target_shapes(
         | EffectDef::ChooseColor { object, .. }
         | EffectDef::BecomeCopyOf { object, .. }
         | EffectDef::ExileLinkedToSource { object }
+        | EffectDef::ExileGrantingOwnerPlay { object, .. }
         | EffectDef::GainControl { object, .. }
         | EffectDef::ExchangeControl { first: object, .. }
         | EffectDef::ReturnWithHasteAndFinality { object, .. }

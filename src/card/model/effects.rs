@@ -429,6 +429,20 @@ pub enum EffectDef {
     ExileLinkedToSource {
         object: EffectRecipientDef,
     },
+    /// Exiles, and leaves the card's own owner able to play it from there
+    /// for as long as it stays exiled -- for a surcharge, which is what
+    /// distinguishes the clause from plain theft.
+    ///
+    /// Unlike [`Self::ExileLinkedToSource`] nothing remembers who did it: the
+    /// card does not come back when the exiling permanent dies, and the
+    /// permission outlives whatever granted it.
+    ExileGrantingOwnerPlay {
+        object: EffectRecipientDef,
+        /// What a spell cast from that exile costs on top of its own mana
+        /// cost. Empty is a legal value and means the card is simply
+        /// castable from where it now sits.
+        surcharge: ManaCost,
+    },
     /// Move control of the recipient for the stated duration. Source-bound
     /// durations also remember whether the source must remain tapped.
     ///

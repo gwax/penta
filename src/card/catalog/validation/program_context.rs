@@ -567,6 +567,7 @@ fn validate_resolving_effect(
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ExileLinkedToSource { .. }
+        | EffectDef::ExileGrantingOwnerPlay { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::GainControl { .. }
         | EffectDef::ExchangeControl { .. }
@@ -911,6 +912,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::GrantFlashToNextSorcery => "GrantFlashToNextSorcery",
         EffectDef::May { .. } => "May",
         EffectDef::ExileLinkedToSource { .. } => "ExileLinkedToSource",
+        EffectDef::ExileGrantingOwnerPlay { .. } => "ExileGrantingOwnerPlay",
         EffectDef::ReturnLinkedExiles { .. } => "ReturnLinkedExiles",
         EffectDef::GainControl { .. } | EffectDef::ExchangeControl { .. } => "GainControl",
         EffectDef::IfCondition { .. } => "IfCondition",

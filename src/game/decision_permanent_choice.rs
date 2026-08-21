@@ -51,8 +51,12 @@ impl Game {
         // A mandatory single-object instruction has no decision when zero or
         // one legal objects exist: Magic does as much as possible, binding
         // none or the only object. An optional instruction still asks, because
-        // declining is itself the player's choice even with one candidate.
-        if definition.minimum > 0 && state.candidates.len() <= definition.minimum {
+        // declining is itself the player's choice even with one candidate --
+        // but not with none, where there is nothing to decline and the only
+        // legal answer is the empty one.
+        if state.candidates.is_empty()
+            || (definition.minimum > 0 && state.candidates.len() <= definition.minimum)
+        {
             let mut context = context;
             Self::bind_effect_choice(&mut context, definition.binding, state.candidates);
             self.resolve_effect_def(scoped.with_effect(*definition.then), object, context);

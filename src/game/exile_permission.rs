@@ -6,6 +6,7 @@
 //! for free and expires.
 
 use super::{CardDefinition, Game, GameObjectId, PlayOptionDef, PlayerId};
+use crate::card::ManaCost;
 
 /// What a card in exile costs the player who may play it.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -38,6 +39,10 @@ pub(super) struct ExilePlayPermission {
     /// is what "as the creature, never as the adventure again" means
     /// (CR 715.3d).
     pub(super) adventure_return_only: bool,
+    /// What a spell played under this permission costs on top of whatever
+    /// [`Self::cost`] already says. Empty for every permission that adds
+    /// nothing, which is all of them but Elite Spellbinder's.
+    pub(super) surcharge: ManaCost,
 }
 
 impl ExilePlayCost {
@@ -107,6 +112,7 @@ impl Game {
             cost: ExilePlayCost::Printed,
             until_end_of_turn: None,
             adventure_return_only: true,
+            surcharge: ManaCost::default(),
         });
     }
 
@@ -120,6 +126,7 @@ impl Game {
             cost: ExilePlayCost::Free,
             until_end_of_turn: Some((active, self.turns_started[active.index()])),
             adventure_return_only: false,
+            surcharge: ManaCost::default(),
         });
     }
 
@@ -134,6 +141,7 @@ impl Game {
             cost: ExilePlayCost::Printed,
             until_end_of_turn: Some((active, self.turns_started[active.index()])),
             adventure_return_only: false,
+            surcharge: ManaCost::default(),
         });
     }
 
@@ -147,7 +155,37 @@ impl Game {
             cost: ExilePlayCost::EnergyEqualToManaValue,
             until_end_of_turn: None,
             adventure_return_only: false,
+            surcharge: ManaCost::default(),
         });
+    }
+
+    /// "For as long as that card remains exiled, its owner may play it. A
+    /// spell cast this way costs `surcharge` more to cast."
+    ///
+    /// The permission is the owner's rather than the exiler's, and it has no
+    /// duration: nothing takes it back, so it lapses only when the card
+    /// leaves exile by being played.
+    pub(super) fn permit_owner_play_while_exiled(
+        &mut self,
+        card: GameObjectId,
+        owner: PlayerId,
+        surcharge: ManaCost,
+    ) {
+        self.exile_play_permissions.push(ExilePlayPermission {
+            card,
+            player: owner,
+            cost: ExilePlayCost::Printed,
+            until_end_of_turn: None,
+            adventure_return_only: false,
+            surcharge,
+        });
+    }
+
+    /// What this player owes on top of a card's own cost to play it out of
+    /// exile, which is nothing unless a permission says otherwise.
+    pub(super) fn exile_play_surcharge(&self, card: GameObjectId, player: PlayerId) -> ManaCost {
+        self.exile_play_permission(card, player)
+            .map_or_else(ManaCost::default, |permission| permission.surcharge)
     }
 
     /// The energy `player` owes to cast `card` from exile, if that is how the

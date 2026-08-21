@@ -166,6 +166,7 @@ fn validate_effect_references(
         | EffectDef::ChooseColor { object, .. }
         | EffectDef::BecomeCopyOf { object, .. }
         | EffectDef::ExileLinkedToSource { object }
+        | EffectDef::ExileGrantingOwnerPlay { object, .. }
         | EffectDef::Detain { object }
         | EffectDef::GainControl { object, .. }
         | EffectDef::ExchangeControl { first: object, .. }

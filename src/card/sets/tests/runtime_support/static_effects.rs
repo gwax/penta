@@ -188,6 +188,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Apply { .. }
         | EffectDef::May { .. }
         | EffectDef::ExileLinkedToSource { .. }
+        | EffectDef::ExileGrantingOwnerPlay { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::Detain { .. }
         | EffectDef::GainControl { .. }
