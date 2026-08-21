@@ -76,28 +76,6 @@ impl TurnKindDef {
     }
 }
 
-/// What follows a discard, and what it counts among the cards that went.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct DiscardFollowUpDef {
-    /// Which discarded cards the follow-up counts, read back with
-    /// [`ValueDef::MatchedCount`].
-    pub counted: ObjectPredicateDef,
-    pub effect: &'static EffectDef,
-}
-
-/// How cards are selected for a discard effect.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum DiscardSelectionDef {
-    /// Each affected player chooses cards from their own hand.
-    RecipientChooses,
-    /// The engine selects cards using the recorded random seed.
-    Random,
-    /// The same, but only from the cards in hand that match. "Discards a
-    /// creature card at random" leaves everything else where it is, and
-    /// discards nothing when the hand holds none.
-    RandomMatching(&'static ObjectPredicateDef),
-}
-
 /// Who may observe a pending choice and its available options.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ChoiceVisibilityDef {
@@ -819,8 +797,21 @@ pub enum EffectDef {
     /// A returned permanent keeps `grant` until end of turn, which is how
     /// Obzedat comes back ready to attack.
     ReturnLinkedExiles {
+        /// Which of them come back. "Each creature card exiled with this
+        /// artifact" leaves the rest of the pile where it is, so the
+        /// predicate is part of the clause rather than a filter on the exile
+        /// that put them there.
+        object: ObjectPredicateDef,
         zone: ZoneKind,
         grant: Option<KeywordAbility>,
+        /// Counters each returning permanent arrives carrying. They belong to
+        /// the arrival for the same reason the controller does: what enters
+        /// is a new object, and a later clause would have nothing to name.
+        counters: Option<TokenCountersDef>,
+        /// A continuous effect each arriving permanent carries, for the
+        /// clauses that say what the thing they just returned now is. Lasts
+        /// as long as the permanent does.
+        arrival_effect: Option<&'static AppliedEffectDef>,
         /// "Return him to the battlefield transformed." The returning card
         /// is a new object, so which face it shows is settled as it arrives
         /// rather than by a transform afterwards.

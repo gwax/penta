@@ -253,7 +253,10 @@ fn ability_locator_matches_origin(
             source_ability,
             ..
         } => (source_definition.0, source_part.0, source_ability.0),
-        super::super::AbilityOrigin::IntrinsicBasicLand(_) => return false,
+        super::super::AbilityOrigin::IntrinsicBasicLand(_)
+        | super::super::AbilityOrigin::IntrinsicCounter(_) => {
+            return false;
+        }
     };
     (locator.definition, locator.part_id, locator.ability_id) == expected
 }

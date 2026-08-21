@@ -213,6 +213,11 @@ pub(super) enum AbilityOriginSnapshot {
     IntrinsicBasicLand {
         land_type: BasicLandTypeSnapshot,
     },
+    IntrinsicCounter {
+        /// The counter's serialized position, which is the same index the
+        /// counter array beside it is written at.
+        counter: usize,
+    },
     Granted {
         source: u32,
         source_definition: u16,

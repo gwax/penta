@@ -1,12 +1,12 @@
 //! The composite shapes an effect carries: a bounded choice among objects,
 //! a partition into piles, a triggered ability installed by a resolution,
-//! and what a token clause puts on the tokens it makes. Each is a small
-//! vocabulary of its own that several effects reach for, rather than a
-//! variant of any one of them.
+//! what a token clause puts on the tokens it makes, and how a discard picks
+//! and counts. Each is a small vocabulary of its own that several effects
+//! reach for, rather than a variant of any one of them.
 
 use super::super::{
-    AbilityDef, ChoiceVisibilityDef, CounterKind, EffectDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerSetDef, ValueDef,
+    AbilityDef, ChoiceVisibilityDef, CounterKind, EffectDef, ObjectPredicateDef, ObjectRefDef,
+    ObjectSetDef, PlayerRefDef, PlayerSetDef, ValueDef,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 
@@ -121,4 +121,26 @@ pub struct TokenCountersDef {
 pub struct CreatedTokensDef {
     pub binding: ObjectSetBindingIndex,
     pub then: &'static EffectDef,
+}
+
+/// What follows a discard, and what it counts among the cards that went.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct DiscardFollowUpDef {
+    /// Which discarded cards the follow-up counts, read back with
+    /// [`ValueDef::MatchedCount`].
+    pub counted: ObjectPredicateDef,
+    pub effect: &'static EffectDef,
+}
+
+/// How cards are selected for a discard effect.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DiscardSelectionDef {
+    /// Each affected player chooses cards from their own hand.
+    RecipientChooses,
+    /// The engine selects cards using the recorded random seed.
+    Random,
+    /// The same, but only from the cards in hand that match. "Discards a
+    /// creature card at random" leaves everything else where it is, and
+    /// discards nothing when the hand holds none.
+    RandomMatching(&'static ObjectPredicateDef),
 }

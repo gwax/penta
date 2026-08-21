@@ -497,6 +497,10 @@ pub(super) struct BattlefieldArrival {
     /// down is the other way to arrive face down, and it does not come
     /// through here.
     pub(super) manifested: bool,
+    /// Counters the permanent arrives carrying. They belong to the arrival
+    /// because an enters trigger reading the permanent's power has to see
+    /// them: the counters were on it as it entered, not put there after.
+    pub(super) counters: Option<(CounterKind, u16)>,
 }
 
 impl BattlefieldArrival {
@@ -507,6 +511,7 @@ impl BattlefieldArrival {
             transformed: false,
             attachment: None,
             manifested: false,
+            counters: None,
         }
     }
 
@@ -519,6 +524,7 @@ impl BattlefieldArrival {
             transformed: false,
             attachment: None,
             manifested: true,
+            counters: None,
         }
     }
 
@@ -529,6 +535,7 @@ impl BattlefieldArrival {
             transformed: false,
             attachment: None,
             manifested: false,
+            counters: None,
         }
     }
 
@@ -539,6 +546,7 @@ impl BattlefieldArrival {
             transformed: true,
             attachment: None,
             manifested: false,
+            counters: None,
         }
     }
 
@@ -551,6 +559,12 @@ impl BattlefieldArrival {
     /// What arrives attaches to a permanent already on the battlefield.
     pub(super) const fn attached_to(mut self, host: GameObjectId) -> Self {
         self.attachment = Some(ArrivalAttachment::ArrivalToHost(host));
+        self
+    }
+
+    /// What arrives carries these counters.
+    pub(super) const fn with_counters(mut self, counters: Option<(CounterKind, u16)>) -> Self {
+        self.counters = counters;
         self
     }
 }

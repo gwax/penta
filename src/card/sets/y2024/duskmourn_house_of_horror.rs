@@ -2,15 +2,17 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AlternativeCastKindDef, AppliedEffectDef, BattlefieldEntryModificationDef, CardArt,
-    CardRules, CardSet, CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef, CounterKind,
-    EffectDef, EffectRecipientDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementConditionDef,
-    ReplacementEffectDef, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, cards,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    AlternativeCastKindDef, AppliedEffectDef, BattlefieldEntryModificationDef, CardArt, CardRules,
+    CardSet, CardType, CardTypeSet, CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef,
+    CounterKind, CreatureTypeSetDef, EffectDef, EffectRecipientDef, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementConditionDef, ReplacementEffectDef, SetOperationDef, SpellAdditionalCostDef,
+    SpendModeDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, cards,
 };
 use crate::ids::ObjectSetBindingIndex;
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 /// "Other creatures you control with power 2 or less", read as each one
 /// enters. The cap below is what makes a batch of them draw one card.
@@ -232,10 +234,87 @@ pub(in crate::card::sets) static OVERLORD_OF_THE_BALEMURK: CardRecord = CardReco
         .with_abilities(&OVERLORD_ABILITIES),
 );
 
+/// Either graveyard: the Vacuum is as happy eating your own escape targets
+/// as theirs, and the second ability does not care whose card it was.
+static A_CARD_IN_A_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Any,
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: None,
+    },
+)];
+
+static VACUUM_CASH_IN_COST: [AbilityCostDef; 3] = [
+    AbilityCostDef::Mana(mana_cost!("{6}")),
+    AbilityCostDef::TapSource,
+    AbilityCostDef::SacrificeSource,
+];
+
+/// "Each of them is a 1/1 Spirit in addition to its other types." Adding the
+/// subtype rather than setting it is what "in addition" means: a Griselbrand
+/// that comes back this way is a Demon Spirit, and a 1/1 one.
+static AS_A_ONE_ONE_SPIRIT: AppliedEffectDef = AppliedEffectDef::Composite(&[
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+    AppliedEffectDef::Characteristic(CharacteristicOperationDef::CreatureTypes(
+        SetOperationDef::Add(CreatureTypeSetDef::named(&["Spirit"])),
+    )),
+]);
+
+static A_FLYING_COUNTER: TokenCountersDef = TokenCountersDef {
+    kind: CounterKind::Flying,
+    amount: ValueDef::Constant(1),
+};
+
+static GHOST_VACUUM_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::activated_with_targets(
+        "{T}: Exile target card from a graveyard.",
+        &[AbilityCostDef::TapSource],
+        &A_CARD_IN_A_GRAVEYARD,
+        // Linked rather than exiled outright: the second ability names what
+        // this one took, and by then nothing else could tell those cards
+        // apart from anything else in exile.
+        EffectDef::ExileLinkedToSource {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    ),
+    AbilityDef::activated(
+        "{6}, {T}, Sacrifice this artifact: Put each creature card exiled with this artifact onto \
+         the battlefield under your control with a flying counter on it. Each of them is a 1/1 \
+         Spirit in addition to its other types. Activate only as a sorcery.",
+        &VACUUM_CASH_IN_COST,
+        EffectDef::ReturnLinkedExiles {
+            // Only the creature cards: a Brainstorm the Vacuum ate stays
+            // exiled, still linked to a source that is no longer there.
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            zone: ZoneKind::Battlefield,
+            grant: None,
+            counters: Some(A_FLYING_COUNTER),
+            arrival_effect: Some(&AS_A_ONE_ONE_SPIRIT),
+            transformed: false,
+            controller: Some(PlayerRelation::You),
+        },
+    )
+    .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+];
+
+// DSK 248 — Ghost Vacuum
+pub(in crate::card::sets) static GHOST_VACUUM: CardRecord = CardRecord::new(
+    cards::GHOST_VACUUM,
+    "Ghost Vacuum",
+    CardArt::new("8ac39c01-127f-4471-bc74-11a90c48e306", "David Szabo"),
+    CardSet::DuskmournHouseOfHorror,
+    // One mana of graveyard hate that the deck playing it can cash in for a
+    // board, which is what keeps it in a cube where dead cards are the cost
+    // of every sideboard card.
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&GHOST_VACUUM_ABILITIES),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ENDURING_INNOCENCE,
     &ABHORRENT_OCULUS,
     &OVERLORD_OF_THE_BALEMURK,
+    &GHOST_VACUUM,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

@@ -21,6 +21,9 @@ static FREEBOOTER_RETURNS_IT: AbilityDef = AbilityDef::triggered(
         None,
     ),
     EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
         zone: ZoneKind::Hand,
         grant: None,
         controller: None,

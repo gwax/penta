@@ -284,7 +284,9 @@ pub fn observation_json_for_format(
 pub(super) fn stack_object_json(catalog: &CardCatalog, object: &StackObservation) -> Value {
     let ability_id = object.ability.and_then(|origin| match origin {
         AbilityOrigin::Printed { ability, .. } => Some(ability.0),
-        AbilityOrigin::IntrinsicBasicLand(_) | AbilityOrigin::Granted { .. } => None,
+        AbilityOrigin::IntrinsicBasicLand(_)
+        | AbilityOrigin::IntrinsicCounter(_)
+        | AbilityOrigin::Granted { .. } => None,
     });
     json!({
         "objectId": object.id.0,

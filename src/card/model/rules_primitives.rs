@@ -1,9 +1,10 @@
-use super::ManaColor;
+use super::{KeywordAbility, ManaColor};
 
-/// A kind of counter a game object can carry. Only `PlusOnePlusOne` has rules
-/// meaning of its own; the rest are named markers that the cards putting them
-/// there give meaning to.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+/// A kind of counter a game object can carry. Most are named markers that
+/// the cards putting them there give meaning to; the ones with rules meaning
+/// of their own are the two that change power and toughness, the finality
+/// counter, and the keyword counters.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum CounterKind {
     PlusOnePlusOne,
     Javelin,
@@ -73,10 +74,15 @@ pub enum CounterKind {
     /// than put into a graveyard when it would die, which is what stops a
     /// reanimated body from being reanimated again.
     Finality,
+    /// A flying counter (CR 122.1e). A keyword counter is not a marker
+    /// either: the permanent carrying it has that keyword for as long as the
+    /// counter is there, which is what makes it survive everything a
+    /// duration-scoped grant would not.
+    Flying,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 27;
+    pub const COUNT: usize = 28;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -106,6 +112,7 @@ impl CounterKind {
         Self::Wish,
         Self::Level,
         Self::Finality,
+        Self::Flying,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -140,7 +147,8 @@ impl CounterKind {
             | Self::Depletion
             | Self::Wish
             | Self::Level
-            | Self::Finality => (0, 0),
+            | Self::Finality
+            | Self::Flying => (0, 0),
         }
     }
 
@@ -174,6 +182,7 @@ impl CounterKind {
             Self::Wish => 24,
             Self::Level => 25,
             Self::Finality => 26,
+            Self::Flying => 27,
         }
     }
 
@@ -207,6 +216,18 @@ impl CounterKind {
             Self::Wish => "wish",
             Self::Level => "level",
             Self::Finality => "finality",
+            Self::Flying => "flying",
+        }
+    }
+
+    /// The keyword a keyword counter grants (CR 122.1e), if this is one.
+    /// Nothing about it is a grant with a duration: the permanent has the
+    /// keyword exactly while the counter is on it.
+    #[must_use]
+    pub const fn granted_keyword(self) -> Option<KeywordAbility> {
+        match self {
+            Self::Flying => Some(KeywordAbility::Flying),
+            _ => None,
         }
     }
 }

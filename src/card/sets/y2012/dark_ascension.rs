@@ -2930,6 +2930,9 @@ pub(in crate::card::sets) static HELVAULT: CardRecord = CardRecord::new(
                 "When Helvault is put into a graveyard from the battlefield, return all cards exiled with it to the battlefield under their owners' control.",
                 TriggerEventDef::zone_changed(ObjectPredicateDef::Source, Some(ZoneKind::Battlefield), Some(ZoneKind::Graveyard)),
                 EffectDef::ReturnLinkedExiles {
+                    object: ObjectPredicateDef::Any,
+                    counters: None,
+                    arrival_effect: None,
                     zone: ZoneKind::Battlefield,
                     grant: None,
                     controller: None,

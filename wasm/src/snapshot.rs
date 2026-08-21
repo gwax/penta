@@ -229,7 +229,9 @@ impl WebGame {
             .map(|object| {
                 let ability_id = object.ability.and_then(|origin| match origin {
                     AbilityOrigin::Printed { ability, .. } => Some(ability.0),
-                    AbilityOrigin::IntrinsicBasicLand(_) | AbilityOrigin::Granted { .. } => None,
+                    AbilityOrigin::IntrinsicBasicLand(_)
+                    | AbilityOrigin::IntrinsicCounter(_)
+                    | AbilityOrigin::Granted { .. } => None,
                 });
                 // Enough card detail for the browser to draw a real card on
                 // the stack rather than a name tag.

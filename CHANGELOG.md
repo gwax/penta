@@ -153,6 +153,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Keyword counters.** A flying counter is not a marker the card putting it
+  there gives meaning to: the permanent carrying it has flying for exactly as
+  long as the counter is on it (CR 122.1e), which is why it survives
+  everything a duration-scoped grant would not. It is read off the counters
+  the way a basic land's mana ability is read off its subtypes, and gets the
+  matching origin: `intrinsicCounter` joins `intrinsicBasicLand` on the wire
+  as a third kind of ability nobody printed.
+
 - **A clause can name the tokens it just made.** Mobilize sacrifices exactly
   the tokens that attack created and no others, and by the time the delayed
   clause fires nothing about the board can tell them apart from the pair the

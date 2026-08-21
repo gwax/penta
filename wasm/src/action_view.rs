@@ -203,6 +203,10 @@ pub(super) fn ability_origin_value(origin: AbilityOrigin) -> Value {
             "kind": "intrinsicBasicLand",
             "landType": format!("{land_type:?}").to_ascii_lowercase(),
         }),
+        AbilityOrigin::IntrinsicCounter(kind) => json!({
+            "kind": "intrinsicCounter",
+            "counter": kind.name(),
+        }),
         AbilityOrigin::Granted {
             source,
             source_definition,

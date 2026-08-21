@@ -65,7 +65,7 @@ pub(super) const fn ability_source_snapshot(source: AbilitySourceRef) -> Ability
     }
 }
 
-pub(super) const fn parse_ability_source(source: AbilitySourceSnapshot) -> AbilitySourceRef {
+pub(super) fn parse_ability_source(source: AbilitySourceSnapshot) -> AbilitySourceRef {
     AbilitySourceRef {
         object: GameObjectId(source.object),
         ability: ability_origin_from_snapshot(source.ability),

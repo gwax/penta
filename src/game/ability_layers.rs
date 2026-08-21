@@ -145,6 +145,21 @@ impl Game {
             }
         }
 
+        // A keyword counter is not a grant with a duration: the permanent
+        // has the keyword exactly while the counter is sitting on it
+        // (CR 122.1e), so it is read off the counters the way a basic land's
+        // mana ability is read off its subtypes.
+        for kind in crate::card::CounterKind::ALL {
+            if characteristics.counters(kind) > 0
+                && let Some(ability) = abilities::keyword_counter_ability(kind)
+            {
+                abilities.push(EffectiveAbility {
+                    origin: AbilityOrigin::IntrinsicCounter(kind),
+                    ability,
+                });
+            }
+        }
+
         let subtypes = prospective.map_or_else(
             || self.effective_subtypes(permanent),
             |prospective| self.effective_subtypes_with_prospective(permanent, prospective),

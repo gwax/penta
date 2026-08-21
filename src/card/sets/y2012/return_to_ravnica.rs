@@ -93,6 +93,9 @@ pub(in crate::card::sets) static ANGEL_OF_SERENITY: CardRecord = CardRecord::new
             "When this creature leaves the battlefield, return the exiled cards to their owners' hands.",
             TriggerEventDef::zone_changed(ObjectPredicateDef::Source, Some(ZoneKind::Battlefield), None),
             EffectDef::ReturnLinkedExiles {
+                object: ObjectPredicateDef::Any,
+                counters: None,
+                arrival_effect: None,
                 zone: ZoneKind::Hand,
                 grant: None,
                 controller: None,
@@ -3452,6 +3455,9 @@ pub(in crate::card::sets) static DETENTION_SPHERE: CardRecord = CardRecord::new(
             "When this enchantment leaves the battlefield, return the exiled cards to the battlefield under their owner's control.",
             TriggerEventDef::zone_changed(ObjectPredicateDef::Source, Some(ZoneKind::Battlefield), None),
             EffectDef::ReturnLinkedExiles {
+                object: ObjectPredicateDef::Any,
+                counters: None,
+                arrival_effect: None,
                 zone: ZoneKind::Battlefield,
                 grant: None,
                 controller: None,

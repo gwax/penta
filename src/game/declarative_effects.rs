@@ -11,6 +11,7 @@ use move_to_zone::MoveToZoneClause;
 
 mod damage;
 mod hand_and_library;
+mod linked_exiles;
 mod mana;
 mod move_to_zone;
 mod permanent_state;
@@ -512,19 +513,6 @@ impl Game {
                     }
                 }
             }
-            EffectDef::ExileLinkedToSource { object: recipient } => {
-                let source = object.source.unwrap_or(object.id);
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    let exiled = match target {
-                        Target::Permanent(id) => self.exile_permanent_returning_card(id),
-                        Target::Card(id) => self.exile_card_returning_card(id),
-                        Target::Player(_) | Target::Spell(_) => None,
-                    };
-                    if let Some(exiled) = exiled {
-                        self.linked_exiles.push((source, exiled));
-                    }
-                }
-            }
             EffectDef::MayCastTargetWithoutPaying {
                 object: recipient,
                 ability,
@@ -537,56 +525,10 @@ impl Game {
                     self.offer_granted_cast(object.controller, card, ability);
                 }
             }
-            EffectDef::ExileGrantingOwnerPlay {
-                object: recipient,
-                surcharge,
-            } => {
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    let exiled = match target {
-                        Target::Permanent(id) => self.exile_permanent_returning_card(id),
-                        Target::Card(id) => self.exile_card_returning_card(id),
-                        Target::Player(_) | Target::Spell(_) => None,
-                    };
-                    // Its owner, not the exiler: what the clause hands back
-                    // is the card's own player's ability to play it.
-                    if let Some(exiled) = exiled
-                        && let Some((_, instance)) = self.card_in_nonbattlefield_zone(exiled)
-                    {
-                        let owner = instance.owner;
-                        self.permit_owner_play_while_exiled(exiled, owner, surcharge);
-                    }
-                }
-            }
-            EffectDef::ReturnLinkedExiles {
-                zone,
-                grant,
-                controller,
-                transformed,
-            } => {
-                let source = object.source.unwrap_or(object.id);
-                let returning = self
-                    .linked_exiles
-                    .iter()
-                    .filter(|(exiled_by, _)| *exiled_by == source)
-                    .map(|(_, card)| *card)
-                    .collect::<Vec<_>>();
-                self.linked_exiles
-                    .retain(|(exiled_by, _)| *exiled_by != source);
-                let arriving_controller = controller.map(|relation| {
-                    if self.player_relation_matches(
-                        object.controller,
-                        relation,
-                        object.controller,
-                        context.trigger,
-                    ) {
-                        object.controller
-                    } else {
-                        object.controller.opponent()
-                    }
-                });
-                for card in returning {
-                    self.return_exiled_card(card, zone, grant, arriving_controller, transformed);
-                }
+            EffectDef::ExileLinkedToSource { .. }
+            | EffectDef::ExileGrantingOwnerPlay { .. }
+            | EffectDef::ReturnLinkedExiles { .. } => {
+                self.resolve_linked_exile_effect(scoped, object, &context);
             }
             EffectDef::Detain { object: recipient } => {
                 let controller = object.controller;

@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-use crate::card::{BasicLandType, ManaSplit};
+use crate::card::{BasicLandType, CounterKind, ManaSplit};
 use crate::casting::{CastChoices, TargetSelection};
 use crate::{
     AbilityId, CardDefinitionId, CardPartId, GameObjectId, GrantId, ModeId, PlayOptionId, PlayerId,
@@ -39,6 +39,10 @@ pub enum AbilityOrigin {
         ability: AbilityId,
     },
     IntrinsicBasicLand(BasicLandType),
+    /// A keyword a counter on the permanent grants (CR 122.1e). Like the
+    /// land one above it is nobody's printed ability: the permanent has it
+    /// because of what is sitting on it.
+    IntrinsicCounter(CounterKind),
     Granted {
         source: GameObjectId,
         source_definition: CardDefinitionId,

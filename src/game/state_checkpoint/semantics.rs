@@ -124,7 +124,9 @@ pub(super) fn resolved_applied_effect_locator(
             source_ability,
             ..
         } => (source_definition.0, source_part.0, source_ability.0),
-        AbilityOrigin::IntrinsicBasicLand(_) => return None,
+        AbilityOrigin::IntrinsicBasicLand(_) | AbilityOrigin::IntrinsicCounter(_) => {
+            return None;
+        }
     };
     let root = AbilityLocator {
         definition,
@@ -165,7 +167,9 @@ pub(super) fn applied_effect_locator_matches_source(
             source_ability,
             ..
         } => (source_definition.0, source_part.0, source_ability.0),
-        AbilityOrigin::IntrinsicBasicLand(_) => return false,
+        AbilityOrigin::IntrinsicBasicLand(_) | AbilityOrigin::IntrinsicCounter(_) => {
+            return false;
+        }
     };
     (
         locator.ability.definition,
@@ -200,7 +204,9 @@ pub(super) fn resolved_damage_prevention_locator(
             source_ability,
             ..
         } => (source_definition.0, source_part.0, source_ability.0),
-        AbilityOrigin::IntrinsicBasicLand(_) => return None,
+        AbilityOrigin::IntrinsicBasicLand(_) | AbilityOrigin::IntrinsicCounter(_) => {
+            return None;
+        }
     };
     let root = AbilityLocator {
         definition,
@@ -399,7 +405,9 @@ pub(super) fn resolved_replacement_effect_locator(
             source_ability,
             ..
         } => (source_definition.0, source_part.0, source_ability.0),
-        AbilityOrigin::IntrinsicBasicLand(_) => return None,
+        AbilityOrigin::IntrinsicBasicLand(_) | AbilityOrigin::IntrinsicCounter(_) => {
+            return None;
+        }
     };
     let root = AbilityLocator {
         definition,
@@ -444,7 +452,9 @@ pub(super) fn replacement_effect_locator_matches_source(
             source_ability,
             ..
         } => (source_definition.0, source_part.0, source_ability.0),
-        AbilityOrigin::IntrinsicBasicLand(_) => return false,
+        AbilityOrigin::IntrinsicBasicLand(_) | AbilityOrigin::IntrinsicCounter(_) => {
+            return false;
+        }
     };
     (
         locator.ability.definition,

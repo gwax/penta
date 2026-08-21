@@ -109,7 +109,9 @@ impl Game {
     ) -> CardDefinitionId {
         match origin {
             AbilityOrigin::Printed { definition, .. } => definition,
-            AbilityOrigin::IntrinsicBasicLand(_) | AbilityOrigin::Granted { .. } => fallback,
+            AbilityOrigin::IntrinsicBasicLand(_)
+            | AbilityOrigin::IntrinsicCounter(_)
+            | AbilityOrigin::Granted { .. } => fallback,
         }
     }
 
@@ -648,7 +650,7 @@ impl Game {
                 source_ability,
                 ..
             } => (source_definition, source_part, source_ability),
-            AbilityOrigin::IntrinsicBasicLand(_) => {
+            AbilityOrigin::IntrinsicBasicLand(_) | AbilityOrigin::IntrinsicCounter(_) => {
                 (fallback, CardPartId::PRIMARY, AbilityId::PRIMARY)
             }
         }

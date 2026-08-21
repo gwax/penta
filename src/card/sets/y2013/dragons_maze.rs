@@ -274,6 +274,9 @@ pub(in crate::card::sets) static AETHERLING: CardRecord = CardRecord::new(
                         player: PlayerRelation::Any,
                     },
                     EffectDef::ReturnLinkedExiles {
+                        object: ObjectPredicateDef::Any,
+                        counters: None,
+                        arrival_effect: None,
                         zone: ZoneKind::Battlefield,
                         grant: None,
                         controller: None,

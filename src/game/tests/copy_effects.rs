@@ -621,7 +621,9 @@ fn separate_grant_sites_receive_distinct_structural_origins() {
         .into_iter()
         .filter_map(|effective| match effective.origin {
             AbilityOrigin::Granted { .. } => Some(effective.origin),
-            AbilityOrigin::Printed { .. } | AbilityOrigin::IntrinsicBasicLand(_) => None,
+            AbilityOrigin::Printed { .. }
+            | AbilityOrigin::IntrinsicBasicLand(_)
+            | AbilityOrigin::IntrinsicCounter(_) => None,
         })
         .collect::<Vec<_>>();
 
@@ -699,7 +701,9 @@ fn a_nonmatching_grant_site_still_advances_the_structural_origin() {
         .into_iter()
         .filter_map(|effective| match effective.origin {
             AbilityOrigin::Granted { .. } => Some(effective.origin),
-            AbilityOrigin::Printed { .. } | AbilityOrigin::IntrinsicBasicLand(_) => None,
+            AbilityOrigin::Printed { .. }
+            | AbilityOrigin::IntrinsicBasicLand(_)
+            | AbilityOrigin::IntrinsicCounter(_) => None,
         })
         .collect::<Vec<_>>();
 
@@ -763,7 +767,9 @@ fn nonmatching_composite_grant_sites_still_advance_structural_origins() {
         .into_iter()
         .filter_map(|effective| match effective.origin {
             AbilityOrigin::Granted { .. } => Some(effective.origin),
-            AbilityOrigin::Printed { .. } | AbilityOrigin::IntrinsicBasicLand(_) => None,
+            AbilityOrigin::Printed { .. }
+            | AbilityOrigin::IntrinsicBasicLand(_)
+            | AbilityOrigin::IntrinsicCounter(_) => None,
         })
         .collect::<Vec<_>>();
 
@@ -884,7 +890,9 @@ pub(super) fn sole_granted_origin(game: &Game, receiver: CardInstanceId) -> Abil
         .into_iter()
         .find_map(|effective| match effective.origin {
             AbilityOrigin::Granted { .. } => Some(effective.origin),
-            AbilityOrigin::Printed { .. } | AbilityOrigin::IntrinsicBasicLand(_) => None,
+            AbilityOrigin::Printed { .. }
+            | AbilityOrigin::IntrinsicBasicLand(_)
+            | AbilityOrigin::IntrinsicCounter(_) => None,
         })
         .expect("the copied source grants an ability")
 }

@@ -431,18 +431,15 @@ impl Game {
         grant: Option<KeywordAbility>,
         arriving_controller: Option<PlayerId>,
         transformed: bool,
-    ) {
-        let Some(owner) = [PlayerId::One, PlayerId::Two].into_iter().find(|player| {
+        counters: Option<(CounterKind, u16)>,
+    ) -> Option<GameObjectId> {
+        let owner = [PlayerId::One, PlayerId::Two].into_iter().find(|player| {
             self.players[player.index()]
                 .exile
                 .iter()
                 .any(|card| card.id == id)
-        }) else {
-            return;
-        };
-        let Some(card) = remove_card(&mut self.players[owner.index()].exile, id) else {
-            return;
-        };
+        })?;
+        let card = remove_card(&mut self.players[owner.index()].exile, id)?;
         if zone == ZoneKind::Battlefield {
             self.put_card_onto_battlefield_from(
                 card,
@@ -451,12 +448,19 @@ impl Game {
                     BattlefieldArrival::transformed_under(arriving_controller.unwrap_or(owner))
                 } else {
                     BattlefieldArrival::under(arriving_controller.unwrap_or(owner))
-                },
+                }
+                .with_counters(counters),
                 grant,
             );
+            // The card that left exile and the permanent now standing there
+            // are two objects, and the arrival is the one a following clause
+            // has to name.
+            self.arrived.take()
         } else {
             let (card, _zone_change) = self.zone_change_card(card);
+            let arrived = card.id;
             self.players[owner.index()].hand.push(card);
+            Some(arrived)
         }
     }
 

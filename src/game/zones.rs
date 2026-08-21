@@ -505,6 +505,11 @@ impl Game {
         // part of the arrival rather than something turned over afterwards.
         permanent.face_down = arrival.manifested;
         permanent.manifested = arrival.manifested;
+        // On it as it arrives, so an enters trigger reading its power sees
+        // them and a keyword counter is granting its keyword already.
+        if let Some((kind, amount)) = arrival.counters {
+            permanent.add_counters(kind, amount);
+        }
         self.initialize_battlefield_entry(&mut permanent);
         if let Some(keyword) = grant {
             permanent.temporary_keywords.push(keyword);

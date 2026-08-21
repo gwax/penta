@@ -638,6 +638,9 @@ pub(in crate::card::sets) static RESTORATION_ANGEL: CardRecord = CardRecord::new
                         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     },
                     EffectDef::ReturnLinkedExiles {
+                        object: ObjectPredicateDef::Any,
+                        counters: None,
+                        arrival_effect: None,
                         zone: ZoneKind::Battlefield,
                         grant: None,
                         controller: None,
@@ -1329,6 +1332,9 @@ static BLINK_UNDER_YOUR_CONTROL: [EffectDef; 2] = [
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
     },
     EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
         zone: ZoneKind::Battlefield,
         grant: None,
         controller: Some(PlayerRelation::You),

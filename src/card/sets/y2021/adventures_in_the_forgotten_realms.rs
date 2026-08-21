@@ -23,6 +23,9 @@ static HOLE_GIVES_IT_BACK: AbilityDef = AbilityDef::triggered(
         None,
     ),
     EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
         zone: ZoneKind::Battlefield,
         grant: None,
         controller: None,

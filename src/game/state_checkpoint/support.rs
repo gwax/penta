@@ -140,6 +140,9 @@ const fn ability_origin_snapshot(origin: AbilityOrigin) -> AbilityOriginSnapshot
         AbilityOrigin::IntrinsicBasicLand(land_type) => AbilityOriginSnapshot::IntrinsicBasicLand {
             land_type: basic_land_type_snapshot(land_type),
         },
+        AbilityOrigin::IntrinsicCounter(kind) => AbilityOriginSnapshot::IntrinsicCounter {
+            counter: kind.index(),
+        },
         AbilityOrigin::Granted {
             source,
             source_definition,
@@ -156,7 +159,7 @@ const fn ability_origin_snapshot(origin: AbilityOrigin) -> AbilityOriginSnapshot
     }
 }
 
-const fn ability_origin_from_snapshot(origin: AbilityOriginSnapshot) -> AbilityOrigin {
+fn ability_origin_from_snapshot(origin: AbilityOriginSnapshot) -> AbilityOrigin {
     match origin {
         AbilityOriginSnapshot::Printed {
             definition,
@@ -169,6 +172,17 @@ const fn ability_origin_from_snapshot(origin: AbilityOriginSnapshot) -> AbilityO
         },
         AbilityOriginSnapshot::IntrinsicBasicLand { land_type } => {
             AbilityOrigin::IntrinsicBasicLand(parse_basic_land_type(land_type))
+        }
+        AbilityOriginSnapshot::IntrinsicCounter { counter } => {
+            // An index this catalog does not know reads back as the plainest
+            // counter there is, which grants nothing: a keyword that cannot
+            // be identified must not be invented.
+            AbilityOrigin::IntrinsicCounter(
+                CounterKind::ALL
+                    .get(counter)
+                    .copied()
+                    .unwrap_or(CounterKind::PlusOnePlusOne),
+            )
         }
         AbilityOriginSnapshot::Granted {
             source,

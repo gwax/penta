@@ -94,6 +94,9 @@ static PRISON_RETURNS_IT: AbilityDef = AbilityDef::triggered(
         None,
     ),
     EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
         zone: ZoneKind::Battlefield,
         grant: None,
         controller: None,
@@ -434,6 +437,9 @@ static AJANI_TURNS_OVER: [EffectDef; 2] = [
         object: EffectRecipientDef::Source,
     },
     EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
         zone: ZoneKind::Battlefield,
         grant: None,
         controller: None,

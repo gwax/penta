@@ -22,6 +22,9 @@ static JAILER_RELEASE: AbilityDef = AbilityDef::triggered(
     "When an opponent becomes the monarch, return the exiled card to the battlefield.",
     TriggerEventDef::BecomesMonarch(PlayerRelation::Opponent),
     EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
         zone: ZoneKind::Battlefield,
         grant: None,
         controller: None,

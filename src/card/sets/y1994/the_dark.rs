@@ -2370,6 +2370,9 @@ pub(in crate::card::sets) static SAFE_HAVEN: CardRecord = CardRecord::new(
                 player: EffectRecipientDef::Controller,
                 object: ObjectPredicateDef::Source,
                 then: Some(&EffectDef::ReturnLinkedExiles {
+                    object: ObjectPredicateDef::Any,
+                    counters: None,
+                    arrival_effect: None,
                     zone: ZoneKind::Battlefield,
                     grant: None,
                     controller: None,

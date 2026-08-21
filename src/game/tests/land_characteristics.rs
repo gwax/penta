@@ -198,7 +198,9 @@ fn direct_and_composite_land_type_effects_grant_intrinsic_mana_in_order() {
                 AbilityOrigin::IntrinsicBasicLand(land_type) => {
                     Some((land_type, activation.color))
                 }
-                AbilityOrigin::Printed { .. } | AbilityOrigin::Granted { .. } => None,
+                AbilityOrigin::Printed { .. }
+                | AbilityOrigin::Granted { .. }
+                | AbilityOrigin::IntrinsicCounter(_) => None,
             })
             .collect::<Vec<_>>(),
         vec![

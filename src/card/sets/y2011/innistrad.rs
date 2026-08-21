@@ -352,6 +352,9 @@ pub(in crate::card::sets) static FIEND_HUNTER: CardRecord = CardRecord::new(
                 "When this creature leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
                 TriggerEventDef::zone_changed(ObjectPredicateDef::Source, Some(ZoneKind::Battlefield), None),
                 EffectDef::ReturnLinkedExiles {
+                    object: ObjectPredicateDef::Any,
+                    counters: None,
+                    arrival_effect: None,
                     zone: ZoneKind::Battlefield,
                     grant: None,
                     controller: None,
