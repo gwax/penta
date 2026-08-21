@@ -153,6 +153,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Proliferate.** A procedure of its own rather than a composition: the
+  choice runs over permanents and players at once, which no object set can
+  say, and what each chosen thing gets is read off what is already on it
+  rather than named by the card. Only things carrying at least one counter
+  are on the menu -- another counter of each kind already there is nothing at
+  all when there is no kind already there.
+
 - **Keyword counters.** A flying counter is not a marker the card putting it
   there gives meaning to: the permanent carrying it has flying for exactly as
   long as the counter is on it (CR 122.1e), which is why it survives

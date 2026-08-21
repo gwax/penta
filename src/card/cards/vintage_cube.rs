@@ -204,3 +204,4 @@ pub const LEGION_EXTRUDER: CardDefinitionId = CardDefinitionId(2288);
 pub const GHOST_VACUUM: CardDefinitionId = CardDefinitionId(2289);
 pub const TIME_SPIRAL: CardDefinitionId = CardDefinitionId(2290);
 pub const JACE_THE_MIND_SCULPTOR: CardDefinitionId = CardDefinitionId(2291);
+pub const CANKERBLOOM: CardDefinitionId = CardDefinitionId(2292);

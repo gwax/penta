@@ -95,6 +95,9 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
                     .flat_map(draw_replacement_referenced_object_ids),
             );
         }
+        DecisionContinuation::Proliferate { candidates } => {
+            ids.extend(candidates.iter().copied().filter_map(target_object_id));
+        }
         DecisionContinuation::MayCastGranted { card, .. } => ids.push(*card),
         DecisionContinuation::CascadeCast { card, exiled, .. } => {
             ids.push(*card);

@@ -98,6 +98,7 @@ mod phasing;
 mod play_permissions;
 mod prevention_state;
 mod procedure_state;
+mod proliferate;
 mod prospective_x;
 mod replacement_state;
 mod sacrifice_to_total;

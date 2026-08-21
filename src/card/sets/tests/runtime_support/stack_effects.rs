@@ -192,8 +192,12 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
                 && shared_stack_effect_at_position(*partition.then, true)
         }
         // A spell copying itself asks its chooser for targets, which is a
-        // decision window like any other.
-        EffectDef::CopyResolvingSpell { .. } => deferred_decision_allowed,
+        // decision window like any other. Proliferate asks over permanents
+        // and players at once, which is the same kind of window and reads
+        // nothing off a recipient either.
+        EffectDef::CopyResolvingSpell { .. } | EffectDef::Proliferate => {
+            deferred_decision_allowed
+        }
         // Naming a card is a decision window, and what follows it is bound by
         // the same rule as anything after one.
         EffectDef::ChooseCardName { then, .. }

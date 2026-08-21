@@ -123,6 +123,7 @@ impl Game {
             | EffectDef::ExileFromTopUntil { .. }
             | EffectDef::ManifestDread { .. }
             | EffectDef::Cascade
+            | EffectDef::Proliferate
             | EffectDef::SearchZone { then: None, .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }

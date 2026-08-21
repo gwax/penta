@@ -583,6 +583,11 @@ fn continuation_snapshot(
         DecisionContinuation::MiracleReveal { card } => {
             DecisionContinuationSnapshot::MiracleReveal { card: card.0 }
         }
+        DecisionContinuation::Proliferate { candidates } => {
+            DecisionContinuationSnapshot::Proliferate {
+                candidates: candidates.iter().copied().map(target_snapshot).collect(),
+            }
+        }
         DecisionContinuation::MayCastGranted {
             player,
             card,

@@ -449,6 +449,7 @@ impl HandcraftedPolicy {
             | EffectDef::ExileFromTopUntil { .. }
         | EffectDef::ManifestDread { .. }
         | EffectDef::Cascade
+        | EffectDef::Proliferate
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }

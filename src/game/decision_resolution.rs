@@ -376,6 +376,17 @@ impl Game {
                 }
                 self.bury_cards(player, to_graveyard);
             }
+            DecisionContinuation::Proliferate { candidates } => {
+                let chosen = pending
+                    .observation
+                    .options
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, option)| options.contains(&option.id))
+                    .filter_map(|(index, _)| candidates.get(index).copied())
+                    .collect::<Vec<_>>();
+                self.proliferate(&chosen);
+            }
             DecisionContinuation::MayCastGranted { card, ability, .. } => {
                 // Answering this decision is the decline: a cast would have
                 // taken the decision away instead of resolving it. Either

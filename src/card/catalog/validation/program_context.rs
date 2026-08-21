@@ -544,6 +544,7 @@ fn validate_resolving_effect(
         | EffectDef::ExileFromTopUntil { .. }
         | EffectDef::ManifestDread { .. }
         | EffectDef::Cascade
+        | EffectDef::Proliferate
         | EffectDef::MayCastTargetWithoutPaying { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealHand { .. }
@@ -890,6 +891,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::ExileFromTopUntil { .. } => "ExileFromTopUntil",
         EffectDef::ManifestDread { .. } => "ManifestDread",
         EffectDef::Cascade => "Cascade",
+        EffectDef::Proliferate => "Proliferate",
         EffectDef::LookAtHand { .. } => "LookAtHand",
         EffectDef::RevealHand { .. } => "RevealHand",
         EffectDef::RevealAtRandomFromHand { .. } => "RevealAtRandomFromHand",

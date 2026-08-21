@@ -784,6 +784,18 @@ fn parse_continuation(
                 card: GameObjectId(*card),
             }
         }
+        DecisionContinuationSnapshot::Proliferate { candidates } => {
+            // Rebuilt rather than trusted: what a proliferate could add to
+            // is a fact of the board, so a checkpoint naming anything else
+            // is not this game.
+            let restored = candidates.iter().copied().map(parse_target).collect::<Vec<_>>();
+            if restored != game.proliferate_candidates() {
+                return Err("proliferate candidates disagree with the board".into());
+            }
+            DecisionContinuation::Proliferate {
+                candidates: restored,
+            }
+        }
         DecisionContinuationSnapshot::MayCastGranted {
             player: seat,
             card,

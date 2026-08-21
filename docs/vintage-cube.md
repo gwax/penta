@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 271 are cataloged and 263 are not
+- 534 cards in the pool, of which 272 are cataloged and 262 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -167,10 +167,9 @@ lands are legal in every format and are not listed.
 - `Tersa Lightshatter`
 - `Voldaren Epicure`
 
-### Green (39)
+### Green (38)
 
 - `Baloth Prime`
-- `Cankerbloom`
 - `Courser of Kruphix`
 - `Elvish Reclaimer`
 - `Endurance`
@@ -322,7 +321,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 271 pool cards are in the catalog because an earlier format needed them.
+These 272 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -362,6 +361,7 @@ been played beside.
 - `Breeding Pool`
 - `Bristly Bill, Spine Sower`
 - `Candelabra of Tawnos`
+- `Cankerbloom`
 - `Cathar Commando`
 - `Cecil, Dark Knight`
 - `Celestial Colonnade`

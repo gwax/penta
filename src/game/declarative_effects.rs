@@ -219,6 +219,7 @@ impl Game {
             | EffectDef::ReplaceNextDrawThisTurn { .. } => {
                 self.resolve_hand_and_library_effect(scoped, object, &context);
             }
+            EffectDef::Proliferate => self.offer_proliferate(object),
             EffectDef::LoseLife { recipient, amount } => {
                 let amount = self
                     .effect_value(amount, object, &context, scoped)

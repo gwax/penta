@@ -793,6 +793,14 @@ pub enum EffectDef {
         player: EffectRecipientDef,
         effect: &'static EffectDef,
     },
+    /// Proliferate (CR 701.28a). Choose any number of permanents and/or
+    /// players, then give each another counter of each kind already there.
+    ///
+    /// A procedure of its own rather than a composition. The choice runs
+    /// over permanents and players at once, which no object set can say, and
+    /// what each chosen thing gets is read off what is already on it rather
+    /// than named by the card.
+    Proliferate,
     /// Returns everything this ability's source exiled, to the named zone.
     /// A returned permanent keeps `grant` until end of turn, which is how
     /// Obzedat comes back ready to attack.

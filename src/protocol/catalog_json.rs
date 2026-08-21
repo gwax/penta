@@ -145,6 +145,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::ConspiracyTakeTheCrown => "conspiracy-take-the-crown",
         CardSet::Kaladesh => "kaladesh",
         CardSet::AetherRevolt => "aether-revolt",
+        CardSet::PhyrexiaAllWillBeOne => "phyrexia-all-will-be-one",
         CardSet::MarchOfTheMachine => "march-of-the-machine",
         CardSet::LordOfTheRings => "lord-of-the-rings",
         CardSet::WildsOfEldraine => "wilds-of-eldraine",

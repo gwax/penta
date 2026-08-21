@@ -240,6 +240,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::ExileFromTopUntil { .. }
         | EffectDef::ManifestDread { .. }
         | EffectDef::Cascade
+        | EffectDef::Proliferate
         | EffectDef::LookAtTopAndSelect { .. }
         | EffectDef::LookAtHand { .. }
         | EffectDef::RevealAtRandomFromHand { .. }

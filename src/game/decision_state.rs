@@ -357,6 +357,12 @@ pub(super) enum DecisionContinuation {
         /// it is instead of trusting a detached fragment.
         definition: ScopedEffect,
     },
+    /// "Choose any number of permanents and/or players, then give each
+    /// another counter of each kind already there." Nothing is bound: what
+    /// each chosen thing gets is read off it when the answer comes back.
+    Proliferate {
+        candidates: Vec<Target>,
+    },
     /// "You may cast target instant or sorcery card from your graveyard
     /// without paying its mana cost." The card has not moved; what it holds
     /// is a lent ability, and answering the decision takes it back.
