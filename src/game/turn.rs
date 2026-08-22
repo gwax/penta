@@ -403,6 +403,11 @@ impl Game {
                 .expiration
                 .survives_turn_start(self.active_player, turns_started)
         });
+        self.resolved_attack_restrictions.retain(|restriction| {
+            restriction
+                .expiration
+                .survives_turn_start(self.active_player, turns_started)
+        });
         self.resolved_play_permissions.retain(|permission| {
             permission
                 .expiration
@@ -520,6 +525,8 @@ impl Game {
             .retain(|redirect| redirect.expiration.survives_untap_step(active));
         self.resolved_play_restrictions
             .retain(|restriction| restriction.expiration.survives_untap_step(active));
+        self.resolved_attack_restrictions
+            .retain(|restriction| restriction.expiration.survives_untap_step(active));
         self.resolved_play_permissions
             .retain(|permission| permission.expiration.survives_untap_step(active));
         for permanent in &mut self.battlefield {
@@ -567,6 +574,8 @@ impl Game {
         self.damage_redirects
             .retain(|redirect| redirect.expiration.survives_end_of_combat());
         self.resolved_play_restrictions
+            .retain(|restriction| restriction.expiration.survives_end_of_combat());
+        self.resolved_attack_restrictions
             .retain(|restriction| restriction.expiration.survives_end_of_combat());
         self.resolved_play_permissions
             .retain(|permission| permission.expiration.survives_end_of_combat());
@@ -649,6 +658,8 @@ impl Game {
         // but it must not revive an expired Quicken or Aurelia's Fury effect.
         self.sorcery_flash_grants = [0; 2];
         self.resolved_play_restrictions
+            .retain(|restriction| restriction.expiration.survives_cleanup());
+        self.resolved_attack_restrictions
             .retain(|restriction| restriction.expiration.survives_cleanup());
         self.resolved_play_permissions
             .retain(|permission| permission.expiration.survives_cleanup());
@@ -736,13 +747,15 @@ impl Game {
                     context,
                     custom_followup,
                 } => self.resolve_effects_in_order(effects, &object, context, custom_followup),
-                PendingProcedure::SylvanAfterDraw { player } => {
-                    let candidates = self.sylvan_candidates(player);
-                    let choices = candidates.len().min(2);
-                    if choices > 0 {
-                        self.queue_sylvan_select(player, candidates, choices);
-                    }
-                }
+                PendingProcedure::ForEachInBinding {
+                    objects,
+                    binding,
+                    next,
+                    effect,
+                    object,
+                    context,
+                } => self
+                    .resolve_for_each_in_binding(objects, binding, next, effect, &object, context),
                 PendingProcedure::SimultaneousDraws {
                     remaining,
                     next,

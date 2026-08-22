@@ -227,6 +227,9 @@ fn validate_object_set_shape(
             validate_object_reference_shape(reference, targets)
         }
         ObjectSetDef::Query(query) => validate_query_shape(query, targets),
+        ObjectSetDef::CardsDrawnThisTurnInHand(player) => {
+            validate_player_reference_shape(player, targets)
+        }
         ObjectSetDef::LegalTargets(target) => {
             validate_target_projection(target, targets, RecipientExpectation::Object)
         }
@@ -550,6 +553,7 @@ fn recipient_may_name_nonbattlefield_object(
             // A graveyard is not the battlefield, which is the whole point of
             // naming a card at either end of it.
             | ObjectSetDef::LinkedExiles(_)
+            | ObjectSetDef::CardsDrawnThisTurnInHand(_)
             | ObjectSetDef::BottomOfGraveyard(_)
             | ObjectSetDef::TopOfGraveyardMatching { .. },
         ) => true,
@@ -611,6 +615,7 @@ fn recipient_nonbattlefield_zones_support_flashback(
             | ObjectSetDef::Binding(_)
             | ObjectSetDef::MatchingBinding { .. }
             | ObjectSetDef::LinkedExiles(_)
+            | ObjectSetDef::CardsDrawnThisTurnInHand(_)
             | ObjectSetDef::BottomOfGraveyard(_)
             | ObjectSetDef::SharingNameWithBinding { .. }
             | ObjectSetDef::TopOfGraveyardMatching { .. },
@@ -693,7 +698,10 @@ fn validate_applied_effect_shapes(
         ) => validate_recipient_shape(recipient, targets, RecipientExpectation::Player),
         // The cap names the players it applies to; the predicate picks out
         // which of their permanents it covers.
-        AppliedEffectDef::Rule(AppliedRuleDef::UntapAtMostOne(predicate)) => {
+        AppliedEffectDef::Rule(
+            AppliedRuleDef::UntapAtMostOne(predicate)
+            | AppliedRuleDef::CannotBeAttackedExceptBy(predicate),
+        ) => {
             validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
             validate_object_predicate_shape(predicate, targets)
         }

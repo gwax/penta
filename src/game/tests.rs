@@ -19,6 +19,8 @@ use crate::{
 mod token_fixtures;
 pub(super) use token_fixtures::*;
 
+mod declarative_draw_enchantments;
+
 static TEST_FLYING_ABILITY: [AbilityDef; 1] = [abilities::flying()];
 static TEST_FLYING_TRAMPLE_ABILITIES: [AbilityDef; 2] = [abilities::flying(), abilities::trample()];
 pub(super) static TEST_MISHRAS_FACTORY_CHARACTERISTICS: [AppliedEffectDef; 3] = [
