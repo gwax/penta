@@ -1,13 +1,13 @@
 //! Visions cards used by the staged Premodern deck tranche.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
     ArrivalAttachmentDef, BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, InstalledTriggerDef, ObjectPredicateDef, PlayerRefDef, PlayerRelation,
-    SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef, PlayerRefDef,
+    PlayerRelation, SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -263,12 +263,65 @@ pub(in crate::card::sets) static FIREBLAST: CardRecord = CardRecord::new_with_le
     ]),
 );
 
+/// A green creature, wherever the card is looking for one. The sacrifice and
+/// the search name the same thing, which is what makes this a trade rather
+/// than a tutor.
+static A_GREEN_CREATURE: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Color(ManaColor::Green),
+]);
+
+/// Paid as the spell is cast, so a board with nothing green on it cannot
+/// cast this at all.
+static SACRIFICE_A_GREEN_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    object: A_GREEN_CREATURE,
+    zone: ZoneKind::Battlefield,
+    count: 1,
+    counted: SpellAdditionalCostCountDef::Printed,
+    spend: SpendModeDef::ByZone,
+    or: None,
+};
+
+// VIS 114 — Natural Order
+pub(in crate::card::sets) static NATURAL_ORDER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("0845f0b0-9413-4ddd-861d-9607636bebc6"),
+    "Natural Order",
+    CardArt::new("0845f0b0-9413-4ddd-861d-9607636bebc6", "Terese Nielsen"),
+    CardSet::Visions,
+    // Four mana and a Llanowar Elves for whatever the deck is built around.
+    // The search is mandatory and the sacrifice is a cost, so the card is a
+    // dead draw exactly when the board is empty.
+    CardRules::new_sorcery(mana_cost!("{2}{G}{G}")).with_ability(
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, sacrifice a green creature.\nSearch your \
+             library for a green creature card, put it onto the battlefield, then shuffle.",
+            &[],
+            SACRIFICE_A_GREEN_CREATURE,
+            EffectDef::SearchZone {
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: A_GREEN_CREATURE,
+                minimum: 0,
+                maximum: ValueDef::Constant(1),
+                reveal: false,
+                destination: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: false,
+                binding: None,
+                then: None,
+            },
+        ),
+    ),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &IMPULSE,
     &VISION_CHARM,
     &NECROMANCY,
     &VAMPIRIC_TUTOR,
     &FIREBLAST,
+    &NATURAL_ORDER,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

@@ -939,6 +939,7 @@ mod vintage_cube_mine_collapse;
 mod vintage_cube_monarch;
 mod vintage_cube_more_spells;
 mod vintage_cube_mystic_confluence;
+mod vintage_cube_natural_order;
 mod vintage_cube_necromancy;
 mod vintage_cube_nights_whisper;
 mod vintage_cube_ninjutsu;
