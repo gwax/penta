@@ -321,6 +321,7 @@ mod vintage_cube_goblin_rabblemaster;
 mod vintage_cube_graveyard;
 mod vintage_cube_gut;
 mod vintage_cube_hand_attack;
+mod vintage_cube_haywire_mite;
 mod vintage_cube_horizon_land;
 mod vintage_cube_infect;
 mod vintage_cube_ivora;

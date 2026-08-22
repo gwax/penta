@@ -540,6 +540,11 @@ const SET_MODULES: &[SetModule] = &[
         y2022::dominaria_united::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::TheBrothersWar,
+        y2022::the_brothers_war::CARDS,
+        y2022::the_brothers_war::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::EternalMasters,
         y2016::eternal_masters::CARDS,
         y2016::eternal_masters::ADDITIONAL_PRINTINGS,

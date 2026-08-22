@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 285 are cataloged and 249 are not
+- 534 cards in the pool, of which 286 are cataloged and 248 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -239,7 +239,7 @@ lands are legal in every format and are not listed.
 - `Wrenn and Six`
 - `Zirda, the Dawnwaker`
 
-### Colorless (33)
+### Colorless (32)
 
 - `Aether Spellbomb`
 - `Chromatic Star`
@@ -248,7 +248,6 @@ lands are legal in every format and are not listed.
 - `Currency Converter`
 - `Emrakul, the Aeons Torn`
 - `Everflowing Chalice`
-- `Haywire Mite`
 - `Kaldra Compleat`
 - `Karn, Scion of Urza`
 - `Lion's Eye Diamond`
@@ -308,7 +307,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 285 pool cards are in the catalog because an earlier format needed them.
+These 286 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -423,6 +422,7 @@ been played beside.
 - `Gush`
 - `Gut, True Soul Zealot`
 - `Hallowed Fountain`
+- `Haywire Mite`
 - `Horizon Canopy`
 - `Hymn to Tourach`
 - `Indatha Triome`

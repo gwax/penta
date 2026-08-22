@@ -103,6 +103,7 @@ pub enum CardSet {
     StreetsOfNewCapenna,
     CommanderLegendsBattleForBaldursGate,
     DominariaUnited,
+    TheBrothersWar,
     EternalMasters,
     EldritchMoon,
     ConspiracyTakeTheCrown,
