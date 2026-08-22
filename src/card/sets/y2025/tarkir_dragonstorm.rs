@@ -1,11 +1,11 @@
 //! Tarkir: Dragonstorm cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CreatedTokensDef,
-    EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef,
-    ObjectSetDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, PlayerSetDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    EffectDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
+    ObjectPredicateDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef,
+    PlayerRelation, PlayerSetDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::mana_cost;
@@ -71,6 +71,37 @@ static VOICE_OF_VICTORY_ABILITIES: [AbilityDef; 2] = [
     ),
 ];
 
+/// "It endures 1": the counter or the Spirit, and the attacking body is
+/// what either one is about.
+static DESCENDANT_ENDURES: EffectDef = EffectDef::Endure {
+    object: EffectRecipientDef::Source,
+    amount: ValueDef::Constant(1),
+};
+
+// TDM 8 — Descendant of Storms
+pub(in crate::card::sets) static DESCENDANT_OF_STORMS: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("f632be90-9e7f-41f8-a52e-a2952354d730"),
+    "Descendant of Storms",
+    CardArt::new("f632be90-9e7f-41f8-a52e-a2952354d730", "Lie Setiawan"),
+    CardSet::TarkirDragonstorm,
+    // A one-mana 2/1 that attacks well early and has somewhere to put mana
+    // late. Which half of endure you want changes with the board: the
+    // counter makes the attack bigger, the Spirit makes the next one wider.
+    CardRules::new_creature(mana_cost!("{W}"), &["Human", "Soldier"], 2, 1).with_ability(
+        AbilityDef::triggered(
+            "Whenever this creature attacks, you may pay {1}{W}. If you do, it endures 1.",
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
+            EffectDef::PayOr(PayOrDef::optional(
+                EffectPaymentDef::mana(
+                    PlayerSetDef::Related(PlayerRelation::You),
+                    mana_cost!("{1}{W}"),
+                ),
+                &DESCENDANT_ENDURES,
+            )),
+        ),
+    ),
+);
+
 // TDM 33 — Voice of Victory
 pub(in crate::card::sets) static VOICE_OF_VICTORY: CardRecord = CardRecord::new_with_legacy_id(
     2282,
@@ -86,6 +117,7 @@ pub(in crate::card::sets) static VOICE_OF_VICTORY: CardRecord = CardRecord::new_
 // TDM 127 — Tersa Lightshatter
 // Audit: blocked — Two of her three abilities need capabilities that are already blocking other cards. "Discard up to two then draw that many" needs a discard whose size the player chooses, where a discard here takes a fixed number; the same gap blocks Mind Bomb in The Dark. And "you may play that card this turn" needs a permission to play one exiled card for a duration, which nothing here can grant and which also blocks Robber of the Rich. Haste alone is not the card.
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&VOICE_OF_VICTORY];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&DESCENDANT_OF_STORMS, &VOICE_OF_VICTORY];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

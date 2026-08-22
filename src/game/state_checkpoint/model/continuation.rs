@@ -133,6 +133,11 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         #[serde(default)]
         remaining: u16,
     },
+    Endure {
+        player: usize,
+        permanent: u32,
+        amount: u16,
+    },
     OptionalEffect {
         object: DetachedStackSnapshot,
         ability: AbilityLocator,

@@ -347,6 +347,15 @@ fn continuation_snapshot(
                 .map(|targets| targets.iter().map(target_selection_snapshot).collect())
                 .collect(),
         },
+        DecisionContinuation::Endure {
+            player,
+            permanent,
+            amount,
+        } => DecisionContinuationSnapshot::Endure {
+            player: player.index(),
+            permanent: permanent.0,
+            amount: *amount,
+        },
         DecisionContinuation::OptionalEffect {
             object,
             context,
@@ -952,6 +961,7 @@ fn parse_decision_observation(
 }
 
 include!("decision/continuation.rs");
+include!("decision/battlefield_entry_continuation.rs");
 
 include!("decision/validation.rs");
 

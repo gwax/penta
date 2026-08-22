@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 286 are cataloged and 248 are not
+- 534 cards in the pool, of which 287 are cataloged and 247 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -33,10 +33,9 @@ leaves empty so nothing reads it as a set window by accident.
 Grouped by color so a tranche can be scoped to one part of the pool. Basic
 lands are legal in every format and are not listed.
 
-### White (25)
+### White (24)
 
 - `Cosmogrand Zenith`
-- `Descendant of Storms`
 - `Eagles of the North`
 - `Elspeth, Knight-Errant`
 - `Elspeth, Storm Slayer`
@@ -307,7 +306,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 286 pool cards are in the catalog because an earlier format needed them.
+These 287 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -379,6 +378,7 @@ been played beside.
 - `Delayed Blast Fireball`
 - `Delighted Halfling`
 - `Demonic Tutor`
+- `Descendant of Storms`
 - `Doomsday`
 - `Dreadhorde Arcanist`
 - `Duelist of the Mind`

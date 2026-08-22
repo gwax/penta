@@ -337,6 +337,14 @@ pub(super) enum DecisionContinuation {
     RecallReturn {
         player: PlayerId,
     },
+    /// Endure N (CR 702.183a): the counters or the Spirit, chosen as the
+    /// ability resolves. Neither branch needs the resolving object, so
+    /// nothing about it is carried here.
+    Endure {
+        player: PlayerId,
+        permanent: GameObjectId,
+        amount: u16,
+    },
     /// An effect the controller was offered and may decline.
     OptionalEffect {
         object: Box<StackObject>,

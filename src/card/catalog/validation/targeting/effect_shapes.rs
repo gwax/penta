@@ -253,7 +253,8 @@ fn validate_effect_target_shapes(
         | EffectDef::Counter { object, .. }
         | EffectDef::ReturnSpellToHand { object }
         | EffectDef::PutSpellIntoOwnersLibrary { object }
-        | EffectDef::CreateTokenCopyOf { object } => {
+        | EffectDef::CreateTokenCopyOf { object }
+        | EffectDef::Endure { object, .. } => {
             validate_recipient_shape(object, targets, RecipientExpectation::Object)
         }
         EffectDef::ReturnWithHasteAndFinality { object, then, .. } => {

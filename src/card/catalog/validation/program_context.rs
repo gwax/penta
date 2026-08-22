@@ -764,6 +764,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::CreateToken { .. } => "CreateToken",
         EffectDef::CreateAttachedToken { .. } => "CreateAttachedToken",
         EffectDef::CreateTokenCopyOf { .. } => "CreateTokenCopyOf",
+        EffectDef::Endure { .. } => "Endure",
         EffectDef::Attach { .. }
         | EffectDef::PhaseOut { .. }
         | EffectDef::ReturnAttached { .. } => "Attach",

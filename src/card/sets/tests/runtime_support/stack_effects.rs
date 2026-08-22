@@ -407,6 +407,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         // an open question.
         EffectDef::PutIntoLibraryBeneathTop { object, .. }
         | EffectDef::CreateTokenCopyOf { object }
+        | EffectDef::Endure { object, .. }
         | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }
         | EffectDef::RemoveFromCombat { object }

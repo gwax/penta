@@ -143,7 +143,12 @@ impl Game {
         }
     }
 
-    fn add_counters_to_permanent(&mut self, id: GameObjectId, kind: CounterKind, amount: u16) {
+    pub(super) fn add_counters_to_permanent(
+        &mut self,
+        id: GameObjectId,
+        kind: CounterKind,
+        amount: u16,
+    ) {
         if let Some(permanent) = self
             .battlefield
             .iter_mut()

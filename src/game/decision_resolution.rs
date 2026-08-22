@@ -437,6 +437,11 @@ impl Game {
                 };
                 self.put_spell_into_library(spell, placement);
             }
+            DecisionContinuation::Endure {
+                player,
+                permanent,
+                amount,
+            } => self.finish_endure(player, permanent, amount, options),
             DecisionContinuation::OptionalEffect {
                 object,
                 context,

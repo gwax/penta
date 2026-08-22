@@ -180,6 +180,7 @@ impl Game {
             | EffectDef::CreateToken { .. }
             | EffectDef::CreateAttachedToken { .. }
             | EffectDef::CreateTokenCopyOf { .. }
+            | EffectDef::Endure { .. }
             | EffectDef::StaticApply { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => false,

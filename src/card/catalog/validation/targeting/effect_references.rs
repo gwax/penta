@@ -185,7 +185,8 @@ fn validate_effect_references(
         | EffectDef::Counter { object, .. }
         | EffectDef::ReturnSpellToHand { object }
         | EffectDef::PutSpellIntoOwnersLibrary { object }
-        | EffectDef::CreateTokenCopyOf { object } => {
+        | EffectDef::CreateTokenCopyOf { object }
+        | EffectDef::Endure { object, .. } => {
             validate_recipient_target_references(object, target_count, scope)
         }
         EffectDef::Discard {

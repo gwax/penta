@@ -423,6 +423,19 @@ impl Game {
                 let grants = &mut self.sorcery_flash_grants[object.controller.index()];
                 *grants = grants.saturating_add(1);
             }
+            EffectDef::Endure {
+                object: recipient,
+                amount,
+            } => {
+                let amount =
+                    u16::try_from(self.effect_value(amount, object, &context, scoped).max(0))
+                        .unwrap_or(u16::MAX);
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Permanent(permanent) = target {
+                        self.queue_endure(object.controller, permanent, amount);
+                    }
+                }
+            }
             EffectDef::May {
                 player: recipient,
                 effect,

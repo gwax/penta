@@ -332,6 +332,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Endure.** "Endure N" is a choice between two whole effects -- N +1/+1
+  counters on the object, or an N/N white Spirit token -- made by its
+  controller as the ability resolves. A procedure of its own for the same
+  reason explore is one: nothing else in the effect vocabulary offers a
+  branch between two effects at resolution time. The token is not authored
+  beside the number because the keyword fixes it, an N/N white Spirit
+  whatever N turns out to be.
+
 - **Exert.** A choice made as a creature is declared as an attacker, and
   paid for afterwards: an exerted creature is skipped by its controller's
   next untap step. The second sentence every printed exert card carries --

@@ -299,6 +299,7 @@ mod vintage_cube_cut_down;
 mod vintage_cube_dack;
 mod vintage_cube_damn;
 mod vintage_cube_delayed_blast_fireball;
+mod vintage_cube_descendant_of_storms;
 mod vintage_cube_dreadhorde_arcanist;
 mod vintage_cube_duelist;
 mod vintage_cube_echo_of_eons;

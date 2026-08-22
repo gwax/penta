@@ -509,6 +509,7 @@ impl HandcraftedPolicy {
             | EffectDef::CreateToken { .. }
             | EffectDef::CreateAttachedToken { .. }
             | EffectDef::CreateTokenCopyOf { .. }
+            | EffectDef::Endure { .. }
             | EffectDef::Special(_) => {}
         }
     }

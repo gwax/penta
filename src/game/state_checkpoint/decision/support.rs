@@ -19,6 +19,7 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             deferred,
             ..
         } => extend_begin_turn_ids(&mut ids, applied, replacements, deferred),
+        DecisionContinuation::Endure { permanent, .. } => ids.push(*permanent),
         DecisionContinuation::ChooseColor {
             object, context, ..
         }

@@ -79,6 +79,7 @@ mod decision_state;
 mod declarative_effects;
 mod effect_support;
 mod effect_values;
+mod endure;
 mod entry_replacements;
 mod error;
 mod event;
