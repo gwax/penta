@@ -101,7 +101,7 @@ fn a_land_on_top_can_be_put_onto_the_battlefield() {
         "and left the top"
     );
     assert!(
-        !game.players[PlayerId::One.index()].land_played_this_turn,
+        game.players[PlayerId::One.index()].lands_played_this_turn == 0,
         "putting it there is not playing it",
     );
 }

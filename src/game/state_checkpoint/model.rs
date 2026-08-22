@@ -78,7 +78,7 @@ pub(super) struct GameSnapshot {
     pub(super) untap_pending: bool,
     pub(super) cleanup_pending: bool,
     pub(super) mulligans: [u8; 2],
-    pub(super) land_played_this_turn: [bool; 2],
+    pub(super) lands_played_this_turn: [u16; 2],
     pub(super) tried_to_draw_from_empty_library: [bool; 2],
     pub(super) mana: [Vec<ManaSnapshot>; 2],
     pub(super) creature_died_this_turn: bool,

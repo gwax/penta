@@ -49,9 +49,11 @@ distinguishes snapshots of the covered source and build inputs.
   records optional versus installed draw replacements, replacement-effect
   continuations, object-set iteration, and resolved attack restrictions, and
   freezes the stack kind inside the checkpoint as well as the public
-  observation. Reconstruction consumers must require
-  `reconstruction.checkpoint.v8` and regenerate format-7 checkpoints. Protocol
-  28 and replay version 2 are unchanged.
+  observation. It also counts each player's land plays rather than flagging
+  them, which is what makes a second land drop expressible at all.
+  Reconstruction consumers must require `reconstruction.checkpoint.v8` and
+  regenerate format-7 checkpoints. Protocol 28 and replay version 2 are
+  unchanged.
 
 - **Card definition IDs now use printing-anchored, JavaScript-safe 52-bit
   identities.** Every existing card keeps its historic numeric value, now
@@ -350,6 +352,11 @@ distinguishes snapshots of the covered source and build inputs.
   field answers both. Checkpoints carry it as an additive optional label.
 
 ### Added
+
+- **A player may be allowed additional land plays.** The turn counts each
+  player's land plays instead of flagging the first, and a static ability can
+  say how many more than one they get. Counted rather than merely present:
+  two Explorations are two extra lands.
 
 - **Endure.** "Endure N" is a choice between two whole effects -- N +1/+1
   counters on the object, or an N/N white Spirit token -- made by its

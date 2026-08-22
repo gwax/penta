@@ -304,6 +304,7 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
             AppliedRuleDef::Ascend
             | AppliedRuleDef::MayLookAtTopOfLibrary
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
+            | AppliedRuleDef::MayPlayAdditionalLands(_)
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary,
         ) => true,
@@ -397,6 +398,7 @@ fn static_object_applied_effect_supported(
             | AppliedRuleDef::Ascend
             | AppliedRuleDef::MayLookAtTopOfLibrary
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
+            | AppliedRuleDef::MayPlayAdditionalLands(_)
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary
             | AppliedRuleDef::CannotPlay(_)

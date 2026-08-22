@@ -227,6 +227,11 @@ pub enum AppliedRuleDef {
     /// letting you cast, and a permission to play is not by itself a
     /// permission to look at what you are not playing.
     MayLookAtTopOfLibrary,
+    /// "You may play an additional land on each of your turns." A player
+    /// rule found the way the hand-size one is found, and counted rather
+    /// than merely present: two of them are two extra lands, which is what
+    /// makes it a number instead of a flag.
+    MayPlayAdditionalLands(u8),
     /// The affected player has no maximum hand size, so the cleanup step
     /// never asks them to discard. A player rule rather than an object one:
     /// it is found by walking the battlefield for statics naming that player.

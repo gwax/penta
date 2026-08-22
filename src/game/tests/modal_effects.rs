@@ -544,7 +544,7 @@ fn primeval_bounty_gains_life_only_for_its_own_lands() {
         game.players[lander.index()]
             .hand
             .push(card(10_002, cards::FOREST, lander));
-        game.players[lander.index()].land_played_this_turn = false;
+        game.players[lander.index()].lands_played_this_turn = 0;
         game.play_land(lander, CardInstanceId(10_002), PlayOptionId::DEFAULT);
         for _ in 0..8 {
             if game.players[0].life != 20 {

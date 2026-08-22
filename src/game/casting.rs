@@ -68,7 +68,9 @@ impl Game {
         };
         let card = remove_card(source_zone, card_id)
             .expect("legal land action references a card in a playable zone");
-        self.players[player.index()].land_played_this_turn = true;
+        self.players[player.index()].lands_played_this_turn = self.players[player.index()]
+            .lands_played_this_turn
+            .saturating_add(1);
         self.consecutive_passes = 0;
         let permanent =
             Permanent::entering(card, presented, player, self.turns_started[player.index()]);

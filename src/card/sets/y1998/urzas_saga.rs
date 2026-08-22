@@ -1,10 +1,10 @@
 //! Urza's Saga cards used by the staged Premodern deck tranche.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt,
-    CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef,
-    ChooseDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
+    AppliedRuleDef, CardArt, CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType,
+    ChoiceVisibilityDef, ChooseDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, SpellResolutionDestinationDef, TriggerConditionDef,
     TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
@@ -313,6 +313,24 @@ pub(in crate::card::sets) static GOBLIN_PATROL: CardRecord = CardRecord::new_wit
     )),
 );
 
+// USG 250 — Exploration
+pub(in crate::card::sets) static EXPLORATION: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("2f09e451-0246-45a2-8bfd-07d3c65ddfe6"),
+    "Exploration",
+    CardArt::new("2f09e451-0246-45a2-8bfd-07d3c65ddfe6", "Brian Sn\u{f5}ddy"),
+    CardSet::UrzasSaga,
+    // One mana for a second land drop every turn, which is nothing at all
+    // in a deck with no lands left to play and the best card in the deck in
+    // one that keeps finding them.
+    CardRules::new_enchantment(mana_cost!("{G}")).with_ability(AbilityDef::static_ability(
+        "You may play an additional land on each of your turns.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Controller,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayAdditionalLands(1)),
+        },
+    )),
+);
+
 // USG 290 — Claws of Gix
 pub(in crate::card::sets) static CLAWS_OF_GIX: CardRecord = CardRecord::new_with_legacy_id(
     288,
@@ -396,6 +414,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GOBLIN_LACKEY,
     &GOBLIN_MATRON,
     &GOBLIN_PATROL,
+    &EXPLORATION,
     &CLAWS_OF_GIX,
     &GAEAS_CRADLE,
     &TOLARIAN_ACADEMY,

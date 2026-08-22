@@ -722,7 +722,10 @@ struct PlayerState {
     outside_game: Vec<CardInstance>,
     mana_pool: ManaPool,
     mana: Vec<Mana>,
-    land_played_this_turn: bool,
+    /// How many lands this player has played this turn. A count rather
+    /// than a flag because Exploration exists: the ordinary allowance is
+    /// one, and a static ability can raise it.
+    lands_played_this_turn: u16,
     /// Poison counters this player has been given. Ten of them is a loss,
     /// checked as a state-based action alongside life and library.
     poison: u16,

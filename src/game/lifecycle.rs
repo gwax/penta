@@ -107,7 +107,7 @@ impl Game {
                     outside_game: Vec::new(),
                     mana_pool: ManaPool::default(),
                     mana: Vec::new(),
-                    land_played_this_turn: false,
+                    lands_played_this_turn: 0,
                     poison: 0,
                     energy: 0,
                 })

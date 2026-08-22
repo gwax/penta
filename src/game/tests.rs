@@ -313,6 +313,7 @@ mod vintage_cube_enduring_innocence;
 mod vintage_cube_eternal_witness;
 mod vintage_cube_exhume;
 mod vintage_cube_expedition_map;
+mod vintage_cube_exploration;
 mod vintage_cube_faerie_mastermind;
 mod vintage_cube_fatal_push;
 mod vintage_cube_figure_of_destiny;

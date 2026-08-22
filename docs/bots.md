@@ -1039,7 +1039,8 @@ one-shot effect, gives battlefield replacement abilities a distinct semantic
 continuation kind, and preserves resumable `ForEachInBinding` procedures and
 resolved player attack restrictions. It also repeats each live stack object's
 kind inside the checkpoint so reconstruction can verify it against the public
-observation.
+observation, and counts each player's land plays in `landsPlayedThisTurn`
+rather than flagging the first in `landPlayedThisTurn`.
 
 A format-7 checkpoint cannot distinguish declining an optional static draw
 replacement from consuming an installed replacement, and has no representation

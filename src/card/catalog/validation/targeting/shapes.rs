@@ -694,6 +694,7 @@ fn validate_applied_effect_shapes(
             AppliedRuleDef::Ascend
             | AppliedRuleDef::MayLookAtTopOfLibrary
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
+            | AppliedRuleDef::MayPlayAdditionalLands(_)
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary,
         ) => validate_recipient_shape(recipient, targets, RecipientExpectation::Player),

@@ -155,7 +155,7 @@ fn gaeas_touch_offers_only_a_basic_forest() {
 
     assert!(on_battlefield(&game, cards::FOREST));
     assert!(
-        !game.players[PlayerId::One.index()].land_played_this_turn,
+        game.players[PlayerId::One.index()].lands_played_this_turn == 0,
         "putting a land there is not playing one",
     );
 }

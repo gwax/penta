@@ -455,9 +455,9 @@ impl Game {
             untap_pending: self.untap_pending,
             cleanup_pending: self.cleanup_pending,
             mulligans: self.mulligans,
-            land_played_this_turn: [
-                self.players[0].land_played_this_turn,
-                self.players[1].land_played_this_turn,
+            lands_played_this_turn: [
+                self.players[0].lands_played_this_turn,
+                self.players[1].lands_played_this_turn,
             ],
             tried_to_draw_from_empty_library: [
                 self.players[0].tried_to_draw_from_empty_library,
@@ -701,7 +701,7 @@ impl Game {
             &mut libraries,
             &mut outside_game,
         )?;
-        let land_played = checkpoint.land_played_this_turn;
+        let lands_played = checkpoint.lands_played_this_turn;
         let tried_empty = checkpoint.tried_to_draw_from_empty_library;
         let mana_values = array(field(observation, "manaPools")?)?;
         if mana_values.len() != 2 {
@@ -733,7 +733,7 @@ impl Game {
             outside_game: outside_game[player.index()].clone(),
             mana_pool: mana_pools[player.index()],
             mana: mana[player.index()].clone(),
-            land_played_this_turn: land_played[player.index()],
+            lands_played_this_turn: lands_played[player.index()],
             poison: poison[player.index()],
             energy: energy[player.index()],
         });

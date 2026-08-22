@@ -49,7 +49,7 @@ fn settle(game: &mut Game) {
 /// one-land-per-turn rule is stepped around directly: what is being measured
 /// is the ability, not the land drop.
 fn play_a_land(game: &mut Game) {
-    game.players[0].land_played_this_turn = false;
+    game.players[0].lands_played_this_turn = 0;
     let action = game
         .legal_actions(PlayerId::One)
         .into_iter()

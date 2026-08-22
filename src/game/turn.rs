@@ -442,7 +442,7 @@ impl Game {
         self.card_left_graveyard_this_turn = [false; 2];
         self.drawn_this_turn = [Vec::new(), Vec::new()];
         self.step = Step::Upkeep;
-        self.players[self.active_player.index()].land_played_this_turn = false;
+        self.players[self.active_player.index()].lands_played_this_turn = 0;
         let started = self.turns_started[self.active_player.index()];
         let active = self.active_player;
         // The lifetime freezes both the referenced player and the exact turn

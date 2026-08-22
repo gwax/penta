@@ -329,6 +329,19 @@ impl Game {
         )
     }
 
+    /// How many lands beyond the ordinary one this player may play this
+    /// turn. Summed rather than merely looked for: two Explorations are two
+    /// extra lands, which is the whole reason the rule carries a number.
+    pub(in crate::game) fn additional_land_plays(&self, affected_player: PlayerId) -> u16 {
+        let mut extra = 0_u16;
+        self.visit_player_static_rules(affected_player, |rule| {
+            if let AppliedRuleDef::MayPlayAdditionalLands(amount) = rule {
+                extra = extra.saturating_add(u16::from(amount));
+            }
+        });
+        extra
+    }
+
     /// Whether any live static ability applies this rule to this player.
     pub(in crate::game) fn player_rule_applies(
         &self,
@@ -344,6 +357,22 @@ impl Game {
         affected_player: PlayerId,
         wanted: AppliedEffectDef,
     ) -> bool {
+        let mut found = false;
+        self.visit_player_static_rules(affected_player, |rule| {
+            found = found || AppliedEffectDef::Rule(rule) == wanted;
+        });
+        found
+    }
+
+    /// Every player rule a live static ability applies to this player, in
+    /// battlefield order. The walk is the one every player-facing rule uses:
+    /// such a rule has no anchor object, so each static ability on the
+    /// battlefield is asked whether its recipient is this player.
+    fn visit_player_static_rules(
+        &self,
+        affected_player: PlayerId,
+        mut visitor: impl FnMut(AppliedRuleDef),
+    ) {
         let land_type_sources = self.land_type_effect_sources(None);
         for source in self.battlefield.iter().chain(self.emblems.iter()) {
             let Some(rules) = self.effective_rules(source) else {
@@ -373,15 +402,29 @@ impl Game {
                 else {
                     continue;
                 };
-                if effect != wanted {
+                if !self.static_player_recipient_matches(recipient, source, affected_player) {
                     continue;
                 }
-                if self.static_player_recipient_matches(recipient, source, affected_player) {
-                    return true;
-                }
+                Self::visit_player_rule_leaves(effect, &mut visitor);
             }
         }
-        false
+    }
+
+    /// The rule leaves of one applied effect, flattening the composites a
+    /// clause that applies several at once is written as.
+    fn visit_player_rule_leaves(
+        effect: AppliedEffectDef,
+        visitor: &mut impl FnMut(AppliedRuleDef),
+    ) {
+        match effect {
+            AppliedEffectDef::Composite(components) => {
+                for component in components {
+                    Self::visit_player_rule_leaves(*component, visitor);
+                }
+            }
+            AppliedEffectDef::Rule(rule) => visitor(rule),
+            AppliedEffectDef::Characteristic(_) => {}
+        }
     }
 
     /// Whether any live static ability tells `affected_player` that drawing

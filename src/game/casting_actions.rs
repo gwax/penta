@@ -24,7 +24,7 @@ impl Game {
         if player != self.active_player
             || !self.step.is_main()
             || !self.stack.is_empty()
-            || state.land_played_this_turn
+            || state.lands_played_this_turn > self.additional_land_plays(player)
         {
             return;
         }
