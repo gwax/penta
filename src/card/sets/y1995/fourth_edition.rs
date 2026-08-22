@@ -13,6 +13,7 @@ pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&alpha::ARMAGEDDON), // 4ED 5
     PrintingRecord::reprint(&alpha::CIRCLE_OF_PROTECTION_RED), // 4ED 17
     PrintingRecord::reprint(&alpha::SWORDS_TO_PLOWSHARES), // 4ED 52
+    PrintingRecord::reprint(&alpha::ANIMATE_ARTIFACT), // 4ED 60
     PrintingRecord::reprint(&alpha::BLUE_ELEMENTAL_BLAST), // 4ED 63
     PrintingRecord::reprint(&alpha::COUNTERSPELL), // 4ED 65
     PrintingRecord::reprint(&alpha::STASIS),     // 4ED 104

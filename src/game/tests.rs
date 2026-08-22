@@ -627,6 +627,7 @@ mod activation_prohibitions;
 mod activation_timing;
 mod additional_costs;
 mod alternative_costs;
+mod animate_artifact;
 mod arabian_lands;
 mod armageddon_clock;
 mod aspect_of_wolf;

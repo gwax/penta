@@ -18,6 +18,7 @@ pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&alpha::WHITE_KNIGHT),   // CEI 44
     PrintingRecord::reprint(&alpha::WRATH_OF_GOD),   // CEI 46
     PrintingRecord::reprint(&alpha::ANCESTRAL_RECALL), // CEI 48
+    PrintingRecord::reprint(&alpha::ANIMATE_ARTIFACT), // CEI 49
     PrintingRecord::reprint(&alpha::BLUE_ELEMENTAL_BLAST), // CEI 50
     PrintingRecord::reprint(&alpha::BRAINGEYSER),    // CEI 51
     PrintingRecord::reprint(&alpha::COPY_ARTIFACT),  // CEI 54

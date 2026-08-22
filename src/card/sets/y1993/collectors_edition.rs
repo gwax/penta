@@ -17,6 +17,7 @@ pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&alpha::WHITE_KNIGHT),   // CED 44
     PrintingRecord::reprint(&alpha::WRATH_OF_GOD),   // CED 46
     PrintingRecord::reprint(&alpha::ANCESTRAL_RECALL), // CED 48
+    PrintingRecord::reprint(&alpha::ANIMATE_ARTIFACT), // CED 49
     PrintingRecord::reprint(&alpha::BLUE_ELEMENTAL_BLAST), // CED 50
     PrintingRecord::reprint(&alpha::BRAINGEYSER),    // CED 51
     PrintingRecord::reprint(&alpha::COPY_ARTIFACT),  // CED 54

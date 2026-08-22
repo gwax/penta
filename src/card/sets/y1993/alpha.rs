@@ -981,8 +981,45 @@ pub(in crate::card::sets) static ANCESTRAL_RECALL: CardRecord = CardRecord::new_
     )]),
 );
 
+/// One continuous effect begins on the attached noncreature artifact in
+/// layer 4 and keeps that same recipient for its layer-7 body under CR 613.6.
+static ANIMATE_ARTIFACT_BODY: AppliedEffectDef = AppliedEffectDef::Composite(&[
+    AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature)),
+    AppliedEffectDef::set_base_power_toughness(
+        ValueDef::AffectedManaValue,
+        ValueDef::AffectedManaValue,
+    ),
+]);
+
+static ANIMATE_ARTIFACT_RECIPIENT: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::AttachedToSource,
+        ObjectPredicateDef::HasType(CardType::Artifact),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Any,
+);
+
 // LEA 48 — Animate Artifact
-// Audit: blocked — Needs Aura-scoped animation with base power and toughness dynamically equal to the enchanted artifact's mana value.
+pub(in crate::card::sets) static ANIMATE_ARTIFACT: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("664b46f5-0424-4f4e-9f26-6bd2cf5e0357"),
+    "Animate Artifact",
+    CardArt::new("664b46f5-0424-4f4e-9f26-6bd2cf5e0357", "Douglas Shuler"),
+    CardSet::Alpha,
+    CardRules::new_enchantment(mana_cost!("{3}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            aura_spell("Enchant artifact", &abilities::ENCHANT_ARTIFACT_TARGET),
+            AbilityDef::static_ability(
+                "As long as enchanted artifact isn't a creature, it's an artifact creature with power and toughness each equal to its mana value.",
+                EffectDef::StaticApply {
+                    recipient: ANIMATE_ARTIFACT_RECIPIENT,
+                    effect: ANIMATE_ARTIFACT_BODY,
+                },
+            ),
+        ]),
+);
 
 // LEA 49 — Blue Elemental Blast
 pub(in crate::card::sets) static BLUE_ELEMENTAL_BLAST: CardRecord = CardRecord::new_with_legacy_id(
@@ -5452,6 +5489,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WRATH_OF_GOD,
     &AIR_ELEMENTAL,
     &ANCESTRAL_RECALL,
+    &ANIMATE_ARTIFACT,
     &BLUE_ELEMENTAL_BLAST,
     &BRAINGEYSER,
     &CLONE,

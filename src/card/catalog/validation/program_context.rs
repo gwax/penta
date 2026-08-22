@@ -370,7 +370,7 @@ fn static_object_applied_effect_supported(
             SetOperationDef::Add(types),
         )) => {
             types == crate::card::CardTypeSet::single(CardType::Creature)
-                && static_animation_query_supported(recipient)
+                && static_type_animation_query_supported(recipient)
         }
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(_)) => {
             static_animation_query_supported(recipient)
@@ -535,7 +535,16 @@ fn static_animation_query_supported(recipient: EffectRecipientDef) -> bool {
         || recipient.object_query().is_some_and(|query| {
             query.zones == [ZoneKind::Battlefield]
                 && static_query_supported(query)
-                && static_animation_predicate_supported(query.object)
+                && static_animation_predicate_supported(query.object, false)
+        })
+}
+
+fn static_type_animation_query_supported(recipient: EffectRecipientDef) -> bool {
+    static_direct_characteristic_recipient(recipient)
+        || recipient.object_query().is_some_and(|query| {
+            query.zones == [ZoneKind::Battlefield]
+                && static_query_supported(query)
+                && static_animation_predicate_supported(query.object, true)
         })
 }
 
@@ -548,30 +557,36 @@ fn static_direct_characteristic_recipient(recipient: EffectRecipientDef) -> bool
 
 /// Which predicates a static animation's own query may read.
 ///
-/// The rule is stratification, not a list of favourites: a static animation
-/// adds the creature card type and may repaint colour, so its query may not
-/// ask about either. Everything below is something no static animation
-/// supplies -- another card type, a non-land subtype, or which object is the
-/// source -- so reading it cannot feed back into the walk. A basic land
-/// subtype is the exception: the layer-4 operations do supply those.
-/// `Game::static_animation_predicate_is_supported` is the runtime's copy of
-/// this list; the two are meant to say the same thing.
-fn static_animation_predicate_supported(predicate: ObjectPredicateDef) -> bool {
+/// The rule is stratification, not a list of favourites. A static animation
+/// may ask whether an object is already a creature because CR 613.6 pins a
+/// compound effect's recipient set when its layer-4 component starts; its
+/// later components do not reselect after the effect supplies Creature. It
+/// still may not ask about colour, which an animation can repaint without an
+/// earlier component pinning the selection. Everything else below is another
+/// card type, a non-land subtype, attachment, or which object is the source.
+/// A basic land subtype remains excluded because layer-4 operations supply it.
+/// The two `Game::static_*animation_predicate_is_supported` methods are the
+/// runtime's copies of this list; both sides are meant to say the same thing.
+fn static_animation_predicate_supported(predicate: ObjectPredicateDef, creature: bool) -> bool {
     match predicate {
         ObjectPredicateDef::Subtype(name) => !crate::card::BasicLandType::ALL
             .iter()
             .any(|land_type| land_type.subtype() == name),
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
+        | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::HasType(
             CardType::Land | CardType::Enchantment | CardType::Artifact,
         ) => true,
+        ObjectPredicateDef::HasType(CardType::Creature) => creature,
         ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => predicates
             .iter()
             .copied()
-            .all(static_animation_predicate_supported),
-        ObjectPredicateDef::Not(predicate) => static_animation_predicate_supported(*predicate),
+            .all(|predicate| static_animation_predicate_supported(predicate, creature)),
+        ObjectPredicateDef::Not(predicate) => {
+            static_animation_predicate_supported(*predicate, creature)
+        }
         _ => false,
     }
 }
