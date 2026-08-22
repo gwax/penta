@@ -6,14 +6,15 @@
 //! continuous-effect layer walkers derive those operations live.
 //!
 //! The recipient vocabulary remains narrow: it may ask about land types, the
-//! card types below the operation being assembled, subtypes, which object is
-//! the source, and control. None of those reads what these operations
-//! supply -- a static animation adds the creature card type and may repaint
-//! colour, and nothing here asks about either. A basic land subtype is the
-//! exception the other way: the layer-4 operations do supply those, so a
-//! subtype predicate naming one stays out. `runtime_support` uses this
-//! same boundary, so a card that needs more is blocked rather than silently
-//! misread. `card::catalog::validation` keeps a matching list for the
+//! card types below the operation being assembled, subtypes, attachment,
+//! which object is the source, and control. A layer-4 transformation may also
+//! ask about Creature because CR 613.6 pins a compound animation's recipient
+//! set when that component starts to apply; its later components do not
+//! reselect after it has supplied that type itself. A colour-only
+//! transformation gets no such exception. A basic land subtype is excluded
+//! the other way because layer-4 operations supply those. `runtime_support`
+//! uses this same boundary, so a card that needs more is blocked rather than
+//! silently misread. `card::catalog::validation` keeps a matching list for the
 //! catalog-time refusal; the two are meant to say the same thing.
 
 use super::{BasicLandType, CardType, Game, ObjectPredicateDef};
@@ -29,28 +30,65 @@ fn subtype_is_supplied_by_a_static_effect(name: &str) -> bool {
 }
 
 impl Game {
-    /// Whether a static characteristic transformation's recipient predicate
-    /// stays inside the stratified vocabulary above.
-    #[must_use]
-    pub fn static_animation_predicate_is_supported(predicate: ObjectPredicateDef) -> bool {
+    fn static_animation_predicate_is_supported_with_creature(
+        predicate: ObjectPredicateDef,
+        creature: bool,
+    ) -> bool {
         match predicate {
             ObjectPredicateDef::Subtype(name) => !subtype_is_supplied_by_a_static_effect(name),
             ObjectPredicateDef::Any
             | ObjectPredicateDef::Source
+            | ObjectPredicateDef::AttachedToSource
             | ObjectPredicateDef::HasAnyBasicLandType(_)
             | ObjectPredicateDef::HasType(
                 CardType::Land | CardType::Enchantment | CardType::Artifact,
             ) => true,
+            ObjectPredicateDef::HasType(CardType::Creature) => creature,
             ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => {
-                predicates
-                    .iter()
-                    .copied()
-                    .all(Self::static_animation_predicate_is_supported)
+                predicates.iter().copied().all(|predicate| {
+                    Self::static_animation_predicate_is_supported_with_creature(predicate, creature)
+                })
             }
             ObjectPredicateDef::Not(predicate) => {
-                Self::static_animation_predicate_is_supported(*predicate)
+                Self::static_animation_predicate_is_supported_with_creature(*predicate, creature)
             }
             _ => false,
         }
+    }
+
+    /// Whether a static colour transformation's recipient predicate stays
+    /// inside the stratified vocabulary above.
+    #[must_use]
+    pub fn static_animation_predicate_is_supported(predicate: ObjectPredicateDef) -> bool {
+        Self::static_animation_predicate_is_supported_with_creature(predicate, false)
+    }
+
+    /// The layer-4 variant may select noncreatures because CR 613.6 keeps that
+    /// selection for the compound effect's later components.
+    #[must_use]
+    pub fn static_type_animation_predicate_is_supported(predicate: ObjectPredicateDef) -> bool {
+        Self::static_animation_predicate_is_supported_with_creature(predicate, true)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    static NONCREATURE_ARTIFACT: ObjectPredicateDef = ObjectPredicateDef::All(&[
+        ObjectPredicateDef::AttachedToSource,
+        ObjectPredicateDef::HasType(CardType::Artifact),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+    ]);
+
+    #[test]
+    fn only_a_type_layer_transformation_may_pin_a_noncreature_selection() {
+        assert!(Game::static_type_animation_predicate_is_supported(
+            NONCREATURE_ARTIFACT,
+        ));
+        assert!(
+            !Game::static_animation_predicate_is_supported(NONCREATURE_ARTIFACT),
+            "a later colour-only transformation has no layer-4 selection to keep",
+        );
     }
 }

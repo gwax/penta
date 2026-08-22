@@ -312,6 +312,23 @@ impl Game {
                 self.visit_static_effect_if(*then, traversal, condition_holds, visitor)
             }
             EffectDef::StaticApply { recipient, effect } => {
+                // CR 613.6 keeps one recipient set for every component of a
+                // continuous effect once that effect starts to apply. A
+                // compound animation therefore chooses its objects in layer
+                // 4 and keeps those same objects for its layer-7 body, even
+                // though its own type component has made them creatures by
+                // then. Re-entering the static set-characteristic walk while
+                // matching the recipient would instead let the later layer
+                // observe the animation itself and switch its own body off.
+                //
+                // The existing guarded layer-below view is also the honest
+                // boundary for dependencies the engine does not yet model:
+                // other static set-characteristic transformations are not
+                // guessed into the answer. Resolved and structural changes
+                // remain visible, as they are below this live static walk.
+                let _type_layer_selection = Self::applied_effect_starts_in_type_layer(effect)
+                    .then(StaticSetCharacteristicLayerGuard::enter)
+                    .flatten();
                 // Traverse the whole applied-effect structure even when this
                 // recipient does not match. Grant IDs identify structural
                 // grant sites, so later grants must not be renumbered by
@@ -331,6 +348,29 @@ impl Game {
                 )
             }
             _ => ControlFlow::Continue(()),
+        }
+    }
+
+    /// Whether this one applied effect begins choosing its recipients in
+    /// layer 4. Later components keep that selection under CR 613.6.
+    fn applied_effect_starts_in_type_layer(effect: AppliedEffectDef) -> bool {
+        match effect {
+            AppliedEffectDef::Composite(effects) => effects
+                .iter()
+                .copied()
+                .any(Self::applied_effect_starts_in_type_layer),
+            AppliedEffectDef::Characteristic(
+                CharacteristicOperationDef::BasicLandTypes(_)
+                | CharacteristicOperationDef::CardTypes(_)
+                | CharacteristicOperationDef::CreatureTypes(_)
+                | CharacteristicOperationDef::Subtypes(_),
+            ) => true,
+            AppliedEffectDef::Characteristic(
+                CharacteristicOperationDef::Abilities(_)
+                | CharacteristicOperationDef::Colors(_)
+                | CharacteristicOperationDef::PowerToughness(_),
+            )
+            | AppliedEffectDef::Rule(_) => false,
         }
     }
 

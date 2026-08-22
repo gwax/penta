@@ -284,6 +284,15 @@ fn shared_static_animation_query(recipient: EffectRecipientDef) -> bool {
         })
 }
 
+fn shared_static_type_animation_query(recipient: EffectRecipientDef) -> bool {
+    shared_direct_characteristic_recipient(recipient)
+        || recipient.object_query().is_some_and(|query| {
+            query.zones == [ZoneKind::Battlefield]
+                && shared_static_query(query)
+                && Game::static_type_animation_predicate_is_supported(query.object)
+        })
+}
+
 fn shared_direct_characteristic_recipient(recipient: EffectRecipientDef) -> bool {
     matches!(
         recipient.object_reference(),
@@ -327,7 +336,7 @@ pub(in super::super) fn shared_static_applied_effect(
             SetOperationDef::Add(types),
         )) => {
             types == crate::card::CardTypeSet::single(CardType::Creature)
-                && shared_static_animation_query(recipient)
+                && shared_static_type_animation_query(recipient)
         }
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(_)) => {
             shared_static_animation_query(recipient)

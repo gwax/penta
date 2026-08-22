@@ -44,6 +44,7 @@ pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
     PrintingRecord::reprint(&alpha::WHITE_KNIGHT),   // LEB 44
     PrintingRecord::reprint(&alpha::WRATH_OF_GOD),   // LEB 46
     PrintingRecord::reprint(&alpha::ANCESTRAL_RECALL), // LEB 48
+    PrintingRecord::reprint(&alpha::ANIMATE_ARTIFACT), // LEB 49
     PrintingRecord::reprint(&alpha::BLUE_ELEMENTAL_BLAST), // LEB 50
     PrintingRecord::reprint(&alpha::BRAINGEYSER),    // LEB 51
     PrintingRecord::reprint(&alpha::COPY_ARTIFACT),  // LEB 54
