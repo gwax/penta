@@ -1,8 +1,9 @@
 use super::model::{
     AppliedStackEffectSnapshot, BasicLandTypeChangeSnapshot, CastSignatureSnapshot,
-    DetachedStackSnapshot, EffectResolutionContextSnapshot, ManaSourceSnapshot, SeatSnapshot,
-    SpellFormSnapshot, StackAbilitySnapshot, StackObjectKindSnapshot, StackSnapshot,
-    TargetSelectionSnapshot, TargetSnapshot, TriggerContextSnapshot,
+    DecisionCardOriginSnapshot, DetachedStackSnapshot, EffectResolutionContextSnapshot,
+    ManaSourceSnapshot, SeatSnapshot, SpellFormSnapshot, StackAbilitySnapshot,
+    StackObjectKindSnapshot, StackSnapshot, TargetSelectionSnapshot, TargetSnapshot,
+    TriggerContextSnapshot,
 };
 use super::semantics::{
     ability_locator_for_origin, applied_effect_locator, catalog_applied_effect,
@@ -28,14 +29,28 @@ use crate::card::{ColorSet, ManaColor};
 mod ability_kind;
 use ability_kind::{StackAbilityCondition, stack_ability_condition};
 mod current;
+mod hidden_references;
 pub(super) use current::current_stack_snapshot;
+pub(in crate::game::state_checkpoint) use hidden_references::*;
+
+/// The live stack records where a hidden source sits; everything detached
+/// from it does not, and leaves its payload out instead.
+///
+/// Only the objects on the stack proper are put back through
+/// [`super::wire_decision::rebind_stack_source_cards`], so only they can
+/// promise that the position they wrote down is honoured.
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub(super) enum HiddenSourcePolicy {
+    Locate,
+    Refuse,
+}
 
 pub(super) fn stack_ability_snapshot(
     game: &Game,
     viewer: PlayerId,
     object: &StackObject,
 ) -> Option<StackAbilitySnapshot> {
-    stack_ability_snapshot_allowing(game, viewer, object, &[])
+    stack_ability_snapshot_with(game, viewer, object, &[], HiddenSourcePolicy::Locate)
 }
 
 pub(super) fn stack_ability_snapshot_allowing(
@@ -44,12 +59,41 @@ pub(super) fn stack_ability_snapshot_allowing(
     object: &StackObject,
     visible_rebindings: &[GameObjectId],
 ) -> Option<StackAbilitySnapshot> {
+    stack_ability_snapshot_with(
+        game,
+        viewer,
+        object,
+        visible_rebindings,
+        HiddenSourcePolicy::Refuse,
+    )
+}
+
+fn stack_ability_snapshot_with(
+    game: &Game,
+    viewer: PlayerId,
+    object: &StackObject,
+    visible_rebindings: &[GameObjectId],
+    hidden_source: HiddenSourcePolicy,
+) -> Option<StackAbilitySnapshot> {
     let payload = object.ability.as_ref()?;
-    if object.source.is_some_and(|source| {
-        object_reference_requires_hidden_rebinding(game, viewer, source)
-            && !visible_rebindings.contains(&source)
-    }) {
-        return None;
+    // A source the viewer cannot read is carried by where it sits rather
+    // than by its object id: the importer mints those zones fresh from the
+    // hypothesis it was handed, so the id it left here would name nothing.
+    let mut source_origin = None;
+    if let Some(source) = object.source
+        && stack_source_requires_hidden_rebinding(game, viewer, source)
+        && !visible_rebindings.contains(&source)
+    {
+        if hidden_source == HiddenSourcePolicy::Refuse {
+            return None;
+        }
+        let (seat, zone, index) = super::decision::hidden_card_origin(game, source)?;
+        source_origin = Some(DecisionCardOriginSnapshot {
+            object_id: source.0,
+            seat: seat.index(),
+            zone,
+            index,
+        });
     }
     if stack_payload_has_unrebindable_hidden_reference_except(
         game,
@@ -76,6 +120,7 @@ pub(super) fn stack_ability_snapshot_allowing(
             .iter()
             .map(target_selection_snapshot)
             .collect(),
+        source_origin,
         context: effect_resolution_context_snapshot(&payload.context),
         mode_effects: payload
             .mode_effects
@@ -218,152 +263,6 @@ fn signature_snapshot(signature: &CastSignature) -> CastSignatureSnapshot {
             .map(target_selection_snapshot)
             .collect(),
     }
-}
-
-pub(super) fn stack_object_requires_retired(game: &Game, object: &StackObject) -> bool {
-    referenced_object_ids(object).any(|id| game.retired_objects.contains_key(&id))
-}
-
-pub(super) fn stack_object_has_unrebindable_hidden_reference(
-    game: &Game,
-    viewer: PlayerId,
-    object: &StackObject,
-) -> bool {
-    object
-        .source
-        .is_some_and(|source| object_reference_requires_hidden_rebinding(game, viewer, source))
-        || object.ability.as_ref().is_some_and(|payload| {
-            stack_payload_has_unrebindable_hidden_reference_except(game, viewer, payload, &[])
-        })
-}
-
-pub(super) fn referenced_object_ids(object: &StackObject) -> impl Iterator<Item = GameObjectId> {
-    let mut ids = Vec::new();
-    ids.extend(object.source);
-    ids.extend(object.chosen_permanents.iter().copied());
-    ids.extend(
-        object
-            .applied_effects
-            .iter()
-            .filter_map(|effect| effect.source.map(|source| source.object)),
-    );
-    if let Some(payload) = &object.ability {
-        ids.extend(resolution_context_referenced_object_ids(&payload.context));
-        ids.extend(lexical_target_referenced_object_ids(payload));
-    }
-    ids.into_iter()
-}
-
-/// Target selections with a declared slot are ordinary targets: once their
-/// object changes zones, the id is deliberately left dangling so legality
-/// makes the spell or ability fizzle. Extra selections without a declared
-/// slot are captured lexical state (for example a delayed follow-up referring
-/// to an earlier target), so they still require hidden rebinding and LKI.
-fn lexical_target_referenced_object_ids(payload: &StackAbilityPayload) -> Vec<GameObjectId> {
-    payload
-        .targets
-        .iter()
-        .filter(|selection| payload.target_defs.get(selection.slot().index()).is_none())
-        .flat_map(TargetSelection::targets)
-        .filter_map(|target| match target {
-            Target::Player(_) => None,
-            Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(*id),
-        })
-        .collect()
-}
-
-fn stack_payload_has_unrebindable_hidden_reference_except(
-    game: &Game,
-    viewer: PlayerId,
-    payload: &StackAbilityPayload,
-    visible_rebindings: &[GameObjectId],
-) -> bool {
-    lexical_target_referenced_object_ids(payload)
-        .into_iter()
-        .chain(resolution_context_referenced_object_ids(&payload.context))
-        .any(|object| {
-            object_reference_requires_hidden_rebinding(game, viewer, object)
-                && !visible_rebindings.contains(&object)
-        })
-}
-
-pub(super) fn target_selections_referenced_object_ids(
-    selections: &[TargetSelection],
-) -> Vec<GameObjectId> {
-    selections
-        .iter()
-        .flat_map(TargetSelection::targets)
-        .filter_map(|target| match target {
-            Target::Player(_) => None,
-            Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(*id),
-        })
-        .collect()
-}
-
-/// Captured trigger state has no hidden-zone rebinding table of its own.
-/// References to the viewer's hand keep their public observation ids, but
-/// libraries, outside-game cards, and the opposing hand are reconstructed
-/// from a hypothesis with freshly minted ids. Serializing one of those host
-/// ids would both disclose hidden identity and leave a dangling reference in
-/// the reconstructed game, so the containing checkpoint must fail closed.
-pub(super) fn trigger_capture_has_unrebindable_hidden_reference(
-    game: &Game,
-    viewer: PlayerId,
-    targets: &[TargetSelection],
-    context: &EffectResolutionContext,
-) -> bool {
-    trigger_capture_has_unrebindable_hidden_reference_except(game, viewer, targets, context, &[])
-}
-
-pub(super) fn trigger_capture_has_unrebindable_hidden_reference_except(
-    game: &Game,
-    viewer: PlayerId,
-    targets: &[TargetSelection],
-    context: &EffectResolutionContext,
-    visible_rebindings: &[GameObjectId],
-) -> bool {
-    target_selections_referenced_object_ids(targets)
-        .into_iter()
-        .chain(resolution_context_referenced_object_ids(context))
-        .any(|object| {
-            object_reference_requires_hidden_rebinding(game, viewer, object)
-                && !visible_rebindings.contains(&object)
-        })
-}
-
-pub(super) fn object_reference_requires_hidden_rebinding(
-    game: &Game,
-    viewer: PlayerId,
-    object: GameObjectId,
-) -> bool {
-    matches!(
-        game.retired_objects.get(&object),
-        Some(RetiredObject::Card(_))
-    ) || [PlayerId::One, PlayerId::Two].into_iter().any(|player| {
-        let state = &game.players[player.index()];
-        state.library.iter().any(|card| card.id == object)
-            || state.outside_game.iter().any(|card| card.id == object)
-            || (player != viewer && state.hand.iter().any(|card| card.id == object))
-    })
-}
-
-pub(super) fn resolution_context_referenced_object_ids(
-    context: &EffectResolutionContext,
-) -> Vec<GameObjectId> {
-    let mut ids = context.trigger.object.into_iter().collect::<Vec<_>>();
-    ids.extend(
-        context
-            .single_objects()
-            .iter()
-            .flatten()
-            .chain(context.object_groups().iter().flatten())
-            .copied()
-            .filter_map(|target| match target {
-                Target::Player(_) => None,
-                Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => Some(id),
-            }),
-    );
-    ids
 }
 
 fn stack_payload_matches(

@@ -11,6 +11,36 @@ use super::wire::{
 };
 use super::{CardDefinitionId, CardInstance, GameObjectId, PlayerId};
 
+/// Gives the hidden-zone card a stack ability names back the object id the
+/// observation published for it.
+///
+/// The counterpart of [`rebind_visible_decision_cards`], for the sources the
+/// stack names rather than the cards a decision offers. A Miracle's trigger
+/// is the case that needs it: the card it came from was revealed and its id
+/// is published all over the observation, but it is still sitting in a hand
+/// the viewer cannot read, and the importer minted that hand fresh.
+pub(super) fn rebind_stack_source_cards(
+    origins: &[DecisionCardOriginSnapshot],
+    hands: &mut [Vec<CardInstance>; 2],
+    libraries: &mut [Vec<CardInstance>; 2],
+    outside_game: &mut [Vec<CardInstance>; 2],
+) -> Result<(), String> {
+    for origin in origins {
+        let seat = player_from_index(origin.seat)?;
+        let cards = match origin.zone {
+            DecisionZoneSnapshot::Hand => &mut hands[seat.index()],
+            DecisionZoneSnapshot::Library => &mut libraries[seat.index()],
+            DecisionZoneSnapshot::OutsideGame => &mut outside_game[seat.index()],
+            _ => return Err("a stack source origin must name a hidden zone".into()),
+        };
+        let card = cards
+            .get_mut(origin.index)
+            .ok_or("a stack source origin is out of range of its hypothesis")?;
+        card.id = GameObjectId(origin.object_id);
+    }
+    Ok(())
+}
+
 pub(super) fn rebind_visible_decision_cards(
     observation: &Value,
     state: Option<&DecisionStateSnapshot>,
@@ -34,12 +64,7 @@ pub(super) fn rebind_visible_decision_cards(
     let visible_cards = visible_decision_cards(decision)?;
     let detached = detached_decision_cards(&state.continuation);
     for (object, _, option_zone) in &visible_cards {
-        let hidden_option_zone = matches!(
-            option_zone,
-            DecisionZoneSnapshot::Hand
-                | DecisionZoneSnapshot::Library
-                | DecisionZoneSnapshot::OutsideGame
-        );
+        let hidden_option_zone = hidden_decision_zone(*option_zone);
         let origin = origins.get(object);
         if hidden_option_zone && origin.is_none() && !detached.contains(object) {
             return Err("visible hidden-zone decision card lacks a card origin".into());
@@ -248,6 +273,17 @@ fn insert_visible_card(
     zone: DecisionZoneSnapshot,
 ) -> Result<(), String> {
     let object = GameObjectId(u32_field(value, "objectId")?);
+    // A decision can offer something that is not a card: a token creature,
+    // an emblem, a face-down body. None of them has a catalog definition on
+    // the wire, and none of them can have come out of a hidden zone, so
+    // there is nothing here to rebind a hypothesis against. Out of a hidden
+    // zone the same silence is a real problem, and still says so.
+    if value.get("definition").is_none_or(Value::is_null) {
+        if hidden_decision_zone(zone) {
+            return Err("a decision card in a hidden zone lacks a definition".into());
+        }
+        return Ok(());
+    }
     let definition = card_definition_id_field(value, "definition")?;
     match seen.insert(object, (definition, zone)) {
         Some(previous) if previous != (definition, zone) => {
@@ -257,6 +293,18 @@ fn insert_visible_card(
         None => cards.push((object, definition, zone)),
     }
     Ok(())
+}
+
+/// The zones a decision option can name that the viewer cannot simply read
+/// off the observation, and whose contents therefore have to be rebound
+/// against the supplied hypothesis.
+const fn hidden_decision_zone(zone: DecisionZoneSnapshot) -> bool {
+    matches!(
+        zone,
+        DecisionZoneSnapshot::Hand
+            | DecisionZoneSnapshot::Library
+            | DecisionZoneSnapshot::OutsideGame
+    )
 }
 
 fn decision_zone(value: &str) -> Result<DecisionZoneSnapshot, String> {

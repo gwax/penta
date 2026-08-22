@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     AbilityLocator, AbilityOriginSnapshot, AppliedEffectLocator, BasicLandTypeSnapshot,
-    EffectResolutionContextSnapshot, FaceDownCharacteristicsSnapshot, ManaSourceSnapshot,
-    ObjectCharacteristicsSnapshot, ObjectKindSnapshot, TargetSelectionSnapshot,
+    DecisionCardOriginSnapshot, EffectResolutionContextSnapshot, FaceDownCharacteristicsSnapshot,
+    ManaSourceSnapshot, ObjectCharacteristicsSnapshot, ObjectKindSnapshot, TargetSelectionSnapshot,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -62,6 +62,16 @@ pub(in crate::game::state_checkpoint) struct StackAbilitySnapshot {
     pub(in crate::game::state_checkpoint) context: EffectResolutionContextSnapshot,
     pub(in crate::game::state_checkpoint) mode_effects: Vec<ScopedEffectSnapshot>,
     pub(in crate::game::state_checkpoint) x: u16,
+    /// Where the ability's source card sits when it is somewhere the viewer
+    /// cannot read -- a library, or somebody else's hand, which is where a
+    /// Miracle's revealed card is while its trigger waits.
+    ///
+    /// The importer mints those zones from the supplied hypothesis, so the
+    /// source's own object id means nothing there and the position is what
+    /// binds the two. Additive: absent for every source on a battlefield, in
+    /// a graveyard, or otherwise already public.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(in crate::game::state_checkpoint) source_origin: Option<DecisionCardOriginSnapshot>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

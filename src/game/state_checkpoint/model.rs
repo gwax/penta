@@ -807,14 +807,14 @@ pub(super) struct DecisionStateSnapshot {
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(super) struct DecisionCardOriginSnapshot {
-    pub(super) object_id: u32,
-    pub(super) seat: usize,
-    pub(super) zone: DecisionZoneSnapshot,
+pub(in crate::game::state_checkpoint) struct DecisionCardOriginSnapshot {
+    pub(in crate::game::state_checkpoint) object_id: u32,
+    pub(in crate::game::state_checkpoint) seat: usize,
+    pub(in crate::game::state_checkpoint) zone: DecisionZoneSnapshot,
     /// Exact index within the named hidden collection. This keeps disclosed
     /// duplicate definitions and visible option order stable under a hidden
     /// hypothesis whose otherwise-unseen cards may be permuted.
-    pub(super) index: usize,
+    pub(in crate::game::state_checkpoint) index: usize,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

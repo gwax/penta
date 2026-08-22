@@ -93,13 +93,13 @@ use stack::{
     current_stack_snapshot, detached_stack_snapshot_allowing, parse_detached_stack, parse_stack,
     parse_target as parse_snapshot_target, referenced_object_ids,
     resolution_context_referenced_object_ids, stack_object_has_unrebindable_hidden_reference,
-    target_selections_referenced_object_ids, target_snapshot,
+    stack_source_origins, target_selections_referenced_object_ids, target_snapshot,
     trigger_capture_has_unrebindable_hidden_reference,
 };
 use trigger::{installed_trigger_snapshot, parse_installed_trigger};
 #[allow(clippy::wildcard_imports)]
 use wire::*;
-use wire_decision::rebind_visible_decision_cards;
+use wire_decision::{rebind_stack_source_cards, rebind_visible_decision_cards};
 
 impl Game {
     /// Hidden-safe rules bookkeeping needed to use an observation as a
@@ -670,6 +670,15 @@ impl Game {
             [opponent_hand, own_hand]
         };
         let mut libraries = [library_one, library_two];
+        // Before the decision's own rebinding: a stack source names a
+        // position in the hypothesis, and the decision pass may reorder the
+        // very zone it names.
+        rebind_stack_source_cards(
+            &stack_source_origins(&checkpoint.stack),
+            &mut checkpoint_hands,
+            &mut libraries,
+            &mut outside_game,
+        )?;
         rebind_visible_decision_cards(
             observation,
             checkpoint.decision_state.as_ref(),

@@ -136,6 +136,34 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A stack ability whose source card was discarded as a cost is
+  checkpointable again.** The gate that keeps a hidden source out of a
+  checkpoint was refusing every source that had retired as a card -- which is
+  the ordinary shape of an ability activated from a hand for a cost that
+  discards it, bloodrush and everything like it. Nothing was protected by
+  that: the observation publishes `stack[].sourceObjectId` whatever became of
+  the card, and the checkpoint already carries the card among its retired
+  objects. Such a state now reconstructs instead of failing closed.
+
+- **A decision that offers a token no longer breaks reconstruction.** The
+  importer read a `definition` off every card an option named. A token, an
+  emblem, and a face-down body have no catalog definition on the wire and
+  cannot have come out of a hidden zone, so there is nothing there to rebind
+  and they are now skipped. A decision card in a hidden zone with no
+  definition is still an error.
+
+- **A stacked Miracle trigger reconstructs for the opponent.** It used to
+  fail closed, because the card it is about is still in a hand that seat
+  cannot read. The observation names that object anyway, so the checkpoint
+  now says where the card sits --
+  `stack[].abilityPayload.sourceOrigin`, an optional seat/zone/index -- and
+  the importer binds its minted card at that position to the published id.
+  This is the disclosure the public cast-or-decline decision one step later
+  already made through `decisionState.cardOrigins`; the trigger stage now
+  matches it. A *pending* Miracle trigger still fails closed, and the
+  checkpoint format is unchanged: the member is additive and absent whenever
+  a source is already public.
+
 - **A permanent chosen for a tap cost could also be planned as the mana
   source for that activation.** Mixed mana and `TapPermanent` costs could
   therefore offer an action that tried to tap the same permanent twice. Mana

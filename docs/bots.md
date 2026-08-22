@@ -315,9 +315,18 @@ An installed, pending, or stacked trigger likewise fails closed when its source,
 retained lexical targets, or bindings name a card in a hidden zone that has no
 stable public object ID; the checkpoint omits that executable state rather than
 serializing a host-only identity. In particular, the non-owner's checkpoint is
-deferred while a revealed Miracle card in hand is the source of its pending or
-stacked linked trigger. Once that trigger resolves, the public cast-or-decline
-decision carries an exact hidden-card origin and reconstructs for either seat.
+deferred while a revealed Miracle card in hand is the source of its *pending*
+linked trigger.
+
+Once that trigger is on the stack the observation names the object itself, in
+`stack[].sourceObjectId`, so the checkpoint says where the card sits rather
+than dropping the payload: `stack[].abilityPayload.sourceOrigin` carries the
+seat, hidden zone, and index, and the importer binds its minted card at that
+position to the published id. It is the same disclosure the public
+cast-or-decline decision one step later already makes through its
+`decisionState.cardOrigins`, and it reconstructs for either seat. The member
+is optional and absent whenever a source is already public, so a consumer that
+does not read it is unaffected.
 
 Checkpoint format 7 covers every ordinary action boundary emitted by the
 hosted formats, subject to the explicit fail-closed cases above: pregame and

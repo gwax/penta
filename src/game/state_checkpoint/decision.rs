@@ -139,7 +139,7 @@ fn visible_decision_card_origins(
     origins
 }
 
-fn hidden_card_origin(
+pub(super) fn hidden_card_origin(
     game: &Game,
     object: GameObjectId,
 ) -> Option<(PlayerId, DecisionZoneSnapshot, usize)> {

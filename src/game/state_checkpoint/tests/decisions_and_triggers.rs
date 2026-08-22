@@ -185,8 +185,15 @@ fn reveal_miracle_and_place_its_trigger(game: &mut Game) {
     assert_eq!(game.stack.len(), 1);
 }
 
+/// A Miracle's trigger is about a card that is still in its owner's hand.
+///
+/// While the trigger is waiting it fails closed for the opponent, who is not
+/// told which object it is about. Once it is on the stack the observation
+/// names that object itself, so the checkpoint says where the card sits
+/// instead of dropping the payload -- the same disclosure the standing offer
+/// one step later already makes.
 #[test]
-fn a_miracle_trigger_in_a_hidden_hand_fails_closed_for_the_opponent() {
+fn a_miracle_trigger_in_a_hidden_hand_is_carried_by_position_on_the_stack() {
     let (mut game, card) = game_with_draw_action_window(crate::card::cards::TERMINUS);
     let reveal = game
         .observe(PlayerId::One)
@@ -209,10 +216,36 @@ fn a_miracle_trigger_in_a_hidden_hand_fails_closed_for_the_opponent() {
     let owner_stacked = game.checkpoint_json(PlayerId::One);
     assert_eq!(owner_stacked["hasDeferredState"], false);
     assert!(owner_stacked["stack"][0]["abilityPayload"].is_object());
+    // The owner can read their own hand, so nothing has to be positioned.
+    assert_eq!(
+        owner_stacked["stack"][0]["abilityPayload"]["sourceOrigin"],
+        Value::Null
+    );
+
     let opponent_stacked = game.checkpoint_json(PlayerId::Two);
-    assert_eq!(opponent_stacked["hasDeferredState"], true);
-    assert_eq!(opponent_stacked["stack"][0]["abilityPayload"], Value::Null);
-    assert_eq!(opponent_stacked["stack"][0]["hasRuntimeOverrides"], true);
+    assert_eq!(opponent_stacked["hasDeferredState"], false);
+    let origin = &opponent_stacked["stack"][0]["abilityPayload"]["sourceOrigin"];
+    assert_eq!(origin["objectId"], card.0, "the object the stack names");
+    assert_eq!(origin["seat"], 0);
+    assert_eq!(origin["zone"], json!("hand"));
+    assert!(origin["index"].is_u64(), "and where it sits in that hand");
+
+    // And the opponent's seat rebuilds a game whose stack names the same
+    // object, out of a hand it was handed rather than one it could read.
+    let wire = wire_for_viewer(&game, PlayerId::Two);
+    let rebuilt = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &wire,
+        &true_hidden_hypothesis(&game, PlayerId::Two),
+        80_903,
+    )
+    .expect("a stacked Miracle trigger reconstructs for the opponent");
+    assert_eq!(rebuilt.stack[0].source, Some(card));
+    assert_eq!(
+        crate::protocol::protocol_actions(&rebuilt.observe(PlayerId::Two)),
+        crate::protocol::protocol_actions(&game.observe(PlayerId::Two)),
+    );
 }
 
 #[test]
