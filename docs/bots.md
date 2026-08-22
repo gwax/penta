@@ -1364,13 +1364,14 @@ still the only option unless both sides ask for something different. A bot
 that would rather know its opponent's archetype up front, the way an
 archetype is known at a competitive paper table, can opt in.
 
-Add `"discloseDeck": true` to your `/_bots/register` or heartbeat body. It
-declares that you are willing to have your own deck named to an opponent who
-also opts in; the registration and heartbeat responses echo it back as
-`discloseDeck`, and the public `/_bots` listing shows it for every bot, so a
-human or scheduler can tell which bots play open-decklist games. A heartbeat
-that omits the field leaves your prior declaration as it was; send it as
-`false` to withdraw it.
+Add `"discloseDeck": true` to your `/_bots/register` or heartbeat body. It is
+a consent signal more than a disclosure of its own: the deck you registered is
+already named in the public `/_bots` listing, so what the flag actually unlocks
+is the *human* seat's deck being named to you, and then only when that seat has
+opted in as well. The registration and heartbeat responses echo it back as
+`discloseDeck`, and the listing shows it for every bot, so a human or scheduler
+can tell which bots play open-decklist games. A heartbeat that omits the field
+leaves your prior declaration as it was; send it as `false` to withdraw it.
 
 Whoever starts a room declares the human seat's own willingness the same
 way, with `"humanDiscloseDeck": true` in the `POST /_game/<room-id>/start`

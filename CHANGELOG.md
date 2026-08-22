@@ -332,6 +332,21 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Open decklists, as a mutual opt-in on hosted bot games.** A bot adds
+  `discloseDeck` to its `/_bots/register` or heartbeat body, whoever starts a
+  room adds `humanDiscloseDeck` to `/_game/<id>/start`, and only when both
+  seats have opted in for that room does the bot's observation -- from
+  `/opponent` and from the `observe` socket push alike -- carry an additive
+  `opponentDeck` naming the human seat's deck. One side opting in alone
+  changes nothing, and a bot that never asks sees exactly the redacted
+  observation it always has. The registry tells a room which bot claimed its
+  seat over a new object-to-object `disclose-bot-deck` route, so the
+  declaration is the bot's own rather than something a challenger could
+  assert on its behalf. This is a hosted-room convenience the deployment
+  layers on top of the wire protocol, not an engine change: protocol 27 and
+  the `observe()` fields the engine emits are unchanged, and a local
+  `penta.Game` has neither a registry nor a room's deck configuration.
+
 - **Rooms, and the special action that opens one.** A Room is a split
   enchantment whose halves are doors: you cast one of them, that door is
   unlocked as the permanent enters, and the other stays shut until somebody
