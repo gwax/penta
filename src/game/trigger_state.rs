@@ -266,6 +266,11 @@ pub(super) enum CommittedTriggerEvent {
         /// nothing about the game state afterwards distinguishes the
         /// turn-based draw from the one a Howling Mine added to it.
         first_in_draw_step: bool,
+        /// Which card of this player's turn it was, counting from one. The
+        /// clauses that name an ordinary ordinal -- "their second card each
+        /// turn" -- read this rather than the running count, which has
+        /// already moved on by the time a trigger resolves.
+        nth_this_turn: u16,
     },
     /// An object became the target of a spell as that spell was cast. The
     /// object carried is the spell, so "that spell's controller" reads off

@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 288 are cataloged and 246 are not
+- 534 cards in the pool, of which 289 are cataloged and 245 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -60,7 +60,7 @@ lands are legal in every format and are not listed.
 - `Virtue of Loyalty`
 - `Witch Enchanter`
 
-### Blue (32)
+### Blue (31)
 
 - `Astrologian's Planisphere`
 - `Brainsurge`
@@ -69,7 +69,6 @@ lands are legal in every format and are not listed.
 - `Consult the Star Charts`
 - `Displacer Kitten`
 - `Emry, Lurker of the Loch`
-- `Faerie Mastermind`
 - `Flash`
 - `Gitaxian Probe`
 - `Hullbreacher`
@@ -305,7 +304,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 288 pool cards are in the catalog because an earlier format needed them.
+These 289 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -392,6 +391,7 @@ been played beside.
 - `Eternal Witness`
 - `Exhume`
 - `Expedition Map`
+- `Faerie Mastermind`
 - `Faithless Looting`
 - `Fallen Shinobi`
 - `Fatal Push`

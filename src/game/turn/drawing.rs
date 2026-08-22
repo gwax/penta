@@ -77,6 +77,7 @@ impl Game {
         self.capture_battlefield_triggers(&CommittedTriggerEvent::DrewCard {
             player,
             first_in_draw_step,
+            nth_this_turn: self.cards_drawn_this_turn[player.index()],
         });
         Some(card_id)
     }

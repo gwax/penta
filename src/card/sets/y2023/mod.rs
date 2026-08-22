@@ -6,4 +6,4 @@ pub(super) mod march_of_the_machine;
 pub(super) mod phyrexia_all_will_be_one;
 pub(super) mod wilds_of_eldraine;
 
-pub(super) use super::{CardRecord, PrintingRecord};
+pub(super) use super::{CardRecord, PrintingAnchor, PrintingRecord};

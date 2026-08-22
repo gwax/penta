@@ -564,6 +564,10 @@ pub struct DrawEventMatcherDef {
     /// and nothing else: a second card drawn in that same step is caught,
     /// and so is every draw taken outside it.
     pub except_first_in_draw_step: bool,
+    /// Which card of that player's turn this has to be. "Whenever an
+    /// opponent draws their second card each turn" is about the ordinal
+    /// rather than the draw: the first one and the third one are not it.
+    pub nth_this_turn: Option<u16>,
 }
 
 impl DrawEventMatcherDef {
@@ -572,6 +576,18 @@ impl DrawEventMatcherDef {
         Self {
             player,
             except_first_in_draw_step: false,
+            nth_this_turn: None,
+        }
+    }
+
+    /// "Their `nth` card each turn", counted over the whole turn rather than
+    /// over any one step.
+    #[must_use]
+    pub const fn nth_each_turn(player: PlayerRelation, nth: u16) -> Self {
+        Self {
+            player,
+            except_first_in_draw_step: false,
+            nth_this_turn: Some(nth),
         }
     }
 
@@ -580,6 +596,7 @@ impl DrawEventMatcherDef {
         Self {
             player,
             except_first_in_draw_step: true,
+            nth_this_turn: None,
         }
     }
 }

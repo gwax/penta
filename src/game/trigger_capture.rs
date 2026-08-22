@@ -781,10 +781,14 @@ impl Game {
                 CommittedTriggerEvent::DrewCard {
                     player,
                     first_in_draw_step,
+                    nth_this_turn,
                 },
             ) => {
                 let controller = controller.unwrap_or(*player);
                 !(matcher.except_first_in_draw_step && *first_in_draw_step)
+                    && matcher
+                        .nth_this_turn
+                        .is_none_or(|wanted| wanted == *nth_this_turn)
                     && self.player_relation_matches(
                         *player,
                         matcher.player,

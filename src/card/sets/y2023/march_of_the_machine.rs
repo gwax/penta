@@ -1,10 +1,11 @@
 //! March of the Machine cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardType, CounterKind, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, TokenCountersDef, ValueDef, ZoneKind,
-    ZonePlacement, tokens,
+    AbilityCostDef, AbilityDef, CardArt, CardRules, CardSet, CardType, CounterKind,
+    DrawEventMatcherDef, EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectSetDef, PlayerRelation, PlayerSetDef, TokenCountersDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::mana_cost;
@@ -66,6 +67,47 @@ pub(in crate::card::sets) static SUNFALL: CardRecord = CardRecord::new_with_lega
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&SUNFALL];
+static FAERIE_MASTERMIND_ABILITIES: [AbilityDef; 4] = [
+    abilities::flash(),
+    abilities::flying(),
+    // The ordinal is the whole clause: their first card each turn is the one
+    // the rules hand them, so this catches the extra one and nothing else.
+    AbilityDef::triggered(
+        "Whenever an opponent draws their second card each turn, you draw a card.",
+        TriggerEventDef::DrewCard(DrawEventMatcherDef::nth_each_turn(
+            PlayerRelation::Opponent,
+            2,
+        )),
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    // Symmetrical on purpose: with the trigger above out, the copy they draw
+    // is the one that draws you another.
+    AbilityDef::activated(
+        "{3}{U}: Each player draws a card.",
+        &[AbilityCostDef::Mana(mana_cost!("{3}{U}"))],
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::players(PlayerSetDef::All),
+            amount: ValueDef::Constant(1),
+        },
+    ),
+];
+
+// MOM 58 — Faerie Mastermind
+pub(in crate::card::sets) static FAERIE_MASTERMIND: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("52d3005f-a1c7-4ef5-911f-ccc0752f4181"),
+    "Faerie Mastermind",
+    CardArt::new("52d3005f-a1c7-4ef5-911f-ccc0752f4181", "Joshua Raphael"),
+    CardSet::MarchOfTheMachine,
+    // A two-mana flash flier that is never a dead card: it taxes every
+    // cantrip the other deck was going to cast anyway, and turns into a
+    // draw engine once there is nothing else to spend mana on.
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Faerie", "Rogue"], 2, 1)
+        .with_abilities(&FAERIE_MASTERMIND_ABILITIES),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&SUNFALL, &FAERIE_MASTERMIND];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
