@@ -307,6 +307,7 @@ mod vintage_cube_duelist;
 mod vintage_cube_echo_of_eons;
 mod vintage_cube_eldrazi;
 mod vintage_cube_elite_spellbinder;
+mod vintage_cube_elspeth;
 mod vintage_cube_emperor_of_bones;
 mod vintage_cube_enduring_innocence;
 mod vintage_cube_eternal_witness;

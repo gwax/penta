@@ -1,11 +1,12 @@
 //! Shards of Alara cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet, CardType,
-    ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, TriggerEventDef, ZoneKind,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef,
+    EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, abilities, tokens,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -73,6 +74,94 @@ static TIDEHOLLOW_SCULLER_ABILITIES: [AbilityDef; 2] = [
     ),
 ];
 
+/// The four types the emblem names, which between them are every permanent
+/// a white deck is likely to control. Written as one alternation because the
+/// emblem grants one thing to all of them.
+static A_PERMANENT_THE_EMBLEM_PROTECTS: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::HasType(CardType::Enchantment),
+    ObjectPredicateDef::HasType(CardType::Land),
+]);
+
+static ELSPETH_EMBLEM_INDESTRUCTIBLE: AbilityDef = abilities::indestructible();
+
+static ELSPETH_EMBLEM_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+    "Artifacts, creatures, enchantments, and lands you control have indestructible.",
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::matching_objects(
+            A_PERMANENT_THE_EMBLEM_PROTECTS,
+            &[ZoneKind::Battlefield],
+            PlayerRelation::You,
+        ),
+        effect: AppliedEffectDef::add_ability(&ELSPETH_EMBLEM_INDESTRUCTIBLE),
+    },
+)];
+
+static ELSPETH_FLYING: AbilityDef = abilities::flying();
+
+static ELSPETH_PUMP: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(3), ValueDef::Constant(3)),
+    AppliedEffectDef::add_ability(&ELSPETH_FLYING),
+];
+
+static ELSPETH_PUMP_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
+static ELSPETH_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::activated(
+        "+1: Create a 1/1 white Soldier creature token.",
+        &[AbilityCostDef::Loyalty(1)],
+        EffectDef::CreateToken {
+            token: tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1),
+            controller: None,
+            count: ValueDef::Constant(1),
+            tapped: false,
+            attacking: false,
+            counters: None,
+            created: None,
+        },
+    ),
+    // The second plus is what makes her a threat rather than a hedge: any
+    // creature, so the token she made last turn is a 4/4 flier this one.
+    AbilityDef::activated_with_targets(
+        "+1: Target creature gets +3/+3 and gains flying until end of turn.",
+        &[AbilityCostDef::Loyalty(1)],
+        &ELSPETH_PUMP_TARGET,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::Composite(&ELSPETH_PUMP),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    ),
+    AbilityDef::activated(
+        "\u{2212}8: You get an emblem with \"Artifacts, creatures, enchantments, and lands you \
+         control have indestructible.\"",
+        &[AbilityCostDef::Loyalty(-8)],
+        EffectDef::create_emblem("Elspeth, Knight-Errant emblem", &ELSPETH_EMBLEM_ABILITIES),
+    ),
+];
+
+// ALA 9 — Elspeth, Knight-Errant
+pub(in crate::card::sets) static ELSPETH_KNIGHT_ERRANT: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("44c52e52-2b1c-4ca8-ab6d-20d97a342704"),
+    "Elspeth, Knight-Errant",
+    CardArt::new("44c52e52-2b1c-4ca8-ab6d-20d97a342704", "Volkan Ba\u{11f}a"),
+    CardSet::ShardsOfAlara,
+    // Four mana, two plus abilities, and neither of them is the safe one:
+    // she makes a blocker or she makes an attacker, and the ultimate ends
+    // the game against anything that answers permanents.
+    CardRules::new_planeswalker(mana_cost!("{2}{W}{W}"), &["Elspeth"], 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&ELSPETH_ABILITIES),
+);
+
 // ALA 202 — Tidehollow Sculler
 pub(in crate::card::sets) static TIDEHOLLOW_SCULLER: CardRecord = CardRecord::new_with_legacy_id(
     2145,
@@ -83,6 +172,7 @@ pub(in crate::card::sets) static TIDEHOLLOW_SCULLER: CardRecord = CardRecord::ne
         .with_abilities(&TIDEHOLLOW_SCULLER_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&TIDEHOLLOW_SCULLER];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&ELSPETH_KNIGHT_ERRANT, &TIDEHOLLOW_SCULLER];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
