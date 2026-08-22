@@ -79,10 +79,15 @@ pub enum CounterKind {
     /// counter is there, which is what makes it survive everything a
     /// duration-scoped grant would not.
     Flying,
+    /// A lifelink counter (CR 122.1e), the same kind of thing a flying
+    /// counter is. Metamorphosis Fanatic puts one on what it reanimates,
+    /// which is why the body it brings back keeps the lifelink after every
+    /// duration a spell could have given it would have run out.
+    Lifelink,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 28;
+    pub const COUNT: usize = 29;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -113,6 +118,7 @@ impl CounterKind {
         Self::Level,
         Self::Finality,
         Self::Flying,
+        Self::Lifelink,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -148,7 +154,8 @@ impl CounterKind {
             | Self::Wish
             | Self::Level
             | Self::Finality
-            | Self::Flying => (0, 0),
+            | Self::Flying
+            | Self::Lifelink => (0, 0),
         }
     }
 
@@ -183,6 +190,7 @@ impl CounterKind {
             Self::Level => 25,
             Self::Finality => 26,
             Self::Flying => 27,
+            Self::Lifelink => 28,
         }
     }
 
@@ -217,6 +225,7 @@ impl CounterKind {
             Self::Level => "level",
             Self::Finality => "finality",
             Self::Flying => "flying",
+            Self::Lifelink => "lifelink",
         }
     }
 
@@ -227,6 +236,7 @@ impl CounterKind {
     pub const fn granted_keyword(self) -> Option<KeywordAbility> {
         match self {
             Self::Flying => Some(KeywordAbility::Flying),
+            Self::Lifelink => Some(KeywordAbility::Lifelink),
             _ => None,
         }
     }

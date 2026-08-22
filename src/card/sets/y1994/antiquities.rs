@@ -51,6 +51,7 @@ pub(in crate::card::sets) static ARGIVIAN_ARCHAEOLOGIST: CardRecord =
                     },
                 )],
                 EffectDef::MoveToZone {
+                    counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
@@ -213,6 +214,7 @@ pub(in crate::card::sets) static HURKYLS_RECALL: CardRecord = CardRecord::new_wi
             AbilityTargetPredicate::Player(PlayerRelation::Any),
         )],
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::objects_owned_by_target(
                 ObjectPredicateDef::HasType(CardType::Artifact),
                 TargetIndex::PRIMARY,
@@ -246,6 +248,7 @@ pub(in crate::card::sets) static RECONSTRUCTION: CardRecord = CardRecord::new_wi
             },
         )],
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
@@ -1034,6 +1037,7 @@ pub(in crate::card::sets) static FELDONS_CANE: CardRecord = CardRecord::new_with
 /// arrived in.
 static FELDONS_CANE_SHUFFLE: [EffectDef; 2] = [
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::matching_objects(
             ObjectPredicateDef::Any,
             &[ZoneKind::Graveyard],
@@ -1266,6 +1270,7 @@ pub(in crate::card::sets) static OBELISK_OF_UNDOING: CardRecord = CardRecord::ne
                 },
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
@@ -1327,6 +1332,7 @@ static RAKALITE_SHIELD: [EffectDef; 2] = [
             player: PlayerRelation::Any,
         },
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Source,
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,

@@ -408,6 +408,7 @@ static TAMIYO_ABILITIES: [AbilityDef; 3] = [
         &[AbilityCostDef::Loyalty(-3)],
         &TAMIYO_RETURN_TARGET,
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             controller: None,

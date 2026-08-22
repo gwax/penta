@@ -255,6 +255,7 @@ static DEATH_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
 
 static DEATH_EFFECTS: [EffectDef; 2] = [
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         zone: ZoneKind::Battlefield,
         placement: ZonePlacement::Top,

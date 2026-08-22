@@ -651,6 +651,11 @@ pub enum EffectDef {
         /// reason the effect above does: what enters is a new object, and a
         /// following effect would have nothing left to name.
         attachment: Option<ArrivalAttachmentDef>,
+        /// Counters the permanent arrives carrying. Separate from
+        /// `arrival_effect` because a counter is not a continuous effect: it
+        /// sits on the permanent and outlives every duration, which is the
+        /// whole point of "with a lifelink counter on it".
+        counters: Option<TokenCountersDef>,
     },
     /// Every card in the named player's hand is revealed to everyone.
     ///

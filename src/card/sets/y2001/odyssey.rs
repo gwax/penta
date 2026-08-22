@@ -48,6 +48,7 @@ pub(in crate::card::sets) static UPHEAVAL: CardRecord = CardRecord::new_with_leg
     CardRules::new_sorcery(mana_cost!("{4}{U}{U}")).with_ability(AbilityDef::spell(
         "Return all permanents to their owners' hands.",
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::matching_objects(
                 ObjectPredicateDef::Any,
                 &[ZoneKind::Battlefield],
@@ -76,6 +77,7 @@ static ATOG_PUMP: EffectDef = EffectDef::Apply {
 /// which is why the set is bound rather than queried twice.
 static ECHOES_EXILE: EffectDef = EffectDef::Sequence(&[
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
         zone: ZoneKind::Exile,
         placement: ZonePlacement::Top,
@@ -84,6 +86,7 @@ static ECHOES_EXILE: EffectDef = EffectDef::Sequence(&[
         controller: None,
     },
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::objects(ObjectSetDef::SharingNameWithBinding {
             binding: ObjectSetBindingIndex::PRIMARY,
             player: PlayerRefDef::Target(TargetIndex::PRIMARY),

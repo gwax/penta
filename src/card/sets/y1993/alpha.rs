@@ -727,6 +727,7 @@ pub(in crate::card::sets) static RESURRECTION: CardRecord = CardRecord::new_with
                 },
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Battlefield,
                 placement: ZonePlacement::Top,
@@ -847,6 +848,7 @@ pub(in crate::card::sets) static SWORDS_TO_PLOWSHARES: CardRecord = CardRecord::
         )],
         EffectDef::Sequence(&[
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Exile,
                 placement: ZonePlacement::Top,
@@ -1740,6 +1742,7 @@ pub(in crate::card::sets) static UNSUMMON: CardRecord = CardRecord::new_with_leg
         "Return target creature to its owner's hand.",
         &ENCHANT_CREATURE_TARGET,
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
@@ -2334,6 +2337,7 @@ pub(in crate::card::sets) static RAISE_DEAD: CardRecord = CardRecord::new_with_l
             },
         )],
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
@@ -4114,6 +4118,7 @@ pub(in crate::card::sets) static REGROWTH: CardRecord = CardRecord::new_with_leg
         "Return target card from your graveyard to your hand.",
         &REGROWTH_TARGET,
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             controller: None,

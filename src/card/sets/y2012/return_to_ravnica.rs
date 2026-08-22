@@ -475,6 +475,7 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new_wit
                 Some(ZoneKind::Battlefield),
             ),
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::Any,
                     &[ZoneKind::Graveyard],
@@ -630,6 +631,7 @@ pub(in crate::card::sets) static TRAINED_CARACAL: CardRecord = keyword_creature(
 
 static TROSTANIS_JUDGMENT_EFFECTS: [EffectDef; 2] = [
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         zone: ZoneKind::Exile,
         placement: ZonePlacement::Top,
@@ -777,6 +779,7 @@ pub(in crate::card::sets) static CYCLONIC_RIFT: CardRecord = CardRecord::new_wit
                 },
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 controller: None,
@@ -789,6 +792,7 @@ pub(in crate::card::sets) static CYCLONIC_RIFT: CardRecord = CardRecord::new_wit
             mana_cost!("{6}{U}"),
             "Return each nonland permanent you don't control to its owner's hand.",
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
                     &[ZoneKind::Battlefield],
@@ -1031,6 +1035,7 @@ static JACE_ARCHITECT_ABILITIES: [AbilityDef; 3] = [
 
 static JACE_ARCHITECT_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
     EffectDef::MoveToZone {
+        counters: None,
         object: abilities::CHOSEN_PILE,
         zone: ZoneKind::Hand,
         placement: ZonePlacement::Top,
@@ -1039,6 +1044,7 @@ static JACE_ARCHITECT_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
         controller: None,
     },
     EffectDef::MoveToZone {
+        counters: None,
         object: abilities::UNCHOSEN_PILE,
         zone: ZoneKind::Library,
         placement: ZonePlacement::Bottom,
@@ -1265,6 +1271,7 @@ pub(in crate::card::sets) static TOWER_DRAKE: CardRecord = CardRecord::new_with_
 );
 
 static VOIDWIELDER_RETURN: EffectDef = EffectDef::MoveToZone {
+    counters: None,
     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
     zone: ZoneKind::Hand,
     controller: None,
@@ -1359,6 +1366,7 @@ pub(in crate::card::sets) static CREMATE: CardRecord = CardRecord::new_with_lega
         )],
         EffectDef::Sequence(&[
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Exile,
                 controller: None,
@@ -2974,6 +2982,7 @@ static WURM_GRAVEYARD_ZONES: [ZoneKind; 2] = [ZoneKind::Battlefield, ZoneKind::G
 
 static WURM_SHUFFLES_ITSELF_BACK: [EffectDef; 2] = [
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::Source,
         zone: ZoneKind::Library,
         placement: ZonePlacement::Top,
@@ -3168,6 +3177,7 @@ pub(in crate::card::sets) static AZORIUS_CHARM: CardRecord = CardRecord::new_wit
                     ObjectPredicateDef::AttackingOrBlocking,
                 ]),
             )], EffectDef::MoveToZone {
+                counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Library,
                     controller: None,
@@ -3444,6 +3454,7 @@ pub(in crate::card::sets) static DRAMATIC_RESCUE: CardRecord = CardRecord::new_w
         )],
         EffectDef::Sequence(&[
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 controller: None,
@@ -4120,6 +4131,7 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new_wi
                     ObjectPredicateDef::PowerAtLeast(5),
                 ]),
             )], EffectDef::MoveToZone {
+                counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Exile,
                     controller: None,
@@ -4161,6 +4173,7 @@ pub(in crate::card::sets) static SKULL_REND: CardRecord = CardRecord::new_with_l
 );
 
 static SKYMARK_ROC_RETURN: EffectDef = EffectDef::MoveToZone {
+    counters: None,
     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
     zone: ZoneKind::Hand,
     controller: None,
@@ -4363,6 +4376,7 @@ pub(in crate::card::sets) static TREASURED_FIND: CardRecord = CardRecord::new_wi
         )],
         EffectDef::Sequence(&[
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 controller: None,
@@ -4371,6 +4385,7 @@ pub(in crate::card::sets) static TREASURED_FIND: CardRecord = CardRecord::new_wi
                 attachment: None,
             },
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Source,
                 zone: ZoneKind::Exile,
                 controller: None,
@@ -4642,6 +4657,7 @@ pub(in crate::card::sets) static DEATHRITE_SHAMAN: CardRecord = CardRecord::new_
             )],
             EffectDef::Sequence(&[
                 EffectDef::MoveToZone {
+                    counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Exile,
                     controller: None,
@@ -4671,6 +4687,7 @@ pub(in crate::card::sets) static DEATHRITE_SHAMAN: CardRecord = CardRecord::new_
             )],
             EffectDef::Sequence(&[
                 EffectDef::MoveToZone {
+                    counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Exile,
                     controller: None,
@@ -4993,6 +5010,7 @@ pub(in crate::card::sets) static CODEX_SHREDDER: CardRecord = CardRecord::new_wi
                 },
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 controller: None,

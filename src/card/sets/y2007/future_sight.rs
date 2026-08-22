@@ -25,6 +25,7 @@ pub(in crate::card::sets) static REALITY_STROBE: CardRecord = CardRecord::new_wi
             "Return target permanent to its owner's hand. Exile Reality Strobe with three time counters on it.\n\nSuspend 3—{2}{U} (Rather than cast this card from your hand, you may pay {2}{U} and exile it with three time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost.)",
             &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::Any)],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
@@ -122,6 +123,7 @@ static A_ONE_ONE_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
 /// from the graveyard is a new object, so a later effect would have nothing
 /// left to name.
 static SWORD_RETURNS_AND_EQUIPS: EffectDef = EffectDef::MoveToZone {
+    counters: None,
     object: EffectRecipientDef::Source,
     zone: ZoneKind::Battlefield,
     placement: ZonePlacement::Top,

@@ -90,6 +90,7 @@ static A_MILLED_CREATURE_CARD: ObjectSetDef = ObjectSetDef::MatchingBinding {
 };
 
 static BARROWGOYF_TAKES_ONE: EffectDef = EffectDef::MoveToZone {
+    counters: None,
     object: EffectRecipientDef::objects(ObjectSetDef::Binding(BARROWGOYF_TAKEN)),
     zone: ZoneKind::Hand,
     placement: ZonePlacement::Top,

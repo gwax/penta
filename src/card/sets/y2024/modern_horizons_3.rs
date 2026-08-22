@@ -402,6 +402,7 @@ static MYCOSPAWN_ABILITIES: [AbilityDef; 4] = [
         &MYCOSPAWN_KICKED,
         &MYCOSPAWN_EXILE_TARGET,
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Exile,
             controller: None,

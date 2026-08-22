@@ -895,6 +895,7 @@ pub(in crate::card::sets) static BOOMERANG: CardRecord = CardRecord::new_with_le
             ObjectPredicateDef::Any,
         )],
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
@@ -1054,6 +1055,7 @@ pub(in crate::card::sets) static FLASH_FLOOD: CardRecord = CardRecord::new_with_
                     ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
                 )],
                 EffectDef::MoveToZone {
+                    counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
@@ -1637,6 +1639,7 @@ pub(in crate::card::sets) static CYCLOPEAN_MUMMY: CardRecord = CardRecord::new_w
             "When this creature dies, exile it.",
             TriggerEventDef::zone_changed(ObjectPredicateDef::Source, Some(ZoneKind::Battlefield), Some(ZoneKind::Graveyard)),
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Source,
                 zone: ZoneKind::Exile,
                 placement: ZonePlacement::Top,
@@ -1866,6 +1869,7 @@ pub(in crate::card::sets) static HELLS_CARETAKER: CardRecord = CardRecord::new_w
                 },
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Battlefield,
                 placement: ZonePlacement::Top,
@@ -2302,6 +2306,7 @@ pub(in crate::card::sets) static ACTIVE_VOLCANO: CardRecord = CardRecord::new_wi
                     ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
                 )],
                 EffectDef::MoveToZone {
+                    counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
@@ -3844,6 +3849,7 @@ pub(in crate::card::sets) static ADUN_OAKENSHIELD: CardRecord = CardRecord::new_
                 },
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
@@ -5401,6 +5407,7 @@ pub(in crate::card::sets) static KARAKAS: CardRecord = CardRecord::new_with_lega
                     ]),
                 )],
                 EffectDef::MoveToZone {
+                    counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,

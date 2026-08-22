@@ -80,6 +80,7 @@ pub(in crate::card::sets) static AURAMANCER: CardRecord = CardRecord::new_with_l
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::MoveToZone {
+                    counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Hand,
                     controller: None,
@@ -594,6 +595,7 @@ pub(in crate::card::sets) static DISPERSE: CardRecord = CardRecord::new_with_leg
             ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
         )],
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             controller: None,
@@ -814,6 +816,7 @@ pub(in crate::card::sets) static TIME_EBB: CardRecord = CardRecord::new_with_leg
             ObjectPredicateDef::HasType(CardType::Creature),
         )],
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Library,
             controller: None,
@@ -1107,6 +1110,7 @@ pub(in crate::card::sets) static CORPSE_HAULER: CardRecord = CardRecord::new_wit
                 owner: Some(PlayerRelation::You),
             })],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 controller: None,
@@ -1241,6 +1245,7 @@ pub(in crate::card::sets) static GNAWING_ZOMBIE: CardRecord = CardRecord::new_wi
 // Audit: blocked — Graveyard target predicates cannot inspect whether a card moved there from the battlefield this turn.
 
 static LIFEBANE_EXILE: EffectDef = EffectDef::MoveToZone {
+    counters: None,
     object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
     zone: ZoneKind::Exile,
     placement: ZonePlacement::Top,
@@ -2655,6 +2660,7 @@ pub(in crate::card::sets) static SCAVENGING_OOZE: CardRecord = CardRecord::new_w
                     amount: ValueDef::IfTargetMatches(&EXILED_A_CREATURE),
                 },
                 EffectDef::MoveToZone {
+                    counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Exile,
                     controller: None,

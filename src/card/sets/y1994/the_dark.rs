@@ -272,6 +272,7 @@ pub(in crate::card::sets) static WITCH_HUNTER: CardRecord = CardRecord::new_with
                 },
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 controller: None,
@@ -697,6 +698,7 @@ pub(in crate::card::sets) static ASHES_TO_ASHES: CardRecord = CardRecord::new_wi
             }],
             EffectDef::Sequence(&[
                 EffectDef::MoveToZone {
+                    counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Exile,
                     controller: None,
@@ -812,6 +814,7 @@ pub(in crate::card::sets) static GRAVE_ROBBERS: CardRecord = CardRecord::new_wit
             )],
             EffectDef::Sequence(&[
                 EffectDef::MoveToZone {
+                    counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Exile,
                     controller: None,
@@ -2211,6 +2214,7 @@ pub(in crate::card::sets) static SKULL_OF_ORM: CardRecord = CardRecord::new_with
                 },
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 controller: None,
@@ -2255,6 +2259,7 @@ pub(in crate::card::sets) static TORMODS_CRYPT: CardRecord = CardRecord::new_wit
             AbilityTargetPredicate::Player(PlayerRelation::Any),
         )],
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::cards_owned_by_target(
                 ObjectPredicateDef::Any,
                 &[ZoneKind::Graveyard],

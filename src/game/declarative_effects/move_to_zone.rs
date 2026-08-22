@@ -8,7 +8,9 @@ use super::{
     ArrivalAttachment, ArrivalAttachmentDef, BattlefieldArrival, EffectResolutionContext, Game,
     ScopedEffect, StackObject, Target, ZoneKind, ZoneMoveCause, ZonePlacement,
 };
-use crate::card::{AppliedEffectDef, EffectRecipientDef, PlayerRelation};
+use crate::card::{
+    AppliedEffectDef, CounterKind, EffectRecipientDef, PlayerRelation, TokenCountersDef,
+};
 
 /// How a permanent this effect moves arrives, when it arrives at all.
 /// "Under your control" and "attach this to it" both belong to the arrival:
@@ -17,16 +19,18 @@ fn battlefield_arrival(
     object: &StackObject,
     arriving_controller: Option<crate::PlayerId>,
     attachment: Option<ArrivalAttachment>,
+    counters: Option<(CounterKind, u16)>,
 ) -> Option<BattlefieldArrival> {
-    if arriving_controller.is_none() && attachment.is_none() {
+    if arriving_controller.is_none() && attachment.is_none() && counters.is_none() {
         return None;
     }
     let arrival = BattlefieldArrival::under(arriving_controller.unwrap_or(object.controller));
-    Some(match attachment {
+    let arrival = match attachment {
         Some(ArrivalAttachment::SourceToArrival(source)) => arrival.attaching(source),
         Some(ArrivalAttachment::ArrivalToHost(host)) => arrival.attached_to(host),
         None => arrival,
-    })
+    };
+    Some(arrival.with_counters(counters))
 }
 
 /// One authored "put this there" clause, gathered so the resolution takes an
@@ -39,6 +43,7 @@ pub(super) struct MoveToZoneClause {
     pub(super) placement: ZonePlacement,
     pub(super) arrival_effect: Option<&'static AppliedEffectDef>,
     pub(super) attachment: Option<ArrivalAttachmentDef>,
+    pub(super) counters: Option<TokenCountersDef>,
 }
 
 impl Game {
@@ -56,6 +61,7 @@ impl Game {
             placement,
             arrival_effect,
             attachment,
+            counters,
         } = clause;
         let attachment = attachment.and_then(|attachment| match attachment {
             ArrivalAttachmentDef::SourceToArrival => {
@@ -80,6 +86,18 @@ impl Game {
                 object.controller.opponent()
             }
         });
+        // Resolved once rather than per target: "with a counter on it" reads
+        // the same number for everything the clause moves.
+        let arriving_counters = counters.map(|counters| {
+            (
+                counters.kind,
+                u16::try_from(
+                    self.effect_value(counters.amount, object, context, scoped)
+                        .max(0),
+                )
+                .unwrap_or(u16::MAX),
+            )
+        });
         for target in self.effect_recipients(recipient, object, context, scoped) {
             let arrived = self.move_target_to_zone(
                 target,
@@ -90,7 +108,7 @@ impl Game {
                 // "Under your control" and "attach this to it" both belong to
                 // the arrival: a permanent that enters is a new object, so
                 // neither can wait for a later step.
-                battlefield_arrival(object, arriving_controller, attachment),
+                battlefield_arrival(object, arriving_controller, attachment, arriving_counters),
                 placement,
             );
             // Applied as the move happens: the identity a permanent gets on

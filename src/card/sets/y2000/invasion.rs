@@ -12,6 +12,7 @@ use crate::{TargetIndex, mana_cost};
 
 static FACT_OR_FICTION_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
     EffectDef::MoveToZone {
+        counters: None,
         object: abilities::CHOSEN_PILE,
         zone: ZoneKind::Hand,
         placement: ZonePlacement::Top,
@@ -20,6 +21,7 @@ static FACT_OR_FICTION_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
         controller: None,
     },
     EffectDef::MoveToZone {
+        counters: None,
         object: abilities::UNCHOSEN_PILE,
         zone: ZoneKind::Graveyard,
         placement: ZonePlacement::Top,

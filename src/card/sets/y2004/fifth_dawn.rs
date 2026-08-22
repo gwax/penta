@@ -33,6 +33,7 @@ static A_CARD_IN_YOUR_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::exac
 static WITNESS_MAY_RETURN: EffectDef = EffectDef::May {
     player: EffectRecipientDef::Controller,
     effect: &EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         zone: ZoneKind::Hand,
         placement: ZonePlacement::Top,

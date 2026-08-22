@@ -134,6 +134,7 @@ static THE_TARGET_PLAYERS_HAND: ObjectQueryDef = ObjectQueryDef::owned_by(
 
 static JACE_ULTIMATE: [EffectDef; 3] = [
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::objects(crate::card::ObjectSetDef::Query(
             THE_TARGET_PLAYERS_LIBRARY,
         )),
@@ -144,6 +145,7 @@ static JACE_ULTIMATE: [EffectDef; 3] = [
         attachment: None,
     },
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::objects(crate::card::ObjectSetDef::Query(
             THE_TARGET_PLAYERS_HAND,
         )),
@@ -183,6 +185,7 @@ static JACE_THE_MIND_SCULPTOR_ABILITIES: [AbilityDef; 4] = [
         &[AbilityCostDef::Loyalty(-1)],
         &A_CREATURE,
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,

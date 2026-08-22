@@ -196,6 +196,7 @@ static A_PLAYER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
 
 static FURNACE_EXILE_AND_DRAW: EffectDef = EffectDef::Sequence(&[
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         zone: ZoneKind::Exile,
         controller: None,
@@ -269,6 +270,7 @@ pub(in crate::card::sets) static PHYREXIAN_FURNACE: CardRecord = CardRecord::new
             &[AbilityCostDef::TapSource],
             &A_PLAYER,
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::objects(ObjectSetDef::BottomOfGraveyard(
                     PlayerRefDef::Target(TargetIndex::PRIMARY),
                 )),

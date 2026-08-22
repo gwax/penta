@@ -332,6 +332,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A permanent can be put onto the battlefield carrying counters.**
+  `MoveToZone` gained the `counters` its exile-returning cousin already had.
+  A counter is not a continuous effect: "with a lifelink counter on it" sits
+  on the permanent and outlives every duration a spell could have named,
+  which is the whole reason the clause is written that way. Lifelink joins
+  flying as a keyword counter.
+
 - **Open decklists, as a mutual opt-in on hosted bot games.** A bot adds
   `discloseDeck` to its `/_bots/register` or heartbeat body, whoever starts a
   room adds `humanDiscloseDeck` to `/_game/<id>/start`, and only when both

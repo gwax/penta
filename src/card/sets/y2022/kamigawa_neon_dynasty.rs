@@ -49,6 +49,7 @@ static LION_SASH_EXILE: [EffectDef; 2] = [
         then: &SASH_GROWS,
     },
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         zone: ZoneKind::Exile,
         placement: ZonePlacement::Top,

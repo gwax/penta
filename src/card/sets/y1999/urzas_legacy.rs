@@ -230,6 +230,7 @@ pub(in crate::card::sets) static RANCOR: CardRecord = CardRecord::new_with_legac
                     Some(ZoneKind::Graveyard),
                 ),
                 EffectDef::MoveToZone {
+                    counters: None,
                     object: EffectRecipientDef::TriggeringObject,
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,

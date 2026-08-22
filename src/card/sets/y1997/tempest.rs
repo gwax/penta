@@ -85,6 +85,7 @@ pub(in crate::card::sets) static CHILL: CardRecord = CardRecord::new_with_legacy
 /// names the rest as well as the pick.
 static INTUITION_DISTRIBUTE: EffectDef = EffectDef::Sequence(&[
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
         zone: ZoneKind::Hand,
         placement: ZonePlacement::Top,
@@ -93,6 +94,7 @@ static INTUITION_DISTRIBUTE: EffectDef = EffectDef::Sequence(&[
         controller: None,
     },
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
         zone: ZoneKind::Graveyard,
         placement: ZonePlacement::Top,
@@ -183,6 +185,7 @@ static DANCE_EXILE_AT_END: AbilityDef = AbilityDef::triggered(
         player: PlayerRelation::Any,
     },
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::Source,
         zone: ZoneKind::Exile,
         placement: ZonePlacement::Top,
@@ -211,6 +214,7 @@ pub(in crate::card::sets) static CORPSE_DANCE: CardRecord = CardRecord::new_with
         AbilityDef::spell(
             "Return the top creature card of your graveyard to the battlefield. That creature gains haste until end of turn. Exile it at the beginning of the next end step.",
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::objects(ObjectSetDef::TopOfGraveyardMatching {
                     player: PlayerRefDef::EffectController,
                     object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -241,6 +245,7 @@ pub(in crate::card::sets) static REANIMATE: CardRecord = CardRecord::new_with_le
         })],
         EffectDef::Sequence(&[
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Battlefield,
                 placement: ZonePlacement::Top,

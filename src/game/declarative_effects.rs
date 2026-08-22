@@ -744,6 +744,7 @@ impl Game {
                 placement,
                 arrival_effect,
                 attachment,
+                counters,
             } => self.resolve_move_to_zone(
                 MoveToZoneClause {
                     recipient,
@@ -752,6 +753,7 @@ impl Game {
                     placement,
                     arrival_effect,
                     attachment,
+                    counters,
                 },
                 object,
                 &context,

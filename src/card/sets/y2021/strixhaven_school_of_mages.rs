@@ -101,6 +101,7 @@ static MASTERY_OPPONENT_DRAWS: EffectDef = EffectDef::DrawCards {
 };
 
 static MASTERY_EXILE: EffectDef = EffectDef::MoveToZone {
+    counters: None,
     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
     zone: ZoneKind::Exile,
     placement: ZonePlacement::Top,

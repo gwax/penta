@@ -146,6 +146,7 @@ static NECROMANCY_CAST_AT_INSTANT_SPEED: TriggerConditionDef =
 /// object, so a following effect would have nothing left to name.
 static NECROMANCY_REANIMATES: [EffectDef; 2] = [
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         zone: ZoneKind::Battlefield,
         placement: ZonePlacement::Top,

@@ -26,6 +26,7 @@ static WINDS_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
 
 static WINDS_SINGLE: [EffectDef; 2] = [
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         zone: ZoneKind::Exile,
         controller: None,
@@ -67,6 +68,7 @@ static WINDS_OVERLOADED_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
 /// off that binding rather than off a board the creatures have left.
 static WINDS_OVERLOADED_STEPS: [EffectDef; 2] = [
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
         zone: ZoneKind::Exile,
         controller: None,

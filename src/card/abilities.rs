@@ -92,6 +92,7 @@ const fn keyword(text: &'static str, keyword: KeywordAbility) -> AbilityDef {
 pub const fn keyword_counter_ability(kind: CounterKind) -> Option<AbilityDef> {
     match kind.granted_keyword() {
         Some(KeywordAbility::Flying) => Some(flying()),
+        Some(KeywordAbility::Lifelink) => Some(lifelink()),
         _ => None,
     }
 }

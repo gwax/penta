@@ -57,6 +57,7 @@ pub(in crate::card::sets) static ANGEL_OF_FLIGHT_ALABASTER: CardRecord = CardRec
                 owner: Some(PlayerRelation::You),
             })],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 controller: None,
@@ -634,6 +635,7 @@ pub(in crate::card::sets) static PURIFY_THE_GRAVE: CardRecord = CardRecord::new_
                 },
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Exile,
                 controller: None,
@@ -734,6 +736,7 @@ pub(in crate::card::sets) static SILVERCHASE_FOX: CardRecord = CardRecord::new_w
                 ObjectPredicateDef::HasType(CardType::Enchantment),
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Exile,
                 controller: None,
@@ -1252,6 +1255,7 @@ pub(in crate::card::sets) static GRASP_OF_PHANTOMS: CardRecord = CardRecord::new
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Library,
                 controller: None,
@@ -1322,6 +1326,7 @@ pub(in crate::card::sets) static LANTERN_SPIRIT: CardRecord = CardRecord::new_wi
             "{U}: Return this creature to its owner's hand.",
             &[AbilityCostDef::Mana(mana_cost!("{U}"))],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Source,
                 zone: ZoneKind::Hand,
                 controller: None,
@@ -1353,6 +1358,7 @@ pub(in crate::card::sets) static LOST_IN_THE_MIST: CardRecord = CardRecord::new_
                 zone: ZoneKind::Graveyard,
             },
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex(1)),
                 zone: ZoneKind::Hand,
                 controller: None,
@@ -1528,6 +1534,7 @@ pub(in crate::card::sets) static SILENT_DEPARTURE: CardRecord = CardRecord::new_
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 controller: None,
@@ -2068,6 +2075,7 @@ static GHOULCALLERS_CHANT_MODES: [AbilityDef; 2] = [
         "Return target creature card from your graveyard to your hand.",
         &GHOULCALLERS_CHANT_ONE_TARGET,
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             controller: None,
@@ -2080,6 +2088,7 @@ static GHOULCALLERS_CHANT_MODES: [AbilityDef; 2] = [
         "Return two target Zombie cards from your graveyard to your hand.",
         &GHOULCALLERS_CHANT_TWO_TARGETS,
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             controller: None,
@@ -2458,6 +2467,7 @@ pub(in crate::card::sets) static SEVER_THE_BLOODLINE: CardRecord = CardRecord::n
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::ObjectsSharingNameWithTarget(TargetIndex::PRIMARY),
                 zone: ZoneKind::Exile,
                 controller: None,
@@ -2584,6 +2594,7 @@ pub(in crate::card::sets) static UNBURIAL_RITES: CardRecord = CardRecord::new_wi
                 },
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Battlefield,
                 controller: None,

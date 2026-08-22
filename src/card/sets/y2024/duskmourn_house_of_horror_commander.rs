@@ -1,11 +1,68 @@
 //! Duskmourn: House of Horror Commander cards cataloged for the Vintage Cube.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef,
-    PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef, TurnStepDef, ValueDef, abilities,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardArt, CardRules,
+    CardSet, CardType, CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef,
+    PlayerRelation, ResolvedEffectDurationDef, TokenCountersDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
+
+/// "Up to one target creature card from your graveyard." Your own, so this
+/// never reaches across the table the way an opponent-facing reanimator
+/// would, and choosing none is already a legal declaration.
+static A_CREATURE_IN_YOUR_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: Some(PlayerRelation::You),
+    },
+    1,
+)];
+
+/// A counter rather than a granted keyword (CR 122.1e): what comes back has
+/// lifelink for exactly as long as the counter is on it, which outlives
+/// every duration a spell could have named.
+static A_LIFELINK_COUNTER: TokenCountersDef = TokenCountersDef {
+    kind: CounterKind::Lifelink,
+    amount: ValueDef::Constant(1),
+};
+
+// DSC 21 — Metamorphosis Fanatic
+pub(in crate::card::sets) static METAMORPHOSIS_FANATIC: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("16448d95-ee21-4def-b880-26f6f159c213"),
+    "Metamorphosis Fanatic",
+    CardArt::new("16448d95-ee21-4def-b880-26f6f159c213", "Andreas Zafiratos"),
+    CardSet::DuskmournHouseOfHorrorCommander,
+    // Six mana for a 4/4 that reanimates is a fair rate and nothing more.
+    // Two mana for it off the top of your library is what puts the card in
+    // a cube -- and the body it brings back is the half that wins games.
+    CardRules::new_creature(mana_cost!("{4}{B}{B}"), &["Human", "Cleric"], 4, 4).with_abilities(&[
+        abilities::lifelink(),
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, return up to one target creature card from your graveyard \
+             to the battlefield with a lifelink counter on it.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &A_CREATURE_IN_YOUR_GRAVEYARD,
+            EffectDef::MoveToZone {
+                counters: Some(A_LIFELINK_COUNTER),
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Battlefield,
+                controller: None,
+                placement: ZonePlacement::Top,
+                arrival_effect: None,
+                attachment: None,
+            },
+        ),
+        abilities::miracle(mana_cost!("{1}{B}")),
+    ]),
+);
 
 static MONSTROSITY_INDESTRUCTIBLE: AbilityDef = abilities::indestructible();
 
@@ -63,6 +120,7 @@ pub(in crate::card::sets) static URSINE_MONSTROSITY: CardRecord = CardRecord::ne
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&URSINE_MONSTROSITY];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&METAMORPHOSIS_FANATIC, &URSINE_MONSTROSITY];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

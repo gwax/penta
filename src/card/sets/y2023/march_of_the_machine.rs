@@ -20,6 +20,7 @@ static EVERY_CREATURE: ObjectQueryDef = ObjectQueryDef::new(
 /// holds by the time the token is made.
 static SUNFALL_STEPS: [EffectDef; 2] = [
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
         zone: ZoneKind::Exile,
         placement: ZonePlacement::Top,

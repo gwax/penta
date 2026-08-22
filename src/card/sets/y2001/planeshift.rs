@@ -96,6 +96,7 @@ static CITY_EXILE_AND_UNTAP: EffectDef = EffectDef::Choose(ChooseDef {
     visibility: ChoiceVisibilityDef::Public,
     then: &EffectDef::Sequence(&[
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
             zone: ZoneKind::Exile,
             controller: None,

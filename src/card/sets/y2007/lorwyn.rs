@@ -26,6 +26,7 @@ static CRYPTIC_COMMAND_MODES: [AbilityDef; 4] = [
         "Return target permanent to its owner's hand.",
         &A_PERMANENT,
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,

@@ -50,6 +50,7 @@ pub const fn shuffle_back_and_draw_seven() -> EffectDef {
 
 static WHEEL_STEPS: [EffectDef; 3] = [
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::matching_objects(
             ObjectPredicateDef::Any,
             &[ZoneKind::Hand, ZoneKind::Graveyard],

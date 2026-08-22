@@ -49,6 +49,7 @@ static GRAVE_EXILE_AT_END: AbilityDef = AbilityDef::triggered(
         player: PlayerRelation::Any,
     },
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::Source,
         zone: ZoneKind::Exile,
         placement: ZonePlacement::Top,
@@ -102,6 +103,7 @@ pub(in crate::card::sets) static SHALLOW_GRAVE: CardRecord = CardRecord::new_wit
     CardRules::new_instant(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell(
         "Return the top creature card of your graveyard to the battlefield. That creature gains haste until end of turn. Exile it at the beginning of the next end step.",
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::objects(ObjectSetDef::TopOfGraveyardMatching {
                 player: PlayerRefDef::EffectController,
                 object: ObjectPredicateDef::HasType(CardType::Creature),

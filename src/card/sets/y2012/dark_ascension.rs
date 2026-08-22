@@ -37,6 +37,7 @@ static ARCHANGELS_LIGHT_EFFECTS: [EffectDef; 3] = [
         amount: ValueDef::Scaled(&ARCHANGELS_LIGHT_AMOUNT),
     },
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::matching_objects(
             ObjectPredicateDef::Any,
             &[ZoneKind::Graveyard],
@@ -547,6 +548,7 @@ pub(in crate::card::sets) static THRABEN_HERETIC: CardRecord = CardRecord::new_w
                 },
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Exile,
                 placement: ZonePlacement::Top,
@@ -754,6 +756,7 @@ pub(in crate::card::sets) static GRIPTIDE: CardRecord = CardRecord::new_with_leg
             ObjectPredicateDef::HasType(CardType::Creature),
         )],
         EffectDef::MoveToZone {
+            counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Library,
             placement: ZonePlacement::Top,
@@ -852,6 +855,7 @@ pub(in crate::card::sets) static MYSTIC_RETRIEVAL: CardRecord = CardRecord::new_
                 },
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
@@ -913,6 +917,7 @@ pub(in crate::card::sets) static SAVING_GRASP: CardRecord = CardRecord::new_with
                 },
             )],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,

@@ -79,6 +79,7 @@ pub(in crate::card::sets) static ETERNAL_DRAGON: CardRecord = CardRecord::new_wi
             "{3}{W}{W}: Return this card from your graveyard to your hand. Activate only during your upkeep.",
             &[AbilityCostDef::Mana(mana_cost!("{3}{W}{W}"))],
             EffectDef::MoveToZone {
+                counters: None,
                 object: EffectRecipientDef::Source,
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,

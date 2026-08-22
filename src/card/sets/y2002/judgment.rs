@@ -125,6 +125,7 @@ pub(in crate::card::sets) static CABAL_THERAPY: CardRecord = CardRecord::new_wit
 /// library the cards join is the one that gets randomized.
 static RECLAMATION_SHUFFLE: EffectDef = EffectDef::Sequence(&[
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
         zone: ZoneKind::Library,
         placement: ZonePlacement::Top,

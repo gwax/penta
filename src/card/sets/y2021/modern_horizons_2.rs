@@ -105,6 +105,7 @@ static ENDING_SMALL_ENOUGH: TriggerConditionDef = TriggerConditionDef::TargetMat
 };
 
 static ENDING_EXILE: EffectDef = EffectDef::MoveToZone {
+    counters: None,
     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
     zone: ZoneKind::Exile,
     placement: ZonePlacement::Top,

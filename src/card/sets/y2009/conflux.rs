@@ -17,6 +17,7 @@ static PATH_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_perma
 
 static PATH_STEPS: [EffectDef; 2] = [
     EffectDef::MoveToZone {
+        counters: None,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         zone: ZoneKind::Exile,
         controller: None,
