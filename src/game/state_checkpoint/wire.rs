@@ -739,6 +739,7 @@ fn parse_permanent(
     permanent.exile_instead_of_dying = state.exile_instead_of_dying;
     permanent.regeneration_shields = state.regeneration_shields;
     permanent.attacked_this_turn = state.attacked_this_turn;
+    permanent.exerted = state.exerted;
     permanent.last_attacked_turn = state
         .last_attacked_turn
         .map(|(player, turns)| player_from_index(player).map(|player| (player, turns)))

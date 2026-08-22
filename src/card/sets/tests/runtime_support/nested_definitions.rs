@@ -77,6 +77,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                     .maximum
                     .is_none_or(|maximum| declaration.minimum <= maximum)
         }
+        TriggerEventDef::Exerted(attacker) => shared_object_predicate(attacker),
         TriggerEventDef::Attacks(matcher) => {
             shared_object_predicate(matcher.attacker)
                 && matcher.declaration.minimum > 0

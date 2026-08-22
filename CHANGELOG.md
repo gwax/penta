@@ -332,6 +332,20 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Exert.** A choice made as a creature is declared as an attacker, and
+  paid for afterwards: an exerted creature is skipped by its controller's
+  next untap step. The second sentence every printed exert card carries --
+  "when you do" -- is a reflexive trigger, and having one is also what makes
+  a creature exertable at all, the way a cycling clause is what makes a card
+  cyclable. On the wire it is the additive action `ExertAttacker`, naming the
+  `attacker`; the open `type` vocabulary means it does not move the epoch.
+
+  Offered as its own action rather than folded into the declaration. Nothing
+  can observe the difference: no player receives priority between declaring
+  an attacker and finishing the declaration, and the trigger it captures
+  waits for the declaration to finish the way every other attack trigger
+  does.
+
 - **A permanent can be put onto the battlefield carrying counters.**
   `MoveToZone` gained the `counters` its exile-returning cousin already had.
   A counter is not a continuous effect: "with a lifelink counter on it" sits

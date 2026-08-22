@@ -157,6 +157,10 @@ struct Permanent {
     text_changes: Vec<BasicLandTypeChange>,
     regeneration_shields: u8,
     attacked_this_turn: bool,
+    /// Exerted as it was declared as an attacker this turn (CR 701.38a).
+    /// Recorded rather than derived: what exerting costs is an untap step,
+    /// and plenty of other things skip one of those.
+    pub(super) exerted: bool,
     /// How many times this creature has been declared as an attacker this
     /// turn. `attacked_this_turn` is already set by the time the attack
     /// triggers are captured, so a "first time each turn" trigger needs the
@@ -289,6 +293,7 @@ impl Permanent {
             text_changes: Vec::new(),
             regeneration_shields: 0,
             attacked_this_turn: false,
+            exerted: false,
             attacks_this_turn: 0,
             last_attacked_turn: None,
             keywords_until_upkeep_of: Vec::new(),

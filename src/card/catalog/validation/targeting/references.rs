@@ -575,6 +575,9 @@ fn validate_trigger_event_references(
             }
             validate_trigger_object_predicate(attacker, event, target_count, scope)
         }
+        TriggerEventDef::Exerted(attacker) => {
+            validate_trigger_object_predicate(attacker, event, target_count, scope)
+        }
         TriggerEventDef::Attacks(matcher) => {
             if declaration_range_is_empty(matcher.declaration) || matcher.attack_number == Some(0) {
                 return Err(unsupported_trigger_event(event));

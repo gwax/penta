@@ -108,6 +108,7 @@ pub enum CardSet {
     ConspiracyTakeTheCrown,
     Kaladesh,
     AetherRevolt,
+    Amonkhet,
     PhyrexiaAllWillBeOne,
     MarchOfTheMachine,
     LordOfTheRings,

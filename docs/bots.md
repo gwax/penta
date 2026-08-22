@@ -504,7 +504,7 @@ per legal casting choice), `ActivateAbility`, `ActivateManaAbility`, `PayLifeFor
 `FinishDeclaringBlockers`, `AssignCombatDamage`, `DiscardCards`,
 `ChooseUntap`, `ChooseDecision`, `CancelDecision`, `PassPriority`,
 `TurnFaceUp` (with `permanent`), `Foretell` (with `card`), `UnlockDoor` (with
-`room` and the `door` part id).
+`room` and the `door` part id), `ExertAttacker` (with `attacker`).
 
 The `type` vocabulary is **open**, and the safe fallback is the one every bot
 already uses: choose by `index`. A bot that does not recognize a `type` may

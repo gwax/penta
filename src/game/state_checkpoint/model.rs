@@ -371,6 +371,10 @@ pub(super) struct PermanentSnapshot {
     pub(super) combat_damage_assignment: Vec<CombatDamageAssignmentSnapshot>,
     pub(super) regeneration_shields: u8,
     pub(super) attacked_this_turn: bool,
+    /// Additive: a checkpoint written before exert existed restores with
+    /// nothing exerted, which is what every board without one is.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) exerted: bool,
     pub(super) attacks_this_turn: u8,
     /// The seat that controlled this permanent the last time it attacked, and
     /// their turn count then. Absent means it has never attacked, which is

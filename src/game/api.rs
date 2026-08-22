@@ -231,6 +231,7 @@ impl Game {
                 }
                 actions.extend(self.attacker_actions(player, moat_active));
                 actions.extend(self.band_actions(player));
+                actions.extend(self.exert_actions(player));
             }
             return actions;
         }
@@ -319,7 +320,12 @@ impl Game {
         // state-based actions or state triggers inspect a partial set.
         let declaration_is_still_open = matches!(
             &action,
-            Action::DeclareAttacker { .. } | Action::DeclareBlocker { .. }
+            Action::DeclareAttacker { .. }
+                // Exerting is part of the declaration that is still open, so
+                // the trigger it captures waits for the rest of it the way
+                // every other attack trigger does.
+                | Action::ExertAttacker { .. }
+                | Action::DeclareBlocker { .. }
         );
         match action {
             Action::KeepHand => self.keep_hand(player),
@@ -390,6 +396,7 @@ impl Game {
                 self.declare_attacker(attacker, defender);
             }
             Action::BandAttackers { first, second } => self.form_band(first, second),
+            Action::ExertAttacker { attacker } => self.exert_attacker(player, attacker),
             Action::FinishDeclaringAttackers => self.finish_declaring_attackers(),
             Action::DeclareBlocker { blocker, attacker } => {
                 self.declare_blocker(blocker, attacker);

@@ -100,6 +100,7 @@ pub(super) fn action_kind(action: &Action) -> &'static str {
         | Action::FinishDeclaringBlockers => "pass",
         Action::DeclareAttacker { .. }
         | Action::BandAttackers { .. }
+        | Action::ExertAttacker { .. }
         | Action::DeclareBlocker { .. }
         | Action::AssignCombatDamage { .. } => "combat",
         _ => "primary",
@@ -112,9 +113,9 @@ pub(super) fn action_card(action: &Action) -> Option<CardInstanceId> {
         Action::ActivateManaAbility { source, .. } | Action::ActivateAbility { source, .. } => {
             Some(*source)
         }
-        Action::DeclareAttacker { attacker, .. } | Action::AssignCombatDamage { attacker, .. } => {
-            Some(*attacker)
-        }
+        Action::DeclareAttacker { attacker, .. }
+        | Action::ExertAttacker { attacker }
+        | Action::AssignCombatDamage { attacker, .. } => Some(*attacker),
         Action::DeclareBlocker { blocker, .. } => Some(*blocker),
         // The band is a pair; anchoring on the first member is what the rest
         // of combat does with an action that names more than one object.
@@ -420,6 +421,7 @@ pub(super) fn animated_action_kind(action: &Action) -> &'static str {
         | Action::UnlockDoor { .. } => "ability",
         Action::DeclareAttacker { .. }
         | Action::BandAttackers { .. }
+        | Action::ExertAttacker { .. }
         | Action::DeclareBlocker { .. }
         | Action::AssignCombatDamage { .. } => "combat",
         Action::KeepHand

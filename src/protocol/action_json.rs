@@ -138,6 +138,9 @@ pub fn action_json(action: &Action) -> Value {
         Action::DeclareAttacker { attacker, defender } => {
             json!({ "type": "DeclareAttacker", "attacker": attacker.0, "defender": defender_json(*defender) })
         }
+        Action::ExertAttacker { attacker } => {
+            json!({ "type": "ExertAttacker", "attacker": attacker.0 })
+        }
         Action::BandAttackers { first, second } => {
             json!({ "type": "BandAttackers", "first": first.0, "second": second.0 })
         }

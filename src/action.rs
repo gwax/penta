@@ -211,6 +211,12 @@ pub enum Action {
         attacker: GameObjectId,
         defender: AttackDefender,
     },
+    /// Exert an attacker you have already declared (CR 701.38a). Available
+    /// only while that declaration is still open, which is what "as it
+    /// attacks" means; the creature owes an untap step for it.
+    ExertAttacker {
+        attacker: GameObjectId,
+    },
     /// Puts two declared attackers, and everything already banded with
     /// either of them, into one attacking band. Bands are built a pair at a
     /// time rather than named all at once so that the legal ones can be

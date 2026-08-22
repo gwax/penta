@@ -815,6 +815,11 @@ impl Game {
             (TriggerEventDef::Cycled, CommittedTriggerEvent::Cycled { object }) => {
                 object.id == source
             }
+            (TriggerEventDef::Exerted(predicate), CommittedTriggerEvent::Exerted { object }) => {
+                self.trigger_object_matches_for_controller(
+                    predicate, object, source, false, controller,
+                )
+            }
             (
                 TriggerEventDef::SpellCast(predicate),
                 CommittedTriggerEvent::SpellCast { object },

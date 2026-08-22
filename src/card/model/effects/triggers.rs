@@ -117,6 +117,14 @@ pub enum TriggerEventDef {
     /// trigger per card, so "whenever you discard a card" fires twice for a
     /// discard of two -- and a discard paid as a cost is still a discard.
     Discarded(PlayerRelation),
+    /// "When you do", for the reflexive half of exert (CR 701.38a).
+    ///
+    /// Exerting is a choice made as the creature is declared as an attacker,
+    /// not an event that happens to it afterwards, so this is what the
+    /// second sentence of "You may exert this creature as it attacks. When
+    /// you do, ..." watches. An ability that watches it is also what makes
+    /// the creature exertable at all: nothing else on the card says so.
+    Exerted(ObjectPredicateDef),
     /// "When you unlock this door" (CR 714.4c). A door becomes unlocked
     /// either on the battlefield, for the unlock special action, or as the
     /// Room enters because you cast that half.

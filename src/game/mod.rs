@@ -82,6 +82,7 @@ mod effect_values;
 mod entry_replacements;
 mod error;
 mod event;
+mod exert;
 mod exile_permission;
 mod explore;
 mod face_down;

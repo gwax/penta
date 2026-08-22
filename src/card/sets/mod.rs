@@ -565,6 +565,11 @@ const SET_MODULES: &[SetModule] = &[
         y2017::aether_revolt::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Amonkhet,
+        y2017::amonkhet::CARDS,
+        y2017::amonkhet::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::PhyrexiaAllWillBeOne,
         y2023::phyrexia_all_will_be_one::CARDS,
         y2023::phyrexia_all_will_be_one::ADDITIONAL_PRINTINGS,

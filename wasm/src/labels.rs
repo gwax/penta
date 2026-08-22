@@ -214,6 +214,7 @@ impl WebGame {
             | Action::CastSpell { .. }
             | Action::DeclareAttacker { .. }
             | Action::BandAttackers { .. }
+            | Action::ExertAttacker { .. }
             | Action::FinishDeclaringAttackers
             | Action::DeclareBlocker { .. }
             | Action::FinishDeclaringBlockers
@@ -685,6 +686,9 @@ impl WebGame {
             }
             Action::DeclareAttacker { attacker, .. } => {
                 format!("Attack with {}", self.instance_name(observation, *attacker))
+            }
+            Action::ExertAttacker { attacker } => {
+                format!("Exert {}", self.instance_name(observation, *attacker))
             }
             Action::BandAttackers { first, second } => format!(
                 "Band {} with {}",

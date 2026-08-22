@@ -198,6 +198,9 @@ impl HandcraftedPolicy {
             // hold the whole band, and this policy has no way to tell which
             // side of that trade a board is on.
             Action::BandAttackers { .. } => 900,
+            // Worth an untap step whenever the attack is happening anyway:
+            // every printed exert clause does something for it.
+            Action::ExertAttacker { .. } => 700,
             Action::FinishDeclaringAttackers | Action::FinishDeclaringBlockers => 1_000,
             Action::AssignCombatDamage { assignments, .. } => {
                 6_000 + Self::score_assignment(observation, assignments)

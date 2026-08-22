@@ -308,6 +308,11 @@ pub(super) enum CommittedTriggerEvent {
     Cycled {
         object: TriggerEventObject,
     },
+    /// A creature was exerted as it was declared as an attacker
+    /// (CR 701.38a).
+    Exerted {
+        object: TriggerEventObject,
+    },
 }
 
 impl CommittedTriggerEvent {
@@ -317,6 +322,7 @@ impl CommittedTriggerEvent {
             Self::ZoneChanged { object, .. }
             | Self::Transformed { object }
             | Self::Cycled { object }
+            | Self::Exerted { object }
             | Self::AttacksAndIsNotBlocked { object } => TriggerContext {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
