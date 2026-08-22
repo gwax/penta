@@ -7,14 +7,14 @@ use crate::card::{
     ChooseDef, ColorChoiceOperationDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
     DamageEventMatcherDef, DamageKindDef, DamageLimitDef, DamagePreventionDef,
     DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef, DiscardSelectionDef,
-    DividedTotal, EffectDef, EffectExecutionDef, EffectPaymentDef, EffectRecipientDef,
-    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, ScaledValueDef, SumValueDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
+    KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    ScaledValueDef, SumValueDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
-use crate::ids::{ObjectBindingIndex, TargetIndex};
+use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
 
 static INDESTRUCTIBLE_AURA_TARGET: [AbilityTargetDef; 1] =
@@ -44,7 +44,7 @@ pub(in crate::card::sets) static AKRON_LEGIONNAIRE: CardRecord = CardRecord::new
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ),
-                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotAttack),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_ATTACK),
             },
         ),
     ),
@@ -560,17 +560,29 @@ pub(in crate::card::sets) static LIFEBLOOD: CardRecord = CardRecord::new_with_le
     )),
 );
 
+static MOAT_HAS_FLYING: ObjectPredicateDef = ObjectPredicateDef::HasKeyword(KeywordAbility::Flying);
+static MOAT_NONFLYING_CREATURES: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Not(&MOAT_HAS_FLYING),
+]);
+
 // LEG 28 — Moat
 pub(in crate::card::sets) static MOAT: CardRecord = CardRecord::new_with_legacy_id(
     119,
     "Moat",
     CardArt::new("952ba126-0915-47f0-9b6a-a0a6dcd22c6f", "Jeff A. Menges"),
     CardSet::Legends,
-    CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_abilities(&[AbilityDef::custom_full(
+    CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_ability(AbilityDef::static_ability(
         "Creatures without flying can't attack.",
-        CardBehavior::Moat,
-        "The attack restriction is implemented by the legacy combat legality check.",
-    )]),
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                MOAT_NONFLYING_CREATURES,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_ATTACK),
+        },
+    )),
 );
 
 /// Every end step, not only its controller's: something dying on either turn
@@ -1683,7 +1695,7 @@ pub(in crate::card::sets) static DEMONIC_TORMENT: CardRecord = CardRecord::new_w
                 "Enchanted creature can't attack.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotAttack),
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_ATTACK),
                 },
             ),
             AbilityDef::static_ability(
@@ -1717,7 +1729,7 @@ pub(in crate::card::sets) static EVIL_EYE_OF_ORMS_BY_GORE: CardRecord =
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
-                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotAttack),
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_ATTACK),
                 },
             ),
             AbilityDef::static_ability(
@@ -3380,7 +3392,7 @@ pub(in crate::card::sets) static GIANT_TURTLE: CardRecord = CardRecord::new_with
             "This creature can't attack if it attacked during your last turn.",
             EffectDef::StaticApply {
                 recipient: GIANT_TURTLE_RESTING,
-                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotAttack),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_ATTACK),
             },
         ),
     ),
@@ -3658,6 +3670,47 @@ pub(in crate::card::sets) static SUBDUE: CardRecord = CardRecord::new_with_legac
     )),
 );
 
+static SYLVAN_PUT_BACK: EffectDef = EffectDef::MoveToZone {
+    counters: None,
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    zone: ZoneKind::Library,
+    placement: ZonePlacement::Top,
+    arrival_effect: None,
+    attachment: None,
+    controller: None,
+};
+
+static SYLVAN_SETTLE_CARD: EffectDef = EffectDef::PayOr(PayOrDef::unless(
+    EffectPaymentDef::life(PlayerSetDef::One(PlayerRefDef::EffectController), 4),
+    &SYLVAN_PUT_BACK,
+));
+
+static SYLVAN_SETTLE_CHOSEN: EffectDef = EffectDef::ForEachInBinding {
+    objects: ObjectSetBindingIndex::PRIMARY,
+    binding: ObjectBindingIndex::PRIMARY,
+    effect: &SYLVAN_SETTLE_CARD,
+};
+
+static SYLVAN_CHOOSE_DRAWN: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::OrderedObjects(ObjectSetBindingIndex::PRIMARY),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::CardsDrawnThisTurnInHand(PlayerRefDef::EffectController),
+    exclude: None,
+    minimum: 2,
+    maximum: 2,
+    visibility: ChoiceVisibilityDef::Private,
+    then: &SYLVAN_SETTLE_CHOSEN,
+});
+
+static SYLVAN_DRAW_AND_SETTLE: EffectDef = EffectDef::Sequence(&[
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+    SYLVAN_CHOOSE_DRAWN,
+]);
+
 // LEG 207 — Sylvan Library
 pub(in crate::card::sets) static SYLVAN_LIBRARY: CardRecord = CardRecord::new_with_legacy_id(
     98,
@@ -3671,12 +3724,11 @@ pub(in crate::card::sets) static SYLVAN_LIBRARY: CardRecord = CardRecord::new_wi
             step: TurnStepDef::Draw,
             player: PlayerRelation::You,
         },
-        EffectDef::Special("Offer the extra draws, then settle each chosen card"),
-    )
-    .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::SylvanLibrary))
-    .with_coverage(AbilityCoverageDef::explained_complete(
-        "The trigger is declarative and uses the shared stack; the card-local resolver offers the draws and then the pay-or-top choice for each card drawn this turn.",
-    ))]),
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &SYLVAN_DRAW_AND_SETTLE,
+        },
+    )]),
 );
 
 static TYPHOON_OPPONENT_ISLANDS: ObjectQueryDef = ObjectQueryDef::matching(

@@ -22,7 +22,8 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
             .copied()
             .collect(),
         EffectDef::SplitIntoPiles(partition) => vec![*partition.then],
-        EffectDef::May { effect, .. }
+        EffectDef::ForEachInBinding { effect, .. }
+        | EffectDef::May { effect, .. }
         | EffectDef::ReplaceNextDrawThisTurn { effect, .. }
         | EffectDef::IfCondition { then: effect, .. }
         | EffectDef::BindMatching { then: effect, .. }
@@ -82,6 +83,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::CreateTokenCopyOf { .. }
         | EffectDef::Endure { .. }
+        | EffectDef::CreateMyriadTokens
         | EffectDef::DealDamage { .. }
         | EffectDef::DealDamageFrom { .. }
         | EffectDef::DealDamageAndApply { .. }

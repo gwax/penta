@@ -28,6 +28,7 @@ impl Game {
             | EffectDef::Choose(_)
             | EffectDef::ChooseCardName { .. }
             | EffectDef::BindMatching { .. }
+            | EffectDef::ForEachInBinding { .. }
             | EffectDef::PayOr(_)
             | EffectDef::SplitIntoPiles(_)
             | EffectDef::PreventDamage { .. }
@@ -130,6 +131,7 @@ impl Game {
             | EffectDef::CreateAttachedToken { .. }
             | EffectDef::CreateTokenCopyOf { .. }
             | EffectDef::Endure { .. }
+            | EffectDef::CreateMyriadTokens
             | EffectDef::StaticApply { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => {

@@ -141,6 +141,29 @@ pub(super) struct ResolvedPlayRestriction {
     pub(super) restriction: PlayRestrictionDef,
 }
 
+/// A resolving attack prohibition after its protected player has been
+/// frozen. Static creature-scoped attack restrictions remain source-derived;
+/// this is for effects such as Island Sanctuary that protect a player for a
+/// duration even after their source leaves the battlefield.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct ResolvedAttackRestriction {
+    pub(super) definition: AppliedEffectDef,
+    pub(super) source: AbilitySourceRef,
+    pub(super) affected_player: PlayerId,
+    pub(super) expiration: ContinuousEffectExpiration,
+    pub(super) restriction: crate::card::AttackRestrictionDef,
+}
+
+/// One live static or resolved attack restriction after its player recipient
+/// has been identified. Attack restrictions do not layer; prohibitions
+/// compose and declaration costs add.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct AppliedAttackRestriction {
+    pub(super) source: GameObjectId,
+    pub(super) affected_player: PlayerId,
+    pub(super) restriction: crate::card::AttackRestrictionDef,
+}
+
 /// A permission to play from an unusual zone that resolved rather than being
 /// printed on a permanent.
 ///

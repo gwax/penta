@@ -48,6 +48,9 @@ fn validate_effect_target_shapes(
             }
             validate_effect_target_shapes(*choice.then, targets, triggering_object_zone)
         }
+        EffectDef::ForEachInBinding { effect, .. } => {
+            validate_effect_target_shapes(*effect, targets, triggering_object_zone)
+        }
         EffectDef::PayOr(payment) => {
             validate_payment_shape(payment.payment, targets)?;
             for effect in payment.if_paid.iter().chain(payment.otherwise.iter()) {
@@ -380,6 +383,7 @@ fn validate_effect_target_shapes(
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::CreateEmblem { .. }
         | EffectDef::CreateAttachedToken { .. }
+        | EffectDef::CreateMyriadTokens
         | EffectDef::Special(_) => Ok(()),
     }
 }

@@ -27,7 +27,7 @@ use super::{
 use crate::card::{ColorSet, ManaColor};
 
 mod ability_kind;
-use ability_kind::{StackAbilityCondition, stack_ability_condition};
+use ability_kind::{StackAbilityCondition, stack_ability_condition, stack_payload_matches};
 mod current;
 mod hidden_references;
 pub(super) use current::current_stack_snapshot;
@@ -266,28 +266,6 @@ fn signature_snapshot(signature: &CastSignature) -> CastSignatureSnapshot {
     }
 }
 
-fn stack_payload_matches(
-    payload: &StackAbilityPayload,
-    candidate: &crate::card::AbilityDef,
-) -> bool {
-    if let Some(definition) = payload.definition.as_deref() {
-        return definition == candidate;
-    }
-    let condition = match candidate.definition {
-        DeclarativeAbilityDef::Triggered(triggered) => triggered.condition,
-        DeclarativeAbilityDef::AlternativeCast(alternative)
-            if candidate.is_executable()
-                && alternative.kind == crate::card::AlternativeCastKindDef::Miracle =>
-        {
-            None
-        }
-        _ => return false,
-    };
-    payload.text == Some(candidate.text)
-        && payload.condition == condition
-        && payload.resolver == Game::ability_resolver(payload.origin, candidate)
-}
-
 pub(super) fn target_selection_snapshot(selection: &TargetSelection) -> TargetSelectionSnapshot {
     TargetSelectionSnapshot {
         slot_id: selection.slot().0,
@@ -380,6 +358,9 @@ pub(super) fn parse_stack(
             "TriggeredAbility" => StackObjectKind::TriggeredAbility,
             other => return Err(format!("unknown stack object kind {other}")),
         };
+        if state.kind != kind_snapshot(kind) {
+            return Err("checkpoint stack kind does not match observation".into());
+        }
         let (source, ability, signature, card) = match kind {
             StackObjectKind::Spell => {
                 let ObjectKind::Card(definition) = object_kind else {
@@ -525,10 +506,13 @@ pub(super) fn parse_detached_stack(
     let object_kind = object_kind_from_snapshot(state.object_kind, &game.catalog)?;
     let owner = seat_index_value(state.owner)?;
     let controller = seat_index_value(state.controller)?;
+    let replacement_effect = state.kind == StackObjectKindSnapshot::ReplacementEffect;
     let kind = match state.kind {
         StackObjectKindSnapshot::Spell => StackObjectKind::Spell,
         StackObjectKindSnapshot::ActivatedAbility => StackObjectKind::ActivatedAbility,
-        StackObjectKindSnapshot::TriggeredAbility => StackObjectKind::TriggeredAbility,
+        StackObjectKindSnapshot::TriggeredAbility | StackObjectKindSnapshot::ReplacementEffect => {
+            StackObjectKind::TriggeredAbility
+        }
     };
     let signature = state
         .signature
@@ -545,14 +529,23 @@ pub(super) fn parse_detached_stack(
                 .and_then(|signature| game.frozen_spell_payload(definition, signature))
         }
         StackObjectKind::ActivatedAbility | StackObjectKind::TriggeredAbility => {
-            if object_kind != ObjectKind::Ability {
+            if replacement_effect {
+                if !matches!(object_kind, ObjectKind::Card(_)) {
+                    return Err("a detached replacement effect must be backed by a card".into());
+                }
+            } else if object_kind != ObjectKind::Ability {
                 return Err("a detached stack ability must have ability object kind".into());
             }
             let payload = state
                 .ability_payload
                 .as_ref()
                 .ok_or("detached stack ability is missing its frozen payload")?;
-            Some(parse_ability_payload(kind, payload, game)?)
+            Some(parse_ability_payload(
+                kind,
+                replacement_effect,
+                payload,
+                game,
+            )?)
         }
     };
     let stack_card = match (object_kind, ability.as_ref()) {
@@ -646,6 +639,7 @@ pub(super) fn color_set_from_flags(flags: [bool; 5]) -> ColorSet {
 
 fn parse_ability_payload(
     kind: StackObjectKind,
+    replacement_effect: bool,
     state: &StackAbilitySnapshot,
     game: &Game,
 ) -> Result<StackAbilityPayload, String> {
@@ -655,9 +649,18 @@ fn parse_ability_payload(
         .ok_or("stack ability lacks a catalog locator")?;
     let definition = catalog_ability(&game.catalog, locator)
         .ok_or_else(|| "stack ability locator is absent from this catalog".to_owned())?;
-    let StackAbilityCondition::Supported(condition) = stack_ability_condition(kind, &definition)
-    else {
-        return Err("stack ability locator does not match its ability kind".into());
+    let condition = if replacement_effect {
+        if !matches!(definition.definition, DeclarativeAbilityDef::Replacement(_)) {
+            return Err("replacement-effect locator does not name a replacement ability".into());
+        }
+        None
+    } else {
+        let StackAbilityCondition::Supported(condition) =
+            stack_ability_condition(kind, &definition)
+        else {
+            return Err("stack ability locator does not match its ability kind".into());
+        };
+        condition
     };
     let target_definition = state
         .target_definition_locator

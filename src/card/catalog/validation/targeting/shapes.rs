@@ -228,6 +228,9 @@ fn validate_object_set_shape(
             validate_object_reference_shape(reference, targets)
         }
         ObjectSetDef::Query(query) => validate_query_shape(query, targets),
+        ObjectSetDef::CardsDrawnThisTurnInHand(player) => {
+            validate_player_reference_shape(player, targets)
+        }
         ObjectSetDef::LegalTargets(target) => {
             validate_target_projection(target, targets, RecipientExpectation::Object)
         }
@@ -551,6 +554,7 @@ fn recipient_may_name_nonbattlefield_object(
             // A graveyard is not the battlefield, which is the whole point of
             // naming a card at either end of it.
             | ObjectSetDef::LinkedExiles(_)
+            | ObjectSetDef::CardsDrawnThisTurnInHand(_)
             | ObjectSetDef::BottomOfGraveyard(_)
             | ObjectSetDef::TopOfGraveyardMatching { .. },
         ) => true,
@@ -612,6 +616,7 @@ fn recipient_nonbattlefield_zones_support_flashback(
             | ObjectSetDef::Binding(_)
             | ObjectSetDef::MatchingBinding { .. }
             | ObjectSetDef::LinkedExiles(_)
+            | ObjectSetDef::CardsDrawnThisTurnInHand(_)
             | ObjectSetDef::BottomOfGraveyard(_)
             | ObjectSetDef::SharingNameWithBinding { .. }
             | ObjectSetDef::TopOfGraveyardMatching { .. },
@@ -697,6 +702,17 @@ fn validate_applied_effect_shapes(
         AppliedEffectDef::Rule(AppliedRuleDef::UntapAtMostOne(predicate)) => {
             validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
             validate_object_predicate_shape(predicate, targets)
+        }
+        AppliedEffectDef::Rule(AppliedRuleDef::AttackRestriction(restriction)) => {
+            let expectation = match restriction.defender {
+                AttackDefenderScopeDef::Any => RecipientExpectation::Object,
+                AttackDefenderScopeDef::AffectedPlayer
+                | AttackDefenderScopeDef::AffectedPlayerOrPlaneswalker => {
+                    RecipientExpectation::Player
+                }
+            };
+            validate_recipient_shape(recipient, targets, expectation)?;
+            validate_object_predicate_shape(restriction.attacker, targets)
         }
         AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(matcher)) => {
             validate_recipient_shape(recipient, targets, RecipientExpectation::Object)?;

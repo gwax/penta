@@ -1,10 +1,10 @@
 use crate::card::{
-    AbilityDef, AbilityOperationDef, AppliedEffectDef, AppliedRuleDef, CardType,
-    CharacteristicOperationDef, DamageEventMatcherDef, DamageRecipientMatcherDef,
-    DamageSourceMatcherDef, DeclarativeAbilityDef, EffectDef, EffectRecipientDef,
-    EffectRecipientSetDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, SetOperationDef,
-    TriggerConditionDef, ValueDef, ZoneKind,
+    AbilityDef, AbilityOperationDef, AppliedEffectDef, AppliedRuleDef, AttackDefenderScopeDef,
+    AttackRestrictionDef, CardType, CharacteristicOperationDef, DamageEventMatcherDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, DeclarativeAbilityDef, EffectDef,
+    EffectRecipientDef, EffectRecipientSetDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef,
+    SetOperationDef, TriggerConditionDef, ValueDef, ZoneKind,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -293,6 +293,10 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
         AppliedEffectDef::Rule(AppliedRuleDef::UntapAtMostOne(predicate)) => {
             static_object_predicate_supported(predicate)
         }
+        AppliedEffectDef::Rule(AppliedRuleDef::AttackRestriction(restriction)) => {
+            restriction.defender != AttackDefenderScopeDef::Any
+                && static_attack_restriction_supported(restriction)
+        }
         // Read by the cleanup step, by the same walk and for the same reason.
         // The colour permission is read the same way, from the mana payment
         // rather than the cleanup step.
@@ -329,7 +333,6 @@ fn static_object_applied_effect_supported(
             AppliedRuleDef::AssignsNoCombatDamage
             | AppliedRuleDef::CannotBeEnchanted
             | AppliedRuleDef::CannotBecomeEnchanted
-            | AppliedRuleDef::CannotAttack
             | AppliedRuleDef::CannotActivateAbilities
             | AppliedRuleDef::MayAttackDespiteDefender
             | AppliedRuleDef::MayAttackAsThoughHasty
@@ -342,6 +345,10 @@ fn static_object_applied_effect_supported(
             | AppliedRuleDef::MayChooseNotToUntap
             | AppliedRuleDef::RemainsAttachedThroughProtection,
         ) => true,
+        AppliedEffectDef::Rule(AppliedRuleDef::AttackRestriction(restriction)) => {
+            restriction.defender == AttackDefenderScopeDef::Any
+                && static_attack_restriction_supported(restriction)
+        }
         // Zero extra blocks would be a rule that grants nothing.
         AppliedEffectDef::Rule(AppliedRuleDef::MayBlockAdditionalCreatures(extra)) => extra > 0,
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::BasicLandTypes(operation)) => {
@@ -414,6 +421,13 @@ fn static_object_applied_effect_supported(
             ) || recipient.object_query().is_some()
         }
     }
+}
+
+fn static_attack_restriction_supported(restriction: AttackRestrictionDef) -> bool {
+    static_object_predicate_supported(restriction.attacker)
+        && restriction
+            .cost
+            .is_none_or(|cost| !cost.variable_x && cost.x_multiplier == 0)
 }
 
 fn validate_resolving_effect(
@@ -514,6 +528,7 @@ fn static_object_set_supported(objects: ObjectSetDef) -> bool {
         | ObjectSetDef::MatchingBinding { .. }
         | ObjectSetDef::PermanentsTargetedBy(_)
         | ObjectSetDef::LinkedExiles(_)
+        | ObjectSetDef::CardsDrawnThisTurnInHand(_)
         | ObjectSetDef::BottomOfGraveyard(_)
         | ObjectSetDef::SharingNameWith(_)
         | ObjectSetDef::SharingNameWithBinding { .. }
@@ -739,6 +754,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::Sequence(_) => "Sequence",
         EffectDef::Randomized { .. } => "Randomized",
         EffectDef::Choose(_) | EffectDef::ChooseCardName { .. } => "Choose",
+        EffectDef::ForEachInBinding { .. } => "ForEachInBinding",
         EffectDef::BindMatching { .. } => "BindMatching",
         EffectDef::PayOr(_) => "PayOr",
         EffectDef::SplitIntoPiles(_) => "SplitIntoPiles",
@@ -765,6 +781,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::CreateAttachedToken { .. } => "CreateAttachedToken",
         EffectDef::CreateTokenCopyOf { .. } => "CreateTokenCopyOf",
         EffectDef::Endure { .. } => "Endure",
+        EffectDef::CreateMyriadTokens => "CreateMyriadTokens",
         EffectDef::Attach { .. }
         | EffectDef::PhaseOut { .. }
         | EffectDef::ReturnAttached { .. } => "Attach",

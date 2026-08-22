@@ -68,6 +68,7 @@ impl Game {
             EffectDef::Choose(ChooseDef { then, .. })
             | EffectDef::SplitIntoPiles(SplitIntoPilesDef { then, .. })
             | EffectDef::ChooseCardName { then, .. }
+            | EffectDef::ForEachInBinding { effect: then, .. }
             | EffectDef::SearchZone {
                 then: Some(then), ..
             }
@@ -181,6 +182,7 @@ impl Game {
             | EffectDef::CreateAttachedToken { .. }
             | EffectDef::CreateTokenCopyOf { .. }
             | EffectDef::Endure { .. }
+            | EffectDef::CreateMyriadTokens
             | EffectDef::StaticApply { .. }
             | EffectDef::Apply { .. }
             | EffectDef::Special(_) => false,

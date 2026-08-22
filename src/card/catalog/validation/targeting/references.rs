@@ -768,6 +768,7 @@ fn validate_recipient_target_references(
         EffectRecipientSetDef::Objects(ObjectSetDef::LinkedExiles(_)) => Ok(()),
         EffectRecipientSetDef::Objects(
             ObjectSetDef::BottomOfGraveyard(player)
+            | ObjectSetDef::CardsDrawnThisTurnInHand(player)
             | ObjectSetDef::SharingNameWithBinding { player, .. }
             | ObjectSetDef::TopOfGraveyardMatching { player, .. },
         ) => validate_player_reference(player, target_count, scope),
@@ -880,6 +881,13 @@ fn validate_applied_effect_target_references(
         AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(matcher)) => {
             validate_damage_matcher_references(matcher, target_count, scope)
         }
+        AppliedEffectDef::Rule(AppliedRuleDef::AttackRestriction(restriction)) => {
+            validate_object_predicate_references(
+                restriction.attacker,
+                target_count,
+                scope,
+            )
+        }
         AppliedEffectDef::Rule(AppliedRuleDef::RedirectDamageFromTo {
             source,
             destination,
@@ -890,6 +898,33 @@ fn validate_applied_effect_target_references(
         // A granted ability introduces its own target scope and is validated
         // separately when the grant tree is traversed.
         AppliedEffectDef::Rule(_) | AppliedEffectDef::Characteristic(_) => Ok(()),
+    }
+}
+
+fn validate_object_predicate_references(
+    predicate: ObjectPredicateDef,
+    target_count: usize,
+    scope: BindingScope,
+) -> Result<(), GrantedAbilityValidationError> {
+    match predicate {
+        ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => {
+            for predicate in predicates {
+                validate_object_predicate_references(*predicate, target_count, scope)?;
+            }
+            Ok(())
+        }
+        ObjectPredicateDef::Not(predicate) | ObjectPredicateDef::AttachedTo(predicate) => {
+            validate_object_predicate_references(*predicate, target_count, scope)
+        }
+        ObjectPredicateDef::ManaValueEqualTo(value)
+        | ObjectPredicateDef::ManaValueAtMostValue(value)
+        | ObjectPredicateDef::ToughnessLessThan(value)
+        | ObjectPredicateDef::PowerGreaterThan(value)
+        | ObjectPredicateDef::ToughnessGreaterThan(value)
+        | ObjectPredicateDef::PowerLessThan(value) => {
+            validate_value_target_references(value, target_count, scope)
+        }
+        _ => Ok(()),
     }
 }
 
@@ -916,6 +951,25 @@ fn validate_resolving_applied_effect(
                 Err(GrantedAbilityValidationError::UnsupportedResolvingAppliedEffect)
             } else {
                 Ok(())
+            }
+        }
+        AppliedEffectDef::Rule(AppliedRuleDef::AttackRestriction(restriction)) => {
+            if restriction
+                .cost
+                .is_some_and(|cost| cost.variable_x || cost.x_multiplier != 0)
+            {
+                return Err(GrantedAbilityValidationError::UnsupportedResolvingAppliedEffect);
+            }
+            let object_recipient = matches!(recipient.0, EffectRecipientSetDef::Objects(_));
+            match restriction.defender {
+                AttackDefenderScopeDef::Any if object_recipient => Ok(()),
+                AttackDefenderScopeDef::AffectedPlayer
+                | AttackDefenderScopeDef::AffectedPlayerOrPlaneswalker
+                    if !object_recipient =>
+                {
+                    Ok(())
+                }
+                _ => Err(GrantedAbilityValidationError::UnsupportedResolvingAppliedEffect),
             }
         }
         AppliedEffectDef::Rule(
