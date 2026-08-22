@@ -801,6 +801,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::SacrificeKeepingOnePerType { .. } => "SacrificeKeepingOnePerType",
         EffectDef::SacrificeOfChoice { .. } => "SacrificeOfChoice",
         EffectDef::ExileTopOfLibraryToPlay { .. } => "ExileTopOfLibraryToPlay",
+        EffectDef::ExileAtRandomFromGraveyardToPlay { .. } => "ExileAtRandomFromGraveyardToPlay",
         EffectDef::ExileTopAndMayCast { .. } => "ExileTopAndMayCast",
         EffectDef::MayCastTargetWithoutPaying { .. } => "MayCastTargetWithoutPaying",
         EffectDef::Mill { .. } => "Mill",

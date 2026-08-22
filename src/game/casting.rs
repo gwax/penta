@@ -22,20 +22,37 @@ impl Game {
         card_id: GameObjectId,
         option_id: PlayOptionId,
     ) {
-        // A land is ordinarily played from hand; a permission can also
-        // offer one out of its owner's graveyard, or off the top of their
-        // library.
+        // A land is ordinarily played from hand; a permission can also offer
+        // one out of a graveyard, out of exile, or off the top of a library.
+        // The exile is looked for in both players' -- a card somebody else
+        // exiled is still played from where it lies.
+        let owner = if self.players[player.index()]
+            .exile
+            .iter()
+            .any(|card| card.id == card_id)
+        {
+            player
+        } else {
+            player.opponent()
+        };
         let state = &self.players[player.index()];
         let from = if state.hand.iter().any(|card| card.id == card_id) {
             ZoneKind::Hand
         } else if state.graveyard.iter().any(|card| card.id == card_id) {
             ZoneKind::Graveyard
+        } else if self.players[owner.index()]
+            .exile
+            .iter()
+            .any(|card| card.id == card_id)
+        {
+            ZoneKind::Exile
         } else {
             ZoneKind::Library
         };
         let definition_id = match from {
             ZoneKind::Graveyard => &state.graveyard,
             ZoneKind::Library => &state.library,
+            ZoneKind::Exile => &self.players[owner.index()].exile,
             _ => &state.hand,
         }
         .iter()
@@ -60,11 +77,11 @@ impl Game {
             .part(presented)
             .filter(|part| part.rules.has_type(CardType::Land))
             .expect("land play option references a land part");
-        let state = &mut self.players[player.index()];
         let source_zone = match from {
-            ZoneKind::Graveyard => &mut state.graveyard,
-            ZoneKind::Library => &mut state.library,
-            _ => &mut state.hand,
+            ZoneKind::Graveyard => &mut self.players[player.index()].graveyard,
+            ZoneKind::Library => &mut self.players[player.index()].library,
+            ZoneKind::Exile => &mut self.players[owner.index()].exile,
+            _ => &mut self.players[player.index()].hand,
         };
         let card = remove_card(source_zone, card_id)
             .expect("legal land action references a card in a playable zone");

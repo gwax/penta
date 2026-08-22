@@ -2,10 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CreatedTokensDef,
-    EffectDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
-    ObjectPredicateDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef,
+    AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype,
+    ChoiceVisibilityDef, ChooseDef, ComparisonDef, CreatedTokensDef, EffectDef, EffectPaymentDef,
+    EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::mana_cost;
@@ -114,10 +116,87 @@ pub(in crate::card::sets) static VOICE_OF_VICTORY: CardRecord = CardRecord::new_
         .with_abilities(&VOICE_OF_VICTORY_ABILITIES),
 );
 
-// TDM 127 — Tersa Lightshatter
-// Audit: blocked — Two of her three abilities need capabilities that are already blocking other cards. "Discard up to two then draw that many" needs a discard whose size the player chooses, where a discard here takes a fixed number; the same gap blocks Mind Bomb in The Dark. And "you may play that card this turn" needs a permission to play one exiled card for a duration, which nothing here can grant and which also blocks Robber of the Rich. Haste alone is not the card.
+/// "Discard up to two cards, then draw that many." The size is the player's
+/// to choose, so the discard is a choice with a floor of none rather than a
+/// fixed number, and what is drawn is however many that turned out to be.
+static TERSA_REFILL: [EffectDef; 2] = [
+    EffectDef::DiscardCards {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::BoundObjectCount(ObjectSetBindingIndex::PRIMARY),
+    },
+];
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&DESCENDANT_OF_STORMS, &VOICE_OF_VICTORY];
+static TERSA_LOOT: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+        ObjectPredicateDef::Any,
+        &[ZoneKind::Hand],
+        PlayerSetDef::One(PlayerRefDef::EffectController),
+    )),
+    exclude: None,
+    minimum: 0,
+    maximum: 2,
+    visibility: ChoiceVisibilityDef::Private,
+    then: &EffectDef::Sequence(&TERSA_REFILL),
+});
+
+/// Seven cards is a real threshold rather than a formality: the attack that
+/// turns it on is the one that has already spent a hand.
+static SEVEN_IN_YOUR_GRAVEYARD: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::Any,
+        &[ZoneKind::Graveyard],
+        PlayerRelation::You,
+    ),
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 7,
+};
+
+static TERSA_ABILITIES: [AbilityDef; 3] = [
+    abilities::haste(),
+    AbilityDef::triggered(
+        "When Tersa Lightshatter enters, discard up to two cards, then draw that many cards.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        TERSA_LOOT,
+    ),
+    AbilityDef::triggered_if(
+        "Whenever Tersa Lightshatter attacks, if there are seven or more cards in your graveyard, \
+         exile a card at random from your graveyard. You may play that card this turn.",
+        TriggerEventDef::attacks(ObjectPredicateDef::Source),
+        &SEVEN_IN_YOUR_GRAVEYARD,
+        EffectDef::ExileAtRandomFromGraveyardToPlay {
+            player: EffectRecipientDef::Controller,
+        },
+    ),
+];
+
+// TDM 127 — Tersa Lightshatter
+pub(in crate::card::sets) static TERSA_LIGHTSHATTER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("39f07b5b-d764-4c88-920b-36b0ba1c62b0"),
+    "Tersa Lightshatter",
+    CardArt::new("39f07b5b-d764-4c88-920b-36b0ba1c62b0", "Olivier Bernard"),
+    CardSet::TarkirDragonstorm,
+    // Three mana for a 3/3 that attacks immediately and turns a spent hand
+    // into a card a turn. What she asks for is the graveyard the deck was
+    // filling anyway.
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Orc", "Wizard"], 3, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&TERSA_ABILITIES),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &DESCENDANT_OF_STORMS,
+    &VOICE_OF_VICTORY,
+    &TERSA_LIGHTSHATTER,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

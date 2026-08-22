@@ -44,6 +44,16 @@ impl Game {
                     .map(|card| (card, ZoneKind::Graveyard)),
             )
             .chain(state.library.last().map(|card| (card, ZoneKind::Library)))
+            // Exile is walked for both players, the way the cast offers walk
+            // it: a permission to *play* a card reaches a land, and a land
+            // somebody else exiled is still played from where it lies.
+            .chain(
+                self.players
+                    .iter()
+                    .flat_map(|state| state.exile.iter())
+                    .filter(|card| self.exile_play_permission(card.id, player).is_some())
+                    .map(|card| (card, ZoneKind::Exile)),
+            )
         {
             let Some(definition) = self.catalog.get(card.definition) else {
                 continue;
@@ -61,6 +71,7 @@ impl Game {
                         ZoneKind::Library => {
                             self.library_top_play_cost(card, player, option).is_some()
                         }
+                        // The permission was already checked to get here.
                         _ => true,
                     })
                     .filter(|option| match &option.form {

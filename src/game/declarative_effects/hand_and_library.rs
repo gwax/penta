@@ -418,6 +418,30 @@ impl Game {
                 }
                 self.resolve_effect_def(scoped.with_effect(*then), object, context);
             }
+            EffectDef::ExileAtRandomFromGraveyardToPlay { player: recipient } => {
+                let controller = object.controller;
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    let Target::Player(player) = target else {
+                        continue;
+                    };
+                    let graveyard = &self.players[player.index()].graveyard;
+                    if graveyard.is_empty() {
+                        continue;
+                    }
+                    let index = self
+                        .rng
+                        .index_below(self.players[player.index()].graveyard.len());
+                    let card = self.players[player.index()].graveyard.remove(index);
+                    // A zone change mints a new object, and the permission
+                    // has to name the card that ended up in exile.
+                    let (card, _zone_change) = self.zone_change_card(card);
+                    let exiled = card.id;
+                    self.players[player.index()].exile.push(card.clone());
+                    self.note_card_left_graveyard(player);
+                    self.capture_cards_exiled(&[card], ZoneKind::Graveyard);
+                    self.permit_cast_this_turn(exiled, controller);
+                }
+            }
             EffectDef::ExileTopOfLibraryToPlay {
                 player: recipient,
                 amount,

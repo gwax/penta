@@ -191,6 +191,7 @@ impl Game {
             | EffectDef::DiscardCards { .. }
             | EffectDef::Mill { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }
+            | EffectDef::ExileAtRandomFromGraveyardToPlay { .. }
             | EffectDef::ExileTopAndMayCast { .. }
             | EffectDef::MillUntil { .. }
             | EffectDef::ExileFromTopUntil { .. }

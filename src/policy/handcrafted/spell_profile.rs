@@ -447,6 +447,7 @@ impl HandcraftedPolicy {
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::DiscardCards { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }
+            | EffectDef::ExileAtRandomFromGraveyardToPlay { .. }
             | EffectDef::ExileTopAndMayCast { .. }
             | EffectDef::MayCastTargetWithoutPaying { .. }
             | EffectDef::Mill { .. }

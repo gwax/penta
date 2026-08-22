@@ -124,6 +124,7 @@ fn validate_effect_target_shapes(
         }
         EffectDef::SearchZonesAndExileRest { player, .. }
         | EffectDef::ExileTopOfLibraryToPlay { player, .. }
+        | EffectDef::ExileAtRandomFromGraveyardToPlay { player }
         | EffectDef::ExileFromTopUntil { player, .. }
         | EffectDef::ManifestDread { player }
         |         EffectDef::ShuffleLibrary { player }

@@ -353,6 +353,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A land can be played out of exile.** The land walk now looks there under
+  the same permission the cast walk already honoured, in both players' exiles
+  -- a card somebody else exiled is still played from where it lies. Nothing
+  could play an exiled land before, which quietly made every "you may play
+  that card" permission a cast permission.
+
 - **A permanent can be told which basic land type to be.** "As this land
   enters, choose a basic land type" joins the card-name and creature-type
   entry choices, and "this land is the chosen type" is a layer-4 set whose

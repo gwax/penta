@@ -115,6 +115,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::ManifestDread { .. }
         | EffectDef::Cascade
         | EffectDef::ExileTopOfLibraryToPlay { .. }
+        | EffectDef::ExileAtRandomFromGraveyardToPlay { .. }
         | EffectDef::MayCastTargetWithoutPaying { .. }
         | EffectDef::MoveToZone { .. }
         | EffectDef::RevealHand { .. }

@@ -240,6 +240,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::SacrificeKeepingOnePerType { .. }
         | EffectDef::SacrificeOfChoice { .. }
         | EffectDef::ExileTopOfLibraryToPlay { .. }
+        | EffectDef::ExileAtRandomFromGraveyardToPlay { .. }
         | EffectDef::ExileTopAndMayCast { .. }
         | EffectDef::MayCastTargetWithoutPaying { .. }
         | EffectDef::Mill { .. }

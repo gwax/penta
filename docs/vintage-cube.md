@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 294 are cataloged and 240 are not
+- 534 cards in the pool, of which 295 are cataloged and 239 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -120,7 +120,7 @@ lands are legal in every format and are not listed.
 - `Vampire Hexmage`
 - `Yawgmoth's Will`
 
-### Red (32)
+### Red (31)
 
 - `Abrade`
 - `Broadside Bombardiers`
@@ -152,7 +152,6 @@ lands are legal in every format and are not listed.
 - `Sneak Attack`
 - `Suplex`
 - `Tarfire`
-- `Tersa Lightshatter`
 - `Voldaren Epicure`
 
 ### Green (34)
@@ -299,7 +298,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 294 pool cards are in the catalog because an earlier format needed them.
+These 295 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -547,6 +546,7 @@ been played beside.
 - `Tamiyo, Collector of Tales`
 - `Temple Garden`
 - `Tendrils of Agony`
+- `Tersa Lightshatter`
 - `Thalia, Guardian of Thraben`
 - `Thassa's Oracle`
 - `Thespian's Stage`

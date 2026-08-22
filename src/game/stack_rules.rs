@@ -119,6 +119,7 @@ impl Game {
             | EffectDef::SacrificeKeepingOnePerType { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }
+            | EffectDef::ExileAtRandomFromGraveyardToPlay { .. }
             | EffectDef::ExileTopAndMayCast { .. }
             | EffectDef::MayCastTargetWithoutPaying { .. }
             | EffectDef::Mill { .. }

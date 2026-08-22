@@ -275,6 +275,7 @@ fn validate_effect_references(
         }
         EffectDef::SearchZonesAndExileRest { player, .. }
         | EffectDef::ExileTopOfLibraryToPlay { player, .. }
+        | EffectDef::ExileAtRandomFromGraveyardToPlay { player }
         | EffectDef::ExileFromTopUntil { player, .. }
         | EffectDef::ManifestDread { player }
         | EffectDef::ChooseCards { player, .. }

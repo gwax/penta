@@ -590,6 +590,17 @@ pub enum EffectDef {
         player: EffectRecipientDef,
         amount: ValueDef,
     },
+    /// "Exile a card at random from your graveyard. You may play that card
+    /// this turn."
+    ///
+    /// Nobody chooses, so this is a procedure rather than a
+    /// [`Self::Choose`]: the game picks with the recorded seed the way a
+    /// random discard does. What the permission grants is that exile is a
+    /// legal place to play it from -- the cost is still owed, unlike the
+    /// library clause above.
+    ExileAtRandomFromGraveyardToPlay {
+        player: EffectRecipientDef,
+    },
     /// "Exile the top card of your library. You may cast that card. If you
     /// don't, ..." The card is cast during this resolution rather than at
     /// some later window, so the offer is the resolution: the player either
