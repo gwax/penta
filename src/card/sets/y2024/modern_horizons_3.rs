@@ -1,16 +1,16 @@
 //! Modern Horizons 3 cards cataloged as attachment edge cases.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardComposition, CardEffectStatus,
-    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, ChoiceVisibilityDef,
-    ChooseDef, ComparisonDef, CounterKind, DoubleFacedKind, EffectDef, EffectPaymentCostDef,
-    EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayOptionDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SpellAdditionalCostDef,
-    SpellForm, SpendModeDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardChoiceSourceDef, CardComposition,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
+    ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, DoubleFacedKind, EffectDef,
+    EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
+    SpellAdditionalCostDef, SpellForm, SpendModeDef, TokenCharacteristics, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{CardPartId, ObjectBindingIndex, ObjectSetBindingIndex, PlayOptionId};
 use crate::{TargetIndex, mana_cost};
@@ -296,6 +296,44 @@ static EMPEROR_OF_BONES_ABILITIES: [AbilityDef; 3] = [
         EMPEROR_CHOOSES,
     ),
 ];
+
+static BRAINSURGE_HAND: [CardChoiceSourceDef; 1] = [CardChoiceSourceDef::Zone(ZoneKind::Hand)];
+
+/// Brainstorm's two steps for one more card. The arrangement is the order
+/// the two are named in: each is placed on top of the last, so the card
+/// named second is the one drawn first.
+static BRAINSURGE_STEPS: [EffectDef; 2] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(4),
+    },
+    EffectDef::ChooseCards {
+        player: EffectRecipientDef::Controller,
+        sources: &BRAINSURGE_HAND,
+        object: ObjectPredicateDef::Any,
+        minimum: 2,
+        maximum: 2,
+        reveal: false,
+        destination: ZoneKind::Library,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+    },
+];
+
+// MH3 53 — Brainsurge
+pub(in crate::card::sets) static BRAINSURGE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("ed48f805-b57c-4d7f-a3c2-d16ae71bce2d"),
+    "Brainsurge",
+    CardArt::new("ed48f805-b57c-4d7f-a3c2-d16ae71bce2d", "Liiga Smilshkalne"),
+    CardSet::ModernHorizons3,
+    // Two more cards than Brainstorm for two more mana, and the same catch:
+    // what it really does is fix a hand, and without a shuffle the two that
+    // go back are two draws you have already spent.
+    CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell(
+        "Draw four cards, then put two cards from your hand on top of your library in any order.",
+        EffectDef::Sequence(&BRAINSURGE_STEPS),
+    )),
+);
 
 // MH3 90 — Emperor of Bones
 pub(in crate::card::sets) static EMPEROR_OF_BONES: CardRecord = CardRecord::new_with_legacy_id(
@@ -816,6 +854,7 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::n
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &OCELOT_PRIDE,
     &STATIC_PRISON,
+    &BRAINSURGE,
     &EMPEROR_OF_BONES,
     &AMPED_RAPTOR,
     &COLOSSAL_DREADMASK,

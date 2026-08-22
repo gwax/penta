@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 292 are cataloged and 242 are not
+- 534 cards in the pool, of which 293 are cataloged and 241 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -59,10 +59,9 @@ lands are legal in every format and are not listed.
 - `Virtue of Loyalty`
 - `Witch Enchanter`
 
-### Blue (31)
+### Blue (30)
 
 - `Astrologian's Planisphere`
-- `Brainsurge`
 - `Brazen Borrower`
 - `Consider`
 - `Consult the Star Charts`
@@ -301,7 +300,7 @@ lands are legal in every format and are not listed.
 
 ## Already cataloged
 
-These 292 pool cards are in the catalog because an earlier format needed them.
+These 293 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -338,6 +337,7 @@ been played beside.
 - `Bountiful Landscape`
 - `Brain Freeze`
 - `Brainstorm`
+- `Brainsurge`
 - `Breeding Pool`
 - `Brightglass Gearhulk`
 - `Bristly Bill, Spine Sower`
