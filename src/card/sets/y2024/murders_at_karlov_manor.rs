@@ -1,6 +1,6 @@
 //! Murders at Karlov Manor cards cataloged for the Vintage Cube.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
     ObjectPredicateDef, PlayerRelation, TopCardSelectionDef, TriggerEventDef, ValueDef, ZoneKind,
@@ -140,12 +140,25 @@ pub(in crate::card::sets) static THUNDERING_FALLS: CardRecord = CardRecord::new_
     surveil_land(&["Island", "Mountain"]),
 );
 
+// MKM 270 — Undercity Sewers
+pub(in crate::card::sets) static UNDERCITY_SEWERS: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("2b5801fb-2026-4f25-98bc-ebb2f99684b9"),
+    "Undercity Sewers",
+    CardArt::new("2b5801fb-2026-4f25-98bc-ebb2f99684b9", "Yeong-Hao Han"),
+    CardSet::MurdersAtKarlovManor,
+    // The blue-black half, and the one the cycle was designed for: the deck
+    // playing it is already trying to fill a graveyard, so the look costs it
+    // nothing it was not going to spend.
+    surveil_land(&["Island", "Swamp"]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FORENSIC_GADGETEER,
     &COMMERCIAL_DISTRICT,
     &LUSH_PORTICO,
     &METICULOUS_ARCHIVE,
     &THUNDERING_FALLS,
+    &UNDERCITY_SEWERS,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

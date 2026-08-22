@@ -253,3 +253,22 @@ fn the_white_blue_land_taps_for_its_own_two() {
     assert!(colors.contains(&ManaColor::Blue), "Island");
     assert_eq!(colors.len(), 2, "and nothing else");
 }
+
+/// Undercity Sewers is the blue-black member: the same land, its own two
+/// basic types.
+#[test]
+fn the_sewers_bring_their_own_two_basic_types() {
+    let (mut game, land) = staged_with(cards::UNDERCITY_SEWERS, cards::MOUNTAIN);
+    play_and_surveil(&mut game, land, false);
+
+    let sewers = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::UNDERCITY_SEWERS)
+        .expect("it is on the battlefield");
+    let subtypes = game.effective_subtypes(sewers);
+
+    assert!(subtypes.contains(&"Island"));
+    assert!(subtypes.contains(&"Swamp"));
+    assert!(sewers.tapped, "and it still arrives tapped");
+}

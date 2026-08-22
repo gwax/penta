@@ -12,7 +12,7 @@ no card Scryfall knows and were left out; the module records which.
 
 ## Snapshot
 
-- 534 cards in the pool, of which 290 are cataloged and 244 are not
+- 534 cards in the pool, of which 291 are cataloged and 243 are not
 - The pool spans sets Penta has never touched, so most of the backlog needs a
   printed-set module before the card itself
 - No decks are registered yet. `deck_names_for_format` returns nothing for the
@@ -271,7 +271,7 @@ lands are legal in every format and are not listed.
 - `Ugin, Eye of the Storms`
 - `Urza's Bauble`
 
-### Lands (27)
+### Lands (26)
 
 - `Arena of Glory`
 - `Blazemire Verge`
@@ -296,14 +296,13 @@ lands are legal in every format and are not listed.
 - `Talon Gates of Madara`
 - `Thornspire Verge`
 - `Twisted Landscape`
-- `Undercity Sewers`
 - `Underground Mortuary`
 - `Urza's Saga`
 - `Waterlogged Grove`
 
 ## Already cataloged
 
-These 290 pool cards are in the catalog because an earlier format needed them.
+These 291 pool cards are in the catalog because an earlier format needed them.
 Being cataloged is not the same as being audited against the rest of the cube:
 a card authored for Old School or Premodern may meet cards here it has never
 been played beside.
@@ -567,6 +566,7 @@ been played beside.
 - `Tropical Island`
 - `Tundra`
 - `Umezawa's Jitte`
+- `Undercity Sewers`
 - `Underground Sea`
 - `Underworld Breach`
 - `Unexpectedly Absent`
