@@ -433,6 +433,9 @@ fn validate_replacement_effect_target_shapes(
                 ) | (
                     ScalarChoiceListDef::CreatureTypes,
                     BattlefieldEntryChoiceDestinationDef::CreatureType
+                ) | (
+                    ScalarChoiceListDef::BasicLandTypes,
+                    BattlefieldEntryChoiceDestinationDef::BasicLandType
                 )
             ) {
                 Ok(())

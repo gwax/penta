@@ -615,6 +615,8 @@ pub(super) struct DetachedPermanentSnapshot {
     pub(super) attacking_band: Option<u8>,
     pub(super) activated_loyalty_this_turn: bool,
     pub(super) chosen_creature_type: Option<String>,
+    /// The basic land type this permanent was told to be as it entered.
+    pub(super) chosen_basic_land_type: Option<BasicLandTypeSnapshot>,
     pub(super) chosen_card_name: Option<String>,
 }
 

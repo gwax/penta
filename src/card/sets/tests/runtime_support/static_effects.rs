@@ -361,13 +361,16 @@ pub(in super::super) fn shared_static_applied_effect(
         // A linked-exile grant hands out whatever the exiled creature cards
         // print, so there is nothing here to check ahead of time the way a
         // written-down grant is checked. Each ability it finds already passed
-        // the catalog's own validation as an ability of its own card.
+        // the catalog's own validation as an ability of its own card. "This
+        // land is the chosen type" carries nothing to check either: which
+        // type it is comes from the choice made on the way in.
         AppliedEffectDef::Characteristic(
             CharacteristicOperationDef::Abilities(
                 AbilityOperationDef::AddActivatedAbilitiesOfLinkedExiles
                 | AbilityOperationDef::Remove(_),
             )
-            | CharacteristicOperationDef::PowerToughness(PowerToughnessOperationDef::Switch),
+            | CharacteristicOperationDef::PowerToughness(PowerToughnessOperationDef::Switch)
+            | CharacteristicOperationDef::ChosenBasicLandType,
         ) => true,
     }
 }

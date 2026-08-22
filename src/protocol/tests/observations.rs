@@ -51,6 +51,7 @@ fn observation_with_printed_and_token_permanents() -> PlayerObservation {
                 phased_out: false,
                 types: crate::CardTypeSet::single(crate::CardType::Creature),
                 chosen_creature_type: Some("Werewolf".into()),
+                chosen_basic_land_type: None,
                 chosen_card_name: None,
                 tapped: false,
                 power: Some(4),
@@ -82,6 +83,7 @@ fn observation_with_printed_and_token_permanents() -> PlayerObservation {
                 types: crate::CardTypeSet::single(crate::CardType::Artifact)
                     .with(crate::CardType::Creature),
                 chosen_creature_type: None,
+                chosen_basic_land_type: None,
                 chosen_card_name: None,
                 tapped: false,
                 power: Some(1),

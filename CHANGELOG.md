@@ -353,6 +353,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A permanent can be told which basic land type to be.** "As this land
+  enters, choose a basic land type" joins the card-name and creature-type
+  entry choices, and "this land is the chosen type" is a layer-4 set whose
+  subject nothing could have written down. Observations carry the choice in
+  the additive `chosenBasicLandType`, beside `chosenCreatureType`.
+
+  A land that sets its own type is not thereby silenced. What CR 305.7
+  silences is a land whose types somebody else replaced; an ability cannot
+  be the reason it is itself ignored, or such a land would never be anything
+  at all.
+
 - **A player may be allowed additional land plays.** The turn counts each
   player's land plays instead of flagging the first, and a static ability can
   say how many more than one they get. Counted rather than merely present:

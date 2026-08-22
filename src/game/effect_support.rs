@@ -526,12 +526,17 @@ impl Game {
             // changing. Freezing one into a resolved effect would fix it at
             // whatever the pile held the moment it resolved, so no resolving
             // effect produces this shape.
+            // Neither has a resolved form: one is a static shape, and the
+            // chosen land type is read live off the permanent that made the
+            // choice.
             CharacteristicOperationDef::Abilities(
                 AbilityOperationDef::AddActivatedAbilitiesOfLinkedExiles,
-            ) => return None,
+            )
+            | CharacteristicOperationDef::ChosenBasicLandType => return None,
             CharacteristicOperationDef::BasicLandTypes(operation) => {
                 ResolvedContinuousEffectKind::BasicLandTypes(operation)
             }
+
             CharacteristicOperationDef::CardTypes(operation) => {
                 ResolvedContinuousEffectKind::CardTypes(operation)
             }

@@ -204,6 +204,14 @@ impl Game {
         choice: BattlefieldEntryScalarChoiceDef,
     ) -> (&'static str, Vec<String>) {
         let (prompt, mut choices, fallback) = match choice.list {
+            ScalarChoiceListDef::BasicLandTypes => (
+                "Choose a basic land type",
+                crate::card::BasicLandType::ALL
+                    .into_iter()
+                    .map(|land_type| land_type.subtype().to_owned())
+                    .collect::<Vec<_>>(),
+                crate::card::BasicLandType::Plains.subtype(),
+            ),
             ScalarChoiceListDef::CardNames | ScalarChoiceListDef::NonlandCardNames => {
                 let nonland_only = choice.list == ScalarChoiceListDef::NonlandCardNames;
                 let mut names = self

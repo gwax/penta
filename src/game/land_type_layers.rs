@@ -203,30 +203,44 @@ impl Game {
                 .iter()
                 .copied()
                 .any(Self::applied_effect_contains_land_type_operation),
-            AppliedEffectDef::Characteristic(CharacteristicOperationDef::BasicLandTypes(_)) => true,
+            AppliedEffectDef::Characteristic(
+                CharacteristicOperationDef::BasicLandTypes(_)
+                | CharacteristicOperationDef::ChosenBasicLandType,
+            ) => true,
             AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
         }
     }
 
     /// Whether any candidate setter targets `affected`, before suppressing a
     /// candidate whose own rules text another setter removes.
+    ///
+    /// A land that sets its own type is not one of those candidates. What
+    /// CR 305.7 silences is a land whose types somebody else replaced; an
+    /// ability cannot be the reason it is itself ignored, or Multiversal
+    /// Passage would never be anything at all.
     fn raw_land_type_set_applies(
         &self,
         affected: &Permanent,
         sources: &[(&Permanent, ContinuousEffectTimestamp)],
     ) -> bool {
-        sources.iter().any(|(source, timestamp)| {
-            let mut operations = Vec::new();
-            self.collect_land_type_operations_from_source(
-                source,
-                affected,
-                *timestamp,
-                &mut operations,
-            );
-            operations
-                .iter()
-                .any(|(_, _, operation)| matches!(operation, LandTypeOperation::SetTo(_)))
-        })
+        sources
+            .iter()
+            .filter(|(source, _)| source.card.id != affected.card.id)
+            .any(|(source, timestamp)| {
+                let mut operations = Vec::new();
+                self.collect_land_type_operations_from_source(
+                    source,
+                    affected,
+                    *timestamp,
+                    &mut operations,
+                );
+                operations.iter().any(|(_, _, operation)| {
+                    matches!(
+                        operation,
+                        LandTypeOperation::SetTo(_) | LandTypeOperation::SetToChosen(_)
+                    )
+                })
+            })
     }
 
     pub(super) fn rules_text_abilities_removed(&self, affected: &Permanent) -> bool {
@@ -264,9 +278,12 @@ impl Game {
                 *timestamp,
                 &mut operations,
             );
-            operations
-                .iter()
-                .any(|(_, _, operation)| matches!(operation, LandTypeOperation::SetTo(_)))
+            operations.iter().any(|(_, _, operation)| {
+                matches!(
+                    operation,
+                    LandTypeOperation::SetTo(_) | LandTypeOperation::SetToChosen(_)
+                )
+            })
         })
     }
 
@@ -358,6 +375,7 @@ impl Game {
                 Self::collect_applied_land_type_operations(
                     effect,
                     source_timestamp,
+                    source.chosen_basic_land_type,
                     component_order,
                     operations,
                 );
@@ -369,6 +387,7 @@ impl Game {
     fn collect_applied_land_type_operations(
         effect: AppliedEffectDef,
         source: ContinuousEffectTimestamp,
+        chosen: Option<BasicLandType>,
         component_order: &mut u16,
         operations: &mut Vec<(ContinuousEffectTimestamp, u16, LandTypeOperation)>,
     ) {
@@ -378,6 +397,7 @@ impl Game {
                     Self::collect_applied_land_type_operations(
                         *effect,
                         source,
+                        chosen,
                         component_order,
                         operations,
                     );
@@ -391,6 +411,18 @@ impl Game {
                     .checked_add(1)
                     .expect("one static ability contains at most 65,536 components");
                 operations.push((source, order, Self::resolved_land_type_operation(operation)));
+            }
+            // A permanent that was never told which type to be says nothing
+            // at all, which is what a Multiversal Passage put onto the
+            // battlefield without choosing comes to.
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::ChosenBasicLandType) => {
+                if let Some(chosen) = chosen {
+                    let order = *component_order;
+                    *component_order = component_order
+                        .checked_add(1)
+                        .expect("one static ability contains at most 65,536 components");
+                    operations.push((source, order, LandTypeOperation::SetToChosen(chosen)));
+                }
             }
             AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => {}
         }
@@ -646,56 +678,79 @@ impl Game {
     /// Applies the subtype layer's operations in timestamp order. Split
     /// from the reader above because the two are different jobs: one works
     /// out the starting line, and this one edits it.
-    fn apply_subtype_operations(
+    /// One layer-4 land-subtype operation. Split out of the walk above for
+    /// the source-size budget; the three shapes are the ones CR 305.7 gives
+    /// a land's types.
+    fn apply_basic_land_subtype_operation(
         subtypes: &mut Vec<&'static str>,
-        operations: Vec<(ContinuousEffectTimestamp, u16, SubtypeLayerOperation)>,
+        operation: LandTypeOperation,
     ) {
         fn is_land_subtype(subtype: &str) -> bool {
             LAND_SUBTYPES.contains(&subtype)
         }
 
+        match operation {
+            // One type or several, the set is the same operation: every land
+            // subtype it had goes, and these take their place.
+            LandTypeOperation::SetTo(_) | LandTypeOperation::SetToChosen(_) => {
+                let chosen = [match operation {
+                    LandTypeOperation::SetToChosen(chosen) => chosen,
+                    _ => BasicLandType::Plains,
+                }];
+                let types: &[BasicLandType] = match operation {
+                    LandTypeOperation::SetTo(types) => types,
+                    _ => &chosen,
+                };
+                let mut insertion = subtypes
+                    .iter()
+                    .position(|subtype| is_land_subtype(subtype))
+                    .unwrap_or(0);
+                subtypes.retain(|subtype| !is_land_subtype(subtype));
+                insertion = insertion.min(subtypes.len());
+                for land_type in types {
+                    if subtypes
+                        .iter()
+                        .any(|subtype| BasicLandType::from_subtype(subtype) == Some(*land_type))
+                    {
+                        continue;
+                    }
+                    subtypes.insert(insertion, land_type.subtype());
+                    insertion += 1;
+                }
+            }
+            LandTypeOperation::Add(types) => {
+                let mut insertion = subtypes
+                    .iter()
+                    .position(|subtype| !is_land_subtype(subtype))
+                    .unwrap_or(subtypes.len());
+                for land_type in types {
+                    if subtypes
+                        .iter()
+                        .any(|subtype| BasicLandType::from_subtype(subtype) == Some(*land_type))
+                    {
+                        continue;
+                    }
+                    subtypes.insert(insertion, land_type.subtype());
+                    insertion += 1;
+                }
+            }
+            LandTypeOperation::Remove(types) => {
+                subtypes.retain(|subtype| {
+                    BasicLandType::from_subtype(subtype)
+                        .is_none_or(|land_type| !types.contains(&land_type))
+                });
+            }
+        }
+    }
+
+    fn apply_subtype_operations(
+        subtypes: &mut Vec<&'static str>,
+        operations: Vec<(ContinuousEffectTimestamp, u16, SubtypeLayerOperation)>,
+    ) {
         for (_, _, operation) in operations {
             match operation {
-                SubtypeLayerOperation::BasicLand(LandTypeOperation::SetTo(types)) => {
-                    let mut insertion = subtypes
-                        .iter()
-                        .position(|subtype| is_land_subtype(subtype))
-                        .unwrap_or(0);
-                    subtypes.retain(|subtype| !is_land_subtype(subtype));
-                    insertion = insertion.min(subtypes.len());
-                    for land_type in types {
-                        if subtypes
-                            .iter()
-                            .any(|subtype| BasicLandType::from_subtype(subtype) == Some(*land_type))
-                        {
-                            continue;
-                        }
-                        subtypes.insert(insertion, land_type.subtype());
-                        insertion += 1;
-                    }
-                }
-                SubtypeLayerOperation::BasicLand(LandTypeOperation::Add(types)) => {
-                    let mut insertion = subtypes
-                        .iter()
-                        .position(|subtype| !is_land_subtype(subtype))
-                        .unwrap_or(subtypes.len());
-                    for land_type in types {
-                        if subtypes
-                            .iter()
-                            .any(|subtype| BasicLandType::from_subtype(subtype) == Some(*land_type))
-                        {
-                            continue;
-                        }
-                        subtypes.insert(insertion, land_type.subtype());
-                        insertion += 1;
-                    }
-                }
-                SubtypeLayerOperation::BasicLand(LandTypeOperation::Remove(types)) => {
-                    subtypes.retain(|subtype| {
-                        !types
-                            .iter()
-                            .any(|land_type| land_type.subtype() == *subtype)
-                    });
+                SubtypeLayerOperation::BasicLand(operation) => {
+                    Self::apply_basic_land_subtype_operation(subtypes, operation);
                 }
                 SubtypeLayerOperation::Creature(operation) => {
                     let (types, removes_existing, removes_named) = match operation {

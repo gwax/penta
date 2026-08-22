@@ -207,6 +207,9 @@ impl WebGame {
                     "owner": if permanent.controller == self.human { "human" } else { "opponent" },
                     "chosenCardName": permanent.chosen_card_name.as_deref(),
                     "chosenCreatureType": permanent.chosen_creature_type.as_deref(),
+                    "chosenBasicLandType": permanent
+                        .chosen_basic_land_type
+                        .map(penta::card::BasicLandType::subtype),
                     "tapped": permanent.tapped,
                     "power": permanent.power,
                     "toughness": permanent.toughness,

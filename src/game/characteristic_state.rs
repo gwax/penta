@@ -35,6 +35,10 @@ pub(super) struct BasicLandTypeChange {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum LandTypeOperation {
     SetTo(&'static [BasicLandType]),
+    /// The same layer-4 set, for the one type a permanent was told to be as
+    /// it entered. A chosen type is not something a card could have written
+    /// down, so it cannot ride in the static slice above.
+    SetToChosen(BasicLandType),
     Add(&'static [BasicLandType]),
     Remove(&'static [BasicLandType]),
 }

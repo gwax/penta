@@ -327,6 +327,9 @@ impl Game {
                     self.object_card_name(object.id)
                         .is_some_and(|actual| actual == chosen)
                 }),
+            // Nothing yet asks "is this object the chosen land type"; the
+            // one card that names one reads it as a characteristic instead.
+            BattlefieldEntryChoiceDestinationDef::BasicLandType => false,
             BattlefieldEntryChoiceDestinationDef::CreatureType => chooser
                 .and_then(|permanent| permanent.chosen_creature_type.as_deref())
                 .is_some_and(|chosen| {

@@ -190,6 +190,8 @@ pub struct PermanentObservation {
     pub types: CardTypeSet,
     /// Public choice associated with permanents such as Cavern of Souls.
     pub chosen_creature_type: Option<String>,
+    /// The basic land type this permanent was told to be as it entered.
+    pub chosen_basic_land_type: Option<crate::card::BasicLandType>,
     /// Public card name associated with permanents such as Pithing Needle.
     pub chosen_card_name: Option<String>,
     pub tapped: bool,

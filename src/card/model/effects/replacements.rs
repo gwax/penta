@@ -125,6 +125,8 @@ pub enum ScalarChoiceListDef {
     NonlandCardNames,
     /// Every creature subtype available to the current game.
     CreatureTypes,
+    /// The five basic land types, which are fixed rather than catalog-derived.
+    BasicLandTypes,
 }
 
 /// The field on an entering permanent that receives a scalar choice.
@@ -132,6 +134,10 @@ pub enum ScalarChoiceListDef {
 pub enum BattlefieldEntryChoiceDestinationDef {
     CardName,
     CreatureType,
+    /// A basic land type, which the permanent then *is* rather than merely
+    /// remembers: Multiversal Passage names one on the way in and reads it
+    /// back in layer 4.
+    BasicLandType,
 }
 
 /// A catalog-derived scalar choice made while applying an entry replacement.
@@ -159,6 +165,11 @@ impl BattlefieldEntryScalarChoiceDef {
     pub const CREATURE_TYPE: Self = Self {
         list: ScalarChoiceListDef::CreatureTypes,
         destination: BattlefieldEntryChoiceDestinationDef::CreatureType,
+    };
+
+    pub const BASIC_LAND_TYPE: Self = Self {
+        list: ScalarChoiceListDef::BasicLandTypes,
+        destination: BattlefieldEntryChoiceDestinationDef::BasicLandType,
     };
 }
 

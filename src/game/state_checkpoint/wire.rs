@@ -469,6 +469,10 @@ pub(super) fn parse_battlefield(
                         .get("chosenCreatureType")
                         .and_then(Value::as_str)
                         .map(str::to_owned),
+                    chosen_basic_land_type: shown
+                        .get("chosenBasicLandType")
+                        .and_then(Value::as_str)
+                        .and_then(BasicLandType::from_subtype),
                     chosen_card_name: shown
                         .get("chosenCardName")
                         .and_then(Value::as_str)
@@ -506,6 +510,7 @@ struct PermanentPresentation {
     attacking_band: Option<u8>,
     activated_loyalty_this_turn: bool,
     chosen_creature_type: Option<String>,
+    chosen_basic_land_type: Option<BasicLandType>,
     chosen_card_name: Option<String>,
 }
 
@@ -663,6 +668,7 @@ fn parse_permanent(
         .as_deref()
         .and_then(crate::card::AlternativeCastKindDef::from_label);
     permanent.chosen_creature_type = shown.chosen_creature_type;
+    permanent.chosen_basic_land_type = shown.chosen_basic_land_type;
     permanent.chosen_card_name = shown.chosen_card_name;
     permanent.face_down = state.face_down.map(face_down_characteristics_from_snapshot);
     permanent.turn_up_for_mana_cost = state.turn_up_for_mana_cost;
@@ -934,6 +940,7 @@ pub(super) fn parse_detached_permanent(
             attacking_band: snapshot.attacking_band,
             activated_loyalty_this_turn: snapshot.activated_loyalty_this_turn,
             chosen_creature_type: snapshot.chosen_creature_type.clone(),
+            chosen_basic_land_type: snapshot.chosen_basic_land_type.map(parse_basic_land_type),
             chosen_card_name: snapshot.chosen_card_name.clone(),
         },
         catalog,

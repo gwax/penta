@@ -563,6 +563,7 @@ impl Game {
                 .iter()
                 .any(|phased| phased.card.id == permanent.card.id),
             chosen_creature_type: permanent.chosen_creature_type.clone(),
+            chosen_basic_land_type: permanent.chosen_basic_land_type,
             chosen_card_name: permanent.chosen_card_name.clone(),
             tapped: permanent.tapped,
             power,

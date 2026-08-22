@@ -135,6 +135,10 @@ impl Game {
                         BattlefieldEntryChoiceDestinationDef::CreatureType => {
                             entry.permanent.chosen_creature_type = Some(selected);
                         }
+                        BattlefieldEntryChoiceDestinationDef::BasicLandType => {
+                            entry.permanent.chosen_basic_land_type =
+                                crate::card::BasicLandType::from_subtype(&selected);
+                        }
                     }
                     self.pending_events.push_front(pending);
                     self.continue_pending_events();

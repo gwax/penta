@@ -325,10 +325,13 @@ fn static_object_applied_effect_supported(
                     .all(|effect| static_object_applied_effect_supported(recipient, effect))
         }
         // A switch reads nothing, so there is no value to gate on and no way
-        // for it to re-enter the characteristics walk.
+        // for it to re-enter the characteristics walk. "This land is the
+        // chosen type" reads only the choice its own source made, which is
+        // the same story.
         AppliedEffectDef::Characteristic(
             CharacteristicOperationDef::PowerToughness(PowerToughnessOperationDef::Switch)
-            | CharacteristicOperationDef::Abilities(_),
+            | CharacteristicOperationDef::Abilities(_)
+            | CharacteristicOperationDef::ChosenBasicLandType,
         )
         | AppliedEffectDef::Rule(
             AppliedRuleDef::AssignsNoCombatDamage

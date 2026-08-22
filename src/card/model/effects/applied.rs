@@ -85,6 +85,11 @@ pub enum CharacteristicOperationDef {
     /// Basic land-subtype operations in layer 4. `Set` additionally has the
     /// rules consequences of CR 305.7; `Add` and `Remove` do not.
     BasicLandTypes(SetOperationDef<&'static [BasicLandType]>),
+    /// "This land is the chosen type." The basic land types are set to the
+    /// one this permanent was told to be as it entered, so what it says is a
+    /// layer-4 set with the same rules consequences and a subject nothing
+    /// could have written down.
+    ChosenBasicLandType,
     CardTypes(SetOperationDef<CardTypeSet>),
     Colors(SetOperationDef<ColorSet>),
     CreatureTypes(SetOperationDef<CreatureTypeSetDef>),
@@ -453,6 +458,11 @@ impl AppliedEffectDef {
         Self::Characteristic(CharacteristicOperationDef::BasicLandTypes(
             SetOperationDef::Add(types),
         ))
+    }
+
+    #[must_use]
+    pub const fn set_chosen_basic_land_type() -> Self {
+        Self::Characteristic(CharacteristicOperationDef::ChosenBasicLandType)
     }
 
     #[must_use]

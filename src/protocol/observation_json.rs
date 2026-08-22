@@ -180,6 +180,7 @@ fn permanent_observation_json(
         "phasedOut": permanent.phased_out,
         "chosenCardName": permanent.chosen_card_name.as_deref(),
         "chosenCreatureType": permanent.chosen_creature_type.as_deref(),
+        "chosenBasicLandType": permanent.chosen_basic_land_type.map(crate::card::BasicLandType::subtype),
         "tapped": permanent.tapped,
         "power": permanent.power,
         "toughness": permanent.toughness,

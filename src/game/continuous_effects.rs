@@ -360,7 +360,8 @@ impl Game {
                 .copied()
                 .any(Self::applied_effect_starts_in_type_layer),
             AppliedEffectDef::Characteristic(
-                CharacteristicOperationDef::BasicLandTypes(_)
+                CharacteristicOperationDef::ChosenBasicLandType
+                | CharacteristicOperationDef::BasicLandTypes(_)
                 | CharacteristicOperationDef::CardTypes(_)
                 | CharacteristicOperationDef::CreatureTypes(_)
                 | CharacteristicOperationDef::Subtypes(_),

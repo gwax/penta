@@ -246,7 +246,26 @@ fn every_builtin_land_without_mana_is_named_explicitly() {
                             }) if !types.is_empty()
                         )
                 });
-            !has_intrinsic_source && !has_printed_source && !has_static_land_type_source
+            // "This land is the chosen type" is a mana source too: which
+            // one is not knowable here, but there is always exactly one.
+            let has_chosen_land_type_source =
+                record.rules.ability_clauses().iter().any(|ability| {
+                    ability.is_executable()
+                        && matches!(ability.definition, DeclarativeAbilityDef::Static(_))
+                        && matches!(
+                            ability.declarative_effect(),
+                            Some(EffectDef::StaticApply {
+                                effect: AppliedEffectDef::Characteristic(
+                                    CharacteristicOperationDef::ChosenBasicLandType
+                                ),
+                                ..
+                            })
+                        )
+                });
+            !has_intrinsic_source
+                && !has_printed_source
+                && !has_static_land_type_source
+                && !has_chosen_land_type_source
         })
         .map(|record| record.name)
         .collect::<Vec<_>>();

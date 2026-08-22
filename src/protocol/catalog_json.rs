@@ -174,6 +174,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::Aetherdrift => "aetherdrift",
         CardSet::FinalFantasy => "final-fantasy",
         CardSet::FinalFantasyCommander => "final-fantasy-commander",
+        CardSet::ThroughTheOmenpaths => "through-the-omenpaths",
         CardSet::Token => "token",
     }
 }
