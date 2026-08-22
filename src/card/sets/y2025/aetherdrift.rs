@@ -1,6 +1,6 @@
 //! Aetherdrift cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AddManaEffectDef, BasicLandType, CardArt, CardRules, CardSet,
     CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
@@ -109,6 +109,43 @@ pub(in crate::card::sets) static BRIGHTGLASS_GEARHULK: CardRecord = CardRecord::
         .with_abilities(&BRIGHTGLASS_GEARHULK_ABILITIES),
 );
 
+/// The same verge condition in this cycle's other pair of colours: either
+/// type answers it, so a Volcanic Island is both halves at once.
+static AN_ISLAND_OR_A_MOUNTAIN_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island, BasicLandType::Mountain]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static RIVERPYRE_HAS_ITS_LAND: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: AN_ISLAND_OR_A_MOUNTAIN_YOU_CONTROL,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+// DFT 260 — Riverpyre Verge
+pub(in crate::card::sets) static RIVERPYRE_VERGE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("57a93a71-d77c-417f-85d0-cd420f573331"),
+    "Riverpyre Verge",
+    CardArt::new("57a93a71-d77c-417f-85d0-cd420f573331", "Titus Lunter"),
+    CardSet::Aetherdrift,
+    // Untapped and free either way: the red is unconditional, and the blue
+    // is what the second land in the deck is for.
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {R}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red)),
+        ),
+        AbilityDef::activated_mana_if(
+            "{T}: Add {U}. Activate only if you control an Island or a Mountain.",
+            &[AbilityCostDef::TapSource],
+            &RIVERPYRE_HAS_ITS_LAND,
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Blue)),
+        ),
+    ]),
+);
+
 /// The verge condition: any land you control with either type answers it,
 /// so a Bayou is both halves at once and a land whose types were changed
 /// counts for what it is now rather than what it was printed as.
@@ -147,7 +184,11 @@ pub(in crate::card::sets) static WASTEWOOD_VERGE: CardRecord = CardRecord::new_w
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&STOCK_UP, &BRIGHTGLASS_GEARHULK, &WASTEWOOD_VERGE];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &STOCK_UP,
+    &BRIGHTGLASS_GEARHULK,
+    &RIVERPYRE_VERGE,
+    &WASTEWOOD_VERGE,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

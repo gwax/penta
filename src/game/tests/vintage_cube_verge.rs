@@ -1,4 +1,5 @@
-//! Wastewood Verge: a land whose second colour is conditional.
+//! The verges: lands whose second colour is conditional. Wastewood
+//! Verge stands for the cycle; the others differ only in which two colours.
 
 use super::*;
 
@@ -100,4 +101,43 @@ fn the_black_half_adds_black_when_it_is_offered() {
             .is_some_and(|permanent| permanent.tapped),
         "and it tapped for it",
     );
+}
+
+/// Riverpyre Verge is the same land in the cycle's other pair of colours:
+/// red unconditionally, blue once the deck has supplied the land type.
+#[test]
+fn the_riverpyre_verge_offers_its_own_two_colours() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let verge = game
+        .put_onto_battlefield(PlayerId::One, cards::RIVERPYRE_VERGE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(offered_colors(&game, verge), vec![ManaColor::Red]);
+
+    game.put_onto_battlefield(PlayerId::One, cards::ISLAND)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let mut offered = offered_colors(&game, verge);
+    offered.sort_unstable();
+    let mut expected = vec![ManaColor::Blue, ManaColor::Red];
+    expected.sort_unstable();
+    assert_eq!(offered, expected, "an Island switches the blue half on");
+}
+
+/// And a land with neither of *its* types leaves it alone, even one that
+/// would switch the other verge on.
+#[test]
+fn the_riverpyre_verge_ignores_the_other_cycle_members_types() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let verge = game
+        .put_onto_battlefield(PlayerId::One, cards::RIVERPYRE_VERGE)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::One, cards::SWAMP)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(offered_colors(&game, verge), vec![ManaColor::Red]);
 }
