@@ -4,8 +4,9 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AppliedEffectDef,
     AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CostModificationDef,
-    EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
-    ValueDef, abilities,
+    EffectDef, EffectRecipientDef, GraveyardPlayPermissionDef, ObjectPredicateDef,
+    PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, ResolvedEffectDurationDef, ValueDef,
+    abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -59,6 +60,56 @@ static ZIRDA_BLOCK_COST: [AbilityCostDef; 2] = [
 static A_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
     ObjectPredicateDef::HasType(CardType::Creature),
 )];
+
+/// "A permanent spell with mana value 2 or less." The action is a cast, so a
+/// land card in the graveyard is not among them: lands are played rather
+/// than cast, which is what keeps this from being a Crucible.
+static LURRUS_PERMISSION: PlayRestrictionDef = PlayRestrictionDef::new(
+    PlayActionMatcherDef::CastSpell,
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Artifact),
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::HasType(CardType::Enchantment),
+            ObjectPredicateDef::HasType(CardType::Planeswalker),
+        ]),
+        ObjectPredicateDef::ManaValueAtMost(2),
+    ]),
+);
+
+// IKO 226 — Lurrus of the Dream-Den
+pub(in crate::card::sets) static LURRUS_OF_THE_DREAM_DEN: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("5ad36fb2-c44e-4085-ba0d-54277841ad3a"),
+    "Lurrus of the Dream-Den",
+    CardArt::new("5ad36fb2-c44e-4085-ba0d-54277841ad3a", "Slawomir Maniak"),
+    CardSet::Ikoria,
+    // Three mana for a lifelinking body that turns every cheap permanent in
+    // the graveyard back into a card, one a turn -- which is why the decks
+    // that play him keep their curve at two.
+    CardRules::new_creature(mana_cost!("{1}{W/B}{W/B}"), &["Cat", "Nightmare"], 3, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::not_implemented(
+                "Companion — Each permanent card in your starting deck has mana value 2 or less. \
+                 (If this card is your chosen companion, you may put it into your hand from \
+                 outside the game for {3} as a sorcery.)",
+                "Companion is a deck-construction permission and a play from outside the game, \
+                 neither of which the engine represents; the card is played from a deck like any \
+                 other.",
+            ),
+            abilities::lifelink(),
+            AbilityDef::static_ability(
+                "Once during each of your turns, you may cast a permanent spell with mana value 2 \
+                 or less from your graveyard.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::Controller,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(
+                        GraveyardPlayPermissionDef::once_each_of_your_turns(LURRUS_PERMISSION),
+                    )),
+                },
+            ),
+        ]),
+);
 
 // IKO 233 — Zirda, the Dawnwaker
 pub(in crate::card::sets) static ZIRDA_THE_DAWNWAKER: CardRecord = CardRecord::new(
@@ -155,6 +206,7 @@ pub(in crate::card::sets) static ZAGOTH_TRIOME: CardRecord = CardRecord::new_wit
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPELLEATER_WOLVERINE,
     &RAM_THROUGH,
+    &LURRUS_OF_THE_DREAM_DEN,
     &ZIRDA_THE_DAWNWAKER,
     &INDATHA_TRIOME,
     &KETRIA_TRIOME,

@@ -182,6 +182,7 @@ impl Game {
             creature_died_this_turn: false,
             creatures_died_this_turn: 0,
             linked_exiles: Vec::new(),
+            graveyard_permission_uses: Vec::new(),
             monarch: None,
             ninjutsu_returned_defender: None,
             exile_play_permissions: Vec::new(),

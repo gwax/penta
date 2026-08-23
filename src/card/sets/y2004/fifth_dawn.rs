@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
-    CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement,
+    CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
+    GraveyardPlayPermissionDef, ObjectPredicateDef, PlayActionMatcherDef, PlayRestrictionDef,
+    PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -127,7 +127,7 @@ pub(in crate::card::sets) static CRUCIBLE_OF_WORLDS: CardRecord = CardRecord::ne
         EffectDef::StaticApply {
             recipient: EffectRecipientDef::Controller,
             effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(
-                CRUCIBLE_PERMISSION,
+                GraveyardPlayPermissionDef::unlimited(CRUCIBLE_PERMISSION),
             )),
         },
     )),

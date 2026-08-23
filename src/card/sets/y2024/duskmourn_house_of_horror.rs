@@ -7,12 +7,12 @@ use crate::card::{
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardType, CardTypeSet,
     CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind,
-    CreatureTypeSetDef, EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef, PlayRestrictionDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementConditionDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef, SpellAdditionalCostDef,
-    SpendModeDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    CreatureTypeSetDef, EffectDef, EffectRecipientDef, GraveyardPlayPermissionDef, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementConditionDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef,
+    SpellAdditionalCostDef, SpendModeDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -335,7 +335,9 @@ const WALK_IN_CLOSET_DOOR: AbilityDef = AbilityDef::static_ability(
     "You may play lands from your graveyard.",
     EffectDef::StaticApply {
         recipient: EffectRecipientDef::Controller,
-        effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(CLOSET_PERMISSION)),
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(
+            GraveyardPlayPermissionDef::unlimited(CLOSET_PERMISSION),
+        )),
     },
 );
 
@@ -368,7 +370,9 @@ static CELLAR_EXILES_INSTEAD: AbilityDef = AbilityDef::replacement_for(
 static CELLAR_UNLOCKS: [EffectDef; 2] = [
     EffectDef::Apply {
         recipient: EffectRecipientDef::Controller,
-        effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(CELLAR_PERMISSION)),
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(
+            GraveyardPlayPermissionDef::unlimited(CELLAR_PERMISSION),
+        )),
         duration: ResolvedEffectDurationDef::UntilEndOfTurn,
     },
     EffectDef::Apply {

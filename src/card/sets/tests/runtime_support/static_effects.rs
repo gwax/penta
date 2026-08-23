@@ -451,8 +451,13 @@ fn shared_static_applied_rule(recipient: EffectRecipientDef, rule: AppliedRuleDe
                     DeclarativeAbilityDef::AlternativeCast(_)
                 )
         }
+        // The graveyard permission carries what bounds it as well as what it
+        // names, and both halves are read where the play is offered.
+        AppliedRuleDef::MayPlayFromGraveyard(permission) => {
+            matches!(recipient.0, EffectRecipientSetDef::Players(_))
+                && shared_object_predicate(permission.restriction.object)
+        }
         AppliedRuleDef::CannotPlay(restriction)
-        | AppliedRuleDef::MayPlayFromGraveyard(restriction)
         | AppliedRuleDef::MayPlayFromTopOfLibrary { restriction, .. } => {
             matches!(recipient.0, EffectRecipientSetDef::Players(_))
                 && shared_object_predicate(restriction.object)

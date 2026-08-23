@@ -496,6 +496,11 @@ impl Game {
                 .iter()
                 .map(|(source, card)| [source.0, card.0])
                 .collect(),
+            graveyard_permission_uses: self
+                .graveyard_permission_uses
+                .iter()
+                .map(|(source, uses)| [source.0, u32::from(*uses)])
+                .collect(),
             damage_cannot_be_prevented_this_turn: self.damage_cannot_be_prevented_this_turn,
             exile_play_permissions: self
                 .exile_play_permissions
@@ -826,6 +831,16 @@ impl Game {
                 .linked_exiles
                 .iter()
                 .map(|pair| (GameObjectId(pair[0]), GameObjectId(pair[1])))
+                .collect(),
+            graveyard_permission_uses: checkpoint
+                .graveyard_permission_uses
+                .iter()
+                .map(|pair| {
+                    (
+                        GameObjectId(pair[0]),
+                        u16::try_from(pair[1]).unwrap_or(u16::MAX),
+                    )
+                })
                 .collect(),
             sorcery_flash_grants: checkpoint.sorcery_flash_grants,
             turn_phase_queue: checkpoint

@@ -117,6 +117,11 @@ pub(super) struct GameSnapshot {
     #[serde(default, skip_serializing_if = "is_zero_u16")]
     pub(super) creatures_died_this_turn: u16,
     pub(super) linked_exiles: Vec<[u32; 2]>,
+    /// Uses of a limited graveyard permission this turn. Additive: a
+    /// checkpoint written before it existed restores a turn in which nothing
+    /// had been played that way yet.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) graveyard_permission_uses: Vec<[u32; 2]>,
     /// Additive: a checkpoint written before the rule existed restores as
     /// false, which is what every ordinary turn means anyway.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]

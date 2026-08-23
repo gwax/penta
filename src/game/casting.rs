@@ -458,6 +458,12 @@ impl Game {
             sacrifices,
         );
         let alternative_kind = self.cast_alternative_kind(player, card_id, &signature, offer);
+        // A cast from a graveyard that is not one of the card's own printed
+        // ways of being cast is happening under somebody's permission, and a
+        // permission that allows only so many spends one here.
+        if source_zone == CastSourceZone::Graveyard && alternative_kind.is_none() {
+            self.record_graveyard_permission_use_for_cast(player, card_id, &signature);
+        }
         self.take_answered_cast_offer(card_id);
         // Both exile the card rather than burying it wherever it would otherwise have gone.
         let cast_via_flashback = matches!(
@@ -862,6 +868,33 @@ impl Game {
         }
 
         Some((stack_object, targets))
+    }
+
+    /// The graveyard-permission bookkeeping for a cast, resolved from the
+    /// card and the play option the signature names.
+    fn record_graveyard_permission_use_for_cast(
+        &mut self,
+        player: PlayerId,
+        card_id: GameObjectId,
+        signature: &CastSignature,
+    ) {
+        let Some(card) = self.players[player.index()]
+            .graveyard
+            .iter()
+            .find(|candidate| candidate.id == card_id)
+            .cloned()
+        else {
+            return;
+        };
+        let Some(option) = self
+            .catalog
+            .get(card.definition)
+            .and_then(|definition| definition.play_option(signature.play_option()))
+            .cloned()
+        else {
+            return;
+        };
+        self.record_graveyard_permission_use(&card, player, &option);
     }
 
     const fn additional_cost_destination(spend: SpendModeDef, from: ZoneKind) -> ZoneKind {

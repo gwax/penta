@@ -196,9 +196,9 @@ pub enum AppliedRuleDef {
     CannotBeCountered,
     /// "You may play lands from your graveyard." The mirror of
     /// [`Self::CannotPlay`]: a permission rather than a prohibition, matched
-    /// against the same action and object the prohibition names, so a card
-    /// that widens it to spells later says so in the same vocabulary.
-    MayPlayFromGraveyard(PlayRestrictionDef),
+    /// against the same action and object the prohibition names, plus
+    /// whatever bounds how often it may be used.
+    MayPlayFromGraveyard(GraveyardPlayPermissionDef),
     /// "Each nonland card in your graveyard has escape. The escape cost is
     /// equal to the card's mana cost plus exile three other cards from your
     /// graveyard."
@@ -440,6 +440,43 @@ pub enum TopOfLibraryCostDef {
     /// The mana cost goes away and the life takes its place, so a spell
     /// nobody has the life for is not castable this way at all.
     LifeEqualToManaValue,
+}
+
+/// A permission to play cards out of a graveyard, and what bounds it.
+///
+/// Crucible's line is unbounded: as many lands as your land drops allow, on
+/// anybody's turn. Lurrus prints the other shape -- one such spell, and only
+/// during your own turns -- and the difference belongs to the permission
+/// rather than to what it names.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct GraveyardPlayPermissionDef {
+    pub restriction: PlayRestrictionDef,
+    /// How many plays each qualifying turn allows. `None` is as many as the
+    /// rest of the rules permit.
+    pub per_turn: Option<u8>,
+    /// Whether it opens only on its controller's own turns.
+    pub your_turns_only: bool,
+}
+
+impl GraveyardPlayPermissionDef {
+    #[must_use]
+    pub const fn unlimited(restriction: PlayRestrictionDef) -> Self {
+        Self {
+            restriction,
+            per_turn: None,
+            your_turns_only: false,
+        }
+    }
+
+    /// "Once during each of your turns, you may cast ..."
+    #[must_use]
+    pub const fn once_each_of_your_turns(restriction: PlayRestrictionDef) -> Self {
+        Self {
+            restriction,
+            per_turn: Some(1),
+            your_turns_only: true,
+        }
+    }
 }
 
 impl PlayRestrictionDef {

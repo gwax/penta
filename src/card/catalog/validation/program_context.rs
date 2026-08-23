@@ -268,9 +268,11 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
         }
         AppliedEffectDef::Rule(
             AppliedRuleDef::CannotPlay(restriction)
-            | AppliedRuleDef::MayPlayFromGraveyard(restriction)
             | AppliedRuleDef::MayPlayFromTopOfLibrary { restriction, .. },
         ) => static_object_predicate_supported(restriction.object),
+        AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(permission)) => {
+            static_object_predicate_supported(permission.restriction.object)
+        }
         // Read where a graveyard cast is enumerated, by the same walk that
         // answers the permissions above.
         AppliedEffectDef::Rule(AppliedRuleDef::GrantsAlternativeCastFromGraveyard {

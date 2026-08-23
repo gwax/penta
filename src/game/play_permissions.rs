@@ -12,13 +12,16 @@ use super::{
     AppliedEffectDef, AppliedRuleDef, CardInstance, CharacteristicContext, DeclarativeAbilityDef,
     Game, GameObjectId, PlayActionKind, PlayOptionDef, PlayerId,
 };
-use crate::card::{AbilityDef, ObjectPredicateDef, PlayRestrictionDef, TopOfLibraryCostDef};
+use crate::card::{
+    AbilityDef, GraveyardPlayPermissionDef, ObjectPredicateDef, PlayRestrictionDef,
+    TopOfLibraryCostDef,
+};
 
 /// One printed permission to play a card from a zone the ordinary rules
 /// would not allow, and what playing it that way costs.
 #[derive(Clone, Copy)]
 pub(super) enum PlayPermission {
-    Graveyard(PlayRestrictionDef),
+    Graveyard(GraveyardPlayPermissionDef),
     TopOfLibrary {
         restriction: PlayRestrictionDef,
         cost: TopOfLibraryCostDef,
@@ -35,15 +38,64 @@ pub(super) enum PlayPermission {
 impl PlayPermission {
     const fn restriction(self) -> Option<PlayRestrictionDef> {
         match self {
-            Self::Graveyard(restriction) | Self::TopOfLibrary { restriction, .. } => {
-                Some(restriction)
-            }
+            Self::Graveyard(permission) => Some(permission.restriction),
+            Self::TopOfLibrary { restriction, .. } => Some(restriction),
             Self::GraveyardAlternativeCast { .. } => None,
         }
     }
 }
 
+impl PlayPermission {
+    /// Whether the limits a permission carries leave it open right now.
+    /// Only the graveyard one has any: "once during each of your turns" is
+    /// two bounds at once, and neither is about what the permission names.
+    fn is_open_now(self, game: &Game, player: PlayerId, source: GameObjectId) -> bool {
+        let Self::Graveyard(permission) = self else {
+            return true;
+        };
+        if permission.your_turns_only && game.active_player != player {
+            return false;
+        }
+        permission
+            .per_turn
+            .is_none_or(|allowed| game.graveyard_permission_uses(source) < u16::from(allowed))
+    }
+}
+
 impl Game {
+    /// How many times a permission granted by this source has been used this
+    /// turn.
+    pub(super) fn graveyard_permission_uses(&self, source: GameObjectId) -> u16 {
+        self.graveyard_permission_uses
+            .iter()
+            .find(|(object, _)| *object == source)
+            .map_or(0, |(_, uses)| *uses)
+    }
+
+    /// Records a play made under a limited graveyard permission. The one that
+    /// authorized it is the first limited one that names the card, since an
+    /// unlimited permission covering the same play would have been used
+    /// instead and nothing would be spent.
+    pub(super) fn record_graveyard_permission_use(
+        &mut self,
+        card: &CardInstance,
+        player: PlayerId,
+        option: &PlayOptionDef,
+    ) {
+        let Some(source) = self.limited_graveyard_permission_source(card, player, option) else {
+            return;
+        };
+        if let Some(entry) = self
+            .graveyard_permission_uses
+            .iter_mut()
+            .find(|(object, _)| *object == source)
+        {
+            entry.1 = entry.1.saturating_add(1);
+        } else {
+            self.graveyard_permission_uses.push((source, 1));
+        }
+    }
+
     /// Whether this player may play this card out of a graveyard right now.
     pub(super) fn graveyard_play_is_permitted(
         &self,
@@ -134,6 +186,63 @@ impl Game {
         found
     }
 
+    /// The source of the limited permission a play would spend, when no
+    /// unlimited one covers the same play.
+    fn limited_graveyard_permission_source(
+        &self,
+        card: &CardInstance,
+        player: PlayerId,
+        option: &PlayOptionDef,
+    ) -> Option<GameObjectId> {
+        let mut limited = None;
+        let _ = self.visit_play_permissions(player, |source, permission| {
+            let PlayPermission::Graveyard(graveyard) = permission else {
+                return ControlFlow::Continue(());
+            };
+            if !self.permission_names_play(card, player, option, graveyard.restriction, source) {
+                return ControlFlow::Continue(());
+            }
+            if graveyard.per_turn.is_none() {
+                limited = None;
+                return ControlFlow::Break(());
+            }
+            if limited.is_none() && permission.is_open_now(self, player, source) {
+                limited = Some(source);
+            }
+            ControlFlow::Continue(())
+        });
+        limited
+    }
+
+    /// Whether a restriction names this card and this way of playing it.
+    fn permission_names_play(
+        &self,
+        card: &CardInstance,
+        player: PlayerId,
+        option: &PlayOptionDef,
+        restriction: PlayRestrictionDef,
+        source: GameObjectId,
+    ) -> bool {
+        let context = match option.action {
+            PlayActionKind::CastSpell => CharacteristicContext::Stack {
+                form: option.form.clone(),
+            },
+            PlayActionKind::PlayLand => CharacteristicContext::Hand,
+        };
+        let Some(object) =
+            self.printed_trigger_event_object(card.id, card.definition, player, &context)
+        else {
+            return false;
+        };
+        restriction.action.matches(option.action)
+            && self.trigger_object_matches(
+                restriction.object,
+                &object,
+                source,
+                option.action == PlayActionKind::CastSpell,
+            )
+    }
+
     /// The first live permission that names this card and this play option,
     /// as whatever `wanted` reads off it.
     fn matching_play_permission<T>(
@@ -161,7 +270,8 @@ impl Game {
             let Some(restriction) = permission.restriction() else {
                 return ControlFlow::Continue(());
             };
-            if restriction.action.matches(option.action)
+            if permission.is_open_now(self, player, source)
+                && restriction.action.matches(option.action)
                 && self.trigger_object_matches(
                     restriction.object,
                     &object,
@@ -248,8 +358,8 @@ impl Game {
                     Self::visit_play_permission_components(*effect, visitor);
                 }
             }
-            AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(restriction)) => {
-                visitor(PlayPermission::Graveyard(restriction));
+            AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(permission)) => {
+                visitor(PlayPermission::Graveyard(permission));
             }
             AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromTopOfLibrary {
                 restriction,

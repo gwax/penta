@@ -809,6 +809,11 @@ pub struct Game {
     /// Cards exiled by an object that promises to bring them back, paired
     /// with whatever exiled them. Oblivion Ring is the shape.
     linked_exiles: Vec<(GameObjectId, GameObjectId)>,
+    /// How many plays each limited graveyard permission has been used for
+    /// this turn. "Once during each of your turns" is a bound on the
+    /// permission rather than on the card it names, so it is counted against
+    /// whatever granted it and cleared as the turn does.
+    graveyard_permission_uses: Vec<(GameObjectId, u16)>,
     /// Which players have had a permanent leave the battlefield from under
     /// their control this turn, which is what revolt asks (CR 702.121a). The
     /// board afterwards cannot tell: a permanent that left and was replaced
