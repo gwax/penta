@@ -846,6 +846,29 @@ impl Game {
         ManaColor::Green,
     ];
 
+    /// The qualities "protection from colorless or from the color of your
+    /// choice" offers, in the order the decision numbers them. Colourless
+    /// goes last so the five-colour indices keep their meaning.
+    pub(super) const CHOOSABLE_COLORS_WITH_COLORLESS: [ManaColor; 6] = [
+        ManaColor::White,
+        ManaColor::Blue,
+        ManaColor::Black,
+        ManaColor::Red,
+        ManaColor::Green,
+        ManaColor::Colorless,
+    ];
+
+    /// What one colour-choice operation may name.
+    pub(super) fn choosable_qualities(operation: ColorChoiceOperationDef) -> &'static [ManaColor] {
+        match operation {
+            ColorChoiceOperationDef::ProtectionFromChosenColor
+            | ColorChoiceOperationDef::BecomesChosenColor => &Self::CHOOSABLE_COLORS,
+            ColorChoiceOperationDef::ProtectionFromChosenColorOrColorless => {
+                &Self::CHOOSABLE_COLORS_WITH_COLORLESS
+            }
+        }
+    }
+
     /// Offers one colour of a run of "add one mana of any color for each ...".
     /// Each mana is named separately, so the run is answered one at a time
     /// and this re-queues itself until it is spent.
@@ -919,12 +942,12 @@ impl Game {
         operation: ColorChoiceOperationDef,
         duration: ResolvedEffectDurationDef,
     ) {
-        let options = Self::CHOOSABLE_COLORS
-            .into_iter()
+        let options = Self::choosable_qualities(operation)
+            .iter()
             .enumerate()
             .map(|(index, color)| DecisionOption {
-                id: u32::try_from(index).expect("five colours fit u32"),
-                label: Self::color_label(color).to_owned(),
+                id: u32::try_from(index).expect("six qualities fit u32"),
+                label: Self::color_label(*color).to_owned(),
                 card: None,
                 members: Vec::new(),
                 ability_text: None,

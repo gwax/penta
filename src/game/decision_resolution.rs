@@ -117,7 +117,7 @@ impl Game {
                 let Some(index) = options
                     .first()
                     .and_then(|option| usize::try_from(*option).ok())
-                    .filter(|index| *index < Self::CHOOSABLE_COLORS.len())
+                    .filter(|index| *index < Self::choosable_qualities(operation).len())
                 else {
                     return;
                 };

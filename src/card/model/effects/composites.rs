@@ -49,6 +49,11 @@ pub struct ChooseDef {
 pub enum ColorChoiceOperationDef {
     /// Gain protection from the chosen colour.
     ProtectionFromChosenColor,
+    /// The same, with colourless among the choices. "Protection from
+    /// colorless or from the color of your choice" is one choice of six
+    /// rather than a colour choice with a rider: colourless is a quality a
+    /// source has by having no colour, and the player picks it or a colour.
+    ProtectionFromChosenColorOrColorless,
     /// Become the chosen colour, replacing whatever colours it had.
     BecomesChosenColor,
 }

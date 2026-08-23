@@ -4,10 +4,11 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, CounterKind, DiscardFollowUpDef, DiscardSelectionDef,
-    EffectDef, EffectRecipientDef, EmblemCharacteristics, ExilePlayDurationDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, SpellAdditionalCostDef, SpendModeDef, TokenCharacteristics, TriggerConditionDef,
+    CardSet, CardSupertype, CardType, ColorChoiceOperationDef, CounterKind, DiscardFollowUpDef,
+    DiscardSelectionDef, EffectDef, EffectRecipientDef, EmblemCharacteristics,
+    ExilePlayDurationDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
+    SpellAdditionalCostDef, SpendModeDef, TokenCharacteristics, TriggerConditionDef,
     TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::ObjectSetBindingIndex;
@@ -112,14 +113,43 @@ pub(in crate::card::sets) static EPHEMERATE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+/// "Another target creature you control": she may not protect herself, which
+/// is the whole difference between her and her mother.
+static ANOTHER_CREATURE_YOU_CONTROL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
+static GIVER_OF_RUNES_COST: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
 // MH1 13 — Giver of Runes
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static GIVER_OF_RUNES: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4e117771-5a8b-4812-b487-32ba34b7f724"),
     "Giver of Runes",
-    crate::card::CardArt::new("4e117771-5a8b-4812-b487-32ba34b7f724", "Seb McKinnon"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("4e117771-5a8b-4812-b487-32ba34b7f724", "Seb McKinnon"),
+    CardSet::ModernHorizons1,
+    // Mother of Runes who cannot save herself, and in exchange answers the
+    // colourless removal her mother could not.
+    CardRules::new_creature(mana_cost!("{W}"), &["Kor", "Cleric"], 1, 2).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: Another target creature you control gains protection from colorless or from \
+             the color of your choice until end of turn.",
+            &GIVER_OF_RUNES_COST,
+            &ANOTHER_CREATURE_YOU_CONTROL,
+            EffectDef::ChooseColor {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                operation: ColorChoiceOperationDef::ProtectionFromChosenColorOrColorless,
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
 );
 
 // MH1 24 — Rhox Veteran

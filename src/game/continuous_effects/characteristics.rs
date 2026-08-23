@@ -211,6 +211,17 @@ impl Game {
         permanent: &Permanent,
         source_colors: [bool; 5],
     ) -> bool {
+        // CR 702.16: colourless is a quality like any other, and the one a
+        // source has by having no colour at all. So the match here is the
+        // absence of every colour rather than the presence of one.
+        if source_colors.iter().all(|has_color| !has_color)
+            && self.permanent_has_executable_keyword(
+                permanent,
+                KeywordAbility::ProtectionFrom(ManaColor::Colorless),
+            )
+        {
+            return true;
+        }
         [
             ManaColor::White,
             ManaColor::Blue,

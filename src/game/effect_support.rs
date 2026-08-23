@@ -29,12 +29,13 @@ impl Game {
     /// One protection ability per colour, so the chosen one has a static
     /// grant to point at. A granted ability is borrowed for the life of the
     /// game, which a colour picked at resolution cannot supply on its own.
-    const PROTECTION_FROM_COLOR: [AbilityDef; 5] = [
+    const PROTECTION_FROM_COLOR: [AbilityDef; 6] = [
         abilities::protection_from(ManaColor::White),
         abilities::protection_from(ManaColor::Blue),
         abilities::protection_from(ManaColor::Black),
         abilities::protection_from(ManaColor::Red),
         abilities::protection_from(ManaColor::Green),
+        abilities::protection_from(ManaColor::Colorless),
     ];
 
     /// The single-colour sets, in the same order the choice offers them.
@@ -61,7 +62,8 @@ impl Game {
         index: usize,
     ) {
         let effect = match operation {
-            ColorChoiceOperationDef::ProtectionFromChosenColor => {
+            ColorChoiceOperationDef::ProtectionFromChosenColor
+            | ColorChoiceOperationDef::ProtectionFromChosenColorOrColorless => {
                 AppliedEffectDef::add_ability(&Self::PROTECTION_FROM_COLOR[index])
             }
             ColorChoiceOperationDef::BecomesChosenColor => {
