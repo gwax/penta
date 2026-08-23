@@ -1,7 +1,7 @@
 //! The Lord of the Rings: Tales of Middle-earth cards cataloged for the
 //! Vintage Cube pool.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
@@ -204,6 +204,56 @@ static HALFLING_MANA_SPEND_EFFECTS: [ManaSpendEffectDef; 1] =
         AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
     )];
 
+static OLIPHAUNT_TRAMPLE: AbilityDef = abilities::trample();
+
+/// What the charge lends: the same trample the Oliphaunt already has, and
+/// two more power to push it through with.
+static OLIPHAUNT_CHARGE: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(0)),
+    AppliedEffectDef::add_ability(&OLIPHAUNT_TRAMPLE),
+];
+
+/// "Another": the Oliphaunt cannot lend itself the bonus, which is why the
+/// trigger does nothing when it attacks alone.
+static ANOTHER_CREATURE_YOU_CONTROL: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+    )];
+
+// LTR 139 — Oliphaunt
+pub(in crate::card::sets) static OLIPHAUNT: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("6989018c-37b1-4282-a4af-9cc97f160b4d"),
+    "Oliphaunt",
+    CardArt::new("6989018c-37b1-4282-a4af-9cc97f160b4d", "John Di Giovanni"),
+    CardSet::LordOfTheRings,
+    // Six mana is not what the card is for either. Mountaincycling is: one
+    // mana from hand, and the Oliphaunt becomes the land the draw did not
+    // give you.
+    CardRules::new_creature(mana_cost!("{5}{R}"), &["Elephant"], 6, 4).with_abilities(&[
+        abilities::trample(),
+        AbilityDef::triggered_with_targets(
+            "Whenever this creature attacks, another target creature you control gets +2/+0 and \
+             gains trample until end of turn.",
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
+            &ANOTHER_CREATURE_YOU_CONTROL,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Composite(&OLIPHAUNT_CHARGE),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        abilities::typecycling(
+            "Mountaincycling {1} ({1}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)",
+            mana_cost!("{1}"),
+            ObjectPredicateDef::Subtype("Mountain"),
+        ),
+    ]),
+);
+
 // LTR 158 — Delighted Halfling
 pub(in crate::card::sets) static DELIGHTED_HALFLING: CardRecord = CardRecord::new_with_legacy_id(
     2153,
@@ -321,6 +371,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LORIEN_REVEALED,
     &STERN_SCOLDING,
     &ORCISH_BOWMASTERS,
+    &OLIPHAUNT,
     &DELIGHTED_HALFLING,
     &GENEROUS_ENT,
     &FLAME_OF_ANOR,
