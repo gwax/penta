@@ -899,6 +899,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             | AlternativeCastKindDef::WithoutPayingManaCost
             | AlternativeCastKindDef::Foretell
             | AlternativeCastKindDef::Escape
+            | AlternativeCastKindDef::Retrace
             | AlternativeCastKindDef::Impending
             | AlternativeCastKindDef::Dash
             | AlternativeCastKindDef::Warp

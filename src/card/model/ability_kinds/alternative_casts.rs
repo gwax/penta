@@ -68,6 +68,10 @@ pub enum AlternativeCastKindDef {
     /// card is not exiled afterwards, so a creature that escaped and later
     /// dies may escape again.
     Escape,
+    /// Retrace (CR 702.81a): cast from a graveyard for its own cost plus a
+    /// discarded land. Like escape the card is not exiled afterwards, which
+    /// is what makes a land-heavy hand into a repeatable spell.
+    Retrace,
     /// Cast for its warp cost. Like a kicker it is an ordinary cast from
     /// hand for a different price; what it changes is that the permanent is
     /// exiled at the beginning of the next end step and may be cast again
@@ -147,6 +151,7 @@ impl AlternativeCastKindDef {
             Self::Impending => "Impending",
             Self::Dash => "Dash",
             Self::Warp => "Warp",
+            Self::Retrace => "Retrace",
             Self::Foretell => "Foretell",
             Self::WithoutPayingManaCost => "Without paying its mana cost",
             Self::FaceDown { label, .. } => label,
@@ -163,6 +168,7 @@ impl AlternativeCastKindDef {
             Self::Impending,
             Self::Dash,
             Self::Warp,
+            Self::Retrace,
             Self::WithoutPayingManaCost,
             Self::Flashback,
             Self::Overload,
@@ -212,6 +218,12 @@ impl AlternativeCastAbilityDef {
                     "Dash {mana_cost} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)",
                 )
             }
+            (AlternativeCastKindDef::Retrace, _) => self.stack_text.map_or_else(
+                || {
+                    "Retrace (You may cast this card from your graveyard by discarding a land card in addition to paying its other costs.)".into()
+                },
+                std::borrow::ToOwned::to_owned,
+            ),
             (AlternativeCastKindDef::Escape, _) => self.stack_text.map_or_else(
                 || "Escape (You may cast this card from your graveyard for its escape cost.)".into(),
                 std::borrow::ToOwned::to_owned,

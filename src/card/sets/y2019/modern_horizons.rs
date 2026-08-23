@@ -5,10 +5,10 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules,
     CardSet, CardSupertype, CardType, CounterKind, EffectDef, EffectRecipientDef,
-    ExilePlayDurationDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetDef, PlayerRefDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef,
-    TokenCharacteristics, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    EmblemCharacteristics, ExilePlayDurationDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, SpellAdditionalCostDef,
+    SpendModeDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -557,6 +557,106 @@ static FARMSTEAD_GLEANER_ABILITIES: [AbilityDef; 2] = [
     ),
 ];
 
+/// Retrace's own cost: the card's mana cost, plus a land out of your hand.
+/// Discarding is what an ordinary hand cost does, so nothing else has to be
+/// said about how the land is spent.
+static DISCARD_A_LAND: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::HasType(CardType::Land),
+    ZoneKind::Hand,
+    1,
+);
+
+static RETRACE: AbilityDef = AbilityDef::alternative_cast_for_card_mana_cost(
+    AlternativeCastKindDef::Retrace,
+    Some(
+        "Retrace (You may cast this card from your graveyard by discarding a land card in \
+         addition to paying its other costs.)",
+    ),
+    EffectDef::None,
+)
+.with_alternative_additional_cost(&DISCARD_A_LAND);
+
+static AN_INSTANT_OR_SORCERY_CARD: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Instant),
+    ObjectPredicateDef::HasType(CardType::Sorcery),
+]);
+
+static WRENN_EMBLEM_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+    "Instant and sorcery cards in your graveyard have retrace.",
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::You)),
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::GrantsAlternativeCastFromGraveyard {
+            object: AN_INSTANT_OR_SORCERY_CARD,
+            ability: &RETRACE,
+        }),
+    },
+)];
+
+static WRENN_EMBLEM: EmblemCharacteristics =
+    EmblemCharacteristics::new("Wrenn and Six emblem", &WRENN_EMBLEM_ABILITIES);
+
+/// "Up to one target land card from your graveyard": a Wrenn with an empty
+/// graveyard still ticks up.
+static UP_TO_ONE_LAND_IN_YOUR_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Land),
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: Some(PlayerRelation::You),
+    },
+    1,
+)];
+
+static WRENN_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::activated_with_targets(
+        "+1: Return up to one target land card from your graveyard to your hand.",
+        &[AbilityCostDef::Loyalty(1)],
+        &UP_TO_ONE_LAND_IN_YOUR_GRAVEYARD,
+        EffectDef::MoveToZone {
+            counters: None,
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            zone: ZoneKind::Hand,
+            placement: ZonePlacement::Top,
+            arrival_effect: None,
+            attachment: None,
+            controller: None,
+        },
+    ),
+    AbilityDef::activated_with_targets(
+        "−1: This planeswalker deals 1 damage to any target.",
+        &[AbilityCostDef::Loyalty(-1)],
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::AnyTarget,
+        )],
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    AbilityDef::activated(
+        "−7: You get an emblem with \"Instant and sorcery cards in your graveyard have retrace.\" \
+         (You may cast instant and sorcery cards from your graveyard by discarding a land card in \
+         addition to paying their other costs.)",
+        &[AbilityCostDef::Loyalty(-7)],
+        EffectDef::CreateEmblem {
+            emblem: WRENN_EMBLEM,
+        },
+    ),
+];
+
+// MH1 217 — Wrenn and Six
+pub(in crate::card::sets) static WRENN_AND_SIX: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("4a706ecf-3277-40e3-871c-4ba4ead16e20"),
+    "Wrenn and Six",
+    CardArt::new("4a706ecf-3277-40e3-871c-4ba4ead16e20", "Chase Stone"),
+    CardSet::ModernHorizons1,
+    // Two mana that buys back a fetchland every turn, pings something on the
+    // way, and eventually turns the graveyard into a second hand.
+    CardRules::new_planeswalker(mana_cost!("{R}{G}"), &["Wrenn"], 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&WRENN_ABILITIES),
+);
+
 // MH1 222 — Farmstead Gleaner
 pub(in crate::card::sets) static FARMSTEAD_GLEANER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("edafd52f-2dda-4981-baee-404f47ee8969"),
@@ -603,6 +703,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TRUMPETING_HERD,
     &WINDING_WAY,
     &FALLEN_SHINOBI,
+    &WRENN_AND_SIX,
     &FARMSTEAD_GLEANER,
     &SUNBAKED_CANYON,
 ];

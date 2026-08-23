@@ -432,6 +432,7 @@ mod vintage_cube_vote;
 mod vintage_cube_walk_in_closet;
 mod vintage_cube_walking_ballista;
 mod vintage_cube_worldspine_wurm;
+mod vintage_cube_wrenn_and_six;
 mod vintage_cube_zirda;
 mod wards;
 mod while_source_tapped;

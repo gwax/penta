@@ -329,6 +329,7 @@ impl Game {
                 Some(
                     AlternativeCastKindDef::Flashback
                         | AlternativeCastKindDef::Escape
+                        | AlternativeCastKindDef::Retrace
                         | AlternativeCastKindDef::WithoutPayingManaCost
                 ),
             )
