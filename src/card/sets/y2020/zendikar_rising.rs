@@ -3,9 +3,10 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AddManaEffectDef, AlternativeCastKindDef, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, ComparisonDef, ControlDurationDef, EffectDef,
+    CardSet, CardSupertype, CardType, ComparisonDef, ControlDurationDef, CounterKind, EffectDef,
     EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
-    PlayerRelation, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -274,14 +275,40 @@ pub(in crate::card::sets) static OMNATH_LOCUS_OF_CREATION: CardRecord =
             .with_abilities(&OMNATH_ABILITIES),
     );
 
+/// "Target creature you control" -- including herself, which is what makes
+/// an unanswered Aspirant a clock rather than a lord.
+static A_CREATURE_YOU_CONTROL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+    ]),
+)];
+
 // ZNR 319 — Luminarch Aspirant
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static LUMINARCH_ASPIRANT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ebe9427d-068f-487c-9263-b40366a164bc"),
     "Luminarch Aspirant",
-    crate::card::CardArt::new("ebe9427d-068f-487c-9263-b40366a164bc", "Mads Ahm"),
-    crate::card::CardSet::ZendikarRising,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("ebe9427d-068f-487c-9263-b40366a164bc", "Mads Ahm"),
+    CardSet::ZendikarRising,
+    // Two mana that adds a counter every turn it survives, before attackers
+    // are declared -- so the counter is already on whatever is about to
+    // attack or block.
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Cleric"], 1, 1).with_ability(
+        AbilityDef::triggered_with_targets(
+            "At the beginning of combat on your turn, put a +1/+1 counter on target creature you \
+             control.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::BeginningOfCombat,
+                player: PlayerRelation::You,
+            },
+            &A_CREATURE_YOU_CONTROL,
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ),
 );
 
 // ZNR 335 — Thieving Skydiver (alternate printing)
