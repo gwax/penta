@@ -206,6 +206,19 @@ pub enum DiscardSelectionDef {
     RandomMatching(&'static ObjectPredicateDef),
 }
 
+/// What a permission to play an exiled card asks for where it is used.
+///
+/// A closed vocabulary rather than a general condition: the permission
+/// outlives the resolution that granted it, so what it asks has to be
+/// something a checkpoint can write down and read back.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ExilePlayConditionDef {
+    /// "During any turn you attacked with a Rogue." Read off the creatures
+    /// that attacked this turn, so a Rogue that attacked and then died is
+    /// not among them.
+    AttackedWithSubtypeThisTurn(&'static str),
+}
+
 /// How long a permission to play an exiled card lasts.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ExilePlayDurationDef {
@@ -214,4 +227,8 @@ pub enum ExilePlayDurationDef {
     /// "Until your next end step", which reaches into the holder's own turn
     /// when the card was exiled on somebody else's.
     UntilYourNextEndStep,
+    /// For as long as the card is in exile. What bounds it is not a turn but
+    /// whatever the clause granting it says: Robber of the Rich hands one
+    /// out that only works on the turns you attacked with a Rogue.
+    WhileExiled,
 }

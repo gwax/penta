@@ -26,7 +26,7 @@ pub(crate) use record::{AbilityPolicyHint, CardAbilityBinding};
 pub use behavior::CardBehavior;
 pub use catalog::{CardCatalog, CatalogError, EffectSubjectKind, GrantedAbilityValidationError};
 pub use characteristics::{CharacteristicContext, CharacteristicError, applicable_part_ids};
-pub use creature_types::CREATURE_TYPES;
+pub use creature_types::{CREATURE_TYPES, creature_type_name};
 pub use model::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityEffectDef,
     AbilityOperationDef, AbilityPredicateDef, AbilityProcedureDef, AbilityProgramDef,
@@ -47,10 +47,10 @@ pub use model::{
     DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef, DeclarativeAbilityDef,
     DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, DoubleFacedKind, DrawEventMatcherDef,
     EffectDef, EffectExecutionDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
-    EffectRecipientSetDef, EmblemCharacteristics, ExilePlayDurationDef, FaceDownCharacteristics,
-    FlexibleManaSymbol, GraveyardTypeConditionDef, HalvedValueDef, HybridPair,
-    ImplementationStatus, InstalledTriggerDef, InstalledTriggerLifetimeDef, KeywordAbility,
-    LifeConditionDef, LikelihoodDef, ManaColor, ManaCost, ManaCostParseError,
+    EffectRecipientSetDef, EmblemCharacteristics, ExilePlayConditionDef, ExilePlayDurationDef,
+    FaceDownCharacteristics, FlexibleManaSymbol, GraveyardTypeConditionDef, HalvedValueDef,
+    HybridPair, ImplementationStatus, InstalledTriggerDef, InstalledTriggerLifetimeDef,
+    KeywordAbility, LifeConditionDef, LikelihoodDef, ManaColor, ManaCost, ManaCostParseError,
     ManaCostParseErrorKind, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ManaSplit,
     MeldComponentDef, MeldRecipeDef, MeldResultDef, ModalSpellDef, ModeDef, ModeSetDef,
     ObjectChoiceBindingDef, ObjectCountConditionDef, ObjectPredicateDef, ObjectQueryDef,

@@ -519,6 +519,22 @@ impl Game {
                 ..ManaCost::default()
             };
         }
+        // "You may spend mana as though it were mana of any color to cast
+        // that spell": what the payer owes stops being a colour and becomes
+        // an amount.
+        if self.card_mana_is_any_color(card) {
+            cost = ManaCost {
+                generic: cost
+                    .generic
+                    .saturating_add(cost.white + cost.blue + cost.black + cost.red + cost.green),
+                white: 0,
+                blue: 0,
+                black: 0,
+                red: 0,
+                green: 0,
+                ..cost
+            };
+        }
         for selected in configuration.additional() {
             let additional = option
                 .additional_costs
@@ -544,6 +560,14 @@ impl Game {
                     top.id == card && self.library_top_life_cost(top, player, option).is_some()
                 })
         })
+    }
+
+    /// Whether a permission over this card lets its mana be spent as any
+    /// colour.
+    fn card_mana_is_any_color(&self, card: GameObjectId) -> bool {
+        self.exile_play_permissions
+            .iter()
+            .any(|permission| permission.card == card && permission.spend_any_color)
     }
 
     /// Whether whoever is playing this card pays something other than its

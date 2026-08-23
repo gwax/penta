@@ -114,6 +114,8 @@ static SCARLETT_ABILITIES: [AbilityDef; 3] = [
             free: false,
             face_down: true,
             duration: ExilePlayDurationDef::ThisTurn,
+            spend_any_color: false,
+            play_condition: None,
         },
     ),
 ];

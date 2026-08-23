@@ -8,6 +8,7 @@ fn is_zero_u8(value: &u8) -> bool {
     *value == 0
 }
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct ExilePlayPermissionSnapshot {
@@ -34,6 +35,13 @@ pub(super) struct ExilePlayPermissionSnapshot {
     /// look-only permission, which is what every game without one has.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) hidden_only: bool,
+    /// Additive: whether mana spent on this card may be of any colour.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) spend_any_color: bool,
+    /// Additive: the creature type this permission asks its holder to have
+    /// attacked with this turn, if it asks anything at all.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) attacked_with_subtype: Option<String>,
     /// The holder's turn whose end step the permission runs to. Additive: a
     /// checkpoint written before any permission reached that far restores
     /// without one, which all of them did.

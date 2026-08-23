@@ -420,6 +420,8 @@ static RAGAVAN_CONNECTS: [EffectDef; 2] = [
         free: false,
         face_down: false,
         duration: ExilePlayDurationDef::ThisTurn,
+        spend_any_color: false,
+        play_condition: None,
     },
 ];
 

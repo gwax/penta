@@ -65,8 +65,28 @@ impl Game {
         controller: PlayerId,
     ) -> i32 {
         match value {
-            crate::card::ValueDef::DevotionTo(_) | crate::card::ValueDef::LibrarySize(_) => {
+            crate::card::ValueDef::DevotionTo(_)
+            | crate::card::ValueDef::LibrarySize(_)
+            | crate::card::ValueDef::BasicLandTypesControlled(_) => {
                 self.player_readable_value(value, controller)
+            }
+            // "If defending player has more cards in hand than you" is two
+            // hands compared, so both sides are read here rather than in the
+            // layer walk that sizes a creature by one of them.
+            crate::card::ValueDef::CardsInHandAbove { player, threshold } => {
+                let counted = [PlayerId::One, PlayerId::Two]
+                    .into_iter()
+                    .filter(|candidate| {
+                        self.player_relation_matches(
+                            *candidate,
+                            player,
+                            controller,
+                            crate::game::TriggerContext::empty(),
+                        )
+                    })
+                    .map(|candidate| self.players[candidate.index()].hand.len())
+                    .sum::<usize>();
+                i32::try_from(counted.saturating_sub(usize::from(threshold))).unwrap_or(i32::MAX)
             }
             // The X its own spell was cast for, which the permanent recorded
             // as it arrived. An intervening "if X is 5 or more" asks about

@@ -603,6 +603,12 @@ pub enum EffectDef {
         face_down: bool,
         /// How long the permission lasts.
         duration: ExilePlayDurationDef,
+        /// Whether mana spent on the card may be of any colour, which is a
+        /// property of the permission rather than of the card.
+        spend_any_color: bool,
+        /// What has to be true where the card is played. A permission that
+        /// outlives the turn it was granted on has to ask again.
+        play_condition: Option<ExilePlayConditionDef>,
     },
     /// "Exile a card at random from your graveyard. You may play that card
     /// this turn."
@@ -920,26 +926,21 @@ pub enum EffectDef {
         player: EffectRecipientDef,
     },
     /// "Puts all the cards from their graveyard on the bottom of their
-    /// library in a random order."
-    ///
-    /// One effect rather than a queried move plus a shuffle, because the
-    /// randomization is what the clause is for: every one of those cards was
-    /// public where it lay, and the order they go home in must not be. That
-    /// is a fact about the pile, which no per-card move can state.
+    /// library in a random order." One effect rather than a queried move
+    /// plus a shuffle: the randomization is what the clause is for, and it
+    /// is a fact about the pile that no per-card move can state.
     BuryGraveyard {
         player: EffectRecipientDef,
     },
-    /// "This Mount becomes saddled until end of turn" (CR 702.166a). Saddled
-    /// is a fact about the permanent rather than a counter or a continuous
-    /// effect: what reads it is the Mount's own printed clause, and it ends
-    /// with the turn.
+    /// "This Mount becomes saddled until end of turn" (CR 702.166a). A fact
+    /// about the permanent rather than a counter or a continuous effect:
+    /// its own printed clause reads it, and it ends with the turn.
     Saddle {
         object: EffectRecipientDef,
     },
     /// "You may play the exiled card without paying its mana cost."
-    /// Hideaway's second half: the permission names the cards this
-    /// permanent hid rather than anything in exile generally, and it lasts
-    /// the turn the ability resolved on.
+    /// Hideaway's second half: it names the cards this permanent hid rather
+    /// than anything in exile, and lasts the turn it resolved on.
     PlayLinkedExiles {
         object: ObjectPredicateDef,
     },

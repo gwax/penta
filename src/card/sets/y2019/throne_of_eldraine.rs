@@ -3,13 +3,15 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::PlayOptionDef;
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivationTimingDef, AlternateSpellKind, AppliedEffectDef, BattlefieldEntryModificationDef,
-    CardArt, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure,
-    CardSupertype, CardType, CardTypeSet, ColorSet, ControlDurationDef, CounterKind,
-    CreatureTypeSetDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRefDef,
-    PlayerRelation, ReplacementEffectDef, ResolvedEffectDurationDef, SpellForm,
-    SpellResolutionDestinationDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, tokens,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
+    AbilityTargetPredicate, ActivationTimingDef, AlternateSpellKind, AppliedEffectDef,
+    BattlefieldEntryModificationDef, CardArt, CardComposition, CardEffectStatus, CardPart,
+    CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet, ColorSet,
+    ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef, EffectDef,
+    EffectRecipientDef, ExilePlayConditionDef, ExilePlayDurationDef, ManaColor, ObjectPredicateDef,
+    PlayerRefDef, PlayerRelation, ReplacementEffectDef, ResolvedEffectDurationDef, SpellForm,
+    SpellResolutionDestinationDef, TriggerConditionDef, TriggerEventDef, ValueComparisonDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::{CardPartId, PlayOptionId, TargetIndex, mana_cost};
 
@@ -272,8 +274,63 @@ pub(in crate::card::sets) static RIMROCK_KNIGHT: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+/// "If defending player has more cards in hand than you", which is two hand
+/// sizes compared rather than either measured: a hand above nothing is the
+/// whole of it.
+static THEY_HAVE_MORE_CARDS: ValueComparisonDef = ValueComparisonDef {
+    left: ValueDef::CardsInHandAbove {
+        player: PlayerRelation::Opponent,
+        threshold: 0,
+    },
+    comparison: ComparisonDef::Greater,
+    right: ValueDef::CardsInHandAbove {
+        player: PlayerRelation::You,
+        threshold: 0,
+    },
+};
+
+static ROBBER_STEALS_IF_THEY_ARE_RICHER: TriggerConditionDef =
+    TriggerConditionDef::ValueComparison(&THEY_HAVE_MORE_CARDS);
+
 // ELD 138 — Robber of the Rich
-// Audit: blocked — Needs three things. An intervening-if that compares two players' hand sizes rather than a count against a printed number; a permission to cast one exiled card that survives its source leaving the battlefield and is gated on having attacked with a Rogue that turn; and spending mana as though it were mana of any color, which already blocks North Star in Legends.
+pub(in crate::card::sets) static ROBBER_OF_THE_RICH: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("0ecbe097-ba51-42e5-957c-382eb66c08f0"),
+    "Robber of the Rich",
+    CardArt::new("0ecbe097-ba51-42e5-957c-382eb66c08f0", "Paul Scott Canavan"),
+    CardSet::ThroneOfEldraine,
+    // Two mana for a hasty reaching body that also takes a card off the top
+    // of whoever is holding more, and hands it back to you on any turn your
+    // Rogues have been out attacking.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Archer", "Rogue"], 2, 2)
+        .with_abilities(&[
+            abilities::reach(),
+            abilities::haste(),
+            AbilityDef::triggered_if(
+                "Whenever this creature attacks, if defending player has more cards in hand than \
+                 you, exile the top card of their library. During any turn you attacked with a \
+                 Rogue, you may cast that card and you may spend mana as though it were mana of \
+                 any color to cast that spell.",
+                TriggerEventDef::attacks(ObjectPredicateDef::Source),
+                &ROBBER_STEALS_IF_THEY_ARE_RICHER,
+                EffectDef::ExileTopOfLibraryToPlay {
+                    player: EffectRecipientDef::Opponent,
+                    amount: ValueDef::Constant(1),
+                    free: false,
+                    face_down: false,
+                    duration: ExilePlayDurationDef::WhileExiled,
+                    spend_any_color: true,
+                    play_condition: Some(ExilePlayConditionDef::AttackedWithSubtypeThisTurn(
+                        "Rogue",
+                    )),
+                },
+            )
+            .with_coverage(AbilityCoverageDef::partial(
+                "Mana spent on the stolen card is owed as an amount rather than as colours, so \
+                 colourless mana pays for it too; and the Rogue that attacked has to still be on \
+                 the battlefield when the card is cast.",
+            )),
+        ]),
+);
 
 /// "Loses all abilities and becomes a green Elk creature with base power and
 /// toughness 3/3." Five operations in one clause, and no duration at all:
@@ -408,6 +465,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BONECRUSHER_GIANT,
     &EMBERETH_SHIELDBREAKER,
     &RIMROCK_KNIGHT,
+    &ROBBER_OF_THE_RICH,
     &OKO_THIEF_OF_CROWNS,
     &GINGERBRUTE,
     &MYSTIC_SANCTUARY,

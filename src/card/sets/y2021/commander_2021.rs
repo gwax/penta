@@ -27,6 +27,8 @@ static LAELIA_ABILITIES: [AbilityDef; 3] = [
             free: false,
             face_down: false,
             duration: ExilePlayDurationDef::ThisTurn,
+            spend_any_color: false,
+            play_condition: None,
         },
     ),
     // One counter for the move rather than one per card, which is what "one

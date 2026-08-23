@@ -485,6 +485,8 @@ impl Game {
                 free,
                 face_down,
                 duration,
+                spend_any_color,
+                play_condition,
             } => {
                 let count = self.effect_value(amount, object, context, scoped).max(0);
                 let Ok(count) = usize::try_from(count) else {
@@ -510,6 +512,19 @@ impl Game {
                                 (false, false, ExilePlayDurationDef::UntilYourNextEndStep) => {
                                     self.permit_play_until_your_next_end_step(exiled, controller);
                                 }
+                                // Bounded by the exile rather than by a turn:
+                                // what limits it is whatever the clause asks
+                                // for each time it is played.
+                                (false, false, ExilePlayDurationDef::WhileExiled) => {
+                                    self.permit_conditional_cast_while_exiled(exiled, controller);
+                                }
+                            }
+                            if spend_any_color || play_condition.is_some() {
+                                self.qualify_exile_permission(
+                                    exiled,
+                                    spend_any_color,
+                                    play_condition,
+                                );
                             }
                         }
                         self.capture_cards_exiled(&moved, ZoneKind::Library);

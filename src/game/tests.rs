@@ -397,6 +397,7 @@ mod vintage_cube_psychic_frog;
 mod vintage_cube_quantum_riddler;
 mod vintage_cube_ragavan;
 mod vintage_cube_relic;
+mod vintage_cube_robber_of_the_rich;
 mod vintage_cube_saheeli;
 mod vintage_cube_sentinel_nameless_city;
 mod vintage_cube_shelldock_isle;

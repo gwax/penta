@@ -4,6 +4,7 @@
 
 use super::model::ExilePlayPermissionSnapshot;
 use super::{ExilePlayCost, ExilePlayPermission, GameObjectId, ManaCost, mana_cost_snapshot, wire};
+use crate::card::ExilePlayConditionDef;
 
 pub(super) fn permission_snapshot(permission: &ExilePlayPermission) -> ExilePlayPermissionSnapshot {
     ExilePlayPermissionSnapshot {
@@ -21,6 +22,10 @@ pub(super) fn permission_snapshot(permission: &ExilePlayPermission) -> ExilePlay
             .map(|(player, turn)| (player.index(), turn)),
         face_down: permission.face_down,
         hidden_only: permission.hidden_only,
+        spend_any_color: permission.spend_any_color,
+        attacked_with_subtype: permission.condition.map(|condition| match condition {
+            ExilePlayConditionDef::AttackedWithSubtypeThisTurn(subtype) => subtype.to_owned(),
+        }),
         until_holder_end_step: permission
             .until_holder_end_step
             .map(|(player, turn)| (player.index(), turn)),
@@ -49,6 +54,16 @@ pub(super) fn parse_permission(
         },
         face_down: permission.face_down,
         hidden_only: permission.hidden_only,
+        spend_any_color: permission.spend_any_color,
+        condition: match permission.attacked_with_subtype.as_deref() {
+            // Read back as the catalog's own name for the type, which is
+            // what the permission holds.
+            Some(subtype) => Some(ExilePlayConditionDef::AttackedWithSubtypeThisTurn(
+                crate::card::creature_type_name(subtype)
+                    .ok_or("unknown creature type in an exile-play permission")?,
+            )),
+            None => None,
+        },
         until_holder_end_step: match permission.until_holder_end_step {
             Some((player, turn)) => Some((wire::player_from_index(player)?, turn)),
             None => None,

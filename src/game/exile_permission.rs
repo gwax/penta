@@ -27,7 +27,12 @@ pub(super) enum ExilePlayCost {
 }
 
 /// One card in exile somebody may play from there.
+///
+/// Several of the flags below are independent facts about one permission --
+/// what it costs, whether the card lies face down, whether it may be played
+/// at all yet -- so they stay separate rather than collapsing into a kind.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[allow(clippy::struct_excessive_bools)]
 pub(super) struct ExilePlayPermission {
     pub(super) card: GameObjectId,
     /// Who may play it. An adventure returns to its owner; a card taken off
@@ -55,6 +60,12 @@ pub(super) struct ExilePlayPermission {
     /// Whether the card lies face down in exile. Only its owner sees what it
     /// is; everybody may count how many there are.
     pub(super) face_down: bool,
+    /// Whether mana spent on this card may be of any colour, which is a
+    /// property of the permission rather than of the card.
+    pub(super) spend_any_color: bool,
+    /// What has to be true where the card is played, asked then rather than
+    /// where the permission was granted.
+    pub(super) condition: Option<crate::card::ExilePlayConditionDef>,
     /// A permission to look and nothing more. Hideaway hides a card its
     /// controller may see and nobody may play until the land's own second
     /// ability says so, so the two halves are separate: this one records
@@ -122,6 +133,12 @@ impl Game {
                     && permission.player == player
                     // A look is not a permission to play.
                     && !permission.hidden_only
+                    // "During any turn you attacked with a Rogue": asked
+                    // here, because the permission outlives the turn it was
+                    // granted on.
+                    && permission
+                        .condition
+                        .is_none_or(|condition| self.exile_play_condition_holds(condition, player))
                     && permission.until_end_of_turn.is_none_or(|(owner, turn)| {
                         self.turns_started[owner.index()] == turn && self.active_player == owner
                     })
@@ -138,6 +155,66 @@ impl Game {
             })
     }
 
+    /// "You may cast that card", with nothing about the turn bounding it:
+    /// what limits the permission is the condition the clause attaches
+    /// below, asked again every time the card could be played.
+    pub(super) fn permit_conditional_cast_while_exiled(
+        &mut self,
+        card: GameObjectId,
+        player: PlayerId,
+    ) {
+        self.exile_play_permissions.push(ExilePlayPermission {
+            card,
+            player,
+            cost: ExilePlayCost::Printed,
+            until_end_of_turn: None,
+            adventure_return_only: false,
+            surcharge: ManaCost::default(),
+            not_before_turn: None,
+            face_down: false,
+            hidden_only: false,
+            spend_any_color: false,
+            condition: None,
+            until_holder_end_step: None,
+        });
+    }
+
+    /// Records what a permission just granted asks for and allows: the
+    /// colours its mana may be spent as, and what has to be true when the
+    /// card is played.
+    pub(super) fn qualify_exile_permission(
+        &mut self,
+        card: GameObjectId,
+        spend_any_color: bool,
+        condition: Option<crate::card::ExilePlayConditionDef>,
+    ) {
+        if let Some(permission) = self
+            .exile_play_permissions
+            .iter_mut()
+            .rev()
+            .find(|permission| permission.card == card)
+        {
+            permission.spend_any_color = spend_any_color;
+            permission.condition = condition;
+        }
+    }
+
+    /// Whether a permission's own condition is satisfied right now.
+    fn exile_play_condition_holds(
+        &self,
+        condition: crate::card::ExilePlayConditionDef,
+        player: PlayerId,
+    ) -> bool {
+        match condition {
+            crate::card::ExilePlayConditionDef::AttackedWithSubtypeThisTurn(subtype) => self
+                .battlefield
+                .iter()
+                .filter(|permanent| permanent.controller == player)
+                .filter(|permanent| permanent.attacked_this_turn)
+                .any(|permanent| self.effective_subtypes(permanent).contains(&subtype)),
+        }
+    }
+
     /// "Look at the top four cards of your library, exile one face down."
     /// What it buys is the looking: playing it waits for whatever clause
     /// hid it to say so.
@@ -152,6 +229,8 @@ impl Game {
             not_before_turn: None,
             face_down: true,
             hidden_only: true,
+            spend_any_color: false,
+            condition: None,
             until_holder_end_step: None,
         });
     }
@@ -170,6 +249,8 @@ impl Game {
             not_before_turn: None,
             face_down: false,
             hidden_only: false,
+            spend_any_color: false,
+            condition: None,
             until_holder_end_step: None,
         });
     }
@@ -188,6 +269,8 @@ impl Game {
             not_before_turn: None,
             face_down: false,
             hidden_only: false,
+            spend_any_color: false,
+            condition: None,
             until_holder_end_step: None,
         });
     }
@@ -208,6 +291,8 @@ impl Game {
             not_before_turn: None,
             face_down: true,
             hidden_only: false,
+            spend_any_color: false,
+            condition: None,
             until_holder_end_step: None,
         });
     }
@@ -233,6 +318,8 @@ impl Game {
             not_before_turn: None,
             face_down: false,
             hidden_only: false,
+            spend_any_color: false,
+            condition: None,
             until_holder_end_step: Some((
                 player,
                 if self.active_player == player {
@@ -261,6 +348,8 @@ impl Game {
             not_before_turn: None,
             face_down: false,
             hidden_only: false,
+            spend_any_color: false,
+            condition: None,
             until_holder_end_step: None,
         });
     }
@@ -279,6 +368,8 @@ impl Game {
             not_before_turn: None,
             face_down: false,
             hidden_only: false,
+            spend_any_color: false,
+            condition: None,
             until_holder_end_step: None,
         });
     }
@@ -305,6 +396,8 @@ impl Game {
             not_before_turn: None,
             face_down: false,
             hidden_only: false,
+            spend_any_color: false,
+            condition: None,
             until_holder_end_step: None,
         });
     }
@@ -323,6 +416,8 @@ impl Game {
             not_before_turn: Some((owner, turn)),
             face_down: true,
             hidden_only: false,
+            spend_any_color: false,
+            condition: None,
             until_holder_end_step: None,
         });
     }
