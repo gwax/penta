@@ -328,6 +328,7 @@ fn validate_value_shape(
             validate_target_shape(target, targets, RecipientExpectation::Object, true)
         }
         ValueDef::CreaturesDiedThisTurn
+        | ValueDef::OpponentsWhoLostLifeThisTurn
         | ValueDef::CardTypesAmongGraveyards(_)
         | ValueDef::IfCardTypesAmongGraveyards(_)
         | ValueDef::LifeTotal(_)

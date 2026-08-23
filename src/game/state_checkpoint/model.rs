@@ -160,6 +160,10 @@ pub(super) struct GameSnapshot {
     #[serde(default)]
     pub(super) card_left_graveyard_this_turn: [bool; 2],
     pub(super) life_gained_this_turn: [u16; 2],
+    /// Whether each player has lost life this turn. Additive: a checkpoint
+    /// written before it existed restores a turn in which nobody has.
+    #[serde(default)]
+    pub(super) lost_life_this_turn: [bool; 2],
     pub(super) draw_step_draw_taken: [bool; 2],
     pub(super) drawn_this_turn: [Vec<u32>; 2],
     /// Compatibility-only wire member. Channel now reconstructs through

@@ -831,6 +831,10 @@ pub struct Game {
     /// this turn" is a fact about what happened rather than about the life
     /// total, which a loss in between would hide.
     life_gained_this_turn: [u16; 2],
+    /// Whether each player has lost life this turn, by damage or by any
+    /// other means. "Each opponent who lost life this turn" asks for the
+    /// fact rather than the amount, so a fact is what is kept.
+    lost_life_this_turn: [bool; 2],
     /// The monarch, if anyone is (CR 720). There is at most one, they draw
     /// a card at the beginning of their end step, and a creature that deals
     /// combat damage to them hands the crown to its controller.

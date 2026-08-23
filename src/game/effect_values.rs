@@ -95,6 +95,11 @@ impl Game {
         match value {
             ValueDef::Constant(value) => value,
             ValueDef::CreaturesDiedThisTurn => i32::from(self.creatures_died_this_turn),
+            // A count of players, not of life: the clause asks how many
+            // opponents lost any at all.
+            ValueDef::OpponentsWhoLostLifeThisTurn => {
+                i32::from(self.lost_life_this_turn[object.controller.opponent().index()])
+            }
             ValueDef::CardTypesAmongGraveyards(player) => {
                 self.card_types_among_graveyards(player, object.controller)
             }

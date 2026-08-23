@@ -56,6 +56,21 @@ pub(in super::super) fn shared_trigger_condition(condition: TriggerConditionDef)
 /// resolving ability, or stack-target scope. Keep their condition boundary to
 /// the source-state predicates that can be evaluated from exactly that input.
 pub(in super::super) fn shared_static_trigger_condition(condition: TriggerConditionDef) -> bool {
+    // A conjunction of static conditions is static: "during your turn, as
+    // long as he has a loyalty counter" is two questions about state the
+    // walk already holds, and each is asked the same way alone.
+    match condition {
+        TriggerConditionDef::All(conditions) | TriggerConditionDef::AnyOf(conditions) => {
+            return conditions
+                .iter()
+                .copied()
+                .all(shared_static_trigger_condition);
+        }
+        TriggerConditionDef::Not(condition) => {
+            return shared_static_trigger_condition(*condition);
+        }
+        _ => {}
+    }
     // Read live off the battlefield, exactly like the attached-permanent form
     // below, so a static clause tracks the source as it changes.
     if let TriggerConditionDef::SourceMatches { object } = condition {

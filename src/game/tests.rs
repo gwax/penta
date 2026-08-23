@@ -358,6 +358,7 @@ mod vintage_cube_ivora;
 mod vintage_cube_jace_the_mind_sculptor;
 mod vintage_cube_jacked_rabbit;
 mod vintage_cube_jitte;
+mod vintage_cube_kaito;
 mod vintage_cube_kappa_cannoneer;
 mod vintage_cube_karn_scion_of_urza;
 mod vintage_cube_laelia;

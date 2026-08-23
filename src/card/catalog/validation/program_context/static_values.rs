@@ -52,6 +52,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         // static power-and-toughness layer.
         ValueDef::IfCardTypesAmongGraveyards(_)
         | ValueDef::CreaturesDiedThisTurn
+        | ValueDef::OpponentsWhoLostLifeThisTurn
         | ValueDef::ChosenX
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
@@ -93,6 +94,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
                 && static_cost_reduction_value_supported(sum.right)
         }
         ValueDef::CreaturesDiedThisTurn
+        | ValueDef::OpponentsWhoLostLifeThisTurn
         | ValueDef::CardTypesAmongGraveyards(_)
         | ValueDef::IfCardTypesAmongGraveyards(_)
         | ValueDef::GreatestPowerAmong(_)

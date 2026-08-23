@@ -253,6 +253,10 @@ pub enum ValueDef {
     /// died this turn". Counted as they die rather than read off a zone,
     /// because a graveyard is not a record of this turn.
     CreaturesDiedThisTurn,
+    /// "For each opponent who lost life this turn." A count of players
+    /// rather than of life: one opponent who lost twelve counts once, and
+    /// how the life went does not matter.
+    OpponentsWhoLostLifeThisTurn,
     /// How many distinct card types appear among the cards in the graveyards
     /// of matching players. Types, not cards: ten artifact cards and ten
     /// creature cards are still two. A Lhurgoyf counts every graveyard;

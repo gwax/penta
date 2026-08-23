@@ -587,6 +587,9 @@ fn a_checkpoint_missing_any_required_field_is_rejected_by_name() {
         "damageTakenThisTurn",
         "damageTakenByGroupThisTurn",
         "cardLeftGraveyardThisTurn",
+        // Defaults to nobody having lost life, which is what a checkpoint
+        // taken before it existed means about the turn it captured.
+        "lostLifeThisTurn",
     ];
 
     let fixture = Fixture::played(120, 8_101);

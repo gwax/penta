@@ -568,6 +568,7 @@ impl HandcraftedPolicy {
             | ValueDef::Halved(_)
             | ValueDef::Sum(_)
             | ValueDef::CreaturesDiedThisTurn
+            | ValueDef::OpponentsWhoLostLifeThisTurn
             | ValueDef::CardTypesAmongGraveyards(_)
             | ValueDef::IfCardTypesAmongGraveyards(_) => None,
         }

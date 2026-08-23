@@ -211,12 +211,20 @@ impl Game {
     pub(super) fn lose_life(&mut self, player: PlayerId, amount: u16) {
         let amount_as_i16 = i16::try_from(amount).unwrap_or(i16::MAX);
         self.players[player.index()].life -= amount_as_i16;
+        if amount > 0 {
+            self.lost_life_this_turn[player.index()] = true;
+        }
         self.events.push(GameEvent::LifeLost { player, amount });
     }
 
     pub(super) fn deal_damage(&mut self, player: PlayerId, amount: u16) {
         let amount_as_i16 = i16::try_from(amount).unwrap_or(i16::MAX);
         self.players[player.index()].life -= amount_as_i16;
+        // Damage to a player is life lost, which is what the clauses reading
+        // it ask about: how the life went is not part of the question.
+        if amount > 0 {
+            self.lost_life_this_turn[player.index()] = true;
+        }
         self.events.push(GameEvent::DamageDealt { player, amount });
     }
 
@@ -446,6 +454,7 @@ impl Game {
         self.spells_cast_this_turn = [0; 2];
         self.cards_drawn_this_turn = [0; 2];
         self.life_gained_this_turn = [0; 2];
+        self.lost_life_this_turn = [false; 2];
         self.permanent_left_battlefield_this_turn = [false; 2];
         self.card_left_graveyard_this_turn = [false; 2];
         self.drawn_this_turn = [Vec::new(), Vec::new()];

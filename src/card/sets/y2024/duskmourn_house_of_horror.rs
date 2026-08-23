@@ -5,15 +5,15 @@ use crate::card::CardComposition;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
-    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardType, CardTypeSet,
-    CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind,
-    CreatureTypeSetDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
-    GraveyardPlayPermissionDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ReplacementConditionDef, ReplacementEffectDef,
+    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    CardTypeSet, CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, ComparisonDef,
+    CounterKind, CreatureTypeSetDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
+    EmblemCharacteristics, GraveyardPlayPermissionDef, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef, PlayRestrictionDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementConditionDef, ReplacementEffectDef,
     ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef, SpellAdditionalCostDef,
-    SpendModeDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef, TurnPhaseDef,
-    TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    SpendModeDef, TokenCountersDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TurnPhaseDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -522,6 +522,160 @@ pub(in crate::card::sets) static WALK_IN_CLOSET_FORGOTTEN_CELLAR: CardRecord =
     )
     .with_composition(walk_in_closet_composition);
 
+/// He is a creature only while it is your turn and only while he still has
+/// loyalty: the pair of conditions is what keeps him from being a creature
+/// anyone can answer on their own turn.
+static KAITO_IS_AWAKE: [TriggerConditionDef; 2] = [
+    TriggerConditionDef::ActivePlayer(PlayerRelation::You),
+    TriggerConditionDef::SourceCounters {
+        kind: CounterKind::Loyalty,
+        comparison: ComparisonDef::GreaterOrEqual,
+        amount: 1,
+    },
+];
+
+static KAITO_IS_A_NINJA_NOW: TriggerConditionDef = TriggerConditionDef::All(&KAITO_IS_AWAKE);
+
+static KAITO_HEXPROOF: AbilityDef = abilities::hexproof();
+
+static KAITO_BECOMES_A_NINJA: [AppliedEffectDef; 4] = [
+    AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(SetOperationDef::Add(
+        CardTypeSet::single(CardType::Creature),
+    ))),
+    AppliedEffectDef::set_creature_types(CreatureTypeSetDef::named(&["Ninja"])),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(3), ValueDef::Constant(4)),
+    AppliedEffectDef::add_ability(&KAITO_HEXPROOF),
+];
+
+static KAITO_ANIMATION: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::Composite(&KAITO_BECOMES_A_NINJA),
+};
+
+static NINJAS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::Subtype("Ninja"),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static KAITO_EMBLEM_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+    "Ninjas you control get +1/+1.",
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::objects(ObjectSetDef::Query(NINJAS_YOU_CONTROL)),
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(1),
+            ValueDef::Constant(1),
+        ),
+    },
+)];
+
+static KAITO_EMBLEM: EmblemCharacteristics =
+    EmblemCharacteristics::new("Kaito, Bane of Nightmares emblem", &KAITO_EMBLEM_ABILITIES);
+
+/// Surveil 2: look at two, bin as many of them as you like, and the rest go
+/// back on top in the order you leave them.
+static KAITO_SURVEILS: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(2),
+    object: None,
+    minimum: 0,
+    maximum: 2,
+    select_all_matching: false,
+    reveal_selected: false,
+    selected_zone: ZoneKind::Graveyard,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Top,
+    rest_random_order: false,
+    rest_counters: None,
+    selected_order_follows_choice: false,
+    then: Some(&KAITO_DRAWS),
+    selected_hidden: false,
+    selected_linked_to_source: false,
+    selected_face_down: None,
+};
+
+/// "A card for each opponent who lost life this turn" is a count of players
+/// rather than of life, which in a two-player game is one card or none.
+static KAITO_DRAWS: EffectDef = EffectDef::DrawCards {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::OpponentsWhoLostLifeThisTurn,
+};
+
+static KAITO_STUNS: [EffectDef; 2] = [
+    EffectDef::Tap {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        kind: CounterKind::Stun,
+        amount: ValueDef::Constant(2),
+    },
+];
+
+static KAITO_NINJUTSU_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{1}{U}{B}")),
+    AbilityCostDef::ReturnUnblockedAttackerToHand,
+];
+
+static A_CREATURE_TO_STUN: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+static KAITO_ABILITIES: [AbilityDef; 5] = [
+    AbilityDef::activated(
+        "Ninjutsu {1}{U}{B} ({1}{U}{B}, Return an unblocked attacker you control to hand: Put \
+         this card onto the battlefield from your hand tapped and attacking.)",
+        &KAITO_NINJUTSU_COST,
+        EffectDef::PutSourceOntoBattlefieldAttacking,
+    )
+    .with_source_zones(&[ZoneKind::Hand])
+    .with_activation_timing(ActivationTimingDef::AfterAttackersDeclared),
+    AbilityDef::static_ability(
+        "During your turn, as long as Kaito has one or more loyalty counters on him, he's a 3/4 \
+         Ninja creature and has hexproof.",
+        EffectDef::IfCondition {
+            condition: &KAITO_IS_A_NINJA_NOW,
+            then: &KAITO_ANIMATION,
+        },
+    ),
+    AbilityDef::activated(
+        "+1: You get an emblem with \"Ninjas you control get +1/+1.\"",
+        &[AbilityCostDef::Loyalty(1)],
+        EffectDef::CreateEmblem {
+            emblem: KAITO_EMBLEM,
+        },
+    ),
+    AbilityDef::activated(
+        "0: Surveil 2. Then draw a card for each opponent who lost life this turn.",
+        &[AbilityCostDef::Loyalty(0)],
+        EffectDef::LookAtTopAndSelect {
+            player: EffectRecipientDef::Controller,
+            looker: EffectRecipientDef::Controller,
+            selection: &KAITO_SURVEILS,
+        },
+    ),
+    AbilityDef::activated_with_targets(
+        "\u{2212}2: Tap target creature. Put two stun counters on it.",
+        &[AbilityCostDef::Loyalty(-2)],
+        &A_CREATURE_TO_STUN,
+        EffectDef::Sequence(&KAITO_STUNS),
+    ),
+];
+
+// DSK 220 — Kaito, Bane of Nightmares
+pub(in crate::card::sets) static KAITO_BANE_OF_NIGHTMARES: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("55a14f30-4ff9-4472-90a6-c3139f1c18e5"),
+    "Kaito, Bane of Nightmares",
+    CardArt::new("55a14f30-4ff9-4472-90a6-c3139f1c18e5", "Joshua Raphael"),
+    CardSet::DuskmournHouseOfHorror,
+    // Four mana, or a ninjutsu out of a connected attacker: he arrives
+    // attacking, is a hexproof 3/4 for as long as it is your turn, and is a
+    // planeswalker again the moment it is not.
+    CardRules::new_planeswalker(mana_cost!("{2}{U}{B}"), &["Kaito"], 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&KAITO_ABILITIES),
+);
+
 // DSK 248 — Ghost Vacuum
 pub(in crate::card::sets) static GHOST_VACUUM: CardRecord = CardRecord::new_with_legacy_id(
     2289,
@@ -641,6 +795,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FLESH_BURROWER,
     &MONSTROUS_EMERGENCE,
     &WALK_IN_CLOSET_FORGOTTEN_CELLAR,
+    &KAITO_BANE_OF_NIGHTMARES,
     &GHOST_VACUUM,
     &GLIMMERLIGHT,
     &BLAZEMIRE_VERGE,

@@ -181,6 +181,7 @@ impl Game {
             attackers_declared: false,
             creature_died_this_turn: false,
             creatures_died_this_turn: 0,
+            lost_life_this_turn: [false; 2],
             linked_exiles: Vec::new(),
             graveyard_permission_uses: Vec::new(),
             monarch: None,
