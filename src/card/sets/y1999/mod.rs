@@ -4,4 +4,4 @@ pub(super) mod mercadian_masques;
 pub(super) mod urzas_destiny;
 pub(super) mod urzas_legacy;
 
-pub(super) use super::{CardRecord, PrintingRecord};
+pub(super) use super::{CardRecord, PrintingAnchor, PrintingRecord};

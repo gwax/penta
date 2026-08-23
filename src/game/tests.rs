@@ -398,6 +398,7 @@ mod vintage_cube_time_spiral;
 mod vintage_cube_titania;
 mod vintage_cube_ulvenwald_oddity;
 mod vintage_cube_underworld_breach;
+mod vintage_cube_unearth;
 mod vintage_cube_ursine;
 mod vintage_cube_vampire_hexmage;
 mod vintage_cube_verge;

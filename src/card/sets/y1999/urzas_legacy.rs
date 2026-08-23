@@ -1,6 +1,6 @@
 //! Urza's Legacy cards used by the staged Premodern deck tranche.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryChoiceDestinationDef,
@@ -173,6 +173,51 @@ static SACRIFICE_A_LAND: SpellAdditionalCostDef = SpellAdditionalCostDef {
     or: None,
 };
 
+/// "Creature card with mana value 3 or less" in your own graveyard. The
+/// bound is what keeps a one-mana reanimation honest: it buys back the
+/// creature you were going to cast anyway, not the one you cheated in.
+static A_SMALL_CREATURE_IN_YOUR_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::ManaValueAtMost(3),
+        ]),
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: Some(PlayerRelation::You),
+    },
+)];
+
+// ULG 72 — Unearth
+pub(in crate::card::sets) static UNEARTH: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("b6cb2549-e485-44d6-9d65-7605c568909e"),
+    "Unearth",
+    CardArt::new("b6cb2549-e485-44d6-9d65-7605c568909e", "Don Hazeltine"),
+    CardSet::UrzasLegacy,
+    // One black mana for a creature you already paid for, and a cycling
+    // cost for the games where there is nothing worth raising.
+    CardRules::new_sorcery(mana_cost!("{B}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Return target creature card with mana value 3 or less from your graveyard to the \
+             battlefield.",
+            &A_SMALL_CREATURE_IN_YOUR_GRAVEYARD,
+            EffectDef::MoveToZone {
+                counters: None,
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                arrival_effect: None,
+                attachment: None,
+                controller: None,
+            },
+        ),
+        abilities::cycling(
+            "Cycling {2} ({2}, Discard this card: Draw a card.)",
+            mana_cost!("{2}"),
+        ),
+    ]),
+);
+
 // ULG 98 — Crop Rotation
 pub(in crate::card::sets) static CROP_ROTATION: CardRecord = CardRecord::new_with_legacy_id(
     2143,
@@ -300,6 +345,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FRANTIC_SEARCH,
     &MISCALCULATION,
     &ENGINEERED_PLAGUE,
+    &UNEARTH,
     &CROP_ROTATION,
     &RANCOR,
     &DEFENSE_GRID,
