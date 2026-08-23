@@ -454,6 +454,7 @@ pub(super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
         TriggerConditionDef::ObjectCount { query, .. } => shared_object_predicate(query.object),
         TriggerConditionDef::TargetMatches { object, .. }
         | TriggerConditionDef::SourceMatches { object }
+        | TriggerConditionDef::LinkedExilesMatch { object }
         | TriggerConditionDef::AttachedPermanentMatches { object } => {
             shared_object_predicate(object)
         }

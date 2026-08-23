@@ -695,6 +695,7 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::TargetMatches { .. }
         | TriggerConditionDef::ControlsGreatestPowerCreature => false,
         TriggerConditionDef::SourceMatches { object }
+        | TriggerConditionDef::LinkedExilesMatch { object }
         | TriggerConditionDef::AttachedPermanentMatches { object } => {
             static_object_predicate_supported(object)
         }

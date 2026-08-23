@@ -282,6 +282,9 @@ impl Game {
                 // to read what it last was (CR 603.10); finding nothing and
                 // answering no would be the wrong answer rather than a
                 // deliberate one.
+                TriggerConditionDef::LinkedExilesMatch { object: predicate } => {
+                    !self.linked_exile_targets(*predicate, source).is_empty()
+                }
                 TriggerConditionDef::SourceMatches { object: predicate } => self
                     .battlefield
                     .iter()

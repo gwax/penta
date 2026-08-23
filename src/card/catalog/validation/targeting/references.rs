@@ -724,6 +724,7 @@ fn validate_trigger_condition(
         | TriggerConditionDef::SpellsCastLastTurn { .. }
         | TriggerConditionDef::ControlsGreatestPowerCreature
         | TriggerConditionDef::SourceMatches { .. }
+        | TriggerConditionDef::LinkedExilesMatch { .. }
         | TriggerConditionDef::AttachedPermanentMatches { .. }
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::SourceCastWith(_)

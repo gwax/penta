@@ -168,6 +168,12 @@ pub enum TriggerConditionDef {
         comparison: ComparisonDef,
         amount: u8,
     },
+    /// Whether a card exiled with this ability's source matches. Phelia
+    /// asks whether what she took was yours: what she gives back goes to its
+    /// owner, so who owned it is what decides whether she grows.
+    LinkedExilesMatch {
+        object: ObjectPredicateDef,
+    },
     /// Whether what a target slot points at still matches. Read when the
     /// condition is checked, so a delayed effect can ask about the target as
     /// it is then rather than as it was.

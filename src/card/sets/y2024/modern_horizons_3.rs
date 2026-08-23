@@ -126,6 +126,92 @@ static PRISON_SACRIFICE: EffectDef = EffectDef::Sacrifice {
     object: EffectRecipientDef::Source,
 };
 
+/// "If it entered under your control": what Phelia gives back goes to its
+/// owner, so who owned it is the whole of the question. Asked before the
+/// return rather than after, because by then there is no exile left to ask
+/// about.
+static PHELIA_TOOK_YOUR_OWN: TriggerConditionDef = TriggerConditionDef::LinkedExilesMatch {
+    object: ObjectPredicateDef::OwnedBy(PlayerRelation::You),
+};
+
+static PHELIA_GROWS: EffectDef = EffectDef::AddCounters {
+    object: EffectRecipientDef::Source,
+    kind: CounterKind::PlusOnePlusOne,
+    amount: ValueDef::Constant(1),
+};
+
+static PHELIA_RETURNS_IT: [EffectDef; 2] = [
+    EffectDef::IfCondition {
+        condition: &PHELIA_TOOK_YOUR_OWN,
+        then: &PHELIA_GROWS,
+    },
+    EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        zone: ZoneKind::Battlefield,
+        grant: None,
+        counters: None,
+        arrival_effect: None,
+        transformed: false,
+        controller: None,
+    },
+];
+
+static PHELIA_END_STEP: AbilityDef = AbilityDef::triggered(
+    "At the beginning of the next end step, return that card to the battlefield under its \
+     owner's control. If it entered under your control, put a +1/+1 counter on this creature.",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+    },
+    EffectDef::Sequence(&PHELIA_RETURNS_IT),
+);
+
+/// "Up to one other target nonland permanent", which is what makes her a
+/// blink as happily as a removal spell: the thing she takes may be yours.
+static ANOTHER_NONLAND_PERMANENT: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    1,
+)];
+
+static PHELIA_EXILE: [EffectDef; 2] = [
+    EffectDef::ExileLinkedToSource {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&PHELIA_END_STEP)),
+];
+
+// MH3 40 — Phelia, Exuberant Shepherd
+pub(in crate::card::sets) static PHELIA_EXUBERANT_SHEPHERD: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("55707746-da6e-46e5-a5ca-7ac843fdc38e"),
+    "Phelia, Exuberant Shepherd",
+    CardArt::new("55707746-da6e-46e5-a5ca-7ac843fdc38e", "Rudy Siswanto"),
+    CardSet::ModernHorizons3,
+    // Two mana that answers something for a turn or blinks something of
+    // yours forever, and grows every time it does the second.
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Dog"], 2, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::flash(),
+            AbilityDef::triggered_with_targets(
+                "Whenever this creature attacks, exile up to one other target nonland permanent. \
+                 At the beginning of the next end step, return that card to the battlefield under \
+                 its owner's control. If it entered under your control, put a +1/+1 counter on \
+                 this creature.",
+                TriggerEventDef::attacks(ObjectPredicateDef::Source),
+                &ANOTHER_NONLAND_PERMANENT,
+                EffectDef::Sequence(&PHELIA_EXILE),
+            ),
+        ]),
+);
+
 // MH3 44 — Static Prison
 pub(in crate::card::sets) static STATIC_PRISON: CardRecord = CardRecord::new_with_legacy_id(
     2194,
@@ -853,6 +939,7 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::n
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &OCELOT_PRIDE,
+    &PHELIA_EXUBERANT_SHEPHERD,
     &STATIC_PRISON,
     &BRAINSURGE,
     &EMPEROR_OF_BONES,

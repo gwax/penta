@@ -439,6 +439,7 @@ fn validate_trigger_condition_shape(
         }
         TriggerConditionDef::ObjectCount { query, .. } => validate_query_shape(query, targets),
         TriggerConditionDef::SourceMatches { object }
+        | TriggerConditionDef::LinkedExilesMatch { object }
         | TriggerConditionDef::AttachedPermanentMatches { object } => {
             validate_object_predicate_shape(object, targets)
         }

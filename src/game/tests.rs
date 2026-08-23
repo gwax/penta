@@ -380,6 +380,7 @@ mod vintage_cube_overlord;
 mod vintage_cube_paradoxical_outcome;
 mod vintage_cube_path;
 mod vintage_cube_phantasmal_image;
+mod vintage_cube_phelia;
 mod vintage_cube_phlage;
 mod vintage_cube_ponder;
 mod vintage_cube_portable_hole;
