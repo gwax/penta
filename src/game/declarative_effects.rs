@@ -215,7 +215,7 @@ impl Game {
                     }
                 }
             }
-            EffectDef::Tap { .. } | EffectDef::Untap { .. } => {
+            EffectDef::Tap { .. } | EffectDef::Untap { .. } | EffectDef::Saddle { .. } => {
                 self.resolve_tap_effect(scoped, object, &context);
             }
             EffectDef::RemoveFromCombat { object: recipient } => {

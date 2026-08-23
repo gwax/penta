@@ -140,6 +140,7 @@ impl Game {
                 | AbilityCostDef::SacrificePermanents { .. }
                 | AbilityCostDef::ReturnUnblockedAttackerToHand
                 | AbilityCostDef::TapPermanent { .. }
+                | AbilityCostDef::TapCreaturesWithTotalPower { .. }
                 | AbilityCostDef::Loyalty(_)
                 | AbilityCostDef::ExileCardsFromGraveyard { .. }
                 | AbilityCostDef::Special(_) => {
@@ -281,6 +282,7 @@ impl Game {
                     | AbilityCostDef::SacrificePermanent { .. }
                     | AbilityCostDef::SacrificePermanents { .. }
                     | AbilityCostDef::TapPermanent { .. }
+                    | AbilityCostDef::TapCreaturesWithTotalPower { .. }
                     | AbilityCostDef::ExileSource
                     | AbilityCostDef::Loyalty(_)
                     | AbilityCostDef::ExileCardsFromGraveyard { .. }
@@ -479,6 +481,9 @@ impl Game {
                     AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                     | AbilityCostDef::ReturnUnblockedAttackerToHand
                     | AbilityCostDef::TapPermanent { .. }
+                    // Paid by decision after everything else, the way a
+                    // multiple sacrifice is.
+                    | AbilityCostDef::TapCreaturesWithTotalPower { .. }
                     | AbilityCostDef::SacrificeSource
                     | AbilityCostDef::SacrificeObject(_)
                     | AbilityCostDef::ReturnSourceToHand
@@ -597,6 +602,30 @@ impl Game {
                 if !chosen_permanents.contains(chosen) {
                     chosen_permanents.push(*chosen);
                 }
+            }
+            // Crew and saddle name the creatures that pay by decision too,
+            // and the total they owe is what the offer counts down.
+            if let Some(AbilityCostDef::TapCreaturesWithTotalPower { minimum }) = definition
+                .costs
+                .iter()
+                .find(|cost| matches!(cost, AbilityCostDef::TapCreaturesWithTotalPower { .. }))
+            {
+                self.queue_activation_saddle(
+                    player,
+                    i32::from(*minimum),
+                    PendingActivation {
+                        source,
+                        source_card,
+                        controller: player,
+                        frozen: frozen_ability,
+                        targets: frozen_targets,
+                        chosen_permanents,
+                        remaining_sacrifices,
+                    },
+                    Vec::new(),
+                );
+                self.consecutive_passes = 0;
+                return;
             }
             // A cost that takes a printed number of permanents names them
             // by decision, so the activation waits here with everything it

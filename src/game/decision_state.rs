@@ -241,6 +241,16 @@ pub(super) enum DecisionContinuation {
         context: EffectResolutionContext,
         if_paid: Option<ScopedEffect>,
     },
+    /// Crew's and saddle's cost, paid one creature at a time while the
+    /// activation waits.
+    ActivationCostTap {
+        player: PlayerId,
+        /// How much power is still owed. Zero or less means the payer may
+        /// stop, and the offer includes a way to.
+        remaining: i32,
+        pending: Box<PendingActivation>,
+        chosen: Vec<GameObjectId>,
+    },
     /// The pile an entering permanent takes with it, chosen while the entry
     /// waits.
     BattlefieldEntryExile {

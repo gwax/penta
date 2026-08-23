@@ -109,6 +109,7 @@ impl Game {
             | EffectDef::DoubleCounters { .. }
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::Untap { .. }
+            | EffectDef::Saddle { .. }
             | EffectDef::Attach { .. }
             | EffectDef::ReturnAttached { .. }
             | EffectDef::Reconfigure { .. }

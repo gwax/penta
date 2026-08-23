@@ -539,6 +539,7 @@ impl Game {
             | ObjectPredicateDef::WasDealtDamageThisTurn
             | ObjectPredicateDef::DealtDamageThisTurn
             | ObjectPredicateDef::Attacking
+            | ObjectPredicateDef::Saddled
             | ObjectPredicateDef::Blocking
             | ObjectPredicateDef::BlockedBySource
             | ObjectPredicateDef::BlockingSource

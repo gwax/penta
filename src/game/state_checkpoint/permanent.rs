@@ -97,6 +97,7 @@ pub(super) fn permanent_snapshot(
         regeneration_shields: permanent.regeneration_shields,
         attacked_this_turn: permanent.attacked_this_turn,
         exerted: permanent.exerted,
+        saddled: permanent.saddled,
         last_attacked_turn: permanent
             .last_attacked_turn
             .map(|(player, turns)| (player.index(), turns)),

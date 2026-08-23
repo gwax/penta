@@ -45,6 +45,9 @@ pub(super) struct EffectResolutionContext {
     pub(super) matched_count: Option<u16>,
     /// Distinct card types among those same matched objects.
     pub(super) matched_card_types: Option<u16>,
+    /// What those same matched objects add up to in mana value, for a
+    /// follow-up measured by what the step before it turned up.
+    pub(super) matched_mana_value: Option<u16>,
     /// A card name chosen while this effect resolves, which the rest of the
     /// same resolution reads back. Cabal Therapy names one and then discards
     /// every copy of it.
@@ -60,6 +63,7 @@ impl EffectResolutionContext {
             paid_amount: None,
             matched_count: None,
             matched_card_types: None,
+            matched_mana_value: None,
             chosen_name: None,
             single_objects: [None; ObjectBindingIndex::COUNT],
             object_groups: std::array::from_fn(|_| Vec::new()),
@@ -113,6 +117,7 @@ impl EffectResolutionContext {
             paid_amount: None,
             matched_count: None,
             matched_card_types: None,
+            matched_mana_value: None,
             chosen_name: None,
             single_objects,
             object_groups,
@@ -163,6 +168,7 @@ pub(super) struct TriggerEventObject {
     /// Whether this creature attacked at any point this turn, which outlives
     /// combat and so is not the same question as `attacking`.
     pub(super) attacked_this_turn: bool,
+    pub(super) saddled: bool,
     /// Whether it attacked during its controller's previous turn. Answered
     /// where the snapshot is built, because the turn count it is measured
     /// against belongs to the game rather than to the permanent.

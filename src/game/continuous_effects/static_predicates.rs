@@ -163,6 +163,7 @@ impl Game {
             | ObjectPredicateDef::HasKeyword(_)
             | ObjectPredicateDef::HasNonManaActivatedAbility
             | ObjectPredicateDef::Attacking
+            | ObjectPredicateDef::Saddled
             | ObjectPredicateDef::AttachedToSource
             | ObjectPredicateDef::Blocking
             | ObjectPredicateDef::BlockedBySource

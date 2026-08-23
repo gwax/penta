@@ -213,6 +213,11 @@ pub enum ValueDef {
     /// counts. One card that is both an artifact and a creature contributes
     /// two; two creatures contribute one.
     MatchedCardTypes,
+    /// What those same matched objects add up to in mana value. "You lose
+    /// life equal to that card's mana value" reads the card the step before
+    /// it revealed, which is gone into a hand by the time this is asked --
+    /// so the number travels rather than the card.
+    MatchedManaValue,
     /// How many objects an earlier step in this resolution bound. "For each
     /// creature exiled this way" counts what the exile actually took, which
     /// the board no longer holds by the time the follow-up runs. Zero

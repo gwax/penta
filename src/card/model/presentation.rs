@@ -78,6 +78,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::WasDealtDamageThisTurn
         | ObjectPredicateDef::DealtDamageThisTurn
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Saddled
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource

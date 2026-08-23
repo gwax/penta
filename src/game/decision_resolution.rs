@@ -232,8 +232,12 @@ impl Game {
                             .unwrap_or(usize::MAX)
                     });
                 }
+                let matched = self.selected_card_totals(&chosen);
                 self.finish_top_card_selection(player, chosen, rest, selection);
                 if let Some(then) = selection.then {
+                    let mut context = context;
+                    context.matched_count = Some(matched.0);
+                    context.matched_mana_value = Some(matched.1);
                     self.resolve_nested_effect_before_later(
                         effect.with_effect(*then),
                         &object,
@@ -300,6 +304,15 @@ impl Game {
                     .copied()
                     .and_then(|option| usize::try_from(option).ok());
                 self.continue_activation_sacrifice(player, quota, *pending, chosen, answer);
+            }
+            DecisionContinuation::ActivationCostTap {
+                player,
+                remaining,
+                pending,
+                chosen,
+            } => {
+                let answer = options.first().copied();
+                self.continue_activation_saddle(player, remaining, *pending, chosen, answer);
             }
             DecisionContinuation::SacrificeToTotalPower {
                 player,

@@ -274,6 +274,7 @@ impl Game {
             attacking: permanent.attacking,
             tapped: permanent.tapped,
             attacked_this_turn: permanent.attacked_this_turn,
+            saddled: permanent.saddled,
             attacked_during_controllers_last_turn: self
                 .attacked_during_controllers_last_turn(permanent),
         }
@@ -332,6 +333,7 @@ impl Game {
             attacking: permanent.attacking,
             tapped: permanent.tapped,
             attacked_this_turn: permanent.attacked_this_turn,
+            saddled: permanent.saddled,
             attacked_during_controllers_last_turn: self
                 .attacked_during_controllers_last_turn(permanent),
         }

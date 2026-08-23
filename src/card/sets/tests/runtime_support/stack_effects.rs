@@ -418,6 +418,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::DoubleCounters { object, .. }
         | EffectDef::RemoveAllCounters { object, .. }
         | EffectDef::Untap { object }
+        | EffectDef::Saddle { object }
         | EffectDef::Destroy { object, .. }
         | EffectDef::Sacrifice { object }
         | EffectDef::DiscardCards { object }

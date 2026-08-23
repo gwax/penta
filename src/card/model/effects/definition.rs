@@ -925,6 +925,13 @@ pub enum EffectDef {
     BuryGraveyard {
         player: EffectRecipientDef,
     },
+    /// "This Mount becomes saddled until end of turn" (CR 702.166a). Saddled
+    /// is a fact about the permanent rather than a counter or a continuous
+    /// effect: what reads it is the Mount's own printed clause, and it ends
+    /// with the turn.
+    Saddle {
+        object: EffectRecipientDef,
+    },
     /// The object sits out this many of its controller's untap steps.
     SkipNextUntapSteps {
         object: EffectRecipientDef,

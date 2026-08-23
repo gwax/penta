@@ -658,6 +658,7 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Saddled
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
@@ -781,6 +782,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::Tap { .. } => "Tap",
         EffectDef::RemoveFromCombat { .. } => "RemoveFromCombat",
         EffectDef::Untap { .. } => "Untap",
+        EffectDef::Saddle { .. } => "Saddle",
         EffectDef::CreateToken { .. } => "CreateToken",
         EffectDef::CreateAttachedToken { .. } => "CreateAttachedToken",
         EffectDef::CreateTokenCopyOf { .. } => "CreateTokenCopyOf",

@@ -181,3 +181,20 @@ pub const fn cascade() -> AbilityDef {
         EffectDef::Cascade,
     )
 }
+
+/// Saddle N (CR 702.166a). The cost is paid by tapping other untapped
+/// creatures whose power adds up to at least N, and what it buys is a fact
+/// about the Mount that lasts until end of turn -- the Mount's own printed
+/// clauses are the only things that read it.
+#[must_use]
+pub const fn saddle(minimum: u8, text: &'static str) -> AbilityDef {
+    AbilityDef::activated_with_cost_list_and_targets(
+        text,
+        AbilityCostList::one(AbilityCostDef::TapCreaturesWithTotalPower { minimum }),
+        &[],
+        EffectDef::Saddle {
+            object: EffectRecipientDef::Source,
+        },
+    )
+    .with_activation_timing(ActivationTimingDef::SorcerySpeed)
+}

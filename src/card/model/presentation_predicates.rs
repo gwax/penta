@@ -33,6 +33,7 @@ pub(super) fn object_predicate_implies(
         | ObjectPredicateDef::WasDealtDamageThisTurn
         | ObjectPredicateDef::DealtDamageThisTurn
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Saddled
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
@@ -92,6 +93,7 @@ pub(super) fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor
         | ObjectPredicateDef::WasDealtDamageThisTurn
         | ObjectPredicateDef::DealtDamageThisTurn
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Saddled
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
@@ -153,6 +155,7 @@ pub(super) fn predicate_color_count(predicate: ObjectPredicateDef) -> Option<u8>
         | ObjectPredicateDef::WasDealtDamageThisTurn
         | ObjectPredicateDef::DealtDamageThisTurn
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Saddled
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
@@ -216,6 +219,7 @@ pub(super) fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'stati
         | ObjectPredicateDef::WasDealtDamageThisTurn
         | ObjectPredicateDef::DealtDamageThisTurn
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Saddled
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
@@ -279,6 +283,7 @@ pub(super) fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option
         | ObjectPredicateDef::WasDealtDamageThisTurn
         | ObjectPredicateDef::DealtDamageThisTurn
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Saddled
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
@@ -350,6 +355,7 @@ pub(super) fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<
         | ObjectPredicateDef::WasDealtDamageThisTurn
         | ObjectPredicateDef::DealtDamageThisTurn
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Saddled
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
@@ -405,6 +411,7 @@ pub(super) fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Opt
         | ObjectPredicateDef::WasDealtDamageThisTurn
         | ObjectPredicateDef::DealtDamageThisTurn
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Saddled
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
@@ -468,6 +475,7 @@ pub(super) fn predicate_controller(predicate: ObjectPredicateDef) -> Option<Play
         | ObjectPredicateDef::WasDealtDamageThisTurn
         | ObjectPredicateDef::DealtDamageThisTurn
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Saddled
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource

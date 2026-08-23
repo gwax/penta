@@ -132,6 +132,10 @@ pub enum ObjectPredicateDef {
     HasNonManaActivatedAbility,
     /// A creature currently declared as an attacker in combat.
     Attacking,
+    /// A Mount whose saddle ability has been paid this turn (CR 702.166a).
+    /// Its own printed clause is what reads it, which is why this is a
+    /// characteristic rather than a counter.
+    Saddled,
     /// Came under its current controller's control during the turn they are
     /// taking now. This is the same fact summoning sickness reads, asked as a
     /// characteristic: "unless it came under your control this turn".

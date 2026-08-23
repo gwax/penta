@@ -1,11 +1,11 @@
 //! Outlaws of Thunder Junction cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt,
     CardRules, CardSet, CardSupertype, CardType, CounterKind, DiscardSelectionDef, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
-    abilities,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -108,6 +108,87 @@ pub(in crate::card::sets) static DUELIST_OF_THE_MIND: CardRecord = CardRecord::n
         .with_abilities(&DUELIST_ABILITIES),
 );
 
+/// "You lose life equal to that card's mana value if this creature isn't
+/// saddled. Otherwise, each opponent loses that much life." Two clauses
+/// reading one number, which is the mana value of the card the reveal just
+/// put in hand -- gone from anywhere the resolution could look at it by the
+/// time either half asks.
+static BRONCO_IS_SADDLED: TriggerConditionDef = TriggerConditionDef::SourceMatches {
+    object: ObjectPredicateDef::Saddled,
+};
+
+static BRONCO_IS_NOT_SADDLED: TriggerConditionDef = TriggerConditionDef::Not(&BRONCO_IS_SADDLED);
+
+static BRONCO_DRAIN: EffectDef = EffectDef::LoseLife {
+    recipient: EffectRecipientDef::Opponent,
+    amount: ValueDef::MatchedManaValue,
+};
+
+static BRONCO_KICK: EffectDef = EffectDef::LoseLife {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::MatchedManaValue,
+};
+
+static BRONCO_PAYMENT: [EffectDef; 2] = [
+    EffectDef::IfCondition {
+        condition: &BRONCO_IS_NOT_SADDLED,
+        then: &BRONCO_KICK,
+    },
+    EffectDef::IfCondition {
+        condition: &BRONCO_IS_SADDLED,
+        then: &BRONCO_DRAIN,
+    },
+];
+
+static BRONCO_PAYMENT_SEQUENCE: EffectDef = EffectDef::Sequence(&BRONCO_PAYMENT);
+
+/// The reveal itself: one card off the top, shown to everybody, into your
+/// hand, and then the clause above reads what it cost.
+static BRONCO_REVEAL: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(1),
+    object: None,
+    minimum: 1,
+    maximum: 1,
+    select_all_matching: true,
+    reveal_selected: true,
+    selected_zone: ZoneKind::Hand,
+    selected_placement: ZonePlacement::Top,
+    selected_face_down: None,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Top,
+    selected_order_follows_choice: false,
+    then: Some(&BRONCO_PAYMENT_SEQUENCE),
+};
+
+// OTJ 82 — Caustic Bronco
+pub(in crate::card::sets) static CAUSTIC_BRONCO: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("e9a268ba-c442-4fe4-90b4-2810c8474f4e"),
+    "Caustic Bronco",
+    CardArt::new("e9a268ba-c442-4fe4-90b4-2810c8474f4e", "Brent Hollowell"),
+    CardSet::OutlawsOfThunderJunction,
+    // Two mana for a 2/2 that draws you an extra card every attack. Whether
+    // that card costs you or them is what the saddle buys.
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Snake", "Horse", "Mount"], 2, 2)
+        .with_abilities(&[
+            AbilityDef::triggered(
+                "Whenever this creature attacks, reveal the top card of your library and put it \
+                 into your hand. You lose life equal to that card's mana value if this creature \
+                 isn't saddled. Otherwise, each opponent loses that much life.",
+                TriggerEventDef::attacks(ObjectPredicateDef::Source),
+                EffectDef::LookAtTopAndSelect {
+                    player: EffectRecipientDef::Controller,
+                    looker: EffectRecipientDef::Controller,
+                    selection: &BRONCO_REVEAL,
+                },
+            ),
+            abilities::saddle(
+                3,
+                "Saddle 3 (Tap any number of other creatures you control with total power 3 or \
+                 more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)",
+            ),
+        ]),
+);
+
 // OTJ 157 — Bristly Bill, Spine Sower
 pub(in crate::card::sets) static BRISTLY_BILL_SPINE_SOWER: CardRecord =
     CardRecord::new_with_legacy_id(
@@ -159,6 +240,7 @@ pub(in crate::card::sets) static LAVASPUR_BOOTS: CardRecord = CardRecord::new_wi
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DUELIST_OF_THE_MIND,
+    &CAUSTIC_BRONCO,
     &BRISTLY_BILL_SPINE_SOWER,
     &LAVASPUR_BOOTS,
 ];

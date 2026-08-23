@@ -163,6 +163,10 @@ struct Permanent {
     /// Recorded rather than derived: what exerting costs is an untap step,
     /// and plenty of other things skip one of those.
     pub(super) exerted: bool,
+    /// Saddled (CR 702.166a): a Mount whose saddle ability has been paid
+    /// this turn. It is a fact about the permanent rather than a counter,
+    /// and it ends with the turn.
+    pub(super) saddled: bool,
     /// How many times this creature has been declared as an attacker this
     /// turn. `attacked_this_turn` is already set by the time the attack
     /// triggers are captured, so a "first time each turn" trigger needs the
@@ -297,6 +301,7 @@ impl Permanent {
             regeneration_shields: 0,
             attacked_this_turn: false,
             exerted: false,
+            saddled: false,
             attacks_this_turn: 0,
             last_attacked_turn: None,
             keywords_until_upkeep_of: Vec::new(),

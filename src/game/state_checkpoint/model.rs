@@ -386,6 +386,10 @@ pub(super) struct PermanentSnapshot {
     /// nothing exerted, which is what every board without one is.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) exerted: bool,
+    /// Additive in the same way: a checkpoint written before saddling
+    /// existed restores with nothing saddled.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) saddled: bool,
     pub(super) attacks_this_turn: u8,
     /// The seat that controlled this permanent the last time it attacked, and
     /// their turn count then. Absent means it has never attacked, which is

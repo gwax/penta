@@ -147,6 +147,7 @@ impl Game {
             tapped: false,
             attacked_during_controllers_last_turn: false,
             attacked_this_turn: false,
+            saddled: false,
         })
     }
 
@@ -214,6 +215,7 @@ impl Game {
             tapped: false,
             attacked_during_controllers_last_turn: false,
             attacked_this_turn: false,
+            saddled: false,
         })
     }
 

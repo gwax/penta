@@ -62,6 +62,7 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::Tapped
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Saddled
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::BlockedBySource
@@ -420,7 +421,11 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
             | AbilityCostDef::Loyalty(_)
             // Nobody chooses which cards go, so a random discard needs no
             // decision procedure -- only a permanent to activate from.
-            | AbilityCostDef::DiscardCardsAtRandom(_) => battlefield,
+            | AbilityCostDef::DiscardCardsAtRandom(_)
+            // Crew and saddle name no predicate: what may pay is every other
+            // untapped creature the payer controls, and the decision that
+            // asks reads the battlefield directly.
+            | AbilityCostDef::TapCreaturesWithTotalPower { .. } => battlefield,
             // Ninjutsu's cost joins the discard here: what it may return is
             // combat state rather than a predicate, and both are paid by a
             // card in hand.
@@ -755,6 +760,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::DoubleCounters { .. }
                     | EffectDef::RemoveAllCounters { .. }
                     | EffectDef::Untap { .. }
+                    | EffectDef::Saddle { .. }
                     | EffectDef::Attach { .. }
                     | EffectDef::PhaseOut { .. }
                     | EffectDef::ReturnAttached { .. }

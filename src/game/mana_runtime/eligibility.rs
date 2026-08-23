@@ -52,6 +52,7 @@ impl Game {
                 | AbilityCostDef::SacrificePermanents { .. }
                 | AbilityCostDef::ReturnUnblockedAttackerToHand
                 | AbilityCostDef::TapPermanent { .. }
+                | AbilityCostDef::TapCreaturesWithTotalPower { .. }
                 | AbilityCostDef::ExileSource
                 | AbilityCostDef::Loyalty(_)
                 | AbilityCostDef::ExileCardsFromGraveyard { .. }
@@ -124,6 +125,7 @@ impl Game {
             | AbilityCostDef::DiscardCardsAtRandom(_)
             | AbilityCostDef::ReturnUnblockedAttackerToHand
                 | AbilityCostDef::TapPermanent { .. }
+            | AbilityCostDef::TapCreaturesWithTotalPower { .. }
             | AbilityCostDef::Loyalty(_)
             | AbilityCostDef::ExileCardsFromGraveyard { .. }
             | AbilityCostDef::Special(_) => false,

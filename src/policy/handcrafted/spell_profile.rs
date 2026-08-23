@@ -417,6 +417,7 @@ impl HandcraftedPolicy {
             | EffectDef::DoubleCounters { .. }
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::Untap { .. }
+            | EffectDef::Saddle { .. }
             | EffectDef::PreventDamage { .. } => {
                 profile.mark(DeclarativeSpellProfile::TAPS);
             }
@@ -546,6 +547,7 @@ impl HandcraftedPolicy {
             | ValueDef::PaidAmount
             | ValueDef::MatchedCount
             | ValueDef::MatchedCardTypes
+            | ValueDef::MatchedManaValue
             | ValueDef::BoundObjectCount(_)
             | ValueDef::SpellsCastBeforeThisTurn
             | ValueDef::DividedAmongTargets

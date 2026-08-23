@@ -357,6 +357,7 @@ impl Game {
             ObjectPredicateDef::Any => true,
             ObjectPredicateDef::Source => object.id == source,
             ObjectPredicateDef::Token => object.token,
+            ObjectPredicateDef::Saddled => object.saddled,
             ObjectPredicateDef::HasType(card_type) => object.types.contains(card_type),
             ObjectPredicateDef::HasAnyBasicLandType(land_types) => {
                 object.types.contains(CardType::Land)
@@ -514,6 +515,7 @@ fn combat_state_matches(predicate: ObjectPredicateDef, object: &TriggerEventObje
     object.types.contains(CardType::Creature)
         && match predicate {
             ObjectPredicateDef::Attacking => object.attacking,
+            ObjectPredicateDef::Saddled => object.saddled,
             // Still attacking is not the question: this asks whether the
             // creature attacked at any point this turn, which is what an
             // end-step check has to read once combat is over.

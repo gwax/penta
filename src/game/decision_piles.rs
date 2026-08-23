@@ -59,12 +59,52 @@ impl Game {
             let (chosen, rest): (Vec<_>, Vec<_>) = revealed
                 .into_iter()
                 .partition(|card| selected.contains(&card.id));
-            self.finish_top_card_selection(player, chosen, rest, selection);
-            if let Some(then) = selection.then {
-                self.resolve_effect_def(scoped.with_effect(*then), object, context);
-            }
+            self.take_all_matching_top_cards(
+                player,
+                (chosen, rest),
+                selection,
+                object,
+                context,
+                scoped,
+            );
             return;
         }
+        let (options, preference) =
+            self.top_card_selection_options(&revealed, &eligible, selection);
+        let no_selection = options.len() == 1 && options[0].card.is_none();
+        self.queue_decision(
+            looker,
+            Self::top_card_selection_prompt(selection),
+            DecisionVisibility::Private,
+            preference,
+            if no_selection {
+                0..=0
+            } else {
+                usize::from(selection.minimum)..=usize::from(selection.maximum)
+            },
+            false,
+            options,
+            DecisionContinuation::TopCardSelection {
+                player,
+                revealed,
+                selection,
+                object: Box::new(object.clone()),
+                context,
+                effect: scoped,
+            },
+        );
+    }
+
+    /// The cards the look offers and how a bot should lean. A selection that
+    /// may take nothing is a look and nothing more, so it is presented the
+    /// same way as one with no eligible card: the cards ride along as
+    /// members and the only option acknowledges them.
+    fn top_card_selection_options(
+        &self,
+        revealed: &[CardInstance],
+        eligible: &[CardInstance],
+        selection: &'static TopCardSelectionDef,
+    ) -> (Vec<DecisionOption>, DecisionPreference) {
         let inspected = revealed
             .iter()
             .map(|card| {
@@ -74,13 +114,10 @@ impl Game {
                 )
             })
             .collect::<Vec<_>>();
-        let mut options = self.card_decision_options(&eligible, DecisionZone::Library);
+        let mut options = self.card_decision_options(eligible, DecisionZone::Library);
         for option in &mut options {
             option.members.clone_from(&inspected);
         }
-        // A selection that may take nothing is a look and nothing more, so it
-        // is presented the same way as one with no eligible card: the cards
-        // ride along as members and the only option acknowledges them.
         let looking_only = selection.maximum == 0;
         let no_selection = options.is_empty() || looking_only;
         if no_selection {
@@ -105,27 +142,7 @@ impl Game {
         } else {
             DecisionPreference::LowerCardValue
         };
-        self.queue_decision(
-            looker,
-            Self::top_card_selection_prompt(selection),
-            DecisionVisibility::Private,
-            preference,
-            if no_selection {
-                0..=0
-            } else {
-                usize::from(selection.minimum)..=usize::from(selection.maximum)
-            },
-            false,
-            options,
-            DecisionContinuation::TopCardSelection {
-                player,
-                revealed,
-                selection,
-                object: Box::new(object.clone()),
-                context,
-                effect: scoped,
-            },
-        );
+        (options, preference)
     }
 
     /// What the looker is asked. An arrangement says so, because the order is
@@ -145,6 +162,42 @@ impl Game {
     /// Where the two halves of an inspected group go once they are settled.
     /// Shared by the decision's continuation and by the selection that asks
     /// nothing, so both place cards and reveal them the same way.
+    /// "Put all the ones that match into your hand", which asks nothing:
+    /// the predicate has already partitioned the cards, and what the
+    /// follow-up reads is what they were.
+    fn take_all_matching_top_cards(
+        &mut self,
+        player: PlayerId,
+        piles: (Vec<CardInstance>, Vec<CardInstance>),
+        selection: &'static TopCardSelectionDef,
+        object: &StackObject,
+        context: EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) {
+        let (chosen, rest) = piles;
+        let (count, mana_value) = self.selected_card_totals(&chosen);
+        self.finish_top_card_selection(player, chosen, rest, selection);
+        if let Some(then) = selection.then {
+            let mut context = context;
+            context.matched_count = Some(count);
+            context.matched_mana_value = Some(mana_value);
+            self.resolve_effect_def(scoped.with_effect(*then), object, context);
+        }
+    }
+
+    /// How many cards a selection took and what they add up to in mana
+    /// value. Read before they move: a card in a hand is no longer something
+    /// the resolution can find.
+    pub(super) fn selected_card_totals(&self, chosen: &[CardInstance]) -> (u16, u16) {
+        let count = u16::try_from(chosen.len()).unwrap_or(u16::MAX);
+        let mana_value = chosen
+            .iter()
+            .filter_map(|card| self.catalog.get(card.definition))
+            .map(|definition| definition.rules.printed_mana_cost().mana_value())
+            .fold(0_u16, u16::saturating_add);
+        (count, mana_value)
+    }
+
     pub(super) fn finish_top_card_selection(
         &mut self,
         player: PlayerId,

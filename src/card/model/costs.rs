@@ -92,6 +92,14 @@ pub enum CostDef {
         object: ObjectPredicateDef,
         count: u8,
     },
+    /// Crew's and saddle's cost: tap any number of other untapped creatures
+    /// you control whose power adds up to at least this much (CR 702.122a,
+    /// CR 702.166a). Which creatures pay is chosen one at a time as the
+    /// ability is activated, for the same reason a multiple sacrifice is: a
+    /// board of ten creatures names a thousand ways to pay one cost.
+    TapCreaturesWithTotalPower {
+        minimum: u8,
+    },
     /// Add or remove that many loyalty counters. A planeswalker's abilities
     /// are the only costs paid this way, and paying one is what makes them
     /// once per turn at sorcery speed.

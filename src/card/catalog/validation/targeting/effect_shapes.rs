@@ -234,6 +234,7 @@ fn validate_effect_target_shapes(
         | EffectDef::Tap { object }
         | EffectDef::RemoveFromCombat { object }
         | EffectDef::Untap { object }
+        | EffectDef::Saddle { object }
         | EffectDef::Attach { object }
         | EffectDef::PhaseOut { object }
         | EffectDef::ReturnAttached { object, .. }

@@ -47,6 +47,7 @@ mod ability_layers;
 mod ability_targeting;
 mod activation;
 mod activation_sacrifice;
+mod activation_saddle;
 mod activation_state;
 mod api;
 mod attachments;

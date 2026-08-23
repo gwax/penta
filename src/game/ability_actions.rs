@@ -349,6 +349,10 @@ impl Game {
                         AbilityCostDef::DiscardCardsAtRandom(amount) => {
                             self.players[player.index()].hand.len() < usize::from(*amount)
                         }
+                        // Crew and saddle: what makes it payable is whether
+                        // the other untapped creatures add up.
+                        AbilityCostDef::TapCreaturesWithTotalPower { minimum } => !self
+                            .can_pay_total_power_tap(player, permanent.card.id, *minimum),
                         // A loyalty ability is sorcery speed, once per turn,
                         // and only removes counters the permanent has.
                         AbilityCostDef::Loyalty(change) => {
@@ -764,6 +768,7 @@ impl Game {
                         | AbilityCostDef::SacrificePermanent { .. }
                         | AbilityCostDef::SacrificePermanents { .. }
                         | AbilityCostDef::TapPermanent { .. }
+                        | AbilityCostDef::TapCreaturesWithTotalPower { .. }
                         | AbilityCostDef::ExileSource
                         | AbilityCostDef::Loyalty(_)
                         | AbilityCostDef::ExileCardsFromGraveyard { .. }
@@ -874,6 +879,7 @@ impl Game {
                             | AbilityCostDef::SacrificePermanents { .. }
                             | AbilityCostDef::ReturnUnblockedAttackerToHand
                             | AbilityCostDef::TapPermanent { .. }
+                            | AbilityCostDef::TapCreaturesWithTotalPower { .. }
                             | AbilityCostDef::Loyalty(_)
                             | AbilityCostDef::ExileCardsFromGraveyard { .. }
                             | AbilityCostDef::Special(_) => supported = false,

@@ -475,6 +475,7 @@ impl Game {
             permanent.dealt_damage_to_opponent_this_turn = false;
             permanent.attacked_this_turn = false;
             permanent.exerted = false;
+            permanent.saddled = false;
             permanent.attacks_this_turn = 0;
             permanent.damage_sources.clear();
             permanent.was_dealt_damage_this_turn = false;

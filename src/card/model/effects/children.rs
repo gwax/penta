@@ -143,6 +143,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::TakeExtraTurn { .. }
         | EffectDef::Tap { .. }
         | EffectDef::Transform { .. }
+        | EffectDef::Saddle { .. }
         | EffectDef::Untap { .. } => Vec::new(),
     }
 }

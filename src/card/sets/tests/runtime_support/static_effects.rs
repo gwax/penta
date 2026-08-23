@@ -223,6 +223,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::DoubleCounters { .. }
         | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
+        | EffectDef::Saddle { .. }
         | EffectDef::Attach { .. }
         | EffectDef::PhaseOut { .. }
         | EffectDef::ReturnAttached { .. }

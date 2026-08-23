@@ -880,7 +880,8 @@ fn continuation_snapshot(
         // An activation paused mid-payment carries the whole of what it
         // chose -- its frozen ability text, targets, and modes -- which this
         // format has no place for yet.
-        | DecisionContinuation::ActivationCostSacrifice { .. } => return None,
+        | DecisionContinuation::ActivationCostSacrifice { .. }
+        | DecisionContinuation::ActivationCostTap { .. } => return None,
     };
     Some(value)
 }

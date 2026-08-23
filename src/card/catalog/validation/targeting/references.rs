@@ -288,6 +288,7 @@ fn validate_trigger_object_predicate(
                     | ValueDef::PaidAmount
                     | ValueDef::MatchedCount
                     | ValueDef::MatchedCardTypes
+                    | ValueDef::MatchedManaValue
                     | ValueDef::BoundObjectCount(_)
                     | ValueDef::SpellsCastBeforeThisTurn
             ) {
@@ -332,6 +333,7 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Saddled
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
@@ -394,6 +396,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::Attacking
+        | ObjectPredicateDef::Saddled
         | ObjectPredicateDef::Blocking
         | ObjectPredicateDef::BlockedBySource
         | ObjectPredicateDef::BlockingSource
@@ -851,6 +854,7 @@ fn validate_value_target_references(
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount
         | ValueDef::MatchedCardTypes
+        | ValueDef::MatchedManaValue
         | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::CreaturesDiedThisTurn

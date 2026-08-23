@@ -178,6 +178,7 @@ fn validate_effect_references(
         | EffectDef::DoubleCounters { object, .. }
         | EffectDef::RemoveAllCounters { object, .. }
         | EffectDef::Untap { object }
+        | EffectDef::Saddle { object }
         | EffectDef::Attach { object }
         | EffectDef::PhaseOut { object }
         | EffectDef::ReturnAttached { object, .. }
