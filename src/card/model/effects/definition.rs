@@ -597,6 +597,8 @@ pub enum EffectDef {
         /// Whether the cards are exiled face down. Only their owner sees
         /// what they are; everybody can count them.
         face_down: bool,
+        /// How long the permission lasts.
+        duration: ExilePlayDurationDef,
     },
     /// "Exile a card at random from your graveyard. You may play that card
     /// this turn."

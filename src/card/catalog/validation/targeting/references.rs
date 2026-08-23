@@ -623,6 +623,7 @@ fn validate_trigger_event_references(
         | TriggerEventDef::BecomesMonarch(_)
         | TriggerEventDef::DrewCard(_)
         | TriggerEventDef::Discarded(_)
+        | TriggerEventDef::DiscardedCards(_)
         | TriggerEventDef::CardsExiled { .. }
         | TriggerEventDef::StateCondition => Ok(()),
     }

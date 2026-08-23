@@ -30,6 +30,11 @@ pub(super) struct ExilePlayPermissionSnapshot {
     /// restores face up, which every permission but a foretell was.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) face_down: bool,
+    /// The holder's turn whose end step the permission runs to. Additive: a
+    /// checkpoint written before any permission reached that far restores
+    /// without one, which all of them did.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) until_holder_end_step: Option<(usize, u32)>,
 }
 
 /// Taken by reference because that is the signature serde's

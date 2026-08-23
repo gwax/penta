@@ -4,9 +4,10 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
-    CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
+    CounterKind, EffectDef, EffectRecipientDef, ExilePlayDurationDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -112,6 +113,7 @@ static SCARLETT_ABILITIES: [AbilityDef; 3] = [
             amount: ValueDef::Constant(1),
             free: false,
             face_down: true,
+            duration: ExilePlayDurationDef::ThisTurn,
         },
     ),
 ];

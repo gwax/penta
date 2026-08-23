@@ -780,6 +780,9 @@ impl Game {
             for _ in 0..count {
                 self.capture_battlefield_triggers(&CommittedTriggerEvent::Discarded { player });
             }
+            // And once for the whole discard, which is what "one or more
+            // cards" asks about.
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::CardsDiscarded { player });
         }
     }
 }

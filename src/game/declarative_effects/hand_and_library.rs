@@ -8,7 +8,7 @@ use super::super::{
     PlayerId, ScopedEffect, StackObject, Target, ZoneKind, ZoneMoveCause, public_cards,
     remove_card,
 };
-use crate::card::ObjectPredicateDef;
+use crate::card::{ExilePlayDurationDef, ObjectPredicateDef};
 
 /// Manifest dread (CR 701.34, 702.169): look at the top two, one goes down
 /// face down as a 2/2 and the other goes to the graveyard. The procedure is
@@ -447,6 +447,7 @@ impl Game {
                 amount,
                 free,
                 face_down,
+                duration,
             } => {
                 let count = self.effect_value(amount, object, context, scoped).max(0);
                 let Ok(count) = usize::try_from(count) else {
@@ -461,12 +462,17 @@ impl Game {
                             let exiled = card.id;
                             self.players[player.index()].exile.push(card.clone());
                             moved.push(card);
-                            match (free, face_down) {
-                                (true, _) => self.permit_free_play_this_turn(exiled, controller),
-                                (false, true) => {
+                            match (free, face_down, duration) {
+                                (true, _, _) => self.permit_free_play_this_turn(exiled, controller),
+                                (false, true, _) => {
                                     self.permit_face_down_play_this_turn(exiled, controller);
                                 }
-                                (false, false) => self.permit_cast_this_turn(exiled, controller),
+                                (false, false, ExilePlayDurationDef::ThisTurn) => {
+                                    self.permit_cast_this_turn(exiled, controller);
+                                }
+                                (false, false, ExilePlayDurationDef::UntilYourNextEndStep) => {
+                                    self.permit_play_until_your_next_end_step(exiled, controller);
+                                }
                             }
                         }
                         self.capture_cards_exiled(&moved, ZoneKind::Library);

@@ -799,6 +799,10 @@ impl Game {
             // Both name only the player the event happened to.
             (TriggerEventDef::Discarded(relation), CommittedTriggerEvent::Discarded { player })
             | (
+                TriggerEventDef::DiscardedCards(relation),
+                CommittedTriggerEvent::CardsDiscarded { player },
+            )
+            | (
                 TriggerEventDef::BecomesMonarch(relation),
                 CommittedTriggerEvent::BecameMonarch { player },
             )

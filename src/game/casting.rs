@@ -882,6 +882,9 @@ impl Game {
                 self.capture_battlefield_triggers(&CommittedTriggerEvent::Discarded {
                     player: owner,
                 });
+                self.capture_battlefield_triggers(&CommittedTriggerEvent::CardsDiscarded {
+                    player: owner,
+                });
             }
         }
 

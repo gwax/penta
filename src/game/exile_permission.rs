@@ -55,6 +55,11 @@ pub(super) struct ExilePlayPermission {
     /// Whether the card lies face down in exile. Only its owner sees what it
     /// is; everybody may count how many there are.
     pub(super) face_down: bool,
+    /// The holder's turn whose end step this permission runs to, as their
+    /// turn count. Unlike [`Self::until_end_of_turn`] this survives the turn
+    /// it was granted on when that turn was somebody else's: "until your
+    /// next end step" reaches across to the holder's own.
+    pub(super) until_holder_end_step: Option<(PlayerId, u32)>,
 }
 
 impl ExilePlayCost {
@@ -118,6 +123,11 @@ impl Game {
                     && permission.not_before_turn.is_none_or(|(owner, turn)| {
                         self.turns_started[owner.index()] > turn || self.active_player != owner
                     })
+                    // Live until the holder's own turn `turn` is over, which
+                    // is what "until your next end step" reaches.
+                    && permission
+                        .until_holder_end_step
+                        .is_none_or(|(holder, turn)| self.turns_started[holder.index()] <= turn)
             })
     }
 
@@ -134,6 +144,7 @@ impl Game {
             surcharge: ManaCost::default(),
             not_before_turn: None,
             face_down: false,
+            until_holder_end_step: None,
         });
     }
 
@@ -150,6 +161,7 @@ impl Game {
             surcharge: ManaCost::default(),
             not_before_turn: None,
             face_down: false,
+            until_holder_end_step: None,
         });
     }
 
@@ -168,6 +180,40 @@ impl Game {
             surcharge: ManaCost::default(),
             not_before_turn: None,
             face_down: true,
+            until_holder_end_step: None,
+        });
+    }
+
+    /// "You may play that card until your next end step."
+    ///
+    /// Longer than a turn when the card was exiled on somebody else's: the
+    /// end step it runs to is the holder's own, so a discard on their turn
+    /// buys the whole of yours. Recorded as the holder's turn count at which
+    /// it lapses, which is this turn when it is already theirs.
+    pub(super) fn permit_play_until_your_next_end_step(
+        &mut self,
+        card: GameObjectId,
+        player: PlayerId,
+    ) {
+        self.exile_play_permissions.push(ExilePlayPermission {
+            card,
+            player,
+            cost: ExilePlayCost::Printed,
+            until_end_of_turn: None,
+            adventure_return_only: false,
+            surcharge: ManaCost::default(),
+            not_before_turn: None,
+            face_down: false,
+            until_holder_end_step: Some((
+                player,
+                if self.active_player == player {
+                    self.turns_started[player.index()]
+                } else {
+                    // Their turn: "your next end step" is the one in the
+                    // turn after this, so the permission outlives it.
+                    self.turns_started[player.index()].saturating_add(1)
+                },
+            )),
         });
     }
 
@@ -185,6 +231,7 @@ impl Game {
             surcharge: ManaCost::default(),
             not_before_turn: None,
             face_down: false,
+            until_holder_end_step: None,
         });
     }
 
@@ -201,6 +248,7 @@ impl Game {
             surcharge: ManaCost::default(),
             not_before_turn: None,
             face_down: false,
+            until_holder_end_step: None,
         });
     }
 
@@ -225,6 +273,7 @@ impl Game {
             surcharge,
             not_before_turn: None,
             face_down: false,
+            until_holder_end_step: None,
         });
     }
 
@@ -241,6 +290,7 @@ impl Game {
             surcharge: ManaCost::default(),
             not_before_turn: Some((owner, turn)),
             face_down: true,
+            until_holder_end_step: None,
         });
     }
 

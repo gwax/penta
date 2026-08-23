@@ -147,3 +147,13 @@ pub enum DiscardSelectionDef {
     /// discards nothing when the hand holds none.
     RandomMatching(&'static ObjectPredicateDef),
 }
+
+/// How long a permission to play an exiled card lasts.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ExilePlayDurationDef {
+    /// "This turn", which is the turn the card was exiled on and no longer.
+    ThisTurn,
+    /// "Until your next end step", which reaches into the holder's own turn
+    /// when the card was exiled on somebody else's.
+    UntilYourNextEndStep,
+}

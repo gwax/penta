@@ -3,8 +3,8 @@
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityDef, CardArt, CardRules, CardSet, CardSupertype, CounterKind, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
-    abilities,
+    EffectRecipientDef, ExilePlayDurationDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef,
+    ValueDef, ZoneKind, abilities,
 };
 use crate::mana_cost;
 
@@ -26,6 +26,7 @@ static LAELIA_ABILITIES: [AbilityDef; 3] = [
             // playing it for nothing: Laelia still pays for what she finds.
             free: false,
             face_down: false,
+            duration: ExilePlayDurationDef::ThisTurn,
         },
     ),
     // One counter for the move rather than one per card, which is what "one

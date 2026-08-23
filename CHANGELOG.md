@@ -361,6 +361,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Whenever you discard one or more cards", and a permission that outlasts
+  the turn.** A discard now raises one batched event beside its per-card
+  ones, so both printed wordings are answerable. And a permission to play an
+  exiled card can run to the holder's next end step rather than to the end
+  of whoever's turn it is -- a discard on somebody else's turn buys the whole
+  of yours.
+
 - **An additional cost can be paid with life instead.** "Discard a card or
   pay 3 life" is one cost with two ways to pay it, and only one of them
   names anything -- so paying the life spends no object, and the empty

@@ -117,6 +117,11 @@ pub enum TriggerEventDef {
     /// trigger per card, so "whenever you discard a card" fires twice for a
     /// discard of two -- and a discard paid as a cost is still a discard.
     Discarded(PlayerRelation),
+    /// "Whenever you discard one or more cards." One trigger for the whole
+    /// discard however many cards it took, which is what separates it from
+    /// [`Self::Discarded`]: a discard of two fires that one twice and this
+    /// one once.
+    DiscardedCards(PlayerRelation),
     /// "When you do", for the reflexive half of exert (CR 701.38a).
     ///
     /// Exerting is a choice made as the creature is declared as an attacker,

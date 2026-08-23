@@ -193,6 +193,12 @@ pub(super) enum CommittedTriggerEvent {
     Discarded {
         player: PlayerId,
     },
+    /// One discard, however many cards it moved. Raised beside the per-card
+    /// event above rather than instead of it: the two wordings are both
+    /// printed, and both have to be answerable.
+    CardsDiscarded {
+        player: PlayerId,
+    },
     Attacks {
         object: TriggerEventObject,
         declaration_size: u8,
@@ -424,6 +430,7 @@ impl CommittedTriggerEvent {
             Self::StepBegins { player, .. }
             | Self::CommittedCrime { player }
             | Self::Discarded { player }
+            | Self::CardsDiscarded { player }
             | Self::BecameMonarch { player }
             | Self::DrewCard { player, .. } => TriggerContext {
                 object: None,

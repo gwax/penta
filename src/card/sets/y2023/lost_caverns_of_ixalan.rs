@@ -2,11 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet, CardType,
-    ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef, InstalledTriggerDef,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, SpellAdditionalCostDef, TriggerEventDef, ZoneKind,
-    abilities, tokens,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardArt, CardRules,
+    CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CounterKind, EffectDef,
+    EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, ExilePlayDurationDef,
+    InstalledTriggerDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
+    SpellAdditionalCostDef, TriggerEventDef, ValueDef, ZoneKind, abilities, tokens,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -174,7 +175,92 @@ pub(in crate::card::sets) static DEEP_CAVERN_BAT: CardRecord = CardRecord::new_w
         .with_abilities(&DEEP_CAVERN_BAT_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&GET_LOST, &BITTER_TRIUMPH, &DEEP_CAVERN_BAT];
+static INTI_TRAMPLE: AbilityDef = abilities::trample();
+
+/// "It gains trample until end of turn" -- the creature that took the
+/// counter, which is the one the trigger targeted.
+static INTI_PUMP: [EffectDef; 2] = [
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::add_ability(&INTI_TRAMPLE),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+];
+
+static AN_ATTACKING_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Attacking,
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
+static INTI_ABILITIES: [AbilityDef; 2] = [
+    // The target is declared as the attack trigger goes on the stack rather
+    // than when the discard is made, which is the one place this differs
+    // from the printed reflexive trigger. "Whenever you attack" guarantees
+    // an attacking creature, so there is always something to name.
+    AbilityDef::triggered_with_targets(
+        "Whenever you attack, you may discard a card. When you do, put a +1/+1 counter on target \
+         attacking creature. It gains trample until end of turn.",
+        TriggerEventDef::attack_declared(ObjectPredicateDef::Any, 1, None),
+        &AN_ATTACKING_CREATURE,
+        EffectDef::PayOr(PayOrDef::optional(
+            EffectPaymentDef {
+                payer: PlayerSetDef::Related(PlayerRelation::You),
+                cost: EffectPaymentCostDef::Discard(1),
+            },
+            &EffectDef::Sequence(&INTI_PUMP),
+        )),
+    ),
+    // One trigger for the whole discard however many cards it took, and the
+    // card it finds is playable into your own turn when the discard
+    // happened on somebody else's.
+    AbilityDef::triggered(
+        "Whenever you discard one or more cards, exile the top card of your library. You may play \
+         that card until your next end step.",
+        TriggerEventDef::DiscardedCards(PlayerRelation::You),
+        EffectDef::ExileTopOfLibraryToPlay {
+            player: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+            free: false,
+            face_down: false,
+            duration: ExilePlayDurationDef::UntilYourNextEndStep,
+        },
+    ),
+];
+
+// LCI 156 — Inti, Seneschal of the Sun
+pub(in crate::card::sets) static INTI_SENESCHAL_OF_THE_SUN: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("fa7a55aa-ae61-4933-b7a4-dcc55dac6fcd"),
+    "Inti, Seneschal of the Sun",
+    CardArt::new(
+        "fa7a55aa-ae61-4933-b7a4-dcc55dac6fcd",
+        "Victor Adame Minguez",
+    ),
+    CardSet::LostCavernsOfIxalan,
+    // Two mana that turns every spare card into a bigger attack and a new
+    // card, and the two halves feed each other: the discard he asks for is
+    // the discard the second clause is watching for.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Knight"], 2, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&INTI_ABILITIES),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &GET_LOST,
+    &BITTER_TRIUMPH,
+    &DEEP_CAVERN_BAT,
+    &INTI_SENESCHAL_OF_THE_SUN,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

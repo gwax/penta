@@ -35,6 +35,7 @@ use crate::{
 mod decision;
 mod emblem;
 mod event;
+mod exile_play;
 mod model;
 mod model_keyword;
 mod model_prevention;
@@ -66,9 +67,9 @@ use model::{
     CombatDamageAssignmentSnapshot, CombatDamageStageSnapshot, ContinuousEffectExpirationSnapshot,
     CopiableAbilitySnapshot, CopiableCharacteristicsSnapshot, CopiedFromSnapshot,
     DetachedCardSnapshot, DetachedPermanentSnapshot, DoubleFacedCopiableCharacteristicsSnapshot,
-    EntryCompletionSnapshot, ExilePlayPermissionSnapshot, GameSnapshot, ManaColorSnapshot,
-    ManaSnapshot, ManaSourceSnapshot, ObjectKindSnapshot, PendingBattlefieldEntrySnapshot,
-    PendingEventSnapshot, PendingReplacementEffectSnapshot, PermanentSnapshot, PregameSnapshot,
+    EntryCompletionSnapshot, GameSnapshot, ManaColorSnapshot, ManaSnapshot, ManaSourceSnapshot,
+    ObjectKindSnapshot, PendingBattlefieldEntrySnapshot, PendingEventSnapshot,
+    PendingReplacementEffectSnapshot, PermanentSnapshot, PregameSnapshot,
     ReplacementEffectContextSnapshot, ReplacementEffectLocator, ResolvedContinuousEffectSnapshot,
     ResolvedContinuousOperationSnapshot, RetiredObjectSnapshot, SetOperationSnapshot,
     SuccessorSnapshot, TemporaryAbilityGrantSnapshot, TurnPhaseResumeSnapshot, TurnPhaseSnapshot,
@@ -475,21 +476,7 @@ impl Game {
             exile_play_permissions: self
                 .exile_play_permissions
                 .iter()
-                .map(|permission| ExilePlayPermissionSnapshot {
-                    card: permission.card.0,
-                    player: permission.player.index(),
-                    cost: permission.cost.label().to_owned(),
-                    until_end_of_turn: permission
-                        .until_end_of_turn
-                        .map(|(player, turn)| (player.index(), turn)),
-                    adventure_return_only: permission.adventure_return_only,
-                    surcharge: (permission.surcharge != ManaCost::default())
-                        .then(|| mana_cost_snapshot(permission.surcharge)),
-                    not_before_turn: permission
-                        .not_before_turn
-                        .map(|(player, turn)| (player.index(), turn)),
-                    face_down: permission.face_down,
-                })
+                .map(exile_play::permission_snapshot)
                 .collect(),
             monarch: self.monarch.map(PlayerId::index),
             sorcery_flash_grants: self.sorcery_flash_grants,
@@ -834,28 +821,7 @@ impl Game {
             exile_play_permissions: checkpoint
                 .exile_play_permissions
                 .iter()
-                .map(|permission| {
-                    Ok(ExilePlayPermission {
-                        card: GameObjectId(permission.card),
-                        player: player_from_index(permission.player)?,
-                        cost: ExilePlayCost::from_label(&permission.cost)
-                            .ok_or("unknown exile-play cost")?,
-                        until_end_of_turn: match permission.until_end_of_turn {
-                            Some((player, turn)) => Some((player_from_index(player)?, turn)),
-                            None => None,
-                        },
-                        adventure_return_only: permission.adventure_return_only,
-                        surcharge: permission
-                            .surcharge
-                            .as_ref()
-                            .map_or_else(ManaCost::default, mana_cost_from_snapshot),
-                        not_before_turn: match permission.not_before_turn {
-                            Some((player, turn)) => Some((player_from_index(player)?, turn)),
-                            None => None,
-                        },
-                        face_down: permission.face_down,
-                    })
-                })
+                .map(exile_play::parse_permission)
                 .collect::<Result<Vec<_>, String>>()?,
             monarch: checkpoint.monarch.map(player_from_index).transpose()?,
             linked_exiles: checkpoint

@@ -4,10 +4,10 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, CounterKind, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    CardSupertype, CardType, CounterKind, EffectDef, EffectRecipientDef, ExilePlayDurationDef,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef,
+    PlayerRelation, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -290,6 +290,7 @@ static SHINOBI_ABILITIES: [AbilityDef; 2] = [
             amount: ValueDef::Constant(2),
             free: true,
             face_down: false,
+            duration: ExilePlayDurationDef::ThisTurn,
         },
     ),
 ];

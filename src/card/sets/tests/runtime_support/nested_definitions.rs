@@ -109,6 +109,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
         | TriggerEventDef::Discarded(_)
+        | TriggerEventDef::DiscardedCards(_)
         // The crown names only the player who received it, and there is
         // nothing else for a predicate to read.
         | TriggerEventDef::BecomesMonarch(_)
