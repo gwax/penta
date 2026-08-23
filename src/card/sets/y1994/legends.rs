@@ -1,4 +1,4 @@
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef,
@@ -1252,8 +1252,65 @@ pub(in crate::card::sets) static RECALL: CardRecord = CardRecord::new_with_legac
     )]),
 );
 
+/// "Enchant artifact an opponent controls." The restriction is on the Aura
+/// spell's target rather than on where it may stay: an artifact that
+/// changes hands afterwards keeps the Aura.
+static AN_OPPONENTS_ARTIFACT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Artifact),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+)];
+
+static RELIC_BIND_MODES: [AbilityDef; 2] = [
+    AbilityDef::spell_with_targets(
+        "This Aura deals 1 damage to target player or planeswalker.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Any),
+        )],
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    AbilityDef::spell_with_targets(
+        "Target player gains 1 life.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(1),
+        },
+    ),
+];
+
 // LEG 71 — Relic Bind
-// Audit: blocked — Needs modal triggered abilities: modes are chosen only while casting a spell, so a trigger has no mode selection to make as it resolves. The trigger event and both modes are available.
+pub(in crate::card::sets) static RELIC_BIND: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("a9b07dc4-21ad-410b-8f8a-2b034253bfee"),
+    "Relic Bind",
+    CardArt::new("a9b07dc4-21ad-410b-8f8a-2b034253bfee", "Christopher Rush"),
+    CardSet::Legends,
+    // Three mana to tax an artifact somebody else is using, a point at a
+    // time, and to hand out a point of life when the taxing is not what you
+    // want.
+    CardRules::new_enchantment(mana_cost!("{2}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell(
+                "Enchant artifact an opponent controls",
+                &AN_OPPONENTS_ARTIFACT,
+            ),
+            AbilityDef::modal_triggered(
+                "Whenever enchanted artifact becomes tapped, choose one —\n• This Aura deals 1 \
+                 damage to target player or planeswalker.\n• Target player gains 1 life.",
+                TriggerEventDef::tapped(ObjectPredicateDef::AttachedToSource),
+                &RELIC_BIND_MODES,
+            ),
+        ]),
+);
 
 // LEG 72 — Remove Soul
 pub(in crate::card::sets) static REMOVE_SOUL: CardRecord = CardRecord::new_with_legacy_id(
@@ -5708,6 +5765,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PART_WATER,
     &PSIONIC_ENTITY,
     &RECALL,
+    &RELIC_BIND,
     &REMOVE_SOUL,
     &RESET,
     &SEA_KINGS_BLESSING,
