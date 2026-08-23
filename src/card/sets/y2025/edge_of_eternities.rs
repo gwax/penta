@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AlternativeCastKindDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementAbilityDef,
-    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityDef, AlternativeCastKindDef, CardArt, CardRules, CardSet, CardType, CounterKind,
+    EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
+    PlayerRelation, ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef,
+    ReplacementEventDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::mana_cost;
 
@@ -213,6 +214,43 @@ pub(in crate::card::sets) static PLASMA_BOLT: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+/// "Each creature you control" includes the Wurm itself, so the counters it
+/// hands out make the next round of them bigger.
+static CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+// EOE 201 — Ouroboroid
+pub(in crate::card::sets) static OUROBOROID: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("209c591a-4ab2-4e89-9523-a7b766cf4e51"),
+    "Ouroboroid",
+    CardArt::new("209c591a-4ab2-4e89-9523-a7b766cf4e51", "Samuel Perin"),
+    CardSet::EdgeOfEternities,
+    // A 1/3 that doubles itself every combat and takes the rest of the board
+    // with it: one counter each the first turn, two the next, four after
+    // that.
+    CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Plant", "Wurm"], 1, 3).with_ability(
+        AbilityDef::triggered(
+            "At the beginning of combat on your turn, put X +1/+1 counters on each creature you \
+             control, where X is this creature's power.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::BeginningOfCombat,
+                player: PlayerRelation::You,
+            },
+            // X is read once, as the ability resolves, and every creature
+            // gets that many -- including the Wurm, whose own growth does
+            // not raise the number partway through.
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::objects(ObjectSetDef::Query(CREATURES_YOU_CONTROL)),
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::SourcePower,
+            },
+        ),
+    ),
+);
+
 // EOE 244 — Pinnacle Kill-Ship
 // Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static PINNACLE_KILL_SHIP: CardRecord = CardRecord::new(
@@ -232,6 +270,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &QUANTUM_RIDDLER,
     &STARBREACH_WHALE,
     &PLASMA_BOLT,
+    &OUROBOROID,
     &PINNACLE_KILL_SHIP,
 ];
 
