@@ -2,13 +2,134 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardComposition, CardEffectStatus,
-    CardPart, CardRules, CardSet, CardStructure, CardType, DoubleFacedKind, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayOptionDef, PlayerRelation, SpellForm, ValueDef,
-    ZoneKind, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    AppliedEffectDef, CardArt, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet,
+    CardStructure, CardType, ChoiceVisibilityDef, ChooseDef, DoubleFacedKind, EffectDef,
+    EffectRecipientDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, SpellForm,
+    TriggerEventDef, ValueDef, ZoneKind, abilities,
 };
-use crate::ids::{CardPartId, PlayOptionId};
+use crate::ids::{
+    CardPartId, ObjectBindingIndex, ObjectSetBindingIndex, PlayOptionId, TargetIndex,
+};
 use crate::mana_cost;
+
+/// What the Eye does with the card it picked. Written as a walk over the
+/// chosen set rather than a plain sequence, because "if you do" gates the
+/// draw as well as the discard: an Eye that looked and took nothing leaves
+/// the opponent with the hand they had.
+static REVEALING_EYE_TAKE_IT: EffectDef = EffectDef::Sequence(&[
+    EffectDef::DiscardCards {
+        object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(1),
+    },
+]);
+
+static REVEALING_EYE_CHOSEN: EffectDef = EffectDef::ForEachInBinding {
+    objects: ObjectSetBindingIndex::PRIMARY,
+    binding: ObjectBindingIndex::PRIMARY,
+    effect: &REVEALING_EYE_TAKE_IT,
+};
+
+/// "You may choose a nonland card from it": a choice of none is a legal
+/// answer, which is why the minimum is zero rather than one.
+static REVEALING_EYE_EFFECT: [EffectDef; 2] = [
+    EffectDef::RevealHand {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::Choose(ChooseDef {
+        binding: ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
+        unchosen: None,
+        chooser: PlayerRefDef::EffectController,
+        candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+            ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+            &[ZoneKind::Hand],
+            PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+        )),
+        exclude: None,
+        minimum: 0,
+        maximum: 1,
+        visibility: ChoiceVisibilityDef::Public,
+        then: &REVEALING_EYE_CHOSEN,
+    }),
+];
+
+static AN_OPPONENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+)];
+
+static CURTAINS_ABILITIES: [AbilityDef; 2] = [
+    abilities::defender(),
+    AbilityDef::activated(
+        "{2}{B}: Transform this creature. Activate only as a sorcery.",
+        &[AbilityCostDef::Mana(mana_cost!("{2}{B}"))],
+        EffectDef::Transform {
+            object: EffectRecipientDef::Source,
+        },
+    )
+    .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+];
+
+static REVEALING_EYE_ABILITIES: [AbilityDef; 2] = [
+    abilities::menace(),
+    AbilityDef::triggered_with_targets(
+        "When this creature transforms into Revealing Eye, target opponent reveals their hand. \
+         You may choose a nonland card from it. If you do, that player discards that card, then \
+         draws a card.",
+        TriggerEventDef::transforms(ObjectPredicateDef::Source),
+        &AN_OPPONENT,
+        EffectDef::Sequence(&REVEALING_EYE_EFFECT),
+    ),
+];
+
+const fn concealing_curtains_rules() -> CardRules {
+    CardRules::new_creature(mana_cost!("{B}"), &["Wall"], 0, 4).with_abilities(&CURTAINS_ABILITIES)
+}
+
+const fn revealing_eye_rules() -> CardRules {
+    CardRules::new_creature_without_mana_cost(&["Eye", "Horror"], 3, 4)
+        .with_abilities(&REVEALING_EYE_ABILITIES)
+}
+
+fn curtains_composition() -> CardComposition {
+    CardComposition {
+        parts: vec![
+            CardPart::new(
+                CardPartId::PRIMARY,
+                "Concealing Curtains",
+                concealing_curtains_rules(),
+            ),
+            CardPart::new(CardPartId(1), "Revealing Eye", revealing_eye_rules()),
+        ],
+        structure: CardStructure::DoubleFaced {
+            front: CardPartId::PRIMARY,
+            back: CardPartId(1),
+            kind: DoubleFacedKind::Transforming,
+        },
+        play_options: vec![PlayOptionDef::cast(
+            PlayOptionId::DEFAULT,
+            "Concealing Curtains",
+            SpellForm::Part(CardPartId::PRIMARY),
+            mana_cost!("{B}"),
+            CardEffectStatus::Implemented,
+        )],
+    }
+}
+
+// VOW 101 — Concealing Curtains
+pub(in crate::card::sets) static CONCEALING_CURTAINS: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("612b2e6e-fe8d-49ad-b845-6fa7fa59ffd1"),
+    "Concealing Curtains",
+    CardArt::new("612b2e6e-fe8d-49ad-b845-6fa7fa59ffd1", "Brian Valeza"),
+    CardSet::InnistradCrimsonVow,
+    // A one-mana wall that holds the ground early and, three mana later,
+    // turns into a menacing body that empties the hand it was hiding from.
+    concealing_curtains_rules(),
+)
+.with_composition(curtains_composition);
 
 static ODDITY_TRAMPLE: AbilityDef = abilities::trample();
 static ODDITY_HASTE: AbilityDef = abilities::haste();
@@ -110,6 +231,6 @@ pub(in crate::card::sets) static ULVENWALD_ODDITY: CardRecord = CardRecord::new(
 )
 .with_composition(ulvenwald_composition);
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&ULVENWALD_ODDITY];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&CONCEALING_CURTAINS, &ULVENWALD_ODDITY];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
