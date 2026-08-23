@@ -332,12 +332,46 @@ pub(in crate::card::sets) static INTI_SENESCHAL_OF_THE_SUN: CardRecord = CardRec
         .with_abilities(&INTI_ABILITIES),
 );
 
+static SENTINEL_ENTERS_OR_ATTACKS: [TriggerEventDef; 2] = [
+    TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Source,
+        None,
+        Some(ZoneKind::Battlefield),
+    ),
+    TriggerEventDef::attacks(ObjectPredicateDef::Source),
+];
+
+static SENTINEL_MAP: EffectDef = EffectDef::create_token(tokens::map()).with_art(CardArt::new(
+    "64839118-09d2-4645-9d3c-f80755ac781f",
+    "Francesca Baerald",
+));
+
+// LCI 211 — Sentinel of the Nameless City
+pub(in crate::card::sets) static SENTINEL_OF_THE_NAMELESS_CITY: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("eeeffc0b-dc92-458e-ad58-86ff6077a508"),
+    "Sentinel of the Nameless City",
+    CardArt::new("eeeffc0b-dc92-458e-ad58-86ff6077a508", "Josu Hernaiz"),
+    CardSet::LostCavernsOfIxalan,
+    // A 3/4 that blocks and attacks in the same turn, and hands you a Map
+    // for doing either.
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Merfolk", "Warrior", "Scout"], 3, 4)
+        .with_abilities(&[
+            abilities::vigilance(),
+            AbilityDef::triggered(
+                "Whenever this creature enters or attacks, create a Map token.",
+                TriggerEventDef::AnyOf(&SENTINEL_ENTERS_OR_ATTACKS),
+                SENTINEL_MAP,
+            ),
+        ]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GET_LOST,
     &MALCOLM_ALLURING_SCOUNDREL,
     &BITTER_TRIUMPH,
     &DEEP_CAVERN_BAT,
     &INTI_SENESCHAL_OF_THE_SUN,
+    &SENTINEL_OF_THE_NAMELESS_CITY,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
