@@ -938,11 +938,11 @@ pub enum EffectDef {
     Saddle {
         object: EffectRecipientDef,
     },
-    /// "You may play the exiled card without paying its mana cost."
-    /// Hideaway's second half: it names the cards this permanent hid rather
-    /// than anything in exile, and lasts the turn it resolved on.
-    PlayLinkedExiles {
-        object: ObjectPredicateDef,
+    /// "You may play those cards without paying their mana costs." The set
+    /// is named rather than the zone: Hideaway means what that permanent
+    /// hid, a search means what it just exiled. Lasts the turn it resolved.
+    MayPlayWithoutPaying {
+        objects: ObjectSetDef,
     },
     /// The object sits out this many of its controller's untap steps.
     SkipNextUntapSteps {

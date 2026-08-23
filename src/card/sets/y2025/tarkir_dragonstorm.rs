@@ -2,14 +2,15 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     ChoiceVisibilityDef, ChooseDef, ComparisonDef, CreatedTokensDef, EffectDef, EffectPaymentDef,
     EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
     ObjectQueryDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, abilities,
+    ZoneKind, ZonePlacement, abilities,
 };
-use crate::ids::ObjectSetBindingIndex;
+use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
 
 /// The tokens go away at the next end step, and it has to be exactly the
@@ -79,6 +80,127 @@ static DESCENDANT_ENDURES: EffectDef = EffectDef::Endure {
     object: EffectRecipientDef::Source,
     amount: ValueDef::Constant(1),
 };
+
+/// "Up to one target permanent that's one or more colors": colorless is what
+/// Ugin does not touch, which is the whole bargain of the deck built around
+/// him -- your own artifacts and Eldrazi are safe from every one of these
+/// triggers.
+static UP_TO_ONE_COLORED_PERMANENT: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Not(&ObjectPredicateDef::ColorCount(0)),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    1,
+)];
+
+static UGIN_EXILES_IT: EffectDef = EffectDef::MoveToZone {
+    counters: None,
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    zone: ZoneKind::Exile,
+    placement: ZonePlacement::Top,
+    controller: None,
+    arrival_effect: None,
+    attachment: None,
+};
+
+/// A colorless spell you cast, which is every spell the deck around him is
+/// made of. His own cast is not one of these: he is still on the stack, and
+/// this clause is read off the battlefield.
+static A_COLORLESS_SPELL_YOU_CAST: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::ColorCount(0),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+static UGIN_GAINS_AND_DRAWS: [EffectDef; 2] = [
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+];
+
+/// "Until end of turn, you may cast those cards without paying their mana
+/// costs": the cards the search just exiled, named by what it bound rather
+/// than by anything about exile, since a card that was already there is not
+/// one of them.
+static UGIN_MAY_CAST_THEM: EffectDef = EffectDef::MayPlayWithoutPaying {
+    objects: ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY),
+};
+
+/// "Any number": the bound is the library, so the search offers everything
+/// that matches and takes as many as its controller wants.
+static UGIN_SEARCH: EffectDef = EffectDef::SearchZone {
+    player: EffectRecipientDef::Controller,
+    source: ZoneKind::Library,
+    object: ObjectPredicateDef::All(&[
+        ObjectPredicateDef::ColorCount(0),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+    ]),
+    minimum: 0,
+    maximum: ValueDef::Constant(i32::MAX),
+    reveal: false,
+    destination: ZoneKind::Exile,
+    placement: ZonePlacement::Top,
+    shuffle: true,
+    enters_tapped: false,
+    binding: Some(ObjectSetBindingIndex::PRIMARY),
+    then: Some(&UGIN_MAY_CAST_THEM),
+};
+
+static UGIN_ABILITIES: [AbilityDef; 5] = [
+    AbilityDef::triggered_with_targets(
+        "When you cast this spell, exile up to one target permanent that's one or more colors.",
+        TriggerEventDef::SpellCast(ObjectPredicateDef::Source),
+        &UP_TO_ONE_COLORED_PERMANENT,
+        UGIN_EXILES_IT,
+    ),
+    AbilityDef::triggered_with_targets(
+        "Whenever you cast a colorless spell, exile up to one target permanent that's one or \
+         more colors.",
+        TriggerEventDef::SpellCast(A_COLORLESS_SPELL_YOU_CAST),
+        &UP_TO_ONE_COLORED_PERMANENT,
+        UGIN_EXILES_IT,
+    ),
+    AbilityDef::activated(
+        "+2: You gain 3 life and draw a card.",
+        &[AbilityCostDef::Loyalty(2)],
+        EffectDef::Sequence(&UGIN_GAINS_AND_DRAWS),
+    ),
+    // A loyalty ability that makes mana is still a mana ability: it never
+    // uses the stack, and it is still the one loyalty ability he may use
+    // this turn.
+    AbilityDef::activated_mana(
+        "0: Add {C}{C}{C}.",
+        &[AbilityCostDef::Loyalty(0)],
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless).with_amount(3)),
+    ),
+    AbilityDef::activated(
+        "\u{2212}11: Search your library for any number of colorless nonland cards, exile them, \
+         then shuffle. Until end of turn, you may cast those cards without paying their mana \
+         costs.",
+        &[AbilityCostDef::Loyalty(-11)],
+        UGIN_SEARCH,
+    ),
+];
+
+// TDM 1 — Ugin, Eye of the Storms
+pub(in crate::card::sets) static UGIN_EYE_OF_THE_STORMS: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("64a5d494-efa1-446b-bebe-2ad36e154376"),
+    "Ugin, Eye of the Storms",
+    CardArt::new("64a5d494-efa1-446b-bebe-2ad36e154376", "Joshua Raphael"),
+    CardSet::TarkirDragonstorm,
+    // Seven mana that answers something the moment it is cast and again for
+    // every colorless spell after it, pays for the next one itself, and
+    // eventually empties the library onto the table for free.
+    CardRules::new_planeswalker(mana_cost!("{7}"), &["Ugin"], 7)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&UGIN_ABILITIES),
+);
 
 // TDM 8 — Descendant of Storms
 pub(in crate::card::sets) static DESCENDANT_OF_STORMS: CardRecord = CardRecord::new(
@@ -277,6 +399,7 @@ pub(in crate::card::sets) static SAGU_WILDLING: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &UGIN_EYE_OF_THE_STORMS,
     &DESCENDANT_OF_STORMS,
     &FORTRESS_KIN_GUARD,
     &RILING_DAWNBREAKER,

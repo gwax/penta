@@ -39,10 +39,12 @@ impl Game {
                     // making it.
                     let _ = self.pay_player_cost(player, *cost, 0);
                 }
+                AbilityCostDef::Loyalty(change) => {
+                    self.pay_loyalty_cost(source, *change);
+                }
                 AbilityCostDef::DiscardSource
                 | AbilityCostDef::UntapSource
                 | AbilityCostDef::SacrificeObject(_)
-                | AbilityCostDef::Loyalty(_)
                 | AbilityCostDef::ExileCardsFromGraveyard { .. }
                 | AbilityCostDef::DiscardCards(_)
                 | AbilityCostDef::DiscardCardMatching(_)

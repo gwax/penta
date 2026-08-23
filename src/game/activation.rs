@@ -8,6 +8,26 @@ use super::{
 };
 
 impl Game {
+    /// Moves the counters a loyalty cost names and records that this
+    /// planeswalker has used its one ability for the turn (CR 606.3). Shared
+    /// by the two activation paths, because a loyalty ability that makes
+    /// mana is paid for exactly like one that does not.
+    pub(super) fn pay_loyalty_cost(&mut self, source: GameObjectId, change: i8) {
+        let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == source)
+        else {
+            return;
+        };
+        if change >= 0 {
+            permanent.add_counters(CounterKind::Loyalty, u16::from(change.unsigned_abs()));
+        } else {
+            permanent.remove_counters(CounterKind::Loyalty, u16::from(change.unsigned_abs()));
+        }
+        permanent.activated_loyalty_this_turn = true;
+    }
+
     /// Whether a printed "Activate only ..." window is currently open for
     /// this player. The restriction narrows when an ability may be activated;
     /// it says nothing about priority, so an ability still needs its
@@ -640,24 +660,7 @@ impl Game {
                         }
                     }
                     AbilityCostDef::Loyalty(change) => {
-                        if let Some(permanent) = self
-                            .battlefield
-                            .iter_mut()
-                            .find(|permanent| permanent.card.id == source)
-                        {
-                            if *change >= 0 {
-                                permanent.add_counters(
-                                    CounterKind::Loyalty,
-                                    u16::from(change.unsigned_abs()),
-                                );
-                            } else {
-                                permanent.remove_counters(
-                                    CounterKind::Loyalty,
-                                    u16::from(change.unsigned_abs()),
-                                );
-                            }
-                            permanent.activated_loyalty_this_turn = true;
-                        }
+                        self.pay_loyalty_cost(source, *change);
                     }
                     AbilityCostDef::DiscardCardsAtRandom(amount) => {
                         self.discard_at_random(player, usize::from(*amount));

@@ -49,8 +49,8 @@ impl Game {
                     }
                 }
             }
-            EffectDef::PlayLinkedExiles { object: predicate } => {
-                self.permit_playing_linked_exiles(predicate, object);
+            EffectDef::MayPlayWithoutPaying { objects } => {
+                self.permit_playing_without_paying(objects, object, context, scoped);
             }
             EffectDef::ReturnLinkedExiles {
                 object: predicate,
@@ -120,16 +120,17 @@ impl Game {
             _ => {}
         }
     }
-    /// "You may play the exiled card without paying its mana cost." The
+    /// "You may play those cards without paying their mana costs." The
     /// permission lasts the turn it was granted on, which is the turn the
     /// ability resolved.
-    fn permit_playing_linked_exiles(
+    fn permit_playing_without_paying(
         &mut self,
-        predicate: crate::card::ObjectPredicateDef,
+        objects: crate::card::ObjectSetDef,
         object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
     ) {
-        let source = object.source.unwrap_or(object.id);
-        for target in self.linked_exile_targets(predicate, source) {
+        for target in self.effect_objects(objects, object, context, scoped) {
             if let Target::Card(card) = target {
                 self.permit_free_play_this_turn(card, object.controller);
             }

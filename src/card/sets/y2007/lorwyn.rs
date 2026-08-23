@@ -275,8 +275,8 @@ pub(in crate::card::sets) static SHELLDOCK_ISLE: CardRecord = CardRecord::new(
             "{U}, {T}: You may play the exiled card without paying its mana cost if a library \
              has twenty or fewer cards in it.",
             &SHELLDOCK_UNLOCK_COST,
-            EffectDef::PlayLinkedExiles {
-                object: ObjectPredicateDef::Any,
+            EffectDef::MayPlayWithoutPaying {
+                objects: ObjectSetDef::LinkedExiles(ObjectPredicateDef::Any),
             },
         )
         .with_activation_condition(&A_LIBRARY_IS_NEARLY_EMPTY)

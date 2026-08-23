@@ -440,7 +440,7 @@ fn validate_effect_references(
         | EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::ReturnLinkedExiles { .. }
-        | EffectDef::PlayLinkedExiles { .. }
+        | EffectDef::MayPlayWithoutPaying { .. }
         | EffectDef::Cascade
         | EffectDef::Proliferate
         | EffectDef::CannotBeForcedToSacrifice

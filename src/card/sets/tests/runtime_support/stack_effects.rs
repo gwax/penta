@@ -402,9 +402,11 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         EffectDef::ReturnLinkedExiles { zone, .. } => {
             matches!(zone, ZoneKind::Battlefield | ZoneKind::Hand)
         }
-        // The pile is named by which permanent hid the cards, so only the
-        // predicate that narrows it is an open question.
-        EffectDef::PlayLinkedExiles { object } => shared_object_predicate(object),
+        // The set is the whole of it: which cards may be played is what the
+        // clause names, and every set the shared walk understands works.
+        EffectDef::MayPlayWithoutPaying { objects } => {
+            shared_effect_recipient(EffectRecipientDef::objects(objects))
+        }
         // Populate copies whatever the choice landed on, so like the rest of
         // these only its recipient has to be one the runtime understands.
         // The destination is always a library and the depth is an ordinary

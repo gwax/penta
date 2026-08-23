@@ -55,9 +55,15 @@ impl Game {
                 | AbilityCostDef::TapPermanent { .. }
                 | AbilityCostDef::TapCreaturesWithTotalPower { .. }
                 | AbilityCostDef::ExileSource
-                | AbilityCostDef::Loyalty(_)
                 | AbilityCostDef::ExileCardsFromGraveyard { .. }
                 | AbilityCostDef::Special(_) => true,
+                // Sorcery speed, once a turn, and never past zero: a mana
+                // ability that costs loyalty is still a loyalty ability
+                // (CR 606.3), so it answers the same question every other
+                // one does.
+                AbilityCostDef::Loyalty(change) => {
+                    self.can_activate_loyalty(permanent, permanent.controller, *change)
+                }
             })
             && Self::source_counter_costs_are_payable(permanent, definition.costs.as_slice())
     }
@@ -99,6 +105,10 @@ impl Game {
             | AbilityCostDef::SacrificePermanent { .. }
             | AbilityCostDef::ExileCardFromHand(_)
             | AbilityCostDef::SacrificePermanents { .. }
+            // A loyalty cost is bounded by the rule rather than by the
+            // board: one loyalty ability per planeswalker per turn, and
+            // that is what stops it looping.
+            | AbilityCostDef::Loyalty(_)
             | AbilityCostDef::PayLife(_) => true,
             AbilityCostDef::Mana(mana) => {
                 // A mana cost alone does not bound how often the ability can
@@ -129,7 +139,6 @@ impl Game {
             | AbilityCostDef::ReturnUnblockedAttackerToHand
                 | AbilityCostDef::TapPermanent { .. }
             | AbilityCostDef::TapCreaturesWithTotalPower { .. }
-            | AbilityCostDef::Loyalty(_)
             | AbilityCostDef::ExileCardsFromGraveyard { .. }
             | AbilityCostDef::Special(_) => false,
         }

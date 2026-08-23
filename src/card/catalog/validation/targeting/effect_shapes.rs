@@ -382,7 +382,7 @@ fn validate_effect_target_shapes(
         | EffectDef::DamageCannotBePreventedThisTurn
             | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ReturnLinkedExiles { .. }
-        | EffectDef::PlayLinkedExiles { .. }
+        | EffectDef::MayPlayWithoutPaying { .. }
         | EffectDef::Cascade
         | EffectDef::Proliferate
         | EffectDef::CannotBeForcedToSacrifice

@@ -631,6 +631,11 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                             // candidate, for the same reason.
                             | AbilityCostDef::SacrificePermanent { .. }
                             | AbilityCostDef::ExileCardFromHand(_)
+                            // A loyalty cost bounds the ability by the rule
+                            // rather than by the board: one loyalty ability
+                            // per planeswalker per turn, and the mana path
+                            // asks that question where it pays.
+                            | AbilityCostDef::Loyalty(_)
                             | AbilityCostDef::PayLife(_)
                     ) || matches!(
                         cost,
@@ -767,7 +772,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::DamageCannotBePreventedThisTurn
                     | EffectDef::GrantFlashToNextSorcery
                     | EffectDef::ExileLinkedToSource { .. }
-                    | EffectDef::PlayLinkedExiles { .. }
+                    | EffectDef::MayPlayWithoutPaying { .. }
                     | EffectDef::ExileGrantingOwnerPlay { .. }
                     | EffectDef::ReturnLinkedExiles { .. }
                     | EffectDef::Detain { .. }

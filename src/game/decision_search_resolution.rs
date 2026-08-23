@@ -43,10 +43,12 @@ impl Game {
             follow_up,
         } = resolution;
         let selected = selected.to_vec();
-        // Bound before the cards move: what the follow-up speaks
-        // about is what this search found, and the identities it
-        // holds do not survive some of the zone changes below.
-        let follow_up = follow_up.map(|follow_up| {
+        // Bound where the cards were found. A move out of a hidden zone
+        // gives each card a new identity, so a destination that changes
+        // them rebinds below; a library destination and a battlefield
+        // arrival do not, the first because the card never leaves and the
+        // second because what enters is settled after this.
+        let mut follow_up = follow_up.map(|follow_up| {
             let mut follow_up = *follow_up;
             if let Some(binding) = binding {
                 let found = selected
@@ -82,8 +84,9 @@ impl Game {
         }
 
         if source != destination {
+            let mut moved = Vec::new();
             for (card, _) in selected {
-                let _ = self.move_card_from_nonbattlefield_zone(
+                let landed = self.move_card_from_nonbattlefield_zone(
                     card,
                     source,
                     destination,
@@ -96,6 +99,18 @@ impl Game {
                         }
                     }),
                 );
+                if let Some((landed, _)) = landed {
+                    moved.push(Target::Card(landed.id));
+                }
+            }
+            // "Exile them, then ... you may cast those cards": the cards the
+            // follow-up names are the ones now sitting in the destination,
+            // which are new objects.
+            if destination != ZoneKind::Battlefield
+                && let Some(binding) = binding
+                && let Some(follow_up) = follow_up.as_mut()
+            {
+                follow_up.context.bind_object_group(binding, moved);
             }
         }
         if shuffle {

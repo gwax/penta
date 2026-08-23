@@ -879,7 +879,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::GrantFlashToNextSorcery => "GrantFlashToNextSorcery",
         EffectDef::May { .. } => "May",
         EffectDef::ExileLinkedToSource { .. } => "ExileLinkedToSource",
-        EffectDef::PlayLinkedExiles { .. } => "PlayLinkedExiles",
+        EffectDef::MayPlayWithoutPaying { .. } => "MayPlayWithoutPaying",
         EffectDef::ExileGrantingOwnerPlay { .. } => "ExileGrantingOwnerPlay",
         EffectDef::ReturnLinkedExiles { .. } => "ReturnLinkedExiles",
         EffectDef::GainControl { .. } | EffectDef::ExchangeControl { .. } => "GainControl",
