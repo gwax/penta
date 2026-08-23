@@ -136,6 +136,7 @@ impl Game {
             | EffectDef::SearchZone { then: None, .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
+            | EffectDef::LookAtRandomCardInHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }
             | EffectDef::RevealHand { .. }
             | EffectDef::ChooseCards { .. }

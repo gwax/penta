@@ -462,6 +462,7 @@ impl HandcraftedPolicy {
         | EffectDef::Explore { .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtHand { .. }
+            | EffectDef::LookAtRandomCardInHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }
             | EffectDef::RevealHand { .. }
             | EffectDef::SearchZone { .. }

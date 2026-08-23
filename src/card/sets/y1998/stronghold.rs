@@ -6,11 +6,19 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef,
     AppliedRuleDef, AttackDefenderScopeDef, AttackRestrictionDef, CardArt, CardRules, CardSet,
     CardSupertype, CardType, DamageEventMatcherDef, DamagePreventionDef, EffectDef,
-    EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef, SpellAdditionalCostDef,
-    ValueDef, ZoneKind, abilities,
+    EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, MillUntilDef, ObjectPredicateDef,
+    PlayerRelation, PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef,
+    SpellAdditionalCostDef, ValueDef, ZoneKind, abilities,
 };
 use crate::mana_cost;
+
+static MILL_UNTIL_1: MillUntilDef = MillUntilDef {
+    player: EffectRecipientDef::Controller,
+    object: A_BASIC_LAND_CARD,
+    matched_zone: ZoneKind::Hand,
+    binding: None,
+    then: None,
+};
 
 // STH 36 — Mana Leak
 pub(in crate::card::sets) static MANA_LEAK: CardRecord = CardRecord::new_with_legacy_id(
@@ -100,13 +108,7 @@ pub(in crate::card::sets) static HERMIT_DRUID: CardRecord = CardRecord::new_with
                 AbilityCostDef::Mana(mana_cost!("{G}")),
                 AbilityCostDef::TapSource,
             ],
-            EffectDef::MillUntil {
-                player: EffectRecipientDef::Controller,
-                object: A_BASIC_LAND_CARD,
-                matched_zone: ZoneKind::Hand,
-                binding: None,
-                then: None,
-            },
+            EffectDef::MillUntil(&MILL_UNTIL_1),
         ),
     ),
 );

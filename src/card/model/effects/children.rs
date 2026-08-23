@@ -44,10 +44,10 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         }
         EffectDef::SearchZone { then, .. }
         | EffectDef::Mill { then, .. }
-        | EffectDef::MillUntil { then, .. }
         | EffectDef::ExileTopAndMayCast {
             otherwise: then, ..
         } => then.into_iter().copied().collect(),
+        EffectDef::MillUntil(mill) => mill.then.into_iter().copied().collect(),
         EffectDef::Discard { then, .. } => then
             .into_iter()
             .map(|follow_up| *follow_up.effect)
@@ -111,6 +111,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::InstallTrigger(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::LookAtHand { .. }
+        | EffectDef::LookAtRandomCardInHand { .. }
         | EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }
         | EffectDef::WinTheGame { .. }
@@ -155,8 +156,8 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
 mod tests {
     use super::*;
     use crate::card::{
-        CreatedTokensDef, EffectRecipientDef, ObjectPredicateDef, TokenCharacteristics, ValueDef,
-        ZoneKind,
+        CreatedTokensDef, EffectRecipientDef, MillUntilDef, ObjectPredicateDef,
+        TokenCharacteristics, ValueDef, ZoneKind,
     };
     use crate::ids::ObjectSetBindingIndex;
 
@@ -188,15 +189,22 @@ mod tests {
 
     #[test]
     fn mill_until_continuation_is_a_child() {
-        let mill = |then| EffectDef::MillUntil {
+        static MILL_WITH_CHILD: MillUntilDef = MillUntilDef {
             player: EffectRecipientDef::Controller,
             object: ObjectPredicateDef::Any,
             matched_zone: ZoneKind::Graveyard,
             binding: None,
-            then,
+            then: Some(&CHILD),
+        };
+        static MILL_ALONE: MillUntilDef = MillUntilDef {
+            then: None,
+            ..MILL_WITH_CHILD
         };
 
-        assert_eq!(child_effects(mill(Some(&CHILD))), vec![CHILD]);
-        assert!(child_effects(mill(None)).is_empty());
+        assert_eq!(
+            child_effects(EffectDef::MillUntil(&MILL_WITH_CHILD)),
+            vec![CHILD]
+        );
+        assert!(child_effects(EffectDef::MillUntil(&MILL_ALONE)).is_empty());
     }
 }

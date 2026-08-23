@@ -514,30 +514,14 @@ pub enum EffectDef {
         player: EffectRecipientDef,
         effect: &'static EffectDef,
     },
-    /// Reveal from the top of a library until a matching card turns up. What
-    /// was passed over goes to the graveyard; the match itself goes where
-    /// `matched_zone` says, which is the graveyard for a plain dig and the
-    /// hand for Hermit Druid.
+    /// Reveal from the top of a library until a matching card turns up.
+    /// Held behind a reference the way a top-card selection is: what it
+    /// takes, where the match goes, and what runs afterwards are four
+    /// knobs rather than one.
     ///
     /// Distinct from [`Self::Mill`], whose count is known before it starts:
-    /// how deep this goes is whatever the library says, and a library with
-    /// nothing matching empties.
-    MillUntil {
-        player: EffectRecipientDef,
-        object: ObjectPredicateDef,
-        matched_zone: ZoneKind,
-        /// Saves the identities of cards this effect put into a graveyard for
-        /// a same-resolution follow-up. They are bound under their new zone
-        /// identities rather than reconstructed from the graveyard. When the
-        /// matching card has another destination, use [`ValueDef::MatchedCount`]
-        /// to count every revealed card; the binding contains only the cards
-        /// that were milled.
-        binding: Option<ObjectSetBindingIndex>,
-        /// Runs immediately after the named reveal-and-move procedures.
-        /// [`ValueDef::MatchedCount`] describes every card
-        /// revealed, including a match sent somewhere other than a graveyard.
-        then: Option<&'static EffectDef>,
-    },
+    /// how deep this goes is whatever the library says.
+    MillUntil(&'static MillUntilDef),
     /// "Exile cards from the top of your library until you exile a nonland
     /// card. You may cast that card by paying an amount of {E} equal to its
     /// mana value rather than paying its mana cost."
@@ -675,6 +659,11 @@ pub enum EffectDef {
         /// sits on the permanent and outlives every duration, which is the
         /// whole point of "with a lifelink counter on it".
         counters: Option<TokenCountersDef>,
+    },
+    /// "Look at a card at random in target player's hand." Private to the
+    /// looker rather than published, and one card rather than the hand.
+    LookAtRandomCardInHand {
+        player: EffectRecipientDef,
     },
     /// Every card in the named player's hand is revealed to everyone.
     ///

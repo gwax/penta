@@ -258,6 +258,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Explore { .. }
         | EffectDef::LookAtTopAndSelect { .. }
         | EffectDef::LookAtHand { .. }
+        | EffectDef::LookAtRandomCardInHand { .. }
         | EffectDef::RevealAtRandomFromHand { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::SearchZone { .. }

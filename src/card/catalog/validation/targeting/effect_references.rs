@@ -291,6 +291,7 @@ fn validate_effect_references(
         | EffectDef::SacrificeKeepingOnePerType { player, .. }
         | EffectDef::TakeExtraTurn { player }
         | EffectDef::LookAtHand { player }
+        | EffectDef::LookAtRandomCardInHand { player }
         | EffectDef::RevealHand { player } => {
             validate_recipient_target_references(player, target_count, scope)
         }
@@ -331,12 +332,8 @@ fn validate_effect_references(
             };
             validate_effect_references(*then, target_count, nested)
         }
-        EffectDef::MillUntil {
-            player,
-            binding,
-            then,
-            ..
-        } => {
+        EffectDef::MillUntil(mill) => {
+            let (player, binding, then) = (mill.player, mill.binding, mill.then);
             validate_recipient_target_references(player, target_count, scope)?;
             let Some(then) = then else {
                 return Ok(());

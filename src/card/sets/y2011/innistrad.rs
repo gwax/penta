@@ -9,13 +9,13 @@ use crate::card::{
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
     ComparisonDef, ConditionalValueDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
     DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectExecutionDef, EffectPaymentDef,
-    EffectRecipientDef, HalvedValueDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ProtectedCreatureType, QuantifierDef, ReplacementConditionDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, RoundingDef, SacrificedAmountDef, SpellAdditionalCostCountDef,
-    SpellAdditionalCostDef, SpellForm, SpendModeDef, TargetConditionDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneChangeEventMatcherDef,
-    ZoneKind, ZonePlacement, abilities,
+    EffectRecipientDef, HalvedValueDef, ManaColor, MillUntilDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ProtectedCreatureType, QuantifierDef, ReplacementConditionDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, RoundingDef, SacrificedAmountDef,
+    SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpellForm, SpendModeDef,
+    TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::game::{
     CardAbilityResolver, CardRuntime, PileChoice, PileChosen, PileSplit, PilesSeparated,
@@ -25,6 +25,14 @@ use crate::ids::{
     AbilityId, CardPartId, ObjectSetBindingIndex, PlayOptionId, TargetIndex, TargetSlotId,
 };
 use crate::mana_cost;
+
+static MILL_UNTIL_1: MillUntilDef = MillUntilDef {
+    player: EffectRecipientDef::EventPlayer,
+    object: ObjectPredicateDef::HasType(CardType::Land),
+    matched_zone: ZoneKind::Graveyard,
+    binding: Some(ObjectSetBindingIndex::PRIMARY),
+    then: Some(&TREPANATION_BLADE_PUMP),
+};
 
 // ISD 1 — Abbey Griffin
 pub(in crate::card::sets) static ABBEY_GRIFFIN: CardRecord = CardRecord::new_with_legacy_id(
@@ -5245,13 +5253,7 @@ pub(in crate::card::sets) static TREPANATION_BLADE: CardRecord = CardRecord::new
             AbilityDef::triggered(
                 "Whenever equipped creature attacks, defending player reveals cards from the top of their library until they reveal a land card. The creature gets +1/+0 until end of turn for each card revealed this way. That player puts the revealed cards into their graveyard.",
                 TriggerEventDef::attacks(ObjectPredicateDef::AttachedToSource),
-                EffectDef::MillUntil {
-                    player: EffectRecipientDef::EventPlayer,
-                    object: ObjectPredicateDef::HasType(CardType::Land),
-                    matched_zone: ZoneKind::Graveyard,
-                    binding: Some(ObjectSetBindingIndex::PRIMARY),
-                    then: Some(&TREPANATION_BLADE_PUMP),
-                },
+                EffectDef::MillUntil(&MILL_UNTIL_1),
             ),
             abilities::equip(&[AbilityCostDef::Mana(mana_cost!("{2}"))], "Equip {2}"),
         ]),

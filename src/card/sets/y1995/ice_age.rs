@@ -1,6 +1,6 @@
 //! Ice Age cards used by the staged Premodern deck tranche.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     AppliedRuleDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
@@ -163,6 +163,53 @@ pub(in crate::card::sets) static PYROBLAST: CardRecord = CardRecord::new_with_le
     )),
 );
 
+/// "You draw a card at the beginning of the next turn's upkeep": a delayed
+/// draw rather than a cantrip, which is what makes the Bauble free to play
+/// and slow to pay.
+static BAUBLE_DRAWS: AbilityDef = AbilityDef::triggered(
+    "At the beginning of the next turn's upkeep, you draw a card.",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::Upkeep,
+        player: PlayerRelation::Any,
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+);
+
+static BAUBLE_PEEKS: [EffectDef; 2] = [
+    EffectDef::LookAtRandomCardInHand {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&BAUBLE_DRAWS)),
+];
+
+static BAUBLE_COST: [AbilityCostDef; 2] =
+    [AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource];
+
+static A_PLAYER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+// ICE 343 — Urza's Bauble
+pub(in crate::card::sets) static URZAS_BAUBLE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("58c9e9a7-e170-4361-b7d5-22fc0771c489"),
+    "Urza's Bauble",
+    CardArt::new("58c9e9a7-e170-4361-b7d5-22fc0771c489", "Christopher Rush"),
+    CardSet::IceAge,
+    // A free artifact that replaces itself a turn later, which is why the
+    // decks that count artifacts or graveyard cards play it for no other
+    // reason.
+    CardRules::new_artifact(mana_cost!("{0}")).with_ability(AbilityDef::activated_with_targets(
+        "{T}, Sacrifice this artifact: Look at a card at random in target player's hand. You draw \
+         a card at the beginning of the next turn's upkeep.",
+        &BAUBLE_COST,
+        &A_PLAYER,
+        EffectDef::Sequence(&BAUBLE_PEEKS),
+    )),
+);
+
 // ICE 350 — Zuran Orb
 pub(in crate::card::sets) static ZURAN_ORB: CardRecord = CardRecord::new_with_legacy_id(
     2106,
@@ -224,6 +271,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PORTENT,
     &INCINERATE,
     &PYROBLAST,
+    &URZAS_BAUBLE,
     &ZURAN_ORB,
     &ADARKAR_WASTES,
     &KARPLUSAN_FOREST,

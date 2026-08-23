@@ -139,6 +139,7 @@ fn validate_effect_target_shapes(
         | EffectDef::SacrificeKeepingOnePerType { player, .. }
         | EffectDef::TakeExtraTurn { player }
         | EffectDef::LookAtHand { player }
+        | EffectDef::LookAtRandomCardInHand { player }
         | EffectDef::RevealHand { player } => {
             validate_recipient_shape(player, targets, RecipientExpectation::Player)
         }
@@ -219,9 +220,9 @@ fn validate_effect_target_shapes(
                 None => Ok(()),
             }
         }
-        EffectDef::MillUntil { player, then, .. } => {
-            validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
-            match then {
+        EffectDef::MillUntil(mill) => {
+            validate_recipient_shape(mill.player, targets, RecipientExpectation::Player)?;
+            match mill.then {
                 Some(then) => {
                     validate_effect_target_shapes(*then, targets, triggering_object_zone)
                 }

@@ -744,6 +744,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Explore { .. }
                     | EffectDef::LookAtTopAndSelect { .. }
                     | EffectDef::LookAtHand { .. }
+                    | EffectDef::LookAtRandomCardInHand { .. }
                     | EffectDef::RevealAtRandomFromHand { .. }
                     | EffectDef::RevealHand { .. }
                     | EffectDef::SearchZone { .. }

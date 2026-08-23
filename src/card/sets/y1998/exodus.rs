@@ -3,10 +3,19 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCoverageDef, AbilityDef, CardArt, CardRules, CardSet, CardType, ComparisonDef,
-    EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
+    EffectDef, EffectRecipientDef, MillUntilDef, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef,
+    ValueDef, ZoneKind,
 };
 use crate::mana_cost;
+
+static MILL_UNTIL_1: MillUntilDef = MillUntilDef {
+    player: EffectRecipientDef::EventPlayer,
+    object: ObjectPredicateDef::HasType(CardType::Creature),
+    matched_zone: ZoneKind::Battlefield,
+    binding: None,
+    then: None,
+};
 
 /// The creatures the player whose upkeep it is controls, and the ones they
 /// do not. In a two-player game the second is exactly "their opponent's",
@@ -39,13 +48,7 @@ static OATH_CONDITION: TriggerConditionDef =
 /// stops on arrives. Nothing is drawn and nothing is chosen -- which is why
 /// the card is played to cheat one enormous creature into play rather than
 /// to find a fair one.
-static OATH_DIGS_FOR_A_CREATURE: EffectDef = EffectDef::MillUntil {
-    player: EffectRecipientDef::EventPlayer,
-    object: ObjectPredicateDef::HasType(CardType::Creature),
-    matched_zone: ZoneKind::Battlefield,
-    binding: None,
-    then: None,
-};
+static OATH_DIGS_FOR_A_CREATURE: EffectDef = EffectDef::MillUntil(&MILL_UNTIL_1);
 
 // EXO 53 — Carnophage
 // Audit: metadata-only — Card rules have not been implemented.

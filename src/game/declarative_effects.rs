@@ -200,6 +200,7 @@ impl Game {
             | EffectDef::ManifestDread { .. }
             | EffectDef::Cascade
             | EffectDef::LookAtHand { .. }
+            | EffectDef::LookAtRandomCardInHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }
             | EffectDef::RevealHand { .. }
             | EffectDef::LookAtTopAndSelect { .. }
@@ -841,31 +842,26 @@ impl Game {
             ),
             // An Aura attaches as its spell becomes a permanent, so its own
             // clause has nothing left to do. Equip resolves this instead.
-            // "Attach it to this creature": the named permanent is what
-            // moves, and the source is where it lands.
-            EffectDef::AttachToSource { object: recipient } => {
+            // An Aura spell attaches itself to what it names; "attach it to
+            // this creature" runs the other way, and the source is the host.
+            EffectDef::Attach { object: recipient }
+            | EffectDef::AttachToSource { object: recipient } => {
+                let onto_source = matches!(scoped.effect, EffectDef::AttachToSource { .. });
                 let Some(source) = object.source else {
                     return;
                 };
                 for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Permanent(id) = target {
-                        self.try_attach(id, source);
+                    let Target::Permanent(id) = target else {
+                        continue;
+                    };
+                    let attached = if onto_source {
+                        self.try_attach(id, source)
+                    } else {
+                        self.try_attach(source, id)
+                    };
+                    if attached && !onto_source {
+                        break;
                     }
-                }
-            }
-            EffectDef::Attach { object: recipient } => {
-                let Some(source) = object.source else {
-                    return;
-                };
-                let host = self
-                    .effect_recipients(recipient, object, &context, scoped)
-                    .into_iter()
-                    .find_map(|target| match target {
-                        Target::Permanent(id) => Some(id),
-                        _ => None,
-                    });
-                if let Some(host) = host {
-                    self.try_attach(source, host);
                 }
             }
             EffectDef::ReturnAttached {

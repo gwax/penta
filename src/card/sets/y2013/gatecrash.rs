@@ -9,14 +9,22 @@ use crate::card::{
     ControlDurationDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef,
     DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef,
     DividedTotal, EffectDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation, QuantifierDef,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    SumValueDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnPhaseDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    MillUntilDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
+    QuantifierDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    SacrificedAmountDef, SumValueDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
+
+static MILL_UNTIL_1: MillUntilDef = MillUntilDef {
+    player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    object: ObjectPredicateDef::HasType(CardType::Land),
+    matched_zone: ZoneKind::Graveyard,
+    binding: None,
+    then: None,
+};
 
 // GTC 1 — Aerial Maneuver
 pub(in crate::card::sets) static AERIAL_MANEUVER: CardRecord = CardRecord::new_with_legacy_id(
@@ -1094,13 +1102,7 @@ pub(in crate::card::sets) static WAY_OF_THE_THIEF: CardRecord = CardRecord::new_
 
 /// A library with no land left in it empties, which is the whole reason
 /// these two are a combo piece rather than a mill spell.
-static MILL_TO_THE_FIRST_LAND: EffectDef = EffectDef::MillUntil {
-    player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-    object: ObjectPredicateDef::HasType(CardType::Land),
-    matched_zone: ZoneKind::Graveyard,
-    binding: None,
-    then: None,
-};
+static MILL_TO_THE_FIRST_LAND: EffectDef = EffectDef::MillUntil(&MILL_UNTIL_1);
 
 // GTC 57 — Balustrade Spy
 pub(in crate::card::sets) static BALUSTRADE_SPY: CardRecord = CardRecord::new_with_legacy_id(

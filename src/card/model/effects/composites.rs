@@ -7,7 +7,7 @@
 use super::super::{
     AbilityDef, ChoiceVisibilityDef, CounterKind, EffectDef, EffectRecipientDef,
     ObjectPredicateDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerSetDef,
-    ResolvedEffectDurationDef, ValueDef,
+    ResolvedEffectDurationDef, ValueDef, ZoneKind,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 
@@ -191,6 +191,29 @@ pub struct DiscardFollowUpDef {
     /// a graveyard among however many were already there.
     pub bound: Option<ObjectSetBindingIndex>,
     pub effect: &'static EffectDef,
+}
+
+/// Revealing from the top of a library until a matching card turns up.
+///
+/// What was passed over goes to the graveyard; the match itself goes where
+/// `matched_zone` says, which is the graveyard for a plain dig and the hand
+/// for Hermit Druid.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct MillUntilDef {
+    pub player: EffectRecipientDef,
+    pub object: ObjectPredicateDef,
+    pub matched_zone: ZoneKind,
+    /// Saves the identities of cards this effect put into a graveyard for a
+    /// same-resolution follow-up. They are bound under their new zone
+    /// identities rather than reconstructed from the graveyard. When the
+    /// matching card has another destination, use [`ValueDef::MatchedCount`]
+    /// to count every revealed card; the binding contains only the cards
+    /// that were milled.
+    pub binding: Option<ObjectSetBindingIndex>,
+    /// Runs immediately after the named reveal-and-move procedures.
+    /// [`ValueDef::MatchedCount`] describes every card revealed, including a
+    /// match sent somewhere other than a graveyard.
+    pub then: Option<&'static EffectDef>,
 }
 
 /// How cards are selected for a discard effect.

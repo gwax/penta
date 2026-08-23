@@ -364,13 +364,14 @@ impl Game {
                     self.discard_cards_with_cause(player, &cards, cause);
                 }
             }
-            EffectDef::MillUntil {
-                player: recipient,
-                object: predicate,
-                matched_zone,
-                binding,
-                then,
-            } => {
+            EffectDef::MillUntil(mill) => {
+                let (recipient, predicate, matched_zone, binding, then) = (
+                    mill.player,
+                    mill.object,
+                    mill.matched_zone,
+                    mill.binding,
+                    mill.then,
+                );
                 let source = object.source.unwrap_or(object.id);
                 let mut revealed = Vec::new();
                 let mut revealed_count = 0_u16;
@@ -538,6 +539,25 @@ impl Game {
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Player(player) = target {
                         self.exile_top_and_offer_cast(player, object, context.clone(), scoped);
+                    }
+                }
+            }
+            // One card, seen by the looker alone: what they now know about
+            // that hand is that card and nothing else, which is what the
+            // last-seen record holds.
+            EffectDef::LookAtRandomCardInHand { player: recipient } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(seen) = target {
+                        let hand = &self.players[seen.index()].hand;
+                        if hand.is_empty() {
+                            continue;
+                        }
+                        // Drawn through the game's seeded RNG, so a replay
+                        // looks at the same card.
+                        let index = self.rng.index_below(hand.len());
+                        let card = &self.players[seen.index()].hand[index];
+                        let looked = vec![(card.id, card.definition)];
+                        self.last_seen_hands[object.controller.index()] = Some((seen, looked));
                     }
                 }
             }
