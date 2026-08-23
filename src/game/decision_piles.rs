@@ -254,7 +254,21 @@ impl Game {
         if selection.rest_random_order {
             self.rng.shuffle(&mut rest);
         }
+        let unselected: Vec<_> = rest.iter().map(|card| card.id).collect();
         self.place_revealed_remainder(player, rest, selection.rest_zone, selection.rest_placement);
+        // "Exile the other with a silver counter on it": settled after the
+        // move, because what landed is a new object and the counter belongs
+        // to that one.
+        if let Some((kind, amount)) = selection.rest_counters {
+            for card in unselected {
+                let Some(moved) = self.successors.get(&card).copied() else {
+                    continue;
+                };
+                if let Some(instance) = self.card_in_nonbattlefield_zone_mut(moved) {
+                    instance.add_counters(kind, amount);
+                }
+            }
+        }
         // Both are settled after the move: a card in exile is a new object,
         // and what names it has to name the one that is there now.
         for card in hidden {

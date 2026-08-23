@@ -420,16 +420,23 @@ impl Game {
         object: GameObjectId,
         kind: CounterKind,
     ) -> u16 {
-        self.battlefield
+        if let Some(permanent) = self
+            .battlefield
             .iter()
             .find(|permanent| permanent.card.id == object)
-            .map_or_else(
-                || match self.retired_objects.get(&object) {
-                    Some(RetiredObject::Permanent { permanent, .. }) => permanent.counters(kind),
-                    Some(RetiredObject::Card(_) | RetiredObject::Stack(_)) | None => 0,
-                },
-                |permanent| permanent.counters(kind),
-            )
+        {
+            return permanent.counters(kind);
+        }
+        // A card outside the battlefield can carry counters too: suspend's
+        // time counters sit on a card in exile, and so does the silver
+        // counter that says which exiled cards Karn may take back.
+        if let Some((_, card)) = self.card_in_nonbattlefield_zone(object) {
+            return card.counters(kind);
+        }
+        match self.retired_objects.get(&object) {
+            Some(RetiredObject::Permanent { permanent, .. }) => permanent.counters(kind),
+            Some(RetiredObject::Card(_) | RetiredObject::Stack(_)) | None => 0,
+        }
     }
 
     /// Whether an object is tapped, using its last existence on the

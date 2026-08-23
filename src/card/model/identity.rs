@@ -106,6 +106,7 @@ pub enum CardSet {
     StreetsOfNewCapenna,
     StreetsOfNewCapennaCommander,
     CommanderLegendsBattleForBaldursGate,
+    Dominaria,
     DominariaUnited,
     TheBrothersWar,
     EternalMasters,

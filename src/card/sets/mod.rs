@@ -797,6 +797,11 @@ const SET_MODULES: &[SetModule] = &[
         y2017::hour_of_devastation::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Dominaria,
+        y2018::dominaria::CARDS,
+        y2018::dominaria::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::CoreSet2019,
         y2018::core_set_2019::CARDS,
         y2018::core_set_2019::ADDITIONAL_PRINTINGS,

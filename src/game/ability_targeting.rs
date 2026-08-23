@@ -235,6 +235,47 @@ impl Game {
         })
     }
 
+    /// The same, for the clauses that have to change the card rather than
+    /// read it: a counter put on a card that is not on the battlefield.
+    pub(super) fn card_in_nonbattlefield_zone_mut(
+        &mut self,
+        id: GameObjectId,
+    ) -> Option<&mut CardInstance> {
+        let located = [PlayerId::One, PlayerId::Two]
+            .into_iter()
+            .find_map(|player| {
+                let state = &self.players[player.index()];
+                [
+                    ZoneKind::Library,
+                    ZoneKind::Hand,
+                    ZoneKind::Graveyard,
+                    ZoneKind::Exile,
+                ]
+                .into_iter()
+                .find_map(|zone| {
+                    let cards = match zone {
+                        ZoneKind::Library => &state.library,
+                        ZoneKind::Hand => &state.hand,
+                        ZoneKind::Graveyard => &state.graveyard,
+                        _ => &state.exile,
+                    };
+                    cards
+                        .iter()
+                        .position(|card| card.id == id)
+                        .map(|index| (player, zone, index))
+                })
+            })?;
+        let (player, zone, index) = located;
+        let state = &mut self.players[player.index()];
+        let cards = match zone {
+            ZoneKind::Library => &mut state.library,
+            ZoneKind::Hand => &mut state.hand,
+            ZoneKind::Graveyard => &mut state.graveyard,
+            _ => &mut state.exile,
+        };
+        cards.get_mut(index)
+    }
+
     pub(super) fn card_object_matches(
         &self,
         predicate: ObjectPredicateDef,

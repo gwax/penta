@@ -28,6 +28,7 @@ static MANIFEST_DREAD: crate::card::TopCardSelectionDef = crate::card::TopCardSe
     rest_zone: ZoneKind::Graveyard,
     rest_placement: crate::card::ZonePlacement::Top,
     rest_random_order: false,
+    rest_counters: None,
     selected_order_follows_choice: false,
     then: None,
 };

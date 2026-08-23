@@ -1,7 +1,7 @@
 //! Looking at the top of a library and settling where the cards go.
 
 use super::super::FaceDownCharacteristics;
-use super::{EffectDef, ObjectPredicateDef, ValueDef, ZoneKind, ZonePlacement};
+use super::{CounterKind, EffectDef, ObjectPredicateDef, ValueDef, ZoneKind, ZonePlacement};
 
 // Four independent printed knobs rather than a state machine: whether the
 // selection asks at all, whether it reveals, whether what it selects goes
@@ -52,6 +52,11 @@ pub struct TopCardSelectionDef {
     /// difference between a look and a stack: without this they would return
     /// in the order they were drawn out.
     pub rest_random_order: bool,
+    /// Counters the cards that were not selected arrive carrying. "Exile the
+    /// other with a silver counter on it" belongs to the move for the same
+    /// reason [`super::EffectDef::MoveToZone`]'s counters do: what lands is
+    /// a new object, and a following clause would have nothing to name.
+    pub rest_counters: Option<(CounterKind, u16)>,
     /// The selected cards are placed in the order they were chosen rather
     /// than the order they were drawn out of the library. This is what "put
     /// them back in any order" asks for: with every inspected card selected,

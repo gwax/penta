@@ -51,6 +51,7 @@ static RINGLEADER_DIG: TopCardSelectionDef = TopCardSelectionDef {
     rest_zone: ZoneKind::Library,
     rest_placement: ZonePlacement::Bottom,
     rest_random_order: false,
+    rest_counters: None,
     selected_order_follows_choice: false,
     then: None,
     selected_hidden: false,

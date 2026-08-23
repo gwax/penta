@@ -91,6 +91,10 @@ pub enum CounterKind {
     /// fourth is the one that matters: from then on the card he made you
     /// discard is one you may cast for nothing.
     Chorus,
+    /// Karn's silver counter, which is a marker and nothing else: what it
+    /// does is let his minus name exactly the cards his plus exiled, out of
+    /// an exile that may hold anything.
+    Silver,
     /// A stun counter (CR 122.1f). Like the keyword counters this one has a
     /// rules meaning of its own: a permanent carrying one that would become
     /// untapped removes it instead and stays tapped, so what the counters
@@ -99,7 +103,7 @@ pub enum CounterKind {
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 32;
+    pub const COUNT: usize = 33;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -133,6 +137,7 @@ impl CounterKind {
         Self::Lifelink,
         Self::Age,
         Self::Chorus,
+        Self::Silver,
         Self::Stun,
     ];
 
@@ -173,6 +178,7 @@ impl CounterKind {
             | Self::Lifelink
             | Self::Age
             | Self::Chorus
+            | Self::Silver
             | Self::Stun => (0, 0),
         }
     }
@@ -211,7 +217,8 @@ impl CounterKind {
             Self::Lifelink => 28,
             Self::Age => 29,
             Self::Chorus => 30,
-            Self::Stun => 31,
+            Self::Silver => 31,
+            Self::Stun => 32,
         }
     }
 
@@ -249,6 +256,7 @@ impl CounterKind {
             Self::Lifelink => "lifelink",
             Self::Age => "age",
             Self::Chorus => "chorus",
+            Self::Silver => "silver",
             Self::Stun => "stun",
         }
     }

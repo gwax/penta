@@ -249,7 +249,6 @@ impl CardInstance {
         self.counters[index] = self.counters[index].saturating_add(amount);
     }
 
-    #[cfg(test)]
     const fn counters(&self, kind: CounterKind) -> u16 {
         self.counters[kind.index()]
     }

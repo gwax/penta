@@ -2,5 +2,6 @@
 
 pub(super) mod battlebond;
 pub(super) mod core_set_2019;
+pub(super) mod dominaria;
 
 pub(super) use super::{CardRecord, PrintingAnchor, PrintingRecord};
