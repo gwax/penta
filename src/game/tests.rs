@@ -392,6 +392,7 @@ mod vintage_cube_tersa_lightshatter;
 mod vintage_cube_thoughtseize;
 mod vintage_cube_time_spiral;
 mod vintage_cube_titania;
+mod vintage_cube_ulvenwald_oddity;
 mod vintage_cube_underworld_breach;
 mod vintage_cube_ursine;
 mod vintage_cube_verge;

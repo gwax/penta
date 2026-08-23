@@ -97,6 +97,7 @@ pub enum CardSet {
     ModernHorizons2,
     AdventuresInTheForgottenRealms,
     InnistradMidnightHunt,
+    InnistradCrimsonVow,
     InnistradCrimsonVowCommander,
     Ikoria,
     KamigawaNeonDynasty,

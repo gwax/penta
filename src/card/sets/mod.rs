@@ -515,6 +515,11 @@ const SET_MODULES: &[SetModule] = &[
         y2021::innistrad_midnight_hunt::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::InnistradCrimsonVow,
+        y2021::innistrad_crimson_vow::CARDS,
+        y2021::innistrad_crimson_vow::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::InnistradCrimsonVowCommander,
         y2021::innistrad_crimson_vow_commander::CARDS,
         y2021::innistrad_crimson_vow_commander::ADDITIONAL_PRINTINGS,
