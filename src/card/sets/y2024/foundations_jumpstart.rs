@@ -2,10 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardSupertype, CounterKind, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, ComparisonDef, CounterKind, EffectDef, EffectRecipientDef,
+    ObjectPredicateDef, PlayerRelation, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
     abilities, tokens,
 };
+use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 /// One printed ability with two ways in, which is what "when it enters and
@@ -51,6 +53,81 @@ pub(in crate::card::sets) static SCHOLAR_OF_COMBUSTION: CardRecord = CardRecord:
     crate::card::CardArt::new("23660e44-8546-438d-a2c4-e1cef6e50855", "Nereida"),
     crate::card::CardSet::FoundationsJumpstart,
     crate::card::CardRules::unsupported(),
+);
+
+/// A land arriving under your control, which is what landfall watches: a
+/// land put onto the battlefield by a search counts exactly as one played
+/// from hand does.
+static A_LAND_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Land),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+static A_CREATURE_YOU_CONTROL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
+/// The count includes the resolution asking, so the second land of the turn
+/// reads two. A third reads three and is not the second time, which is why
+/// the two branches are one condition and its negation rather than a pair of
+/// numbers.
+static CUB_SECOND_TIME: TriggerConditionDef = TriggerConditionDef::SourceResolutionsThisTurn {
+    comparison: ComparisonDef::Equal,
+    amount: 2,
+};
+
+static CUB_NOT_SECOND_TIME: TriggerConditionDef = TriggerConditionDef::Not(&CUB_SECOND_TIME);
+
+static CUB_GROWS_IT: EffectDef = EffectDef::AddCounters {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    kind: CounterKind::PlusOnePlusOne,
+    amount: ValueDef::Constant(1),
+};
+
+/// "Double the number of +1/+1 counters on that creature": what it has, not
+/// what this ability put there, so a creature somebody else grew doubles
+/// just as readily.
+static CUB_DOUBLES_IT: EffectDef = EffectDef::DoubleCounters {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    kind: CounterKind::PlusOnePlusOne,
+};
+
+static CUB_LANDFALL: [EffectDef; 2] = [
+    EffectDef::IfCondition {
+        condition: &CUB_NOT_SECOND_TIME,
+        then: &CUB_GROWS_IT,
+    },
+    EffectDef::IfCondition {
+        condition: &CUB_SECOND_TIME,
+        then: &CUB_DOUBLES_IT,
+    },
+];
+
+// J25 24 — Scythecat Cub
+pub(in crate::card::sets) static SCYTHECAT_CUB: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("b3dd3c7d-4685-4579-b483-14ddaaaddf5b"),
+    "Scythecat Cub",
+    CardArt::new("b3dd3c7d-4685-4579-b483-14ddaaaddf5b", "Gabor Szikszai"),
+    CardSet::FoundationsJumpstart,
+    // Two mana that turns a land drop into a counter and the second land of
+    // the turn into all of them at once -- and trample, so what it grows
+    // into does not stop at a blocker.
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Cat"], 2, 2).with_abilities(&[
+        abilities::trample(),
+        AbilityDef::triggered_with_targets(
+            "Landfall \u{2014} Whenever a land you control enters, put a +1/+1 counter on target \
+             creature you control. If this is the second time this ability has resolved this \
+             turn, double the number of +1/+1 counters on that creature instead.",
+            TriggerEventDef::zone_changed(A_LAND_YOU_CONTROL, None, Some(ZoneKind::Battlefield)),
+            &A_CREATURE_YOU_CONTROL,
+            EffectDef::Sequence(&CUB_LANDFALL),
+        ),
+    ]),
 );
 
 // J25 28 — Shardless Outlander
@@ -129,6 +206,7 @@ pub(in crate::card::sets) static GUARDIAN_IDOL: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCHOLAR_OF_COMBUSTION,
+    &SCYTHECAT_CUB,
     &SHARDLESS_OUTLANDER,
     &IVORA_INSATIABLE_HEIR,
     &INSPIRING_OVERSEER,
