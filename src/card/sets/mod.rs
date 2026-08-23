@@ -747,6 +747,11 @@ const SET_MODULES: &[SetModule] = &[
         y2005::saviors_of_kamigawa::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::RavnicaCityOfGuilds,
+        y2005::ravnica_city_of_guilds::CARDS,
+        y2005::ravnica_city_of_guilds::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Guildpact,
         y2006::guildpact::CARDS,
         y2006::guildpact::ADDITIONAL_PRINTINGS,

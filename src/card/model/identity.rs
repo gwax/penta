@@ -139,6 +139,7 @@ pub enum CardSet {
     FinalFantasyCommander,
     ThroughTheOmenpaths,
     SaviorsOfKamigawa,
+    RavnicaCityOfGuilds,
     Guildpact,
     Dissension,
     TimeSpiral,

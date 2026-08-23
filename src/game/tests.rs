@@ -310,6 +310,7 @@ mod vintage_cube_currency_converter;
 mod vintage_cube_cut_down;
 mod vintage_cube_dack;
 mod vintage_cube_damn;
+mod vintage_cube_dark_confidant;
 mod vintage_cube_delayed_blast_fireball;
 mod vintage_cube_descendant_of_storms;
 mod vintage_cube_dreadhorde_arcanist;

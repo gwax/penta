@@ -182,6 +182,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::FinalFantasyCommander => "final-fantasy-commander",
         CardSet::ThroughTheOmenpaths => "through-the-omenpaths",
         CardSet::SaviorsOfKamigawa => "saviors-of-kamigawa",
+        CardSet::RavnicaCityOfGuilds => "ravnica-city-of-guilds",
         CardSet::Guildpact => "guildpact",
         CardSet::Dissension => "dissension",
         CardSet::TimeSpiral => "time-spiral",

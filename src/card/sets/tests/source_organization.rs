@@ -328,6 +328,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("classic_sixth_edition.rs") => source(CardSet::ClassicSixthEdition, "6ED"),
         Some("prophecy.rs") => source(CardSet::Prophecy, "PCY"),
         Some("saviors_of_kamigawa.rs") => source(CardSet::SaviorsOfKamigawa, "SOK"),
+        Some("ravnica_city_of_guilds.rs") => source(CardSet::RavnicaCityOfGuilds, "RAV"),
         Some("guildpact.rs") => source(CardSet::Guildpact, "GPT"),
         Some("dissension.rs") => source(CardSet::Dissension, "DIS"),
         Some("time_spiral.rs") => source(CardSet::TimeSpiral, "TSP"),
