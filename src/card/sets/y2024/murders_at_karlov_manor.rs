@@ -175,13 +175,15 @@ pub(in crate::card::sets) static ESCAPE_TUNNEL: CardRecord = CardRecord::new(
 );
 
 // MKM 262 — Hedge Maze
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static HEDGE_MAZE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5260f8ae-805b-4eae-badf-62de0f768867"),
     "Hedge Maze",
-    crate::card::CardArt::new("5260f8ae-805b-4eae-badf-62de0f768867", "Andrew Mar"),
-    crate::card::CardSet::MurdersAtKarlovManor,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("5260f8ae-805b-4eae-badf-62de0f768867", "Andrew Mar"),
+    CardSet::MurdersAtKarlovManor,
+    // The green-blue half of the cycle, and the one whose deck is usually
+    // happiest to see the surveil: the graveyard is where half its cards
+    // want to be anyway.
+    surveil_land(&["Forest", "Island"]),
 );
 
 // MKM 263 — Lush Portico

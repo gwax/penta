@@ -272,3 +272,58 @@ fn the_sewers_bring_their_own_two_basic_types() {
     assert!(subtypes.contains(&"Swamp"));
     assert!(sewers.tapped, "and it still arrives tapped");
 }
+
+/// Hedge Maze is the green-blue member, and the last of the cycle the cube
+/// wants. The surveil is the same surveil; what is left to check is which
+/// two colours it makes.
+#[test]
+fn the_hedge_maze_taps_for_its_own_two() {
+    let (mut game, land) = staged_with(cards::HEDGE_MAZE, cards::LIGHTNING_BOLT);
+    play_and_surveil(&mut game, land, false);
+    let id = the_land_named(&game, cards::HEDGE_MAZE)
+        .expect("it is on the battlefield")
+        .card
+        .id;
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == id)
+    {
+        permanent.tapped = false;
+    }
+
+    let colors = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility { source, color, .. } if source == id => Some(color),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert!(colors.contains(&ManaColor::Green), "Forest");
+    assert!(colors.contains(&ManaColor::Blue), "Island");
+    assert_eq!(colors.len(), 2, "and nothing else");
+}
+
+/// It surveils like the rest of them, which is the half worth checking once
+/// per member rather than trusting the shared helper alone.
+#[test]
+fn the_hedge_maze_surveils_on_the_way_in() {
+    let (mut game, land) = staged_with(cards::HEDGE_MAZE, cards::LIGHTNING_BOLT);
+    play_and_surveil(&mut game, land, true);
+
+    assert!(
+        the_land_named(&game, cards::HEDGE_MAZE).is_some_and(|permanent| permanent.tapped),
+        "tapped on arrival",
+    );
+    assert!(game.players[0].library.is_empty());
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .filter(|card| card.definition == cards::LIGHTNING_BOLT)
+            .count(),
+        1,
+    );
+}
