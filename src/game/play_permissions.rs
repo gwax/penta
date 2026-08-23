@@ -330,6 +330,24 @@ impl Game {
                 let Some(effect) = ability.declarative_effect() else {
                     continue;
                 };
+                // "During your turn, ... have retrace": a permission can be
+                // gated, and a gate that is shut is not a permission at all.
+                let effect = match effect {
+                    super::EffectDef::IfCondition { condition, then }
+                        if self.trigger_condition_holds(
+                            condition,
+                            source.card.id,
+                            source.controller,
+                            super::TriggerContext::empty(),
+                            None,
+                            None,
+                        ) =>
+                    {
+                        *then
+                    }
+                    super::EffectDef::IfCondition { .. } => continue,
+                    effect => effect,
+                };
                 let super::EffectDef::StaticApply { recipient, effect } = effect else {
                     continue;
                 };

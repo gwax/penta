@@ -419,6 +419,7 @@ mod vintage_cube_sentinel_nameless_city;
 mod vintage_cube_shelldock_isle;
 mod vintage_cube_sheltering_landscape;
 mod vintage_cube_shieldbreaker;
+mod vintage_cube_six;
 mod vintage_cube_spells;
 mod vintage_cube_static_prison;
 mod vintage_cube_stoneforge;

@@ -719,6 +719,118 @@ pub(in crate::card::sets) static NYXBORN_HYDRA: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+/// Retrace's own cost: the card's mana cost, plus a land out of your hand.
+static SIX_DISCARDS_A_LAND: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::HasType(CardType::Land),
+    ZoneKind::Hand,
+    1,
+);
+
+static SIX_RETRACE: AbilityDef = AbilityDef::alternative_cast_for_card_mana_cost(
+    AlternativeCastKindDef::Retrace,
+    Some(
+        "Retrace (You may cast this card from your graveyard by discarding a land card in \
+         addition to paying its other costs.)",
+    ),
+    EffectDef::None,
+)
+.with_alternative_additional_cost(&SIX_DISCARDS_A_LAND);
+
+/// "Nonland permanent cards": what the grant reaches is every card that
+/// would become a permanent, which is the whole of what a Treefolk deck
+/// throws away.
+static A_NONLAND_PERMANENT_CARD: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::HasType(CardType::Enchantment),
+    ObjectPredicateDef::HasType(CardType::Planeswalker),
+]);
+
+static SIX_GRANTS_RETRACE: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::You)),
+    effect: AppliedEffectDef::Rule(AppliedRuleDef::GrantsAlternativeCastFromGraveyard {
+        object: A_NONLAND_PERMANENT_CARD,
+        ability: &SIX_RETRACE,
+    }),
+};
+
+/// "During your turn" is a gate on the permission rather than on what it
+/// names: on their turn the cards in your graveyard have nothing.
+static DURING_YOUR_TURN: TriggerConditionDef =
+    TriggerConditionDef::ActivePlayer(PlayerRelation::You);
+
+/// "From among them" is what the mill just put there, not what the graveyard
+/// already held -- and only a land among those.
+static A_MILLED_LAND_CARD: ObjectSetDef = ObjectSetDef::MatchingBinding {
+    binding: ObjectSetBindingIndex::PRIMARY,
+    object: ObjectPredicateDef::HasType(CardType::Land),
+};
+
+/// Where the taken land is saved, kept apart from the milled pile so that
+/// "them" and "the one you took" stay two different sets.
+static SIX_TAKEN_LAND: ObjectSetBindingIndex = ObjectSetBindingIndex::new(1);
+
+static SIX_TAKES_IT: EffectDef = EffectDef::MoveToZone {
+    counters: None,
+    object: EffectRecipientDef::objects(ObjectSetDef::Binding(SIX_TAKEN_LAND)),
+    zone: ZoneKind::Hand,
+    placement: ZonePlacement::Top,
+    controller: None,
+    arrival_effect: None,
+    attachment: None,
+};
+
+/// A minimum of zero is the "you may": milling three and taking nothing is a
+/// legal answer, and a pile with no land in it never asks.
+static SIX_CHOOSES: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Objects(SIX_TAKEN_LAND),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: A_MILLED_LAND_CARD,
+    exclude: None,
+    minimum: 0,
+    maximum: 1,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &SIX_TAKES_IT,
+});
+
+static SIX_MILLS: EffectDef = EffectDef::Mill {
+    player: EffectRecipientDef::Controller,
+    amount: ValueDef::Constant(3),
+    binding: Some(ObjectSetBindingIndex::PRIMARY),
+    then: Some(&SIX_CHOOSES),
+};
+
+// MH3 169 — Six
+pub(in crate::card::sets) static SIX: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("f9246b68-580f-4f53-883d-7900880e4b0d"),
+    "Six",
+    CardArt::new("f9246b68-580f-4f53-883d-7900880e4b0d", "Andrew Mar"),
+    CardSet::ModernHorizons3,
+    // A blocker that fills the graveyard and then plays out of it: every
+    // land the attack finds is another permanent cast back from the pile.
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Treefolk"], 2, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::reach(),
+            AbilityDef::triggered(
+                "Whenever Six attacks, mill three cards. You may put a land card from among them \
+                 into your hand.",
+                TriggerEventDef::attacks(ObjectPredicateDef::Source),
+                SIX_MILLS,
+            ),
+            AbilityDef::static_ability(
+                "During your turn, nonland permanent cards in your graveyard have retrace. (You \
+                 may cast permanent cards from your graveyard by discarding a land card in \
+                 addition to paying their other costs.)",
+                EffectDef::IfCondition {
+                    condition: &DURING_YOUR_TURN,
+                    then: &SIX_GRANTS_RETRACE,
+                },
+            ),
+        ]),
+);
+
 // MH3 170 — Sowing Mycospawn
 pub(in crate::card::sets) static SOWING_MYCOSPAWN: CardRecord = CardRecord::new_with_legacy_id(
     2176,
@@ -1353,6 +1465,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HORRIFIC_ASSAULT,
     &MALEVOLENT_RUMBLE,
     &NYXBORN_HYDRA,
+    &SIX,
     &SOWING_MYCOSPAWN,
     &TEMPERAMENTAL_OOZEWAGG,
     &CONDUIT_GOBLIN,
