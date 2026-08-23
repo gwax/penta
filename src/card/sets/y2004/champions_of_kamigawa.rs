@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AppliedEffectDef, CardArt, CardChoiceSourceDef, CardRules,
-    CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    TriggerEventDef, TurnStepDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AppliedEffectDef, CardArt, CardChoiceSourceDef,
+    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
+    PlayerRelation, TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::mana_cost;
 
@@ -83,7 +84,79 @@ pub(in crate::card::sets) static SAKURA_TRIBE_ELDER: CardRecord = CardRecord::ne
     crate::card::CardRules::unsupported(),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&THROUGH_THE_BREACH, &SAKURA_TRIBE_ELDER];
+/// Every card looked at is selected, which is what makes the choice an
+/// ordering rather than a filter: all three go back on top, in the order
+/// they were named.
+static TOP_LOOK: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(3),
+    object: None,
+    minimum: 3,
+    maximum: 3,
+    select_all_matching: false,
+    reveal_selected: false,
+    selected_zone: ZoneKind::Library,
+    selected_placement: ZonePlacement::Top,
+    selected_hidden: false,
+    selected_linked_to_source: false,
+    selected_face_down: None,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Top,
+    rest_random_order: false,
+    rest_counters: None,
+    selected_order_follows_choice: true,
+    then: None,
+};
+
+/// The draw and the trip back to the library are one clause: the Top is on
+/// the battlefield as the card is drawn and gone by the time anything could
+/// answer it, which is why it is never really spent.
+static TOP_DRAWS_AND_LEAVES: [EffectDef; 2] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::MoveToZone {
+        counters: None,
+        object: EffectRecipientDef::Source,
+        zone: ZoneKind::Library,
+        placement: ZonePlacement::Top,
+        controller: None,
+        arrival_effect: None,
+        attachment: None,
+    },
+];
+
+// CHK 268 — Sensei's Divining Top
+pub(in crate::card::sets) static SENSEIS_DIVINING_TOP: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("4a08ca06-58db-4ce6-b490-be4bea8956a1"),
+    "Sensei's Divining Top",
+    CardArt::new("4a08ca06-58db-4ce6-b490-be4bea8956a1", "Michael Sutfin"),
+    CardSet::ChampionsOfKamigawa,
+    // One mana that fixes every draw for the rest of the game: the tap
+    // trades the card it just arranged for itself, and the {1} sets up the
+    // next one.
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
+        AbilityDef::activated(
+            "{1}: Look at the top three cards of your library, then put them back in any order.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            EffectDef::LookAtTopAndSelect {
+                player: EffectRecipientDef::Controller,
+                looker: EffectRecipientDef::Controller,
+                selection: &TOP_LOOK,
+            },
+        ),
+        AbilityDef::activated(
+            "{T}: Draw a card, then put this artifact on top of its owner's library.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::Sequence(&TOP_DRAWS_AND_LEAVES),
+        ),
+    ]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &THROUGH_THE_BREACH,
+    &SAKURA_TRIBE_ELDER,
+    &SENSEIS_DIVINING_TOP,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
