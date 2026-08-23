@@ -1797,18 +1797,7 @@ pub(in crate::card::sets) static CRABOMINATION: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// MH3 457 — Detective's Phoenix
-// Audit: metadata-only — Card rules have not been implemented.
-pub(in crate::card::sets) static DETECTIVE_S_PHOENIX: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("db16e02b-1b7f-4976-b9eb-41350337616c"),
-    "Detective's Phoenix",
-    crate::card::CardArt::new(
-        "db16e02b-1b7f-4976-b9eb-41350337616c",
-        "Deruchenko Alexander",
-    ),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
-);
+// MH3 457 — Detective's Phoenix (alternate printing)
 
 // MH3 460 — Wight of the Reliquary
 // Audit: metadata-only — Card rules have not been implemented.
@@ -1883,10 +1872,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SORIN_OF_HOUSE_MARKOV,
     &GUIDE_OF_SOULS,
     &CRABOMINATION,
-    &DETECTIVE_S_PHOENIX,
     &WIGHT_OF_THE_RELIQUARY,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&SIX, 1), // MH3 484
+    PrintingRecord::alternate(&DETECTIVES_PHOENIX, 1), // MH3 457
+    PrintingRecord::alternate(&SIX, 1),                // MH3 484
 ];
