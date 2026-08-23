@@ -29,14 +29,14 @@ pub(in super::super) fn shared_static_non_apply_effect(
         }
         // Neither increase carries a value, so only the predicate -- and,
         // for the spell one, the caster relation -- needs checking.
-        EffectDef::IncreaseMatchingAbilityCostBy { permanent, .. } => {
+        EffectDef::ModifyCost(CostModificationDef::AbilityIncrease { permanent, .. }) => {
             battlefield_only(source_zones) && shared_object_predicate(permanent)
         }
         // The discount beside it does carry a value, read off the board the
         // same way a spell discount's is.
-        EffectDef::ReduceMatchingAbilityCostBy {
+        EffectDef::ModifyCost(CostModificationDef::AbilityReduction {
             permanent, amount, ..
-        } => {
+        }) => {
             battlefield_only(source_zones)
                 && shared_object_predicate(permanent)
                 && matches!(
@@ -45,7 +45,7 @@ pub(in super::super) fn shared_static_non_apply_effect(
                         | crate::card::ValueDef::CountMatchingObjects(_)
                 )
         }
-        EffectDef::IncreaseMatchingSpellCostBy { spell, caster, .. } => {
+        EffectDef::ModifyCost(CostModificationDef::SpellIncrease { spell, caster, .. }) => {
             battlefield_only(source_zones)
                 && shared_object_predicate(spell)
                 && matches!(
@@ -60,11 +60,11 @@ pub(in super::super) fn shared_static_non_apply_effect(
         }
         // Read off a permanent rather than the card in hand, so the spell
         // predicate and the caster relation are what have to be shared.
-        EffectDef::ReduceMatchingSpellCostBy {
+        EffectDef::ModifyCost(CostModificationDef::SpellReduction {
             spell,
             caster,
             amount,
-        } => {
+        }) => {
             battlefield_only(source_zones)
                 && shared_object_predicate(spell)
                 && matches!(
@@ -106,10 +106,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::GainClassLevel { .. }
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::ReduceGenericCostBy(_)
-        | EffectDef::IncreaseMatchingAbilityCostBy { .. }
-        | EffectDef::ReduceMatchingAbilityCostBy { .. }
-        | EffectDef::IncreaseMatchingSpellCostBy { .. }
-        | EffectDef::ReduceMatchingSpellCostBy { .. }
+        | EffectDef::ModifyCost(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::CannotAttackIf(_)

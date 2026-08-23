@@ -9,7 +9,8 @@ pub(super) use stack_effects::shared_stack_effect;
 
 use crate::Game;
 use crate::card::{
-    ActivatedAbilityDef, AppliedRuleDef, ReplacementConditionDef, SpellAdditionalCostDef,
+    ActivatedAbilityDef, AppliedRuleDef, CostModificationDef, ReplacementConditionDef,
+    SpellAdditionalCostDef,
 };
 
 use super::*;
@@ -819,10 +820,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::InstallTrigger(_)
                     | EffectDef::IfCondition { .. }
                     | EffectDef::ReduceGenericCostBy(_)
-                    | EffectDef::IncreaseMatchingAbilityCostBy { .. }
-                    | EffectDef::ReduceMatchingAbilityCostBy { .. }
-                    | EffectDef::IncreaseMatchingSpellCostBy { .. }
-                    | EffectDef::ReduceMatchingSpellCostBy { .. }
+                    | EffectDef::ModifyCost(_)
                     | EffectDef::LandwalkCanBeBlocked(_)
                     | EffectDef::CannotAttackUnless(_)
                     | EffectDef::CannotAttackIf(_)

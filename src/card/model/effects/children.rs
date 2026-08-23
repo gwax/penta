@@ -124,10 +124,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::PreventDamage { .. }
         | EffectDef::ReduceGenericCostBy(_)
-        | EffectDef::IncreaseMatchingAbilityCostBy { .. }
-        | EffectDef::ReduceMatchingAbilityCostBy { .. }
-        | EffectDef::IncreaseMatchingSpellCostBy { .. }
-        | EffectDef::ReduceMatchingSpellCostBy { .. }
+        | EffectDef::ModifyCost(_)
         | EffectDef::Regenerate { .. }
         | EffectDef::DoubleCounters { .. }
         | EffectDef::RemoveAllCounters { .. }

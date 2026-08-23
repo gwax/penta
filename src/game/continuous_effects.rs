@@ -553,10 +553,7 @@ impl Game {
                 | EffectDef::CannotBeForcedToDiscard
                 | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
                 | EffectDef::ReduceGenericCostBy(_)
-                | EffectDef::IncreaseMatchingAbilityCostBy { .. }
-                | EffectDef::ReduceMatchingAbilityCostBy { .. }
-                | EffectDef::IncreaseMatchingSpellCostBy { .. }
-                | EffectDef::ReduceMatchingSpellCostBy { .. }
+                | EffectDef::ModifyCost(_)
                 | EffectDef::LandwalkCanBeBlocked(_)
                 | EffectDef::CannotAttackUnless(_)
                 | EffectDef::PutIntoLibraryBeneathTop { .. }

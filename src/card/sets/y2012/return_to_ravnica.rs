@@ -6,13 +6,13 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
     CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ColorSet, ComparisonDef,
-    ControlDurationDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef,
-    DamagePreventionDef, DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
-    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementChoiceDef,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneChangeEventMatcherDef,
-    ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities,
+    ControlDurationDef, CostModificationDef, CounterKind, CreatureTypeSetDef,
+    DamageEventMatcherDef, DamagePreventionDef, DiscardSelectionDef, EffectDef, EffectPaymentDef,
+    EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementChoiceDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -3573,11 +3573,11 @@ pub(in crate::card::sets) static GOBLIN_ELECTROMANCER: CardRecord = CardRecord::
     CardRules::new_creature(mana_cost!("{U}{R}"), &["Goblin", "Wizard"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "Instant and sorcery spells you cast cost {1} less to cast.",
-            EffectDef::ReduceMatchingSpellCostBy {
+            EffectDef::ModifyCost(CostModificationDef::SpellReduction {
                 spell: INSTANT_OR_SORCERY,
                 caster: PlayerRelation::You,
                 amount: ValueDef::Constant(1),
-            },
+            }),
         ),
     ),
 );

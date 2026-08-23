@@ -228,7 +228,7 @@ fn validate_effect_references(
             }
         }
         EffectDef::ReduceGenericCostBy(count)
-        | EffectDef::ReduceMatchingSpellCostBy { amount: count, .. } => {
+        | EffectDef::ModifyCost(CostModificationDef::SpellReduction { amount: count, .. }) => {
             validate_value_target_references(count, target_count, scope)
         }
         EffectDef::SacrificeOfChoice {
@@ -402,9 +402,7 @@ fn validate_effect_references(
         // The copy names nobody: it reuses whatever the spell already
         // targeted unless its chooser retargets it as it is made.
         EffectDef::CopyResolvingSpell { .. }
-        | EffectDef::IncreaseMatchingAbilityCostBy { .. }
-            | EffectDef::ReduceMatchingAbilityCostBy { .. }
-        | EffectDef::IncreaseMatchingSpellCostBy { .. }
+        | EffectDef::ModifyCost(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::CannotAttackIf(_)

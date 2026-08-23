@@ -5,9 +5,9 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryChoiceDestinationDef,
     BattlefieldEntryScalarChoiceDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef,
-    ChooseDef, ColorChoiceOperationDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
-    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, ReplacementChoiceDef, ReplacementEffectDef,
+    ChooseDef, ColorChoiceOperationDef, CostModificationDef, DiscardSelectionDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectSetDef, PlayerRefDef, PlayerRelation, ReplacementChoiceDef, ReplacementEffectDef,
     ResolvedEffectDurationDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef,
     TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
@@ -258,11 +258,11 @@ pub(in crate::card::sets) static DEFENSE_GRID: CardRecord = CardRecord::new_with
     // lands on the instant held up and not on the sorcery cast on time.
     CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::static_ability(
         "Each spell costs {3} more to cast except during its controller's turn.",
-        EffectDef::IncreaseMatchingSpellCostBy {
+        EffectDef::ModifyCost(CostModificationDef::SpellIncrease {
             spell: ObjectPredicateDef::Any,
             caster: PlayerRelation::NonactivePlayer,
             amount: mana_cost!("{3}"),
-        },
+        }),
     )),
 );
 

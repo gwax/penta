@@ -725,43 +725,12 @@ pub enum EffectDef {
     /// discounted: that one is a card in hand cutting its own cost and needs
     /// to name nothing, while this is read off a permanent and so has to say
     /// which spells, and cast by whom.
-    /// A permanent making the activated abilities of matching permanents
-    /// cost more. Like the spell increase beside it the amount is a whole
-    /// mana cost, and like it the effect is read off the battlefield rather
-    /// than baked into the affected permanent.
-    IncreaseMatchingAbilityCostBy {
-        permanent: ObjectPredicateDef,
-        amount: ManaCost,
-    },
-    /// A permanent making matching permanents' activated abilities cost less
-    /// to activate. The mirror of [`Self::IncreaseMatchingAbilityCostBy`],
-    /// and like a spell discount it touches generic mana only.
-    ///
-    /// The printed floor is part of the effect rather than a rule of its
-    /// own: "this effect can't reduce the mana in that cost to less than one
-    /// mana" is what keeps a free ability from becoming free twice over.
-    ReduceMatchingAbilityCostBy {
-        permanent: ObjectPredicateDef,
-        amount: ValueDef,
-        /// The least mana the cost may be left with. An ability whose cost
-        /// already holds no more than this is untouched.
-        minimum: u16,
-    },
-    /// A permanent making matching spells cost more. The mirror of
-    /// [`Self::ReduceMatchingSpellCostBy`], but the amount is a whole mana
-    /// cost rather than a number: an increase can name a colour, which a
-    /// discount never does (CR 601.2f lets a reduction touch generic mana
-    /// only).
-    IncreaseMatchingSpellCostBy {
-        spell: ObjectPredicateDef,
-        caster: PlayerRelation,
-        amount: ManaCost,
-    },
-    ReduceMatchingSpellCostBy {
-        spell: ObjectPredicateDef,
-        caster: PlayerRelation,
-        amount: ValueDef,
-    },
+    /// A permanent on the battlefield changing what a spell or an activated
+    /// ability costs. The four spellings live together in
+    /// [`CostModificationDef`] because every consumer takes them together:
+    /// the mana planner prices a spell against all of them at once, and
+    /// every clause that is not about cost passes over the whole family.
+    ModifyCost(CostModificationDef),
     /// Creates a regeneration shield (CR 701.15). The shield is not the
     /// regeneration: it waits, and the next destruction this turn is replaced
     /// by tapping the permanent, removing it from combat, and removing all

@@ -6,15 +6,16 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
     CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ColorChoiceOperationDef,
-    ColorSet, ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef,
-    DamageEventMatcherDef, DamageKindDef, DamagePreventionDef, DamageRecipientMatcherDef,
-    DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef,
-    EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef, ManaSpendEffectDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ProtectedCreatureType, ReplacementChoiceDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostCountDef,
-    SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement, abilities,
+    ColorSet, ComparisonDef, ControlDurationDef, CostModificationDef, CounterKind,
+    CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef, DamagePreventionDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal,
+    EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef,
+    ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ProtectedCreatureType, ReplacementChoiceDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef,
+    SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -861,11 +862,11 @@ pub(in crate::card::sets) static ARCANE_MELEE: CardRecord = CardRecord::new_with
     CardSet::AvacynRestored,
     CardRules::new_enchantment(mana_cost!("{4}{U}")).with_ability(AbilityDef::static_ability(
         "Instant and sorcery spells cost {2} less to cast.",
-        EffectDef::ReduceMatchingSpellCostBy {
+        EffectDef::ModifyCost(CostModificationDef::SpellReduction {
             spell: ARCANE_MELEE_SPELLS,
             caster: PlayerRelation::Any,
             amount: ValueDef::Constant(2),
-        },
+        }),
     )),
 );
 

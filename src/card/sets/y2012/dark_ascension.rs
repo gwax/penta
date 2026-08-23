@@ -5,13 +5,13 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardComposition,
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    ComparisonDef, ConditionalValueDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
-    DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectRecipientDef, KeywordAbility,
-    LifeConditionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayOptionDef, PlayerRelation,
-    QuantifierDef, ReplacementEffectDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    ScaledValueDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpellForm, SpendModeDef,
-    TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    ComparisonDef, ConditionalValueDef, CostModificationDef, CounterKind, DamageEventMatcherDef,
+    DamagePreventionDef, DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectRecipientDef,
+    KeywordAbility, LifeConditionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayOptionDef,
+    PlayerRelation, QuantifierDef, ReplacementEffectDef, ResolvedEffectDurationDef,
+    SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef,
+    SpellForm, SpendModeDef, TargetConditionDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{CardPartId, PlayOptionId, TargetIndex};
 use crate::mana_cost;
@@ -479,13 +479,13 @@ pub(in crate::card::sets) static THALIA_GUARDIAN_OF_THRABEN: CardRecord =
                 abilities::first_strike(),
                 AbilityDef::static_ability(
                     "Noncreature spells cost {1} more to cast.",
-                    EffectDef::IncreaseMatchingSpellCostBy {
+                    EffectDef::ModifyCost(CostModificationDef::SpellIncrease {
                         spell: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(
                             CardType::Creature,
                         )),
                         caster: PlayerRelation::Any,
                         amount: mana_cost!("{1}"),
-                    },
+                    }),
                 ),
             ]),
     );

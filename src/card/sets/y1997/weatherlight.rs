@@ -4,8 +4,8 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardRules, CardSet,
-    CardType, CounterKind, EffectDef, EffectPaymentDef, EffectRecipientDef, HalvedValueDef,
-    ManaColor, ObjectPredicateDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef,
+    CardType, CostModificationDef, CounterKind, EffectDef, EffectPaymentDef, EffectRecipientDef,
+    HalvedValueDef, ManaColor, ObjectPredicateDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef,
     PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
     ResolvedEffectDurationDef, RoundingDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
 };
@@ -76,11 +76,11 @@ pub(in crate::card::sets) static AURA_OF_SILENCE: CardRecord = CardRecord::new_w
     CardRules::new_enchantment(mana_cost!("{1}{W}{W}")).with_abilities(&[
         AbilityDef::static_ability(
             "Artifact and enchantment spells your opponents cast cost {2} more to cast.",
-            EffectDef::IncreaseMatchingSpellCostBy {
+            EffectDef::ModifyCost(CostModificationDef::SpellIncrease {
                 spell: OPPONENTS_ARTIFACTS_AND_ENCHANTMENTS,
                 caster: PlayerRelation::Opponent,
                 amount: mana_cost!("{2}"),
-            },
+            }),
         ),
         AbilityDef::activated_with_targets(
             "Sacrifice this enchantment: Destroy target artifact or enchantment.",

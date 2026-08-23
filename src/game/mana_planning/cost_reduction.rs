@@ -47,11 +47,11 @@ impl Game {
                 if !ability.is_executable() {
                     continue;
                 }
-                let Some(EffectDef::ReduceMatchingSpellCostBy {
+                let Some(EffectDef::ModifyCost(CostModificationDef::SpellReduction {
                     spell,
                     caster,
                     amount,
-                }) = ability.declarative_effect()
+                })) = ability.declarative_effect()
                 else {
                     continue;
                 };
@@ -97,11 +97,11 @@ impl Game {
                 if !ability.is_executable() {
                     continue;
                 }
-                let Some(EffectDef::IncreaseMatchingSpellCostBy {
+                let Some(EffectDef::ModifyCost(CostModificationDef::SpellIncrease {
                     spell,
                     caster,
                     amount,
-                }) = ability.declarative_effect()
+                })) = ability.declarative_effect()
                 else {
                     continue;
                 };
@@ -141,17 +141,17 @@ impl Game {
                     continue;
                 }
                 match ability.declarative_effect() {
-                    Some(EffectDef::IncreaseMatchingAbilityCostBy {
+                    Some(EffectDef::ModifyCost(CostModificationDef::AbilityIncrease {
                         permanent: matcher,
                         amount,
-                    }) if self.ability_cost_effect_applies(matcher, permanent, other) => {
+                    })) if self.ability_cost_effect_applies(matcher, permanent, other) => {
                         total = add_mana_cost(total, amount);
                     }
-                    Some(EffectDef::ReduceMatchingAbilityCostBy {
+                    Some(EffectDef::ModifyCost(CostModificationDef::AbilityReduction {
                         permanent: matcher,
                         amount,
                         minimum,
-                    }) if self.ability_cost_effect_applies(matcher, permanent, other) => {
+                    })) if self.ability_cost_effect_applies(matcher, permanent, other) => {
                         let amount =
                             self.cost_reduction_value(amount, other.controller, other.card.id);
                         discounts.push((amount, minimum));

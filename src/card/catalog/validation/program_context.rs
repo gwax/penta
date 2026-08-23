@@ -1,10 +1,11 @@
 use crate::card::{
     AbilityDef, AbilityOperationDef, AppliedEffectDef, AppliedRuleDef, AttackDefenderScopeDef,
-    AttackRestrictionDef, CardType, CharacteristicOperationDef, DamageEventMatcherDef,
-    DamageRecipientMatcherDef, DamageSourceMatcherDef, DeclarativeAbilityDef, EffectDef,
-    EffectRecipientDef, EffectRecipientSetDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef,
-    SetOperationDef, TriggerConditionDef, ValueDef, ZoneKind,
+    AttackRestrictionDef, CardType, CharacteristicOperationDef, CostModificationDef,
+    DamageEventMatcherDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
+    DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EffectRecipientSetDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, PowerToughnessOperationDef, SetOperationDef, TriggerConditionDef, ValueDef,
+    ZoneKind,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -152,26 +153,26 @@ fn validate_static_effect(
         // The increase carries a whole mana cost rather than a value, so
         // there is nothing here to check beyond the predicate and the player
         // relation the discount beside it also checks.
-        EffectDef::IncreaseMatchingAbilityCostBy {
+        EffectDef::ModifyCost(CostModificationDef::AbilityIncrease {
             permanent: matcher, ..
-        } if position == StaticPosition::Root
+        }) if position == StaticPosition::Root
             && source_zones == [ZoneKind::Battlefield]
             && static_object_predicate_supported(matcher) =>
         {
             Ok(())
         }
-        EffectDef::ReduceMatchingAbilityCostBy {
+        EffectDef::ModifyCost(CostModificationDef::AbilityReduction {
             permanent: matcher,
             amount,
             ..
-        } if position == StaticPosition::Root
+        }) if position == StaticPosition::Root
             && source_zones == [ZoneKind::Battlefield]
             && static_object_predicate_supported(matcher)
             && static_cost_reduction_value_supported(amount) =>
         {
             Ok(())
         }
-        EffectDef::IncreaseMatchingSpellCostBy { spell, caster, .. }
+        EffectDef::ModifyCost(CostModificationDef::SpellIncrease { spell, caster, .. })
             if position == StaticPosition::Root
                 && source_zones == [ZoneKind::Battlefield]
                 && static_object_predicate_supported(spell)
@@ -179,11 +180,11 @@ fn validate_static_effect(
         {
             Ok(())
         }
-        EffectDef::ReduceMatchingSpellCostBy {
+        EffectDef::ModifyCost(CostModificationDef::SpellReduction {
             spell,
             caster,
             amount,
-        } if position == StaticPosition::Root
+        }) if position == StaticPosition::Root
             && source_zones == [ZoneKind::Battlefield]
             && static_object_predicate_supported(spell)
             && static_player_relation_supported(caster)
@@ -459,10 +460,7 @@ fn validate_resolving_effect(
         | EffectDef::CannotBeForcedToSacrifice
         | EffectDef::CannotBeForcedToDiscard
         | EffectDef::ReduceGenericCostBy(_)
-        | EffectDef::IncreaseMatchingAbilityCostBy { .. }
-        | EffectDef::ReduceMatchingAbilityCostBy { .. }
-        | EffectDef::IncreaseMatchingSpellCostBy { .. }
-        | EffectDef::ReduceMatchingSpellCostBy { .. }
+        | EffectDef::ModifyCost(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::CannotAttackIf(_)
         | EffectDef::LandwalkCanBeBlocked(_) => Err(effect_operation_name(effect)),
@@ -852,10 +850,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
             "SubstituteBasicLandTypeUntilEndOfTurn"
         }
         EffectDef::ReduceGenericCostBy(_) => "ReduceGenericCostBy",
-        EffectDef::IncreaseMatchingAbilityCostBy { .. } => "IncreaseMatchingAbilityCostBy",
-        EffectDef::ReduceMatchingAbilityCostBy { .. } => "ReduceMatchingAbilityCostBy",
-        EffectDef::IncreaseMatchingSpellCostBy { .. } => "IncreaseMatchingSpellCostBy",
-        EffectDef::ReduceMatchingSpellCostBy { .. } => "ReduceMatchingSpellCostBy",
+        EffectDef::ModifyCost(_) => "ModifyCost",
         EffectDef::CannotAttackUnless(_) => "CannotAttackUnless",
         EffectDef::CannotAttackIf(_) => "CannotAttackIf",
         EffectDef::LandwalkCanBeBlocked(_) => "LandwalkCanBeBlocked",

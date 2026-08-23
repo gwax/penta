@@ -5,7 +5,7 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
     AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, BattlefieldEntryModificationDef,
     CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef,
-    ChooseDef, EffectDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
+    ChooseDef, CostModificationDef, EffectDef, EffectExecutionDef, EffectRecipientDef, ManaColor,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
     PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
     TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
@@ -72,11 +72,11 @@ pub(in crate::card::sets) static CHILL: CardRecord = CardRecord::new_with_legacy
     // has to say.
     CardRules::new_enchantment(mana_cost!("{1}{U}")).with_ability(AbilityDef::static_ability(
         "Red spells cost {2} more to cast.",
-        EffectDef::IncreaseMatchingSpellCostBy {
+        EffectDef::ModifyCost(CostModificationDef::SpellIncrease {
             spell: ObjectPredicateDef::Color(ManaColor::Red),
             caster: PlayerRelation::Any,
             amount: mana_cost!("{2}"),
-        },
+        }),
     )),
 );
 

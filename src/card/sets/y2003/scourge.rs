@@ -4,10 +4,10 @@ use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardType, ComparisonDef,
-    CounterKind, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ResolvedEffectDurationDef, StackTargetKindDef, TriggerConditionDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    CostModificationDef, CounterKind, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, PayOrDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ResolvedEffectDurationDef, StackTargetKindDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -342,11 +342,11 @@ pub(in crate::card::sets) static GOBLIN_WARCHIEF: CardRecord = CardRecord::new_w
         &[
             AbilityDef::static_ability(
                 "Goblin spells you cast cost {1} less to cast.",
-                EffectDef::ReduceMatchingSpellCostBy {
+                EffectDef::ModifyCost(CostModificationDef::SpellReduction {
                     spell: GOBLIN_SPELLS,
                     caster: PlayerRelation::You,
                     amount: ValueDef::Constant(1),
-                },
+                }),
             ),
             AbilityDef::static_ability(
                 "Goblins you control have haste.",

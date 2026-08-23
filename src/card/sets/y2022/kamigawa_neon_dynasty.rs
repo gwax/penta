@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TokenCharacteristics,
-    TriggerConditionDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CostModificationDef,
+    CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    TokenCharacteristics, TriggerConditionDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -149,11 +149,11 @@ static TAMIYO_PLUS_ONE_EFFECTS: [EffectDef; 2] = [
 static TAMIYOS_NOTEBOOK_ABILITIES: [AbilityDef; 2] = [
     AbilityDef::static_ability(
         "Spells you cast cost {2} less to cast.",
-        EffectDef::ReduceMatchingSpellCostBy {
+        EffectDef::ModifyCost(CostModificationDef::SpellReduction {
             spell: ObjectPredicateDef::Any,
             caster: PlayerRelation::You,
             amount: ValueDef::Constant(2),
-        },
+        }),
     )
     .with_coverage(AbilityCoverageDef::partial(
         "The generic reduction applies to printed generic mana but does not yet reduce a spell's announced X payment.",

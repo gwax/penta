@@ -280,7 +280,7 @@ fn validate_effect_target_shapes(
             }
         }
         EffectDef::ReduceGenericCostBy(count)
-        | EffectDef::ReduceMatchingSpellCostBy { amount: count, .. }
+        | EffectDef::ModifyCost(CostModificationDef::SpellReduction { amount: count, .. })
         | EffectDef::AddManaEqualTo { amount: count, .. } => validate_value_shape(count, targets),
         EffectDef::IfCondition { condition, then } => {
             validate_trigger_condition_shape(*condition, targets)?;
@@ -366,9 +366,7 @@ fn validate_effect_target_shapes(
         EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::CopyResolvingSpell { .. }
-        | EffectDef::IncreaseMatchingAbilityCostBy { .. }
-            | EffectDef::ReduceMatchingAbilityCostBy { .. }
-        | EffectDef::IncreaseMatchingSpellCostBy { .. }
+        | EffectDef::ModifyCost(_)
         | EffectDef::None
         | EffectDef::AddMana(_)
         | EffectDef::DamageCannotBePreventedThisTurn

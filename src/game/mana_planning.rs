@@ -1,6 +1,6 @@
 use std::{collections::HashMap, ops::ControlFlow};
 
-use crate::card::FlexibleManaSymbol;
+use crate::card::{CostModificationDef, FlexibleManaSymbol};
 
 use super::{
     AbilityCostDef, AbilityOrigin, AbilityProcedureDef, Action, ActivatedAbilityDef,

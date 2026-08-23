@@ -4,15 +4,15 @@ use crate::card::{
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef,
     AppliedRuleDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef, CardArt,
     CardBehavior, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef,
-    ChooseDef, ColorChoiceOperationDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
-    DamageEventMatcherDef, DamageKindDef, DamageLimitDef, DamagePreventionDef,
-    DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef, DiscardSelectionDef,
-    DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
-    KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    ScaledValueDef, SumValueDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    ChooseDef, ColorChoiceOperationDef, ColorSet, ComparisonDef, ControlDurationDef,
+    CostModificationDef, CounterKind, DamageEventMatcherDef, DamageKindDef, DamageLimitDef,
+    DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef,
+    DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef,
+    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    SacrificedAmountDef, ScaledValueDef, SumValueDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -5213,11 +5213,11 @@ pub(in crate::card::sets) static MANA_MATRIX: CardRecord = CardRecord::new_with_
     CardSet::Legends,
     CardRules::new_artifact(mana_cost!("{6}")).with_ability(AbilityDef::static_ability(
         "Instant and enchantment spells you cast cost {2} less to cast.",
-        EffectDef::ReduceMatchingSpellCostBy {
+        EffectDef::ModifyCost(CostModificationDef::SpellReduction {
             spell: INSTANT_OR_ENCHANTMENT,
             caster: PlayerRelation::You,
             amount: ValueDef::Constant(2),
-        },
+        }),
     )),
 );
 
@@ -5266,11 +5266,11 @@ pub(in crate::card::sets) static PLANAR_GATE: CardRecord = CardRecord::new_with_
     CardSet::Legends,
     CardRules::new_artifact(mana_cost!("{6}")).with_ability(AbilityDef::static_ability(
         "Creature spells you cast cost {2} less to cast.",
-        EffectDef::ReduceMatchingSpellCostBy {
+        EffectDef::ModifyCost(CostModificationDef::SpellReduction {
             spell: ObjectPredicateDef::HasType(CardType::Creature),
             caster: PlayerRelation::You,
             amount: ValueDef::Constant(2),
-        },
+        }),
     )),
 );
 

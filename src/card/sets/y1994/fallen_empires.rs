@@ -3,12 +3,12 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet, CardType,
-    ChoiceVisibilityDef, ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
-    DamagePreventionDef, DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
-    InstalledTriggerDef, LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    ChoiceVisibilityDef, ComparisonDef, ControlDurationDef, CostModificationDef, CounterKind,
+    DamageEventMatcherDef, DamagePreventionDef, DiscardSelectionDef, EffectDef, EffectPaymentDef,
+    EffectRecipientDef, InstalledTriggerDef, LikelihoodDef, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -805,11 +805,11 @@ pub(in crate::card::sets) static DERELOR: CardRecord = CardRecord::new_with_lega
     CardRules::new_creature(mana_cost!("{3}{B}"), &["Thrull"], 4, 4).with_ability(
         AbilityDef::static_ability(
             "Black spells you cast cost {B} more to cast.",
-            EffectDef::IncreaseMatchingSpellCostBy {
+            EffectDef::ModifyCost(CostModificationDef::SpellIncrease {
                 spell: ObjectPredicateDef::Color(ManaColor::Black),
                 caster: PlayerRelation::You,
                 amount: mana_cost!("{B}"),
-            },
+            }),
         ),
     ),
 );

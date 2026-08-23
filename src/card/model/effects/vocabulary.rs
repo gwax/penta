@@ -57,3 +57,51 @@ pub enum ChoiceVisibilityDef {
     Public,
     Private,
 }
+
+/// One static modification to what something costs.
+///
+/// Four spellings of a single idea, kept together because every consumer
+/// takes them together: the mana planner prices a spell against all of them
+/// at once, and every clause that is not about cost passes over the whole
+/// family in one arm.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum CostModificationDef {
+    /// A permanent making the activated abilities of matching permanents
+    /// cost more. Like the spell increase beside it the amount is a whole
+    /// mana cost, and like it the effect is read off the battlefield rather
+    /// than baked into the affected permanent.
+    AbilityIncrease {
+        permanent: ObjectPredicateDef,
+        amount: ManaCost,
+    },
+    /// A permanent making matching permanents' activated abilities cost less
+    /// to activate. The mirror of [`Self::AbilityIncrease`], and like a
+    /// spell discount it touches generic mana only.
+    ///
+    /// The printed floor is part of the effect rather than a rule of its
+    /// own: "this effect can't reduce the mana in that cost to less than one
+    /// mana" is what keeps a free ability from becoming free twice over.
+    AbilityReduction {
+        permanent: ObjectPredicateDef,
+        amount: ValueDef,
+        /// The least mana the cost may be left with. An ability whose cost
+        /// already holds no more than this is untouched.
+        minimum: u16,
+    },
+    /// A permanent making matching spells cost more. The mirror of
+    /// [`Self::SpellReduction`], but the amount is a whole mana cost rather
+    /// than a number: an increase can name a colour, which a discount never
+    /// does (CR 601.2f lets a reduction touch generic mana only).
+    SpellIncrease {
+        spell: ObjectPredicateDef,
+        caster: PlayerRelation,
+        amount: ManaCost,
+    },
+    /// Matching spells cost that much less generic mana to cast, read off a
+    /// permanent rather than off the card being cast.
+    SpellReduction {
+        spell: ObjectPredicateDef,
+        caster: PlayerRelation,
+        amount: ValueDef,
+    },
+}

@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, PlayerRelation, TopCardSelectionDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, tokens,
+    AbilityDef, CardArt, CardRules, CardSet, CardType, CostModificationDef, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TopCardSelectionDef, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::mana_cost;
 
@@ -40,11 +40,11 @@ pub(in crate::card::sets) static FORENSIC_GADGETEER: CardRecord = CardRecord::ne
             ),
             AbilityDef::static_ability(
                 "Activated abilities of artifacts you control cost {1} less to activate. This effect can't reduce the mana in that cost to less than one mana.",
-                EffectDef::ReduceMatchingAbilityCostBy {
+                EffectDef::ModifyCost(CostModificationDef::AbilityReduction {
                     permanent: ARTIFACTS_YOU_CONTROL,
                     amount: ValueDef::Constant(1),
                     minimum: 1,
-                },
+                }),
             ),
         ]),
 );

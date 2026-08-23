@@ -4,15 +4,16 @@ use crate::card::{
     ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef,
     AttackDefenderScopeDef, AttackRestrictionDef, BasicLandType, CardArt, CardBehavior, CardRules,
     CardSet, CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef, ColorSet,
-    ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef,
-    DamagePreventionDef, DamagePreventionFollowUpDef, DamageRecipientMatcherDef,
-    DamageSourceGroupDef, DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectPaymentDef,
-    EffectRecipientDef, HalvedValueDef, InstalledTriggerDef, KeywordAbility, LikelihoodDef,
-    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef,
-    ReplacementChoiceDef, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, RoundingDef, TriggerConditionDef, TriggerEventDef, TurnKindDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    ComparisonDef, ControlDurationDef, CostModificationDef, CounterKind, CreatureTypeSetDef,
+    DamageEventMatcherDef, DamagePreventionDef, DamagePreventionFollowUpDef,
+    DamageRecipientMatcherDef, DamageSourceGroupDef, DiscardSelectionDef, EffectDef,
+    EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, HalvedValueDef, InstalledTriggerDef,
+    KeywordAbility, LikelihoodDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ReplacementAbilityDef, ReplacementChoiceDef, ReplacementConditionDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, RoundingDef,
+    TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -2131,18 +2132,18 @@ pub(in crate::card::sets) static GLOOM: CardRecord = CardRecord::new_with_legacy
         // the Gloom player's own.
         AbilityDef::static_ability(
             "White spells cost {3} more to cast.",
-            EffectDef::IncreaseMatchingSpellCostBy {
+            EffectDef::ModifyCost(CostModificationDef::SpellIncrease {
                 spell: ObjectPredicateDef::Color(ManaColor::White),
                 caster: PlayerRelation::Any,
                 amount: mana_cost!("{3}"),
-            },
+            }),
         ),
         AbilityDef::static_ability(
             "Activated abilities of white enchantments cost {3} more to activate.",
-            EffectDef::IncreaseMatchingAbilityCostBy {
+            EffectDef::ModifyCost(CostModificationDef::AbilityIncrease {
                 permanent: GLOOM_WHITE_ENCHANTMENT,
                 amount: mana_cost!("{3}"),
-            },
+            }),
         ),
     ]),
 );
