@@ -6,9 +6,9 @@ use crate::card::{
     AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet,
     CardSupertype, CardType, DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef,
     EffectRecipientDef, ExilePlayDurationDef, GraveyardTypeConditionDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef,
-    TokenCharacteristics, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, tokens,
+    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, SacrificedAmountDef,
+    SpellAdditionalCostDef, SpendModeDef, TokenCharacteristics, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -231,6 +231,87 @@ pub(in crate::card::sets) static SUBTLETY: CardRecord = CardRecord::new_with_leg
     // blue card off the top of your hand when you do not.
     CardRules::new_creature(mana_cost!("{2}{U}{U}"), &["Elemental", "Incarnation"], 3, 3)
         .with_abilities(&SUBTLETY_ABILITIES),
+);
+
+/// One printed ability with two ways in: he arrives, or he attacks. Two
+/// abilities would make him trigger twice on a turn he does both, which the
+/// card does not say -- and would count as two triggered abilities where the
+/// card has one.
+static ARCHON_TRIGGERS: [TriggerEventDef; 2] = [
+    TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Source,
+        None,
+        Some(ZoneKind::Battlefield),
+    ),
+    TriggerEventDef::attacks(ObjectPredicateDef::Source),
+];
+
+static AN_OPPONENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+)];
+
+static A_CREATURE_OR_PLANESWALKER: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::HasType(CardType::Planeswalker),
+]);
+
+/// Four things in one sentence, in the order they are printed: what the
+/// opponent gives up, then what you get. The sacrifice is theirs to choose,
+/// which is why it is a procedure rather than a targeted destruction.
+static ARCHON_TOLL: [EffectDef; 4] = [
+    EffectDef::SacrificeOfChoice {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        object: A_CREATURE_OR_PLANESWALKER,
+        count: ValueDef::Constant(1),
+        then: None,
+        amount: SacrificedAmountDef::Power,
+        otherwise: None,
+        optional: false,
+    },
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(1),
+        selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
+    },
+    EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::Sequence(&ARCHON_REWARD),
+];
+
+static ARCHON_REWARD: [EffectDef; 2] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(3),
+    },
+];
+
+// MH2 75 — Archon of Cruelty
+pub(in crate::card::sets) static ARCHON_OF_CRUELTY: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("1be9d9a4-d7ee-4854-abc2-85cabf993ec9"),
+    "Archon of Cruelty",
+    CardArt::new("1be9d9a4-d7ee-4854-abc2-85cabf993ec9", "Andrew Mar"),
+    CardSet::ModernHorizons2,
+    // Eight mana nobody pays: he is a reanimation target, and the trigger is
+    // why -- a six-point swing and two cards the turn he lands, and again
+    // every turn he attacks.
+    CardRules::new_creature(mana_cost!("{6}{B}{B}"), &["Archon"], 6, 6).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered_with_targets(
+            "Whenever this creature enters or attacks, target opponent sacrifices a creature or \
+             planeswalker of their choice, discards a card, and loses 3 life. You draw a card and \
+             gain 3 life.",
+            TriggerEventDef::AnyOf(&ARCHON_TRIGGERS),
+            &AN_OPPONENT,
+            EffectDef::Sequence(&ARCHON_TOLL),
+        ),
+    ]),
 );
 
 // MH2 76 — Bone Shards
@@ -725,6 +806,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HARD_EVIDENCE,
     &LOSE_FOCUS,
     &SUBTLETY,
+    &ARCHON_OF_CRUELTY,
     &BONE_SHARDS,
     &DAMN,
     &LOATHSOME_CURATOR,
