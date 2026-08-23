@@ -780,9 +780,13 @@ pub enum EffectDef {
         object: EffectRecipientDef,
         kind: CounterKind,
     },
+    /// Removes every counter of one kind, or -- when no kind is named --
+    /// every counter of every kind. "Remove all counters from target
+    /// permanent" is the second: what it takes off a planeswalker is its
+    /// loyalty, which is why the thing then dies.
     RemoveAllCounters {
         object: EffectRecipientDef,
-        kind: CounterKind,
+        kind: Option<CounterKind>,
     },
     /// Removes that many counters of one kind, or as many as are there. The
     /// mirror of [`Self::AddCounters`], for the clauses that take some back

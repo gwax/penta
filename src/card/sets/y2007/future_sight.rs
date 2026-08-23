@@ -71,7 +71,7 @@ static RELIC_CASHES_IN: [EffectDef; 2] = [
     ),
     EffectDef::RemoveAllCounters {
         object: EffectRecipientDef::Source,
-        kind: CounterKind::Charge,
+        kind: Some(CounterKind::Charge),
     },
 ];
 

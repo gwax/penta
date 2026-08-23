@@ -1,6 +1,6 @@
 //! Zendikar cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef,
@@ -67,6 +67,40 @@ static BLAZING_TORCH_GRANTED_ABILITY: AbilityDef = AbilityDef::activated_with_ta
         recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         amount: ValueDef::Constant(2),
     },
+);
+
+/// Any permanent, which is the point: what it takes off a planeswalker is
+/// the loyalty, and a planeswalker with no loyalty is put into a graveyard
+/// by the ordinary state-based action.
+static ANY_PERMANENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Any,
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
+// ZEN 114 — Vampire Hexmage
+pub(in crate::card::sets) static VAMPIRE_HEXMAGE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("93d2c4d1-6205-404a-b03d-995b90a3a33a"),
+    "Vampire Hexmage",
+    CardArt::new("93d2c4d1-6205-404a-b03d-995b90a3a33a", "Eric Deschamps"),
+    CardSet::Zendikar,
+    // A two-mana first striker that is never a dead card: it answers a
+    // planeswalker outright, and everything else it might name is a bonus.
+    CardRules::new_creature(mana_cost!("{B}{B}"), &["Vampire", "Shaman"], 2, 1).with_abilities(&[
+        abilities::first_strike(),
+        AbilityDef::activated_with_targets(
+            "Sacrifice this creature: Remove all counters from target permanent.",
+            &[AbilityCostDef::SacrificeSource],
+            &ANY_PERMANENT,
+            EffectDef::RemoveAllCounters {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                kind: None,
+            },
+        ),
+    ]),
 );
 
 // ZEN 197 — Blazing Torch
@@ -201,6 +235,7 @@ pub(in crate::card::sets) static VERDANT_CATACOMBS: CardRecord = CardRecord::new
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPELL_PIERCE,
+    &VAMPIRE_HEXMAGE,
     &BLAZING_TORCH,
     &EXPEDITION_MAP,
     &ARID_MESA,

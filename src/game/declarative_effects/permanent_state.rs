@@ -88,8 +88,14 @@ impl Game {
                         .iter_mut()
                         .find(|permanent| permanent.card.id == id)
                     {
-                        let held = permanent.counters(kind);
-                        permanent.remove_counters(kind, held);
+                        // No kind named is every kind, which is what
+                        // "remove all counters" says.
+                        for kind in
+                            kind.map_or_else(|| CounterKind::ALL.to_vec(), |kind| vec![kind])
+                        {
+                            let held = permanent.counters(kind);
+                            permanent.remove_counters(kind, held);
+                        }
                     }
                 }
             }

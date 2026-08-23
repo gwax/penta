@@ -546,7 +546,7 @@ pub(in crate::card::sets) static HOMARID: CardRecord = CardRecord::new_with_lega
             &HOMARID_FOUR_TIDE,
             EffectDef::RemoveAllCounters {
                 object: EffectRecipientDef::Source,
-                kind: CounterKind::Tide,
+                kind: Some(CounterKind::Tide),
             },
         ),
     ]),
