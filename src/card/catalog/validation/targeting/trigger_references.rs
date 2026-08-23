@@ -25,6 +25,7 @@ fn trigger_stat_value_is_supported(value: ValueDef) -> bool {
                     | ValueDef::DevotionTo(_)
         | ValueDef::BasicLandTypesControlled(_)
                     | ValueDef::LibrarySize(_)
+        | ValueDef::SpellsCastThisGame(_)
                     | ValueDef::ColorsOfManaSpent
                     | ValueDef::PaidAmount
                     | ValueDef::MatchedCount

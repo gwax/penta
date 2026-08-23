@@ -197,6 +197,7 @@ impl Game {
             emblems: Vec::new(),
             spells_cast_this_turn: [0; 2],
             spells_cast_last_turn: [0; 2],
+            total_spells_cast: [0; 2],
             cards_drawn_this_turn: [0; 2],
             citys_blessing: [false; 2],
             permanent_left_battlefield_this_turn: [false; 2],

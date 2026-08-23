@@ -63,6 +63,22 @@ impl Game {
                 }
                 i32::try_from(found.into_iter().filter(|seen| *seen).count()).unwrap_or(0)
             }
+            // A whole-game tally rather than a zone count, but read the
+            // same way: whichever players the relation names, added up.
+            crate::card::ValueDef::SpellsCastThisGame(relation) => {
+                [crate::ids::PlayerId::One, crate::ids::PlayerId::Two]
+                    .into_iter()
+                    .filter(|player| {
+                        self.player_relation_matches(
+                            *player,
+                            relation,
+                            controller,
+                            crate::game::TriggerContext::empty(),
+                        )
+                    })
+                    .map(|player| i32::from(self.total_spells_cast[player.index()]))
+                    .sum()
+            }
             crate::card::ValueDef::LibrarySize(relation) => {
                 [crate::ids::PlayerId::One, crate::ids::PlayerId::Two]
                     .into_iter()
@@ -207,6 +223,7 @@ impl Game {
             ValueDef::ColorsOfManaSpent => i32::from(object.colors_spent_count()),
             ValueDef::DevotionTo(_)
             | ValueDef::LibrarySize(_)
+            | ValueDef::SpellsCastThisGame(_)
             | ValueDef::BasicLandTypesControlled(_) => {
                 self.player_readable_value(value, object.controller)
             }

@@ -953,6 +953,8 @@ impl Game {
         self.consecutive_passes = 0;
         self.spells_cast_this_turn[player.index()] =
             self.spells_cast_this_turn[player.index()].saturating_add(1);
+        self.total_spells_cast[player.index()] =
+            self.total_spells_cast[player.index()].saturating_add(1);
         // Kept for the targeting triggers below, which run after the cast
         // event has taken the list.
         let crime_targets = targets.clone();

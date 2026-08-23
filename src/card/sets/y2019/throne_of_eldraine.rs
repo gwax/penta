@@ -4,14 +4,14 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::PlayOptionDef;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
-    AbilityTargetPredicate, ActivationTimingDef, AlternateSpellKind, AppliedEffectDef,
-    BattlefieldEntryModificationDef, CardArt, CardComposition, CardEffectStatus, CardPart,
-    CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet, ColorSet,
+    AbilityTargetPredicate, ActivationTimingDef, AlternateSpellKind, AlternativeCastKindDef,
+    AppliedEffectDef, BattlefieldEntryModificationDef, CardArt, CardComposition, CardEffectStatus,
+    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet, ColorSet,
     ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef, EffectDef,
     EffectRecipientDef, ExilePlayConditionDef, ExilePlayDurationDef, ManaColor, ObjectPredicateDef,
     PlayerRefDef, PlayerRelation, ReplacementEffectDef, ResolvedEffectDurationDef, SpellForm,
-    SpellResolutionDestinationDef, TriggerConditionDef, TriggerEventDef, ValueComparisonDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    SpellResolutionDestinationDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::{CardPartId, PlayOptionId, TargetIndex, mana_cost};
 
@@ -414,6 +414,76 @@ static OKO_ABILITIES: [AbilityDef; 3] = [
     ),
 ];
 
+/// "You may reveal a creature or land card from among them": the two types
+/// the deck casting this on turn one is actually short of.
+static A_CREATURE_OR_LAND_CARD: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::HasType(CardType::Land),
+]);
+
+static ONCE_UPON_A_TIME_DIGS: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(5),
+    object: Some(A_CREATURE_OR_LAND_CARD),
+    minimum: 0,
+    maximum: 1,
+    select_all_matching: false,
+    reveal_selected: true,
+    selected_zone: ZoneKind::Hand,
+    selected_placement: ZonePlacement::Top,
+    selected_hidden: false,
+    selected_linked_to_source: false,
+    selected_face_down: None,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Bottom,
+    rest_random_order: true,
+    rest_counters: None,
+    selected_order_follows_choice: false,
+    then: None,
+};
+
+/// The spell asking is counted as it goes on the stack, so a spell that is
+/// the first one asks about a tally still standing at zero.
+static NOTHING_CAST_YET: ValueComparisonDef = ValueComparisonDef {
+    left: ValueDef::SpellsCastThisGame(PlayerRelation::You),
+    comparison: ComparisonDef::Equal,
+    right: ValueDef::Constant(0),
+};
+
+static IT_IS_YOUR_FIRST_SPELL: TriggerConditionDef =
+    TriggerConditionDef::ValueComparison(&NOTHING_CAST_YET);
+
+// ELD 169 — Once Upon a Time
+pub(in crate::card::sets) static ONCE_UPON_A_TIME: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("4034e5ba-9974-43e3-bde7-8d9b4586c3a4"),
+    "Once Upon a Time",
+    CardArt::new("4034e5ba-9974-43e3-bde7-8d9b4586c3a4", "Matt Stewart"),
+    CardSet::ThroneOfEldraine,
+    // A free spell that finds a land or a creature, which is why every green
+    // deck played it and why it is banned in the format it was printed for.
+    CardRules::new_instant(mana_cost!("{1}{G}")).with_abilities(&[
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::AlternativeCost,
+            Some(
+                "If this spell is the first spell you've cast this game, you may cast it without \
+                 paying its mana cost.",
+            ),
+            EffectDef::None,
+        )
+        .with_alternative_condition(&IT_IS_YOUR_FIRST_SPELL),
+        AbilityDef::spell(
+            "Look at the top five cards of your library. You may reveal a creature or land card \
+             from among them and put it into your hand. Put the rest on the bottom of your \
+             library in a random order.",
+            EffectDef::LookAtTopAndSelect {
+                player: EffectRecipientDef::Controller,
+                looker: EffectRecipientDef::Controller,
+                selection: &ONCE_UPON_A_TIME_DIGS,
+            },
+        ),
+    ]),
+);
+
 // ELD 197 — Oko, Thief of Crowns
 pub(in crate::card::sets) static OKO_THIEF_OF_CROWNS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("3462a3d0-5552-49fa-9eb7-100960c55891"),
@@ -466,6 +536,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &EMBERETH_SHIELDBREAKER,
     &RIMROCK_KNIGHT,
     &ROBBER_OF_THE_RICH,
+    &ONCE_UPON_A_TIME,
     &OKO_THIEF_OF_CROWNS,
     &GINGERBRUTE,
     &MYSTIC_SANCTUARY,

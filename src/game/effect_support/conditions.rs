@@ -77,6 +77,7 @@ impl Game {
             .unwrap_or(i32::MAX),
             crate::card::ValueDef::DevotionTo(_)
             | crate::card::ValueDef::LibrarySize(_)
+            | crate::card::ValueDef::SpellsCastThisGame(_)
             | crate::card::ValueDef::BasicLandTypesControlled(_) => {
                 self.player_readable_value(value, controller)
             }

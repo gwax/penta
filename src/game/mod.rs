@@ -883,6 +883,10 @@ pub struct Game {
     /// ended, which is only knowable if it was counted while it happened.
     spells_cast_this_turn: [u16; 2],
     spells_cast_last_turn: [u16; 2],
+    /// How many spells each player has cast this game. Not reset with the
+    /// turn: "the first spell you've cast this game" is a question about the
+    /// whole game, and only a running tally can answer it.
+    total_spells_cast: [u16; 2],
     /// How many cards each player has drawn this turn. Miracle asks whether a
     /// draw was the first one.
     cards_drawn_this_turn: [u16; 2],

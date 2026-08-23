@@ -397,6 +397,7 @@ mod vintage_cube_ocelot_pride;
 mod vintage_cube_oko;
 mod vintage_cube_oliphaunt;
 mod vintage_cube_omnath;
+mod vintage_cube_once_upon_a_time;
 mod vintage_cube_oracle;
 mod vintage_cube_orcish_bowmasters;
 mod vintage_cube_ouroboroid;

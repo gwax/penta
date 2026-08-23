@@ -240,6 +240,12 @@ pub enum ValueDef {
     /// [`Self::TargetLibrarySize`] for the clauses that name a player by
     /// relation rather than by pointing at one.
     LibrarySize(PlayerRelation),
+    /// How many spells a player has cast this game. Kept for the whole game
+    /// rather than reset with the turn, which is what makes "the first spell
+    /// you've cast this game" answerable; the spell asking is counted as it
+    /// goes on the stack, so a clause read while casting sees the ones
+    /// before it.
+    SpellsCastThisGame(PlayerRelation),
     /// "The number of cards you've drawn this turn." Counts every draw,
     /// including the turn's own draw step, and resets when the turn does.
     CardsDrawnThisTurn(PlayerRelation),

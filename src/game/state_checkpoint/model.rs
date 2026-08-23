@@ -151,6 +151,11 @@ pub(super) struct GameSnapshot {
     pub(super) resolved_play_permissions: Vec<ResolvedPlayPermissionSnapshot>,
     pub(super) spells_cast_this_turn: [u16; 2],
     pub(super) spells_cast_last_turn: [u16; 2],
+    /// Spells cast over the whole game. Additive: a checkpoint written before
+    /// it was counted restores a game in which nobody has cast anything,
+    /// which is only wrong for a card that asks, and only until one is cast.
+    #[serde(default)]
+    pub(super) spells_cast_this_game: [u16; 2],
     pub(super) cards_drawn_this_turn: [u16; 2],
     pub(super) citys_blessing: [bool; 2],
     pub(super) permanent_left_battlefield_this_turn: [bool; 2],

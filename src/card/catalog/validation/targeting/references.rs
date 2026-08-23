@@ -461,6 +461,7 @@ fn validate_value_target_references(
         | ValueDef::DevotionTo(_)
         | ValueDef::BasicLandTypesControlled(_)
         | ValueDef::LibrarySize(_)
+        | ValueDef::SpellsCastThisGame(_)
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount
         | ValueDef::MatchedCount
