@@ -3,11 +3,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation,
-    SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
+    CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    PlayerRelation, SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
+    abilities,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 /// "Another creature or an artifact." Gut is neither an artifact nor another
 /// creature, so the exclusion covers both halves without saying so twice.
@@ -196,14 +197,61 @@ pub(in crate::card::sets) static MINSC_BOO_TIMELESS_HEROES: CardRecord = CardRec
     crate::card::CardRules::unsupported(),
 );
 
+/// A noncreature spell you cast. What it does is no part of the condition:
+/// the Kitten reads the type line and nothing else.
+static A_NONCREATURE_SPELL_YOU_CAST: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+/// "Up to one target nonland permanent you control": the trigger goes on the
+/// stack whether or not there is anything worth blinking.
+static UP_TO_ONE_NONLAND_PERMANENT_YOU_CONTROL: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+    1,
+)];
+
+/// Exiling links the permanent to the Kitten, which is what lets the return
+/// name the card the exile just made.
+static KITTEN_BLINKS: [EffectDef; 2] = [
+    EffectDef::ExileLinkedToSource {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
+        zone: ZoneKind::Battlefield,
+        grant: None,
+        controller: None,
+        transformed: false,
+    },
+];
+
 // CLB 560 — Displacer Kitten
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static DISPLACER_KITTEN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9a53e8fc-bfd2-4866-a61c-f3204b0a98bf"),
     "Displacer Kitten",
-    crate::card::CardArt::new("9a53e8fc-bfd2-4866-a61c-f3204b0a98bf", "Campbell White"),
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("9a53e8fc-bfd2-4866-a61c-f3204b0a98bf", "Campbell White"),
+    CardSet::CommanderLegendsBattleForBaldursGate,
+    // Four mana for a 2/2 that does nothing on its own and everything in a
+    // deck built to cast noncreature spells: every one of them is another
+    // enter trigger off whatever is already on the battlefield.
+    CardRules::new_creature(mana_cost!("{3}{U}"), &["Cat", "Beast"], 2, 2).with_ability(
+        AbilityDef::triggered_with_targets(
+            "Avoidance — Whenever you cast a noncreature spell, exile up to one target nonland \
+             permanent you control, then return that card to the battlefield under its owner's \
+             control.",
+            TriggerEventDef::SpellCast(A_NONCREATURE_SPELL_YOU_CAST),
+            &UP_TO_ONE_NONLAND_PERMANENT_YOU_CONTROL,
+            EffectDef::Sequence(&KITTEN_BLINKS),
+        ),
+    ),
 );
 
 // CLB 630 — Delayed Blast Fireball
