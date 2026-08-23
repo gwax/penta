@@ -283,6 +283,7 @@ impl Game {
                     .collect();
                 let follow_up = then.map(|follow_up| crate::game::DiscardFollowUp {
                     counted: follow_up.counted,
+                    bound: follow_up.bound,
                     effect: scoped.with_effect(*follow_up.effect),
                     object: Box::new(object.clone()),
                     context: context.clone(),

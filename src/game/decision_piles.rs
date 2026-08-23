@@ -525,6 +525,17 @@ impl Game {
             let mut context = follow_up.context;
             context.matched_count = u16::try_from(matched).ok();
             context.matched_card_types = Some(matched_card_types);
+            // A discarded card is a new object in its graveyard, so what the
+            // follow-up is handed is the successor rather than the identity
+            // the card had in hand.
+            if let Some(binding) = follow_up.bound {
+                let discarded = counted
+                    .iter()
+                    .filter_map(|(_, card)| self.successors.get(card).copied())
+                    .map(crate::Target::Card)
+                    .collect();
+                context.bind_object_group(binding, discarded);
+            }
             let object = *follow_up.object;
             self.resolve_effect_def(follow_up.effect, &object, context);
         }

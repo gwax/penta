@@ -115,6 +115,7 @@ pub(in crate::card::sets) static GERRARDS_VERDICT: CardRecord = CardRecord::new_
             selection: DiscardSelectionDef::RecipientChooses,
             then: Some(DiscardFollowUpDef {
                 counted: ObjectPredicateDef::HasType(CardType::Land),
+                bound: None,
                 effect: &VERDICT_LIFE,
             }),
         },

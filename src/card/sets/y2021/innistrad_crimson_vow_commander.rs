@@ -21,6 +21,7 @@ static SPIRITS_FOR_THE_TYPES: EffectDef =
 
 static EPIPHANY_DISCARD: DiscardFollowUpDef = DiscardFollowUpDef {
     counted: ObjectPredicateDef::Any,
+    bound: None,
     effect: &SPIRITS_FOR_THE_TYPES,
 };
 

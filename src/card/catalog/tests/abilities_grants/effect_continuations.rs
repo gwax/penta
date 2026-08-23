@@ -8,6 +8,7 @@ fn continuation_effects(child: &'static EffectDef) -> [EffectDef; 4] {
             selection: crate::card::DiscardSelectionDef::RecipientChooses,
             then: Some(crate::card::DiscardFollowUpDef {
                 counted: ObjectPredicateDef::Any,
+                bound: None,
                 effect: child,
             }),
         },

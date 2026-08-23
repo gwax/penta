@@ -214,7 +214,11 @@ fn validate_effect_references(
             validate_recipient_target_references(recipient, target_count, scope)?;
             validate_value_target_references(amount, target_count, scope)?;
             if let Some(follow_up) = then {
-                validate_effect_references(*follow_up.effect, target_count, scope)?;
+                let nested = match follow_up.bound {
+                    Some(binding) => scope.with_object_set(binding)?,
+                    None => scope,
+                };
+                validate_effect_references(*follow_up.effect, target_count, nested)?;
             }
             Ok(())
         }

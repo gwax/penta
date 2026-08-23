@@ -87,10 +87,14 @@ pub enum CounterKind {
     /// Cumulative upkeep's counter (CR 702.24). Its count determines the
     /// upkeep payment rather than changing the permanent by itself.
     Age,
+    /// Malcolm's counter, which counts how many times he has connected. The
+    /// fourth is the one that matters: from then on the card he made you
+    /// discard is one you may cast for nothing.
+    Chorus,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 30;
+    pub const COUNT: usize = 31;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -123,6 +127,7 @@ impl CounterKind {
         Self::Flying,
         Self::Lifelink,
         Self::Age,
+        Self::Chorus,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -160,7 +165,8 @@ impl CounterKind {
             | Self::Finality
             | Self::Flying
             | Self::Lifelink
-            | Self::Age => (0, 0),
+            | Self::Age
+            | Self::Chorus => (0, 0),
         }
     }
 
@@ -197,6 +203,7 @@ impl CounterKind {
             Self::Flying => 27,
             Self::Lifelink => 28,
             Self::Age => 29,
+            Self::Chorus => 30,
         }
     }
 
@@ -233,6 +240,7 @@ impl CounterKind {
             Self::Flying => "flying",
             Self::Lifelink => "lifelink",
             Self::Age => "age",
+            Self::Chorus => "chorus",
         }
     }
 

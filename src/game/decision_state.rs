@@ -73,6 +73,7 @@ pub(super) enum ResolvedEffectPayment {
 #[derive(Clone, Debug)]
 pub(super) struct DiscardFollowUp {
     pub(super) counted: ObjectPredicateDef,
+    pub(super) bound: Option<ObjectSetBindingIndex>,
     pub(super) effect: ScopedEffect,
     pub(super) object: Box<StackObject>,
     pub(super) context: EffectResolutionContext,

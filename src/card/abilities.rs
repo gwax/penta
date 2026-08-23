@@ -667,6 +667,7 @@ static CONNIVE_STEPS: [EffectDef; 2] = [
 
 static CONNIVE_COUNTERS: DiscardFollowUpDef = DiscardFollowUpDef {
     counted: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+    bound: None,
     effect: &EffectDef::AddCounters {
         object: EffectRecipientDef::Source,
         kind: CounterKind::PlusOnePlusOne,

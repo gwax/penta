@@ -2,14 +2,16 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CounterKind, EffectDef,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, AppliedEffectDef,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef,
+    ComparisonDef, CounterKind, DiscardFollowUpDef, DiscardSelectionDef, EffectDef,
     EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, ExilePlayDurationDef,
     InstalledTriggerDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
     ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
-    SpellAdditionalCostDef, TriggerEventDef, ValueDef, ZoneKind, abilities, tokens,
+    SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    tokens,
 };
-use crate::ids::ObjectBindingIndex;
+use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 use crate::{TargetIndex, mana_cost};
 
 /// "Until this creature leaves the battlefield" is one printed ability, so
@@ -145,6 +147,80 @@ static A_CREATURE_OR_PLANESWALKER: [AbilityTargetDef; 1] = [AbilityTargetDef::ex
     },
 )];
 
+/// What the fourth connection is worth: the card you just threw away, cast
+/// for nothing. The kind says both halves at once -- no mana, and an
+/// ordinary trip to the graveyard afterwards.
+static MALCOLM_FREE_CAST: AbilityDef = AbilityDef::alternative_cast(
+    mana_cost!("{0}"),
+    AlternativeCastKindDef::WithoutPayingManaCost,
+    Some("Cast without paying its mana cost."),
+    EffectDef::None,
+);
+
+static MALCOLM_CAST_THE_DISCARD: EffectDef = EffectDef::MayCastTargetWithoutPaying {
+    object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+    ability: &MALCOLM_FREE_CAST,
+};
+
+/// Read after the counter has been added, so the connection that makes it
+/// four is itself the one that pays.
+static MALCOLM_IS_A_CHORUS: TriggerConditionDef = TriggerConditionDef::SourceCounters {
+    kind: CounterKind::Chorus,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 4,
+};
+
+static MALCOLM_MAYBE_CAST: EffectDef = EffectDef::IfCondition {
+    condition: &MALCOLM_IS_A_CHORUS,
+    then: &MALCOLM_CAST_THE_DISCARD,
+};
+
+static MALCOLM_TRIGGER: [EffectDef; 3] = [
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::Chorus,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+        selection: DiscardSelectionDef::RecipientChooses,
+        then: Some(DiscardFollowUpDef {
+            counted: ObjectPredicateDef::Any,
+            bound: Some(ObjectSetBindingIndex::PRIMARY),
+            effect: &MALCOLM_MAYBE_CAST,
+        }),
+    },
+];
+
+// LCI 63 — Malcolm, Alluring Scoundrel
+pub(in crate::card::sets) static MALCOLM_ALLURING_SCOUNDREL: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("19d6834d-afa3-4747-a62d-0654f4d9729f"),
+    "Malcolm, Alluring Scoundrel",
+    CardArt::new("19d6834d-afa3-4747-a62d-0654f4d9729f", "Fesbra"),
+    CardSet::LostCavernsOfIxalan,
+    // Two mana for an evasive body that loots every time it connects, and
+    // that turns the loot into a free spell once it has connected four
+    // times.
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Siren", "Pirate"], 2, 1)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::flash(),
+            abilities::flying(),
+            AbilityDef::triggered(
+                "Whenever this creature deals combat damage to a player, put a chorus counter on \
+                 it. Draw a card, then discard a card. If there are four or more chorus counters \
+                 on it, you may cast the discarded card without paying its mana cost.",
+                TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
+                EffectDef::Sequence(&MALCOLM_TRIGGER),
+            ),
+        ]),
+);
+
 // LCI 91 — Bitter Triumph
 pub(in crate::card::sets) static BITTER_TRIUMPH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("05bdd22c-3e11-4c29-bdfa-d3dfc0e90a9f"),
@@ -258,6 +334,7 @@ pub(in crate::card::sets) static INTI_SENESCHAL_OF_THE_SUN: CardRecord = CardRec
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GET_LOST,
+    &MALCOLM_ALLURING_SCOUNDREL,
     &BITTER_TRIUMPH,
     &DEEP_CAVERN_BAT,
     &INTI_SENESCHAL_OF_THE_SUN,

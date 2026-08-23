@@ -132,6 +132,11 @@ pub struct DiscardFollowUpDef {
     /// Which discarded cards the follow-up counts, read back with
     /// [`ValueDef::MatchedCount`].
     pub counted: ObjectPredicateDef,
+    /// Where the counted cards are saved, so the follow-up can name them
+    /// rather than only count them. "You may cast the discarded card" needs
+    /// the card itself, and by the time the follow-up runs it is one card in
+    /// a graveyard among however many were already there.
+    pub bound: Option<ObjectSetBindingIndex>,
     pub effect: &'static EffectDef,
 }
 
