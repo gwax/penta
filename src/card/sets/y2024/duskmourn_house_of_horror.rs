@@ -472,6 +472,43 @@ pub(in crate::card::sets) static GLIMMERLIGHT: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+/// The same condition in this cycle's Rakdos colours. Either type answers
+/// it, so a Badlands is both halves at once.
+static A_SWAMP_OR_A_MOUNTAIN_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp, BasicLandType::Mountain]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static BLAZEMIRE_HAS_ITS_LAND: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: A_SWAMP_OR_A_MOUNTAIN_YOU_CONTROL,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+// DSK 256 — Blazemire Verge
+pub(in crate::card::sets) static BLAZEMIRE_VERGE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("d151c8e2-d715-470d-868a-f45191db9fa0"),
+    "Blazemire Verge",
+    CardArt::new("d151c8e2-d715-470d-868a-f45191db9fa0", "Andrew Mar"),
+    CardSet::DuskmournHouseOfHorror,
+    // Untapped and free either way: the black is unconditional, and the red
+    // is what the rest of the mana base is for.
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {B}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Black)),
+        ),
+        AbilityDef::activated_mana_if(
+            "{T}: Add {R}. Activate only if you control a Swamp or a Mountain.",
+            &[AbilityCostDef::TapSource],
+            &BLAZEMIRE_HAS_ITS_LAND,
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red)),
+        ),
+    ]),
+);
+
 /// The verge condition in this cycle's Gruul colours. Either type answers
 /// it, so a Taiga is both halves at once.
 static A_MOUNTAIN_OR_A_FOREST_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
@@ -533,6 +570,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WALK_IN_CLOSET_FORGOTTEN_CELLAR,
     &GHOST_VACUUM,
     &GLIMMERLIGHT,
+    &BLAZEMIRE_VERGE,
     &THORNSPIRE_VERGE,
     &CLOCKWORK_PERCUSSIONIST,
 ];

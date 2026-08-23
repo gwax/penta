@@ -169,3 +169,31 @@ fn the_thornspire_verge_offers_its_own_two_colours() {
     expected.sort_unstable();
     assert_eq!(offered, expected, "a Forest switches the green half on");
 }
+
+/// Blazemire Verge is the Rakdos member: black unconditionally, red once a
+/// Swamp or a Mountain is out.
+#[test]
+fn the_blazemire_verge_offers_its_own_two_colours() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let verge = game
+        .put_onto_battlefield(PlayerId::One, cards::BLAZEMIRE_VERGE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(offered_colors(&game, verge), vec![ManaColor::Black]);
+
+    // A Forest is neither of its types.
+    game.put_onto_battlefield(PlayerId::One, cards::FOREST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(offered_colors(&game, verge), vec![ManaColor::Black]);
+
+    game.put_onto_battlefield(PlayerId::One, cards::MOUNTAIN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let mut offered = offered_colors(&game, verge);
+    offered.sort_unstable();
+    let mut expected = vec![ManaColor::Black, ManaColor::Red];
+    expected.sort_unstable();
+    assert_eq!(offered, expected, "a Mountain switches the red half on");
+}
