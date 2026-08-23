@@ -331,6 +331,7 @@ mod vintage_cube_expedition_map;
 mod vintage_cube_exploration;
 mod vintage_cube_faerie_mastermind;
 mod vintage_cube_fatal_push;
+mod vintage_cube_fear_of_missing_out;
 mod vintage_cube_fiery_confluence;
 mod vintage_cube_figure_of_destiny;
 mod vintage_cube_flickerwisp;

@@ -7,12 +7,13 @@ use crate::card::{
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardType, CardTypeSet,
     CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind,
-    CreatureTypeSetDef, EffectDef, EffectRecipientDef, GraveyardPlayPermissionDef, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef,
-    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementConditionDef,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef,
-    SpellAdditionalCostDef, SpendModeDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    CreatureTypeSetDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
+    GraveyardPlayPermissionDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ReplacementConditionDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef, SpellAdditionalCostDef,
+    SpendModeDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef, TurnPhaseDef,
+    TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -416,6 +417,77 @@ fn walk_in_closet_composition() -> CardComposition {
     )
 }
 
+/// Delirium: four or more card types among the cards in your graveyard,
+/// counted as the trigger is placed and again as it resolves. The discard
+/// his own arrival asks for is often what turns it on.
+static DELIRIUM: ValueComparisonDef = ValueComparisonDef {
+    left: ValueDef::CardTypesAmongGraveyards(PlayerRelation::You),
+    comparison: ComparisonDef::GreaterOrEqual,
+    right: ValueDef::Constant(4),
+};
+
+static FOUR_TYPES_IN_YOUR_GRAVEYARD: TriggerConditionDef =
+    TriggerConditionDef::ValueComparison(&DELIRIUM);
+
+static A_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+/// Untapping is what makes the extra combat worth having: the creature that
+/// just attacked can attack again.
+static FOMO_UNTAPS_AND_REPEATS: [EffectDef; 2] = [
+    EffectDef::Untap {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::ScheduleTurnPhases(&[TurnPhaseDef::Combat]),
+];
+
+static FOMO_LOOTS: [EffectDef; 2] = [
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+        selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+];
+
+// DSK 136 — Fear of Missing Out
+pub(in crate::card::sets) static FEAR_OF_MISSING_OUT: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("9d48aaff-46ab-411b-9456-171d4709f951"),
+    "Fear of Missing Out",
+    CardArt::new("9d48aaff-46ab-411b-9456-171d4709f951", "John Stanko"),
+    CardSet::DuskmournHouseOfHorror,
+    // Two mana for a body that fills its own graveyard on the way in and
+    // then, once the graveyard is deep enough, hands the whole team a second
+    // attack.
+    CardRules::new_enchantment_creature(mana_cost!("{1}{R}"), &["Nightmare"], 2, 3).with_abilities(
+        &[
+            AbilityDef::triggered(
+                "When this creature enters, discard a card, then draw a card.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                EffectDef::Sequence(&FOMO_LOOTS),
+            ),
+            AbilityDef::triggered_if_with_targets(
+                "Delirium — Whenever this creature attacks for the first time each turn, if there \
+                 are four or more card types among cards in your graveyard, untap target \
+                 creature. After this phase, there is an additional combat phase.",
+                TriggerEventDef::attacks_first_time_this_turn(ObjectPredicateDef::Source),
+                &FOUR_TYPES_IN_YOUR_GRAVEYARD,
+                &A_CREATURE,
+                EffectDef::Sequence(&FOMO_UNTAPS_AND_REPEATS),
+            ),
+        ],
+    ),
+);
+
 // DSK 178 — Flesh Burrower
 // Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static FLESH_BURROWER: CardRecord = CardRecord::new(
@@ -565,6 +637,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ABHORRENT_OCULUS,
     &UNABLE_TO_SCREAM,
     &OVERLORD_OF_THE_BALEMURK,
+    &FEAR_OF_MISSING_OUT,
     &FLESH_BURROWER,
     &MONSTROUS_EMERGENCE,
     &WALK_IN_CLOSET_FORGOTTEN_CELLAR,

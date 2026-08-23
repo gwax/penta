@@ -80,6 +80,12 @@ impl Game {
             | crate::card::ValueDef::BasicLandTypesControlled(_) => {
                 self.player_readable_value(value, controller)
             }
+            // Delirium: "if there are four or more card types among cards in
+            // your graveyard" is a comparison against a number rather than a
+            // count of objects, so it is read here rather than by a query.
+            crate::card::ValueDef::CardTypesAmongGraveyards(player) => {
+                self.card_types_among_graveyards(player, controller)
+            }
             // "If defending player has more cards in hand than you" is two
             // hands compared, so both sides are read here rather than in the
             // layer walk that sizes a creature by one of them.
