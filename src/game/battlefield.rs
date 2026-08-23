@@ -246,6 +246,32 @@ impl Game {
     /// effective replacement abilities are frozen before any member leaves;
     /// if CR 616 requires the affected object's controller to order two or
     /// more effects, the entire batch remains prospective behind that choice.
+    /// Sacrificing, which is a way of putting a permanent into a graveyard
+    /// rather than something that happens to it there. The event is
+    /// published before anything moves, so what was sacrificed is still on
+    /// the battlefield to be read.
+    pub(super) fn sacrifice_permanents(&mut self, ids: &[GameObjectId]) {
+        self.capture_sacrifices(ids);
+        self.move_permanents_to_graveyard(ids);
+    }
+
+    /// The event half on its own, for the sacrifices whose move carries a
+    /// follow-up and so cannot go through the pair above.
+    pub(super) fn capture_sacrifices(&mut self, ids: &[GameObjectId]) {
+        let sacrificed = self
+            .battlefield
+            .iter()
+            .filter(|permanent| ids.contains(&permanent.card.id))
+            .map(|permanent| (self.trigger_event_object(permanent), permanent.controller))
+            .collect::<Vec<_>>();
+        for (object, player) in sacrificed {
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::Sacrificed {
+                object,
+                player,
+            });
+        }
+    }
+
     pub(super) fn move_permanents_to_graveyard(&mut self, ids: &[GameObjectId]) {
         self.move_permanents_to_graveyard_then(ids, None);
     }

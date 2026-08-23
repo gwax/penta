@@ -107,6 +107,6 @@ impl Game {
             .map(|permanent| permanent.card.id)
             .collect::<Vec<_>>();
         let _ = controller;
-        self.move_permanents_to_graveyard(&doomed);
+        self.sacrifice_permanents(&doomed);
     }
 }

@@ -123,7 +123,7 @@ impl Game {
             .find(|permanent| permanent.card.id == chosen)
             .and_then(|permanent| self.creature_stats(permanent))
             .map_or(0, |stats| i32::from(stats.power).max(0));
-        self.move_permanents_to_graveyard(&[chosen]);
+        self.sacrifice_permanents(&[chosen]);
         self.queue_total_power_sacrifice(player, remaining - power, object, context, if_paid);
     }
 }

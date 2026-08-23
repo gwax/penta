@@ -828,6 +828,22 @@ impl Game {
             (TriggerEventDef::Cycled, CommittedTriggerEvent::Cycled { object }) => {
                 object.id == source
             }
+            (
+                TriggerEventDef::Sacrificed {
+                    object: predicate,
+                    player: relation,
+                },
+                CommittedTriggerEvent::Sacrificed { object, player },
+            ) => {
+                self.player_relation_matches(
+                    *player,
+                    relation,
+                    controller.unwrap_or(*player),
+                    TriggerContext::empty(),
+                ) && self.trigger_object_matches_for_controller(
+                    predicate, object, source, false, controller,
+                )
+            }
             (TriggerEventDef::Exerted(predicate), CommittedTriggerEvent::Exerted { object }) => {
                 self.trigger_object_matches_for_controller(
                     predicate, object, source, false, controller,

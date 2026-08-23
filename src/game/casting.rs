@@ -777,6 +777,7 @@ impl Game {
             {
                 match spend {
                     SpendModeDef::ByZone => {
+                        self.capture_sacrifices(&[spent]);
                         self.move_permanents_to_graveyard_then(
                             &[spent],
                             Some(BattlefieldExitCompletion::CompleteSpellCast {

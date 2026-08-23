@@ -78,6 +78,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                     .is_none_or(|maximum| declaration.minimum <= maximum)
         }
         TriggerEventDef::Exerted(attacker) => shared_object_predicate(attacker),
+        // Published from every site that sacrifices, before the permanent
+        // leaves, so what it was is still readable.
+        TriggerEventDef::Sacrificed { object, .. } => shared_object_predicate(object),
         TriggerEventDef::Attacks(matcher) => {
             shared_object_predicate(matcher.attacker)
                 && matcher.declaration.minimum > 0

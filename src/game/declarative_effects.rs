@@ -270,7 +270,7 @@ impl Game {
                             })
                     })
                     .collect::<Vec<_>>();
-                self.move_permanents_to_graveyard(&permanents);
+                self.sacrifice_permanents(&permanents);
             }
             EffectDef::SacrificeOfChoice {
                 count,

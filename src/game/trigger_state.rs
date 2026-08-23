@@ -330,6 +330,12 @@ pub(super) enum CommittedTriggerEvent {
     Exerted {
         object: TriggerEventObject,
     },
+    /// A permanent was sacrificed, captured before it left so what it was
+    /// is still readable.
+    Sacrificed {
+        object: TriggerEventObject,
+        player: PlayerId,
+    },
 }
 
 impl CommittedTriggerEvent {
@@ -344,6 +350,14 @@ impl CommittedTriggerEvent {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
                 event_player: None,
+                amount: None,
+            },
+            // Who sacrificed it is the half that "whenever you sacrifice"
+            // reads, and what was sacrificed is the other.
+            Self::Sacrificed { object, player } => TriggerContext {
+                object: Some(object.id),
+                object_controller: Some(object.controller),
+                event_player: Some(*player),
                 amount: None,
             },
             // The event is the move rather than any card in it, so nothing

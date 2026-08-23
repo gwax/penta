@@ -776,6 +776,7 @@ impl Game {
         // "sacrifices three".
         if !optional && candidates.len() <= count {
             let sacrificed = candidates.first().copied();
+            self.capture_sacrifices(&candidates);
             if let Some(followup) = followup {
                 self.move_permanents_to_graveyard_then(
                     &candidates,

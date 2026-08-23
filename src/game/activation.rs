@@ -814,6 +814,7 @@ impl Game {
     ) {
         if !remaining_sacrifices.is_empty() {
             let sacrificed = remaining_sacrifices.remove(0);
+            self.capture_sacrifices(&[sacrificed]);
             self.move_permanents_to_graveyard_then(
                 &[sacrificed],
                 Some(BattlefieldExitCompletion::CompleteActivatedAbility {

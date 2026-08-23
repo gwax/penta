@@ -164,7 +164,7 @@ impl Game {
                 {
                     return None;
                 }
-                self.move_permanents_to_graveyard(&[permanent]);
+                self.sacrifice_permanents(&[permanent]);
                 Some(0)
             }
             ResolvedEffectPayment::DiscardMatching(predicate) => {

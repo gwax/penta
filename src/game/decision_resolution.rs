@@ -663,6 +663,7 @@ impl Game {
                     .filter_map(|option| option.card.map(|(card, _)| card))
                     .collect::<Vec<_>>();
                 let chosen = sacrificed.first().copied();
+                self.capture_sacrifices(&sacrificed);
                 // "If a player does" -- declining an optional sacrifice earns
                 // nothing, while a compulsory one pays out even for nothing.
                 if let Some(followup) = followup

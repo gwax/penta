@@ -130,6 +130,15 @@ pub enum TriggerEventDef {
     /// you do, ..." watches. An ability that watches it is also what makes
     /// the creature exertable at all: nothing else on the card says so.
     Exerted(ObjectPredicateDef),
+    /// "Whenever you sacrifice a Clue." A sacrifice is a way of putting a
+    /// permanent into a graveyard rather than a thing that happens to it
+    /// there, so it is its own event: a Clue somebody destroyed went to the
+    /// same place and is not what this asks about. The relation is to the
+    /// player who sacrificed it, which is who "you sacrifice" names.
+    Sacrificed {
+        object: ObjectPredicateDef,
+        player: PlayerRelation,
+    },
     /// "When you unlock this door" (CR 714.4c). A door becomes unlocked
     /// either on the battlefield, for the unlock special action, or as the
     /// Room enters because you cast that half.
