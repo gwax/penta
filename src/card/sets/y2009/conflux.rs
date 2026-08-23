@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, ObjectRefDef, PlayerRefDef, ValueDef, ZoneKind,
-    ZonePlacement,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectRefDef, PlayerRefDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -63,14 +63,32 @@ pub(in crate::card::sets) static PATH_TO_EXILE: CardRecord = CardRecord::new_wit
     )),
 );
 
+static HIERARCH_MANA_COST: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
+static NOBLE_HIERARCH_ABILITIES: [AbilityDef; 2] = [
+    abilities::exalted(),
+    AbilityDef::activated_mana(
+        "{T}: Add {G}, {W}, or {U}.",
+        &HIERARCH_MANA_COST,
+        EffectDef::AddMana(AddManaEffectDef::choice(&[
+            ManaColor::Green,
+            ManaColor::White,
+            ManaColor::Blue,
+        ])),
+    ),
+];
+
 // CON 87 — Noble Hierarch
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static NOBLE_HIERARCH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("6adfe928-1305-444d-b709-1e714544daaf"),
     "Noble Hierarch",
-    crate::card::CardArt::new("6adfe928-1305-444d-b709-1e714544daaf", "Mark Zug"),
-    crate::card::CardSet::Conflux,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("6adfe928-1305-444d-b709-1e714544daaf", "Mark Zug"),
+    CardSet::Conflux,
+    // A one-mana accelerant for three colours whose body is beside the
+    // point, except that exalted makes the 0/1 into a real attacker's
+    // dividend on any turn nothing else attacks.
+    CardRules::new_creature(mana_cost!("{G}"), &["Human", "Druid"], 0, 1)
+        .with_abilities(&NOBLE_HIERARCH_ABILITIES),
 );
 
 // CON 113 — Knight of the Reliquary
