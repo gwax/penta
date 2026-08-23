@@ -392,6 +392,7 @@ pub(in crate::game) fn copied_characteristics(
         added_types: CardTypeSet::empty(),
         added_abilities: Vec::new(),
         retain_printed_subtypes: false,
+        base_power_toughness: None,
     }
 }
 

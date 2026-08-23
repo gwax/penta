@@ -497,6 +497,10 @@ pub(super) struct CopiableCharacteristicsSnapshot {
     /// subtypes restores without them, which is what every copy did then.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) retain_printed_subtypes: bool,
+    /// "Except it's a 1/1", which is a copiable value of its own. Additive:
+    /// a checkpoint written before it existed restores a copy with none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) base_power_toughness: Option<[i16; 2]>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

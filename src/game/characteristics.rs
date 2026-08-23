@@ -134,6 +134,7 @@ impl Game {
                 added_types: CardTypeSet::empty(),
                 added_abilities: Vec::new(),
                 retain_printed_subtypes: false,
+                base_power_toughness: None,
             })
     }
 
@@ -205,6 +206,7 @@ impl Game {
             added_types: CardTypeSet::empty(),
             added_abilities: Vec::new(),
             retain_printed_subtypes: false,
+            base_power_toughness: None,
         };
         let mut faces = match permanent.card.definition {
             ObjectKind::Card(definition) => {

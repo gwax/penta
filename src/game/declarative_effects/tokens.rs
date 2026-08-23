@@ -70,7 +70,10 @@ impl Game {
                     self.create_attached_token(object.controller, token, source);
                 }
             }
-            EffectDef::CreateTokenCopyOf { object: recipient } => {
+            EffectDef::CreateTokenCopyOf {
+                object: recipient,
+                base_power_toughness,
+            } => {
                 let copies = self
                     .effect_recipients(recipient, object, context, scoped)
                     .into_iter()
@@ -83,8 +86,13 @@ impl Game {
                             // token nature is deliberately not among them: the
                             // newly created object is independently a token.
                             .map(|permanent| {
+                                let mut copy = Self::copiable_characteristics(permanent);
+                                // The exception rides on the copy rather than
+                                // being applied to the token afterwards: it is
+                                // itself a copiable value.
+                                copy.base_power_toughness = base_power_toughness;
                                 (
-                                    Self::copiable_characteristics(permanent),
+                                    copy,
                                     self.double_faced_copiable_characteristics(permanent),
                                     permanent.presented,
                                 )

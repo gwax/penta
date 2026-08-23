@@ -315,6 +315,10 @@ impl Game {
                         // Dash is an ordinary cast from hand for a different
                         // price, exactly as impending is.
                         | AlternativeCastKindDef::Dash
+                        // Offspring is the kicker shape: more mana as the
+                        // creature is cast, and a trigger that asks whether
+                        // it was paid.
+                        | AlternativeCastKindDef::Offspring
                         | AlternativeCastKindDef::Warp
                         // Face down is a way of casting the card from hand,
                         // not a permission to cast it elsewhere.

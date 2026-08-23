@@ -623,6 +623,7 @@ pub const fn bloodrush(
 /// Populate's copy step, made once its choice has landed.
 static POPULATE_COPY: EffectDef = EffectDef::CreateTokenCopyOf {
     object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    base_power_toughness: None,
 };
 
 /// Populate: choose a creature token you control, then create a copy of it.

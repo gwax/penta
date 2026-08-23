@@ -64,6 +64,10 @@ pub(super) struct CopiableCharacteristics {
     /// it copied, which is what "except it's an Illusion in addition to its
     /// other types" says.
     pub(super) retain_printed_subtypes: bool,
+    /// "Except it's a 1/1." A copy exception is itself a copiable value
+    /// (CR 707.9a), so it rides here rather than being applied to the token
+    /// afterwards: a later copy of an offspring token is 1/1 as well.
+    pub(super) base_power_toughness: Option<(i16, i16)>,
 }
 
 /// The permanent, two-face copiable values of a double-faced token created as

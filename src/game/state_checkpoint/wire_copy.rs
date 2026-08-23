@@ -20,6 +20,9 @@ pub(super) fn parse_copiable_characteristics(
         base,
         added_types,
         retain_printed_subtypes: snapshot.retain_printed_subtypes,
+        base_power_toughness: snapshot
+            .base_power_toughness
+            .map(|stats| (stats[0], stats[1])),
         added_abilities: snapshot
             .added_abilities
             .iter()

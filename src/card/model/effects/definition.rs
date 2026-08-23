@@ -52,8 +52,7 @@ pub enum EffectDef {
         object: EffectRecipientDef,
     },
     /// The mirror of [`Self::Attach`]: the named permanent moves onto this
-    /// ability's own source, which is what "attach it to this creature"
-    /// means when the creature is the one asking.
+    /// ability's own source, which is what "attach it to this creature" says.
     AttachToSource {
         object: EffectRecipientDef,
     },
@@ -271,6 +270,9 @@ pub enum EffectDef {
     /// this after its generic choice has selected a creature token.
     CreateTokenCopyOf {
         object: EffectRecipientDef,
+        /// "Except it's a 1/1": a copy exception, so a copy of the token
+        /// copies it too.
+        base_power_toughness: Option<(i16, i16)>,
     },
     CreateMyriadTokens, // Exact no-op in two-player games: there is no other opponent.
     /// Endure N (CR 702.183a): put N +1/+1 counters on the object, or create

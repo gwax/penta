@@ -2353,6 +2353,7 @@ pub(in crate::card::sets) static GIANT_ADEPHAGE: CardRecord = CardRecord::new_wi
             TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
             EffectDef::CreateTokenCopyOf {
                 object: EffectRecipientDef::Source,
+                base_power_toughness: None,
             },
         ),
     ]),

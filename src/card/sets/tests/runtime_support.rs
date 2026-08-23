@@ -913,6 +913,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             | AlternativeCastKindDef::Retrace
             | AlternativeCastKindDef::Impending
             | AlternativeCastKindDef::Dash
+            // Offspring changes only what the cast cost, which the arrival
+            // trigger reads off the permanent afterwards.
+            | AlternativeCastKindDef::Offspring
             | AlternativeCastKindDef::Warp
             | AlternativeCastKindDef::Miracle
             | AlternativeCastKindDef::AlternativeCost

@@ -32,6 +32,7 @@ fn synthetic_double_faced_token(
             added_types: CardTypeSet::empty(),
             added_abilities: Vec::new(),
             retain_printed_subtypes: false,
+            base_power_toughness: None,
         },
     });
     permanent
@@ -47,6 +48,7 @@ fn single_faced_card_copying_incubator_cannot_transform() {
         added_types: CardTypeSet::empty(),
         added_abilities: Vec::new(),
         retain_printed_subtypes: false,
+        base_power_toughness: None,
     });
     let copier_id = copier.card.id;
     game.battlefield.push(copier);
@@ -222,6 +224,7 @@ fn sacrificed_card_copying_token_remains_nontoken_on_the_stack() {
         added_types: CardTypeSet::single(CardType::Enchantment),
         added_abilities: Vec::new(),
         retain_printed_subtypes: false,
+        base_power_toughness: None,
     });
     let source = copier.card.id;
     game.battlefield.push(copier);

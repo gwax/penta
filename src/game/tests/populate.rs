@@ -71,6 +71,7 @@ fn populate_preserves_the_tokens_complete_copiable_values() {
         added_types: CardTypeSet::single(CardType::Artifact),
         added_abilities: Vec::new(),
         retain_printed_subtypes: false,
+        base_power_toughness: None,
     });
     game.battlefield.push(original);
 

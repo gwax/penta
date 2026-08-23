@@ -139,6 +139,7 @@ fn checkpoint_round_trips_authored_and_card_copy_tokens() {
             added_types: CardTypeSet::empty(),
             added_abilities: Vec::new(),
             retain_printed_subtypes: false,
+            base_power_toughness: None,
         },
         None,
         CardPartId::PRIMARY,

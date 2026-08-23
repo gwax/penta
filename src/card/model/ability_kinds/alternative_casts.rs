@@ -105,6 +105,12 @@ pub enum AlternativeCastKindDef {
     /// {2} during its owner's turn; this is the other half, and it may not
     /// be taken until a later turn.
     Foretell,
+    /// Offspring (CR 702.126a): an additional cost paid as the creature is
+    /// cast, which nothing about the spell reads except its own arrival --
+    /// "if you do, when this creature enters" is a trigger asking whether it
+    /// was paid. Written as an alternative for the same reason kicker is:
+    /// what varies is the cost, and the permanent records which it paid.
+    Offspring,
     /// Plot (CR 702.170a). Unlike every other kind here, this is not a way to
     /// cast the card at all: the cost is paid to the plot special action,
     /// which exiles the card, and the cast that follows on a later turn is
@@ -167,6 +173,7 @@ impl AlternativeCastKindDef {
             Self::Warp => "Warp",
             Self::Retrace => "Retrace",
             Self::Foretell => "Foretell",
+            Self::Offspring => "Offspring",
             Self::Plot => "Plot",
             Self::WithoutPayingManaCost => "Without paying its mana cost",
             Self::FaceDown { label, .. } => label,
@@ -180,6 +187,7 @@ impl AlternativeCastKindDef {
         [
             Self::Escape,
             Self::Foretell,
+            Self::Offspring,
             Self::Plot,
             Self::Impending,
             Self::Dash,
@@ -200,6 +208,18 @@ impl AlternativeCastKindDef {
 }
 
 impl AlternativeCastAbilityDef {
+    /// Plot's reminder, which repeats the cost twice and so is long enough
+    /// to sit apart from the walk over every other kind.
+    fn plot_rules_text(mana_cost: AlternativeCastManaCostDef) -> String {
+        match mana_cost {
+            AlternativeCastManaCostDef::Fixed(mana_cost) => format!(
+                "Plot {mana_cost} (You may pay {mana_cost} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)",
+            ),
+            // No card prints a plot cost equal to its own mana cost.
+            AlternativeCastManaCostDef::ThisCardManaCost => "Plot".into(),
+        }
+    }
+
     #[must_use]
     pub fn rules_text(self) -> String {
         match (self.kind, self.mana_cost) {
@@ -281,20 +301,15 @@ impl AlternativeCastAbilityDef {
             (AlternativeCastKindDef::Foretell, AlternativeCastManaCostDef::ThisCardManaCost) => {
                 "Foretell".into()
             }
-            (AlternativeCastKindDef::Plot, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
-                format!(
-                    "Plot {mana_cost} (You may pay {mana_cost} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)",
-                )
-            }
-            // No card prints a plot cost equal to its own mana cost.
-            (AlternativeCastKindDef::Plot, AlternativeCastManaCostDef::ThisCardManaCost) => {
-                "Plot".into()
-            }
-            // Never printed on the card being cast: whatever granted the
-            // permission said this, so its own text is the reminder.
-            (AlternativeCastKindDef::WithoutPayingManaCost, _) => self
+            (AlternativeCastKindDef::Plot, mana_cost) => Self::plot_rules_text(mana_cost),
+            // Whatever printed or granted these said it in its own words, so
+            // that text is the reminder and the kind's name is the fallback.
+            (
+                AlternativeCastKindDef::WithoutPayingManaCost | AlternativeCastKindDef::Offspring,
+                _,
+            ) => self
                 .stack_text
-                .map_or_else(|| "Without paying its mana cost".into(), std::borrow::ToOwned::to_owned),
+                .map_or_else(|| self.kind.label().to_owned(), std::borrow::ToOwned::to_owned),
             // Morph is printed on the card that has it; casting face down is
             // the rule that applies to every such card, and the cost of doing
             // it is always {3}.

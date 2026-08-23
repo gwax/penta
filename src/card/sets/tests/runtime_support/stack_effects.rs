@@ -413,7 +413,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         // value the shared walk already resolves, so only the recipient is
         // an open question.
         EffectDef::PutIntoLibraryBeneathTop { object, .. }
-        | EffectDef::CreateTokenCopyOf { object }
+        | EffectDef::CreateTokenCopyOf { object, .. }
         | EffectDef::Endure { object, .. }
         | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }

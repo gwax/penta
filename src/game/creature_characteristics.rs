@@ -101,6 +101,14 @@ impl Game {
             debug_assert!(result.is_continue());
         }
         if setters.is_empty() {
+            // "Except it's a 1/1" travels with the copy, so it answers before
+            // the copied card's own printed stats do.
+            if let Some((power, toughness)) = permanent
+                .active_copy_values()
+                .and_then(|copy| copy.base_power_toughness)
+            {
+                return Some(crate::CreatureStats { power, toughness });
+            }
             return self
                 .effective_rules(permanent)
                 .and_then(|rules| rules.creature_stats());

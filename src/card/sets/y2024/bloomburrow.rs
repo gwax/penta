@@ -3,9 +3,10 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    CardArt, CardRules, CardSet, CardType, ComparisonDef, CounterKind, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, TriggerConditionDef,
-    TriggerEventDef, ZoneKind, ZonePlacement, abilities,
+    AlternativeCastKindDef, CardArt, CardRules, CardSet, CardType, ComparisonDef, CounterKind,
+    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -127,6 +128,89 @@ pub(in crate::card::sets) static STORMCHASERS_TALENT: CardRecord = CardRecord::n
         .with_abilities(&STORMCHASERS_TALENT_ABILITIES),
 );
 
+/// "If you do, when this creature enters": the arrival asks what the cast
+/// paid, which the permanent recorded as it arrived.
+static TRAINER_HAD_OFFSPRING: TriggerConditionDef =
+    TriggerConditionDef::SourceCastWith(AlternativeCastKindDef::Offspring);
+
+/// A 1/1 copy of himself, which arrives with his own look at four attached
+/// to it -- the whole reason the extra four mana is worth paying.
+static TRAINER_OFFSPRING_TOKEN: EffectDef = EffectDef::CreateTokenCopyOf {
+    object: EffectRecipientDef::Source,
+    base_power_toughness: Some((1, 1)),
+};
+
+/// A noncreature, nonland card among the four, which is what the deck
+/// playing him is digging for.
+static A_NONCREATURE_NONLAND_CARD: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+]);
+
+static TRAINER_DIGS: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(4),
+    object: Some(A_NONCREATURE_NONLAND_CARD),
+    minimum: 0,
+    maximum: 1,
+    select_all_matching: false,
+    reveal_selected: true,
+    selected_zone: ZoneKind::Hand,
+    selected_placement: ZonePlacement::Top,
+    selected_hidden: false,
+    selected_linked_to_source: false,
+    selected_face_down: None,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Bottom,
+    rest_random_order: true,
+    rest_counters: None,
+    selected_order_follows_choice: false,
+    then: None,
+};
+
+static TRAINER_ARRIVES: TriggerEventDef = TriggerEventDef::zone_changed(
+    ObjectPredicateDef::Source,
+    None,
+    Some(ZoneKind::Battlefield),
+);
+
+// BLB 78 — Thundertrap Trainer
+pub(in crate::card::sets) static THUNDERTRAP_TRAINER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("9cf3af94-b7c8-415c-a5a1-d89967fd0bba"),
+    "Thundertrap Trainer",
+    CardArt::new("9cf3af94-b7c8-415c-a5a1-d89967fd0bba", "Matt Stewart"),
+    CardSet::Bloomburrow,
+    // Two mana to dig four cards deep for the spell you want, or six for two
+    // bodies and two looks.
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Otter", "Wizard"], 1, 2).with_abilities(&[
+        AbilityDef::alternative_cast(
+            mana_cost!("{5}{U}"),
+            AlternativeCastKindDef::Offspring,
+            Some(
+                "Offspring {4} (You may pay an additional {4} as you cast this spell. If you do, \
+                 when this creature enters, create a 1/1 token copy of it.)",
+            ),
+            EffectDef::None,
+        ),
+        AbilityDef::triggered_if(
+            "When this creature enters, create a 1/1 token copy of it.",
+            TRAINER_ARRIVES,
+            &TRAINER_HAD_OFFSPRING,
+            TRAINER_OFFSPRING_TOKEN,
+        ),
+        AbilityDef::triggered(
+            "When this creature enters, look at the top four cards of your library. You may \
+             reveal a noncreature, nonland card from among them and put it into your hand. Put \
+             the rest on the bottom of your library in a random order.",
+            TRAINER_ARRIVES,
+            EffectDef::LookAtTopAndSelect {
+                player: EffectRecipientDef::Controller,
+                looker: EffectRecipientDef::Controller,
+                selection: &TRAINER_DIGS,
+            },
+        ),
+    ]),
+);
+
 // BLB 208 — Cindering Cutthroat
 // Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static CINDERING_CUTTHROAT: CardRecord = CardRecord::new(
@@ -159,6 +243,7 @@ pub(in crate::card::sets) static HIDDEN_GROTTO: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STORMCHASERS_TALENT,
+    &THUNDERTRAP_TRAINER,
     &CINDERING_CUTTHROAT,
     &TEMPEST_ANGLER,
     &HIDDEN_GROTTO,

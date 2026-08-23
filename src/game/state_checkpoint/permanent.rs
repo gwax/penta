@@ -202,6 +202,9 @@ fn copiable_characteristics_snapshot(
         CopiableCharacteristicsSnapshot {
             base,
             added_types: CardType::ALL.map(|card_type| copy.added_types.contains(card_type)),
+            base_power_toughness: copy
+                .base_power_toughness
+                .map(|(power, toughness)| [power, toughness]),
             added_abilities,
             retain_printed_subtypes: copy.retain_printed_subtypes,
         },

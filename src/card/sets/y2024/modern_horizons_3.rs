@@ -31,6 +31,7 @@ static YOUR_NEW_TOKENS: ObjectQueryDef = ObjectQueryDef::controlled_by(
 
 static OCELOT_DOUBLES_THEM: EffectDef = EffectDef::CreateTokenCopyOf {
     object: EffectRecipientDef::objects(ObjectSetDef::Query(YOUR_NEW_TOKENS)),
+    base_power_toughness: None,
 };
 
 static OCELOT_END_STEP: [EffectDef; 2] = [
