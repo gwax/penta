@@ -358,6 +358,21 @@ impl Permanent {
         })
     }
 
+    /// Untaps, unless a stun counter replaces it (CR 122.1f): a permanent
+    /// carrying one removes it and stays tapped instead. A permanent that is
+    /// already untapped is not becoming untapped, so nothing is replaced and
+    /// no counter comes off.
+    fn untap(&mut self) {
+        if !self.tapped {
+            return;
+        }
+        if self.counters(CounterKind::Stun) > 0 {
+            self.remove_counters(CounterKind::Stun, 1);
+        } else {
+            self.tapped = false;
+        }
+    }
+
     const fn counters(&self, kind: CounterKind) -> u16 {
         self.counters[kind.index()]
     }

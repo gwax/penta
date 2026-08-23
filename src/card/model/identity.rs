@@ -155,6 +155,7 @@ pub enum CardSet {
     MagicFoundations,
     AvatarTheLastAirbender,
     EdgeOfEternities,
+    EdgeOfEternitiesCommander,
     LorwynEclipsed,
     SecretsOfStrixhaven,
     TeenageMutantNinjaTurtles,

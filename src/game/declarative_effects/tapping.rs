@@ -26,7 +26,7 @@ impl Game {
                             .iter_mut()
                             .find(|candidate| candidate.card.id == id)
                     {
-                        permanent.tapped = false;
+                        permanent.untap();
                     }
                 }
             }

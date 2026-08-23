@@ -586,7 +586,7 @@ impl Game {
                             .iter_mut()
                             .find(|permanent| permanent.card.id == source)
                             .expect("a legal activation has its source")
-                            .tapped = false;
+                            .untap();
                     }
                     // The open-ended removal never reaches payment: mana
                     // enumeration replaced it with a sized one.

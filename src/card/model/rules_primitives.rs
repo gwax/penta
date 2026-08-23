@@ -91,10 +91,15 @@ pub enum CounterKind {
     /// fourth is the one that matters: from then on the card he made you
     /// discard is one you may cast for nothing.
     Chorus,
+    /// A stun counter (CR 122.1f). Like the keyword counters this one has a
+    /// rules meaning of its own: a permanent carrying one that would become
+    /// untapped removes it instead and stays tapped, so what the counters
+    /// measure is how many untaps the permanent still owes.
+    Stun,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 31;
+    pub const COUNT: usize = 32;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -128,6 +133,7 @@ impl CounterKind {
         Self::Lifelink,
         Self::Age,
         Self::Chorus,
+        Self::Stun,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -166,7 +172,8 @@ impl CounterKind {
             | Self::Flying
             | Self::Lifelink
             | Self::Age
-            | Self::Chorus => (0, 0),
+            | Self::Chorus
+            | Self::Stun => (0, 0),
         }
     }
 
@@ -204,6 +211,7 @@ impl CounterKind {
             Self::Lifelink => 28,
             Self::Age => 29,
             Self::Chorus => 30,
+            Self::Stun => 31,
         }
     }
 
@@ -241,6 +249,7 @@ impl CounterKind {
             Self::Lifelink => "lifelink",
             Self::Age => "age",
             Self::Chorus => "chorus",
+            Self::Stun => "stun",
         }
     }
 

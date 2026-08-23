@@ -344,6 +344,9 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("magic_foundations.rs") => source(CardSet::MagicFoundations, "FDN"),
         Some("avatar_the_last_airbender.rs") => source(CardSet::AvatarTheLastAirbender, "TLA"),
         Some("edge_of_eternities.rs") => source(CardSet::EdgeOfEternities, "EOE"),
+        Some("edge_of_eternities_commander.rs") => {
+            source(CardSet::EdgeOfEternitiesCommander, "EOC")
+        }
         Some("lorwyn_eclipsed.rs") => source(CardSet::LorwynEclipsed, "ECL"),
         Some("secrets_of_strixhaven.rs") => source(CardSet::SecretsOfStrixhaven, "SOS"),
         Some("teenage_mutant_ninja_turtles.rs") => {

@@ -827,6 +827,11 @@ const SET_MODULES: &[SetModule] = &[
         y2025::edge_of_eternities::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::EdgeOfEternitiesCommander,
+        y2025::edge_of_eternities_commander::CARDS,
+        y2025::edge_of_eternities_commander::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::LorwynEclipsed,
         y2026::lorwyn_eclipsed::CARDS,
         y2026::lorwyn_eclipsed::ADDITIONAL_PRINTINGS,

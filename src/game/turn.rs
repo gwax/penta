@@ -116,7 +116,7 @@ impl Game {
             .collect::<Vec<_>>();
         for permanent in &mut self.battlefield {
             if eligible.contains(&permanent.card.id) && selected.contains(&permanent.card.id) {
-                permanent.tapped = false;
+                permanent.untap();
             }
         }
         self.untap_pending = false;
@@ -517,7 +517,7 @@ impl Game {
                 {
                     self.untap_pending = true;
                 } else if !untap_restricted.contains(&permanent.card.id) {
-                    permanent.tapped = false;
+                    permanent.untap();
                 }
             }
         }
