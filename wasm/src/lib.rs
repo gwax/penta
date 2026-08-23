@@ -576,6 +576,28 @@ impl WebGame {
             && self.session.decision_seat() == Some(self.human.opponent())
     }
 
+    /// Whether the game has ended, without building the state to find out.
+    ///
+    /// A host asks this constantly -- on every bot poll, and again on every
+    /// applied command -- and the answer is one `Option` on the session. The
+    /// alternative it replaces, serializing the whole human-visible state
+    /// and parsing back one field, costs a payload that grows with the game
+    /// and is discarded immediately.
+    #[wasm_bindgen(js_name = isFinished)]
+    #[must_use]
+    pub fn is_finished(&self) -> bool {
+        self.session.result().is_some()
+    }
+
+    /// The finished game's result as the human sees it, or `None` while the
+    /// game is live. The same object `state_json`'s `result` member carries,
+    /// for a caller that wants only that.
+    #[wasm_bindgen(js_name = resultJson)]
+    #[must_use]
+    pub fn result_json(&self) -> Option<String> {
+        self.result_value().map(|result| result.to_string())
+    }
+
     /// The opponent seat's redacted view, in the same protocol JSON a bot on
     /// a socket already reads. Only an external opponent has a driver to
     /// show it to.

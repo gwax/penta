@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test, { after } from "node:test";
 
-import ts from "typescript";
+import {
+  durableState,
+  installRoomGlobals,
+  loadGameRoom,
+  request,
+  restoreRoomGlobals,
+} from "./game-room-support.mjs";
 
 /**
  * What the room knows about its bot, and what it says about the ending.
@@ -19,47 +24,6 @@ import ts from "typescript";
  * Like the other room suites, `GameRoom` is transpiled from source with its
  * worker-only imports swapped for injected globals.
  */
-
-class MemoryStorage {
-  values = new Map();
-  alarm = null;
-
-  async get(key) {
-    const value = this.values.get(key);
-    return value === undefined ? undefined : structuredClone(value);
-  }
-
-  async put(key, value) {
-    this.values.set(key, structuredClone(value));
-  }
-
-  async delete(key) {
-    return this.values.delete(key);
-  }
-
-  async setAlarm(time) {
-    this.alarm = time;
-  }
-
-  async deleteAlarm() {
-    this.alarm = null;
-  }
-}
-
-class TestResponse {
-  constructor(body = null, init = {}) {
-    this.status = init.status ?? 200;
-    this.body = body === null ? "" : String(body);
-  }
-
-  static json(value, init = {}) {
-    return new TestResponse(JSON.stringify(value), init);
-  }
-
-  async json() {
-    return JSON.parse(this.body);
-  }
-}
 
 /** Every timeout the room has handed the engine, newest last. */
 const timeouts = [];
@@ -80,6 +44,14 @@ class TestWebGame {
     return this.result === null;
   }
 
+  isFinished() {
+    return this.result !== null;
+  }
+
+  resultJson() {
+    return this.result === null ? undefined : JSON.stringify(this.result);
+  }
+
   loseOnTime(seat, reason) {
     timeouts.push({ seat, reason });
     this.result = { loser: seat, reason };
@@ -90,97 +62,22 @@ class TestWebGame {
   }
 }
 
-class TestHostedGame {
-  static replayVersion() {
-    return 1;
-  }
-
-  static simulationFingerprint() {
-    return "test-fingerprint";
-  }
-
-  static engineVersion() {
-    return "test-engine";
-  }
-
-  static protocolVersion() {
-    return 1;
-  }
-}
-
-const originalResponse = globalThis.Response;
-globalThis.Response = TestResponse;
-globalThis.__gameRoomEngine = async () => ({
+installRoomGlobals({
   WebGame: TestWebGame,
-  HostedGame: TestHostedGame,
-});
-globalThis.__replayCompatibilityError = () => null;
-globalThis.__botPresence = {
-  FINISHED_ROOM_MS: 60_000,
   // A zero budget for the bot, so `alarm()` finds the clock already expired
   // rather than rearming -- these tests are about what the alarm does when it
   // fires, not about waiting for one.
-  moveBudgetMs: (seat) => (seat === "bot" ? 0 : 10_000),
-};
+  presence: { moveBudgetMs: (seat) => (seat === "bot" ? 0 : 10_000) },
+});
+after(restoreRoomGlobals);
 
-after(() => {
-  globalThis.Response = originalResponse;
-  delete globalThis.__gameRoomEngine;
-  delete globalThis.__replayCompatibilityError;
-  delete globalThis.__botPresence;
+let GameRoom;
+test.before(async () => {
+  ({ GameRoom } = await loadGameRoom());
 });
 
-async function loadGameRoom() {
-  let source = await readFile(
-    new URL("../worker/game-room.ts", import.meta.url),
-    "utf8",
-  );
-  const replacements = [
-    [
-      'import { type EngineModule, engine } from "./engine";',
-      "const engine = globalThis.__gameRoomEngine;",
-    ],
-    [
-      'import { replayCompatibilityError } from "./replay-compatibility.mjs";',
-      "const replayCompatibilityError = globalThis.__replayCompatibilityError;",
-    ],
-    [
-      'import { FINISHED_ROOM_MS, moveBudgetMs } from "./bot-presence.mjs";',
-      "const { FINISHED_ROOM_MS, moveBudgetMs } = globalThis.__botPresence;",
-    ],
-  ];
-  for (const [from, to] of replacements) {
-    assert.ok(source.includes(from), `test loader expected ${from}`);
-    source = source.replace(from, to);
-  }
-  const javascript = ts.transpileModule(source, {
-    compilerOptions: {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2022,
-    },
-  }).outputText;
-  const encoded = Buffer.from(javascript).toString("base64");
-  return import(`data:text/javascript;base64,${encoded}`);
-}
-
-function durableState(storage) {
-  return {
-    storage,
-    blockConcurrencyWhile: (callback) => callback(),
-  };
-}
-
-function request(route, { token, body } = {}) {
-  const headers = token ? { "x-penta-token": token } : undefined;
-  return new Request(`https://room.test/${route}`, {
-    method: body === undefined ? "GET" : "POST",
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-}
-
 async function startRoom() {
-  const room = new GameRoom(durableState(new MemoryStorage()));
+  const room = new GameRoom(durableState());
   const response = await room.fetch(
     request("start", {
       body: {
@@ -199,11 +96,6 @@ async function botActivity(room) {
   const response = await room.fetch(request("bot-activity"));
   return (await response.json()).lastSeen;
 }
-
-let GameRoom;
-test.before(async () => {
-  ({ GameRoom } = await loadGameRoom());
-});
 test.beforeEach(() => {
   timeouts.length = 0;
 });

@@ -1,77 +1,20 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test, { after } from "node:test";
 
-import ts from "typescript";
+import {
+  MemoryStorage,
+  durableState,
+  installRoomGlobals,
+  loadGameRoom,
+  request,
+  restoreRoomGlobals,
+  socketPairs,
+} from "./game-room-support.mjs";
 
-class MemoryStorage {
-  values = new Map();
-  alarm = null;
-
-  async get(key) {
-    const value = this.values.get(key);
-    return value === undefined ? undefined : structuredClone(value);
-  }
-
-  async put(key, value) {
-    this.values.set(key, structuredClone(value));
-  }
-
-  async delete(key) {
-    return this.values.delete(key);
-  }
-
-  async setAlarm(time) {
-    this.alarm = time;
-  }
-
-  async deleteAlarm() {
-    this.alarm = null;
-  }
-}
-
-class RoomSocket {
-  sent = [];
-  handlers = new Map();
-
-  accept() {}
-
-  send(message) {
-    this.sent.push(message);
-  }
-
-  close() {}
-
-  addEventListener(type, handler) {
-    this.handlers.set(type, handler);
-  }
-}
-
-const socketPairs = [];
-
-class TestWebSocketPair {
-  constructor() {
-    const pair = { 0: new RoomSocket(), 1: new RoomSocket() };
-    socketPairs.push(pair);
-    return pair;
-  }
-}
-
-class TestResponse {
-  constructor(body = null, init = {}) {
-    this.status = init.status ?? 200;
-    this.webSocket = init.webSocket;
-    this.body = body === null ? "" : String(body);
-  }
-
-  static json(value, init = {}) {
-    return new TestResponse(JSON.stringify(value), init);
-  }
-
-  async json() {
-    return JSON.parse(this.body);
-  }
-}
+/**
+ * What a reconnecting or polling human seat is allowed to see, and what the
+ * room may not let slip while the opponent seat is mid-decision.
+ */
 
 const SAFE_BEFORE_DRAW = {
   view: "safe-before-draw",
@@ -128,6 +71,14 @@ class TestWebGame {
     this.opponentDeciding = false;
   }
 
+  isFinished() {
+    return Boolean(this.state.result);
+  }
+
+  resultJson() {
+    return this.state.result ? JSON.stringify(this.state.result) : undefined;
+  }
+
   opponentIsDeciding() {
     return this.opponentDeciding;
   }
@@ -141,94 +92,16 @@ class TestWebGame {
   }
 }
 
-class TestHostedGame {
-  static replayVersion() {
-    return 1;
-  }
-
-  static simulationFingerprint() {
-    return "test-fingerprint";
-  }
-
-  static engineVersion() {
-    return "test-engine";
-  }
-
-  static protocolVersion() {
-    return 1;
-  }
-}
-
-const originalResponse = globalThis.Response;
-const originalWebSocketPair = globalThis.WebSocketPair;
-globalThis.Response = TestResponse;
-globalThis.WebSocketPair = TestWebSocketPair;
-globalThis.__gameRoomEngine = async () => ({
+installRoomGlobals({
   WebGame: TestWebGame,
-  HostedGame: TestHostedGame,
+  presence: { FINISHED_ROOM_MS: 60_000, moveBudgetMs: (seat) => (seat === "bot" ? 1_000 : 10_000) },
 });
-globalThis.__replayCompatibilityError = () => null;
-globalThis.__botPresence = {
-  FINISHED_ROOM_MS: 60_000,
-  moveBudgetMs: (seat) => (seat === "bot" ? 1_000 : 10_000),
-};
+after(restoreRoomGlobals);
 
-after(() => {
-  globalThis.Response = originalResponse;
-  globalThis.WebSocketPair = originalWebSocketPair;
-  delete globalThis.__gameRoomEngine;
-  delete globalThis.__replayCompatibilityError;
-  delete globalThis.__botPresence;
+let GameRoom;
+test.before(async () => {
+  ({ GameRoom } = await loadGameRoom());
 });
-
-async function loadGameRoom() {
-  let source = await readFile(
-    new URL("../worker/game-room.ts", import.meta.url),
-    "utf8",
-  );
-  const replacements = [
-    [
-      'import { type EngineModule, engine } from "./engine";',
-      "const engine = globalThis.__gameRoomEngine;",
-    ],
-    [
-      'import { replayCompatibilityError } from "./replay-compatibility.mjs";',
-      "const replayCompatibilityError = globalThis.__replayCompatibilityError;",
-    ],
-    [
-      'import { FINISHED_ROOM_MS, moveBudgetMs } from "./bot-presence.mjs";',
-      "const { FINISHED_ROOM_MS, moveBudgetMs } = globalThis.__botPresence;",
-    ],
-  ];
-  for (const [from, to] of replacements) {
-    assert.ok(source.includes(from), `test loader expected ${from}`);
-    source = source.replace(from, to);
-  }
-  const javascript = ts.transpileModule(source, {
-    compilerOptions: {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2022,
-    },
-  }).outputText;
-  const encoded = Buffer.from(javascript).toString("base64");
-  return import(`data:text/javascript;base64,${encoded}`);
-}
-
-function durableState(storage) {
-  return {
-    storage,
-    blockConcurrencyWhile: (callback) => callback(),
-  };
-}
-
-function request(route, { token, body } = {}) {
-  const headers = token ? { "x-penta-token": token } : undefined;
-  return new Request(`https://room.test/${route}`, {
-    method: body === undefined ? "GET" : "POST",
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-}
 
 function assertCredentialsRedacted(record) {
   assert.equal("humanToken" in record, false);
@@ -236,7 +109,6 @@ function assertCredentialsRedacted(record) {
 }
 
 test("polling and reconnect cannot see an external opponent's private Miracle window", async () => {
-  const { GameRoom } = await loadGameRoom();
   const storage = new MemoryStorage();
   const room = new GameRoom(durableState(storage));
   const started = await (
@@ -333,7 +205,6 @@ test("polling and reconnect cannot see an external opponent's private Miracle wi
 });
 
 test("built-in game records do not expose either seat token", async () => {
-  const { GameRoom } = await loadGameRoom();
   const room = new GameRoom(durableState(new MemoryStorage()));
   const started = await (
     await room.fetch(

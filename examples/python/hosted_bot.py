@@ -11,6 +11,10 @@ wall-clock time, and a game is the longest stretch a bot spends busy, so a
 play loop that stops heartbeating is a bot that goes silent right when
 someone is waiting on it.
 
+The play loop waits rather than polls: `opponent` takes a `wait`, and holds
+the request open until the decision is yours. Every priority pass is a
+decision, so a poll interval is a tax paid many times per turn.
+
     python3 hosted_bot.py --name Fizzbot           # your own server
     python3 hosted_bot.py --name Fizzbot \
         --server https://penta.lacker.workers.dev  # where people can play it
@@ -31,8 +35,14 @@ import requests
 # Heartbeat well inside the server's 45-second presence window, so one lost
 # packet does not read as "this bot went away".
 HEARTBEAT_SECONDS = 10
-# How long to wait between polls while it is the opponent's turn to move.
-POLL_SECONDS = 0.25
+# How long to let the server hold a request open while it is the human's turn.
+# The server answers the moment the decision is ours, so this is a ceiling on
+# waiting, not a delay -- and it wants to stay under HEARTBEAT_SECONDS so the
+# heartbeat below keeps its own schedule.
+WAIT_SECONDS = 8
+# How long to wait before asking again after a refusal, which is the only
+# thing left that asking again can fix.
+RETRY_SECONDS = 0.25
 # This bot consumes the protocol-28 indexed-action vocabulary, requires no
 # optional server facilities, and implements no optional server-required
 # vocabulary. Never copy the server's claims without implementing them.
@@ -135,15 +145,22 @@ def play(server, room, token, beat):
         # Whatever this returns is about some later game: the invitation for
         # this room stays outstanding until the room is reported in `done`.
         beat()
+        # `wait` parks this request until the decision is ours. A game asks
+        # the opponent seat for far more decisions than it looks like -- every
+        # priority pass is one -- so a fixed poll interval would spend itself
+        # over and over on a single turn. Waiting costs the human nothing and
+        # costs the server less than asking would.
         view = requests.get(
-            f"{server}/_game/{room}/opponent", headers=headers, timeout=30
+            f"{server}/_game/{room}/opponent",
+            params={"wait": int(WAIT_SECONDS * 1000)},
+            headers=headers,
+            timeout=WAIT_SECONDS + 30,
         ).json()
         if view.get("result"):
             print(f"  finished: {view['result']}")
             return
         if not view.get("deciding"):
-            # The human is thinking, or the engine is resolving something.
-            time.sleep(POLL_SECONDS)
+            # The wait elapsed with the human still thinking. Ask again.
             continue
         index = choose(view["observation"])
         reply = requests.post(
@@ -154,9 +171,9 @@ def play(server, room, token, beat):
         )
         if reply.status_code != 200:
             # A refused action leaves the previous observation standing, so
-            # the next poll simply asks again.
+            # the next request simply asks again.
             print(f"  refused: {reply.text}")
-            time.sleep(POLL_SECONDS)
+            time.sleep(RETRY_SECONDS)
 
 
 def main():

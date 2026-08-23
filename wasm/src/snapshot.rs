@@ -70,6 +70,25 @@ impl WebGame {
         self.snapshot_value(true)
     }
 
+    /// The finished game's outcome and message, or `None` while it is live.
+    ///
+    /// Lives apart from the snapshot because a host asks for the result far
+    /// more often than for the board, and building the board to answer is
+    /// the difference between a constant cost and one that grows all game.
+    pub(super) fn result_value(&self) -> Option<Value> {
+        self.session.result().map(|result| match result {
+            GameResult::Winner { winner, reason } => json!({
+                "outcome": if winner == self.human { "win" } else { "loss" },
+                "message": format!(
+                    "{} — {}",
+                    if winner == self.human { "You win" } else { "You lose" },
+                    self.result_reason_text(reason, winner != self.human)
+                ),
+            }),
+            GameResult::Draw => json!({"outcome": "draw", "message": "Draw"}),
+        })
+    }
+
     /// The clause after the dash in a finished game's message.
     ///
     /// [`WinReason`](penta::WinReason) names the loser as "the opponent" from
@@ -395,17 +414,7 @@ impl WebGame {
                 .map(|(id, definition)| card_in_zone(*id, *definition))
                 .collect::<Vec<_>>()
         };
-        let result = self.session.result().map(|result| match result {
-            GameResult::Winner { winner, reason } => json!({
-                "outcome": if winner == self.human { "win" } else { "loss" },
-                "message": format!(
-                    "{} — {}",
-                    if winner == self.human { "You win" } else { "You lose" },
-                    self.result_reason_text(reason, winner != self.human)
-                ),
-            }),
-            GameResult::Draw => json!({"outcome": "draw", "message": "Draw"}),
-        });
+        let result = self.result_value();
         // `events_for` withholds the seed. This client owns the engine, so it
         // may still show it; a remote one would not have it to show.
         let seat_events = self.session.events_for(self.human);

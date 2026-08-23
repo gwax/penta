@@ -27,6 +27,30 @@ export const HUMAN_MOVE_MS = 5 * 60_000;
 export const BOT_MOVE_MS = 60_000;
 
 /**
+ * The longest a bot may park on `opponent` waiting for its turn.
+ *
+ * A parked bot is a bot that has not spoken since it parked, and presence
+ * asks when it last spoke -- so this has to stay comfortably inside
+ * `PRESENCE_MS`, or waiting politely would read as having gone away. It is a
+ * ceiling rather than a value: a bot asks for what it wants and gets the
+ * smaller of the two.
+ */
+export const MAX_WAIT_MS = 30_000;
+
+/**
+ * How long a bot's `wait` request actually parks it for. Anything
+ * unparseable, negative, or absent means the caller did not ask to wait, and
+ * gets the immediate answer bots have always got.
+ *
+ * @param {string | null} requested
+ */
+export function waitBudgetMs(requested) {
+  const asked = Number(requested);
+  if (!Number.isFinite(asked) || asked <= 0) return 0;
+  return Math.min(Math.floor(asked), MAX_WAIT_MS);
+}
+
+/**
  * The clock budget for whichever seat must act.
  *
  * @param {"human" | "bot"} seat

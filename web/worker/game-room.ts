@@ -132,7 +132,7 @@ interface HumanStateCache {
   };
 }
 
-import { FINISHED_ROOM_MS, moveBudgetMs } from "./bot-presence.mjs";
+import { FINISHED_ROOM_MS, moveBudgetMs, waitBudgetMs } from "./bot-presence.mjs";
 
 const STORED = "hosted-game";
 const HUMAN_STATE = "human-state";
@@ -231,6 +231,14 @@ export class GameRoom {
    * chattiest path in the room, to learn nothing new.
    */
   #lastBotSeen: number | null = null;
+  /**
+   * Bots parked on `opponent`, each waiting to be told the board moved.
+   *
+   * A parked request holds no storage operation, so the object goes on
+   * serving everyone else while these wait -- which is the whole point:
+   * the bot is asleep rather than asking again every quarter second.
+   */
+  readonly #parked = new Set<() => void>();
   /** Last state it was safe to render to the human seat. */
   #humanState: HumanStateCache | null = null;
 
@@ -274,7 +282,8 @@ export class GameRoom {
         return seat === "human" ? this.#snapshot() : forbidden();
       }
       if (route === "opponent") {
-        return seat === "bot" ? this.#opponentView(game) : forbidden();
+        if (seat !== "bot") return forbidden();
+        return await this.#opponentView(game, waitBudgetMs(url.searchParams.get("wait")));
       }
       if (route === "verify-bot-token") {
         // Object-to-object only, like `lose-on-time`. The registry asks this
@@ -346,11 +355,8 @@ export class GameRoom {
         // record a private choice that produced no public event. Neither is
         // a live-game observation: withhold both until the result makes the
         // complete replay ordinary post-game provenance.
-        const finished = Boolean(
-          (JSON.parse(game.state_json()) as { result?: unknown }).result,
-        );
         return Response.json(
-          finished
+          game.isFinished()
             ? record
             : {
                 ...record,
@@ -371,16 +377,40 @@ export class GameRoom {
    * it by posting `botAct` to `command`, so a whole remote bot needs only
    * these two ordinary requests.
    */
-  #opponentView(game: WebGame): Response {
-    const result = (JSON.parse(game.state_json()) as { result?: unknown }).result;
+  async #opponentView(game: WebGame, waitMs: number): Promise<Response> {
+    // A bot that asked to wait is held here until its turn arrives rather
+    // than sent away to ask again. What it costs a poller is a whole poll
+    // interval per decision, and a game asks the opponent seat for many more
+    // decisions than a person would guess -- every priority pass is one.
+    if (waitMs > 0) {
+      const deadline = Date.now() + waitMs;
+      while (!game.opponentIsDeciding() && !game.isFinished()) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) break;
+        if (!(await this.#park(remaining))) break;
+      }
+      // Parking is the bot being here, for as long as it is parked: it is
+      // not going to say anything else while it waits.
+      this.#lastBotSeen = Date.now();
+    }
+    // `resultJson` rather than the whole state: this runs on every poll a
+    // bot makes, including the many that only ask whether it is their turn
+    // yet, and the state it used to build for one member grows all game.
+    const result = this.#result(game);
     if (!game.opponentIsDeciding()) {
-      return Response.json({ deciding: false, result: result ?? null });
+      return Response.json({ deciding: false, result });
     }
     return Response.json({
       deciding: true,
-      result: result ?? null,
+      result,
       observation: this.#withOpponentDeck(JSON.parse(game.opponentObserveJson())),
     });
+  }
+
+  /** The finished game's result, or null while it is live. */
+  #result(game: WebGame): unknown {
+    const result = game.resultJson();
+    return result === undefined ? null : JSON.parse(result);
   }
 
   /**
@@ -665,19 +695,25 @@ export class GameRoom {
    * driver is prompted, or the human's view is current and gets pushed.
    */
   async #dispatch(game: WebGame): Promise<void> {
-    await this.#armClock(game);
-    if (game.opponentIsDeciding()) {
-      this.#promptBot(game);
-      // Humans are not pushed here. Their snapshot would describe their own
-      // seat as holding a decision it does not hold, and an actionable panel
-      // that rejects every click is worse than a still one.
-      return;
-    }
-    await this.#rememberHumanState(game);
-    this.#toHumans(this.#deliverable());
-    const result = this.#humanState?.state.result;
-    if (result && this.#bot) {
-      this.#bot.send(JSON.stringify({ t: "result", result }));
+    // Whatever this dispatch decides, a parked bot is owed a fresh look --
+    // but only once the room is done, never mid-bookkeeping.
+    try {
+      await this.#armClock(game);
+      if (game.opponentIsDeciding()) {
+        this.#promptBot(game);
+        // Humans are not pushed here. Their snapshot would describe their own
+        // seat as holding a decision it does not hold, and an actionable panel
+        // that rejects every click is worse than a still one.
+        return;
+      }
+      await this.#rememberHumanState(game);
+      this.#toHumans(this.#deliverable());
+      const result = this.#humanState?.state.result;
+      if (result && this.#bot) {
+        this.#bot.send(JSON.stringify({ t: "result", result }));
+      }
+    } finally {
+      this.#wake();
     }
   }
 
@@ -687,10 +723,7 @@ export class GameRoom {
    * is what enforces it: nobody has to be connected for a timeout to land.
    */
   async #armClock(game: WebGame): Promise<void> {
-    const finished = Boolean(
-      (JSON.parse(game.state_json()) as { result?: unknown }).result,
-    );
-    if (finished) {
+    if (game.isFinished()) {
       this.#clock = null;
       await this.#state.storage.delete(CLOCK);
       // A decided game is worth keeping for a while -- the players may still
@@ -715,7 +748,7 @@ export class GameRoom {
   async alarm(): Promise<void> {
     const game = await this.#load();
     if (!game) return;
-    if ((JSON.parse(game.state_json()) as { result?: unknown }).result) {
+    if (game.isFinished()) {
       // The retention alarm: the game ended, its keeping time is up.
       await this.#state.storage.delete(STORED);
       await this.#state.storage.delete(HUMAN_STATE);
@@ -753,6 +786,31 @@ export class GameRoom {
         observation: this.#withOpponentDeck(JSON.parse(game.opponentObserveJson())),
       }),
     );
+  }
+
+  /**
+   * Waits for the next change to the board, or for `timeoutMs` to pass.
+   * Resolves true when something actually happened, false on the timeout,
+   * so a caller can tell "look again" from "your time is up".
+   */
+  #park(timeoutMs: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      const release = (moved: boolean) => {
+        clearTimeout(timer);
+        this.#parked.delete(wake);
+        resolve(moved);
+      };
+      const wake = () => release(true);
+      const timer = setTimeout(() => release(false), timeoutMs);
+      this.#parked.add(wake);
+    });
+  }
+
+  /** Releases every parked bot; the board is not what it was. */
+  #wake(): void {
+    const waiting = [...this.#parked];
+    this.#parked.clear();
+    for (const release of waiting) release();
   }
 
   /** The state message with only the beats nobody has been sent yet. */

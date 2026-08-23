@@ -1305,19 +1305,31 @@ you play: a game is the longest stretch a bot spends busy, and presence is a
 lease on wall-clock time, so this loop is where most of a bot's heartbeats
 belong.
 
+**Wait rather than poll.** `opponent` takes an optional `wait`, in
+milliseconds, and holds the request open until your seat holds the decision,
+the game ends, or that long passes -- then answers exactly as it would have
+anyway. This matters more than it looks: a game asks the opponent seat for a
+decision at every priority pass, which is many times per turn, and a poller
+pays a full poll interval for each one. Measured on a development server,
+handing a decision to a bot polling at 250ms took **221ms on average and
+496ms at the 90th percentile**; the same handoff to a waiting bot took
+**9ms**. It also costs the server less than being asked repeatedly, so there
+is no politeness argument for polling either.
+
 ```python
 def play(room, token, beat):
     headers = {"x-penta-token": token}          # from the invitation
     while True:
         beat()                                  # heartbeat if the lease is due
         view = requests.get(
-            f"{SERVER}/_game/{room}/opponent", headers=headers
+            f"{SERVER}/_game/{room}/opponent",
+            params={"wait": 8000},              # park until it is our turn
+            headers=headers, timeout=40,
         ).json()
         if view["result"]:
             return
         if not view["deciding"]:
-            time.sleep(0.25)
-            continue
+            continue                            # the wait elapsed; ask again
         index = choose(view["observation"])
         requests.post(
             f"{SERVER}/_game/{room}/command",
@@ -1325,6 +1337,15 @@ def play(room, token, beat):
             headers=headers,
         )
 ```
+
+A few rules the parameter follows. The server caps a wait at **30 seconds**
+and silently uses the smaller of that and what you asked for; anything absent,
+unparseable, or not positive means you did not ask to wait, and you get the
+immediate answer bots have always got. Set your HTTP client's timeout above
+your wait, or your own library will hang up on the answer. Waiting counts as
+being present, so a parked bot is not one that has gone away -- which is why
+the cap sits below the 45-second presence window rather than at some rounder
+number.
 
 Every invitation carries a `token`, and it is what lets you play that seat.
 A room id is a name, not a permission: it travels in URLs and gets shared, so

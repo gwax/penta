@@ -25,6 +25,29 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Changed
 
+- **A bot can wait for its turn instead of asking for it.** `GET
+  /_game/<room>/opponent` takes an optional `wait`, in milliseconds, and holds
+  the request open until the bot seat holds the decision, the game ends, or
+  that long elapses; the reply is then exactly what it always was. A game asks
+  the opponent seat for a decision at every priority pass, so a polling bot
+  paid a full poll interval many times per turn. Measured on a development
+  server, handing a decision to a bot polling at 250ms took 221ms on average
+  and 496ms at the 90th percentile, against 9ms for a waiting one. The server
+  caps a wait at 30 seconds, deliberately under the 45-second presence window
+  so that waiting cannot read as having gone away, and an absent or
+  unparseable `wait` means the immediate answer every existing bot already
+  gets. This is an optional query parameter with the old behavior as its
+  fallback, so protocol 28 is unchanged.
+
+- **The room stops building the whole board to read one field.** Asking
+  whether a game had finished serialized the entire human-visible state and
+  parsed back a single member -- on every bot poll and every applied command,
+  against a payload that grew all game. `WebGame` gained `isFinished()` and
+  `resultJson()`, and the room's hot paths use them. Measured per applied
+  command in a late-game position, the room's own work outside the engine is
+  now about a millisecond. The command journal, long suspected here, was never
+  the cost: rewriting it measured at zero.
+
 - **A bot that is playing its game counts as present.** The registry used to
   end a hosted game the moment a bot's heartbeat lease lapsed, which caught
   bots that were sitting right there polling `opponent` and posting `botAct`
