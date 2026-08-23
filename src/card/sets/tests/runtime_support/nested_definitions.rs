@@ -170,6 +170,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
             source && recipient
         }
         TriggerEventDef::AttacksAndIsNotBlocked { attacker: source }
+        | TriggerEventDef::UnblockedAttackersDeclared {
+            attacker: source, ..
+        }
         | TriggerEventDef::Blocks { blocked: source }
         | TriggerEventDef::BecomesBlockedBy { blocker: source } => shared_object_predicate(source),
         TriggerEventDef::BlocksOrBecomesBlockedBy { creature, other } => {

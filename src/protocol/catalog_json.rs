@@ -136,6 +136,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::DragonsOfTarkir => "dragons-of-tarkir",
         CardSet::ModernHorizons1 => "modern-horizons-1",
         CardSet::Kaldheim => "kaldheim",
+        CardSet::Commander2018 => "commander-2018",
         CardSet::Commander2021 => "commander-2021",
         CardSet::StrixhavenSchoolOfMages => "strixhaven-school-of-mages",
         CardSet::AdventuresInTheForgottenRealms => "adventures-in-the-forgotten-realms",

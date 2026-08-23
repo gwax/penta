@@ -477,13 +477,37 @@ impl Game {
         &self,
         blocked: &[GameObjectId],
     ) -> Vec<CommittedTriggerEvent> {
-        self.battlefield
+        let unblocked = self
+            .battlefield
             .iter()
             .filter(|permanent| permanent.attacking && !blocked.contains(&permanent.card.id))
+            .collect::<Vec<_>>();
+        let mut events = unblocked
+            .iter()
             .map(|permanent| CommittedTriggerEvent::AttacksAndIsNotBlocked {
                 object: self.trigger_event_object(permanent),
             })
-            .collect()
+            .collect::<Vec<_>>();
+        // And the same set again as one batch per player it was aimed at,
+        // for "whenever one or more creatures attack you and aren't
+        // blocked". Attackers pointed at a planeswalker are left out: they
+        // are not attacking the player who controls it.
+        for defending_player in [PlayerId::One, PlayerId::Two] {
+            let attackers = unblocked
+                .iter()
+                .filter(|permanent| {
+                    Self::combat_defender(permanent) == AttackDefender::Player(defending_player)
+                })
+                .map(|permanent| self.trigger_event_object(permanent))
+                .collect::<Vec<_>>();
+            if !attackers.is_empty() {
+                events.push(CommittedTriggerEvent::UnblockedAttackersDeclared {
+                    attackers,
+                    defending_player,
+                });
+            }
+        }
+        events
     }
 
     /// One event per ordered pair of a blocker and what it blocks, so a

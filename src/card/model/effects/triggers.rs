@@ -30,6 +30,17 @@ pub enum TriggerEventDef {
     AttacksAndIsNotBlocked {
         attacker: ObjectPredicateDef,
     },
+    /// "Whenever one or more creatures an opponent controls attack you and
+    /// aren't blocked." One trigger for the whole declaration, however many
+    /// of them went unblocked, which is what "one or more" means -- distinct
+    /// from [`Self::AttacksAndIsNotBlocked`] for the same reason
+    /// [`Self::AttackDeclared`] is distinct from [`Self::Attacks`]. Only
+    /// attackers pointed at the player count: a creature attacking a
+    /// planeswalker is not attacking them.
+    UnblockedAttackersDeclared {
+        attacker: ObjectPredicateDef,
+        defender: PlayerRelation,
+    },
     /// CR 509.1h: the attacker became blocked. The event carries how many
     /// creatures are blocking it beyond the first, which is the quantity
     /// every rampage-style clause is written against.

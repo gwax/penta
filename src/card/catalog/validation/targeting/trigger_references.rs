@@ -296,6 +296,45 @@ const COMMITTED_ZONE_TRANSITIONS: [(ZoneKind, ZoneKind); 9] = [
     (ZoneKind::Battlefield, ZoneKind::Library),
 ];
 
+/// The zone-change arm of the walk next door, which is long enough to read
+/// on its own: which transitions are actually published, whether the
+/// predicate can survive the departure it matches, and the optional "that
+/// was dealt damage by" reference.
+fn validate_zone_change_references(
+    event: TriggerEventDef,
+    matcher: ZoneChangeEventMatcherDef,
+    target_count: usize,
+    scope: BindingScope,
+) -> Result<(), GrantedAbilityValidationError> {
+    if !COMMITTED_ZONE_TRANSITIONS.iter().any(|(from, to)| {
+        matcher.from.is_none_or(|expected| expected == *from)
+            && matcher.to.is_none_or(|expected| expected == *to)
+    }) {
+        return Err(unsupported_trigger_event(event));
+    }
+    let can_match_departure = COMMITTED_ZONE_TRANSITIONS.iter().any(|(from, to)| {
+        *from == ZoneKind::Battlefield
+            && *to != ZoneKind::Battlefield
+            && matcher.from.is_none_or(|expected| expected == *from)
+            && matcher.to.is_none_or(|expected| expected == *to)
+    });
+    if can_match_departure && trigger_predicate_requires_live_battlefield(matcher.object) {
+        return Err(unsupported_trigger_event(event));
+    }
+    validate_trigger_object_predicate(matcher.object, event, target_count, scope)?;
+    if let Some(reference) = matcher.previously_damaged_by {
+        if matcher
+            .from
+            .is_some_and(|from| from != ZoneKind::Battlefield)
+            || matcher.to.is_some_and(|to| to != ZoneKind::Graveyard)
+        {
+            return Err(unsupported_trigger_event(event));
+        }
+        validate_trigger_object_reference(reference, event, target_count, scope)?;
+    }
+    Ok(())
+}
+
 fn validate_trigger_event_references(
     event: TriggerEventDef,
     target_count: usize,
@@ -308,33 +347,7 @@ fn validate_trigger_event_references(
             .iter()
             .try_for_each(|event| validate_trigger_event_references(*event, target_count, scope)),
         TriggerEventDef::ZoneChanged(matcher) => {
-            if !COMMITTED_ZONE_TRANSITIONS.iter().any(|(from, to)| {
-                matcher.from.is_none_or(|expected| expected == *from)
-                    && matcher.to.is_none_or(|expected| expected == *to)
-            }) {
-                return Err(unsupported_trigger_event(event));
-            }
-            let can_match_departure = COMMITTED_ZONE_TRANSITIONS.iter().any(|(from, to)| {
-                *from == ZoneKind::Battlefield
-                    && *to != ZoneKind::Battlefield
-                    && matcher.from.is_none_or(|expected| expected == *from)
-                    && matcher.to.is_none_or(|expected| expected == *to)
-            });
-            if can_match_departure && trigger_predicate_requires_live_battlefield(matcher.object) {
-                return Err(unsupported_trigger_event(event));
-            }
-            validate_trigger_object_predicate(matcher.object, event, target_count, scope)?;
-            if let Some(reference) = matcher.previously_damaged_by {
-                if matcher
-                    .from
-                    .is_some_and(|from| from != ZoneKind::Battlefield)
-                    || matcher.to.is_some_and(|to| to != ZoneKind::Graveyard)
-                {
-                    return Err(unsupported_trigger_event(event));
-                }
-                validate_trigger_object_reference(reference, event, target_count, scope)?;
-            }
-            Ok(())
+            validate_zone_change_references(event, matcher, target_count, scope)
         }
         TriggerEventDef::Tapped(matcher) => {
             validate_trigger_object_predicate(matcher.object, event, target_count, scope)
@@ -370,6 +383,10 @@ fn validate_trigger_event_references(
         }
         TriggerEventDef::AttacksAndIsNotBlocked {
             attacker: predicate,
+        }
+        | TriggerEventDef::UnblockedAttackersDeclared {
+            attacker: predicate,
+            ..
         }
         | TriggerEventDef::BecomesBlocked(predicate)
         | TriggerEventDef::Blocks { blocked: predicate }

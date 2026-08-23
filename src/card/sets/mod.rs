@@ -807,6 +807,11 @@ const SET_MODULES: &[SetModule] = &[
         y2018::core_set_2019::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Commander2018,
+        y2018::commander_2018::CARDS,
+        y2018::commander_2018::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::RavnicaAllegiance,
         y2019::ravnica_allegiance::CARDS,
         y2019::ravnica_allegiance::ADDITIONAL_PRINTINGS,

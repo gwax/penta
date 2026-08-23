@@ -242,6 +242,14 @@ pub(super) enum CommittedTriggerEvent {
     AttacksAndIsNotBlocked {
         object: TriggerEventObject,
     },
+    /// Every unblocked attacker pointed at one player, published once as
+    /// blockers are declared. The batched counterpart of
+    /// [`Self::AttacksAndIsNotBlocked`], for the clauses that read "one or
+    /// more creatures ... attack you and aren't blocked" as one event.
+    UnblockedAttackersDeclared {
+        attackers: Vec<TriggerEventObject>,
+        defending_player: PlayerId,
+    },
     /// One side of one blocking relationship. Emitted once per ordered pair,
     /// so a clause on either creature sees the other as the triggering
     /// object without having to know which of them attacked.
@@ -374,6 +382,19 @@ impl CommittedTriggerEvent {
             },
             // The event is the declaration rather than any creature in it,
             // so nothing here names one.
+            // The event is the batch rather than any creature in it. Who it
+            // was aimed at is the defending player, and who aimed it is the
+            // attackers' own controller, which is the player such a clause
+            // hands its consequences to.
+            Self::UnblockedAttackersDeclared {
+                attackers,
+                defending_player,
+            } => TriggerContext {
+                object: None,
+                object_controller: attackers.first().map(|attacker| attacker.controller),
+                event_player: Some(*defending_player),
+                amount: Some(i32::try_from(attackers.len()).unwrap_or(i32::MAX)),
+            },
             Self::AttackersDeclared { attackers } => TriggerContext {
                 object: None,
                 object_controller: attackers.first().map(|attacker| attacker.controller),

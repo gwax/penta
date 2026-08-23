@@ -31,6 +31,7 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         | TriggerEventDef::AttackDeclared { .. }
         | TriggerEventDef::CardsExiled { .. }
         | TriggerEventDef::AttacksAndIsNotBlocked { .. }
+        | TriggerEventDef::UnblockedAttackersDeclared { .. }
         | TriggerEventDef::BecomesBlocked(_)
         | TriggerEventDef::BlocksOrBecomesBlockedBy { .. }
         | TriggerEventDef::Blocks { .. }

@@ -9,7 +9,7 @@ use crate::card::{
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
     PlayerSetDef, PowerToughnessOperationDef, ReplacementChoiceDef, ReplacementEffectDef,
     ResolvedEffectDurationDef, ScalarChoiceListDef, TriggerConditionDef, TriggerEventDef, ValueDef,
-    ZoneKind,
+    ZoneChangeEventMatcherDef, ZoneKind,
 };
 use crate::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 

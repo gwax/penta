@@ -742,6 +742,29 @@ impl Game {
                     owner: exiled_by,
                 },
             ) => self.exile_move_matches(zones, owner, cards, *from, *exiled_by, controller),
+            // One batch, one trigger: the predicate says which of the
+            // unblocked attackers count, and the relation says whether the
+            // player they were aimed at is the one the clause names.
+            (
+                TriggerEventDef::UnblockedAttackersDeclared { attacker, defender },
+                CommittedTriggerEvent::UnblockedAttackersDeclared {
+                    attackers,
+                    defending_player,
+                },
+            ) => {
+                controller.is_some_and(|controller| {
+                    self.player_relation_matches(
+                        *defending_player,
+                        defender,
+                        controller,
+                        crate::game::TriggerContext::empty(),
+                    )
+                }) && attackers.iter().any(|object| {
+                    self.trigger_object_matches_for_controller(
+                        attacker, object, source, false, controller,
+                    )
+                })
+            }
             (
                 TriggerEventDef::AttackDeclared {
                     attacker,

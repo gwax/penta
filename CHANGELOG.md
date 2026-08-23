@@ -35,6 +35,13 @@ distinguishes snapshots of the covered source and build inputs.
   permission carries no sorcery-speed restriction of its own: every card that
   prints the keyword so far is a sorcery, and its type already says so.
 
+- **"Whenever one or more creatures attack you and aren't blocked."** The
+  batched counterpart of the per-attacker unblocked trigger, published once
+  as blockers are declared for each player the unblocked attackers were
+  aimed at: two creatures through gives one trigger, not two. Attackers
+  pointed at a planeswalker are left out of the batch, because a creature
+  attacking a planeswalker is not attacking the player who controls it.
+
 ### Changed
 
 - **A bot can wait for its turn instead of asking for it.** `GET
