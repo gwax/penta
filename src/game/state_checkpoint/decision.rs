@@ -580,6 +580,22 @@ fn continuation_snapshot(
                 .collect::<Option<Vec<_>>>()?,
             candidates: candidates.iter().copied().map(target_snapshot).collect(),
         },
+        DecisionContinuation::TriggerMode {
+            trigger,
+            pending,
+            remaining,
+            ..
+        } => DecisionContinuationSnapshot::TriggerMode {
+            trigger: pending_trigger_snapshot(game, viewer, trigger)?,
+            pending: pending
+                .iter()
+                .map(|trigger| pending_trigger_snapshot(game, viewer, trigger))
+                .collect::<Option<Vec<_>>>()?,
+            remaining: remaining
+                .iter()
+                .map(|batch| trigger_batch_snapshot(game, viewer, batch))
+                .collect::<Option<Vec<_>>>()?,
+        },
         DecisionContinuation::TriggerDivision {
             trigger,
             pending,

@@ -1,7 +1,7 @@
 use crate::action::{AbilityOrigin, ManaColor, Target};
 use crate::card::{
     AbilityDef, BattlefieldEntryScalarChoiceDef, CardType, CardTypeSet, ColorChoiceOperationDef,
-    ColorSet, EffectDef, ManaCost, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ColorSet, EffectDef, ManaCost, ModalSpellDef, ObjectChoiceBindingDef, ObjectPredicateDef,
     ReplacementEffectDef, TopCardSelectionDef, TurnKindDef, ZoneKind, ZonePlacement,
 };
 use crate::casting::TargetSelection;
@@ -597,6 +597,13 @@ pub(super) enum DecisionContinuation {
     /// just chose. A cast spell settles this while the action is enumerated;
     /// a trigger has already put its targets on the stack, so the split is a
     /// second question with the same answer space.
+    /// A modal trigger waiting for the mode it goes on the stack with.
+    TriggerMode {
+        trigger: PendingTrigger,
+        pending: Vec<PendingTrigger>,
+        remaining: Vec<TriggerPlacementBatch>,
+        modes: ModalSpellDef,
+    },
     TriggerDivision {
         trigger: PendingTrigger,
         pending: Vec<PendingTrigger>,

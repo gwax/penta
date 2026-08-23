@@ -52,6 +52,12 @@ impl Game {
     ) {
         while !triggers.is_empty() {
             let trigger = triggers.remove(0);
+            // The mode comes first: what it names decides both the effect
+            // and the targets there are left to choose (CR 603.3c).
+            if trigger.modes.is_some() {
+                self.queue_trigger_mode_decision(trigger, triggers, remaining);
+                return;
+            }
             if trigger.targets.len() < trigger.target_defs.len() {
                 self.queue_trigger_target_decision(trigger, triggers, remaining);
                 return;
@@ -162,6 +168,102 @@ impl Game {
                 },
             },
         );
+    }
+
+    /// Asks which mode a modal trigger was put onto the stack with. Only
+    /// modes the runtime can execute are offered, and a modal trigger with
+    /// none of them simply resolves as the nothing its own program is.
+    pub(super) fn queue_trigger_mode_decision(
+        &mut self,
+        mut trigger: PendingTrigger,
+        pending: Vec<PendingTrigger>,
+        remaining: Vec<TriggerPlacementBatch>,
+    ) {
+        let modal = trigger
+            .modes
+            .take()
+            .expect("asked only for a modal trigger");
+        let offered = modal
+            .modes
+            .iter()
+            .enumerate()
+            .filter(|(_, mode)| mode.is_executable())
+            .collect::<Vec<_>>();
+        let Some((only, _)) = offered.first().filter(|_| offered.len() == 1) else {
+            if offered.is_empty() {
+                let mut continued = vec![trigger];
+                continued.extend(pending);
+                self.place_trigger_sequence(continued, remaining);
+                return;
+            }
+            let options = offered
+                .iter()
+                .map(|(index, mode)| DecisionOption {
+                    id: u32::try_from(*index).unwrap_or(u32::MAX),
+                    label: mode.text.to_owned(),
+                    card: None,
+                    members: Vec::new(),
+                    ability_text: Some(mode.text.to_owned()),
+                    zone: DecisionZone::None,
+                })
+                .collect::<Vec<_>>();
+            let source_name = self.presentation_name(trigger.presentation).map_or_else(
+                || "Triggered ability".to_owned(),
+                std::borrow::Cow::into_owned,
+            );
+            let id = self.next_decision_id;
+            self.next_decision_id = self.next_decision_id.saturating_add(1);
+            self.pending_decisions.insert(
+                0,
+                PendingDecision {
+                    observation: DecisionObservation {
+                        id,
+                        player: trigger.controller,
+                        kind: DecisionKind::TriggerPlacement,
+                        order_semantics: None,
+                        prompt: format!("{source_name}: choose one"),
+                        visibility: DecisionVisibility::Public,
+                        preference: DecisionPreference::Neutral,
+                        minimum: 1,
+                        maximum: 1,
+                        cancellable: false,
+                        options,
+                    },
+                    continuation: DecisionContinuation::TriggerMode {
+                        trigger,
+                        pending,
+                        remaining,
+                        modes: modal,
+                    },
+                },
+            );
+            return;
+        };
+        // One executable mode is no choice at all.
+        Self::apply_trigger_mode(&mut trigger, modal, *only);
+        let mut continued = vec![trigger];
+        continued.extend(pending);
+        self.place_trigger_sequence(continued, remaining);
+    }
+
+    /// Takes the chosen mode's own text, effect, and targets onto the
+    /// trigger. From here it is an ordinary trigger carrying one program,
+    /// which is also what lets a checkpoint locate the mode again.
+    pub(super) fn apply_trigger_mode(
+        trigger: &mut PendingTrigger,
+        modal: crate::card::ModalSpellDef,
+        index: usize,
+    ) {
+        let Some(mode) = modal.modes.get(index) else {
+            return;
+        };
+        trigger.modes = None;
+        trigger.text = mode.text;
+        trigger.effect = mode.declarative_effect().unwrap_or(EffectDef::None);
+        trigger.resolver = Self::ability_resolver(trigger.source.ability, mode);
+        if let crate::card::DeclarativeAbilityDef::Spell(spell) = mode.definition {
+            trigger.target_defs.extend_from_slice(spell.targets());
+        }
     }
 
     /// Asks how a fixed total is split among targets already chosen. Every

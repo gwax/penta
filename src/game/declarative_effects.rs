@@ -589,6 +589,9 @@ impl Game {
                         resolver: StackAbilityResolver::Declarative(scoped.with_effect(effect)),
                         context,
                         condition: definition.condition,
+                        // An installed trigger carries the effect it was
+                        // installed with; nothing about it is modal.
+                        modes: None,
                         x: frozen.x,
                     },
                     lifetime,

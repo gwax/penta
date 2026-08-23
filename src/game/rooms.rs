@@ -184,6 +184,7 @@ impl Game {
                 resolver: Self::ability_resolver(origin, &ability),
                 context: TriggerContext::empty().into(),
                 condition: triggered.condition,
+                modes: triggered.modes,
                 x: 0,
             });
         }

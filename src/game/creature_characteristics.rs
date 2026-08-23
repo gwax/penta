@@ -249,6 +249,9 @@ impl Game {
             ValueDef::CountersOnSource(kind) => {
                 i32::from(self.current_or_last_known_counters(source, kind))
             }
+            // Domain, read live off the board: the Kavu resizes as lands
+            // with new basic types arrive and leave.
+            ValueDef::BasicLandTypesControlled(_) => self.player_readable_value(value, controller),
             // A tally the turn keeps, read the same way: the creature
             // resizes as its controller draws.
             ValueDef::CardsDrawnThisTurn(relation) => [PlayerId::One, PlayerId::Two]

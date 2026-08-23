@@ -282,6 +282,7 @@ fn validate_trigger_object_predicate(
                     | ValueDef::CountersOnSource(_)
                     | ValueDef::CardsDrawnThisTurn(_)
                     | ValueDef::DevotionTo(_)
+        | ValueDef::BasicLandTypesControlled(_)
                     | ValueDef::LibrarySize(_)
                     | ValueDef::ColorsOfManaSpent
                     | ValueDef::PaidAmount
@@ -844,6 +845,7 @@ fn validate_value_target_references(
         | ValueDef::CountersOnSource(_)
         | ValueDef::CardsDrawnThisTurn(_)
         | ValueDef::DevotionTo(_)
+        | ValueDef::BasicLandTypesControlled(_)
         | ValueDef::LibrarySize(_)
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount

@@ -331,6 +331,8 @@ fn checkpoint_wire(game: &Game) -> (PlayerId, Value) {
 
 include!("tests/decisions_and_triggers.rs");
 
+include!("tests/modal_triggers.rs");
+
 /// A hypothesis the seat could have chosen instead of the truth: both hidden
 /// libraries reversed and the opposing hand rotated. Card counts and every
 /// card the seat can actually see survive, so this stays consistent with what

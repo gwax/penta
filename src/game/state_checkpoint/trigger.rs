@@ -128,6 +128,7 @@ pub(super) fn parse_installed_trigger(
             }),
             context: parse_effect_resolution_context(snapshot.context.clone())?,
             condition: triggered.condition,
+            modes: triggered.modes,
             x: snapshot.x,
         },
         lifetime: match snapshot.lifetime {

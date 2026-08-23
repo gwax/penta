@@ -2,8 +2,8 @@ use std::borrow::Cow;
 
 use crate::action::{AbilityOrigin, Target};
 use crate::card::{
-    AbilityTargetDef, CardSupertype, CardTypeSet, EffectDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ZoneKind,
+    AbilityTargetDef, CardSupertype, CardTypeSet, EffectDef, ModalSpellDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ZoneKind,
 };
 use crate::casting::TargetSelection;
 use crate::ids::{GameObjectId, ObjectBindingIndex, ObjectSetBindingIndex, PlayerId};
@@ -462,6 +462,10 @@ pub(super) struct PendingTrigger {
     pub(super) resolver: StackAbilityResolver,
     pub(super) context: EffectResolutionContext,
     pub(super) condition: Option<&'static TriggerConditionDef>,
+    /// "Choose one --": the modes still to be chosen as this trigger is put
+    /// onto the stack. Cleared once one is, because what the trigger then
+    /// carries is that mode's own effect and targets.
+    pub(super) modes: Option<ModalSpellDef>,
     pub(super) x: u16,
 }
 
@@ -483,6 +487,10 @@ pub(super) struct TriggerCapture {
     /// The intervening-if condition this trigger reads, checked both when the
     /// ability would go on the stack and again when it resolves.
     pub(super) condition: Option<&'static TriggerConditionDef>,
+    /// "Choose one --": the modes still to be chosen as this trigger is put
+    /// onto the stack. Cleared once one is, because what the trigger then
+    /// carries is that mode's own effect and targets.
+    pub(super) modes: Option<ModalSpellDef>,
     /// The X chosen for the installing ability. Installed triggers retain the
     /// same resolving context as the effect that created them.
     pub(super) x: u16,

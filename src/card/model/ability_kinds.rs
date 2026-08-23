@@ -637,6 +637,12 @@ pub struct TriggeredAbilityDef {
     /// Held by reference so that this definition stays small enough to pass
     /// around by value alongside a captured trigger.
     pub condition: Option<&'static TriggerConditionDef>,
+    /// "Choose one --" on a trigger. The mode is chosen as the ability is
+    /// put onto the stack (CR 603.3c), which is why it is settled during
+    /// placement beside target selection rather than as the ability
+    /// resolves. Exactly one mode: a trigger carries one effect, so a
+    /// clause choosing two would have nowhere to put the second.
+    pub modes: Option<ModalSpellDef>,
 }
 
 impl TriggeredAbilityDef {
@@ -649,7 +655,15 @@ impl TriggeredAbilityDef {
             procedure: AbilityProcedureDef::Shared,
             trigger_limit: None,
             condition: None,
+            modes: None,
         }
+    }
+
+    /// "Choose one --", for a trigger that prints modes.
+    #[must_use]
+    pub const fn with_modes(mut self, modes: ModalSpellDef) -> Self {
+        self.modes = Some(modes);
+        self
     }
 
     /// "This ability triggers only once each turn."

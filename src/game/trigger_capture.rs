@@ -140,6 +140,7 @@ impl Game {
                     resolver: Self::ability_resolver(effective.origin, &ability),
                     context: TriggerContext::empty().into(),
                     condition: definition.condition,
+                    modes: definition.modes,
                     x: 0,
                 },
             });
@@ -209,6 +210,7 @@ impl Game {
                     resolver: Self::ability_resolver(effective.origin, &ability),
                     context: TriggerContext::empty().into(),
                     condition: definition.condition,
+                    modes: definition.modes,
                     x: 0,
                 },
             });
@@ -321,6 +323,7 @@ impl Game {
                         resolver: Self::ability_resolver(effective.origin, &ability),
                         context: TriggerContext::empty().into(),
                         condition: definition.condition,
+                        modes: definition.modes,
                         x: 0,
                     },
                 });
@@ -519,8 +522,10 @@ impl Game {
                 resolver,
                 context: event.context().into(),
                 // A legacy custom trigger states its own condition inside its
-                // behavior rather than declaring one here.
+                // behavior rather than declaring one here, and prints no
+                // modes.
                 condition: None,
+                modes: None,
                 x: 0,
             });
         }

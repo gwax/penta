@@ -758,6 +758,16 @@ pub(super) fn child_abilities(ability: &AbilityDef) -> Vec<&AbilityDef> {
     if let DeclarativeAbilityDef::Spell(SpellAbilityDef::Modal(modal)) = ability.definition {
         children.extend(modal.modes);
     }
+    // A modal trigger's modes are reached the same way: what goes onto the
+    // stack is the chosen mode's own program, so a checkpoint has to be able
+    // to name it. Appended only for triggers, because inserting children
+    // ahead of an existing ability's would move every path already written
+    // down.
+    if let DeclarativeAbilityDef::Triggered(triggered) = ability.definition
+        && let Some(modal) = triggered.modes
+    {
+        children.extend(modal.modes);
+    }
     match ability.effect.definition {
         AbilityProgramDef::Effects(effect) => collect_effect_abilities(effect, &mut children),
         AbilityProgramDef::Replacement(effect) => {

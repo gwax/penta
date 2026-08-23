@@ -53,6 +53,7 @@ fn emperor_of_bones_end_step_trigger_reconstructs_through_its_follow_up() {
             resolver: Game::ability_resolver(origin, nested),
             context: EffectResolutionContext::empty(),
             condition: triggered.condition,
+            modes: None,
             x: 0,
         },
         lifetime: InstalledTriggerLifetime::Once,

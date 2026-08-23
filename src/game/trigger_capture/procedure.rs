@@ -180,6 +180,7 @@ impl Game {
             resolver: capture.resolver,
             context: capture.context.clone(),
             condition: capture.condition,
+            modes: capture.modes,
             x: capture.x,
         });
         self.events.push(GameEvent::AbilityTriggered {

@@ -347,6 +347,7 @@ fn validate_value_shape(
         | ValueDef::CountersOnSource(_)
         | ValueDef::CardsDrawnThisTurn(_)
         | ValueDef::DevotionTo(_)
+        | ValueDef::BasicLandTypesControlled(_)
         | ValueDef::LibrarySize(_)
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount

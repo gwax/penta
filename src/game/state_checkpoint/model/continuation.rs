@@ -210,6 +210,14 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         remaining: Vec<TriggerPlacementBatchSnapshot>,
         candidates: Vec<TargetSnapshot>,
     },
+    /// A modal trigger still waiting for the mode it goes onto the stack
+    /// with. The modes themselves come back from the ability the trigger
+    /// names, so nothing about them is written down here.
+    TriggerMode {
+        trigger: PendingTriggerSnapshot,
+        pending: Vec<PendingTriggerSnapshot>,
+        remaining: Vec<TriggerPlacementBatchSnapshot>,
+    },
     TriggerDivision {
         trigger: PendingTriggerSnapshot,
         pending: Vec<PendingTriggerSnapshot>,

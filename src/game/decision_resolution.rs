@@ -897,6 +897,7 @@ impl Game {
             }
             trigger @ (DecisionContinuation::TriggerOrder { .. }
             | DecisionContinuation::TriggerPlacement { .. }
+            | DecisionContinuation::TriggerMode { .. }
             | DecisionContinuation::TriggerDivision { .. }) => {
                 self.complete_trigger_continuation(trigger, options);
             }

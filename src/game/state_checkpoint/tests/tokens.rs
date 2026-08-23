@@ -386,6 +386,7 @@ fn checkpoint_round_trips_a_pending_token_trigger() {
         resolver: Game::ability_resolver(origin, &ability),
         context: EffectResolutionContext::empty(),
         condition: triggered.condition,
+        modes: None,
         x: 0,
     });
     game.next_trigger_id = 1;

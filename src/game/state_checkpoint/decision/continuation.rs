@@ -588,6 +588,28 @@ fn parse_continuation(
                 .collect::<Result<Vec<_>, _>>()?,
             candidates: candidates.iter().copied().map(parse_target).collect(),
         },
+        DecisionContinuationSnapshot::TriggerMode {
+            trigger,
+            pending,
+            remaining,
+        } => {
+            let trigger = parse_pending_trigger(trigger, game)?;
+            let modes = trigger
+                .modes
+                .ok_or("trigger-mode decision names a trigger that prints no modes")?;
+            DecisionContinuation::TriggerMode {
+                trigger,
+                pending: pending
+                    .iter()
+                    .map(|trigger| parse_pending_trigger(trigger, game))
+                    .collect::<Result<Vec<_>, _>>()?,
+                remaining: remaining
+                    .iter()
+                    .map(|batch| parse_trigger_batch(batch, game))
+                    .collect::<Result<Vec<_>, _>>()?,
+                modes,
+            }
+        }
         DecisionContinuationSnapshot::TriggerDivision {
             trigger,
             pending,

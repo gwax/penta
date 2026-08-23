@@ -678,6 +678,7 @@ fn installed_trigger_round_trip_preserves_targets_bindings_and_x() {
         }),
         context: context.clone(),
         condition: triggered.condition,
+        modes: None,
         x,
     };
     game.installed_triggers.push(InstalledTrigger {

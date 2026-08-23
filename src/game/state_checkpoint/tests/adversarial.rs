@@ -421,6 +421,7 @@ fn retained_trigger_state_never_serializes_unrebindable_hidden_object_ids() {
         resolver: Game::ability_resolver(source.ability, &ability),
         context: EffectResolutionContext::empty(),
         condition: triggered.condition,
+        modes: None,
         x: 0,
     };
     game.installed_triggers.push(InstalledTrigger {
@@ -455,6 +456,7 @@ fn retained_trigger_state_never_serializes_unrebindable_hidden_object_ids() {
         resolver: capture.resolver,
         context: hidden_context,
         condition: triggered.condition,
+        modes: None,
         x: 0,
     });
     game.next_trigger_id = 1;

@@ -67,6 +67,22 @@ impl Game {
                 continued.extend(pending);
                 self.place_trigger_sequence(continued, remaining);
             }
+            DecisionContinuation::TriggerMode {
+                mut trigger,
+                pending,
+                remaining,
+                modes,
+            } => {
+                if let Some(chosen) = options
+                    .first()
+                    .and_then(|option| usize::try_from(*option).ok())
+                {
+                    Self::apply_trigger_mode(&mut trigger, modes, chosen);
+                }
+                let mut continued = vec![trigger];
+                continued.extend(pending);
+                self.place_trigger_sequence(continued, remaining);
+            }
             DecisionContinuation::TriggerDivision {
                 mut trigger,
                 pending,

@@ -226,6 +226,11 @@ pub enum ValueDef {
     /// hybrid symbol counts once for each of its colours, and a permanent
     /// with no mana cost contributes nothing.
     DevotionTo(ManaColor),
+    /// Domain (CR 702.5a): how many of the five basic land types are among
+    /// the lands this player controls. Counted over effective types, so a
+    /// dual land is two of them and a land somebody turned into a Swamp
+    /// counts as one.
+    BasicLandTypesControlled(PlayerRelation),
     /// How many cards a player's library holds. The mirror of
     /// [`Self::TargetLibrarySize`] for the clauses that name a player by
     /// relation rather than by pointing at one.

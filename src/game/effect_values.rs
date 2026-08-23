@@ -45,6 +45,24 @@ impl Game {
                 .filter_map(|rules| rules.mana_cost())
                 .map(|cost| i32::from(devotion_symbols(cost, color)))
                 .sum(),
+            crate::card::ValueDef::BasicLandTypesControlled(relation) => {
+                let mut found = [false; crate::card::BasicLandType::ALL.len()];
+                for permanent in self.battlefield.iter().filter(|permanent| {
+                    self.player_relation_matches(
+                        permanent.controller,
+                        relation,
+                        controller,
+                        crate::game::TriggerContext::empty(),
+                    )
+                }) {
+                    for subtype in self.effective_subtypes(permanent).iter() {
+                        if let Some(basic) = crate::card::BasicLandType::from_subtype(subtype) {
+                            found[basic.index()] = true;
+                        }
+                    }
+                }
+                i32::try_from(found.into_iter().filter(|seen| *seen).count()).unwrap_or(0)
+            }
             crate::card::ValueDef::LibrarySize(relation) => {
                 [crate::ids::PlayerId::One, crate::ids::PlayerId::Two]
                     .into_iter()
@@ -182,7 +200,9 @@ impl Game {
             // copy has nothing spent on it and counts zero, which is what
             // converge on a copied spell means.
             ValueDef::ColorsOfManaSpent => i32::from(object.colors_spent_count()),
-            ValueDef::DevotionTo(_) | ValueDef::LibrarySize(_) => {
+            ValueDef::DevotionTo(_)
+            | ValueDef::LibrarySize(_)
+            | ValueDef::BasicLandTypesControlled(_) => {
                 self.player_readable_value(value, object.controller)
             }
             ValueDef::CardsDrawnThisTurn(relation) => [PlayerId::One, PlayerId::Two]

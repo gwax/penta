@@ -2,12 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    DividedTotal, EffectDef, EffectRecipientDef, GraveyardTypeConditionDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef,
-    TokenCharacteristics, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef,
+    EffectRecipientDef, GraveyardTypeConditionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRelation, SpellAdditionalCostDef, SpendModeDef, TokenCharacteristics,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -422,6 +422,91 @@ pub(in crate::card::sets) static ENDURANCE: CardRecord = CardRecord::new(
 // MH2 202 — Grist, the Hunger Tide
 // Audit: blocked — Needs three capabilities at once: a resolution loop that repeats a step while reading what the previous iteration milled, a reflexive triggered ability that chooses its target when the optional sacrifice is actually made rather than on activation, and characteristics that apply in every zone except the battlefield.
 
+/// Domain: how many of the five basic land types are among your lands. A
+/// Kavu on a two-colour board is a 2/2, and one behind a full spread of
+/// fetched duals is a 5/5.
+static KAVU_DOMAIN: AppliedEffectDef = AppliedEffectDef::set_base_power_toughness(
+    ValueDef::BasicLandTypesControlled(PlayerRelation::You),
+    ValueDef::BasicLandTypesControlled(PlayerRelation::You),
+);
+
+/// "If you do": the draw is sized by what the discard actually took, so an
+/// empty hand discards nothing and draws nothing.
+static KAVU_DRAW_WHAT_WAS_DISCARDED: EffectDef = EffectDef::DrawCards {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::MatchedCount,
+};
+
+static A_CARD_IN_A_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Any,
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: None,
+    },
+    1,
+)];
+
+static KAVU_MODES: [AbilityDef; 2] = [
+    AbilityDef::spell(
+        "Discard a card. If you do, draw a card.",
+        EffectDef::Discard {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+            selection: DiscardSelectionDef::RecipientChooses,
+            then: Some(DiscardFollowUpDef {
+                counted: ObjectPredicateDef::Any,
+                bound: None,
+                effect: &KAVU_DRAW_WHAT_WAS_DISCARDED,
+            }),
+        },
+    ),
+    AbilityDef::spell_with_targets(
+        "Exile up to one target card from a graveyard.",
+        &A_CARD_IN_A_GRAVEYARD,
+        EffectDef::MoveToZone {
+            counters: None,
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            zone: ZoneKind::Exile,
+            placement: ZonePlacement::Top,
+            arrival_effect: None,
+            attachment: None,
+            controller: None,
+        },
+    ),
+];
+
+// MH2 216 — Territorial Kavu
+pub(in crate::card::sets) static TERRITORIAL_KAVU: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("2605df98-0b02-4aab-bc36-01e93c693743"),
+    "Territorial Kavu",
+    CardArt::new("2605df98-0b02-4aab-bc36-01e93c693743", "E. M. Gist"),
+    CardSet::ModernHorizons2,
+    // Two mana for as big a body as your mana base is greedy, and an attack
+    // trigger that either loots or eats a graveyard.
+    CardRules::new_creature(mana_cost!("{R}{G}"), &["Kavu"], 0, 0).with_abilities(&[
+        AbilityDef::static_ability(
+            "Domain — This creature's power and toughness are each equal to the number of basic \
+             land types among lands you control.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: KAVU_DOMAIN,
+            },
+        )
+        .with_coverage(AbilityCoverageDef::partial(
+            "A characteristic-defining ability sets power and toughness in every zone. This is a \
+             battlefield-only continuous effect, so the value is right wherever the card is \
+             played and absent for anything reading it in another zone.",
+        )),
+        AbilityDef::modal_triggered(
+            "Whenever this creature attacks, choose one —\n• Discard a card. If you do, draw a \
+             card.\n• Exile up to one target card from a graveyard.",
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
+            &KAVU_MODES,
+        ),
+    ]),
+);
+
 // MH2 231 — Nettlecyst
 pub(in crate::card::sets) static NETTLECYST: CardRecord = CardRecord::new_with_legacy_id(
     2126,
@@ -483,6 +568,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MINE_COLLAPSE,
     &UNHOLY_HEAT,
     &ENDURANCE,
+    &TERRITORIAL_KAVU,
     &NETTLECYST,
     &YAVIMAYA_CRADLE_OF_GROWTH,
 ];

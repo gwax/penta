@@ -37,6 +37,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         // layer already has, so reading it cannot re-enter the walk.
         | ValueDef::CountersOnSource(_)
         | ValueDef::DevotionTo(_)
+        | ValueDef::BasicLandTypesControlled(_)
         | ValueDef::LibrarySize(_) => true,
         ValueDef::CountMatchingObjects(query)
         | ValueDef::AnyMatchingObject(query)
@@ -115,6 +116,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::CountersOnSource(_)
         | ValueDef::CardsDrawnThisTurn(_)
         | ValueDef::DevotionTo(_)
+        | ValueDef::BasicLandTypesControlled(_)
         | ValueDef::LibrarySize(_)
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount

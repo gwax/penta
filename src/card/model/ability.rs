@@ -303,6 +303,24 @@ impl AbilityDef {
         )
     }
 
+    /// "Choose one --" on a triggered ability, which chooses its mode as it
+    /// is put onto the stack (CR 603.3c) rather than as it resolves. The
+    /// ability does nothing of its own beyond the mode it prints.
+    #[must_use]
+    pub const fn modal_triggered(
+        text: &'static str,
+        event: TriggerEventDef,
+        modes: &'static [AbilityDef],
+    ) -> Self {
+        Self::defined(
+            text,
+            DeclarativeAbilityDef::Triggered(
+                TriggeredAbilityDef::new(event).with_modes(ModalSpellDef::choose_one(modes)),
+            ),
+            EffectDef::None,
+        )
+    }
+
     #[must_use]
     pub const fn triggered(text: &'static str, event: TriggerEventDef, effect: EffectDef) -> Self {
         Self::triggered_with_targets(text, event, &[], effect)

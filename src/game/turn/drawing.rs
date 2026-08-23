@@ -392,6 +392,7 @@ impl Game {
             resolver: Self::ability_resolver(origin, &ability),
             context: TriggerContext::empty().into(),
             condition: None,
+            modes: None,
             x: 0,
         });
     }

@@ -479,7 +479,10 @@ fn static_stat_value(value: crate::card::ValueDef) -> bool {
         // for the same reason.
         | crate::card::ValueDef::CardsDrawnThisTurn(_)
         // Counters on the effect's own source: plain state the layer has.
-        | crate::card::ValueDef::CountersOnSource(_) => true,
+        | crate::card::ValueDef::CountersOnSource(_)
+        // Domain, read live off the lands on the battlefield the same way a
+        // battlefield count is.
+        | crate::card::ValueDef::BasicLandTypesControlled(_) => true,
         crate::card::ValueDef::Scaled(scaled) => static_stat_value(scaled.value),
         crate::card::ValueDef::Halved(halved) => static_stat_value(halved.value),
         _ => false,

@@ -320,6 +320,7 @@ fn targeted_trigger_chooses_public_targets_while_being_put_on_stack() {
         }
         .into(),
         condition: None,
+        modes: None,
         x: 0,
     });
     game.finish_rules_procedure();
@@ -448,6 +449,7 @@ fn su_chi_mana_and_source_power_use_ordinary_stack_and_lki() {
         }
         .into(),
         condition: None,
+        modes: None,
         x: 0,
     });
     game.destroy_permanent(CardInstanceId(10_010));

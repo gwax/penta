@@ -63,6 +63,7 @@ impl Game {
                                 resolver: Self::ability_resolver(effective.origin, &ability),
                                 context: TriggerContext::empty().into(),
                                 condition: definition.condition,
+                                modes: definition.modes,
                                 x: 0,
                             },
                         });

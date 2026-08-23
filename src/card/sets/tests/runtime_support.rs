@@ -910,7 +910,23 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                 && definition
                     .condition
                     .is_none_or(|condition| shared_trigger_condition(*condition))
-                && shared_stack_effect(effect)
+                && definition.modes.is_none_or(|modal| {
+                    // One mode, because a trigger carries one program: what
+                    // placement puts on the stack is the mode's own effect
+                    // and targets.
+                    modal.minimum == 1
+                        && modal.maximum == 1
+                        && !modal.may_repeat
+                        && modal.additional_cost.is_none()
+                        && modal.conditional_maximum.is_none()
+                        && modal.modes.iter().all(|mode| {
+                            mode.declarative_effect().is_none() || shared_definition_ability(mode)
+                        })
+                })
+                // A purely modal trigger does nothing of its own before the
+                // mode it prints, exactly as a modal activated ability does.
+                && (shared_stack_effect(effect)
+                    || (definition.modes.is_some() && effect == EffectDef::None))
         }
         DeclarativeAbilityDef::Static(definition) => {
             (effect == EffectDef::None
