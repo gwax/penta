@@ -805,6 +805,7 @@ fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static Abil
             collect_applied_abilities(applied, abilities);
         }
         EffectDef::InstallTrigger(installed) => abilities.push(installed.ability),
+        EffectDef::CreateOngoingEffect(ongoing) => abilities.push(ongoing.ability),
         EffectDef::MayCastTargetWithoutPaying { ability, .. } => abilities.push(ability),
         _ => {}
     }
@@ -829,6 +830,8 @@ fn collect_applied_abilities(effect: AppliedEffectDef, abilities: &mut Vec<&'sta
 pub(super) const fn keyword_snapshot(keyword: KeywordAbility) -> KeywordSnapshot {
     match keyword {
         KeywordAbility::Convoke => KeywordSnapshot::Convoke,
+        KeywordAbility::Delve => KeywordSnapshot::Delve,
+        KeywordAbility::Improvise => KeywordSnapshot::Improvise,
         KeywordAbility::Devoid => KeywordSnapshot::Devoid,
         KeywordAbility::Compleated => KeywordSnapshot::Compleated,
         KeywordAbility::SplitSecond => KeywordSnapshot::SplitSecond,
@@ -890,6 +893,8 @@ pub(super) const fn keyword_snapshot(keyword: KeywordAbility) -> KeywordSnapshot
 pub(super) const fn parse_keyword(value: KeywordSnapshot) -> KeywordAbility {
     match value {
         KeywordSnapshot::Convoke => KeywordAbility::Convoke,
+        KeywordSnapshot::Delve => KeywordAbility::Delve,
+        KeywordSnapshot::Improvise => KeywordAbility::Improvise,
         KeywordSnapshot::Devoid => KeywordAbility::Devoid,
         KeywordSnapshot::Compleated => KeywordAbility::Compleated,
         KeywordSnapshot::SplitSecond => KeywordAbility::SplitSecond,
