@@ -1,7 +1,13 @@
 //! Ikoria: Lair of Behemoths cards cataloged for the Vintage Cube pool.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
-use crate::card::{AbilityDef, CardArt, CardRules, CardSet, abilities};
+use crate::card::{
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AppliedEffectDef,
+    AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CostModificationDef,
+    EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
+    ValueDef, abilities,
+};
+use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 /// A triome is a tapped land with three basic land types and cycling, and
@@ -37,6 +43,68 @@ pub(in crate::card::sets) static RAM_THROUGH: CardRecord = CardRecord::new(
     crate::card::CardArt::new("ac0b24e7-14e7-45ee-b5d8-bdb8674b669c", "Zoltan Boros"),
     crate::card::CardSet::Ikoria,
     crate::card::CardRules::unsupported(),
+);
+
+/// "Abilities you activate", which the shared vocabulary reaches as the
+/// abilities of permanents you control. Cycling and the rest of the
+/// abilities a card in hand or a graveyard prints are outside it.
+static PERMANENTS_YOU_CONTROL: ObjectPredicateDef =
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You);
+
+static ZIRDA_BLOCK_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{1}")),
+    AbilityCostDef::TapSource,
+];
+
+static A_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+// IKO 233 — Zirda, the Dawnwaker
+pub(in crate::card::sets) static ZIRDA_THE_DAWNWAKER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("1bd8e61c-2ee8-4243-a848-7008810db8a0"),
+    "Zirda, the Dawnwaker",
+    CardArt::new("1bd8e61c-2ee8-4243-a848-7008810db8a0", "Jesper Ejsing"),
+    CardSet::Ikoria,
+    // Three mana for a 3/3 that makes every activated ability on the board
+    // two cheaper, which is what a deck full of equipment and pingers is
+    // waiting for.
+    CardRules::new_creature(mana_cost!("{1}{R/W}{R/W}"), &["Elemental", "Fox"], 3, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::not_implemented(
+                "Companion — Each permanent card in your starting deck has an activated ability. \
+                 (If this card is your chosen companion, you may put it into your hand from \
+                 outside the game for {3} as a sorcery.)",
+                "Companion is a deck-construction permission and a play from outside the game, \
+                 neither of which the engine represents; the card is played from a deck like any \
+                 other.",
+            ),
+            AbilityDef::static_ability(
+                "Abilities you activate that aren't mana abilities cost {2} less to activate. \
+                 This effect can't reduce the mana in that cost to less than one mana.",
+                EffectDef::ModifyCost(CostModificationDef::AbilityReduction {
+                    permanent: PERMANENTS_YOU_CONTROL,
+                    amount: ValueDef::Constant(2),
+                    minimum: 1,
+                }),
+            )
+            .with_coverage(AbilityCoverageDef::partial(
+                "The discount reaches the activated abilities of permanents you control. An \
+                 ability you activate from somewhere else -- cycling a card in hand, or a \
+                 graveyard ability -- is outside what the shared cost vocabulary can name.",
+            )),
+            AbilityDef::activated_with_targets(
+                "{1}, {T}: Target creature can't block this turn.",
+                &ZIRDA_BLOCK_COST,
+                &A_CREATURE,
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBlock),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ]),
 );
 
 // IKO 248 — Indatha Triome
@@ -87,6 +155,7 @@ pub(in crate::card::sets) static ZAGOTH_TRIOME: CardRecord = CardRecord::new_wit
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPELLEATER_WOLVERINE,
     &RAM_THROUGH,
+    &ZIRDA_THE_DAWNWAKER,
     &INDATHA_TRIOME,
     &KETRIA_TRIOME,
     &RAUGRIN_TRIOME,
