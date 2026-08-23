@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CostModificationDef,
-    CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    TokenCharacteristics, TriggerConditionDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
+    AbilityTargetPredicate, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    CostModificationDef, CounterKind, EffectDef, EffectRecipientDef, InstalledTriggerDef,
+    ObjectPredicateDef, PlayerRelation, TokenCharacteristics, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -102,6 +103,118 @@ pub(in crate::card::sets) static LION_SASH: CardRecord = CardRecord::new_with_le
                  creature. Reconfigure only as a sorcery. While attached, this isn't a creature.)",
             ),
         ]),
+);
+
+/// "Until this enchantment leaves the battlefield" is one printed clause, so
+/// the return rides on a delayed trigger rather than appearing as a second
+/// ability the card does not print.
+static TOUCH_RETURNS_IT: AbilityDef = AbilityDef::triggered(
+    "When this enchantment leaves the battlefield, return the exiled card to the battlefield \
+     under its owner's control.",
+    TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Source,
+        Some(ZoneKind::Battlefield),
+        None,
+    ),
+    EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
+        zone: ZoneKind::Battlefield,
+        grant: None,
+        controller: None,
+        transformed: false,
+    },
+);
+
+/// The channel half gives it back at the beginning of the next end step
+/// instead, which is a blink rather than an answer.
+static TOUCH_RETURNS_IT_AT_END: AbilityDef = AbilityDef::triggered(
+    "At the beginning of the next end step, return the exiled card to the battlefield under its \
+     owner's control.",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+    },
+    EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
+        zone: ZoneKind::Battlefield,
+        grant: None,
+        controller: None,
+        transformed: false,
+    },
+);
+
+static AN_ARTIFACT_OR_CREATURE: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::HasType(CardType::Creature),
+]);
+
+static UP_TO_ONE_ARTIFACT_OR_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: AN_ARTIFACT_OR_CREATURE,
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    1,
+)];
+
+static ONE_ARTIFACT_OR_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    AN_ARTIFACT_OR_CREATURE,
+)];
+
+static TOUCH_EXILES_IT: [EffectDef; 2] = [
+    EffectDef::ExileLinkedToSource {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&TOUCH_RETURNS_IT)),
+];
+
+static TOUCH_CHANNEL_EXILES_IT: [EffectDef; 2] = [
+    EffectDef::ExileLinkedToSource {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&TOUCH_RETURNS_IT_AT_END)),
+];
+
+static TOUCH_CHANNEL_COST: AbilityCostList = AbilityCostList::two(
+    AbilityCostDef::Mana(mana_cost!("{1}{W}")),
+    AbilityCostDef::DiscardSource,
+);
+
+// NEO 40 — Touch the Spirit Realm
+pub(in crate::card::sets) static TOUCH_THE_SPIRIT_REALM: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("e16ab44e-4257-4c0c-b705-8ac1e9c1d835"),
+    "Touch the Spirit Realm",
+    CardArt::new("e16ab44e-4257-4c0c-b705-8ac1e9c1d835", "Marta Nael"),
+    CardSet::KamigawaNeonDynasty,
+    // Three mana to answer something for as long as the enchantment lives,
+    // or two from hand to blink one of yours -- which is why it is never
+    // quite dead.
+    CardRules::new_enchantment(mana_cost!("{2}{W}")).with_abilities(&[
+        AbilityDef::triggered_with_targets(
+            "When this enchantment enters, exile up to one target artifact or creature until this \
+             enchantment leaves the battlefield.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &UP_TO_ONE_ARTIFACT_OR_CREATURE,
+            EffectDef::Sequence(&TOUCH_EXILES_IT),
+        ),
+        AbilityDef::activated_with_cost_list_and_targets(
+            "Channel — {1}{W}, Discard this card: Exile target artifact or creature. Return it to \
+             the battlefield under its owner's control at the beginning of the next end step.",
+            TOUCH_CHANNEL_COST,
+            &ONE_ARTIFACT_OR_CREATURE,
+            EffectDef::Sequence(&TOUCH_CHANNEL_EXILES_IT),
+        )
+        .with_source_zones(&[ZoneKind::Hand]),
+    ]),
 );
 
 // NEO 63 — Mirrorshell Crab
@@ -305,6 +418,7 @@ pub(in crate::card::sets) static IRON_APPRENTICE: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &IMPERIAL_OATH,
     &LION_SASH,
+    &TOUCH_THE_SPIRIT_REALM,
     &MIRRORSHELL_CRAB,
     &MOON_CIRCUIT_HACKER,
     &CLAWING_TORMENT,

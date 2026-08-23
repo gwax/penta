@@ -418,6 +418,7 @@ mod vintage_cube_thoughtseize;
 mod vintage_cube_time_spiral;
 mod vintage_cube_tireless_tracker;
 mod vintage_cube_titania;
+mod vintage_cube_touch_spirit_realm;
 mod vintage_cube_ulvenwald_oddity;
 mod vintage_cube_underworld_breach;
 mod vintage_cube_unearth;
