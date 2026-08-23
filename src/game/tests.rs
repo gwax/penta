@@ -340,6 +340,7 @@ mod vintage_cube_ghost_vacuum;
 mod vintage_cube_glimmer_lens;
 mod vintage_cube_glorybringer;
 mod vintage_cube_goblin_rabblemaster;
+mod vintage_cube_goldspan_dragon;
 mod vintage_cube_graveyard;
 mod vintage_cube_gut;
 mod vintage_cube_hand_attack;
