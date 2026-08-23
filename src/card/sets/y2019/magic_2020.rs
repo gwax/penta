@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, AppliedRuleDef, CardArt,
-    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    ResolvedEffectDurationDef,
+    CardRules, CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef, ObjectPredicateDef,
+    ObjectQueryDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TriggerConditionDef,
+    ValueDef, ZoneKind, ZonePlacement,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -52,6 +53,78 @@ pub(in crate::card::sets) static CLOUDKIN_SEER: CardRecord = CardRecord::new(
     ),
     crate::card::CardSet::Magic2020,
     crate::card::CardRules::unsupported(),
+);
+
+/// "Three or more land cards in your graveyard": the fetchlands that made
+/// him a 3/4 are the same ones his own ability puts there, which is why he
+/// grows on the turn he is used.
+static LAND_CARDS_IN_YOUR_GRAVEYARD: ObjectQueryDef = ObjectQueryDef::owned_by(
+    ObjectPredicateDef::HasType(CardType::Land),
+    &[ZoneKind::Graveyard],
+    PlayerSetDef::Related(PlayerRelation::You),
+);
+
+static THREE_LANDS_IN_YOUR_GRAVEYARD: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: LAND_CARDS_IN_YOUR_GRAVEYARD,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 3,
+};
+
+static RECLAIMER_GROWS: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+};
+
+static RECLAIMER_FETCH_COST: [AbilityCostDef; 3] = [
+    AbilityCostDef::Mana(mana_cost!("{2}")),
+    AbilityCostDef::TapSource,
+    AbilityCostDef::SacrificePermanent {
+        object: ObjectPredicateDef::HasType(CardType::Land),
+        controller: PlayerRelation::You,
+    },
+];
+
+// M20 169 — Elvish Reclaimer
+pub(in crate::card::sets) static ELVISH_RECLAIMER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("39c431d7-d94b-46c4-bb89-f3db56214ab4"),
+    "Elvish Reclaimer",
+    CardArt::new(
+        "39c431d7-d94b-46c4-bb89-f3db56214ab4",
+        "Victor Adame Minguez",
+    ),
+    CardSet::Magic2020,
+    // One mana for a body that turns a spent fetchland into whatever land
+    // the deck is built around, and is a 3/4 by the time it has done it
+    // twice.
+    CardRules::new_creature(mana_cost!("{G}"), &["Elf", "Warrior"], 1, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature gets +2/+2 as long as there are three or more land cards in your \
+             graveyard.",
+            EffectDef::IfCondition {
+                condition: &THREE_LANDS_IN_YOUR_GRAVEYARD,
+                then: &RECLAIMER_GROWS,
+            },
+        ),
+        AbilityDef::activated(
+            "{2}, {T}, Sacrifice a land: Search your library for a land card, put it onto the \
+             battlefield tapped, then shuffle.",
+            &RECLAIMER_FETCH_COST,
+            EffectDef::SearchZone {
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: ObjectPredicateDef::HasType(CardType::Land),
+                minimum: 0,
+                maximum: ValueDef::Constant(1),
+                reveal: false,
+                destination: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: true,
+                binding: None,
+                then: None,
+            },
+        ),
+    ]),
 );
 
 // M20 230 — Manifold Key
@@ -104,6 +177,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANCESTRAL_BLADE,
     &RAISE_THE_ALARM,
     &CLOUDKIN_SEER,
+    &ELVISH_RECLAIMER,
     &MANIFOLD_KEY,
     &WILDFIRE_ELEMENTAL,
 ];
