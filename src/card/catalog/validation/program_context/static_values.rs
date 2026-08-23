@@ -85,6 +85,9 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
     match value {
         ValueDef::Constant(_) => true,
         ValueDef::CountMatchingObjects(query) => static_query_supported(*query),
+        // Domain counts basic land types rather than permanents, which no
+        // query can say. The planner reads it off the board the same way.
+        ValueDef::BasicLandTypesControlled(relation) => static_player_relation_supported(relation),
         ValueDef::Sum(sum) => {
             static_cost_reduction_value_supported(sum.left)
                 && static_cost_reduction_value_supported(sum.right)
@@ -117,7 +120,6 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::CountersOnSource(_)
         | ValueDef::CardsDrawnThisTurn(_)
         | ValueDef::DevotionTo(_)
-        | ValueDef::BasicLandTypesControlled(_)
         | ValueDef::LibrarySize(_)
         | ValueDef::ColorsOfManaSpent
         | ValueDef::PaidAmount

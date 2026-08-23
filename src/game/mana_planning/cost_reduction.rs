@@ -227,6 +227,12 @@ impl Game {
                     .len(),
             )
             .unwrap_or(u16::MAX),
+            // Domain: how many basic land types are among the lands you
+            // control, which is a count of types rather than of permanents
+            // and so cannot be said as a query.
+            ValueDef::BasicLandTypesControlled(_) => {
+                u16::try_from(self.player_readable_value(value, player).max(0)).unwrap_or(u16::MAX)
+            }
             _ => 0,
         }
     }

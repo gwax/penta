@@ -85,6 +85,10 @@ pub(in super::super) fn shared_static_non_apply_effect(
                     value,
                     crate::card::ValueDef::Constant(_)
                         | crate::card::ValueDef::CountMatchingObjects(_)
+                        // Domain counts basic land types rather than
+                        // permanents, and the planner reads it the same way
+                        // it reads a count of lands.
+                        | crate::card::ValueDef::BasicLandTypesControlled(_)
                 )
         }
         EffectDef::Sequence(effects) => {

@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    DrawEventMatcherDef, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    TriggerEventDef, ValueDef, abilities,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, DrawEventMatcherDef, EffectDef, EffectRecipientDef,
+    InstalledTriggerDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
+    abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -39,6 +40,74 @@ static CUT_DOWN_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_p
         ObjectPredicateDef::TotalPowerAndToughnessAtMost(5),
     ]),
 )];
+
+/// "Until this enchantment leaves the battlefield" is one printed clause, so
+/// the return rides on a delayed trigger rather than appearing as a second
+/// ability the card does not print.
+static BINDING_RETURNS_IT: AbilityDef = AbilityDef::triggered(
+    "When this enchantment leaves the battlefield, return the exiled card to the battlefield \
+     under its owner's control.",
+    TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Source,
+        Some(ZoneKind::Battlefield),
+        None,
+    ),
+    EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
+        zone: ZoneKind::Battlefield,
+        grant: None,
+        controller: None,
+        transformed: false,
+    },
+);
+
+static A_NONLAND_PERMANENT_THEY_CONTROL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+)];
+
+static BINDING_EXILES_IT: [EffectDef; 2] = [
+    EffectDef::ExileLinkedToSource {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&BINDING_RETURNS_IT)),
+];
+
+// DMU 24 — Leyline Binding
+pub(in crate::card::sets) static LEYLINE_BINDING: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("3c3ac3dd-35db-447f-8674-37b4680a1ef7"),
+    "Leyline Binding",
+    CardArt::new("3c3ac3dd-35db-447f-8674-37b4680a1ef7", "Cristi Balanescu"),
+    CardSet::DominariaUnited,
+    // Six mana on paper and one in a deck with every basic land type, cast
+    // at instant speed: the whole card is the mana base it asks for.
+    CardRules::new_enchantment(mana_cost!("{5}{W}")).with_abilities(&[
+        abilities::flash(),
+        AbilityDef::static_ability(
+            "Domain — This spell costs {1} less to cast for each basic land type among lands you \
+             control.",
+            EffectDef::ReduceGenericCostBy(ValueDef::BasicLandTypesControlled(PlayerRelation::You)),
+        )
+        .with_source_zones(&[ZoneKind::Hand]),
+        AbilityDef::triggered_with_targets(
+            "When this enchantment enters, exile target nonland permanent an opponent controls \
+             until this enchantment leaves the battlefield.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &A_NONLAND_PERMANENT_THEY_CONTROL,
+            EffectDef::Sequence(&BINDING_EXILES_IT),
+        ),
+    ]),
+);
 
 // DMU 72 — Tolarian Terror
 // Audit: metadata-only — Card rules have not been implemented.
@@ -97,6 +166,7 @@ pub(in crate::card::sets) static LIGHTNING_STRIKE: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &LEYLINE_BINDING,
     &TOLARIAN_TERROR,
     &CUT_DOWN,
     &SHEOLDRED_THE_APOCALYPSE,
