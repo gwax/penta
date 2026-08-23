@@ -1234,10 +1234,10 @@ import time, requests
 
 # Local while building; the public deployment when you are ready.
 SERVER = "http://localhost:3000"
-# This bot consumes the protocol-28 indexed-action vocabulary and no optional
+# This bot consumes the protocol-29 indexed-action vocabulary and no optional
 # facilities. Do not echo capabilities from the server unless you implement them.
 COMPATIBILITY = {
-    "protocolVersion": 28,
+    "protocolVersion": 29,
     "capabilities": [],
     "requiredCapabilities": [],
     # Trained bots may require the exact server artifact they target:
