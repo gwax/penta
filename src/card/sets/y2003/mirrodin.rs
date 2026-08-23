@@ -2,10 +2,59 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, EffectDef,
-    EffectRecipientDef, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet,
+    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
+
+static SPELLBOMB_BOUNCE_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{U}")),
+    AbilityCostDef::SacrificeSource,
+];
+
+static SPELLBOMB_DRAW_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{1}")),
+    AbilityCostDef::SacrificeSource,
+];
+
+static A_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+// MRD 141 — Aether Spellbomb
+pub(in crate::card::sets) static AETHER_SPELLBOMB: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("f3792e8b-4ad7-4e2d-994c-c4eaac0fa55f"),
+    "Aether Spellbomb",
+    CardArt::new("f3792e8b-4ad7-4e2d-994c-c4eaac0fa55f", "Jim Nelson"),
+    CardSet::Mirrodin,
+    // One mana that answers a creature for a turn if it has to and replaces
+    // itself if it does not, which is why it costs a deck nothing to play.
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{U}, Sacrifice this artifact: Return target creature to its owner's hand.",
+            &SPELLBOMB_BOUNCE_COST,
+            &A_CREATURE,
+            EffectDef::MoveToZone {
+                counters: None,
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Hand,
+                placement: ZonePlacement::Top,
+                controller: None,
+                arrival_effect: None,
+                attachment: None,
+            },
+        ),
+        AbilityDef::activated(
+            "{1}, Sacrifice this artifact: Draw a card.",
+            &SPELLBOMB_DRAW_COST,
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
 
 static GREAVES_HASTE: AbilityDef = abilities::haste();
 
@@ -51,6 +100,7 @@ pub(in crate::card::sets) static LIGHTNING_GREAVES: CardRecord = CardRecord::new
         ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&BONESPLITTER, &LIGHTNING_GREAVES];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&AETHER_SPELLBOMB, &BONESPLITTER, &LIGHTNING_GREAVES];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
