@@ -4,11 +4,11 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, CounterKind, EffectDef, EffectRecipientDef,
-    EmblemCharacteristics, ExilePlayDurationDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, SpellAdditionalCostDef,
-    SpendModeDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    CardSet, CardSupertype, CardType, CounterKind, DiscardFollowUpDef, DiscardSelectionDef,
+    EffectDef, EffectRecipientDef, EmblemCharacteristics, ExilePlayDurationDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, SpellAdditionalCostDef, SpendModeDef, TokenCharacteristics, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -405,6 +405,95 @@ pub(in crate::card::sets) static RECKLESS_CHARGE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+/// A 1/1 red Elemental, which is what both halves of him make: the arrival
+/// pays one per nonland card it threw away, and the graveyard ability pays
+/// two flat.
+static PYROMANCER_ELEMENTAL: TokenCharacteristics =
+    tokens::creature(&["Elemental"], &[ManaColor::Red], 1, 1);
+
+static PYROMANCER_MAKES_TOKENS: EffectDef = EffectDef::CreateToken {
+    token: PYROMANCER_ELEMENTAL,
+    controller: None,
+    count: ValueDef::MatchedCount,
+    tapped: false,
+    attacking: false,
+    counters: None,
+    created: None,
+};
+
+/// The draw comes before the tokens are counted, which is what the printed
+/// order says: two cards go, two cards come, and only then does the board
+/// pay you back for the ones that were not lands.
+static PYROMANCER_DRAWS_THEN_PAYS: [EffectDef; 2] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+    PYROMANCER_MAKES_TOKENS,
+];
+
+static PYROMANCER_DRAWS_THEN_PAYS_SEQUENCE: EffectDef =
+    EffectDef::Sequence(&PYROMANCER_DRAWS_THEN_PAYS);
+
+static PYROMANCER_GRAVEYARD_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{3}{R}{R}")),
+    AbilityCostDef::ExileSource,
+];
+
+static PYROMANCER_MAKES_TWO: EffectDef = EffectDef::CreateToken {
+    token: PYROMANCER_ELEMENTAL,
+    controller: None,
+    count: ValueDef::Constant(2),
+    tapped: false,
+    attacking: false,
+    counters: None,
+    created: None,
+};
+
+static SEASONED_PYROMANCER_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::triggered(
+        "When this creature enters, discard two cards, then draw two cards. For each nonland card \
+         discarded this way, create a 1/1 red Elemental creature token.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        EffectDef::Discard {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(2),
+            selection: DiscardSelectionDef::RecipientChooses,
+            then: Some(DiscardFollowUpDef {
+                counted: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                bound: None,
+                effect: &PYROMANCER_DRAWS_THEN_PAYS_SEQUENCE,
+            }),
+        },
+    ),
+    // The card is spent from the graveyard, which is why he is never a dead
+    // draw late: the body was the first half and this is the second.
+    AbilityDef::activated(
+        "{3}{R}{R}, Exile this card from your graveyard: Create two 1/1 red Elemental creature \
+         tokens.",
+        &PYROMANCER_GRAVEYARD_COST,
+        PYROMANCER_MAKES_TWO,
+    )
+    .with_source_zones(&[ZoneKind::Graveyard]),
+];
+
+// MH1 145 — Seasoned Pyromancer
+pub(in crate::card::sets) static SEASONED_PYROMANCER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("2e139ad1-1079-49e9-babd-6399c44ad333"),
+    "Seasoned Pyromancer",
+    CardArt::new("2e139ad1-1079-49e9-babd-6399c44ad333", "Cynthia Sheppard"),
+    CardSet::ModernHorizons1,
+    // Three mana that turns the two worst cards in your hand into two fresh
+    // ones and a body for each of them that was not a land -- and then does
+    // it again from the graveyard.
+    CardRules::new_creature(mana_cost!("{1}{R}{R}"), &["Human", "Shaman"], 2, 2)
+        .with_abilities(&SEASONED_PYROMANCER_ABILITIES),
+);
+
 // MH1 158 — Collector Ouphe
 pub(in crate::card::sets) static COLLECTOR_OUPHE: CardRecord = CardRecord::new_with_legacy_id(
     2284,
@@ -696,6 +785,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PUTRID_GOBLIN,
     &BOGARDAN_DRAGONHEART,
     &RECKLESS_CHARGE,
+    &SEASONED_PYROMANCER,
     &COLLECTOR_OUPHE,
     &FORCE_OF_VIGOR,
     &KROSAN_TUSKER,
