@@ -2,10 +2,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AddManaEffectDef, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, ObjectSetDef, PlayerRelation, TriggerConditionDef, TriggerEventDef, ValueDef,
-    ZoneKind, abilities,
+    AbilityDef, AbilityTargetDef, AddManaEffectDef, AlternativeCastKindDef, CardArt, CardRules,
+    CardSet, CardSupertype, CardType, ComparisonDef, ControlDurationDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
+    PlayerRelation, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -43,8 +43,76 @@ pub(in crate::card::sets) static DAUNTLESS_UNITY: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+/// "If it was kicked", asked as the arrival resolves. The kick is what the
+/// whole card is: unkicked he is a 2/1 flier and nothing else happens.
+static SKYDIVER_WAS_KICKED: TriggerConditionDef =
+    TriggerConditionDef::SourceCastWith(AlternativeCastKindDef::Kicked);
+
+/// "Target artifact with mana value X or less", where X is what his own cast
+/// paid: the target is sized by the kick rather than by anything printed.
+static AN_ARTIFACT_WORTH_X: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Artifact),
+        ObjectPredicateDef::ManaValueAtMostValue(ValueDef::SourceCastX),
+    ]),
+)];
+
+static THAT_ARTIFACT_IS_AN_EQUIPMENT: TriggerConditionDef = TriggerConditionDef::TargetMatches {
+    slot: TargetIndex::PRIMARY,
+    object: ObjectPredicateDef::Subtype("Equipment"),
+};
+
+static SKYDIVER_EQUIPS_ITSELF: EffectDef = EffectDef::AttachToSource {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+};
+
+static SKYDIVER_STEALS: [EffectDef; 2] = [
+    EffectDef::GainControl {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        controller: PlayerRefDef::EffectController,
+        duration: ControlDurationDef::Indefinitely,
+    },
+    EffectDef::IfCondition {
+        condition: &THAT_ARTIFACT_IS_AN_EQUIPMENT,
+        then: &SKYDIVER_EQUIPS_ITSELF,
+    },
+];
+
 // ZNR 85 — Thieving Skydiver
-// Audit: blocked — Kicker here is a spell cast for more mana with different instructions, and the kicked clause has to carry those instructions. This card's kicker changes nothing about how the spell resolves; it changes whether a triggered ability fires afterwards and what that ability may target, which the kicked alternative has no way to say. It also needs a minimum on X, since casts are enumerated from zero and "X can't be 0" would otherwise let an unkicked-sized cast steal a nothing-cost artifact.
+pub(in crate::card::sets) static THIEVING_SKYDIVER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("ff84ea71-e477-44f7-a3f8-77fef708efeb"),
+    "Thieving Skydiver",
+    CardArt::new("ff84ea71-e477-44f7-a3f8-77fef708efeb", "Kieran Yanner"),
+    CardSet::ZendikarRising,
+    // Two mana for a flier, or two plus X for a flier that takes the best
+    // artifact on the board with it -- a Mox on turn three, a Sword on turn
+    // five, and the Sword comes down already attached.
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Merfolk", "Rogue"], 2, 1).with_abilities(&[
+        AbilityDef::alternative_cast(
+            mana_cost!("{X}{1}{U}"),
+            AlternativeCastKindDef::Kicked,
+            Some(
+                "Kicker {X}. X can't be 0. (You may pay an additional {X} as you cast this \
+                 spell.)",
+            ),
+            EffectDef::None,
+        )
+        .with_alternative_minimum_x(1),
+        abilities::flying(),
+        AbilityDef::triggered_if_with_targets(
+            "When this creature enters, if it was kicked, gain control of target artifact with \
+             mana value X or less. If that artifact is an Equipment, attach it to this creature.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &SKYDIVER_WAS_KICKED,
+            &AN_ARTIFACT_WORTH_X,
+            EffectDef::Sequence(&SKYDIVER_STEALS),
+        ),
+    ]),
+);
 
 // ZNR 94 — Bloodchief's Thirst
 pub(in crate::card::sets) static BLOODCHIEFS_THIRST: CardRecord = CardRecord::new_with_legacy_id(
@@ -198,6 +266,7 @@ pub(in crate::card::sets) static OMNATH_LOCUS_OF_CREATION: CardRecord =
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DAUNTLESS_UNITY,
+    &THIEVING_SKYDIVER,
     &BLOODCHIEFS_THIRST,
     &GNARLID_COLONY,
     &OMNATH_LOCUS_OF_CREATION,

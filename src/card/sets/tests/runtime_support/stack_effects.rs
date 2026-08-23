@@ -435,6 +435,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::AddCounters { object, .. }
         | EffectDef::RemoveCounters { object, .. }
         | EffectDef::Attach { object }
+        | EffectDef::AttachToSource { object }
         | EffectDef::PhaseOut { object }
         | EffectDef::ReturnAttached { object, .. }
         | EffectDef::Reconfigure { object }

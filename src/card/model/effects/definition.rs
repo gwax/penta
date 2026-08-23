@@ -1,7 +1,4 @@
-// The effect vocabulary itself: every primitive the rules engine
-// interprets, and the shorthands for the two that are always written the
-// same way.
-//
+// The effect vocabulary itself: every primitive the rules engine interprets.
 // Split out of the parent module for the source-size budget, and included
 // rather than declared so the shared vocabulary above it stays in scope.
 
@@ -52,6 +49,12 @@ pub enum EffectDef {
     /// spell becomes is what attaches, so this is only meaningful on the spell
     /// clause of an Aura.
     Attach {
+        object: EffectRecipientDef,
+    },
+    /// The mirror of [`Self::Attach`]: the named permanent moves onto this
+    /// ability's own source, which is what "attach it to this creature"
+    /// means when the creature is the one asking.
+    AttachToSource {
         object: EffectRecipientDef,
     },
     /// Phase the recipient out. It is treated as though it does not exist
@@ -593,10 +596,9 @@ pub enum EffectDef {
     ExileTopOfLibraryToPlay {
         player: EffectRecipientDef,
         amount: ValueDef,
-        /// Whether the permission also waives the cards' mana costs. "You
-        /// may play those cards" and "you may play those cards without
-        /// paying their mana costs" are different clauses, and only the
-        /// second one is free.
+        /// Whether the permission also waives the cards' mana costs: "you
+        /// may play those cards" and "without paying their mana costs" are
+        /// different clauses, and only the second one is free.
         free: bool,
         /// Whether the cards are exiled face down. Only their owner sees
         /// what they are; everybody can count them.
@@ -606,8 +608,8 @@ pub enum EffectDef {
         /// Whether mana spent on the card may be of any colour, which is a
         /// property of the permission rather than of the card.
         spend_any_color: bool,
-        /// What has to be true where the card is played. A permission that
-        /// outlives the turn it was granted on has to ask again.
+        /// What has to be true where the card is played, asked there rather
+        /// than where it was granted.
         play_condition: Option<ExilePlayConditionDef>,
     },
     /// "Exile a card at random from your graveyard. You may play that card
@@ -927,20 +929,17 @@ pub enum EffectDef {
     },
     /// "Puts all the cards from their graveyard on the bottom of their
     /// library in a random order." One effect rather than a queried move
-    /// plus a shuffle: the randomization is what the clause is for, and it
-    /// is a fact about the pile that no per-card move can state.
+    /// plus a shuffle: the randomization is what the clause is for.
     BuryGraveyard {
         player: EffectRecipientDef,
     },
     /// "This Mount becomes saddled until end of turn" (CR 702.166a). A fact
-    /// about the permanent rather than a counter or a continuous effect:
-    /// its own printed clause reads it, and it ends with the turn.
+    /// about the permanent rather than a counter, and it ends with the turn.
     Saddle {
         object: EffectRecipientDef,
     },
     /// "You may play those cards without paying their mana costs." The set
-    /// is named rather than the zone: Hideaway means what that permanent
-    /// hid, a search means what it just exiled. Lasts the turn it resolved.
+    /// is named rather than the zone, and it lasts the turn it resolved on.
     MayPlayWithoutPaying {
         objects: ObjectSetDef,
     },

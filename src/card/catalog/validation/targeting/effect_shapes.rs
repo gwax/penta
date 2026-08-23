@@ -236,6 +236,7 @@ fn validate_effect_target_shapes(
         | EffectDef::Untap { object }
         | EffectDef::Saddle { object }
         | EffectDef::Attach { object }
+        | EffectDef::AttachToSource { object }
         | EffectDef::PhaseOut { object }
         | EffectDef::ReturnAttached { object, .. }
         | EffectDef::Reconfigure { object }

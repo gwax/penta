@@ -501,6 +501,7 @@ impl AbilityDef {
                 additional_cost: None,
                 condition: None,
                 life: 0,
+                minimum_x: 0,
             }),
             effect,
         )
@@ -525,6 +526,7 @@ impl AbilityDef {
                 additional_cost: None,
                 condition: None,
                 life: 0,
+                minimum_x: 0,
             }),
             effect,
         )
@@ -647,6 +649,21 @@ impl AbilityDef {
             }
             _ => panic!("only an activated ability has an activation window"),
         };
+        self
+    }
+
+    /// "X can't be 0": the smallest X this alternative may be cast for.
+    ///
+    /// # Panics
+    ///
+    /// Panics for any ability that is not an alternative cast.
+    #[must_use]
+    pub const fn with_alternative_minimum_x(mut self, minimum: u16) -> Self {
+        let DeclarativeAbilityDef::AlternativeCast(mut definition) = self.definition else {
+            panic!("only an alternative cast bounds an X of its own");
+        };
+        definition.minimum_x = minimum;
+        self.definition = DeclarativeAbilityDef::AlternativeCast(definition);
         self
     }
 

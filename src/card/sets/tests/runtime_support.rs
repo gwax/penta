@@ -714,6 +714,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Untap { .. }
                     | EffectDef::Saddle { .. }
                     | EffectDef::Attach { .. }
+                    | EffectDef::AttachToSource { .. }
                     | EffectDef::PhaseOut { .. }
                     | EffectDef::ReturnAttached { .. }
                     | EffectDef::Reconfigure { .. }

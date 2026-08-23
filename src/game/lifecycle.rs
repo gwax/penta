@@ -529,6 +529,21 @@ impl Game {
                     .unwrap_or(i32::MAX),
                 )
             }
+            // The X its own spell was cast for, which the permanent recorded
+            // as it arrived. "Target artifact with mana value X or less" is
+            // a predicate rather than an effect, and by the time it is asked
+            // the spell is a permanent.
+            ValueDef::SourceCastX => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == source)
+                .map(|permanent| i32::from(permanent.cast_x))
+                .or_else(|| match self.retired_objects.get(&source) {
+                    Some(RetiredObject::Permanent { permanent, .. }) => {
+                        Some(i32::from(permanent.cast_x))
+                    }
+                    Some(RetiredObject::Card(_) | RetiredObject::Stack(_)) | None => None,
+                }),
             // "Power X or less" is said as "below X plus one", so a sum has
             // to be reachable from here as well as its parts.
             ValueDef::Sum(sum) => self

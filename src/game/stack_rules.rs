@@ -111,6 +111,7 @@ impl Game {
             | EffectDef::Untap { .. }
             | EffectDef::Saddle { .. }
             | EffectDef::Attach { .. }
+            | EffectDef::AttachToSource { .. }
             | EffectDef::ReturnAttached { .. }
             | EffectDef::Reconfigure { .. }
             | EffectDef::Unattach { .. }

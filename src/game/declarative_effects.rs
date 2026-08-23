@@ -841,6 +841,18 @@ impl Game {
             ),
             // An Aura attaches as its spell becomes a permanent, so its own
             // clause has nothing left to do. Equip resolves this instead.
+            // "Attach it to this creature": the named permanent is what
+            // moves, and the source is where it lands.
+            EffectDef::AttachToSource { object: recipient } => {
+                let Some(source) = object.source else {
+                    return;
+                };
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Permanent(id) = target {
+                        self.try_attach(id, source);
+                    }
+                }
+            }
             EffectDef::Attach { object: recipient } => {
                 let Some(source) = object.source else {
                     return;

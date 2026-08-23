@@ -226,6 +226,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Untap { .. }
         | EffectDef::Saddle { .. }
         | EffectDef::Attach { .. }
+        | EffectDef::AttachToSource { .. }
         | EffectDef::PhaseOut { .. }
         | EffectDef::ReturnAttached { .. }
         | EffectDef::Reconfigure { .. }

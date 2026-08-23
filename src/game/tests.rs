@@ -424,6 +424,7 @@ mod vintage_cube_tamiyo;
 mod vintage_cube_tendrils;
 mod vintage_cube_territorial_kavu;
 mod vintage_cube_tersa_lightshatter;
+mod vintage_cube_thieving_skydiver;
 mod vintage_cube_thoughtseize;
 mod vintage_cube_time_spiral;
 mod vintage_cube_tireless_tracker;

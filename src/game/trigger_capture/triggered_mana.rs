@@ -124,6 +124,7 @@ impl Game {
             | EffectDef::PutIntoLibraryBeneathTop { .. }
             | EffectDef::MoveToZone { .. }
             | EffectDef::Attach { .. }
+            | EffectDef::AttachToSource { .. }
             | EffectDef::PhaseOut { .. }
             | EffectDef::ReturnAttached { .. }
             | EffectDef::Reconfigure { .. }

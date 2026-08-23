@@ -61,6 +61,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::AddEnergyCounters { .. }
         | EffectDef::Apply { .. }
         | EffectDef::Attach { .. }
+        | EffectDef::AttachToSource { .. }
         | EffectDef::PhaseOut { .. }
         | EffectDef::ReturnAttached { .. }
         | EffectDef::PairWithSource { .. }

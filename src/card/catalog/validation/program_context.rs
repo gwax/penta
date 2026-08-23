@@ -827,6 +827,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::Endure { .. } => "Endure",
         EffectDef::CreateMyriadTokens => "CreateMyriadTokens",
         EffectDef::Attach { .. }
+        | EffectDef::AttachToSource { .. }
         | EffectDef::PhaseOut { .. }
         | EffectDef::ReturnAttached { .. } => "Attach",
         EffectDef::Reconfigure { .. } => "Reconfigure",

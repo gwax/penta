@@ -118,6 +118,25 @@ impl Game {
         Self::alternative_cast_ability(definition, option, selected).map(|(_, _, kind)| kind)
     }
 
+    /// The smallest X the selected alternative may be cast for. "Kicker
+    /// {X}. X can't be 0" is the only thing that says so, and it says it
+    /// about the kicker rather than about the spell.
+    pub(super) fn configured_alternative_minimum_x(
+        definition: &CardDefinition,
+        option: &PlayOptionDef,
+        costs: &CostConfiguration,
+    ) -> u16 {
+        let Some(selected) = costs.alternative() else {
+            return 0;
+        };
+        Self::alternative_cast_ability(definition, option, selected)
+            .and_then(|(_, ability, _)| match ability.definition {
+                DeclarativeAbilityDef::AlternativeCast(alternative) => Some(alternative.minimum_x),
+                _ => None,
+            })
+            .unwrap_or(0)
+    }
+
     pub(super) fn temporary_alternative_cost_id(
         option: &PlayOptionDef,
     ) -> Option<AlternativeCostId> {

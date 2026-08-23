@@ -348,7 +348,12 @@ impl Game {
                                 (Some(bound), None) | (None, Some(bound)) => bound,
                                 (None, None) => 0,
                             };
-                            for x in 0..=max_x {
+                            // "X can't be 0" starts the enumeration higher:
+                            // the kicked cast is only ever offered for an X
+                            // its own clause allows.
+                            let min_x =
+                                Self::configured_alternative_minimum_x(definition, option, &costs);
+                            for x in min_x..=max_x {
                                 let cast_life = self.configured_cast_life_payment(
                                     definition,
                                     option,
