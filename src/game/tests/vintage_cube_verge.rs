@@ -141,3 +141,31 @@ fn the_riverpyre_verge_ignores_the_other_cycle_members_types() {
 
     assert_eq!(offered_colors(&game, verge), vec![ManaColor::Red]);
 }
+
+/// Thornspire Verge is the Gruul member: red unconditionally, green once a
+/// Mountain or a Forest is out.
+#[test]
+fn the_thornspire_verge_offers_its_own_two_colours() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let verge = game
+        .put_onto_battlefield(PlayerId::One, cards::THORNSPIRE_VERGE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(offered_colors(&game, verge), vec![ManaColor::Red]);
+
+    // Either of its two types answers, and a Swamp is neither.
+    game.put_onto_battlefield(PlayerId::One, cards::SWAMP)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(offered_colors(&game, verge), vec![ManaColor::Red]);
+
+    game.put_onto_battlefield(PlayerId::One, cards::FOREST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let mut offered = offered_colors(&game, verge);
+    offered.sort_unstable();
+    let mut expected = vec![ManaColor::Red, ManaColor::Green];
+    expected.sort_unstable();
+    assert_eq!(offered, expected, "a Forest switches the green half on");
+}

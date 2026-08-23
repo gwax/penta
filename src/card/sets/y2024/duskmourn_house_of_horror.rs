@@ -1,17 +1,18 @@
 //! Duskmourn: House of Horror cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::CardComposition;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef,
-    CardArt, CardRules, CardSet, CardType, CardTypeSet, CharacteristicOperationDef,
-    ChoiceVisibilityDef, ChooseDef, CounterKind, CreatureTypeSetDef, EffectDef, EffectRecipientDef,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef,
-    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementConditionDef,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef,
-    SpellAdditionalCostDef, SpendModeDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
+    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardType, CardTypeSet,
+    CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind,
+    CreatureTypeSetDef, EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef, PlayRestrictionDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementConditionDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef, SpellAdditionalCostDef,
+    SpendModeDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -417,12 +418,53 @@ pub(in crate::card::sets) static GHOST_VACUUM: CardRecord = CardRecord::new_with
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&GHOST_VACUUM_ABILITIES),
 );
 
+/// The verge condition in this cycle's Gruul colours. Either type answers
+/// it, so a Taiga is both halves at once.
+static A_MOUNTAIN_OR_A_FOREST_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain, BasicLandType::Forest]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static THORNSPIRE_HAS_ITS_LAND: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: A_MOUNTAIN_OR_A_FOREST_YOU_CONTROL,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+// DSK 270 — Thornspire Verge
+pub(in crate::card::sets) static THORNSPIRE_VERGE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("7e1cdc03-6faa-4138-9a52-caafbe34fb59"),
+    "Thornspire Verge",
+    CardArt::new(
+        "7e1cdc03-6faa-4138-9a52-caafbe34fb59",
+        "Kasia 'Kafis' Zielińska",
+    ),
+    CardSet::DuskmournHouseOfHorror,
+    // Untapped and free either way: the red is unconditional, and the green
+    // is what the rest of the mana base is for.
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {R}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red)),
+        ),
+        AbilityDef::activated_mana_if(
+            "{T}: Add {G}. Activate only if you control a Mountain or a Forest.",
+            &[AbilityCostDef::TapSource],
+            &THORNSPIRE_HAS_ITS_LAND,
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green)),
+        ),
+    ]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ENDURING_INNOCENCE,
     &ABHORRENT_OCULUS,
     &OVERLORD_OF_THE_BALEMURK,
     &WALK_IN_CLOSET_FORGOTTEN_CELLAR,
     &GHOST_VACUUM,
+    &THORNSPIRE_VERGE,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
