@@ -771,6 +771,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::GainLife { .. } => "GainLife",
         EffectDef::DrawCards { .. } => "DrawCards",
         EffectDef::ShuffleLibrary { .. } => "ShuffleLibrary",
+        EffectDef::BuryGraveyard { .. } => "BuryGraveyard",
         EffectDef::EmptyManaPool { .. } => "EmptyManaPool",
         EffectDef::Discard { .. } => "Discard",
         EffectDef::DiscardCards { .. } => "DiscardCards",

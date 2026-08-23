@@ -234,6 +234,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::AddEnergyCounters { recipient, .. }
         | EffectDef::DrawCards { recipient, .. }
         | EffectDef::ShuffleLibrary { player: recipient }
+        | EffectDef::BuryGraveyard { player: recipient }
         | EffectDef::EmptyManaPool { player: recipient }
         | EffectDef::TakeExtraTurn { player: recipient }
         | EffectDef::LoseLife { recipient, .. }

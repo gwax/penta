@@ -1,6 +1,6 @@
 //! Modern Horizons 2 cards cataloged as cross-format rules-engine test cases.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
     AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType,
@@ -362,6 +362,63 @@ pub(in crate::card::sets) static UNHOLY_HEAT: CardRecord = CardRecord::new_with_
     )),
 );
 
+static EXILE_A_GREEN_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::Color(ManaColor::Green),
+    ZoneKind::Hand,
+    1,
+)
+.spent(SpendModeDef::Exile);
+
+/// "Up to one target player" includes yourself, which is the mode nobody
+/// prints on the card: an Endurance can put your own graveyard back when
+/// something else is trying to eat it.
+static ENDURANCE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+    1,
+)];
+
+static ENDURANCE_ABILITIES: [AbilityDef; 5] = [
+    abilities::flash(),
+    abilities::reach(),
+    AbilityDef::triggered_with_targets(
+        "When this creature enters, up to one target player puts all the cards from their \
+         graveyard on the bottom of their library in a random order.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        &ENDURANCE_TARGET,
+        EffectDef::BuryGraveyard {
+            player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    ),
+    AbilityDef::alternative_cast(
+        mana_cost!("{0}"),
+        AlternativeCastKindDef::AlternativeCost,
+        Some("Evoke—Exile a green card from your hand."),
+        EffectDef::None,
+    )
+    .with_alternative_additional_cost(&EXILE_A_GREEN_CARD),
+    abilities::evoke_sacrifice("When this creature enters, if it was evoked, sacrifice it."),
+];
+
+// MH2 157 — Endurance
+pub(in crate::card::sets) static ENDURANCE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("eb0e0404-4846-4891-acfa-bd0951ecf9c6"),
+    "Endurance",
+    CardArt::new(
+        "eb0e0404-4846-4891-acfa-bd0951ecf9c6",
+        "Anastasia Ovchinnikova",
+    ),
+    CardSet::ModernHorizons2,
+    // A free answer to a graveyard that leaves a 3/4 blocker behind, or a
+    // green card off the top of your hand when the graveyard is the whole
+    // reason you are casting it.
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Elemental", "Incarnation"], 3, 4)
+        .with_abilities(&ENDURANCE_ABILITIES),
+);
+
 // MH2 202 — Grist, the Hunger Tide
 // Audit: blocked — Needs three capabilities at once: a resolution loop that repeats a step while reading what the previous iteration milled, a reflexive triggered ability that chooses its target when the optional sacrifice is actually made rather than on activation, and characteristics that apply in every zone except the battlefield.
 
@@ -425,6 +482,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FURY,
     &MINE_COLLAPSE,
     &UNHOLY_HEAT,
+    &ENDURANCE,
     &NETTLECYST,
     &YAVIMAYA_CRADLE_OF_GROWTH,
 ];

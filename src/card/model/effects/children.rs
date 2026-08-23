@@ -135,6 +135,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeKeepingOnePerType { .. }
         | EffectDef::ScheduleTurnPhases(_)
+        | EffectDef::BuryGraveyard { .. }
         | EffectDef::ShuffleLibrary { .. }
         | EffectDef::SkipNextUntapSteps { .. }
         | EffectDef::Special(_)

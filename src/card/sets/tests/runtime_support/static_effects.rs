@@ -210,6 +210,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Discard { .. }
         | EffectDef::DiscardCards { .. }
         | EffectDef::ShuffleLibrary { .. }
+        | EffectDef::BuryGraveyard { .. }
         | EffectDef::EmptyManaPool { .. }
         | EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }

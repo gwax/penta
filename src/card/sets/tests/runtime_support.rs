@@ -742,6 +742,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Discard { .. }
                     | EffectDef::DiscardCards { .. }
                     | EffectDef::ShuffleLibrary { .. }
+                    | EffectDef::BuryGraveyard { .. }
                     | EffectDef::EmptyManaPool { .. }
                     | EffectDef::LoseLife { .. }
                     | EffectDef::LoseTheGame { .. }

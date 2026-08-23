@@ -128,6 +128,7 @@ fn validate_effect_target_shapes(
         | EffectDef::ExileFromTopUntil { player, .. }
         | EffectDef::ManifestDread { player }
         |         EffectDef::ShuffleLibrary { player }
+        | EffectDef::BuryGraveyard { player }
         | EffectDef::EmptyManaPool { player }
         | EffectDef::LoseTheGame { player }
         | EffectDef::WinTheGame { player }

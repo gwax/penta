@@ -909,6 +909,16 @@ pub enum EffectDef {
     ShuffleLibrary {
         player: EffectRecipientDef,
     },
+    /// "Puts all the cards from their graveyard on the bottom of their
+    /// library in a random order."
+    ///
+    /// One effect rather than a queried move plus a shuffle, because the
+    /// randomization is what the clause is for: every one of those cards was
+    /// public where it lay, and the order they go home in must not be. That
+    /// is a fact about the pile, which no per-card move can state.
+    BuryGraveyard {
+        player: EffectRecipientDef,
+    },
     /// The object sits out this many of its controller's untap steps.
     SkipNextUntapSteps {
         object: EffectRecipientDef,
