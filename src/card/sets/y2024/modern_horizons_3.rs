@@ -2,15 +2,17 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardChoiceSourceDef, CardComposition,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
+    BattlefieldEntryModificationDef, CardArt, CardChoiceSourceDef, CardComposition,
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
     ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, DoubleFacedKind, EffectDef,
     EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
-    SpellAdditionalCostDef, SpellForm, SpendModeDef, TokenCharacteristics, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, SpellAdditionalCostDef, SpellForm, SpendModeDef,
+    TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::ids::{CardPartId, ObjectBindingIndex, ObjectSetBindingIndex, PlayOptionId};
 use crate::{TargetIndex, mana_cost};
@@ -1421,6 +1423,117 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::n
 )
 .with_composition(ajani_composition);
 
+/// "Target artifact or enchantment an opponent controls": two types and a
+/// controller, which together are the whole restriction.
+static ENCHANTER_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Artifact),
+            ObjectPredicateDef::HasType(CardType::Enchantment),
+        ]),
+        ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+    ]),
+)];
+
+static ENCHANTER_ABILITIES: [AbilityDef; 1] = [AbilityDef::triggered_with_targets(
+    "When this creature enters, destroy target artifact or enchantment an opponent controls.",
+    TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Source,
+        None,
+        Some(ZoneKind::Battlefield),
+    ),
+    &ENCHANTER_TARGET,
+    EffectDef::destroy_target(TargetIndex::PRIMARY, true),
+)];
+
+/// Declining is what taps it, so the paid branch does nothing and the
+/// declined branch is the whole of the cost.
+static MEADOW_ENTERS_TAPPED: [ReplacementEffectDef; 1] =
+    [ReplacementEffectDef::ModifyBattlefieldEntry(
+        BattlefieldEntryModificationDef::Tapped,
+    )];
+
+static MEADOW_PAID: [ReplacementEffectDef; 0] = [];
+
+static MEADOW_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::replacement(
+        "As this land enters, you may pay 3 life. If you don't, it enters tapped.",
+        ReplacementEffectDef::PayOr {
+            payment: EffectPaymentDef::life(PlayerSetDef::Related(PlayerRelation::You), 3),
+            if_paid: &MEADOW_PAID,
+            if_declined: &MEADOW_ENTERS_TAPPED,
+        },
+    ),
+    AbilityDef::activated_mana(
+        "{T}: Add {W}.",
+        &MEADOW_MANA_COST,
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::White)),
+    ),
+];
+
+static MEADOW_MANA_COST: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
+const fn witch_enchanter_rules() -> CardRules {
+    CardRules::new_creature(mana_cost!("{3}{W}"), &["Human", "Warlock"], 2, 2)
+        .with_abilities(&ENCHANTER_ABILITIES)
+}
+
+const fn witch_blessed_meadow_rules() -> CardRules {
+    CardRules::new_land(&[]).with_abilities(&MEADOW_ABILITIES)
+}
+
+/// A modal double-faced card: the two faces are alternatives chosen as it is
+/// played rather than states it turns between, so the back has a play option
+/// of its own and nothing ever transforms.
+fn witch_enchanter_composition() -> CardComposition {
+    CardComposition {
+        parts: vec![
+            CardPart::new(
+                CardPartId::PRIMARY,
+                "Witch Enchanter",
+                witch_enchanter_rules(),
+            ),
+            CardPart::new(
+                CardPartId(1),
+                "Witch-Blessed Meadow",
+                witch_blessed_meadow_rules(),
+            ),
+        ],
+        structure: CardStructure::DoubleFaced {
+            front: CardPartId::PRIMARY,
+            back: CardPartId(1),
+            kind: DoubleFacedKind::Modal,
+        },
+        play_options: vec![
+            PlayOptionDef::cast(
+                PlayOptionId::DEFAULT,
+                "Witch Enchanter",
+                SpellForm::Part(CardPartId::PRIMARY),
+                mana_cost!("{3}{W}"),
+                CardEffectStatus::Implemented,
+            ),
+            PlayOptionDef::play_land(
+                PlayOptionId(1),
+                "Witch-Blessed Meadow",
+                CardPartId(1),
+                CardEffectStatus::Implemented,
+            ),
+        ],
+    }
+}
+
+// MH3 239 — Witch Enchanter
+pub(in crate::card::sets) static WITCH_ENCHANTER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("62061e7c-cf19-4f03-b8fa-2bdba62d6b0b"),
+    "Witch Enchanter",
+    CardArt::new("62061e7c-cf19-4f03-b8fa-2bdba62d6b0b", "Tyler Walpole"),
+    CardSet::ModernHorizons3,
+    // Four mana and a Disenchant, or the land the deck was short of. Which
+    // one it is is decided in hand, which is the whole appeal.
+    witch_enchanter_rules(),
+)
+.with_composition(witch_enchanter_composition);
+
 // MH3 284 — Annoyed Altisaur
 // Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static ANNOYED_ALTISAUR: CardRecord = CardRecord::new(
@@ -1487,6 +1600,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TRANQUIL_LANDSCAPE,
     &TWISTED_LANDSCAPE,
     &AJANI_NACATL_PARIAH,
+    &WITCH_ENCHANTER,
     &ANNOYED_ALTISAUR,
     &PRIEST_OF_TITANIA,
 ];
