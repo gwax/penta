@@ -63,8 +63,18 @@ impl Game {
         value: crate::card::ValueDef,
         source: GameObjectId,
         controller: PlayerId,
+        context: TriggerContext,
     ) -> i32 {
         match value {
+            // Counted with the trigger's own context, so a query can name the
+            // player the event happened to: "more creatures than they do" is
+            // asked about the player whose upkeep began, not about whoever
+            // controls the enchantment asking.
+            crate::card::ValueDef::CountMatchingObjects(query) => i32::try_from(
+                self.objects_matching_query(*query, controller, source, context)
+                    .len(),
+            )
+            .unwrap_or(i32::MAX),
             crate::card::ValueDef::DevotionTo(_)
             | crate::card::ValueDef::LibrarySize(_)
             | crate::card::ValueDef::BasicLandTypesControlled(_) => {
@@ -175,8 +185,8 @@ impl Game {
                 // is the only way "X or more cards in your library" can be
                 // said: neither amount is a printed number.
                 TriggerConditionDef::ValueComparison(values) => {
-                    let left = self.condition_value(values.left, source, controller);
-                    let right = self.condition_value(values.right, source, controller);
+                    let left = self.condition_value(values.left, source, controller, context);
+                    let right = self.condition_value(values.right, source, controller, context);
                     compare(&left, values.comparison, &right)
                 }
                 TriggerConditionDef::SourceOnBattlefield => self

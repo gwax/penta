@@ -384,6 +384,7 @@ mod vintage_cube_necromancy;
 mod vintage_cube_nights_whisper;
 mod vintage_cube_ninjutsu;
 mod vintage_cube_nissa;
+mod vintage_cube_oath_of_druids;
 mod vintage_cube_occult_epiphany;
 mod vintage_cube_ocelot_pride;
 mod vintage_cube_oko;

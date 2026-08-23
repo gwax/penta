@@ -488,6 +488,9 @@ impl Game {
             PlayerRelation::ActivePlayer => player == self.active_player,
             PlayerRelation::NonactivePlayer => player == self.active_player.opponent(),
             PlayerRelation::EventPlayer => context.event_player == Some(player),
+            PlayerRelation::NotEventPlayer => {
+                context.event_player.is_some_and(|event| event != player)
+            }
             // Both of these live on the ability's source, which this does not
             // have. The triggers that name them resolve the relation where
             // the source is known.

@@ -463,6 +463,11 @@ pub enum PlayerRelation {
     /// The player identified directly by the event, such as the player whose
     /// upkeep began or who cast a spell.
     EventPlayer,
+    /// Any player the event does not name. "More creatures than they do" is
+    /// asked about the player whose upkeep began, so the other side of the
+    /// comparison is everybody else -- which in a two-player game is their
+    /// opponent.
+    NotEventPlayer,
     /// The player the ability's own source chose as it entered. Only a
     /// permanent that made such a choice matches anyone at all.
     ChosenPlayer,
