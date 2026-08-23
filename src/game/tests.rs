@@ -393,6 +393,7 @@ mod vintage_cube_portable_hole;
 mod vintage_cube_portal_to_phyrexia;
 mod vintage_cube_prismatic_ending;
 mod vintage_cube_psychic_frog;
+mod vintage_cube_ragavan;
 mod vintage_cube_relic;
 mod vintage_cube_saheeli;
 mod vintage_cube_sentinel_nameless_city;

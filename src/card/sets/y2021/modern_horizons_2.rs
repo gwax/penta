@@ -5,9 +5,10 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet,
     CardSupertype, CardType, DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef,
-    EffectRecipientDef, GraveyardTypeConditionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    PlayerRelation, SpellAdditionalCostDef, SpendModeDef, TokenCharacteristics,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    EffectRecipientDef, ExilePlayDurationDef, GraveyardTypeConditionDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef,
+    TokenCharacteristics, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, tokens,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -346,6 +347,53 @@ static UNHOLY_HEAT_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_on
     },
 )];
 
+static RAGAVAN_CONNECTS: [EffectDef; 2] = [
+    EffectDef::create_token(tokens::treasure()).with_art(CardArt::new(
+        "630c0d1c-9ddb-4e76-a82a-9cdd8a5b487b",
+        "Alayna Danner",
+    )),
+    // "That player's library", and the permission is yours: what the Monkey
+    // steals is theirs to lose and yours to cast.
+    EffectDef::ExileTopOfLibraryToPlay {
+        player: EffectRecipientDef::EventPlayer,
+        amount: ValueDef::Constant(1),
+        free: false,
+        face_down: false,
+        duration: ExilePlayDurationDef::ThisTurn,
+    },
+];
+
+static RAGAVAN_ABILITIES: [AbilityDef; 4] = [
+    AbilityDef::triggered(
+        "Whenever this creature deals combat damage to a player, create a Treasure token and \
+         exile the top card of that player's library. Until end of turn, you may cast that card.",
+        TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
+        EffectDef::Sequence(&RAGAVAN_CONNECTS),
+    ),
+    abilities::dash(
+        mana_cost!("{1}{R}"),
+        "Dash {1}{R} (You may cast this spell for its dash cost. If you do, it gains haste, and \
+         it's returned from the battlefield to its owner's hand at the beginning of the next end \
+         step.)",
+    ),
+    abilities::dashed_haste(),
+    abilities::dashed_return(),
+];
+
+// MH2 138 — Ragavan, Nimble Pilferer
+pub(in crate::card::sets) static RAGAVAN_NIMBLE_PILFERER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("a9738cda-adb1-47fb-9f4c-ecd930228c4d"),
+    "Ragavan, Nimble Pilferer",
+    CardArt::new("a9738cda-adb1-47fb-9f4c-ecd930228c4d", "Simon Dominic"),
+    CardSet::ModernHorizons2,
+    // One mana for a 2/1 that pays for itself the first time it connects,
+    // and a dash cost for the turns when leaving it out would only get it
+    // killed.
+    CardRules::new_creature(mana_cost!("{R}"), &["Monkey", "Pirate"], 2, 1)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&RAGAVAN_ABILITIES),
+);
+
 // MH2 145 — Unholy Heat
 pub(in crate::card::sets) static UNHOLY_HEAT: CardRecord = CardRecord::new_with_legacy_id(
     2159,
@@ -566,6 +614,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DAMN,
     &FURY,
     &MINE_COLLAPSE,
+    &RAGAVAN_NIMBLE_PILFERER,
     &UNHOLY_HEAT,
     &ENDURANCE,
     &TERRITORIAL_KAVU,

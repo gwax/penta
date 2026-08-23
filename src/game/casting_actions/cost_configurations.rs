@@ -312,6 +312,9 @@ impl Game {
                         | AlternativeCastKindDef::Kicked
                         | AlternativeCastKindDef::AlternativeCost
                         | AlternativeCastKindDef::Impending
+                        // Dash is an ordinary cast from hand for a different
+                        // price, exactly as impending is.
+                        | AlternativeCastKindDef::Dash
                         // Face down is a way of casting the card from hand,
                         // not a permission to cast it elsewhere.
                         | AlternativeCastKindDef::FaceDown { .. }

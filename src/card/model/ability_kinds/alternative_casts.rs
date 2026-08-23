@@ -68,6 +68,11 @@ pub enum AlternativeCastKindDef {
     /// card is not exiled afterwards, so a creature that escaped and later
     /// dies may escape again.
     Escape,
+    /// Cast for its dash cost (CR 702.109a). Like a kicker it is an
+    /// ordinary cast from hand for a different price; what it changes is
+    /// that the creature arrives hasty and goes back to its owner's hand at
+    /// the beginning of the next end step, which the card's own clauses say.
+    Dash,
     /// Cast for its impending cost (CR 702.175a). Like a kicker it is an
     /// ordinary cast from hand for a different price; what it changes is how
     /// the permanent arrives, which the card's own clauses say.
@@ -135,6 +140,7 @@ impl AlternativeCastKindDef {
             Self::AlternativeCost => "Alternative cost",
             Self::Escape => "Escape",
             Self::Impending => "Impending",
+            Self::Dash => "Dash",
             Self::Foretell => "Foretell",
             Self::WithoutPayingManaCost => "Without paying its mana cost",
             Self::FaceDown { label, .. } => label,
@@ -149,6 +155,7 @@ impl AlternativeCastKindDef {
             Self::Escape,
             Self::Foretell,
             Self::Impending,
+            Self::Dash,
             Self::WithoutPayingManaCost,
             Self::Flashback,
             Self::Overload,
@@ -182,6 +189,14 @@ impl AlternativeCastAbilityDef {
                 },
                 std::borrow::ToOwned::to_owned,
             ),
+            (AlternativeCastKindDef::Dash, AlternativeCastManaCostDef::ThisCardManaCost) => {
+                "Dash—the dash cost is equal to this card's mana cost.".into()
+            }
+            (AlternativeCastKindDef::Dash, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
+                format!(
+                    "Dash {mana_cost} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)",
+                )
+            }
             (AlternativeCastKindDef::Escape, _) => self.stack_text.map_or_else(
                 || "Escape (You may cast this card from your graveyard for its escape cost.)".into(),
                 std::borrow::ToOwned::to_owned,
