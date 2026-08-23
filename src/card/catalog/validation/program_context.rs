@@ -722,6 +722,8 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         // not one of.
         | TriggerConditionDef::SourceResolutionsThisTurn { .. }
         | TriggerConditionDef::TargetMatches { .. }
+        // And this reads a binding, which only a resolution has.
+        | TriggerConditionDef::BoundObjectMatches { .. }
         | TriggerConditionDef::ControlsGreatestPowerCreature => false,
         TriggerConditionDef::SourceMatches { object }
         | TriggerConditionDef::LinkedExilesMatch { object }

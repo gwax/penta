@@ -547,6 +547,11 @@ const SET_MODULES: &[SetModule] = &[
         y2022::streets_of_new_capenna::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::StreetsOfNewCapennaCommander,
+        y2022::streets_of_new_capenna_commander::CARDS,
+        y2022::streets_of_new_capenna_commander::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::CommanderLegendsBattleForBaldursGate,
         y2022::commander_legends_baldurs_gate::CARDS,
         y2022::commander_legends_baldurs_gate::ADDITIONAL_PRINTINGS,

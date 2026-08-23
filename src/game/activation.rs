@@ -1,10 +1,10 @@
 use super::{
     AbilityCostDef, AbilityOrigin, AbilityProcedureDef, ActivationChoices, ActivationTimingDef,
-    BattlefieldExitCompletion, CardBehavior, CardInstance, CharacteristicContext, CounterKind,
-    DeclarativeAbilityDef, FrozenActivatedAbility, Game, GameEvent, GameObjectId, ManaCost,
-    ManaPaymentPurpose, ManaPlanOptions, ObjectCharacteristics, ObjectInstance, PendingActivation,
-    PlayRestriction, PlayerId, SacrificeQuota, Step, Target, TargetSelection, ZoneKind,
-    ZoneMoveCause, ZonePlacement, remove_card,
+    BattlefieldExitCompletion, CardBehavior, CardInstance, CharacteristicContext,
+    CommittedTriggerEvent, CounterKind, DeclarativeAbilityDef, FrozenActivatedAbility, Game,
+    GameEvent, GameObjectId, ManaCost, ManaPaymentPurpose, ManaPlanOptions, ObjectCharacteristics,
+    ObjectInstance, PendingActivation, PlayRestriction, PlayerId, SacrificeQuota, Step, Target,
+    TargetSelection, ZoneKind, ZoneMoveCause, ZonePlacement, remove_card,
 };
 
 impl Game {
@@ -323,6 +323,21 @@ impl Game {
                         self.events.push(GameEvent::CardsDiscarded {
                             player,
                             cards: vec![(discarded_id, definition)],
+                        });
+                        // A discard paid as a cost is still a discard, so
+                        // what watches for one sees this too.
+                        let card = self.printed_trigger_event_object(
+                            discarded_id,
+                            definition,
+                            player,
+                            &CharacteristicContext::Graveyard,
+                        );
+                        self.capture_battlefield_triggers(&CommittedTriggerEvent::Discarded {
+                            player,
+                            card,
+                        });
+                        self.capture_battlefield_triggers(&CommittedTriggerEvent::CardsDiscarded {
+                            player,
                         });
                         // Cycling is the only printed ability with this
                         // shape, and CR 702.29b fires its trigger on

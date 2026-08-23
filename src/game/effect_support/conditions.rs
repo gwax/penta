@@ -203,6 +203,16 @@ impl Game {
                         _ => false,
                     }
                 }
+                // The card an earlier choice saved, read where it is now:
+                // the clause that asks is the same resolution that chose it.
+                TriggerConditionDef::BoundObjectMatches {
+                    binding,
+                    object: predicate,
+                } => object.is_some_and(|(_, _, context): (_, _, &EffectResolutionContext)| {
+                    context.single_object(*binding).is_some_and(|bound| {
+                        self.bound_object_matches(bound, *predicate, source)
+                    })
+                }),
                 // The permanent records the controller's turn count as it
                 // arrived. By this upkeep that count has advanced once, so
                 // "since the last upkeep" is exactly one turn ago -- and the

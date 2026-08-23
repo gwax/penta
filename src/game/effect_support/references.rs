@@ -361,7 +361,7 @@ impl Game {
     /// Whether one member of a binding matches a predicate, wherever it is.
     /// A binding can hold battlefield permanents as readily as cards in a
     /// graveyard, so both are looked for.
-    fn bound_object_matches(
+    pub(super) fn bound_object_matches(
         &self,
         bound: Target,
         predicate: ObjectPredicateDef,

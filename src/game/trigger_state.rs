@@ -193,11 +193,15 @@ pub(super) enum CommittedTriggerEvent {
         player: PlayerId,
         amount: u16,
     },
-    /// One card left a hand for a graveyard. The card itself is already in
-    /// the graveyard, and nothing in the supported pool reads it, so only the
-    /// player who discarded is carried.
+    /// One card left a hand for a graveyard. The card is read where it now
+    /// lies, which is what "whenever you discard a card, you may exile that
+    /// card from your graveyard" names: the discard is over by the time the
+    /// trigger fires, so the object it points at is the graveyard card
+    /// rather than the one that was in hand. `None` where the card left no
+    /// readable object behind.
     Discarded {
         player: PlayerId,
+        card: Option<TriggerEventObject>,
     },
     /// One discard, however many cards it moved. Raised beside the per-card
     /// event above rather than instead of it: the two wordings are both
@@ -447,9 +451,14 @@ impl CommittedTriggerEvent {
                 event_player: None,
                 amount: None,
             },
+            Self::Discarded { player, card } => TriggerContext {
+                object: card.as_ref().map(|card| card.id),
+                object_controller: card.as_ref().map(|card| card.controller),
+                event_player: Some(*player),
+                amount: None,
+            },
             Self::StepBegins { player, .. }
             | Self::CommittedCrime { player }
-            | Self::Discarded { player }
             | Self::CardsDiscarded { player }
             | Self::BecameMonarch { player }
             | Self::DrewCard { player, .. } => TriggerContext {

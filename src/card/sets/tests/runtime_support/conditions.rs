@@ -16,6 +16,7 @@ pub(in super::super) fn shared_trigger_condition(condition: TriggerConditionDef)
         TriggerConditionDef::Not(condition) => shared_trigger_condition(*condition),
         TriggerConditionDef::ObjectCount { query, .. } => shared_object_predicate(query.object),
         TriggerConditionDef::TargetMatches { object, .. }
+        | TriggerConditionDef::BoundObjectMatches { object, .. }
         | TriggerConditionDef::SourceMatches { object }
         | TriggerConditionDef::LinkedExilesMatch { object }
         | TriggerConditionDef::AttachedPermanentMatches { object } => {

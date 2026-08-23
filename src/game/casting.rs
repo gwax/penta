@@ -1,12 +1,13 @@
 use super::{
     AbilityCostDef, AbilityOrigin, AlternativeCastKindDef, BTreeMap, BattlefieldExitCompletion,
     CREATURE_TYPES, CardBehavior, CardDefinition, CardInstance, CardType, CardTypeSet, CastChoices,
-    CastOfferCost, CastSignature, CastSourceZone, CommittedTriggerEvent, CostConfiguration,
-    DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
-    DeclarativeAbilityDef, EntryCompletion, Game, GameEvent, GameObjectId, Mana,
-    ManaAbilityActivation, ManaActivationChoices, ManaColor, ManaCost, ManaPaymentPurpose,
-    PendingBattlefieldEntry, Permanent, PlayActionKind, PlayOptionDef, PlayOptionId, PlayerId,
-    StackObject, StackObjectKind, Target, ZoneKind, ZoneMoveCause, ZonePlacement, remove_card,
+    CastOfferCost, CastSignature, CastSourceZone, CharacteristicContext, CommittedTriggerEvent,
+    CostConfiguration, DecisionContinuation, DecisionOption, DecisionPreference,
+    DecisionVisibility, DecisionZone, DeclarativeAbilityDef, EntryCompletion, Game, GameEvent,
+    GameObjectId, Mana, ManaAbilityActivation, ManaActivationChoices, ManaColor, ManaCost,
+    ManaPaymentPurpose, PendingBattlefieldEntry, Permanent, PlayActionKind, PlayOptionDef,
+    PlayOptionId, PlayerId, StackObject, StackObjectKind, Target, ZoneKind, ZoneMoveCause,
+    ZonePlacement, remove_card,
 };
 mod signature_validation;
 include!("casting/life_costs.rs");
@@ -839,8 +840,15 @@ impl Game {
                     player: owner,
                     cards: vec![(card.id, card.definition)],
                 });
+                let discarded = self.printed_trigger_event_object(
+                    card.id,
+                    card.definition,
+                    owner,
+                    &CharacteristicContext::Graveyard,
+                );
                 self.capture_battlefield_triggers(&CommittedTriggerEvent::Discarded {
                     player: owner,
+                    card: discarded,
                 });
                 self.capture_battlefield_triggers(&CommittedTriggerEvent::CardsDiscarded {
                     player: owner,

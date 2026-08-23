@@ -14,6 +14,10 @@ use crate::card::{
 use crate::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
 include!("targeting/references.rs");
+// What a trigger event itself may name, split from the references above for
+// the source-size budget: the questions an event asks about its own object,
+// player, and damage matcher are a boundary of their own.
+include!("targeting/trigger_references.rs");
 include!("targeting/effect_references.rs");
 
 #[derive(Clone, Copy)]

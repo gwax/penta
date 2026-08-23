@@ -801,8 +801,13 @@ impl Game {
                         event.context(),
                     )
             }
-            // Both name only the player the event happened to.
-            (TriggerEventDef::Discarded(relation), CommittedTriggerEvent::Discarded { player })
+            // The card the discard put into the graveyard is carried for
+            // the clause that goes on to name it; which card it was does not
+            // narrow the trigger, which asks only whose discard it was.
+            (
+                TriggerEventDef::Discarded(relation),
+                CommittedTriggerEvent::Discarded { player, .. },
+            )
             | (
                 TriggerEventDef::DiscardedCards(relation),
                 CommittedTriggerEvent::CardsDiscarded { player },

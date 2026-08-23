@@ -280,6 +280,9 @@ fn set_source_for_file(path: &Path) -> SetSource {
             source(CardSet::KamigawaNeonDynastyCommander, "NEC")
         }
         Some("streets_of_new_capenna.rs") => source(CardSet::StreetsOfNewCapenna, "SNC"),
+        Some("streets_of_new_capenna_commander.rs") => {
+            source(CardSet::StreetsOfNewCapennaCommander, "NCC")
+        }
         Some("commander_legends_baldurs_gate.rs") => {
             source(CardSet::CommanderLegendsBattleForBaldursGate, "CLB")
         }

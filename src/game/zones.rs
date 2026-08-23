@@ -766,19 +766,33 @@ impl Game {
                 continue;
             };
             let definition = card.definition;
-            discarded.push((card.id, definition));
+            // Read where the card now lies: a trigger that exiles "that
+            // card from your graveyard" needs the graveyard object, and the
+            // one that was in hand no longer exists.
+            let object = self.printed_trigger_event_object(
+                card.id,
+                definition,
+                player,
+                &CharacteristicContext::Graveyard,
+            );
+            discarded.push((card.id, definition, object));
         }
         if !discarded.is_empty() {
-            let count = discarded.len();
             self.events.push(GameEvent::CardsDiscarded {
                 player,
-                cards: discarded,
+                cards: discarded
+                    .iter()
+                    .map(|(id, definition, _)| (*id, *definition))
+                    .collect(),
             });
             // One event per card: "whenever you discard a card" fires twice
             // for a discard of two. Raised after the cards have moved, so
             // anything the triggers read sees the finished hand.
-            for _ in 0..count {
-                self.capture_battlefield_triggers(&CommittedTriggerEvent::Discarded { player });
+            for (_, _, object) in discarded {
+                self.capture_battlefield_triggers(&CommittedTriggerEvent::Discarded {
+                    player,
+                    card: object,
+                });
             }
             // And once for the whole discard, which is what "one or more
             // cards" asks about.

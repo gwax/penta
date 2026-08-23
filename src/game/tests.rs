@@ -306,6 +306,7 @@ mod vintage_cube_consult_star_charts;
 mod vintage_cube_creatures;
 mod vintage_cube_crucible;
 mod vintage_cube_cryptic_command;
+mod vintage_cube_currency_converter;
 mod vintage_cube_cut_down;
 mod vintage_cube_dack;
 mod vintage_cube_damn;

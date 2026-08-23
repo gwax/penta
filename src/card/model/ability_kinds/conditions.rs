@@ -178,6 +178,14 @@ pub enum TriggerConditionDef {
     LinkedExilesMatch {
         object: ObjectPredicateDef,
     },
+    /// Whether an object saved by an earlier choice in this resolution
+    /// matches. "If it's a land card" asks about the card the clause just
+    /// chose, which nothing else can name: it was not targeted, and by then
+    /// it is one card among many in a zone.
+    BoundObjectMatches {
+        binding: ObjectBindingIndex,
+        object: ObjectPredicateDef,
+    },
     /// Whether what a target slot points at still matches. Read when the
     /// condition is checked, so a delayed effect can ask about the target as
     /// it is then rather than as it was.
