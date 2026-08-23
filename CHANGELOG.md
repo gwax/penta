@@ -166,6 +166,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **"You may play that card" is no longer free.** The clause that exiles the
+  top of a library and lets you play what it finds granted the free-play
+  permission whatever the card said, so Laelia's attack trigger was handing
+  out its find for nothing. Only "without paying their mana costs" waives
+  the cost now; the plain permission owes it. The same clause can also exile
+  face down, which is a property of the permission rather than of what it
+  costs.
+
 - **A stack ability whose source card was discarded as a cost is
   checkpointable again.** The gate that keeps a hidden source out of a
   checkpoint was refusing every source that had retired as a card -- which is

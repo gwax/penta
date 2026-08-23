@@ -270,3 +270,24 @@ fn the_exiled_card_may_be_played_this_turn() {
         "you may play that card this turn",
     );
 }
+
+/// "You may play that card" is not "without paying its mana cost": Laelia
+/// finds the card and you still pay for it.
+#[test]
+fn the_exiled_card_still_costs_its_mana() {
+    let (mut game, laelia) = staged(&[cards::MOUNTAIN, cards::LIGHTNING_BOLT]);
+    attack_with(&mut game, laelia);
+    let exiled = game.players[0]
+        .exile
+        .iter()
+        .find(|card| card.definition == cards::LIGHTNING_BOLT)
+        .expect("it is in exile")
+        .id;
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .all(|action| !matches!(action, Action::CastSpell { card, .. } if *card == exiled)),
+        "with no red mana there is nothing to cast it with",
+    );
+}

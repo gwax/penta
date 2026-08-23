@@ -288,6 +288,8 @@ static SHINOBI_ABILITIES: [AbilityDef; 2] = [
         EffectDef::ExileTopOfLibraryToPlay {
             player: EffectRecipientDef::EventPlayer,
             amount: ValueDef::Constant(2),
+            free: true,
+            face_down: false,
         },
     ),
 ];

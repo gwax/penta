@@ -488,6 +488,7 @@ impl Game {
                     not_before_turn: permission
                         .not_before_turn
                         .map(|(player, turn)| (player.index(), turn)),
+                    face_down: permission.face_down,
                 })
                 .collect(),
             monarch: self.monarch.map(PlayerId::index),
@@ -852,6 +853,7 @@ impl Game {
                             Some((player, turn)) => Some((player_from_index(player)?, turn)),
                             None => None,
                         },
+                        face_down: permission.face_down,
                     })
                 })
                 .collect::<Result<Vec<_>, String>>()?,

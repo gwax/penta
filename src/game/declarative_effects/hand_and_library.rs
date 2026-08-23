@@ -445,6 +445,8 @@ impl Game {
             EffectDef::ExileTopOfLibraryToPlay {
                 player: recipient,
                 amount,
+                free,
+                face_down,
             } => {
                 let count = self.effect_value(amount, object, context, scoped).max(0);
                 let Ok(count) = usize::try_from(count) else {
@@ -459,7 +461,13 @@ impl Game {
                             let exiled = card.id;
                             self.players[player.index()].exile.push(card.clone());
                             moved.push(card);
-                            self.permit_free_play_this_turn(exiled, controller);
+                            match (free, face_down) {
+                                (true, _) => self.permit_free_play_this_turn(exiled, controller),
+                                (false, true) => {
+                                    self.permit_face_down_play_this_turn(exiled, controller);
+                                }
+                                (false, false) => self.permit_cast_this_turn(exiled, controller),
+                            }
                         }
                         self.capture_cards_exiled(&moved, ZoneKind::Library);
                     }

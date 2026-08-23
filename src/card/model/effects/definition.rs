@@ -589,6 +589,14 @@ pub enum EffectDef {
     ExileTopOfLibraryToPlay {
         player: EffectRecipientDef,
         amount: ValueDef,
+        /// Whether the permission also waives the cards' mana costs. "You
+        /// may play those cards" and "you may play those cards without
+        /// paying their mana costs" are different clauses, and only the
+        /// second one is free.
+        free: bool,
+        /// Whether the cards are exiled face down. Only their owner sees
+        /// what they are; everybody can count them.
+        face_down: bool,
     },
     /// "Exile a card at random from your graveyard. You may play that card
     /// this turn."
@@ -978,22 +986,4 @@ pub enum EffectDef {
     Untap {
         object: EffectRecipientDef,
     },
-}
-
-impl EffectDef {
-    #[must_use]
-    pub const fn counter_target(target: TargetIndex) -> Self {
-        Self::Counter {
-            object: EffectRecipientDef::Target(target),
-            zone: ZoneKind::Graveyard,
-        }
-    }
-
-    #[must_use]
-    pub const fn destroy_target(target: TargetIndex, can_regenerate: bool) -> Self {
-        Self::Destroy {
-            object: EffectRecipientDef::Target(target),
-            can_regenerate,
-        }
-    }
 }

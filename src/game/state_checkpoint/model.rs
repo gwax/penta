@@ -26,6 +26,10 @@ pub(super) struct ExilePlayPermissionSnapshot {
     /// every permission but a foretell carries anyway.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) not_before_turn: Option<(usize, u32)>,
+    /// Additive: a checkpoint written before a permission could say so
+    /// restores face up, which every permission but a foretell was.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) face_down: bool,
 }
 
 /// Taken by reference because that is the signature serde's

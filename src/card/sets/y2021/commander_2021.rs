@@ -22,6 +22,10 @@ static LAELIA_ABILITIES: [AbilityDef; 3] = [
         EffectDef::ExileTopOfLibraryToPlay {
             player: EffectRecipientDef::Controller,
             amount: ValueDef::Constant(1),
+            // "You may play that card this turn", which is not the same as
+            // playing it for nothing: Laelia still pays for what she finds.
+            free: false,
+            face_down: false,
         },
     ),
     // One counter for the move rather than one per card, which is what "one

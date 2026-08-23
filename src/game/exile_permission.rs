@@ -52,6 +52,9 @@ pub(super) struct ExilePlayPermission {
     /// sets it: a card exiled this turn is castable on a later one, and
     /// "later" is the whole cost of the two mana.
     pub(super) not_before_turn: Option<(PlayerId, u32)>,
+    /// Whether the card lies face down in exile. Only its owner sees what it
+    /// is; everybody may count how many there are.
+    pub(super) face_down: bool,
 }
 
 impl ExilePlayCost {
@@ -130,6 +133,7 @@ impl Game {
             adventure_return_only: true,
             surcharge: ManaCost::default(),
             not_before_turn: None,
+            face_down: false,
         });
     }
 
@@ -145,6 +149,25 @@ impl Game {
             adventure_return_only: false,
             surcharge: ManaCost::default(),
             not_before_turn: None,
+            face_down: false,
+        });
+    }
+
+    /// "Exile the top card of your library face down. You may look at and
+    /// play that card this turn." Lying face down is the whole difference
+    /// from the permission below: the cost is still owed either way, and
+    /// only its owner knows what the card is.
+    pub(super) fn permit_face_down_play_this_turn(&mut self, card: GameObjectId, player: PlayerId) {
+        let active = self.active_player;
+        self.exile_play_permissions.push(ExilePlayPermission {
+            card,
+            player,
+            cost: ExilePlayCost::Printed,
+            until_end_of_turn: Some((active, self.turns_started[active.index()])),
+            adventure_return_only: false,
+            surcharge: ManaCost::default(),
+            not_before_turn: None,
+            face_down: true,
         });
     }
 
@@ -161,6 +184,7 @@ impl Game {
             adventure_return_only: false,
             surcharge: ManaCost::default(),
             not_before_turn: None,
+            face_down: false,
         });
     }
 
@@ -176,6 +200,7 @@ impl Game {
             adventure_return_only: false,
             surcharge: ManaCost::default(),
             not_before_turn: None,
+            face_down: false,
         });
     }
 
@@ -199,6 +224,7 @@ impl Game {
             adventure_return_only: false,
             surcharge,
             not_before_turn: None,
+            face_down: false,
         });
     }
 
@@ -214,6 +240,7 @@ impl Game {
             adventure_return_only: false,
             surcharge: ManaCost::default(),
             not_before_turn: Some((owner, turn)),
+            face_down: true,
         });
     }
 
@@ -222,7 +249,7 @@ impl Game {
     pub(super) fn exiled_card_is_face_down(&self, card: GameObjectId) -> bool {
         self.exile_play_permissions
             .iter()
-            .any(|permission| permission.card == card && permission.cost == ExilePlayCost::Foretell)
+            .any(|permission| permission.card == card && permission.face_down)
     }
 
     /// One player's exile as another sees it. A card lying face down is
