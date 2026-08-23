@@ -94,6 +94,11 @@ pub struct SpellAdditionalCostDef {
     /// predicate it carries. Both halves spend what they name the same way;
     /// what differs is the zone they name it in.
     pub or: Option<&'static SpellAdditionalCostDef>,
+    /// A way to pay the same printed cost with life instead of objects.
+    /// "Discard a card or pay 3 life" is one cost with two ways to pay it,
+    /// and only one of them names anything: paying the life spends no
+    /// object at all, which is how the payment is told apart afterwards.
+    pub or_life: Option<u8>,
 }
 
 /// A printed "as an additional cost to cast this spell, pay N life".
@@ -145,6 +150,7 @@ impl SpellAdditionalCostDef {
     #[must_use]
     pub const fn new(object: ObjectPredicateDef, zone: ZoneKind, count: u8) -> Self {
         Self {
+            or_life: None,
             object,
             zone,
             count,
@@ -159,6 +165,28 @@ impl SpellAdditionalCostDef {
     pub const fn or(mut self, alternative: &'static SpellAdditionalCostDef) -> Self {
         self.or = Some(alternative);
         self
+    }
+
+    /// "... or pay N life." The same cost, paid with life rather than with
+    /// anything the clause names.
+    #[must_use]
+    pub const fn or_pay_life(mut self, life: u8) -> Self {
+        self.or_life = Some(life);
+        self
+    }
+
+    /// The life every alternative way of paying this cost would take,
+    /// smallest first. Empty when nothing about it may be paid with life.
+    #[must_use]
+    pub fn life_alternatives(self) -> Vec<u8> {
+        let mut life = self
+            .alternatives()
+            .into_iter()
+            .filter_map(|cost| cost.or_life)
+            .collect::<Vec<_>>();
+        life.sort_unstable();
+        life.dedup();
+        life
     }
 
     /// This cost and every alternative way of paying it, in printed order.

@@ -78,6 +78,49 @@ impl Game {
         alternative_life.saturating_add(Self::spell_life_payment(definition, option, x))
     }
 
+    /// The spend modes an object payment that skipped some costs actually
+    /// needs, and the life those skipped costs took instead.
+    ///
+    /// Costs are consumed in printed order, which is the order the payment
+    /// is enumerated in. A cost the payment cannot cover is the one paid
+    /// with life, and it takes the cheapest way its clause offers.
+    fn cost_payment_split(
+        &self,
+        definition: &CardDefinition,
+        option: &PlayOptionDef,
+        costs: &CostConfiguration,
+        card: &super::CardInstance,
+        scale: super::casting_actions::CastScale,
+        paid_objects: usize,
+    ) -> (Vec<SpendModeDef>, u16) {
+        let mut modes = Vec::new();
+        let mut life = 0_u16;
+        let mut remaining = paid_objects;
+        for cost in self.selected_object_additional_costs(definition, option, costs, card, scale.offer)
+        {
+            let count = match cost.counted {
+                crate::card::SpellAdditionalCostCountDef::Printed => usize::from(cost.count),
+                crate::card::SpellAdditionalCostCountDef::ChosenX => usize::from(scale.x),
+                crate::card::SpellAdditionalCostCountDef::ModesBeyondFirst => {
+                    usize::from(cost.count).saturating_mul(scale.modes.saturating_sub(1))
+                }
+            };
+            let cheapest_life = cost.life_alternatives().into_iter().min();
+            match cheapest_life {
+                Some(amount) if remaining < count => {
+                    life = life.saturating_add(u16::from(amount));
+                }
+                _ => {
+                    for _ in 0..count {
+                        modes.push(cost.spend);
+                    }
+                    remaining = remaining.saturating_sub(count);
+                }
+            }
+        }
+        (modes, life)
+    }
+
     /// The life still available to mana abilities after an already chosen
     /// cast payment. `None` means the cast itself asks for more life than the
     /// player has, before mana planning even begins.
@@ -215,20 +258,41 @@ impl Game {
                 },
             )
         };
+        // A cost that could have been paid with life and was handed no
+        // object was paid that way: the empty payment is how the two ways
+        // are told apart, since the object half always names something.
+        let (spend_modes, or_life) = if sacrifices.len() == spend_modes.len() {
+            (spend_modes, 0)
+        } else {
+            self.cost_payment_split(
+                definition,
+                option,
+                signature.costs(),
+                held,
+                super::casting_actions::CastScale {
+                    x: signature.x(),
+                    modes: signature.modes().len(),
+                    offer,
+                },
+                sacrifices.len(),
+            )
+        };
         assert_eq!(
             sacrifices.len(),
             spend_modes.len(),
             "a validated object payment retains one spend mode per object",
         );
         let object_payments = sacrifices.iter().copied().zip(spend_modes).collect();
-        let life = self.configured_cast_life_payment(
-            definition,
-            option,
-            card_id,
-            signature.costs(),
-            signature.x(),
-            offer,
-        );
+        let life = self
+            .configured_cast_life_payment(
+                definition,
+                option,
+                card_id,
+                signature.costs(),
+                signature.x(),
+                offer,
+            )
+            .saturating_add(or_life);
         (object_payments, life)
     }
 }

@@ -164,6 +164,7 @@ static RANCOR_GRANT: AbilityDef = abilities::trample();
 /// ramp spell: the land you give up pays for the one you go and get, so the
 /// board count never moves.
 static SACRIFICE_A_LAND: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    or_life: None,
     object: ObjectPredicateDef::HasType(CardType::Land),
     zone: ZoneKind::Battlefield,
     count: 1,

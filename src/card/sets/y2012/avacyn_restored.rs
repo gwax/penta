@@ -1682,6 +1682,7 @@ pub(in crate::card::sets) static BLOODFLOW_CONNOISSEUR: CardRecord = CardRecord:
 );
 
 static SACRIFICE_A_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    or_life: None,
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Battlefield,
     count: 1,

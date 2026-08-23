@@ -802,6 +802,7 @@ pub(in crate::card::sets) static HAVENGUL_RUNEBINDER: CardRecord = CardRecord::n
 /// "As an additional cost to cast this spell, exile a creature card from your
 /// graveyard."
 static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    or_life: None,
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Graveyard,
     count: 1,

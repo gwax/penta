@@ -51,6 +51,7 @@ pub(in crate::card::sets) static IMPULSE: CardRecord = CardRecord::new_with_lega
 /// rather than a burn spell: it is cast from an empty board on the turn the
 /// lands stop mattering.
 static SACRIFICE_TWO_MOUNTAINS: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    or_life: None,
     object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
     zone: ZoneKind::Battlefield,
     count: 2,
@@ -350,6 +351,7 @@ static A_GREEN_CREATURE: ObjectPredicateDef = ObjectPredicateDef::All(&[
 /// Paid as the spell is cast, so a board with nothing green on it cannot
 /// cast this at all.
 static SACRIFICE_A_GREEN_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    or_life: None,
     object: A_GREEN_CREATURE,
     zone: ZoneKind::Battlefield,
     count: 1,

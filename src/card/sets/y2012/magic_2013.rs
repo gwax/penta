@@ -2904,6 +2904,7 @@ pub(in crate::card::sets) static VOLCANIC_STRENGTH: CardRecord = CardRecord::new
 );
 
 static DISCARD_A_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    or_life: None,
     object: ObjectPredicateDef::Any,
     zone: ZoneKind::Hand,
     count: 1,

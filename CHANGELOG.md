@@ -361,6 +361,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **An additional cost can be paid with life instead.** "Discard a card or
+  pay 3 life" is one cost with two ways to pay it, and only one of them
+  names anything -- so paying the life spends no object, and the empty
+  payment is how the two are told apart afterwards. Offered only when the
+  life is there, down to exactly zero (CR 118.4).
+
 - **A land can be played out of exile.** The land walk now looks there under
   the same permission the cast walk already honoured, in both players' exiles
   -- a card somebody else exiled is still played from where it lies. Nothing

@@ -1376,6 +1376,7 @@ pub(in crate::card::sets) static LOST_IN_THE_MIST: CardRecord = CardRecord::new_
 /// "As an additional cost to cast this spell, exile a creature card from your
 /// graveyard."
 static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    or_life: None,
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Graveyard,
     count: 1,
@@ -1550,6 +1551,7 @@ pub(in crate::card::sets) static SILENT_DEPARTURE: CardRecord = CardRecord::new_
 /// Two so a graveyard holding one creature cannot pay at all and a
 /// graveyard holding several offers every pair.
 static EXILE_TWO_CREATURE_CARDS: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    or_life: None,
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Graveyard,
     count: 2,
@@ -1790,6 +1792,7 @@ pub(in crate::card::sets) static ABATTOIR_GHOUL: CardRecord = CardRecord::new_wi
 );
 
 static SACRIFICE_A_CREATURE: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    or_life: None,
     object: ObjectPredicateDef::HasType(CardType::Creature),
     zone: ZoneKind::Battlefield,
     count: 1,

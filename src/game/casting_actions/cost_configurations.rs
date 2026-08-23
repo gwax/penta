@@ -24,7 +24,7 @@ pub(in crate::game) struct CastScale {
 }
 
 impl Game {
-    fn selected_object_additional_costs(
+    pub(in crate::game) fn selected_object_additional_costs(
         &self,
         definition: &CardDefinition,
         option: &PlayOptionDef,
@@ -107,6 +107,17 @@ impl Game {
                         ways.push(payment);
                     }
                 }
+            }
+            // "... or pay N life" spends no object, so the way it is paid is
+            // the empty one. Offered only when the life is there: paying
+            // down to exactly zero is legal (CR 118.4), below it is not.
+            if cost
+                .life_alternatives()
+                .into_iter()
+                .any(|life| i64::from(life) <= i64::from(self.players[player.index()].life))
+                && !ways.contains(&Vec::new())
+            {
+                ways.push(Vec::new());
             }
             // Separate additional costs all have to be paid. Form their
             // Cartesian product without allowing one object to pay twice.

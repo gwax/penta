@@ -1,11 +1,12 @@
 //! Lost Caverns of Ixalan cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingRecord};
+use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet, CardType,
     ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef, InstalledTriggerDef,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerEventDef, ZoneKind, abilities, tokens,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, SpellAdditionalCostDef, TriggerEventDef, ZoneKind,
+    abilities, tokens,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -126,6 +127,43 @@ pub(in crate::card::sets) static GET_LOST: CardRecord = CardRecord::new_with_leg
     )),
 );
 
+/// One cost with two ways to pay it. The life is the way a deck with an
+/// empty hand still casts this, which is what keeps it playable late.
+static DISCARD_A_CARD_OR_PAY_THREE_LIFE: SpellAdditionalCostDef =
+    SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Hand, 1).or_pay_life(3);
+
+static A_CREATURE_OR_PLANESWALKER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::HasType(CardType::Planeswalker),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
+// LCI 91 — Bitter Triumph
+pub(in crate::card::sets) static BITTER_TRIUMPH: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("05bdd22c-3e11-4c29-bdfa-d3dfc0e90a9f"),
+    "Bitter Triumph",
+    CardArt::new("05bdd22c-3e11-4c29-bdfa-d3dfc0e90a9f", "Donato Giancola"),
+    CardSet::LostCavernsOfIxalan,
+    // Two mana for unconditional removal at instant speed, and the card or
+    // the three life is the whole restriction: it answers anything, and it
+    // never answers it for free.
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_ability(
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, discard a card or pay 3 life.\nDestroy \
+             target creature or planeswalker.",
+            &A_CREATURE_OR_PLANESWALKER,
+            DISCARD_A_CARD_OR_PAY_THREE_LIFE,
+            EffectDef::destroy_target(TargetIndex::PRIMARY, true),
+        ),
+    ),
+);
+
 // LCI 102 — Deep-Cavern Bat
 pub(in crate::card::sets) static DEEP_CAVERN_BAT: CardRecord = CardRecord::new_with_legacy_id(
     2161,
@@ -136,6 +174,7 @@ pub(in crate::card::sets) static DEEP_CAVERN_BAT: CardRecord = CardRecord::new_w
         .with_abilities(&DEEP_CAVERN_BAT_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&GET_LOST, &DEEP_CAVERN_BAT];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&GET_LOST, &BITTER_TRIUMPH, &DEEP_CAVERN_BAT];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
