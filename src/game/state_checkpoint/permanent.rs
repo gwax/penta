@@ -98,6 +98,12 @@ pub(super) fn permanent_snapshot(
         attacked_this_turn: permanent.attacked_this_turn,
         exerted: permanent.exerted,
         saddled: permanent.saddled,
+        exhausted: permanent
+            .exhausted
+            .iter()
+            .copied()
+            .map(super::ability_origin_snapshot)
+            .collect(),
         last_attacked_turn: permanent
             .last_attacked_turn
             .map(|(player, turns)| (player.index(), turns)),

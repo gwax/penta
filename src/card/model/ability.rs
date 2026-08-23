@@ -742,6 +742,26 @@ impl AbilityDef {
         self.activations_each_turn(1)
     }
 
+    /// Exhaust (CR 702.184a): this ability may be activated once from this
+    /// object and never again, however many turns it survives.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the clause is not an activated ability.
+    #[must_use]
+    pub const fn exhausting(mut self) -> Self {
+        self.definition = match self.definition {
+            DeclarativeAbilityDef::Activated(definition) => {
+                DeclarativeAbilityDef::Activated(definition.exhausting())
+            }
+            DeclarativeAbilityDef::ActivatedMana(definition) => {
+                DeclarativeAbilityDef::ActivatedMana(definition.exhausting())
+            }
+            _ => panic!("only an activated ability can be exhausted"),
+        };
+        self
+    }
+
     /// The general form: "no more than twice each turn" and its relatives.
     ///
     /// # Panics

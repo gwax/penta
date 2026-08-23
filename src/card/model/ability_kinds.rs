@@ -514,6 +514,11 @@ pub struct ActivatedAbilityDef {
     /// each turn" clause allows this ability to be activated per turn from
     /// one object. `None` is the ordinary unlimited case.
     pub activation_limit: Option<u8>,
+    /// Exhaust (CR 702.184a): "Activate each exhaust ability only once."
+    /// A cap on the permanent's whole lifetime rather than on its turn,
+    /// which is why it is counted apart from the limit above -- that one
+    /// clears when the turn does, and this one never clears.
+    pub exhaust: bool,
     /// Whether anyone may activate it, not just the permanent's controller.
     /// The permanent stays the ability's source whoever pays, so the damage
     /// it deals is still the permanent's damage.
@@ -546,6 +551,7 @@ impl ActivatedAbilityDef {
             procedure: AbilityProcedureDef::Shared,
             timing: ActivationTimingDef::Any,
             activation_limit: None,
+            exhaust: false,
             any_player_may_activate: false,
             condition: None,
             modes: None,
@@ -596,6 +602,13 @@ impl ActivatedAbilityDef {
     #[must_use]
     pub const fn with_timing(mut self, timing: ActivationTimingDef) -> Self {
         self.timing = timing;
+        self
+    }
+
+    /// Exhaust: once per object, for as long as that object is there.
+    #[must_use]
+    pub const fn exhausting(mut self) -> Self {
+        self.exhaust = true;
         self
     }
 

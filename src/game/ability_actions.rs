@@ -92,6 +92,19 @@ impl Game {
                 Some((_, count)) => *count = count.saturating_add(1),
                 None => permanent.activations_this_turn.push((frozen.origin, 1)),
             }
+            // Exhaust is spent rather than counted: what matters afterwards
+            // is only that it happened.
+            let exhausts = frozen.definition.as_ref().is_some_and(|definition| {
+                matches!(
+                    definition.definition,
+                    DeclarativeAbilityDef::Activated(activated)
+                        | DeclarativeAbilityDef::ActivatedMana(activated)
+                        if activated.exhaust
+                )
+            });
+            if exhausts && !permanent.exhausted.contains(&frozen.origin) {
+                permanent.exhausted.push(frozen.origin);
+            }
         }
         let event_chosen_permanents = chosen_permanents.clone();
         let card = self.unbacked_ability_object(frozen.presentation, source_owner);
@@ -231,6 +244,9 @@ impl Game {
                             *origin == effective.origin && *count >= limit
                         })
                     })
+                    // Exhaust, which the permanent remembers for as long as
+                    // it is there rather than for the turn.
+                    || (definition.exhaust && permanent.exhausted.contains(&effective.origin))
                     // "Activate only if ...". A false condition means there is
                     // no legal activation at all, rather than one that
                     // resolves and does nothing.

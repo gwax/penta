@@ -755,6 +755,12 @@ fn parse_permanent(
     permanent.attacked_this_turn = state.attacked_this_turn;
     permanent.exerted = state.exerted;
     permanent.saddled = state.saddled;
+    permanent.exhausted = state
+        .exhausted
+        .iter()
+        .copied()
+        .map(super::ability_origin_from_snapshot)
+        .collect();
     permanent.last_attacked_turn = state
         .last_attacked_turn
         .map(|(player, turns)| player_from_index(player).map(|player| (player, turns)))

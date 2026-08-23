@@ -116,6 +116,10 @@ struct Permanent {
     /// activated this turn, for the cards that count their own activations.
     /// Cleared when the next turn begins, after any inserted phases.
     activations_this_turn: Vec<(AbilityOrigin, u8)>,
+    /// The exhaust abilities this permanent has already spent. Unlike the
+    /// counts above this list never clears: an exhausted ability is
+    /// exhausted for as long as the permanent is there.
+    pub(super) exhausted: Vec<AbilityOrigin>,
     /// How many times each of this permanent's triggered abilities has
     /// triggered this turn, for the ones that print "this ability triggers
     /// only once each turn". Cleared alongside the activations above.
@@ -287,6 +291,7 @@ impl Permanent {
             temporary_keywords: Vec::new(),
             resolved_continuous_effects: Vec::new(),
             activations_this_turn: Vec::new(),
+            exhausted: Vec::new(),
             triggers_this_turn: Vec::new(),
             resolutions_this_turn: Vec::new(),
             counters: [0; CounterKind::COUNT],

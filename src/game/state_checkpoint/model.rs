@@ -398,6 +398,11 @@ pub(super) struct PermanentSnapshot {
     /// existed restores with nothing saddled.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) saddled: bool,
+    /// The exhaust abilities this permanent has already spent. Additive:
+    /// a checkpoint written before exhaust existed restores with none
+    /// spent, which is what every board without one has.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) exhausted: Vec<AbilityOriginSnapshot>,
     pub(super) attacks_this_turn: u8,
     /// The seat that controlled this permanent the last time it attacked, and
     /// their turn count then. Absent means it has never attacked, which is
