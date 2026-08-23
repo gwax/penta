@@ -1698,6 +1698,7 @@ pub(in crate::card::sets) static DISCIPLE_OF_BOLAS: CardRecord = CardRecord::new
         "When this creature enters, sacrifice another creature. You gain X life and draw X where X is that creature's power.",
         TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)),
         EffectDef::SacrificeOfChoice {
+            count: ValueDef::Constant(1),
             player: EffectRecipientDef::Controller,
             object: ObjectPredicateDef::All(&[
                 ObjectPredicateDef::HasType(CardType::Creature),

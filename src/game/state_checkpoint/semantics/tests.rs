@@ -46,6 +46,7 @@ static EXILE_OTHERWISE: EffectDef = EffectDef::ExileTopAndMayCast {
     otherwise: Some(&CREATE_TOKEN),
 };
 static SACRIFICE_THEN_AND_OTHERWISE: EffectDef = EffectDef::SacrificeOfChoice {
+    count: ValueDef::Constant(1),
     player: EffectRecipientDef::Controller,
     object: ObjectPredicateDef::Any,
     then: Some(&EffectDef::None),

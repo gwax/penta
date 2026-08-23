@@ -1833,6 +1833,7 @@ pub(in crate::card::sets) static DEMONIC_TASKMASTER: CardRecord = CardRecord::ne
                 player: PlayerRelation::You,
             },
             EffectDef::SacrificeOfChoice {
+                count: ValueDef::Constant(1),
                 player: EffectRecipientDef::Controller,
                 object: ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),

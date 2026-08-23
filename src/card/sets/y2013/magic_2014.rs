@@ -181,6 +181,7 @@ pub(in crate::card::sets) static CELESTIAL_FLARE: CardRecord = CardRecord::new_w
             AbilityTargetPredicate::Player(PlayerRelation::Any),
         )],
         EffectDef::SacrificeOfChoice {
+            count: ValueDef::Constant(1),
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             object: ObjectPredicateDef::All(&[
                 ObjectPredicateDef::HasType(CardType::Creature),
@@ -1489,6 +1490,7 @@ pub(in crate::card::sets) static SHADOWBORN_DEMON: CardRecord = CardRecord::new_
             },
             &SHADOWBORN_DEMON_UPKEEP_CONDITION,
             EffectDef::SacrificeOfChoice {
+                count: ValueDef::Constant(1),
                 player: EffectRecipientDef::Controller,
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 then: None,

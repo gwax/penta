@@ -19,6 +19,7 @@ fn continuation_effects(child: &'static EffectDef) -> [EffectDef; 4] {
             then: Some(child),
         },
         EffectDef::SacrificeOfChoice {
+            count: ValueDef::Constant(1),
             player: EffectRecipientDef::Controller,
             object: ObjectPredicateDef::Any,
             then: None,

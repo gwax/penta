@@ -1473,6 +1473,7 @@ pub(in crate::card::sets) static DIAMOND_VALLEY: CardRecord = CardRecord::new_wi
         "{T}, Sacrifice a creature: You gain life equal to the sacrificed creature's toughness.",
         &[AbilityCostDef::TapSource],
         EffectDef::SacrificeOfChoice {
+            count: ValueDef::Constant(1),
             player: EffectRecipientDef::Controller,
             object: ObjectPredicateDef::HasType(CardType::Creature),
             then: Some(&DIAMOND_VALLEY_PAYOFF),

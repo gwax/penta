@@ -1248,6 +1248,7 @@ pub(in crate::card::sets) static DEVOUR_FLESH: CardRecord = CardRecord::new_with
             PlayerRelation::Any,
         ))],
         EffectDef::SacrificeOfChoice {
+            count: ValueDef::Constant(1),
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             object: ObjectPredicateDef::HasType(CardType::Creature),
             then: Some(&DEVOUR_FLESH_PAYOFF),

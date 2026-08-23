@@ -1440,6 +1440,7 @@ pub(in crate::card::sets) static DESECRATION_DEMON: CardRecord = CardRecord::new
                 player: PlayerRelation::Any,
             },
             EffectDef::SacrificeOfChoice {
+                count: ValueDef::Constant(1),
                 player: EffectRecipientDef::Opponent,
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 then: Some(&DESECRATION_DEMON_TRIBUTE),
@@ -1704,6 +1705,7 @@ pub(in crate::card::sets) static SLUM_REAPER: CardRecord = CardRecord::new_with_
                 Some(ZoneKind::Battlefield),
             ),
             EffectDef::SacrificeOfChoice {
+                count: ValueDef::Constant(1),
                 player: EffectRecipientDef::EachPlayer,
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 then: None,
@@ -3827,6 +3829,7 @@ pub(in crate::card::sets) static KOROZDA_GUILDMAGE: CardRecord = CardRecord::new
             "{2}{B}{G}, Sacrifice a nontoken creature: Create X 1/1 green Saproling creature tokens, where X is the sacrificed creature's toughness.",
             &[AbilityCostDef::Mana(mana_cost!("{2}{B}{G}"))],
             EffectDef::SacrificeOfChoice {
+                count: ValueDef::Constant(1),
                 player: EffectRecipientDef::Controller,
                 // Nontoken, so the Saprolings it makes cannot be fed back in.
                 // Nontoken, so the Saprolings it makes cannot be fed back in.

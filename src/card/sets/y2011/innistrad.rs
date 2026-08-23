@@ -1690,6 +1690,7 @@ pub(in crate::card::sets) static STITCHERS_APPRENTICE: CardRecord = CardRecord::
                         "Johann Bodin",
                     )),
                 EffectDef::SacrificeOfChoice {
+                    count: ValueDef::Constant(1),
                     player: EffectRecipientDef::Controller,
                     object: ObjectPredicateDef::HasType(CardType::Creature),
                     then: None,
@@ -1973,6 +1974,7 @@ pub(in crate::card::sets) static DISCIPLE_OF_GRISELBRAND: CardRecord = CardRecor
             "{1}, Sacrifice a creature: You gain life equal to the sacrificed creature's toughness.",
             &[AbilityCostDef::Mana(mana_cost!("{1}"))],
             EffectDef::SacrificeOfChoice {
+                count: ValueDef::Constant(1),
                 player: EffectRecipientDef::Controller,
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 then: Some(&DISCIPLE_OF_GRISELBRAND_PAYOFF),
@@ -2242,6 +2244,7 @@ pub(in crate::card::sets) static LILIANA_OF_THE_VEIL: CardRecord = CardRecord::n
                     AbilityTargetPredicate::Player(PlayerRelation::Any),
                 )],
                 EffectDef::SacrificeOfChoice {
+                    count: ValueDef::Constant(1),
                     player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     object: ObjectPredicateDef::HasType(CardType::Creature),
                     then: None,
@@ -2556,6 +2559,7 @@ pub(in crate::card::sets) static TRIBUTE_TO_HUNGER: CardRecord = CardRecord::new
             PlayerRelation::Opponent,
         ))],
         EffectDef::SacrificeOfChoice {
+            count: ValueDef::Constant(1),
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             object: ObjectPredicateDef::HasType(CardType::Creature),
             then: Some(&TRIBUTE_TO_HUNGER_PAYOFF),
@@ -4054,6 +4058,7 @@ static GARRUK_BACK_ABILITIES: [AbilityDef; 3] = [
         "−1: Sacrifice a creature. If you do, search your library for a creature card, reveal it, put it into your hand, then shuffle.",
         &[AbilityCostDef::Loyalty(-1)],
         EffectDef::SacrificeOfChoice {
+            count: ValueDef::Constant(1),
             player: EffectRecipientDef::Controller,
             object: ObjectPredicateDef::HasType(CardType::Creature),
             then: Some(&GARRUK_TUTOR),

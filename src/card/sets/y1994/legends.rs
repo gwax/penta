@@ -967,6 +967,7 @@ pub(in crate::card::sets) static ELDER_SPAWN: CardRecord = CardRecord::new_with_
                 player: PlayerRelation::You,
             },
             EffectDef::SacrificeOfChoice {
+                count: ValueDef::Constant(1),
                 player: EffectRecipientDef::Controller,
                 object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
                 then: None,
@@ -5185,6 +5186,7 @@ pub(in crate::card::sets) static LIFE_CHISEL: CardRecord = CardRecord::new_with_
              Activate only during your upkeep.",
             &[],
             EffectDef::SacrificeOfChoice {
+                count: ValueDef::Constant(1),
                 player: EffectRecipientDef::Controller,
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 then: Some(&LIFE_CHISEL_PAYOFF),

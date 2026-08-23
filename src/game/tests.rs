@@ -380,6 +380,7 @@ mod vintage_cube_phantasmal_image;
 mod vintage_cube_phlage;
 mod vintage_cube_ponder;
 mod vintage_cube_portable_hole;
+mod vintage_cube_portal_to_phyrexia;
 mod vintage_cube_prismatic_ending;
 mod vintage_cube_psychic_frog;
 mod vintage_cube_relic;

@@ -2151,6 +2151,7 @@ pub(in crate::card::sets) static FEED_THE_PACK: CardRecord = CardRecord::new_wit
             player: PlayerRelation::You,
         },
         EffectDef::SacrificeOfChoice {
+            count: ValueDef::Constant(1),
             player: EffectRecipientDef::Controller,
             // Nontoken, so the Wolves it makes cannot feed it back.
             // Nontoken, so the Wolves it makes cannot feed it back.

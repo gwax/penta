@@ -144,6 +144,7 @@ fn validate_effect_target_shapes(
         }
         EffectDef::BecomeMonarch { player } => validate_player_reference_shape(player, targets),
         EffectDef::SacrificeOfChoice {
+            count,
             player,
             object,
             then,
@@ -152,6 +153,7 @@ fn validate_effect_target_shapes(
         } => {
             validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
             validate_object_predicate_shape(object, targets)?;
+            validate_value_shape(count, targets)?;
             for effect in then.into_iter().chain(otherwise) {
                 validate_effect_target_shapes(*effect, targets, triggering_object_zone)?;
             }

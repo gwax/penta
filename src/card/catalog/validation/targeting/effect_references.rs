@@ -237,12 +237,14 @@ fn validate_effect_references(
             validate_value_target_references(count, target_count, scope)
         }
         EffectDef::SacrificeOfChoice {
+            count,
             player,
             then,
             otherwise,
             ..
         } => {
             validate_recipient_target_references(player, target_count, scope)?;
+            validate_value_target_references(count, target_count, scope)?;
             for effect in then.into_iter().chain(otherwise) {
                 validate_effect_references(*effect, target_count, scope)?;
             }

@@ -159,6 +159,7 @@ pub(in crate::card::sets) static RENOUNCE_THE_GUILDS: CardRecord = CardRecord::n
     CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell(
         "Each player sacrifices a multicolored permanent of their choice.",
         EffectDef::SacrificeOfChoice {
+            count: ValueDef::Constant(1),
             player: EffectRecipientDef::EachPlayer,
             object: MULTICOLORED,
             then: None,
@@ -2206,6 +2207,7 @@ fn far_away_composition() -> CardComposition {
             "Target player sacrifices a creature of their choice.",
             &ANY_PLAYER_TARGET,
             EffectDef::SacrificeOfChoice {
+                count: ValueDef::Constant(1),
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 object: ObjectPredicateDef::HasType(CardType::Creature),
                 then: None,

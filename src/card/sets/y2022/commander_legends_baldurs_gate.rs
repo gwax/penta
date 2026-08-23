@@ -56,6 +56,7 @@ pub(in crate::card::sets) static GUT_TRUE_SOUL_ZEALOT: CardRecord = CardRecord::
                 "Whenever you attack, you may sacrifice another creature or an artifact. If you do, create a 4/1 black Skeleton creature token with menace that's tapped and attacking.",
                 WHENEVER_YOU_ATTACK,
                 EffectDef::SacrificeOfChoice {
+                    count: ValueDef::Constant(1),
                     player: EffectRecipientDef::Controller,
                     object: ANOTHER_CREATURE_OR_AN_ARTIFACT,
                     then: Some(&GUT_MAKES_A_SKELETON),

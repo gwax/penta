@@ -682,10 +682,14 @@ impl Game {
         );
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn queue_chosen_sacrifice(
         &mut self,
         player: PlayerId,
         predicate: ObjectPredicateDef,
+        // How many are given up. A player with fewer than this gives up
+        // everything they have.
+        count: usize,
         source: GameObjectId,
         followup: Option<SacrificeFollowup>,
         declined: Option<SacrificeDeclined>,
@@ -706,20 +710,22 @@ impl Game {
             .map(|permanent| permanent.card.id)
             .collect::<Vec<_>>();
         // An optional sacrifice is always a question, even with one candidate
-        // or none: declining is a real answer. A compulsory one with a single
-        // candidate has only one answer, so it happens without asking.
-        if !optional && candidates.len() <= 1 {
+        // or none: declining is a real answer. A compulsory one with no more
+        // candidates than it asks for has only one answer, so it happens
+        // without asking -- which is also how a player holding two creatures
+        // "sacrifices three".
+        if !optional && candidates.len() <= count {
             let sacrificed = candidates.first().copied();
             if let Some(followup) = followup {
                 self.move_permanents_to_graveyard_then(
-                    sacrificed.as_slice(),
+                    &candidates,
                     Some(BattlefieldExitCompletion::SacrificeFollowup {
                         followup,
                         sacrificed,
                     }),
                 );
-            } else if let Some(sacrificed) = sacrificed {
-                self.move_permanents_to_graveyard(&[sacrificed]);
+            } else if !candidates.is_empty() {
+                self.move_permanents_to_graveyard(&candidates);
             }
             return;
         }
@@ -734,12 +740,14 @@ impl Game {
             player,
             if optional {
                 "You may sacrifice a permanent"
-            } else {
+            } else if count == 1 {
                 "Choose a permanent to sacrifice"
+            } else {
+                "Choose permanents to sacrifice"
             },
             DecisionVisibility::Public,
             DecisionPreference::LowerCardValue,
-            usize::from(!optional)..=1,
+            if optional { 0 } else { count }..=count,
             false,
             options,
             DecisionContinuation::SacrificeOfChoice {

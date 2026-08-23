@@ -772,6 +772,7 @@ pub(in crate::card::sets) static CURSE_ARTIFACT: CardRecord = CardRecord::new_wi
                 "At the beginning of the upkeep of enchanted artifact's controller, this Aura \
                  deals 2 damage to that player unless they sacrifice that artifact.",
                 EffectDef::SacrificeOfChoice {
+                    count: ValueDef::Constant(1),
                     player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
                         ObjectRefDef::AttachedToSource,
                     )),
@@ -2376,6 +2377,7 @@ pub(in crate::card::sets) static SAFE_HAVEN: CardRecord = CardRecord::new_with_l
                 player: PlayerRelation::You,
             },
             EffectDef::SacrificeOfChoice {
+                count: ValueDef::Constant(1),
                 player: EffectRecipientDef::Controller,
                 object: ObjectPredicateDef::Source,
                 then: Some(&EffectDef::ReturnLinkedExiles {

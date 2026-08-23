@@ -671,6 +671,7 @@ fn granted_ability_validation_follows_sacrifice_continuations() {
         "Sacrifice a permanent, then grant an ability.",
         &[],
         EffectDef::SacrificeOfChoice {
+            count: ValueDef::Constant(1),
             player: EffectRecipientDef::Controller,
             object: ObjectPredicateDef::Any,
             then: Some(&THEN),

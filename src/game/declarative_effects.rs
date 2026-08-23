@@ -272,6 +272,7 @@ impl Game {
                 self.move_permanents_to_graveyard(&permanents);
             }
             EffectDef::SacrificeOfChoice {
+                count,
                 amount: sacrificed_amount,
                 player: recipient,
                 object: predicate,
@@ -300,8 +301,11 @@ impl Game {
                         context: context.clone(),
                         effect: scoped.with_effect(*effect),
                     });
+                    let count =
+                        usize::try_from(self.effect_value(count, object, &context, scoped).max(0))
+                            .unwrap_or(0);
                     self.queue_chosen_sacrifice(
-                        player, predicate, source, followup, declined, optional,
+                        player, predicate, count, source, followup, declined, optional,
                     );
                 }
             }

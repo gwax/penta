@@ -845,6 +845,12 @@ pub enum EffectDef {
     SacrificeOfChoice {
         player: EffectRecipientDef,
         object: ObjectPredicateDef,
+        /// How many the player gives up. A player with fewer than this many
+        /// gives up every one they have, which is what "sacrifices three
+        /// creatures" means to somebody holding two. The follow-up below
+        /// reads one sacrificed permanent, so a clause that counts on it
+        /// takes exactly one.
+        count: ValueDef,
         /// Run after the sacrifice, with the characteristic named by
         /// `amount` as [`ValueDef::TriggerEventAmount`]. A sacrifice of
         /// choice waits on a decision, so anything reading what was
