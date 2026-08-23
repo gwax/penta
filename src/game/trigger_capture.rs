@@ -948,6 +948,7 @@ mod emblem_trigger_limit_tests {
             CardPartId::PRIMARY,
             owner,
             game.turns_started[owner.index()],
+            game.turn,
         ));
 
         assert_eq!(game.triggers_this_turn(source), 0);

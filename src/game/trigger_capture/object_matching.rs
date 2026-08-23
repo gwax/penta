@@ -443,6 +443,11 @@ impl Game {
             ObjectPredicateDef::CameUnderControlThisTurn => {
                 self.came_under_control_this_turn(object.id)
             }
+            ObjectPredicateDef::EnteredThisTurn => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == object.id)
+                .is_some_and(|permanent| permanent.entered_turn == self.turn),
             ObjectPredicateDef::AttachedToSource => self
                 .current_or_last_known_attached_host(source)
                 .is_some_and(|host| host == object.id),

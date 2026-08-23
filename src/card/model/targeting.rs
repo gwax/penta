@@ -140,6 +140,12 @@ pub enum ObjectPredicateDef {
     /// taking now. This is the same fact summoning sickness reads, asked as a
     /// characteristic: "unless it came under your control this turn".
     CameUnderControlThisTurn,
+    /// Entered the battlefield during the turn being taken now. Not the same
+    /// question as [`Self::CameUnderControlThisTurn`], which is measured
+    /// against its controller's own turn count and so stays true through the
+    /// opponent's following turn: a permanent that entered on your turn did
+    /// not enter on theirs.
+    EnteredThisTurn,
     /// The permanent the ability's source is attached to, for an Aura whose
     /// trigger watches its own host rather than itself.
     AttachedToSource,

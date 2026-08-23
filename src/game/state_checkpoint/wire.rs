@@ -637,6 +637,7 @@ fn parse_permanent(
         CardPartId(state.presented_part_id),
         shown.controller,
         state.entered_controller_turn,
+        state.entered_turn,
     );
     permanent.token_characteristics = token_characteristics;
     permanent.double_faced_token_copy = double_faced_token_copy;

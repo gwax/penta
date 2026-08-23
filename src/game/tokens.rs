@@ -63,6 +63,7 @@ impl Game {
             token,
             controller,
             self.turns_started[controller.index()],
+            self.turn,
         );
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
@@ -89,6 +90,7 @@ impl Game {
             token,
             controller,
             self.turns_started[controller.index()],
+            self.turn,
         );
         permanent.created_by = creator;
         // Set before entry replacements run, the same point an as-enters
@@ -152,6 +154,7 @@ impl Game {
             physical_part,
             controller,
             self.turns_started[controller.index()],
+            self.turn,
         );
         permanent.copied_from = Some(copy.base);
         if let Some(double_faced) = double_faced {

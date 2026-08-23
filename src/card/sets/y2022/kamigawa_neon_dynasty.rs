@@ -3,10 +3,11 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
-    AbilityTargetPredicate, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CostModificationDef, CounterKind, EffectDef, EffectRecipientDef, InstalledTriggerDef,
-    ObjectPredicateDef, PlayerRelation, TokenCharacteristics, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, CostModificationDef, CounterKind, EffectDef, EffectRecipientDef,
+    InstalledTriggerDef, ManaColor, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
+    TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -217,6 +218,119 @@ pub(in crate::card::sets) static TOUCH_THE_SPIRIT_REALM: CardRecord = CardRecord
     ]),
 );
 
+/// "As long as The Wandering Emperor entered this turn": the permission is
+/// hers for the turn she lands and no longer, which is what makes flashing
+/// her in at the end of a turn a plan rather than a waste.
+static EMPEROR_ENTERED_THIS_TURN: TriggerConditionDef = TriggerConditionDef::SourceMatches {
+    object: ObjectPredicateDef::EnteredThisTurn,
+};
+
+static EMPEROR_INSTANT_SPEED_LOYALTY: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::Rule(AppliedRuleDef::MayActivateLoyaltyAnyTime),
+};
+
+/// "Up to one target creature", which is what keeps the plus activatable on
+/// an empty board.
+static UP_TO_ONE_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    1,
+)];
+
+/// A tapped creature: the minus answers an attacker that has already
+/// committed, which is the half of removal flash was made for.
+static A_TAPPED_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::Tapped,
+    ]),
+)];
+
+static EMPEROR_COUNTER_AND_FIRST_STRIKE: [EffectDef; 2] = [
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::add_ability(&FIRST_STRIKE),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+];
+
+static FIRST_STRIKE: AbilityDef = abilities::first_strike();
+
+static EMPEROR_EXILE_AND_GAIN: [EffectDef; 2] = [
+    EffectDef::MoveToZone {
+        counters: None,
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        zone: ZoneKind::Exile,
+        placement: ZonePlacement::Top,
+        controller: None,
+        arrival_effect: None,
+        attachment: None,
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+];
+
+static WANDERING_EMPEROR_ABILITIES: [AbilityDef; 5] = [
+    abilities::flash(),
+    AbilityDef::static_ability(
+        "As long as The Wandering Emperor entered this turn, you may activate her loyalty \
+         abilities any time you could cast an instant.",
+        EffectDef::IfCondition {
+            condition: &EMPEROR_ENTERED_THIS_TURN,
+            then: &EMPEROR_INSTANT_SPEED_LOYALTY,
+        },
+    ),
+    AbilityDef::activated_with_targets(
+        "+1: Put a +1/+1 counter on up to one target creature. It gains first strike until end of \
+         turn.",
+        &[AbilityCostDef::Loyalty(1)],
+        &UP_TO_ONE_CREATURE,
+        EffectDef::Sequence(&EMPEROR_COUNTER_AND_FIRST_STRIKE),
+    ),
+    AbilityDef::activated(
+        "−1: Create a 2/2 white Samurai creature token with vigilance.",
+        &[AbilityCostDef::Loyalty(-1)],
+        EffectDef::create_creature_token(&["Samurai"], &[ManaColor::White], 2, 2)
+            .with_abilities(&[abilities::vigilance()])
+            .with_art(CardArt::new(
+                "f68e5337-6e44-4f8f-a102-2f97b433beea",
+                "Gaboleps",
+            )),
+    ),
+    AbilityDef::activated_with_targets(
+        "−2: Exile target tapped creature. You gain 2 life.",
+        &[AbilityCostDef::Loyalty(-2)],
+        &A_TAPPED_CREATURE,
+        EffectDef::Sequence(&EMPEROR_EXILE_AND_GAIN),
+    ),
+];
+
+// NEO 42 — The Wandering Emperor
+pub(in crate::card::sets) static THE_WANDERING_EMPEROR: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("fab2d8a9-ab4c-4225-a570-22636293c17d"),
+    "The Wandering Emperor",
+    CardArt::new("fab2d8a9-ab4c-4225-a570-22636293c17d", "Tommy Arnold"),
+    CardSet::KamigawaNeonDynasty,
+    // A planeswalker you cast on their turn: she answers an attacker, makes
+    // a blocker, or wins a fight, and she does it before they can respond by
+    // killing her.
+    CardRules::new_planeswalker(mana_cost!("{2}{W}{W}"), &["The Wandering Emperor"], 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&WANDERING_EMPEROR_ABILITIES),
+);
+
 // NEO 63 — Mirrorshell Crab
 // Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static MIRRORSHELL_CRAB: CardRecord = CardRecord::new(
@@ -419,6 +533,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &IMPERIAL_OATH,
     &LION_SASH,
     &TOUCH_THE_SPIRIT_REALM,
+    &THE_WANDERING_EMPEROR,
     &MIRRORSHELL_CRAB,
     &MOON_CIRCUIT_HACKER,
     &CLAWING_TORMENT,

@@ -20,6 +20,7 @@ fn synthetic_double_faced_token(
         CardPartId::PRIMARY,
         PlayerId::One,
         0,
+        0,
     );
     permanent.double_faced_token_copy = Some(DoubleFacedCopiableCharacteristics {
         kind,

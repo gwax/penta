@@ -65,6 +65,7 @@ pub(super) fn permanent_snapshot(
         presented_part_id: permanent.presented.0,
         timestamp: permanent.timestamp.0,
         entered_controller_turn: permanent.entered_controller_turn,
+        entered_turn: permanent.entered_turn,
         detained_until_turn_of: permanent
             .detained_until_turn_of
             .map(|(player, turns)| (player.index(), turns)),

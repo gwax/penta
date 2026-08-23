@@ -15,6 +15,7 @@ fn deterministic_land_entry_replacements_use_object_queries() {
                 CardPartId::PRIMARY,
                 controller,
                 0,
+                0,
             ));
         }
         let retreat = card(10_000, cards::CLIFFTOP_RETREAT, PlayerId::One);

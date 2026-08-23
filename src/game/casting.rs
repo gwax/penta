@@ -91,8 +91,13 @@ impl Game {
             .lands_played_this_turn
             .saturating_add(1);
         self.consecutive_passes = 0;
-        let permanent =
-            Permanent::entering(card, presented, player, self.turns_started[player.index()]);
+        let permanent = Permanent::entering(
+            card,
+            presented,
+            player,
+            self.turns_started[player.index()],
+            self.turn,
+        );
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from,

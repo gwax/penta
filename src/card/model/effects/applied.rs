@@ -251,6 +251,12 @@ pub enum AppliedRuleDef {
     /// win the game instead." A player rule rather than a permanent's,
     /// because the draw it replaces belongs to the player.
     WinsInsteadOfDrawingFromEmptyLibrary,
+    /// "You may activate her loyalty abilities any time you could cast an
+    /// instant." A permission on the affected planeswalker rather than a
+    /// timing printed on each ability: what it lifts is the sorcery-speed
+    /// window CR 606.3 imposes on every loyalty ability, and the one-per-turn
+    /// limit beside it is untouched.
+    MayActivateLoyaltyAnyTime,
     /// The affected permanent's activated abilities can't be activated. Only
     /// the activations: its triggered and static clauses, and any mana it
     /// makes as a cost of something else, are untouched.

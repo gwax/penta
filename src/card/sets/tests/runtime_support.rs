@@ -75,6 +75,7 @@ pub(super) fn shared_object_predicate(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
+        | ObjectPredicateDef::EnteredThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn => true,
     }
 }

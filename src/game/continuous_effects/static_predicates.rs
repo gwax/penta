@@ -173,6 +173,7 @@ impl Game {
             | ObjectPredicateDef::AttachedTo(_)
             | ObjectPredicateDef::AttackedThisTurn
             | ObjectPredicateDef::CameUnderControlThisTurn
+            | ObjectPredicateDef::EnteredThisTurn
             | ObjectPredicateDef::AttackedDuringControllersLastTurn
             // Both read something the layers own -- a chosen scalar, or the
             // targets a stack object already has -- so they take the complete

@@ -573,6 +573,7 @@ fn an_emblem_rebuilds_with_identity_and_source_provenance() {
         CardPartId::PRIMARY,
         controller,
         game.turns_started[controller.index()],
+        game.turn,
     );
     emblem.timestamp = game.allocate_continuous_effect_timestamp();
     emblem.emblem_source = Some(AbilityOrigin::Printed {

@@ -325,102 +325,107 @@ fn static_object_applied_effect_supported(
                     .copied()
                     .all(|effect| static_object_applied_effect_supported(recipient, effect))
         }
+        AppliedEffectDef::Characteristic(operation) => {
+            static_object_characteristic_supported(recipient, operation)
+        }
+        AppliedEffectDef::Rule(rule) => static_object_rule_supported(recipient, rule),
+    }
+}
+
+/// Which characteristic operations a static walk can supply. Split from the
+/// rules beside them for the source-size budget; the two halves answer
+/// different questions and share only their recipient.
+fn static_object_characteristic_supported(
+    recipient: EffectRecipientDef,
+    operation: CharacteristicOperationDef,
+) -> bool {
+    match operation {
         // A switch reads nothing, so there is no value to gate on and no way
         // for it to re-enter the characteristics walk. "This land is the
         // chosen type" reads only the choice its own source made, which is
         // the same story.
-        AppliedEffectDef::Characteristic(
-            CharacteristicOperationDef::PowerToughness(PowerToughnessOperationDef::Switch)
-            | CharacteristicOperationDef::Abilities(_)
-            | CharacteristicOperationDef::ChosenBasicLandType,
-        )
-        | AppliedEffectDef::Rule(
-            AppliedRuleDef::AssignsNoCombatDamage
-            | AppliedRuleDef::CannotBeEnchanted
-            | AppliedRuleDef::CannotBecomeEnchanted
-            | AppliedRuleDef::CannotActivateAbilities
-            | AppliedRuleDef::MayAttackDespiteDefender
-            | AppliedRuleDef::MayAttackAsThoughHasty
-            | AppliedRuleDef::CannotBeBlocked
-            | AppliedRuleDef::CannotBlock
-            | AppliedRuleDef::MustBlockEachAttackerIfAble
-            | AppliedRuleDef::CannotChangeController
-            | AppliedRuleDef::CannotRegenerate
-            | AppliedRuleDef::DoesNotUntapDuringUntapStep
-            | AppliedRuleDef::MayChooseNotToUntap
-            | AppliedRuleDef::RemainsAttachedThroughProtection,
-        ) => true,
-        AppliedEffectDef::Rule(AppliedRuleDef::AttackRestriction(restriction)) => {
-            restriction.defender == AttackDefenderScopeDef::Any
-                && static_attack_restriction_supported(restriction)
-        }
-        // Zero extra blocks would be a rule that grants nothing.
-        AppliedEffectDef::Rule(AppliedRuleDef::MayBlockAdditionalCreatures(extra)) => extra > 0,
-        AppliedEffectDef::Characteristic(CharacteristicOperationDef::BasicLandTypes(operation)) => {
-            match operation {
-                SetOperationDef::Add(types)
-                | SetOperationDef::Remove(types)
-                | SetOperationDef::Set(types) => !types.is_empty(),
-            }
-        }
-        AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+        CharacteristicOperationDef::PowerToughness(PowerToughnessOperationDef::Switch)
+        | CharacteristicOperationDef::Abilities(_)
+        | CharacteristicOperationDef::ChosenBasicLandType => true,
+        CharacteristicOperationDef::BasicLandTypes(operation) => match operation {
+            SetOperationDef::Add(types)
+            | SetOperationDef::Remove(types)
+            | SetOperationDef::Set(types) => !types.is_empty(),
+        },
+        CharacteristicOperationDef::PowerToughness(
             PowerToughnessOperationDef::SetBase { power, toughness }
             | PowerToughnessOperationDef::Modify { power, toughness },
-        )) => {
+        ) => {
             static_power_toughness_value_supported(power)
                 && static_power_toughness_value_supported(toughness)
         }
-        AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+        CharacteristicOperationDef::PowerToughness(
             PowerToughnessOperationDef::SetBasePower(power)
             | PowerToughnessOperationDef::SetBaseToughness(power),
-        )) => static_power_toughness_value_supported(power),
+        ) => static_power_toughness_value_supported(power),
         // Static animation is deliberately narrower than resolving
         // characteristic changes. A direct source/attachment recipient
         // cannot feed back into its own selection; a group query must avoid
         // reading the characteristics it supplies.
-        AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
-            SetOperationDef::Add(types),
-        )) => {
+        CharacteristicOperationDef::CardTypes(SetOperationDef::Add(types)) => {
             types == crate::card::CardTypeSet::single(CardType::Creature)
                 && static_type_animation_query_supported(recipient)
         }
-        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(_)) => {
-            static_animation_query_supported(recipient)
+        CharacteristicOperationDef::Colors(_) => static_animation_query_supported(recipient),
+        CharacteristicOperationDef::CreatureTypes(_) | CharacteristicOperationDef::Subtypes(_) => {
+            static_direct_characteristic_recipient(recipient)
         }
-        AppliedEffectDef::Characteristic(
-            CharacteristicOperationDef::CreatureTypes(_)
-            | CharacteristicOperationDef::Subtypes(_),
-        ) => static_direct_characteristic_recipient(recipient),
-        AppliedEffectDef::Characteristic(
-            CharacteristicOperationDef::CardTypes(
-                SetOperationDef::Remove(_) | SetOperationDef::Set(_),
-            ),
-        )
-        | AppliedEffectDef::Rule(
-            AppliedRuleDef::CannotBeCountered
-            // Ascend belongs to a player, so nothing about an object reads it.
-            | AppliedRuleDef::Ascend
-            | AppliedRuleDef::MayLookAtTopOfLibrary
-            | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
-            | AppliedRuleDef::MayPlayAdditionalLands(_)
-            | AppliedRuleDef::NoMaximumHandSize
-            | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary
-            | AppliedRuleDef::CannotPlay(_)
-            | AppliedRuleDef::MayPlayFromGraveyard(_)
-            | AppliedRuleDef::MayPlayFromTopOfLibrary { .. }
-            | AppliedRuleDef::GrantsAlternativeCastFromGraveyard { .. }
-            | AppliedRuleDef::UntapAtMostOne(_)
-            | AppliedRuleDef::RedirectDamageFromTo { .. },
+        CharacteristicOperationDef::CardTypes(
+            SetOperationDef::Remove(_) | SetOperationDef::Set(_),
         ) => false,
-        AppliedEffectDef::Rule(
-            AppliedRuleDef::CannotBeBlockedBy(predicate)
-            | AppliedRuleDef::CanBlockOnly(predicate)
-            | AppliedRuleDef::MustBeBlockedBy(predicate),
-        ) => static_object_predicate_supported(predicate),
-        AppliedEffectDef::Rule(
-            AppliedRuleDef::PreventDamage(matcher) | AppliedRuleDef::LimitDamage { matcher, .. },
-        ) => static_damage_matcher_supported(matcher),
-        AppliedEffectDef::Rule(AppliedRuleDef::RedirectPlayerDamageToThis(_)) => {
+    }
+}
+
+/// Which rules a static walk can supply to an object.
+fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRuleDef) -> bool {
+    match rule {
+        AppliedRuleDef::AssignsNoCombatDamage
+        | AppliedRuleDef::CannotBeEnchanted
+        | AppliedRuleDef::CannotBecomeEnchanted
+        | AppliedRuleDef::CannotActivateAbilities
+        | AppliedRuleDef::MayActivateLoyaltyAnyTime
+        | AppliedRuleDef::MayAttackDespiteDefender
+        | AppliedRuleDef::MayAttackAsThoughHasty
+        | AppliedRuleDef::CannotBeBlocked
+        | AppliedRuleDef::CannotBlock
+        | AppliedRuleDef::MustBlockEachAttackerIfAble
+        | AppliedRuleDef::CannotChangeController
+        | AppliedRuleDef::CannotRegenerate
+        | AppliedRuleDef::DoesNotUntapDuringUntapStep
+        | AppliedRuleDef::MayChooseNotToUntap
+        | AppliedRuleDef::RemainsAttachedThroughProtection => true,
+        AppliedRuleDef::AttackRestriction(restriction) => {
+            restriction.defender == AttackDefenderScopeDef::Any
+                && static_attack_restriction_supported(restriction)
+        }
+        // Zero extra blocks would be a rule that grants nothing.
+        AppliedRuleDef::MayBlockAdditionalCreatures(extra) => extra > 0,
+        AppliedRuleDef::CannotBeCountered
+        // Ascend belongs to a player, so nothing about an object reads it.
+        | AppliedRuleDef::Ascend
+        | AppliedRuleDef::MayLookAtTopOfLibrary
+        | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
+        | AppliedRuleDef::MayPlayAdditionalLands(_)
+        | AppliedRuleDef::NoMaximumHandSize
+        | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary
+        | AppliedRuleDef::CannotPlay(_)
+        | AppliedRuleDef::MayPlayFromGraveyard(_)
+        | AppliedRuleDef::MayPlayFromTopOfLibrary { .. }
+        | AppliedRuleDef::GrantsAlternativeCastFromGraveyard { .. }
+        | AppliedRuleDef::UntapAtMostOne(_)
+        | AppliedRuleDef::RedirectDamageFromTo { .. } => false,
+        AppliedRuleDef::CannotBeBlockedBy(predicate)
+        | AppliedRuleDef::CanBlockOnly(predicate)
+        | AppliedRuleDef::MustBeBlockedBy(predicate) => static_object_predicate_supported(predicate),
+        AppliedRuleDef::PreventDamage(matcher) | AppliedRuleDef::LimitDamage { matcher, .. } => {
+            static_damage_matcher_supported(matcher)
+        }
+        AppliedRuleDef::RedirectPlayerDamageToThis(_) => {
             matches!(
                 recipient.object_reference(),
                 Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
@@ -698,6 +703,7 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
+        | ObjectPredicateDef::EnteredThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn => true,
     }
 }

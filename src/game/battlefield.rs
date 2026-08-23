@@ -343,8 +343,13 @@ impl Game {
         let Some(card) = self.players[owner.index()].graveyard.pop() else {
             return;
         };
-        let mut permanent =
-            Permanent::entering(card, presented, owner, self.turns_started[owner.index()]);
+        let mut permanent = Permanent::entering(
+            card,
+            presented,
+            owner,
+            self.turns_started[owner.index()],
+            self.turn,
+        );
         permanent.add_counters(CounterKind::PlusOnePlusOne, 1);
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,

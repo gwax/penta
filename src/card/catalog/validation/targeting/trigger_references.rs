@@ -105,6 +105,7 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
+        | ObjectPredicateDef::EnteredThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn => Ok(()),
     }
 }
@@ -167,6 +168,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
+        | ObjectPredicateDef::EnteredThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::Special(_) => false,
     }

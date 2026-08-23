@@ -1,8 +1,10 @@
+use std::ops::ControlFlow;
+
 use super::{
-    BalancePhase, BalanceTask, BattlefieldExitCompletion, CardInstance, CardPartId, CardRuntime,
-    CommittedTriggerEvent, CounterKind, DecisionContinuation, DecisionOption, DecisionPreference,
-    DecisionVisibility, DecisionZone, DeclarativeAbilityDef, DiscardFollowUp, EffectDef,
-    EffectResolutionContext, Game, GameEvent, GameObjectId, ObjectCharacteristics,
+    AppliedRuleDef, BalancePhase, BalanceTask, BattlefieldExitCompletion, CardInstance, CardPartId,
+    CardRuntime, CommittedTriggerEvent, CounterKind, DecisionContinuation, DecisionOption,
+    DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef, DiscardFollowUp,
+    EffectDef, EffectResolutionContext, Game, GameEvent, GameObjectId, ObjectCharacteristics,
     ObjectPredicateDef, Permanent, PileChoice, PileChosen, PileSplit, PilesSeparated, PlayerId,
     SacrificeDeclined, SacrificeFollowup, SacrificedAmountDef, ScopedEffect, StackObject, Step,
     TopCardSelectionDef, ZoneKind, ZoneMoveCause,
@@ -730,17 +732,35 @@ impl Game {
         })
     }
 
+    /// Whether a permission on this planeswalker opens its loyalty abilities
+    /// to instant speed.
+    fn loyalty_may_be_activated_any_time(&self, permanent: &Permanent) -> bool {
+        self.visit_applied_rules(permanent, |applied| {
+            if applied.rule == AppliedRuleDef::MayActivateLoyaltyAnyTime {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .is_break()
+    }
+
     pub(super) fn can_activate_loyalty(
         &self,
         permanent: &Permanent,
         player: PlayerId,
         change: i8,
     ) -> bool {
-        if permanent.controller != player
-            || permanent.activated_loyalty_this_turn
-            || self.active_player != player
-            || !matches!(self.step, Step::PrecombatMain | Step::PostcombatMain)
-            || !self.stack.is_empty()
+        if permanent.controller != player || permanent.activated_loyalty_this_turn {
+            return false;
+        }
+        // CR 606.3: sorcery speed, unless the planeswalker itself says
+        // otherwise. The one-per-turn limit above is not part of the window
+        // and stands either way.
+        if !self.loyalty_may_be_activated_any_time(permanent)
+            && (self.active_player != player
+                || !matches!(self.step, Step::PrecombatMain | Step::PostcombatMain)
+                || !self.stack.is_empty())
         {
             return false;
         }

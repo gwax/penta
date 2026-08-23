@@ -22,6 +22,12 @@ struct Permanent {
     controller: PlayerId,
     tapped: bool,
     entered_controller_turn: u32,
+    /// The game turn this permanent entered the battlefield, which is not
+    /// the same question as the one above: that one is measured against its
+    /// controller's own turn count, so it stays true through the opponent's
+    /// following turn, which is exactly what summoning sickness wants and
+    /// exactly what "as long as this entered this turn" does not.
+    entered_turn: u32,
     damage: u16,
     /// The X chosen for the spell that put this permanent here, zero when
     /// nothing chose one. Its own enters trigger is a separate object and so
@@ -250,6 +256,7 @@ impl Permanent {
         presented: CardPartId,
         controller: PlayerId,
         entered_controller_turn: u32,
+        entered_turn: u32,
     ) -> Self {
         let card = card.into();
         Self {
@@ -261,6 +268,7 @@ impl Permanent {
             controller,
             tapped: false,
             entered_controller_turn,
+            entered_turn,
             damage: 0,
             cast_x: 0,
             cast_alternative: None,
@@ -325,6 +333,7 @@ impl Permanent {
         token: TokenCharacteristics,
         controller: PlayerId,
         entered_controller_turn: u32,
+        entered_turn: u32,
     ) -> Self {
         debug_assert!(card.definition.is_token());
         let mut permanent = Self::entering(
@@ -332,6 +341,7 @@ impl Permanent {
             token.primary_part_id(),
             controller,
             entered_controller_turn,
+            entered_turn,
         );
         permanent.token_characteristics = Some(token);
         permanent

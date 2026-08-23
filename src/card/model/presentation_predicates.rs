@@ -45,6 +45,7 @@ pub(super) fn object_predicate_implies(
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
+        | ObjectPredicateDef::EnteredThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -105,6 +106,7 @@ pub(super) fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
+        | ObjectPredicateDef::EnteredThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -167,6 +169,7 @@ pub(super) fn predicate_color_count(predicate: ObjectPredicateDef) -> Option<u8>
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
+        | ObjectPredicateDef::EnteredThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -231,6 +234,7 @@ pub(super) fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'stati
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
+        | ObjectPredicateDef::EnteredThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -295,6 +299,7 @@ pub(super) fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
+        | ObjectPredicateDef::EnteredThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -367,6 +372,7 @@ pub(super) fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
+        | ObjectPredicateDef::EnteredThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -423,6 +429,7 @@ pub(super) fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Opt
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
+        | ObjectPredicateDef::EnteredThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell
@@ -487,6 +494,7 @@ pub(super) fn predicate_controller(predicate: ObjectPredicateDef) -> Option<Play
         | ObjectPredicateDef::AttachedToSource
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
+        | ObjectPredicateDef::EnteredThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn
         | ObjectPredicateDef::HasType(_)
         | ObjectPredicateDef::Spell

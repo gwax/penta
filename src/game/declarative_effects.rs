@@ -330,6 +330,7 @@ impl Game {
                     CardPartId::PRIMARY,
                     controller,
                     self.turns_started[controller.index()],
+                    self.turn,
                 );
                 emblem.timestamp = self.allocate_continuous_effect_timestamp();
                 emblem.emblem_source = object.ability_origin();

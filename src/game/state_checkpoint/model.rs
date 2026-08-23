@@ -8,6 +8,12 @@ fn is_zero_u8(value: &u8) -> bool {
     *value == 0
 }
 
+// The same, for the turn a permanent entered on.
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn is_zero_turn(value: &u32) -> bool {
+    *value == 0
+}
+
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -365,6 +371,13 @@ pub(super) struct PermanentSnapshot {
     pub(super) presented_part_id: u8,
     pub(super) timestamp: u64,
     pub(super) entered_controller_turn: u32,
+    /// The game turn this permanent entered, for the clauses that ask about
+    /// the turn itself rather than about its controller's turn count.
+    /// Additive: a checkpoint written before it existed restores a permanent
+    /// that entered on turn zero, which is what one that has been there all
+    /// along would say anyway.
+    #[serde(default, skip_serializing_if = "is_zero_turn")]
+    pub(super) entered_turn: u32,
     /// Detained until this seat's next turn, with the turn count it landed on.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) detained_until_turn_of: Option<(usize, u32)>,
@@ -580,6 +593,13 @@ pub(super) struct EmblemSnapshot {
     pub(super) owner: usize,
     pub(super) timestamp: u64,
     pub(super) entered_controller_turn: u32,
+    /// The game turn this permanent entered, for the clauses that ask about
+    /// the turn itself rather than about its controller's turn count.
+    /// Additive: a checkpoint written before it existed restores a permanent
+    /// that entered on turn zero, which is what one that has been there all
+    /// along would say anyway.
+    #[serde(default, skip_serializing_if = "is_zero_turn")]
+    pub(super) entered_turn: u32,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]

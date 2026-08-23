@@ -91,6 +91,7 @@ impl Game {
                 presented,
                 object.controller,
                 self.turns_started[object.controller.index()],
+                self.turn,
             );
             permanent.face_down = object.face_down;
             self.initialize_battlefield_entry(&mut permanent);

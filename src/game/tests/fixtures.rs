@@ -201,6 +201,7 @@ pub(in crate::game) fn creature(
         CardPartId::PRIMARY,
         controller,
         0,
+        0,
     )
 }
 
@@ -217,7 +218,7 @@ pub(in crate::game) fn token_permanent(
         characteristics: CharacteristicSource::Token(token),
         counters: [0; CounterKind::COUNT],
     };
-    Permanent::entering_token(object, token, controller, 0)
+    Permanent::entering_token(object, token, controller, 0, 0)
 }
 
 pub(in crate::game) fn is_token_with(permanent: &Permanent, token: TokenCharacteristics) -> bool {

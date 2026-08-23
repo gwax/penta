@@ -23,6 +23,7 @@ pub(super) fn emblem_snapshot(catalog: &CardCatalog, emblem: &Permanent) -> Opti
         owner: emblem.card.owner.index(),
         timestamp: emblem.timestamp.0,
         entered_controller_turn: emblem.entered_controller_turn,
+        entered_turn: emblem.entered_turn,
     })
 }
 
@@ -82,6 +83,7 @@ pub(super) fn parse_emblems(
                 CardPartId::PRIMARY,
                 controller,
                 state.entered_controller_turn,
+                state.entered_turn,
             );
             emblem.timestamp = ContinuousEffectTimestamp(state.timestamp);
             emblem.emblem_source = Some(source);

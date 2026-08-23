@@ -69,6 +69,7 @@ impl Game {
             | ObjectPredicateDef::AttachedToSource
             | ObjectPredicateDef::AttackedThisTurn
             | ObjectPredicateDef::CameUnderControlThisTurn
+            | ObjectPredicateDef::EnteredThisTurn
             | ObjectPredicateDef::AttackedDuringControllersLastTurn
             | ObjectPredicateDef::HasKeyword(_)
             | ObjectPredicateDef::HasCounter(_)

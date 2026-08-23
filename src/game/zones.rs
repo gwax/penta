@@ -172,8 +172,13 @@ impl Game {
             .next()
             .expect("build_zone returns one card for one definition");
         let id = card.id;
-        let mut permanent =
-            Permanent::entering(card, presented, player, self.turns_started[player.index()]);
+        let mut permanent = Permanent::entering(
+            card,
+            presented,
+            player,
+            self.turns_started[player.index()],
+            self.turn,
+        );
         self.initialize_battlefield_entry(&mut permanent);
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
@@ -547,6 +552,7 @@ impl Game {
             presented,
             controller,
             self.turns_started[controller.index()],
+            self.turn,
         );
         // Set before entry replacements run, the same way an as-enters clause
         // would, so nothing observes the permanent arriving untapped first.
