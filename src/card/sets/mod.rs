@@ -535,6 +535,11 @@ const SET_MODULES: &[SetModule] = &[
         y2022::kamigawa_neon_dynasty::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::KamigawaNeonDynastyCommander,
+        y2022::kamigawa_neon_dynasty_commander::CARDS,
+        y2022::kamigawa_neon_dynasty_commander::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::StreetsOfNewCapenna,
         y2022::streets_of_new_capenna::CARDS,
         y2022::streets_of_new_capenna::ADDITIONAL_PRINTINGS,

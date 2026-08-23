@@ -102,6 +102,7 @@ pub enum CardSet {
     InnistradCrimsonVowCommander,
     Ikoria,
     KamigawaNeonDynasty,
+    KamigawaNeonDynastyCommander,
     StreetsOfNewCapenna,
     CommanderLegendsBattleForBaldursGate,
     DominariaUnited,
