@@ -612,10 +612,27 @@ impl Game {
         // standing there, and the card it became on the way out has a
         // different identity. "Return it to its owner's hand" means that
         // card, so follow the move rather than finding nothing.
-        let successor = self.successors.get(&object).copied()?;
+        let successor = self.final_successor(object)?;
         self.card_in_nonbattlefield_zone(successor)
             .is_some()
             .then_some(Target::Card(successor))
+    }
+
+    /// Where an object's card ended up, following every zone change it has
+    /// made since. One hop is enough for a permanent that died, but a card
+    /// cast from hand has made two by the time it is exiled -- hand to
+    /// stack, stack to exile -- and both moves are the same physical card.
+    pub(super) fn final_successor(&self, object: GameObjectId) -> Option<GameObjectId> {
+        let mut current = *self.successors.get(&object)?;
+        // Bounded rather than trusting the chain to be acyclic: nothing
+        // constructs a cycle, and a corrupted one must not hang the game.
+        for _ in 0..self.successors.len() {
+            match self.successors.get(&current) {
+                Some(next) => current = *next,
+                None => break,
+            }
+        }
+        Some(current)
     }
 
     /// How much of a divided total one target takes, read off the selection

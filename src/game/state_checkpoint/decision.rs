@@ -634,6 +634,9 @@ fn continuation_snapshot(
             card,
             ability,
             grant,
+            // Recomputed on restore from where the card is, which is where
+            // it came from.
+            source_zone: _,
         } => DecisionContinuationSnapshot::MayCastGranted {
             player: player.index(),
             card: card.0,

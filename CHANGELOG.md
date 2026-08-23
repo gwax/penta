@@ -68,6 +68,19 @@ distinguishes snapshots of the covered source and build inputs.
   permission carries no sorcery-speed restriction of its own: every card that
   prints the keyword so far is a sorcery, and its type already says so.
 
+- **Rebound.** Two halves that only make sense together: a spell cast from
+  hand exiles itself as it resolves, and a delayed trigger offers it back for
+  nothing at the caster's next upkeep. Both are gated on the same question --
+  whether this cast came from hand -- so the rebounded cast, which comes from
+  exile, goes to the graveyard like any other spell and does not rebound
+  again.
+
+  What it needed underneath was for a lent cast to work from exile at all.
+  The machinery that offers a card back was written for the clauses that buy
+  a spell out of a graveyard and hard-coded that zone in four places; the
+  zone is the offering clause's business, and a standing offer is itself the
+  permission that reaches the card.
+
 - **Bestow, and collect evidence.** Bestow is the first alternative cast
   that changes what the spell *is* rather than only what it costs: the clause
   carries its own enchant-creature target and its own attaching effect, so a

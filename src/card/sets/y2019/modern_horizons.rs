@@ -8,8 +8,8 @@ use crate::card::{
     DiscardSelectionDef, EffectDef, EffectRecipientDef, EmblemCharacteristics,
     ExilePlayDurationDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
     ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
-    SpellAdditionalCostDef, SpendModeDef, TokenCharacteristics, TriggerConditionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    SpellAdditionalCostDef, SpellResolutionDestinationDef, SpendModeDef, TokenCharacteristics,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -103,14 +103,50 @@ static WINDS_OVERLOADED: EffectDef = EffectDef::BindMatching {
     then: &EffectDef::Sequence(&WINDS_OVERLOADED_STEPS),
 };
 
+/// The blink, and then rebound's own clause. Exiling links the creature to
+/// the spell, which is what lets the return name the card it just made.
+static EPHEMERATE_BLINKS: [EffectDef; 3] = [
+    EffectDef::ExileLinkedToSource {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
+        zone: ZoneKind::Battlefield,
+        grant: None,
+        controller: None,
+        transformed: false,
+    },
+    abilities::rebound_offer(),
+];
+
+static A_CREATURE_YOU_CONTROL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
 // MH1 7 — Ephemerate
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static EPHEMERATE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("2da5f3f8-5eef-498f-ba2c-2f3fbc3745aa"),
     "Ephemerate",
-    crate::card::CardArt::new("2da5f3f8-5eef-498f-ba2c-2f3fbc3745aa", "Bastien L. Deharme"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("2da5f3f8-5eef-498f-ba2c-2f3fbc3745aa", "Bastien L. Deharme"),
+    CardSet::ModernHorizons1,
+    // One white mana for two enter triggers, a turn apart. What it costs is
+    // that the creature has to survive until the second one.
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(
+        AbilityDef::spell_with_targets(
+            "Exile target creature you control, then return it to the battlefield under its \
+             owner's control.",
+            &A_CREATURE_YOU_CONTROL,
+            EffectDef::Sequence(&EPHEMERATE_BLINKS),
+        )
+        .with_resolution_destination(SpellResolutionDestinationDef::ExileIfCastFromHand),
+    ),
 );
 
 /// "Another target creature you control": she may not protect herself, which

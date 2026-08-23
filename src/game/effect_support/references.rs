@@ -46,9 +46,7 @@ impl Game {
                 // so follow the move rather than pointing at a permanent
                 // nothing can find.
                 match self
-                    .successors
-                    .get(&source)
-                    .copied()
+                    .final_successor(source)
                     .filter(|successor| self.card_in_nonbattlefield_zone(*successor).is_some())
                 {
                     Some(successor) => Target::Card(successor),

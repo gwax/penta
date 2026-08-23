@@ -139,7 +139,13 @@ impl Game {
                     .iter()
                     .flat_map(|state| state.exile.iter())
                     .find(|card| {
-                        card.id == card_id && self.exile_play_permission(card_id, player).is_some()
+                        card.id == card_id
+                            && (self.exile_play_permission(card_id, player).is_some()
+                                // Or a standing offer, which is the whole of
+                                // the permission rebound's own card has.
+                                || self
+                                    .current_cast_offer(player, card_id, CastSourceZone::Exile)
+                                    .is_some())
                     })
                     .map(|card| (card, CastSourceZone::Exile))
             })
@@ -163,7 +169,10 @@ impl Game {
         {
             return None;
         }
+        // A standing offer is itself the permission, which is what lets
+        // rebound lend its own card back out of exile.
         if source_zone == CastSourceZone::Exile
+            && offer.is_none()
             && !self.exile_play_is_permitted(definition, option, card_id, player)
         {
             return None;

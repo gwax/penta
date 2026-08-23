@@ -101,6 +101,12 @@ pub enum AlternativeCastKindDef {
     /// ordinary cast from hand for a different price; what it changes is how
     /// the permanent arrives, which the card's own clauses say.
     Impending,
+    /// Rebound's free cast (CR 702.87a), taken from exile at the beginning
+    /// of the caster's next upkeep. Unlike the free cast beside it the card
+    /// is not exiled afterwards: it was cast from exile rather than from
+    /// hand, so rebound has nothing more to say about it and it goes to the
+    /// graveyard like any other spell.
+    Rebound,
     /// Bestow (CR 702.103a): cast as an Aura spell for its bestow cost.
     /// Unlike every other kind here it changes what the spell is rather than
     /// only what it costs -- an Aura spell with "enchant creature", which is
@@ -192,6 +198,7 @@ impl AlternativeCastKindDef {
             Self::Offspring => "Offspring",
             Self::Plot => "Plot",
             Self::Bestow => "Bestow",
+            Self::Rebound => "Rebound",
             Self::WithoutPayingManaCost => "Without paying its mana cost",
             Self::FaceDown { label, .. } => label,
         }
@@ -207,6 +214,7 @@ impl AlternativeCastKindDef {
             Self::Offspring,
             Self::Plot,
             Self::Bestow,
+            Self::Rebound,
             Self::Impending,
             Self::Dash,
             Self::Warp,
@@ -260,6 +268,9 @@ impl AlternativeCastAbilityDef {
             // Every printed bestow cost is a cost the card writes out, and
             // Detective's Phoenix writes a nonmana one, so the reminder is
             // taken from the clause rather than rebuilt from a mana cost.
+            (AlternativeCastKindDef::Rebound, _) => self.printed_rules_text(
+                "Rebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)",
+            ),
             (AlternativeCastKindDef::Bestow, _) => self.printed_rules_text(
                 "Bestow (If you cast this card for its bestow cost, it's an Aura spell with enchant creature. It becomes a creature again if it's not attached to a creature.)",
             ),

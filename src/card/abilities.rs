@@ -10,13 +10,13 @@ use super::model::{
     CardChoiceSourceDef, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, ConditionDef,
     CounterKind, DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef,
     DiscardFollowUpDef, DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
-    InstalledTriggerDef, KeywordAbility, ManaColor, ManaCost, ObjectChoiceBindingDef,
-    ObjectCountConditionDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    OptionalAdditionalCostAbilityDef, OptionalAdditionalCostKindDef, PartitionItemsDef, PayOrDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef,
-    SpellAdditionalCostDef, SpellResolutionDestinationDef, SplitIntoPilesDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    InstalledTriggerDef, InstalledTriggerLifetimeDef, KeywordAbility, ManaColor, ManaCost,
+    ObjectChoiceBindingDef, ObjectCountConditionDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, OptionalAdditionalCostAbilityDef, OptionalAdditionalCostKindDef,
+    PartitionItemsDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    ScaledValueDef, SpellAdditionalCostDef, SpellResolutionDestinationDef, SplitIntoPilesDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 

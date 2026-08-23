@@ -147,7 +147,13 @@ impl Game {
                 self.players
                     .iter()
                     .flat_map(|state| state.exile.iter())
-                    .filter(|card| self.exile_play_permission(card.id, player).is_some())
+                    // A standing offer is itself the permission: rebound
+                    // lends its own card back without granting exile the
+                    // general permission an impulse draw does.
+                    .filter(|card| {
+                        self.exile_play_permission(card.id, player).is_some()
+                            || offer.is_some_and(|offer| offer.card == card.id)
+                    })
                     .map(|card| (card, CastSourceZone::Exile)),
             )
             // The top card of the caster's own library, which the
@@ -188,6 +194,7 @@ impl Game {
                     continue;
                 }
                 if source_zone == CastSourceZone::Exile
+                    && offer.is_none()
                     && !self.exile_play_is_permitted(definition, option, card.id, player)
                 {
                     continue;

@@ -3,14 +3,25 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::TargetIndex;
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules,
-    CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    ResolvedEffectDurationDef, SpellResolutionDestinationDef, ValueDef,
+    AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
+    EffectDef, EffectRecipientDef, ObjectPredicateDef, ResolvedEffectDurationDef,
+    SpellResolutionDestinationDef, ValueDef, abilities,
 };
 use crate::mana_cost;
 
+static ARTFUL_MANEUVER_STEPS: [EffectDef; 2] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(2),
+            ValueDef::Constant(2),
+        ),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    abilities::rebound_offer(),
+];
+
 // DTK 4 — Artful Maneuver
-// Audit: partial — Rebound's self-exile is executable, but its next-upkeep free cast from exile needs the shared exile-casting lifecycle.
 pub(in crate::card::sets) static ARTFUL_MANEUVER: CardRecord = CardRecord::new_with_legacy_id(
     1710,
     "Artful Maneuver",
@@ -22,19 +33,9 @@ pub(in crate::card::sets) static ARTFUL_MANEUVER: CardRecord = CardRecord::new_w
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::modify_power_toughness(
-                    ValueDef::Constant(2),
-                    ValueDef::Constant(2),
-                ),
-                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-            },
+            EffectDef::Sequence(&ARTFUL_MANEUVER_STEPS),
         )
-        .with_resolution_destination(SpellResolutionDestinationDef::Exile)
-        .with_coverage(AbilityCoverageDef::partial(
-            "Rebound's next-upkeep free cast from exile needs the shared exile-casting lifecycle.",
-        )),
+        .with_resolution_destination(SpellResolutionDestinationDef::ExileIfCastFromHand),
     ),
 );
 

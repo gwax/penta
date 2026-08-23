@@ -614,8 +614,22 @@ impl Game {
         card: GameObjectId,
         ability: &'static AbilityDef,
     ) {
-        let Some((ZoneKind::Graveyard, instance)) = self.card_in_nonbattlefield_zone(card) else {
+        // The zone is the offering clause's business rather than this
+        // machinery's: a graveyard for the clauses that buy a spell back,
+        // exile for rebound's own card waiting there. What both have in
+        // common is that the card is somewhere a cast can reach it.
+        let Some((zone @ (ZoneKind::Graveyard | ZoneKind::Exile), instance)) =
+            self.card_in_nonbattlefield_zone(card)
+        else {
             return;
+        };
+        let source_zone = match zone {
+            ZoneKind::Exile => CastSourceZone::Exile,
+            _ => CastSourceZone::Graveyard,
+        };
+        let decision_zone = match zone {
+            ZoneKind::Exile => DecisionZone::Exile,
+            _ => DecisionZone::Graveyard,
         };
         let printed = instance.definition;
         let name = self
@@ -637,7 +651,7 @@ impl Game {
             CastOffer {
                 player,
                 card,
-                source_zone: CastSourceZone::Graveyard,
+                source_zone,
                 cost: CastOfferCost::GrantedAlternative(grant_index),
             },
             &mut castable,
@@ -662,13 +676,14 @@ impl Game {
                 )),
                 members: Vec::new(),
                 ability_text: None,
-                zone: DecisionZone::Graveyard,
+                zone: decision_zone,
             }],
             DecisionContinuation::MayCastGranted {
                 player,
                 card,
                 ability: *ability,
                 grant: grant_index,
+                source_zone,
             },
         );
     }

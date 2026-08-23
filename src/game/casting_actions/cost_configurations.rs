@@ -425,7 +425,10 @@ impl Game {
             // Foretell is the one alternative permission that casts from
             // exile. Adventure and one-shot free permissions use the base
             // configuration instead.
-            | (CastSourceZone::Exile, Some(AlternativeCastKindDef::Foretell))
+            | (
+                CastSourceZone::Exile,
+                Some(AlternativeCastKindDef::Foretell | AlternativeCastKindDef::Rebound),
+            )
             // A permission to play the top card of a library uses what that
             // play option ordinarily prints.
             | (CastSourceZone::LibraryTop, None) => true,
@@ -539,9 +542,14 @@ impl Game {
                 return ControlFlow::Break(());
             }
         }
-        if source_zone == CastSourceZone::Graveyard
-            && let Some((_, _granted_alternative, _)) =
-                self.granted_alternative_for_offer(card, option, offer)
+        // A lent cast comes from wherever the clause that lent it put the
+        // card: a graveyard for the ones that buy a spell back, exile for
+        // rebound's own.
+        if matches!(
+            source_zone,
+            CastSourceZone::Graveyard | CastSourceZone::Exile
+        ) && let Some((_, _granted_alternative, _)) =
+            self.granted_alternative_for_offer(card, option, offer)
             && let Some(granted) = Self::temporary_alternative_cost_id(option)
             && Self::visit_additional_cost_configurations(
                 option,

@@ -285,6 +285,23 @@ impl Game {
         } else {
             SpellResolutionDestinationDef::Graveyard
         };
+        // Rebound only exiles a spell its caster cast from hand. Settled here
+        // rather than in the walk below because it is a question about the
+        // cast rather than about the move: from anywhere else this is an
+        // ordinary spell going to an ordinary graveyard.
+        let destination = match destination {
+            SpellResolutionDestinationDef::ExileIfCastFromHand => {
+                if object
+                    .cast_from_zone
+                    .is_some_and(|from| from.zone() == ZoneKind::Hand)
+                {
+                    SpellResolutionDestinationDef::Exile
+                } else {
+                    SpellResolutionDestinationDef::Graveyard
+                }
+            }
+            other => other,
+        };
         if object.is_copy {
             // A copy has no card to move, but "shuffle it into its owner's
             // library" still instructs its controller to shuffle.
@@ -333,6 +350,8 @@ impl Game {
                 }
                 self.players[owner.index()].exile.push(card);
             }
+            // Resolved into one of the two above before the walk began.
+            SpellResolutionDestinationDef::ExileIfCastFromHand => {}
             SpellResolutionDestinationDef::LibraryShuffled => {
                 if flashback_replaces_move {
                     self.players[owner.index()].exile.push(card);

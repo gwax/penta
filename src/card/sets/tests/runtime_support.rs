@@ -908,6 +908,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             AlternativeCastKindDef::Flashback
             | AlternativeCastKindDef::WithoutPayingManaCost
             | AlternativeCastKindDef::Foretell
+            // Rebound's free cast, which like the others above only says
+            // what the cast costs and where it is taken from.
+            | AlternativeCastKindDef::Rebound
             // Plot is not a cast at all: the clause exists so the plot cost
             // has somewhere printed to live.
             | AlternativeCastKindDef::Plot

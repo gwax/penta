@@ -379,16 +379,23 @@ fn parse_may_cast_granted_continuation(
     {
         return Err("checkpoint granted-cast offer names the wrong temporary grant".into());
     }
-    let Some((crate::card::ZoneKind::Graveyard, instance)) =
+    let Some((zone @ (crate::card::ZoneKind::Graveyard | crate::card::ZoneKind::Exile), instance)) =
         game.card_in_nonbattlefield_zone(card)
     else {
-        return Err("checkpoint granted-cast offer card is not in a graveyard".into());
+        return Err("checkpoint granted-cast offer card is not in a graveyard or in exile".into());
+    };
+    let source_zone = match zone {
+        crate::card::ZoneKind::Exile => CastSourceZone::Exile,
+        _ => CastSourceZone::Graveyard,
     };
     let DeclarativeAbilityDef::AlternativeCast(alternative) = ability.definition else {
         return Err("checkpoint granted-cast offer ability is not an alternative-cast clause".into());
     };
     if !ability.is_executable()
-        || alternative.kind != AlternativeCastKindDef::WithoutPayingManaCost
+        || !matches!(
+            alternative.kind,
+            AlternativeCastKindDef::WithoutPayingManaCost | AlternativeCastKindDef::Rebound
+        )
     {
         return Err(
             "checkpoint granted-cast offers currently support only executable free casts".into(),
@@ -397,7 +404,7 @@ fn parse_may_cast_granted_continuation(
     let offer = CastOffer {
         player,
         card,
-        source_zone: CastSourceZone::Graveyard,
+        source_zone,
         cost: CastOfferCost::GrantedAlternative(grant),
     };
     let mut castable = Vec::new();
@@ -438,6 +445,7 @@ fn parse_may_cast_granted_continuation(
         card,
         ability,
         grant,
+        source_zone,
     })
 }
 

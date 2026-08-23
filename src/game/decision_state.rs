@@ -398,6 +398,11 @@ pub(super) enum DecisionContinuation {
         card: GameObjectId,
         ability: AbilityDef,
         grant: usize,
+        /// Where the lent cast comes from. Derived from where the card
+        /// actually is rather than stored on the wire, because it is the
+        /// same fact: a graveyard for the clauses that buy a spell back,
+        /// exile for rebound's own card waiting there.
+        source_zone: CastSourceZone,
     },
     /// "Its owner puts it on their choice of the top or bottom of their
     /// library." The owner answers, not whoever is resolving, so the spell
@@ -638,11 +643,12 @@ impl DecisionContinuation {
                 player,
                 card,
                 grant,
+                source_zone,
                 ..
             } => Some(CastOffer {
                 player: *player,
                 card: *card,
-                source_zone: CastSourceZone::Graveyard,
+                source_zone: *source_zone,
                 cost: CastOfferCost::GrantedAlternative(*grant),
             }),
             Self::MayCastAlternative {
