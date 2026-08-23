@@ -357,6 +357,7 @@ mod vintage_cube_legolas_reflexes;
 mod vintage_cube_library;
 mod vintage_cube_lion_sash;
 mod vintage_cube_loot_pathfinder;
+mod vintage_cube_loran;
 mod vintage_cube_lorien;
 mod vintage_cube_magda;
 mod vintage_cube_malcolm;

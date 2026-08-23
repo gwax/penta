@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    CardArt, CardRules, CardSet, CardType, CharacteristicOperationDef, CreatureTypeSetDef,
-    EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, SetOperationDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, CharacteristicOperationDef,
+    CreatureTypeSetDef, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    SetOperationDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -28,6 +28,70 @@ static A_NONCREATURE_ARTIFACT_OR_ENCHANTMENT: [AbilityTargetDef; 1] =
             owner: None,
         },
     )];
+
+/// "Up to one target artifact or enchantment": an Loran with nothing worth
+/// answering still arrives as a 2/1 that draws.
+static UP_TO_ONE_ARTIFACT_OR_ENCHANTMENT: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Artifact),
+            ObjectPredicateDef::HasType(CardType::Enchantment),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    1,
+)];
+
+static AN_OPPONENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+)];
+
+/// "You and target opponent each draw a card." Two draws rather than one
+/// instruction naming both, because only one of them is targeted: the
+/// opponent has to be a legal target and you never are.
+static LORAN_DRAWS: [EffectDef; 2] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(1),
+    },
+];
+
+// BRO 12 — Loran of the Third Path
+pub(in crate::card::sets) static LORAN_OF_THE_THIRD_PATH: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("59faa45d-868b-4bc7-934c-0e077642e129"),
+    "Loran of the Third Path",
+    CardArt::new("59faa45d-868b-4bc7-934c-0e077642e129", "Steven Belledin"),
+    CardSet::TheBrothersWar,
+    // Three mana for an answer to an artifact, a body that blocks, and a
+    // symmetrical draw nobody else gets to use as often as you do.
+    CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Artificer"], 2, 1)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::vigilance(),
+            AbilityDef::triggered_with_targets(
+                "When this creature enters, destroy up to one target artifact or enchantment.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                &UP_TO_ONE_ARTIFACT_OR_ENCHANTMENT,
+                EffectDef::destroy_target(TargetIndex::PRIMARY, true),
+            ),
+            AbilityDef::activated_with_targets(
+                "{T}: You and target opponent each draw a card.",
+                &[AbilityCostDef::TapSource],
+                &AN_OPPONENT,
+                EffectDef::Sequence(&LORAN_DRAWS),
+            ),
+        ]),
+);
 
 // BRO 72 — Weakstone's Subjugation
 // Audit: metadata-only — Card rules have not been implemented.
@@ -182,6 +246,7 @@ pub(in crate::card::sets) static TOCASIA_S_DIG_SITE: CardRecord = CardRecord::ne
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &LORAN_OF_THE_THIRD_PATH,
     &WEAKSTONE_S_SUBJUGATION,
     &GIXIAN_INFILTRATOR,
     &SCRAPWORK_MUTT,
