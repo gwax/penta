@@ -102,6 +102,7 @@ mod ninjutsu;
 mod observation;
 mod phasing;
 mod play_permissions;
+mod plot;
 mod prevention_state;
 mod procedure_state;
 mod proliferate;

@@ -23,6 +23,18 @@ the bot-wire epoch.
 This release reports engine 0.7.0 and protocol 28. The simulation fingerprint
 distinguishes snapshots of the covered source and build inputs.
 
+### Added
+
+- **Plot, and a `Plot` action.** The mirror of foretell's economics: a
+  special action pays the plot cost to exile a card from your hand face up,
+  and what it buys is a free cast on a later turn. Only the first half is new
+  machinery; the second is the ordinary free permission to cast from exile,
+  which is why nothing in the casting path knows the word. On the wire it is
+  the additive action `Plot`, naming the `card`, in the same open vocabulary
+  `Foretell` and `UnlockDoor` already use, so the epoch does not move. The
+  permission carries no sorcery-speed restriction of its own: every card that
+  prints the keyword so far is a sorcery, and its type already says so.
+
 ### Changed
 
 - **A bot can wait for its turn instead of asking for it.** `GET

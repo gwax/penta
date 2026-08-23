@@ -422,6 +422,28 @@ impl Game {
         });
     }
 
+    /// "Exile this card from your hand. Cast it as a sorcery on a later turn
+    /// without paying its mana cost." The plot cost was paid to get it here,
+    /// so what remains is a free cast that has to wait for another turn. The
+    /// card lies face up: everybody can see what is coming.
+    pub(super) fn permit_plotted_cast(&mut self, card: GameObjectId, owner: PlayerId) {
+        let turn = self.turns_started[owner.index()];
+        self.exile_play_permissions.push(ExilePlayPermission {
+            card,
+            player: owner,
+            cost: ExilePlayCost::Free,
+            until_end_of_turn: None,
+            adventure_return_only: false,
+            surcharge: ManaCost::default(),
+            not_before_turn: Some((owner, turn)),
+            face_down: false,
+            hidden_only: false,
+            spend_any_color: false,
+            condition: None,
+            until_holder_end_step: None,
+        });
+    }
+
     /// Whether this exiled card is lying face down, which today means it was
     /// foretold. Its owner knows what it is; nobody else does.
     pub(super) fn exiled_card_is_face_down(&self, card: GameObjectId) -> bool {

@@ -136,6 +136,9 @@ impl HandcraftedPolicy {
             // Two mana now for a discount later is real, but never worth
             // more than doing something this turn.
             Action::Foretell { .. } => 120,
+            // The same bargain as foretell, paid the other way round: the
+            // card costs nothing later, so it is worth a little more.
+            Action::Plot { .. } => 140,
             // The second half of a Room is a whole other card for its own
             // cost, and it is there whenever nothing better presents itself.
             Action::UnlockDoor { .. } => 500,

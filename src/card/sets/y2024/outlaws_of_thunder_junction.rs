@@ -4,8 +4,9 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt,
     CardRules, CardSet, CardSupertype, CardType, CounterKind, DiscardSelectionDef, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ScaledValueDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -238,6 +239,64 @@ pub(in crate::card::sets) static VORACIOUS_VARMINT: CardRecord = CardRecord::new
     crate::card::CardRules::unsupported(),
 );
 
+/// "Twice the number of lands you control", which is what makes the card a
+/// land-count payoff rather than a fixed dig: six lands look at twelve.
+static LANDS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Land),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static TWICE_YOUR_LANDS: ScaledValueDef =
+    ScaledValueDef::new(ValueDef::CountMatchingObjects(&LANDS_YOU_CONTROL), 2);
+
+/// One card of however many were seen, and the rest go to the bottom in a
+/// random order: the looker has seen them, so the order they return in is
+/// the game's to decide rather than the order they came out.
+static PILLAGE_THE_BOG_LOOK: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Scaled(&TWICE_YOUR_LANDS),
+    object: None,
+    minimum: 1,
+    maximum: 1,
+    select_all_matching: false,
+    reveal_selected: false,
+    selected_zone: ZoneKind::Hand,
+    selected_placement: ZonePlacement::Top,
+    selected_hidden: false,
+    selected_linked_to_source: false,
+    selected_face_down: None,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Bottom,
+    rest_random_order: true,
+    rest_counters: None,
+    selected_order_follows_choice: false,
+    then: None,
+};
+
+// OTJ 224 — Pillage the Bog
+pub(in crate::card::sets) static PILLAGE_THE_BOG: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("fa3b415f-7901-4ab4-84fe-60b90d40ac90"),
+    "Pillage the Bog",
+    CardArt::new("fa3b415f-7901-4ab4-84fe-60b90d40ac90", "Forrest Imel"),
+    CardSet::OutlawsOfThunderJunction,
+    // Two mana to find the one card the deck is built around, and plot is
+    // what makes the two mana free: pay three on a turn with nothing to do,
+    // and dig for nothing on the turn it matters.
+    CardRules::new_sorcery(mana_cost!("{B}{G}")).with_abilities(&[
+        AbilityDef::spell(
+            "Look at the top X cards of your library, where X is twice the number of lands you \
+             control. Put one of them into your hand and the rest on the bottom of your library \
+             in a random order.",
+            EffectDef::LookAtTopAndSelect {
+                player: EffectRecipientDef::Controller,
+                looker: EffectRecipientDef::Controller,
+                selection: &PILLAGE_THE_BOG_LOOK,
+            },
+        ),
+        abilities::plot(mana_cost!("{1}{B}{G}")),
+    ]),
+);
+
 // OTJ 243 — Lavaspur Boots
 pub(in crate::card::sets) static LAVASPUR_BOOTS: CardRecord = CardRecord::new_with_legacy_id(
     2252,
@@ -311,6 +370,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CAUSTIC_BRONCO,
     &BRISTLY_BILL_SPINE_SOWER,
     &VORACIOUS_VARMINT,
+    &PILLAGE_THE_BOG,
     &LAVASPUR_BOOTS,
     &ABRADED_BLUFFS,
     &BRISTLING_BACKWOODS,

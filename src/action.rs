@@ -203,6 +203,12 @@ pub enum Action {
     Foretell {
         card: GameObjectId,
     },
+    /// Plot a card in hand: pay its plot cost and exile it face up, to be
+    /// cast for nothing on a later turn (CR 702.170a). A special action like
+    /// foretell, and available only when a sorcery could be cast.
+    Plot {
+        card: GameObjectId,
+    },
     /// Unlock a locked door of a Room you control by paying that door's mana
     /// cost (CR 714.4a). A special action like the two above: no stack,
     /// nothing to respond to, and only in your own main phase.

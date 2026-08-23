@@ -905,6 +905,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             AlternativeCastKindDef::Flashback
             | AlternativeCastKindDef::WithoutPayingManaCost
             | AlternativeCastKindDef::Foretell
+            // Plot is not a cast at all: the clause exists so the plot cost
+            // has somewhere printed to live.
+            | AlternativeCastKindDef::Plot
             | AlternativeCastKindDef::Escape
             | AlternativeCastKindDef::Retrace
             | AlternativeCastKindDef::Impending

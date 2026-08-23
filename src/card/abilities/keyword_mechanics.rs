@@ -198,3 +198,17 @@ pub const fn saddle(minimum: u8, text: &'static str) -> AbilityDef {
     )
     .with_activation_timing(ActivationTimingDef::SorcerySpeed)
 }
+
+/// Plot (CR 702.170a): a cost paid to a special action rather than to a
+/// cast. What it buys is a card sitting in exile that its owner may cast for
+/// nothing on a later turn, which is why the clause carries the cost and
+/// nothing offers it as a way to cast the card now.
+#[must_use]
+pub const fn plot(mana_cost: ManaCost) -> AbilityDef {
+    AbilityDef::alternative_cast(
+        mana_cost,
+        AlternativeCastKindDef::Plot,
+        None,
+        EffectDef::None,
+    )
+}

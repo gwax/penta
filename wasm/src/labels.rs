@@ -206,6 +206,7 @@ impl WebGame {
             | Action::ChooseUntap { .. }
             | Action::TurnFaceUp { .. }
             | Action::Foretell { .. }
+            | Action::Plot { .. }
             | Action::UnlockDoor { .. }
             | Action::PassPriority
             | Action::PlayLand { .. }
@@ -489,6 +490,9 @@ impl WebGame {
             ),
             Action::Foretell { card } => {
                 format!("Foretell {}", self.instance_name(observation, *card))
+            }
+            Action::Plot { card } => {
+                format!("Plot {}", self.instance_name(observation, *card))
             }
             // Named for the door rather than for the Room: "Unlock Forgotten
             // Cellar" says which half is being bought, and the Room's own

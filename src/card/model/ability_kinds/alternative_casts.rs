@@ -101,6 +101,12 @@ pub enum AlternativeCastKindDef {
     /// {2} during its owner's turn; this is the other half, and it may not
     /// be taken until a later turn.
     Foretell,
+    /// Plot (CR 702.170a). Unlike every other kind here, this is not a way to
+    /// cast the card at all: the cost is paid to the plot special action,
+    /// which exiles the card, and the cast that follows on a later turn is
+    /// free. The clause is written as an alternative so that the cost has
+    /// somewhere printed to live, and nothing offers it as a cast.
+    Plot,
     /// Cast using the supplied face-down copiable values. The spell's own
     /// clauses are not what it does while face down, so this kind changes the
     /// object rather than only its cost. Morph and Disguise choose different
@@ -157,6 +163,7 @@ impl AlternativeCastKindDef {
             Self::Warp => "Warp",
             Self::Retrace => "Retrace",
             Self::Foretell => "Foretell",
+            Self::Plot => "Plot",
             Self::WithoutPayingManaCost => "Without paying its mana cost",
             Self::FaceDown { label, .. } => label,
         }
@@ -169,6 +176,7 @@ impl AlternativeCastKindDef {
         [
             Self::Escape,
             Self::Foretell,
+            Self::Plot,
             Self::Impending,
             Self::Dash,
             Self::Warp,
@@ -268,6 +276,15 @@ impl AlternativeCastAbilityDef {
             // No card prints a foretell cost equal to its own mana cost.
             (AlternativeCastKindDef::Foretell, AlternativeCastManaCostDef::ThisCardManaCost) => {
                 "Foretell".into()
+            }
+            (AlternativeCastKindDef::Plot, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
+                format!(
+                    "Plot {mana_cost} (You may pay {mana_cost} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)",
+                )
+            }
+            // No card prints a plot cost equal to its own mana cost.
+            (AlternativeCastKindDef::Plot, AlternativeCastManaCostDef::ThisCardManaCost) => {
+                "Plot".into()
             }
             // Never printed on the card being cast: whatever granted the
             // permission said this, so its own text is the reminder.
