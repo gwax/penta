@@ -3,11 +3,12 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, CounterKind, EffectDef, EffectRecipientDef, ExilePlayDurationDef,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef,
-    PlayerRelation, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules,
+    CardSet, CardSupertype, CardType, CounterKind, EffectDef, EffectRecipientDef,
+    ExilePlayDurationDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PlayerRefDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef,
+    TokenCharacteristics, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -220,6 +221,88 @@ pub(in crate::card::sets) static FORCE_OF_NEGATION: CardRecord = CardRecord::new
     ]),
 );
 
+/// "This token gets +1/+1 for each artifact you control", which counts the
+/// token itself: a lone Construct is a 1/1, and every artifact after it is
+/// another point in both directions.
+static ARTIFACTS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static CONSTRUCT_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+    "This token gets +1/+1 for each artifact you control.",
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::CountMatchingObjects(&ARTIFACTS_YOU_CONTROL),
+            ValueDef::CountMatchingObjects(&ARTIFACTS_YOU_CONTROL),
+        ),
+    },
+)];
+
+static URZA_CONSTRUCT: TokenCharacteristics =
+    TokenCharacteristics::artifact_creature(&["Construct"], &[], 0, 0)
+        .with_abilities(&CONSTRUCT_ABILITIES);
+
+/// "Tap an untapped artifact you control", which the Construct itself
+/// answers -- and so does every Mox, every Lotus, and everything they made.
+static TAP_AN_ARTIFACT: AbilityCostDef = AbilityCostDef::TapPermanent {
+    object: ObjectPredicateDef::HasType(CardType::Artifact),
+    controller: PlayerRelation::You,
+};
+
+static URZA_DIG: [EffectDef; 2] = [
+    EffectDef::ShuffleLibrary {
+        player: EffectRecipientDef::Controller,
+    },
+    EffectDef::ExileTopOfLibraryToPlay {
+        player: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+        free: true,
+        face_down: false,
+        duration: ExilePlayDurationDef::ThisTurn,
+    },
+];
+
+// MH1 75 — Urza, Lord High Artificer
+pub(in crate::card::sets) static URZA_LORD_HIGH_ARTIFICER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("9e7fb3c0-5159-4d1f-8490-ce4c9a60f567"),
+    "Urza, Lord High Artificer",
+    CardArt::new("9e7fb3c0-5159-4d1f-8490-ce4c9a60f567", "Grzegorz Rutkowski"),
+    CardSet::ModernHorizons1,
+    // Four mana for a body, a blue mana out of every artifact you have, and
+    // a mana sink that turns the rest of them into a free card.
+    CardRules::new_creature(mana_cost!("{2}{U}{U}"), &["Human", "Artificer"], 1, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::triggered(
+                "When this creature enters, create a 0/0 colorless Construct artifact creature \
+                 token with \"This token gets +1/+1 for each artifact you control.\"",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                EffectDef::create_token(URZA_CONSTRUCT).with_art(CardArt::new(
+                    "85f212cd-4fc6-42fe-b268-22d8e3b2b7eb",
+                    "Victor Adame Minguez",
+                )),
+            ),
+            AbilityDef::activated(
+                "Tap an untapped artifact you control: Add {U}.",
+                &[TAP_AN_ARTIFACT],
+                EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Blue)),
+            ),
+            AbilityDef::activated(
+                "{5}: Shuffle your library, then exile the top card. Until end of turn, you may \
+                 play that card without paying its mana cost.",
+                &[AbilityCostDef::Mana(mana_cost!("{5}"))],
+                EffectDef::Sequence(&URZA_DIG),
+            ),
+        ]),
+);
+
 // MH1 158 — Collector Ouphe
 pub(in crate::card::sets) static COLLECTOR_OUPHE: CardRecord = CardRecord::new_with_legacy_id(
     2284,
@@ -358,6 +441,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WINDS_OF_ABANDON,
     &ECHO_OF_EONS,
     &FORCE_OF_NEGATION,
+    &URZA_LORD_HIGH_ARTIFICER,
     &COLLECTOR_OUPHE,
     &FORCE_OF_VIGOR,
     &FALLEN_SHINOBI,
