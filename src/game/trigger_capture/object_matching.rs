@@ -11,6 +11,7 @@ impl Game {
                 self.current_or_last_known_attached_host(ability_source)
             }
             ObjectRefDef::TriggeringObject => event.context().object,
+            ObjectRefDef::DamagedObject => event.context().damaged_object,
             ObjectRefDef::AbilityGrantSource
             | ObjectRefDef::ResolvingObject
             | ObjectRefDef::Binding(_)

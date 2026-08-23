@@ -462,7 +462,8 @@ impl Game {
                     | ObjectRefDef::AbilityGrantSource
                     | ObjectRefDef::Target(_)
                     | ObjectRefDef::SourceOfTargetedStackObject(_)
-                    | ObjectRefDef::TriggeringObject,
+                    | ObjectRefDef::TriggeringObject
+                    | ObjectRefDef::DamagedObject,
                 )
                 | ObjectSetDef::Binding(_)
                 | ObjectSetDef::MatchingBinding { .. }

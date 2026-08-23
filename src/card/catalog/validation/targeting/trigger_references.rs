@@ -268,6 +268,15 @@ fn validate_trigger_damage_matcher(
         DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player) => {
             validate_trigger_player_reference(player, event, target_count, scope)
         }
+        // The same bar the source side clears: the damaged object is read
+        // from its snapshot, so a predicate that needs it still standing on
+        // the battlefield cannot answer.
+        DamageRecipientMatcherDef::MatchingObject(predicate) => {
+            if trigger_predicate_requires_live_battlefield(predicate) {
+                return Err(unsupported_trigger_event(event));
+            }
+            validate_trigger_object_predicate(predicate, event, target_count, scope)
+        }
         DamageRecipientMatcherDef::AffectedObject | DamageRecipientMatcherDef::Recipients(_) => {
             Err(unsupported_trigger_event(event))
         }

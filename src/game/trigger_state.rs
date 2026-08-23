@@ -16,6 +16,11 @@ pub(super) struct TriggerContext {
     pub(super) object_controller: Option<PlayerId>,
     pub(super) event_player: Option<PlayerId>,
     pub(super) amount: Option<i32>,
+    /// What the event's damage was dealt to, when it was dealt to an object.
+    /// Kept apart from `object`, which for a damage event is the source that
+    /// dealt it: "whenever this creature deals combat damage to a creature,
+    /// exile that creature" names both, and they are never the same one.
+    pub(super) damaged_object: Option<GameObjectId>,
 }
 
 impl TriggerContext {
@@ -25,6 +30,7 @@ impl TriggerContext {
             object_controller: None,
             event_player: None,
             amount: None,
+            damaged_object: None,
         }
     }
 }
@@ -370,6 +376,7 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: None,
                 amount: None,
+                damaged_object: None,
             },
             // Who sacrificed it is the half that "whenever you sacrifice"
             // reads, and what was sacrificed is the other.
@@ -378,6 +385,7 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: Some(*player),
                 amount: None,
+                damaged_object: None,
             },
             // The event is the move rather than any card in it, so nothing
             // here names one; how many there were is the amount.
@@ -386,6 +394,7 @@ impl CommittedTriggerEvent {
                 object_controller: Some(*owner),
                 event_player: Some(*owner),
                 amount: Some(i32::try_from(cards.len()).unwrap_or(i32::MAX)),
+                damaged_object: None,
             },
             // The event is the declaration rather than any creature in it,
             // so nothing here names one.
@@ -399,6 +408,7 @@ impl CommittedTriggerEvent {
                 object_controller: objects.first().map(|object| object.controller),
                 event_player: objects.first().map(|object| object.controller),
                 amount: Some(i32::try_from(objects.len()).unwrap_or(i32::MAX)),
+                damaged_object: None,
             },
             // The event is the batch rather than any creature in it. Who it
             // was aimed at is the defending player, and who aimed it is the
@@ -412,12 +422,14 @@ impl CommittedTriggerEvent {
                 object_controller: attackers.first().map(|attacker| attacker.controller),
                 event_player: Some(*defending_player),
                 amount: Some(i32::try_from(attackers.len()).unwrap_or(i32::MAX)),
+                damaged_object: None,
             },
             Self::AttackersDeclared { attackers } => TriggerContext {
                 object: None,
                 object_controller: attackers.first().map(|attacker| attacker.controller),
                 event_player: attackers.first().map(|attacker| attacker.controller),
                 amount: Some(i32::try_from(attackers.len()).unwrap_or(i32::MAX)),
+                damaged_object: None,
             },
             Self::Attacks {
                 object,
@@ -428,16 +440,19 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: Some(*defending_player),
                 amount: None,
+                damaged_object: None,
             },
             Self::Tapped { object, for_mana } => TriggerContext {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
                 event_player: for_mana.then_some(object.controller),
                 amount: None,
+                damaged_object: None,
             },
             Self::DamageDealt {
                 source,
                 recipient,
+                recipient_object,
                 amount,
                 ..
             } => TriggerContext {
@@ -448,12 +463,14 @@ impl CommittedTriggerEvent {
                     Target::Card(_) | Target::Permanent(_) | Target::Spell(_) => None,
                 },
                 amount: Some(i32::from(*amount)),
+                damaged_object: recipient_object.as_ref().map(|object| object.id),
             },
             Self::BlocksOrBecomesBlocked { other, .. } => TriggerContext {
                 object: Some(other.id),
                 object_controller: Some(other.controller),
                 event_player: None,
                 amount: None,
+                damaged_object: None,
             },
             Self::BecomesBlocked {
                 object,
@@ -463,18 +480,21 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: None,
                 amount: Some(i32::from(*blockers_beyond_first)),
+                damaged_object: None,
             },
             Self::LifeGained { player, amount } => TriggerContext {
                 object: None,
                 object_controller: None,
                 event_player: Some(*player),
                 amount: Some(i32::from(*amount)),
+                damaged_object: None,
             },
             Self::CountersPlaced { object, amount, .. } => TriggerContext {
                 object: Some(object.id),
                 object_controller: Some(object.controller),
                 event_player: None,
                 amount: Some(i32::from(*amount)),
+                damaged_object: None,
             },
             Self::BecameTargetOfSpell { object, .. }
             | Self::BecameTargetOfAbility { object, .. }
@@ -483,18 +503,21 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: Some(object.controller),
                 amount: None,
+                damaged_object: None,
             },
             Self::BecameLevel { object, .. } => TriggerContext {
                 object: Some(*object),
                 object_controller: None,
                 event_player: None,
                 amount: None,
+                damaged_object: None,
             },
             Self::Discarded { player, card } => TriggerContext {
                 object: card.as_ref().map(|card| card.id),
                 object_controller: card.as_ref().map(|card| card.controller),
                 event_player: Some(*player),
                 amount: None,
+                damaged_object: None,
             },
             Self::StepBegins { player, .. }
             | Self::CommittedCrime { player }
@@ -505,6 +528,7 @@ impl CommittedTriggerEvent {
                 object_controller: None,
                 event_player: Some(*player),
                 amount: None,
+                damaged_object: None,
             },
         }
     }

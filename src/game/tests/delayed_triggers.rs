@@ -289,6 +289,7 @@ fn installed_trigger_retains_lexical_bindings_targets_and_target_scope() {
         object_controller: None,
         event_player: Some(PlayerId::One),
         amount: Some(99),
+        damaged_object: None,
     });
     context.bind_single_object(
         ObjectBindingIndex::PRIMARY,

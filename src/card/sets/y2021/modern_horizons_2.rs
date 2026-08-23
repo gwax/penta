@@ -4,9 +4,10 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef,
+    CardSupertype, CardType, DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef,
+    DamageSourceMatcherDef, DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef,
     EffectRecipientDef, ExilePlayDurationDef, GraveyardTypeConditionDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, SacrificedAmountDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PlayerRelation, SacrificedAmountDef,
     SpellAdditionalCostDef, SpendModeDef, TokenCharacteristics, TriggerConditionDef,
     TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
@@ -775,14 +776,76 @@ pub(in crate::card::sets) static TERRITORIAL_KAVU: CardRecord = CardRecord::new(
     ]),
 );
 
+/// The clause the equipped creature gains, not one Kaldra has itself: "that
+/// creature" is the one that took the damage, which is a different object
+/// from the one that dealt it.
+static KALDRA_EXILES_WHAT_IT_HITS: AbilityDef = AbilityDef::triggered(
+    "Whenever this creature deals combat damage to a creature, exile that creature.",
+    TriggerEventDef::DamageDealt(DamageEventMatcherDef {
+        kind: DamageKindDef::Combat,
+        source: DamageSourceMatcherDef::Object(ObjectRefDef::Source),
+        recipient: DamageRecipientMatcherDef::MatchingObject(ObjectPredicateDef::HasType(
+            CardType::Creature,
+        )),
+    }),
+    EffectDef::MoveToZone {
+        counters: None,
+        object: EffectRecipientDef::object(ObjectRefDef::DamagedObject),
+        zone: ZoneKind::Exile,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        attachment: None,
+        controller: None,
+    },
+);
+
+static KALDRA_FIRST_STRIKE: AbilityDef = abilities::first_strike();
+static KALDRA_TRAMPLE: AbilityDef = abilities::trample();
+static KALDRA_INDESTRUCTIBLE: AbilityDef = abilities::indestructible();
+static KALDRA_HASTE: AbilityDef = abilities::haste();
+
+static KALDRA_GRANTS: [AppliedEffectDef; 6] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(5), ValueDef::Constant(5)),
+    AppliedEffectDef::add_ability(&KALDRA_FIRST_STRIKE),
+    AppliedEffectDef::add_ability(&KALDRA_TRAMPLE),
+    AppliedEffectDef::add_ability(&KALDRA_INDESTRUCTIBLE),
+    AppliedEffectDef::add_ability(&KALDRA_HASTE),
+    AppliedEffectDef::add_ability(&KALDRA_EXILES_WHAT_IT_HITS),
+];
+
+static KALDRA_EQUIP_COST: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{7}"))];
+
+static KALDRA_COMPLEAT_ABILITIES: [AbilityDef; 4] = [
+    abilities::living_weapon(
+        TokenCharacteristics::creature(&["Phyrexian", "Germ"], &[ManaColor::Black], 0, 0).with_art(
+            CardArt::new("b53e0681-603e-4180-bc86-3dadf214e61a", "Igor Kieryluk"),
+        ),
+    ),
+    abilities::indestructible(),
+    AbilityDef::static_ability(
+        "Equipped creature gets +5/+5 and has first strike, trample, indestructible, haste, and \
+         \"Whenever this creature deals combat damage to a creature, exile that creature.\"",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::AttachedPermanent,
+            effect: AppliedEffectDef::Composite(&KALDRA_GRANTS),
+        },
+    ),
+    abilities::equip(&KALDRA_EQUIP_COST, "Equip {7}"),
+];
+
 // MH2 227 — Kaldra Compleat
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static KALDRA_COMPLEAT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9b6c6ad4-d5fb-4503-8b15-c2104f125990"),
     "Kaldra Compleat",
-    crate::card::CardArt::new("87cc2855-6b14-44dd-a398-7dc2bbae081f", "Vincent Proce"),
-    crate::card::CardSet::ModernHorizons2,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("87cc2855-6b14-44dd-a398-7dc2bbae081f", "Vincent Proce"),
+    CardSet::ModernHorizons2,
+    // Seven mana that arrives as a 5/5 first-striking, trampling,
+    // indestructible, hasty creature which exiles whatever blocks it. The
+    // Germ is the point: it never needs a creature to equip.
+    CardRules::new_artifact(mana_cost!("{7}"))
+        .with_supertype(CardSupertype::Legendary)
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&KALDRA_COMPLEAT_ABILITIES),
 );
 
 // MH2 231 — Nettlecyst

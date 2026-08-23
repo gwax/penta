@@ -164,7 +164,8 @@ fn validate_object_reference(
         | ObjectRefDef::AbilityGrantSource
         | ObjectRefDef::ResolvingObject
         | ObjectRefDef::AttachedToSource
-        | ObjectRefDef::TriggeringObject => Ok(()),
+        | ObjectRefDef::TriggeringObject
+        | ObjectRefDef::DamagedObject => Ok(()),
     }
 }
 
@@ -231,7 +232,10 @@ fn validate_damage_matcher_references(
         DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player) => {
             validate_player_reference(player, target_count, scope)
         }
-        DamageRecipientMatcherDef::Any
+        // A predicate names no target and no player, so there is nothing
+        // here to check against the clause's declared slots.
+        DamageRecipientMatcherDef::MatchingObject(_)
+        | DamageRecipientMatcherDef::Any
         | DamageRecipientMatcherDef::AffectedObject
         | DamageRecipientMatcherDef::PlayerOrPlaneswalker => Ok(()),
     }

@@ -66,9 +66,11 @@ fn shared_damage_prevention(prevention: crate::card::DamagePreventionDef) -> boo
         DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player) => {
             shared_effect_recipient(EffectRecipientDef::player(player))
         }
-        // Neither reaches a prevention: they exist for a static shield and
-        // for a trigger, and each is refused where it does not belong.
-        DamageRecipientMatcherDef::AffectedObject
+        // None of these reaches a prevention: they exist for a static
+        // shield and for a trigger, and each is refused where it does not
+        // belong.
+        DamageRecipientMatcherDef::MatchingObject(_)
+        | DamageRecipientMatcherDef::AffectedObject
         | DamageRecipientMatcherDef::PlayerOrPlaneswalker => false,
     };
     let capacity_is_shared = match prevention.capacity {

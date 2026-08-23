@@ -188,6 +188,13 @@ impl Game {
                 );
                 Vec::new()
             }
+            DamageRecipientMatcherDef::MatchingObject(_) => {
+                debug_assert!(
+                    false,
+                    "MatchingObject is only meaningful for a trigger or a static shield"
+                );
+                Vec::new()
+            }
             DamageRecipientMatcherDef::Recipients(recipients) => self
                 .effect_recipients(recipients, object, context, scoped)
                 .into_iter()

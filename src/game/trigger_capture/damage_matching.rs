@@ -110,6 +110,20 @@ impl Game {
             DamageRecipientMatcherDef::AffectedObject => {
                 recipient == Target::Permanent(ability_source)
             }
+            // Read from the snapshot rather than the battlefield: a creature
+            // that took lethal damage is often gone by the time the trigger
+            // is placed, and it is still what the clause is about.
+            DamageRecipientMatcherDef::MatchingObject(predicate) => {
+                recipient_object.is_some_and(|object| {
+                    self.trigger_object_matches_for_controller(
+                        predicate,
+                        object,
+                        ability_source,
+                        false,
+                        controller,
+                    )
+                })
+            }
             DamageRecipientMatcherDef::Recipients(recipients) => match recipients.0 {
                 EffectRecipientSetDef::Objects(ObjectSetDef::One(reference)) => self
                     .trigger_event_object_reference(reference, ability_source, event)

@@ -140,7 +140,8 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                         | ObjectRefDef::AbilityGrantSource
                         | ObjectRefDef::Target(_)
                         | ObjectRefDef::SourceOfTargetedStackObject(_)
-                        | ObjectRefDef::TriggeringObject,
+                        | ObjectRefDef::TriggeringObject
+                        | ObjectRefDef::DamagedObject,
                     )
                     | ObjectSetDef::Binding(_)
                     | ObjectSetDef::MatchingBinding { .. }

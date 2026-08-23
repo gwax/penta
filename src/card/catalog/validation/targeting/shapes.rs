@@ -412,7 +412,8 @@ fn validate_damage_matcher_shape(
         DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(player) => {
             validate_player_reference_shape(player, targets)
         }
-        DamageRecipientMatcherDef::Any
+        DamageRecipientMatcherDef::MatchingObject(_)
+        | DamageRecipientMatcherDef::Any
         | DamageRecipientMatcherDef::AffectedObject
         | DamageRecipientMatcherDef::PlayerOrPlaneswalker => Ok(()),
     }
@@ -581,6 +582,9 @@ fn recipient_may_name_nonbattlefield_object(
                 | ObjectRefDef::AbilityGrantSource
                 | ObjectRefDef::ResolvingObject
                 | ObjectRefDef::AttachedToSource
+                // Damage reaches players and permanents, so what took it is
+                // on the battlefield or is not an object at all.
+                | ObjectRefDef::DamagedObject
                 // The permanent behind a countered ability, which is on the
                 // battlefield or nowhere.
                 | ObjectRefDef::SourceOfTargetedStackObject(_),
@@ -638,7 +642,10 @@ fn recipient_nonbattlefield_zones_support_flashback(
                 | ObjectRefDef::AbilityGrantSource
                 | ObjectRefDef::ResolvingObject
                 | ObjectRefDef::AttachedToSource
-                | ObjectRefDef::SourceOfTargetedStackObject(_),
+                | ObjectRefDef::SourceOfTargetedStackObject(_)
+                // Damage reaches players and permanents, so what took it was
+                // on the battlefield.
+                | ObjectRefDef::DamagedObject,
             )
             | ObjectSetDef::PermanentsTargetedBy(_)
             | ObjectSetDef::SharingNameWith(_),

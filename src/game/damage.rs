@@ -277,6 +277,21 @@ impl Game {
                             .recipient_object
                             .is_some_and(|object| object.id == recipient)
                     }),
+                DamageRecipientMatcherDef::MatchingObject(predicate) => {
+                    event.recipient_object.is_some_and(|recipient| {
+                        self.battlefield
+                            .iter()
+                            .find(|permanent| permanent.card.id == recipient.id)
+                            .is_some_and(|permanent| {
+                                self.trigger_object_matches(
+                                    predicate,
+                                    &self.trigger_event_object(permanent),
+                                    effect_source,
+                                    false,
+                                )
+                            })
+                    })
+                }
                 // Both exist for trigger matching rather than for a static
                 // shield, and the validation above refuses either here.
                 DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(_)
@@ -357,7 +372,8 @@ impl Game {
             | ObjectRefDef::Binding(_)
             | ObjectRefDef::Target(_)
             | ObjectRefDef::SourceOfTargetedStackObject(_)
-            | ObjectRefDef::TriggeringObject => None,
+            | ObjectRefDef::TriggeringObject
+            | ObjectRefDef::DamagedObject => None,
         }
     }
 

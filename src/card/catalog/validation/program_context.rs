@@ -576,7 +576,8 @@ fn static_object_set_supported(objects: ObjectSetDef) -> bool {
             | ObjectRefDef::AbilityGrantSource
             | ObjectRefDef::Target(_)
             | ObjectRefDef::SourceOfTargetedStackObject(_)
-            | ObjectRefDef::TriggeringObject,
+            | ObjectRefDef::TriggeringObject
+            | ObjectRefDef::DamagedObject,
         )
         | ObjectSetDef::Binding(_)
         | ObjectSetDef::MatchingBinding { .. }
@@ -795,6 +796,9 @@ fn static_damage_matcher_supported(matcher: DamageEventMatcherDef) -> bool {
         DamageRecipientMatcherDef::Recipients(recipients) => recipients
             .object_reference()
             .is_some_and(static_damage_object_reference_supported),
+        DamageRecipientMatcherDef::MatchingObject(predicate) => {
+            static_object_predicate_supported(predicate)
+        }
         DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(_)
         | DamageRecipientMatcherDef::PlayerOrPlaneswalker => false,
     };

@@ -448,6 +448,7 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
                 | ObjectRefDef::AttachedToSource
                 | ObjectRefDef::Target(_)
                 | ObjectRefDef::TriggeringObject
+                | ObjectRefDef::DamagedObject
                 | ObjectRefDef::SourceOfTargetedStackObject(_),
             )
             | AbilityCostDef::DiscardCards(_)

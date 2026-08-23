@@ -88,6 +88,10 @@ impl Game {
                 .trigger
                 .object
                 .and_then(|triggering| self.live_object_target(triggering)),
+            ObjectRefDef::DamagedObject => context
+                .trigger
+                .damaged_object
+                .and_then(|damaged| self.live_object_target(damaged)),
         }
     }
 
@@ -133,6 +137,7 @@ impl Game {
                 self.targeted_stack_object_source(target, object, scoped)
             }
             ObjectRefDef::TriggeringObject => context.trigger.object,
+            ObjectRefDef::DamagedObject => context.trigger.damaged_object,
         }
     }
 

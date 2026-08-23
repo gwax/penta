@@ -318,6 +318,7 @@ impl Game {
             object_controller: Some(entry.permanent.controller),
             event_player: Some(entry.permanent.controller),
             amount: None,
+            damaged_object: None,
         }
     }
 

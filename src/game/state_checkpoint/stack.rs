@@ -300,6 +300,7 @@ pub(super) fn trigger_context_snapshot(context: TriggerContext) -> TriggerContex
         object_controller: context.object_controller.map(PlayerId::index),
         event_player: context.event_player.map(PlayerId::index),
         amount: context.amount,
+        damaged_object: context.damaged_object.map(|id| id.0),
     }
 }
 
@@ -737,6 +738,7 @@ pub(super) fn parse_trigger_context(
         object_controller: value.object_controller.map(seat_index_value).transpose()?,
         event_player: value.event_player.map(seat_index_value).transpose()?,
         amount: value.amount,
+        damaged_object: value.damaged_object.map(GameObjectId),
     })
 }
 
@@ -858,6 +860,7 @@ mod tests {
             object_controller: Some(PlayerId::One),
             event_player: Some(PlayerId::Two),
             amount: Some(3),
+            damaged_object: None,
         };
         let mut context = EffectResolutionContext::new(trigger);
         context.bind_single_object(

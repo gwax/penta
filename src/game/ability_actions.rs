@@ -44,6 +44,7 @@ impl Game {
             | ObjectRefDef::AttachedToSource
             | ObjectRefDef::Target(_)
             | ObjectRefDef::TriggeringObject
+            | ObjectRefDef::DamagedObject
             | ObjectRefDef::SourceOfTargetedStackObject(_) => None,
         }
     }

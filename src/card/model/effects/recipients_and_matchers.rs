@@ -18,6 +18,11 @@ pub enum ObjectRefDef {
     AttachedToSource,
     Target(TargetIndex),
     TriggeringObject,
+    /// What a damage event's damage was dealt to. Distinct from
+    /// [`Self::TriggeringObject`], which for a damage trigger is the source
+    /// that dealt it: "whenever this creature deals combat damage to a
+    /// creature, exile that creature" names both, and never the same one.
+    DamagedObject,
     /// The permanent a targeted stack ability came from. Read after that
     /// ability has left the stack, which is what "if a permanent's ability is
     /// countered this way, destroy that permanent" asks for; a targeted spell
@@ -253,7 +258,8 @@ impl EffectRecipientDef {
                 | ObjectRefDef::AttachedToSource
                 | ObjectRefDef::Target(_)
                 | ObjectRefDef::SourceOfTargetedStackObject(_)
-                | ObjectRefDef::TriggeringObject,
+                | ObjectRefDef::TriggeringObject
+                | ObjectRefDef::DamagedObject,
             )
             | None => None,
         }
@@ -430,6 +436,11 @@ pub enum DamageRecipientMatcherDef {
     /// The object receiving a static applied effect.
     AffectedObject,
     Recipients(EffectRecipientDef),
+    /// An object matching a predicate. "Deals combat damage to a creature"
+    /// is about what was hit rather than about which one in particular, so
+    /// it is a predicate over the damaged object -- the mirror of
+    /// [`DamageSourceMatcherDef::Matching`] on the other side of the event.
+    MatchingObject(ObjectPredicateDef),
     /// A player resolved when the prevention is created, plus creatures that
     /// player controls when damage would be dealt.
     PlayerAndCreaturesControlledBy(PlayerRefDef),
