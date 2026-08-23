@@ -927,6 +927,55 @@ pub(in crate::card::sets) static BOUNTIFUL_LANDSCAPE: CardRecord = CardRecord::n
     CardRules::new_land(&[]).with_abilities(&BOUNTIFUL_LANDSCAPE_ABILITIES),
 );
 
+/// The Naya half of the same cycle, and the same shape: three basics, a
+/// tapped land, and a cycling cost nobody pays for the mana.
+static A_BASIC_NAYA_LAND: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Supertype(CardSupertype::Basic),
+    ObjectPredicateDef::HasAnyBasicLandType(&[
+        BasicLandType::Mountain,
+        BasicLandType::Forest,
+        BasicLandType::Plains,
+    ]),
+]);
+
+static SHELTERING_LANDSCAPE_ABILITIES: [AbilityDef; 3] = [
+    abilities::tap_for(ManaColor::Colorless),
+    AbilityDef::activated(
+        "{T}, Sacrifice this land: Search your library for a basic Mountain, Forest, or Plains \
+         card, put it onto the battlefield tapped, then shuffle.",
+        &LANDSCAPE_FETCH_COST,
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: A_BASIC_NAYA_LAND,
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: false,
+            destination: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: true,
+            binding: None,
+            then: None,
+        },
+    ),
+    abilities::cycling(
+        "Cycling {R}{G}{W} ({R}{G}{W}, Discard this card: Draw a card.)",
+        mana_cost!("{R}{G}{W}"),
+    ),
+];
+
+// MH3 227 — Sheltering Landscape
+pub(in crate::card::sets) static SHELTERING_LANDSCAPE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("0fe070f4-8877-4280-b8fd-869f3ac34ab6"),
+    "Sheltering Landscape",
+    CardArt::new("0fe070f4-8877-4280-b8fd-869f3ac34ab6", "Erikas Perl"),
+    CardSet::ModernHorizons3,
+    // The same bargain as its Temur cousin: a colourless tap nobody wants, a
+    // tapped basic when you have the land drop, and a card when you do not.
+    CardRules::new_land(&[]).with_abilities(&SHELTERING_LANDSCAPE_ABILITIES),
+);
+
 // MH3 237 — Ajani, Nacatl Pariah
 pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::new_with_legacy_id(
     2199,
@@ -949,6 +998,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PHLAGE_TITAN_OF_FIRES_FURY,
     &PSYCHIC_FROG,
     &BOUNTIFUL_LANDSCAPE,
+    &SHELTERING_LANDSCAPE,
     &AJANI_NACATL_PARIAH,
 ];
 
