@@ -1,9 +1,6 @@
-//! Built-in card records, grouped by release year and set.
-//!
-//! Each canonical card is defined in one set module. Records default to a
-//! complete implementation and explicitly carry a reason when they are partial
-//! or metadata-only. Reprints and alternate-art variants point back to that
-//! canonical record from their own set module.
+//! Built-in card records grouped by release year and set.
+//! Canonical cards live in one set module; reprints and alternate art point back to it.
+//! Partial and metadata-only entries carry explicit coverage reasons.
 
 mod y1993;
 mod y1994;
@@ -797,11 +794,6 @@ const SET_MODULES: &[SetModule] = &[
         y2017::hour_of_devastation::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
-        CardSet::Dominaria,
-        y2018::dominaria::CARDS,
-        y2018::dominaria::ADDITIONAL_PRINTINGS,
-    ),
-    SetModule::new(
         CardSet::CoreSet2019,
         y2018::core_set_2019::CARDS,
         y2018::core_set_2019::ADDITIONAL_PRINTINGS,
@@ -855,6 +847,51 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::TeenageMutantNinjaTurtles,
         y2026::teenage_mutant_ninja_turtles::CARDS,
         y2026::teenage_mutant_ninja_turtles::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::PortalThreeKingdoms,
+        y1999::portal_three_kingdoms::CARDS,
+        y1999::portal_three_kingdoms::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Coldsnap,
+        y2006::coldsnap::CARDS,
+        y2006::coldsnap::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::BornOfTheGods,
+        y2014::born_of_the_gods::CARDS,
+        y2014::born_of_the_gods::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Commander2017,
+        y2017::commander_2017::CARDS,
+        y2017::commander_2017::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Dominaria,
+        y2018::dominaria::CARDS,
+        y2018::dominaria::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::CommanderLegends,
+        y2020::commander_legends::CARDS,
+        y2020::commander_legends::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::DominariaUnitedCommander,
+        y2022::dominaria_united_commander::CARDS,
+        y2022::dominaria_united_commander::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::MarchOfTheMachineCommander,
+        y2023::march_of_the_machine_commander::CARDS,
+        y2023::march_of_the_machine_commander::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::LostCavernsOfIxalanCommander,
+        y2023::lost_caverns_of_ixalan_commander::CARDS,
+        y2023::lost_caverns_of_ixalan_commander::ADDITIONAL_PRINTINGS,
     ),
 ];
 
