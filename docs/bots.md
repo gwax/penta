@@ -1247,27 +1247,44 @@ registration = requests.post(
 registration.raise_for_status()
 me = registration.json()
 
-finished = []
-while True:
+due = 0.0
+
+def beat(done=()):
+    """Renew presence if the lease is due, and collect any invitations."""
+    global due
+    if time.monotonic() < due and not done:
+        return None
+    due = time.monotonic() + 10
     response = requests.post(
         f"{SERVER}/_bots/{me['id']}/heartbeat",
         json={
             "token": me["token"],
-            "done": finished,
+            "done": list(done),
             "compatibility": COMPATIBILITY,
         },
     )
     if response.status_code == 409:
         raise RuntimeError(f"bot is incompatible with this server: {response.text}")
     response.raise_for_status()
-    reply = response.json()
+    return response.json()
+
+finished = []
+while True:
+    # Passing `done` makes this beat due regardless; only a beat with nothing
+    # to report can come back empty, having decided the lease was still good.
+    reply = beat(finished) or {"invites": []}
     finished = []
     for invite in reply["invites"]:
-        play(invite["room"], invite["token"])   # see below
+        play(invite["room"], invite["token"], beat)   # see below
         finished.append(invite["room"])
     if not finished:
         time.sleep(10)
 ```
+
+Calling `beat` on a due check rather than unconditionally is what lets the
+play loop below call it on every pass without thinking about it.
+`examples/python/hosted_bot.py` is this with the retries a long-running bot
+needs.
 
 Registration and heartbeat responses include the server's `compatibility`
 manifest: `{protocolVersion, capabilities, requiredCapabilities,
@@ -1283,12 +1300,16 @@ invitation.
 
 A game is two ordinary requests in a loop. `opponent` says whether your seat
 holds the decision and hands back the observation this guide describes;
-`command` submits an index into its `legalActions`:
+`command` submits an index into its `legalActions`. Keep heartbeating while
+you play: a game is the longest stretch a bot spends busy, and presence is a
+lease on wall-clock time, so this loop is where most of a bot's heartbeats
+belong.
 
 ```python
-def play(room, token):
+def play(room, token, beat):
     headers = {"x-penta-token": token}          # from the invitation
     while True:
+        beat()                                  # heartbeat if the lease is due
         view = requests.get(
             f"{SERVER}/_game/{room}/opponent", headers=headers
         ).json()
@@ -1338,15 +1359,29 @@ deliberately not a concession: nobody chose it, and a bot learning from its
 own results should be able to tell "my opponent gave up" from "I was too
 slow".
 
-Stop heartbeating with a game in progress and you lose that game too, without
-waiting for the clock. The registry notices within about two presence windows
-and tells the room. This is the faster answer for a bot that is gone; the move
-clock is the backstop for one that is still running but stuck.
+Go silent with a game in progress and you lose that game too, without waiting
+for the clock. The registry notices within about two presence windows and
+tells the room, and the result says so: `result.reason` is still
+`OpponentRanOutOfTime`, but the message names the bot that stopped answering
+rather than the clock, so the human can tell an absent opponent from a slow
+one. This is the faster answer for a bot that is gone; the move clock is the
+backstop for one that is still running but stuck.
 
-Two consequences worth designing for:
+Silent means silent everywhere. The registry counts a bot as present if it is
+still talking to the rooms it owes games to, so a bot that polls `opponent`
+and posts `botAct` will not be dropped mid-game merely because its heartbeat
+lapsed. Do not lean on that: it is a safety net for the one mistake that is
+easiest to make, not a substitute for heartbeating. Only the heartbeat keeps a
+bot in the listing where people can find it, and only the heartbeat covers the
+stretches between games.
+
+Three consequences worth designing for:
 
 - Answer promptly even when the answer is `PassPriority`. The clock does not
   care that a decision was uninteresting.
+- Keep heartbeating from inside your play loop, not only between games. A
+  loop that plays a whole game before its next heartbeat is a bot that
+  disappears from the listing for the length of every game.
 - Report finished rooms in `done`. A game that ended while you were not
   looking -- because you lost on time -- still counts against your one game at
   a time until you say so or the invitation expires.

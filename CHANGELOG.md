@@ -25,6 +25,26 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Changed
 
+- **A bot that is playing its game counts as present.** The registry used to
+  end a hosted game the moment a bot's heartbeat lease lapsed, which caught
+  bots that were sitting right there polling `opponent` and posting `botAct`
+  -- including any bot copied from this repository's own examples, whose play
+  loop blocked the heartbeat for the length of every game. Before declaring a
+  bot gone, the registry now asks the rooms it owes games to, via the
+  object-to-object `bot-activity` route; heartbeating from inside the play
+  loop is still what keeps a bot listed, and `examples/python/hosted_bot.py`
+  and the bot guide's loop now do it. The move clock is unchanged and remains
+  the answer for a bot that is running but wedged.
+
+- **A timeout says what actually happened.** `WebGame.loseOnTime(seat)` takes
+  an optional second argument, the host's own account of the ending, and a
+  reason other than the default `"ran out of time"` is what the player is
+  shown -- so a bot whose process vanished reads as "Fizzbot stopped
+  answering" rather than as one that merely thought too long. The reason was
+  already journaled and already replayed; only the live path dropped it.
+  `result.reason` is still `OpponentRanOutOfTime`, so protocol 28 and replay
+  version 2 are unchanged.
+
 - **Formats are organized by legality model and category.** Set-based formats
   now carry set windows plus banned/restricted policy, while cubes carry fixed
   card lists. Historical Standard adds `isd-m14-standard` and

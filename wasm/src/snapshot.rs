@@ -70,6 +70,21 @@ impl WebGame {
         self.snapshot_value(true)
     }
 
+    /// The clause after the dash in a finished game's message.
+    ///
+    /// [`WinReason`](penta::WinReason) names the loser as "the opponent" from
+    /// the winner's seat. The browser only ever has the human's seat, so say
+    /// who actually did the losing. A host that ended the game on a clock may
+    /// also have said something more specific than the generic wording -- a
+    /// bot whose process stopped answering is not the same as one that was
+    /// merely too slow -- and that account wins where it exists.
+    fn result_reason_text(&self, reason: penta::WinReason, human_lost: bool) -> &str {
+        match (reason, self.timeout_reason.as_deref()) {
+            (penta::WinReason::OpponentRanOutOfTime, Some(text)) => text,
+            _ => win_reason_text(reason, human_lost),
+        }
+    }
+
     fn automatic_mana_sources(&self, action: &Action) -> Vec<u32> {
         self.session
             .mana_sources_for_action(self.human, action)
@@ -386,10 +401,7 @@ impl WebGame {
                 "message": format!(
                     "{} — {}",
                     if winner == self.human { "You win" } else { "You lose" },
-                    // WinReason names the loser as "the opponent" from the
-                    // winner's seat. The browser only ever has the human's
-                    // seat, so say who actually did the losing.
-                    win_reason_text(reason, winner != self.human)
+                    self.result_reason_text(reason, winner != self.human)
                 ),
             }),
             GameResult::Draw => json!({"outcome": "draw", "message": "Draw"}),

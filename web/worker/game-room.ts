@@ -202,7 +202,9 @@ function apply(game: WebGame, command: Command): void {
       game.opponentAct(command.index);
       return;
     case "loseOnTime":
-      game.loseOnTime(command.seat);
+      // The reason travels with the command, so a replay of this room ends
+      // with the same account of the ending that the player was given.
+      game.loseOnTime(command.seat, command.reason);
   }
 }
 
@@ -218,6 +220,17 @@ export class GameRoom {
   #deliveredBeats = 0;
   /** Who the room is waiting on, mirrored from storage. */
   #clock: MoveClock | null = null;
+  /**
+   * When the bot seat last showed up here: connected, polled, or moved.
+   *
+   * Deliberately memory-only. Its one reader asks whether the bot has been
+   * here within a presence window, and a bot that has been here within a
+   * presence window has kept this object loaded -- so an instance with no
+   * value is an instance nothing has talked to, which is the same answer.
+   * Persisting it would put a storage write on the poll loop, which is the
+   * chattiest path in the room, to learn nothing new.
+   */
+  #lastBotSeen: number | null = null;
   /** Last state it was safe to render to the human seat. */
   #humanState: HumanStateCache | null = null;
 
@@ -235,9 +248,21 @@ export class GameRoom {
       if (route === "start") {
         return await this.#start((await request.json()) as GameConfig, presented);
       }
+      if (route === "bot-activity") {
+        // Object-to-object only, like `lose-on-time`: the registry asks this
+        // before it concludes that a bot has abandoned this room. Answered
+        // before `#load()` on purpose -- it needs no game, and a registry
+        // poll should not pay to replay one.
+        return Response.json({ lastSeen: this.#lastBotSeen });
+      }
       const game = await this.#load();
       if (!game) return Response.json({ error: "no game here yet" }, { status: 404 });
       const seat = this.#seatFor(presented);
+      // Presenting the bot seat's token is the bot being here. Polling
+      // counts as much as moving: a bot waiting out the human's turn is
+      // alive, and the move clock -- not this -- is what answers a bot that
+      // is running but wedged.
+      if (seat === "bot") this.#lastBotSeen = Date.now();
       if (route === "ws") {
         const role = url.searchParams.get("role") ?? "human";
         if (seat !== role) return forbidden();
@@ -623,6 +648,9 @@ export class GameRoom {
   }
 
   async #onBotMessage(game: WebGame, data: unknown): Promise<void> {
+    // A socket bot presents its token once, at connect, so its later moves
+    // arrive as frames rather than as requests `fetch` could notice.
+    this.#lastBotSeen = Date.now();
     try {
       const message = JSON.parse(String(data)) as { t: string; index: number };
       if (message.t !== "act") throw new Error("the bot socket speaks only act");

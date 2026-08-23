@@ -43,6 +43,11 @@ const BOT_ACTION_LIMIT: usize = 50_000;
 /// core simulation fingerprint.
 const REPLAY_VERSION: u32 = 2;
 
+/// What a host says when its clock simply expired. Journaled verbatim like
+/// any other reason, and recognised here so that the ordinary ending keeps
+/// the win-reason table's seat-aware wording rather than this bare phrase.
+const DEFAULT_TIMEOUT_REASON: &str = "ran out of time";
+
 fn required_json_field<'a>(
     object: &'a serde_json::Map<String, Value>,
     context: &str,
@@ -189,6 +194,10 @@ pub struct WebGame {
     announced_turn: Option<u32>,
     /// The board the moment your own action landed, before the game answered.
     human_action_state: Option<Value>,
+    /// Why a host's clock ended this game, when the host said something more
+    /// specific than [`DEFAULT_TIMEOUT_REASON`]. `None` is the ordinary
+    /// expired-clock ending, which the win-reason table already describes.
+    timeout_reason: Option<String>,
 }
 
 #[wasm_bindgen]
@@ -259,6 +268,7 @@ impl WebGame {
             // The opening turn arrives with the board, not as a change to it.
             announced_turn: Some(1),
             human_action_state: None,
+            timeout_reason: None,
         };
         web_game.advance_until_human_choice()?;
         Ok(web_game)
@@ -633,13 +643,23 @@ impl WebGame {
     /// is not going to take their turn. And unlike conceding, nobody chose
     /// it, which is why the result says so.
     ///
+    /// `reason` is the host's own account of the ending, and defaults to
+    /// [`DEFAULT_TIMEOUT_REASON`]. A host that knows more than "the clock
+    /// expired" -- that the opponent's process stopped answering, say --
+    /// should say so, because a seat that is merely slow and a seat that is
+    /// gone are different things to the player waiting on it. Anything other
+    /// than the default is shown to the human in place of the generic
+    /// wording, so phrase it from that seat's point of view and name its own
+    /// subject: "Fizzbot stopped answering", not "stopped answering".
+    ///
     /// # Errors
     ///
     /// Returns a JavaScript error for an unknown seat, or when the game is
     /// already over.
+    #[allow(clippy::needless_pass_by_value)] // wasm-bindgen owns optional strings at the ABI.
     #[wasm_bindgen(js_name = loseOnTime)]
-    pub fn lose_on_time(&mut self, seat: &str) -> Result<(), JsValue> {
-        self.lose_on_time_with_reason(seat, "ran out of time")
+    pub fn lose_on_time(&mut self, seat: &str, reason: Option<String>) -> Result<(), JsValue> {
+        self.lose_on_time_with_reason(seat, reason.as_deref().unwrap_or(DEFAULT_TIMEOUT_REASON))
     }
 
     fn lose_on_time_with_reason(&mut self, seat: &str, reason: &str) -> Result<(), JsValue> {
@@ -653,6 +673,10 @@ impl WebGame {
         }
         self.mana_undo_history.clear();
         self.attack_undo = None;
+        // Only a reason that says more than the default is worth carrying:
+        // the win-reason table already words the plain expired clock, and it
+        // words it per seat, which a single stored string cannot.
+        self.timeout_reason = (reason != DEFAULT_TIMEOUT_REASON).then(|| reason.to_owned());
         self.session.lose_on_time(player);
         // The ending is the whole remaining story, so the human sees it as a
         // beat rather than as a board that silently stopped.

@@ -370,10 +370,17 @@ export class BotRegistry {
   }
 
   /**
-   * Checks every bot that owes somebody a game. A bot that has stopped
-   * heartbeating has abandoned its opponent, so its room is told to end the
-   * game against it -- a human should not sit waiting out a move clock for a
-   * process that is gone.
+   * Checks every bot that owes somebody a game. A bot that has gone silent
+   * has abandoned its opponent, so its room is told to end the game against
+   * it -- a human should not sit waiting out a move clock for a process that
+   * is gone.
+   *
+   * Silent means silent everywhere, not merely here. A bot playing a game is
+   * talking to that game's room, and a bot in the middle of a game is the
+   * one case where an otherwise healthy bot most easily forgets to heartbeat
+   * -- so a bot that has not heartbeated is asked about at its rooms before
+   * it is declared gone. Ending the game of a bot that is visibly still
+   * playing it is the worse error by far.
    *
    * The move clock in the room is the backstop for a bot that is still alive
    * but wedged; this is the faster, more specific answer for one that is not.
@@ -395,14 +402,45 @@ export class BotRegistry {
         watching = true;
         continue;
       }
+      const abandoned: Invite[] = [];
       for (const invite of invites) {
+        if (isOnline(await this.#botLastSeenIn(invite.room), now)) {
+          watching = true;
+        } else {
+          abandoned.push(invite);
+        }
+      }
+      if (abandoned.length === 0) continue;
+      for (const invite of abandoned) {
         await this.#loseOnTime(invite.room, `${bot.name} stopped answering`);
       }
-      bot.invites = [];
+      bot.invites = invites.filter((invite) => !abandoned.includes(invite));
       await this.#state.storage.put(PREFIX + bot.id, bot);
     }
     await this.#evictStale();
     if (watching) await this.#state.storage.setAlarm(now + PRESENCE_MS);
+  }
+
+  /**
+   * When `room` last heard from the bot holding its opponent seat, as an
+   * epoch millisecond `isOnline` can weigh -- 0 for a room that has not
+   * heard from it at all, or that could not be reached to ask.
+   */
+  async #botLastSeenIn(room: string): Promise<number> {
+    try {
+      const stub = this.#env.GAME_ROOMS.get(this.#env.GAME_ROOMS.idFromName(room));
+      const reply = await stub.fetch(
+        new Request(`https://room/_game/${room}/bot-activity`),
+      );
+      if (!reply.ok) return 0;
+      const { lastSeen } = (await reply.json()) as { lastSeen?: number | null };
+      return typeof lastSeen === "number" ? lastSeen : 0;
+    } catch {
+      // A room that cannot answer cannot vouch for the bot either. Falling
+      // back to the heartbeat alone is the behaviour this check refines, not
+      // one it may quietly replace with something more forgiving.
+      return 0;
+    }
   }
 
   /** Whether `room` agrees that `token` is its bot seat's. */

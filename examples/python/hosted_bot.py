@@ -6,6 +6,11 @@ where invitations arrive. No WebSocket, no framework, no penta module: this
 plays entirely against the server's engine, so it runs anywhere `requests`
 does.
 
+Note that the heartbeat keeps going *during* a game. Presence is a lease on
+wall-clock time, and a game is the longest stretch a bot spends busy, so a
+play loop that stops heartbeating is a bot that goes silent right when
+someone is waiting on it.
+
     python3 hosted_bot.py --name Fizzbot           # your own server
     python3 hosted_bot.py --name Fizzbot \
         --server https://penta.lacker.workers.dev  # where people can play it
@@ -28,11 +33,11 @@ import requests
 HEARTBEAT_SECONDS = 10
 # How long to wait between polls while it is the opponent's turn to move.
 POLL_SECONDS = 0.25
-# This bot consumes the protocol-22 indexed-action vocabulary, requires no
+# This bot consumes the protocol-28 indexed-action vocabulary, requires no
 # optional server facilities, and implements no optional server-required
 # vocabulary. Never copy the server's claims without implementing them.
 COMPATIBILITY = {
-    "protocolVersion": 22,
+    "protocolVersion": 28,
     "capabilities": [],
     "requiredCapabilities": [],
     # A trained bot can set this to the simulationFingerprint it requires:
@@ -58,15 +63,78 @@ def choose(observation):
     return 0
 
 
-def play(server, room, token):
+class Incompatible(Exception):
+    """The server will not have this bot as it is declared."""
+
+
+def heartbeat(server, identifier, token, done=()):
+    """Renew presence, and collect whatever invitations are waiting.
+
+    Raises `Incompatible` when the server refuses this bot's declaration,
+    which is not something retrying will fix.
+    """
+    response = requests.post(
+        f"{server}/_bots/{identifier}/heartbeat",
+        json={
+            "token": token,
+            "done": list(done),
+            "compatibility": COMPATIBILITY,
+        },
+        timeout=30,
+    )
+    if response.status_code == 409:
+        raise Incompatible(response.text)
+    response.raise_for_status()
+    return response.json()
+
+
+def keep_alive(server, identifier, token):
+    """Returns a callable that heartbeats whenever the lease is due.
+
+    Call it as often as you like -- it is a no-op until `HEARTBEAT_SECONDS`
+    have passed -- and call it from anywhere the bot might be busy for a
+    while. The play loop below calls it on every poll, which is what keeps a
+    long game from looking like a bot that walked away.
+
+    A failed heartbeat is not fatal: presence is a lease with slack in it, so
+    one lost packet is worth riding out. Only a refused declaration stops the
+    bot, because that one will not fix itself.
+    """
+    due = 0.0
+
+    def beat(done=()):
+        nonlocal due
+        now = time.monotonic()
+        if now < due and not done:
+            return
+        due = now + HEARTBEAT_SECONDS
+        try:
+            return heartbeat(server, identifier, token, done)
+        except (requests.RequestException, ValueError) as problem:
+            print(f"heartbeat failed ({problem}); retrying")
+            return None
+
+    return beat
+
+
+def play(server, room, token, beat):
     """Drive the opponent seat of one room until the game ends.
 
     The token came with the invitation and is what authorises this seat; the
     room id alone is just a name, and the room will refuse without it.
+
+    `beat` is the presence heartbeat, called on every pass. A game is the
+    longest a bot stays busy, so this loop -- not the outer one -- is where
+    most of a bot's heartbeats happen. Drop it and the server watches the bot
+    go silent mid-game and ends the game against it, which looks from the
+    other seat like a bot that ran out of time.
     """
     print(f"playing {room}")
     headers = {"x-penta-token": token}
     while True:
+        # Whatever this returns is about some later game: the invitation for
+        # this room stays outstanding until the room is reported in `done`.
+        beat()
         view = requests.get(
             f"{server}/_game/{room}/opponent", headers=headers, timeout=30
         ).json()
@@ -122,39 +190,32 @@ def main():
     print(f"registered as {arguments.name} ({identifier}) playing {arguments.deck}")
     print("waiting for a challenger…")
 
+    beat = keep_alive(server, identifier, token)
     finished = []
     while True:
-        # A server restart, a proxy hiccup, or a redeploy all show up here as
-        # one bad reply. Missing a heartbeat costs at most a spell out of the
-        # list; crashing costs the whole bot, so the loop rides it out.
+        # A server restart, a proxy hiccup, or a redeploy all show up as one
+        # bad reply, which `beat` rides out: missing a heartbeat costs at most
+        # a spell out of the list, and crashing costs the whole bot. A refused
+        # declaration is the one thing retrying will not fix.
         try:
-            response = requests.post(
-                f"{server}/_bots/{identifier}/heartbeat",
-                json={
-                    "token": token,
-                    "done": finished,
-                    "compatibility": COMPATIBILITY,
-                },
-                timeout=30,
-            )
-            if response.status_code == 409:
-                print(f"server rejected this bot's compatibility: {response.text}")
-                return
-            response.raise_for_status()
-            reply = response.json()
-        except (requests.RequestException, ValueError) as problem:
-            print(f"heartbeat failed ({problem}); retrying")
-            time.sleep(HEARTBEAT_SECONDS)
-            continue
-        finished = []
-        for invite in reply.get("invites", []):
-            try:
-                play(server, invite["room"], invite["token"])
-            except (requests.RequestException, ValueError) as problem:
-                print(f"lost the game in {invite['room']} ({problem})")
-            # Reporting it finished is what frees the bot for the next game,
-            # whether it ended in a result or in a dropped connection.
-            finished.append(invite["room"])
+            # Reporting rooms in `done` is what frees the bot for the next
+            # game, so this beat is due whether or not the lease is.
+            reply = beat(finished)
+            if reply is None:
+                time.sleep(HEARTBEAT_SECONDS)
+                continue
+            finished = []
+            for invite in reply.get("invites", []):
+                try:
+                    play(server, invite["room"], invite["token"], beat)
+                except (requests.RequestException, ValueError) as problem:
+                    print(f"lost the game in {invite['room']} ({problem})")
+                # Reporting it finished is what frees the bot for the next
+                # game, whether it ended in a result or a dropped connection.
+                finished.append(invite["room"])
+        except Incompatible as problem:
+            print(f"server rejected this bot's compatibility: {problem}")
+            return
         if not finished:
             time.sleep(HEARTBEAT_SECONDS)
 

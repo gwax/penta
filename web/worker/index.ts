@@ -149,9 +149,10 @@ const worker = {
     // /_game/<id>/<route>. The id names the Durable Object, so every request
     // for one game reaches the same instance and the engine has a single
     // writer. Only these routes are reachable from outside: `lose-on-time`
-    // deliberately is not, which is what makes an object-to-object call from
-    // the room's own alarm or the bot registry distinguishable from a
-    // stranger ending someone's game.
+    // and `bot-activity` deliberately are not, which is what makes an
+    // object-to-object call from the room's own alarm or the bot registry
+    // distinguishable from a stranger ending someone's game or reading when
+    // its bot last moved.
     const room = hostedGames ? url.pathname.match(/^\/_game\/([^/]+)\/([^/]+)$/) : null;
     if (room && PUBLIC_ROOM_ROUTES.has(room[2])) {
       const stub = env.GAME_ROOMS.get(env.GAME_ROOMS.idFromName(room[1]));

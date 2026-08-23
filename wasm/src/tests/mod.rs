@@ -608,12 +608,13 @@ mod lose_on_time {
             "game is live"
         );
 
-        game.lose_on_time("bot").expect("the bot loses on time");
+        game.lose_on_time("bot", None)
+            .expect("the bot loses on time");
 
         let result = parsed(&game.state_json());
         assert_eq!(result["result"]["outcome"], "win", "{result}");
         assert!(
-            game.lose_on_time("bot").is_err(),
+            game.lose_on_time("bot", None).is_err(),
             "a finished game cannot run out of time again"
         );
     }
@@ -629,7 +630,7 @@ mod lose_on_time {
             !game.opponent_is_deciding(),
             "the human is the one on the clock here"
         );
-        game.lose_on_time("bot")
+        game.lose_on_time("bot", None)
             .expect("the clock does not need the turn");
         assert_eq!(parsed(&game.state_json())["result"]["outcome"], "win");
     }
@@ -638,7 +639,8 @@ mod lose_on_time {
     fn a_human_who_runs_out_of_time_loses_the_game() {
         let mut game =
             WebGame::new("Sligh", "Goblins", "External", true, 9, None).expect("game starts");
-        game.lose_on_time("human").expect("the human loses on time");
+        game.lose_on_time("human", None)
+            .expect("the human loses on time");
         assert_eq!(parsed(&game.state_json())["result"]["outcome"], "loss");
     }
 
@@ -648,7 +650,8 @@ mod lose_on_time {
     fn the_result_says_time_rather_than_concession() {
         let mut game =
             WebGame::new("Sligh", "Goblins", "External", true, 9, None).expect("game starts");
-        game.lose_on_time("human").expect("the human loses on time");
+        game.lose_on_time("human", None)
+            .expect("the human loses on time");
         let message = parsed(&game.state_json())["result"]["message"]
             .as_str()
             .expect("a finished game explains itself")
@@ -657,11 +660,72 @@ mod lose_on_time {
         assert!(!message.contains("conceded"), "{message}");
     }
 
+    /// Issue 95: a bot whose process had gone away and a bot that was merely
+    /// slow both read as "opponent ran out of time", so the player could not
+    /// tell a broken opponent from a thoughtful one -- and the host already
+    /// knew which it was.
+    #[test]
+    fn a_hosts_own_account_of_the_ending_reaches_the_player() {
+        let mut game =
+            WebGame::new("Sligh", "Goblins", "External", true, 9, None).expect("game starts");
+        game.lose_on_time("bot", Some("Fizzbot stopped answering".to_owned()))
+            .expect("the bot loses on time");
+
+        let result = parsed(&game.state_json());
+        assert_eq!(result["result"]["outcome"], "win", "{result}");
+        assert_eq!(
+            result["result"]["message"], "You win — Fizzbot stopped answering",
+            "{result}"
+        );
+    }
+
+    /// The generic reason is the one the win-reason table already words, and
+    /// words per seat -- "opponent ran out of time" reads correctly and "ran
+    /// out of time" does not. A host that says nothing more than the default
+    /// must not cost the player that wording, whether it says it by omission
+    /// or by spelling the default out, as a replayed journal always does.
+    #[test]
+    fn the_default_reason_keeps_the_seat_aware_wording() {
+        for reason in [None, Some(String::from("ran out of time"))] {
+            let mut game =
+                WebGame::new("Sligh", "Goblins", "External", true, 9, None).expect("game starts");
+            game.lose_on_time("bot", reason.clone())
+                .expect("the bot loses on time");
+            assert_eq!(
+                parsed(&game.state_json())["result"]["message"],
+                "You win — opponent ran out of time",
+                "{reason:?}"
+            );
+        }
+    }
+
+    /// A replay is the same game told again, so it must reach the same
+    /// ending -- reason and all, which is the part a journal could silently
+    /// drop while every other assertion still passed.
+    #[test]
+    fn a_replay_ends_with_the_same_account_of_the_ending() {
+        let mut game =
+            WebGame::new("Sligh", "Goblins", "External", true, 9, None).expect("game starts");
+        game.lose_on_time("bot", Some("Fizzbot stopped answering".to_owned()))
+            .expect("the bot loses on time");
+        let replay = game.replay_json();
+        assert_eq!(
+            parsed(&replay)["commands"][0]["reason"],
+            "Fizzbot stopped answering"
+        );
+
+        let replayed = WebGame::from_replay_json(&replay).expect("the timeout replays");
+        assert_eq!(
+            parsed(&replayed.state_json())["result"]["message"],
+            "You win — Fizzbot stopped answering"
+        );
+    }
+
     #[test]
     fn an_unknown_seat_is_refused() {
         let mut game =
             WebGame::new("Sligh", "Goblins", "External", true, 9, None).expect("game starts");
-        assert!(game.lose_on_time("nobody").is_err());
+        assert!(game.lose_on_time("nobody", None).is_err());
         assert!(
             parsed(&game.state_json())["result"].is_null(),
             "a refused timeout leaves the game alone"
@@ -672,7 +736,7 @@ mod lose_on_time {
     fn the_timeout_journal_uses_the_canonical_v1_seat_and_reason() {
         let mut game =
             WebGame::new("Sligh", "Goblins", "External", true, 9, None).expect("game starts");
-        game.lose_on_time("opponent")
+        game.lose_on_time("opponent", None)
             .expect("the public alias remains accepted");
 
         let replay = parsed(&game.replay_json());
@@ -693,7 +757,8 @@ mod lose_on_time {
                 .expect("keep is offered"),
         )
         .expect("keep applies");
-        game.lose_on_time("bot").expect("the bot loses on time");
+        game.lose_on_time("bot", None)
+            .expect("the bot loses on time");
 
         let rebuilt = WebGame::from_replay_json(&game.replay_json()).expect("replay rebuilds");
         assert_eq!(
