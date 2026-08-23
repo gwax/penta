@@ -2,11 +2,10 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef,
-    CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, PlayerRelation, PlayerSetDef, SpellAdditionalCostDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
-    ZonePlacement,
+    AbilityDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules,
+    CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    PlayerRelation, PlayerSetDef, SpellAdditionalCostDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement,
 };
 use crate::mana_cost;
 
@@ -39,6 +38,7 @@ static ORACLE_LOOK: TopCardSelectionDef = TopCardSelectionDef {
     selected_placement: ZonePlacement::Top,
     rest_zone: ZoneKind::Library,
     rest_placement: ZonePlacement::Bottom,
+    rest_random_order: true,
     selected_order_follows_choice: false,
     then: None,
     selected_face_down: None,
@@ -75,12 +75,7 @@ pub(in crate::card::sets) static THASSAS_ORACLE: CardRecord = CardRecord::new_wi
                 Some(ZoneKind::Battlefield),
             ),
             EffectDef::Sequence(&ORACLE_ENTERS),
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The cards put on the bottom go there in their library order rather than a random \
-             one. Nothing in the pool looks at the bottom of a library, so the difference is \
-             not observable from inside a game.",
-        )),
+        ),
     ),
 );
 

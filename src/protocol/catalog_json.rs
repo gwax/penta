@@ -180,6 +180,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::FinalFantasy => "final-fantasy",
         CardSet::FinalFantasyCommander => "final-fantasy-commander",
         CardSet::ThroughTheOmenpaths => "through-the-omenpaths",
+        CardSet::EdgeOfEternities => "edge-of-eternities",
         CardSet::Token => "token",
     }
 }

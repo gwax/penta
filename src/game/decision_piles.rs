@@ -232,6 +232,13 @@ impl Game {
                 selection.selected_placement,
             );
         }
+        // "The rest go back in a random order": the looker has seen them, so
+        // the order they return in is decided by the game rather than by
+        // what order they happened to come out in.
+        let mut rest = rest;
+        if selection.rest_random_order {
+            self.rng.shuffle(&mut rest);
+        }
         self.place_revealed_remainder(player, rest, selection.rest_zone, selection.rest_placement);
     }
 

@@ -39,6 +39,11 @@ pub struct TopCardSelectionDef {
     pub selected_face_down: Option<FaceDownCharacteristics>,
     pub rest_zone: ZoneKind,
     pub rest_placement: ZonePlacement,
+    /// "Put the rest on the bottom of your library in a random order." The
+    /// looker has seen those cards, so the order they go back in is the
+    /// difference between a look and a stack: without this they would return
+    /// in the order they were drawn out.
+    pub rest_random_order: bool,
     /// The selected cards are placed in the order they were chosen rather
     /// than the order they were drawn out of the library. This is what "put
     /// them back in any order" asks for: with every inspected card selected,

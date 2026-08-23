@@ -105,6 +105,7 @@ static PONDER_LOOK: TopCardSelectionDef = TopCardSelectionDef {
     selected_placement: ZonePlacement::Top,
     rest_zone: ZoneKind::Library,
     rest_placement: ZonePlacement::Top,
+    rest_random_order: false,
     selected_order_follows_choice: true,
     then: Some(&PONDER_SHUFFLE_AND_DRAW),
     selected_face_down: None,

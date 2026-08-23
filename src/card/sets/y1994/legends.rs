@@ -818,6 +818,7 @@ static VISIONS_LOOK: TopCardSelectionDef = TopCardSelectionDef {
     selected_placement: ZonePlacement::Top,
     rest_zone: ZoneKind::Library,
     rest_placement: ZonePlacement::Top,
+    rest_random_order: false,
     selected_order_follows_choice: false,
     then: Some(&VISIONS_SHUFFLE),
     selected_face_down: None,

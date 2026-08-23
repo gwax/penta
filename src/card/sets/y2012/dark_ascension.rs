@@ -1057,6 +1057,7 @@ pub(in crate::card::sets) static TOWER_GEIST: CardRecord = CardRecord::new_with_
                     selected_placement: ZonePlacement::Top,
                     rest_zone: ZoneKind::Graveyard,
                     rest_placement: ZonePlacement::Top,
+                    rest_random_order: false,
                     selected_order_follows_choice: false,
                     then: None,
                 selected_face_down: None,},

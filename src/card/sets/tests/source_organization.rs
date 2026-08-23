@@ -319,6 +319,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("final_fantasy.rs") => source(CardSet::FinalFantasy, "FIN"),
         Some("final_fantasy_commander.rs") => source(CardSet::FinalFantasyCommander, "FIC"),
         Some("through_the_omenpaths.rs") => source(CardSet::ThroughTheOmenpaths, "OM1"),
+        Some("edge_of_eternities.rs") => source(CardSet::EdgeOfEternities, "EOE"),
         Some(name) => panic!(
             "{}: add {name} to the official set-code map",
             path.display()

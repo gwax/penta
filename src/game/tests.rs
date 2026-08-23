@@ -302,6 +302,7 @@ mod vintage_cube_chandra;
 mod vintage_cube_collective_brutality;
 mod vintage_cube_colonnade;
 mod vintage_cube_concealing_curtains;
+mod vintage_cube_consult_star_charts;
 mod vintage_cube_creatures;
 mod vintage_cube_crucible;
 mod vintage_cube_cryptic_command;

@@ -709,6 +709,11 @@ const SET_MODULES: &[SetModule] = &[
         y2025::through_the_omenpaths::CARDS,
         y2025::through_the_omenpaths::ADDITIONAL_PRINTINGS,
     ),
+    SetModule::new(
+        CardSet::EdgeOfEternities,
+        y2025::edge_of_eternities::CARDS,
+        y2025::edge_of_eternities::ADDITIONAL_PRINTINGS,
+    ),
 ];
 
 pub(super) fn definitions() -> Vec<CardDefinition> {

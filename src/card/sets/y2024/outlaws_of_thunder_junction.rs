@@ -156,6 +156,7 @@ static BRONCO_REVEAL: TopCardSelectionDef = TopCardSelectionDef {
     selected_face_down: None,
     rest_zone: ZoneKind::Library,
     rest_placement: ZonePlacement::Top,
+    rest_random_order: false,
     selected_order_follows_choice: false,
     then: Some(&BRONCO_PAYMENT_SEQUENCE),
 };

@@ -137,6 +137,7 @@ pub enum CardSet {
     FinalFantasy,
     FinalFantasyCommander,
     ThroughTheOmenpaths,
+    EdgeOfEternities,
     /// Tokens are game objects rather than printed cards. They live in the
     /// catalog so a client can look one up by definition, and belong to no
     /// set a format allows, so they are never deck-legal.
