@@ -5,8 +5,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
     AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype,
     CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef,
-    ValueDef, ZoneKind, abilities,
+    ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef, SpellAdditionalCostDef,
+    SpendModeDef, TriggerConditionDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -154,6 +154,56 @@ pub(in crate::card::sets) static SNUFF_OUT: CardRecord = CardRecord::new_with_le
     ]),
 );
 
+/// A Forest on the battlefield, which is what the free cast is gated on.
+static YOU_CONTROL_A_FOREST: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+static INVIGORATE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+// MMQ 254 — Invigorate
+pub(in crate::card::sets) static INVIGORATE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("406b343c-90b5-4a4d-91c3-2fddcc9a0e05"),
+    "Invigorate",
+    CardArt::new("406b343c-90b5-4a4d-91c3-2fddcc9a0e05", "Dan Frazier"),
+    CardSet::MercadianMasques,
+    // Four power for nothing at all, which is why the deck that plays it is
+    // trying to kill you before the three life matters.
+    CardRules::new_instant(mana_cost!("{2}{G}")).with_abilities(&[
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::AlternativeCost,
+            Some(
+                "If you control a Forest, rather than pay this spell's mana cost, you may have an \
+                 opponent gain 3 life.",
+            ),
+            EffectDef::None,
+        )
+        .with_alternative_opponent_life_gain(3)
+        .with_alternative_condition(&YOU_CONTROL_A_FOREST),
+        AbilityDef::spell_with_targets(
+            "Target creature gets +4/+4 until end of turn.",
+            &INVIGORATE_TARGET,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(4),
+                    ValueDef::Constant(4),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
+
 // MMQ 316 — Dust Bowl
 pub(in crate::card::sets) static DUST_BOWL: CardRecord = CardRecord::new_with_legacy_id(
     280,
@@ -217,6 +267,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GUSH,
     &THWART,
     &SNUFF_OUT,
+    &INVIGORATE,
     &DUST_BOWL,
     &HICKORY_WOODLOT,
     &RISHADAN_PORT,

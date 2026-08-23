@@ -479,6 +479,9 @@ impl Game {
         } else {
             0
         };
+        // Read before the signature is handed to the stack object, and paid
+        // below beside every other cost this cast owes.
+        let opponent_life_gain = self.cast_opponent_life_gain(card_id, &signature);
         let card = self.remove_card_for_cast(player, card_id, source_zone);
         let mut stack_object = self.propose_spell_on_stack(
             player,
@@ -510,17 +513,7 @@ impl Game {
                 .clone(),
             reserved_life_payment: life,
         };
-        // Life named by the chosen alternative, by the spell's own additional
-        // cost, or by the permission that let it be cast off a library, is
-        // paid alongside its mana, before the spell is finished on the stack.
-        if life > 0 {
-            self.lose_life(player, life);
-        }
-        // Read before the permission is consumed above; spent here, where
-        // every other cost for this cast is paid.
-        if energy > 0 {
-            self.spend_energy(player, energy);
-        }
+        self.pay_cast_life_and_energy(player, life, opponent_life_gain, energy);
         let Some(plan) = self.plan_mana_activations_for_reserving(
             player,
             cost,

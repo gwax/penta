@@ -501,6 +501,7 @@ impl AbilityDef {
                 additional_cost: None,
                 condition: None,
                 life: 0,
+                opponent_life_gain: 0,
                 minimum_x: 0,
             }),
             effect,
@@ -526,6 +527,7 @@ impl AbilityDef {
                 additional_cost: None,
                 condition: None,
                 life: 0,
+                opponent_life_gain: 0,
                 minimum_x: 0,
             }),
             effect,
@@ -649,6 +651,22 @@ impl AbilityDef {
             }
             _ => panic!("only an activated ability has an activation window"),
         };
+        self
+    }
+
+    /// "Have an opponent gain N life": what this alternative costs, which is
+    /// paid where every other cast cost is.
+    ///
+    /// # Panics
+    ///
+    /// Panics for any ability that is not an alternative cast.
+    #[must_use]
+    pub const fn with_alternative_opponent_life_gain(mut self, amount: u16) -> Self {
+        let DeclarativeAbilityDef::AlternativeCast(mut definition) = self.definition else {
+            panic!("only an alternative cast costs an opponent's life gain");
+        };
+        definition.opponent_life_gain = amount;
+        self.definition = DeclarativeAbilityDef::AlternativeCast(definition);
         self
     }
 

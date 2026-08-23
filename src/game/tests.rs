@@ -352,6 +352,7 @@ mod vintage_cube_headliner_scarlett;
 mod vintage_cube_horizon_land;
 mod vintage_cube_infect;
 mod vintage_cube_inti;
+mod vintage_cube_invigorate;
 mod vintage_cube_ivora;
 mod vintage_cube_jace_the_mind_sculptor;
 mod vintage_cube_jacked_rabbit;

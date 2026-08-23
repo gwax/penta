@@ -41,6 +41,75 @@ impl Game {
         u16::try_from(self.players[player.index()].life.max(0)).unwrap_or(u16::MAX)
     }
 
+    /// Every non-mana life or energy cost a cast owes, paid together and
+    /// before the spell is finished on the stack.
+    ///
+    /// Life named by the chosen alternative, by the spell's own additional
+    /// cost, or by the permission that let it be cast off a library is the
+    /// caster's. "Have an opponent gain 3 life" is the same kind of cost
+    /// pointed the other way: it is paid here rather than on resolution, and
+    /// paid even if the spell is answered afterwards.
+    pub(super) fn pay_cast_life_and_energy(
+        &mut self,
+        player: PlayerId,
+        life: u16,
+        opponent_life_gain: u16,
+        energy: u16,
+    ) {
+        if life > 0 {
+            self.lose_life(player, life);
+        }
+        if opponent_life_gain > 0 {
+            self.gain_life(player.opponent(), opponent_life_gain);
+        }
+        if energy > 0 {
+            self.spend_energy(player, energy);
+        }
+    }
+
+    /// The same, read off the card being cast rather than off a definition
+    /// the caller already has in hand.
+    pub(super) fn cast_opponent_life_gain(
+        &self,
+        card: GameObjectId,
+        signature: &CastSignature,
+    ) -> u16 {
+        self.object_definition(card)
+            .and_then(|definition| self.catalog.get(definition))
+            .and_then(|definition| {
+                let option = definition.play_option(signature.play_option())?;
+                Some(Self::configured_cast_opponent_life_gain(
+                    definition,
+                    option,
+                    signature.costs(),
+                ))
+            })
+            .unwrap_or(0)
+    }
+
+    /// The life an opponent gains as a cost of this cast, which is what
+    /// Invigorate charges instead of mana. Read the same way the caster's own
+    /// life payment is, off whichever alternative was selected.
+    pub(super) fn configured_cast_opponent_life_gain(
+        definition: &CardDefinition,
+        option: &PlayOptionDef,
+        costs: &CostConfiguration,
+    ) -> u16 {
+        costs
+            .alternative()
+            .and_then(|selected| {
+                Self::alternative_cast_clause(definition, option, selected).and_then(
+                    |(_, ability, _)| match ability.definition {
+                        DeclarativeAbilityDef::AlternativeCast(alternative) => {
+                            Some(alternative.opponent_life_gain)
+                        }
+                        _ => None,
+                    },
+                )
+            })
+            .unwrap_or(0)
+    }
+
     /// The life a cast owes before any mana ability is activated: what its
     /// selected alternative names, plus the spell's own additional life cost.
     pub(super) fn configured_cast_life_payment(

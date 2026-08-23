@@ -42,6 +42,10 @@ pub struct AlternativeCastAbilityDef {
     /// names. "You may pay 4 life rather than pay this spell's mana cost" is
     /// a mana cost of nothing and a life cost of four.
     pub life: u16,
+    /// Life an opponent gains as this alternative is taken. Invigorate's is
+    /// the only shape of it: what the caster spends is not their own life
+    /// but the other player's gain, which costs them nothing they had.
+    pub opponent_life_gain: u16,
     /// The smallest X this alternative may be cast for. "Kicker {X}. X can't
     /// be 0" is the whole reason it exists: casts are enumerated from zero,
     /// and a kick of nothing would be a kick that cost nothing.
