@@ -13,6 +13,7 @@ use std::io;
 use std::path::{Component, Path, PathBuf};
 
 const MAX_RUST_SOURCE_LINES: usize = 1_000;
+const CONTENT_INVENTORY_MARKER: &str = "//! Content inventory: source-size exemption.";
 const SOURCE_DIRECTORY_NAMES: [&str; 4] = ["src", "tests", "examples", "benches"];
 const EXCLUDED_DIRECTORY_NAMES: [&str; 4] = [".git", "target", "node_modules", ".pnpm-store"];
 const EXCLUDED_REPOSITORY_DIRECTORY_PATHS: [&str; 12] = [
@@ -77,7 +78,10 @@ fn rust_source_files_stay_within_size_limit() {
         let contents = fs::read(&source_file)
             .unwrap_or_else(|error| panic!("failed to read {}: {error}", source_file.display()));
         let line_count = physical_line_count(&contents);
-        if line_count > MAX_RUST_SOURCE_LINES && !is_card_set_file(repository_relative) {
+        if line_count > MAX_RUST_SOURCE_LINES
+            && !is_card_set_file(repository_relative)
+            && !is_content_inventory_file(&contents)
+        {
             diagnostics.push(format!(
                 "{}: {line_count} lines (limit: {MAX_RUST_SOURCE_LINES})",
                 repository_relative.display()
@@ -88,8 +92,9 @@ fn rust_source_files_stay_within_size_limit() {
     diagnostics.sort();
     assert!(
         diagnostics.is_empty(),
-        "oversized Rust source files; split each by concept. The only exemption is a direct \
-         src/card/sets/y####/*.rs file, and there is no allowlist:\n  {}",
+        "oversized Rust source files; split each by concept. Exemptions are a direct \
+         src/card/sets/y####/*.rs file or a pure content inventory marked with \
+         `{CONTENT_INVENTORY_MARKER}`:\n  {}",
         diagnostics.join("\n  ")
     );
 }
@@ -225,6 +230,10 @@ fn is_card_set_file(repository_relative: &Path) -> bool {
     components.next().is_none() && Path::new(file_name).extension() == Some(OsStr::new("rs"))
 }
 
+fn is_content_inventory_file(contents: &[u8]) -> bool {
+    contents.starts_with(CONTENT_INVENTORY_MARKER.as_bytes())
+}
+
 fn physical_line_count(contents: &[u8]) -> usize {
     contents.split_inclusive(|byte| *byte == b'\n').count()
 }
@@ -250,6 +259,17 @@ fn card_set_file_exemption_is_exact() {
     ] {
         assert!(!is_card_set_file(Path::new(path)), "matched {path}");
     }
+}
+
+#[test]
+fn content_inventory_exemption_requires_the_exact_marker() {
+    assert!(is_content_inventory_file(
+        b"//! Content inventory: source-size exemption.\n\nstatic ITEMS: &[&str] = &[];\n"
+    ));
+    assert!(!is_content_inventory_file(b"//! Content inventory\n"));
+    assert!(!is_content_inventory_file(
+        b"// A comment before the marker\n//! Content inventory: source-size exemption.\n"
+    ));
 }
 
 #[test]

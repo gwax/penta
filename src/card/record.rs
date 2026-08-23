@@ -100,6 +100,24 @@ pub(super) struct CardRecord {
 }
 
 impl CardRecord {
+    /// Defines a metadata-only record for a format card whose rules have not
+    /// yet been cataloged. Keeping this distinct from a normal declaration
+    /// makes the absence of executable rules explicit to every consumer.
+    #[must_use]
+    pub(super) const fn unimplemented(
+        identity_anchor: PrintingAnchor,
+        name: &'static str,
+        debut_set: CardSet,
+    ) -> Self {
+        Self::new(
+            identity_anchor,
+            name,
+            CardArt::new(identity_anchor.scryfall_id, ""),
+            debut_set,
+            CardRules::unsupported(),
+        )
+    }
+
     /// Defines a card whose ID is derived from its immutable first-printing anchor.
     #[allow(clippy::large_types_passed_by_value)]
     #[allow(dead_code)] // Existing records use the migration-only legacy constructor.

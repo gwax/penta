@@ -19,12 +19,13 @@ the form `// LEA 230 — Ankh of Mishra`, using the canonical printing's upperca
 set code, collector number, and card name. Ordinarily the header immediately
 precedes the declaration. In the inline Old School audit, an incomplete
 identity puts `// Audit: blocked — Needs ...` on the next line, using `partial`
-or `metadata-only` when applicable. Partial and metadata-only audit lines
-immediately precede their declarations; blocked header-and-audit pairs stand
-alone at the identity's collector position. Keep every identity header in
-natural collector order. The header identifies the canonical printing in that
-module's set even when presentation art intentionally comes from another
-printing.
+or `metadata-only` when applicable. Partial audit lines immediately precede
+their declarations. A metadata-only audit line may instead be backed by the
+central `sets::unimplemented` format-stub registry; use that for a legal card
+whose identity is known but whose rules are not yet cataloged. Keep every
+identity header in natural collector order. The header identifies the canonical
+printing in that module's set even when presentation art intentionally comes
+from another printing.
 
 Existing definitions use `CardRecord::new_with_legacy_id`, with their historic
 numeric value written beside the record. Never allocate another sequential

@@ -35,6 +35,7 @@ impl CatalogCoverage {
 struct SetCoverage {
     catalog: CatalogCoverage,
     blocked: usize,
+    uncataloged: usize,
 }
 
 impl SetCoverage {
@@ -49,14 +50,17 @@ impl SetCoverage {
             .into_iter()
             .filter(|audit| audit.status == AuditStatus::Blocked)
             .count();
+        let uncataloged =
+            super::super::unimplemented::uncataloged_format_printings(catalog, format).len();
         Self {
             catalog: catalog_coverage,
             blocked,
+            uncataloged,
         }
     }
 
     const fn total(self) -> usize {
-        self.catalog.total() + self.blocked
+        self.catalog.total() + self.blocked + self.uncataloged
     }
 }
 
@@ -148,6 +152,8 @@ fn write_format_coverage(
             write_catalog_coverage(report, coverage.catalog);
             writeln!(report, "    blocked        {:>6}", coverage.blocked)
                 .expect("writing to a String cannot fail");
+            writeln!(report, "    uncataloged    {:>6}", coverage.uncataloged)
+                .expect("writing to a String cannot fail");
             writeln!(report, "    total          {:>6}", coverage.total())
                 .expect("writing to a String cannot fail");
         }
@@ -232,6 +238,7 @@ fn report_layout_is_derived_from_category_registries() {
                         metadata_only: 7,
                     },
                     blocked: 0,
+                    uncataloged: 0,
                 }),
             )],
         ),
@@ -276,6 +283,7 @@ fn report_layout_is_derived_from_category_registries() {
             "    partial             1\n",
             "    metadata-only       7\n",
             "    blocked             0\n",
+            "    uncataloged         0\n",
             "    total              13\n",
             "\n",
             "Cubes\n",

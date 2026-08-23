@@ -144,8 +144,11 @@ make preflight
 
 It sequentially runs `make fmt` and `make test-source-file-sizes`. The latter is
 a dependency-free crate that enforces the 1,000-line Rust source-file limit
-without building the engine. Direct card-set files are the semantic exception;
-the checker discovers all Cargo roots and applies the repository rule.
+without building the engine. Direct card-set files are a semantic exception, as
+are pure content inventories explicitly headed `//! Content inventory:
+source-size exemption.`. Use that marker only for a homogeneous data list;
+split mixed implementation, behavior, or loosely related declarations by
+concept. The checker discovers all Cargo roots and applies the repository rule.
 
 Slow simulation sweeps are deferred to nightly CI. Run `make test-rust-slow` or
 `make test-web-wasm-slow` locally only when changed behavior is specifically
@@ -217,9 +220,10 @@ make catalog-report
 
 The report derives repository-wide complete, partial, and metadata-only
 definitions from the built-in catalog. It also gives a mutually exclusive
-complete/partial/metadata-only/blocked partition for each set-based format,
-using the inline `// Audit:` rows to identify cards that are not yet cataloged,
-and a complete/partial/metadata-only/uncataloged partition for every cube.
+complete/partial/metadata-only/blocked/uncataloged partition for each
+set-based format, using the inline `// Audit:` rows and the generated legal-set
+inventory to identify cards that are not yet cataloged, and a
+complete/partial/metadata-only/uncataloged partition for every cube.
 Pass `CATALOG_REPORT_ARGS=--verbose` to list the individual fixed-pool cards in
 each status. The report output is intentionally not checked in: the source
 declarations remain authoritative, so adding a card does not require updating a

@@ -5,6 +5,7 @@
 //! or metadata-only. Reprints and alternate-art variants point back to that
 //! canonical record from their own set module.
 
+mod unimplemented;
 mod y1993;
 mod y1994;
 mod y1995;
@@ -44,6 +45,7 @@ use super::record::{CardAbilityBinding, CardRecord, PrintingAnchor, PrintingReco
 use crate::AbilityOrigin;
 use crate::card::{AbilityDef, CardBehavior, CardDefinition, CardPrinting, CardRules, CardSet};
 use crate::game::{PileChosen, PilesSeparated};
+use std::collections::HashSet;
 
 static UNSUPPORTED_RULES: CardRules = CardRules::unsupported();
 
@@ -834,11 +836,17 @@ const SET_MODULES: &[SetModule] = &[
 ];
 
 pub(super) fn definitions() -> Vec<CardDefinition> {
-    let capacity = SET_MODULES.iter().map(|module| module.cards.len()).sum();
+    let capacity = SET_MODULES
+        .iter()
+        .map(|module| module.cards.len())
+        .sum::<usize>()
+        + unimplemented::count();
     let mut definitions = Vec::with_capacity(capacity);
     for module in SET_MODULES {
         definitions.extend(module.cards.iter().map(|record| record.definition()));
     }
+    definitions.extend(unimplemented::definitions());
+    unimplemented::apply_format_printings(&mut definitions);
     definitions
 }
 
@@ -866,6 +874,11 @@ pub(crate) fn ability_binding(
 }
 
 pub(super) fn additional_printings() -> Vec<CardPrinting> {
+    let definition_printings = definitions()
+        .into_iter()
+        .flat_map(|definition| definition.printings)
+        .map(|printing| printing.id)
+        .collect::<HashSet<_>>();
     SET_MODULES
         .iter()
         .flat_map(|module| {
@@ -873,6 +886,7 @@ pub(super) fn additional_printings() -> Vec<CardPrinting> {
                 .additional_printings
                 .iter()
                 .map(|record| record.printing(module.set))
+                .filter(|printing| !definition_printings.contains(&printing.id))
         })
         .collect()
 }

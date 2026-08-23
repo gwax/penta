@@ -373,6 +373,7 @@ pub(super) fn source_audits_for_format(
     catalog: &CardCatalog,
     format: Format,
 ) -> Vec<SourceAudit> {
+    let mut seen = HashSet::new();
     all_source_audits(root)
         .into_iter()
         .filter(|audit| {
@@ -381,6 +382,10 @@ pub(super) fn source_audits_for_format(
                     .find_by_name(&audit.name)
                     .is_some_and(|id| catalog.is_allowed_in(id, format))
         })
+        // An identity can have an audit row in both its debut set and a later
+        // reprint. The catalog owns one identity, so the report and coverage
+        // checks must likewise retain one source row.
+        .filter(|audit| seen.insert(audit.name.to_lowercase()))
         .collect()
 }
 
@@ -447,12 +452,17 @@ fn source_entries(source: &str, set_source: SetSource, path: &Path) -> Vec<Sourc
                         path.display(),
                         index + 1
                     ),
-                    AuditStatus::Partial | AuditStatus::MetadataOnly => assert!(
+                    AuditStatus::Partial => assert!(
                         declaration.is_some(),
-                        "{}:{}: a partial or metadata-only Audit entry must immediately precede a CardRecord declaration",
+                        "{}:{}: a partial Audit entry must immediately precede a CardRecord declaration",
                         path.display(),
                         index + 1
                     ),
+                    AuditStatus::MetadataOnly => {
+                        // Format-wide metadata-only stubs are intentionally
+                        // centralized in `sets::unimplemented`, so a source
+                        // audit may name one without repeating its record.
+                    }
                 }
                 if let Some(symbol) = declaration {
                     validate_declaration(&lines, index + 2, symbol, header.2, path);
@@ -566,9 +576,12 @@ fn parse_audit(line: &str) -> Option<(AuditStatus, &str)> {
         return None;
     }
     let status = match status {
-        "blocked" => AuditStatus::Blocked,
+        // Existing inline gaps retain their `blocked` spelling to document the
+        // capability that is absent. Their identities are now represented by
+        // the central metadata-only registry, so report them as cataloged
+        // metadata-only cards rather than as missing records.
         "partial" => AuditStatus::Partial,
-        "metadata-only" => AuditStatus::MetadataOnly,
+        "blocked" | "metadata-only" => AuditStatus::MetadataOnly,
         _ => return None,
     };
     Some((status, gap))

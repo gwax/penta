@@ -36,6 +36,12 @@ The selected format is stored on each game. Format-specific construction and
 mana rules live in one profile rather than as global switches, so adding a
 format does not change existing games.
 
+When adding a supported format, catalog every legal identity at the same time.
+Use an executable record where its rules are supported and add an explicit
+metadata-only entry to `src/card/sets/unimplemented.rs` for every remaining
+identity. This keeps `make catalog-report` a complete, honest format inventory:
+metadata-only cards are visible but never offered as silent no-op plays.
+
 ## Cube formats
 
 Cube legality is a fixed card list rather than a set window. The shared format
