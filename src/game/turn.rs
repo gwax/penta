@@ -251,7 +251,7 @@ impl Game {
                 self.step = Step::Draw;
                 self.draw_step_draw_taken[self.active_player.index()] = false;
                 if !(self.turn == 1 && self.active_player == PlayerId::One) {
-                    let _ = self.draw_card(self.active_player);
+                    self.draw_instruction(self.active_player, 1);
                     if !self.pending_decisions.is_empty() || !self.pending_events.is_empty() {
                         self.pending_procedures
                             .push_back(PendingProcedure::FinishStepAdvance);

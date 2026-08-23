@@ -238,7 +238,9 @@ pub(super) fn shared_entry_replacement_effect(effect: ReplacementEffectDef) -> b
         ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::Perform(_)
-        | ReplacementEffectDef::MultiplyEventAmount(_) => false,
+        | ReplacementEffectDef::MultiplyEventAmount(_)
+        // A draw's clause rather than an entry's.
+        | ReplacementEffectDef::AddToEventAmount(_) => false,
     }
 }
 
@@ -264,6 +266,7 @@ pub(in super::super) fn shared_begin_turn_replacement_effect(effect: Replacement
         ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
         | ReplacementEffectDef::CopyEntering { .. }
         | ReplacementEffectDef::Conditional { .. }
@@ -272,6 +275,12 @@ pub(in super::super) fn shared_begin_turn_replacement_effect(effect: Replacement
 }
 
 pub(in super::super) fn shared_draw_replacement_effect(effect: ReplacementEffectDef) -> bool {
+    // "You draw that many cards plus one instead": the instruction is
+    // replaced by a larger one, counted where the instruction is rather
+    // than once per card.
+    if matches!(effect, ReplacementEffectDef::AddToEventAmount(_)) {
+        return true;
+    }
     let ReplacementEffectDef::Sequence(effects) = effect else {
         return false;
     };
@@ -325,6 +334,7 @@ pub(in super::super) fn shared_battlefield_exit_replacement_effect(
         ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
         | ReplacementEffectDef::CopyEntering { .. }
         | ReplacementEffectDef::Conditional { .. }
@@ -430,6 +440,7 @@ pub(in super::super) fn assert_nested_replacement_definition_abilities(
         | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
         | ReplacementEffectDef::CopyEntering { .. } => {}
     }

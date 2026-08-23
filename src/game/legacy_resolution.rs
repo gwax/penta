@@ -23,7 +23,7 @@ impl Game {
                 }
             }
             CardBehavior::LibraryOfAlexandria => {
-                self.draw_cards(object.controller, 1);
+                self.draw_instruction(object.controller, 1);
             }
             _ => {}
         }
@@ -35,7 +35,7 @@ impl Game {
             CardBehavior::SphinxsRevelation => {
                 let player = object.controller;
                 self.gain_life(player, object.x());
-                self.draw_cards(player, object.x());
+                self.draw_instruction(player, object.x());
             }
             CardBehavior::PillarOfFlame => {
                 self.damage_target(object.first_target(), 2);

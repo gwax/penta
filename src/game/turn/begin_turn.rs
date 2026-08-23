@@ -86,7 +86,11 @@ impl Game {
                     }
                     // How a permanent's spell was paid for is a fact about
                     // the entry, so nothing about a turn beginning asks it.
-                    Some(ReplacementConditionDef::SourceCastWith(_)) => false,
+                    // The same of a hand size, which only a draw asks about.
+                    Some(
+                        ReplacementConditionDef::SourceCastWith(_)
+                        | ReplacementConditionDef::ControllerHandAtMost(_),
+                    ) => false,
                 };
                 if applied.contains(&source)
                     || !definition.source_zones.contains(&ZoneKind::Battlefield)
@@ -230,6 +234,7 @@ impl Game {
             | ReplacementEffectDef::Conditional { .. }
             | ReplacementEffectDef::PayOr { .. }
             | ReplacementEffectDef::MultiplyEventAmount(_)
+            | ReplacementEffectDef::AddToEventAmount(_)
             | ReplacementEffectDef::Choose(_)
             | ReplacementEffectDef::CopyEntering { .. } => false,
         }
@@ -269,6 +274,7 @@ impl Game {
             | ReplacementEffectDef::Conditional { .. }
             | ReplacementEffectDef::PayOr { .. }
             | ReplacementEffectDef::MultiplyEventAmount(_)
+            | ReplacementEffectDef::AddToEventAmount(_)
             | ReplacementEffectDef::Choose(_)
             | ReplacementEffectDef::CopyEntering { .. } => false,
         }

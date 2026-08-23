@@ -164,8 +164,11 @@ impl Game {
                         ReplacementConditionDef::CreatureDiedThisTurn => {
                             self.creature_died_this_turn
                         }
-                        // Asked as a permanent enters, never as one leaves.
-                        ReplacementConditionDef::SourceCastWith(_) => false,
+                        // How a permanent's spell was paid for is asked as
+                        // it enters, and a hand size as a draw would happen;
+                        // neither is a question about leaving.
+                        ReplacementConditionDef::SourceCastWith(_)
+                        | ReplacementConditionDef::ControllerHandAtMost(_) => false,
                     }
                 } else {
                     true
@@ -279,6 +282,7 @@ impl Game {
             }
             ReplacementEffectDef::ModifyBattlefieldEntry(_)
             | ReplacementEffectDef::MultiplyEventAmount(_)
+            | ReplacementEffectDef::AddToEventAmount(_)
             | ReplacementEffectDef::Choose(_)
             | ReplacementEffectDef::CopyEntering { .. }
             | ReplacementEffectDef::Conditional { .. }

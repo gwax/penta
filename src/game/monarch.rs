@@ -54,7 +54,7 @@ impl Game {
     /// nothing responds to it.
     pub(super) fn monarch_draws_at_end_step(&mut self) {
         if self.monarch == Some(self.active_player) {
-            let _ = self.draw_card(self.active_player);
+            self.draw_instruction(self.active_player, 1);
         }
     }
 }

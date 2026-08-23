@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, AlternativeCastKindDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TopCardSelectionDef,
-    TriggerConditionDef, ValueDef, ZoneKind, ZonePlacement,
+    EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ReplacementAbilityDef,
+    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::mana_cost;
 
@@ -140,6 +141,55 @@ pub(in crate::card::sets) static MECHANOZOA: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+/// "As long as you have one or fewer cards in hand, if you would draw one
+/// or more cards, you draw that many cards plus one instead." One
+/// replacement of the whole instruction: a draw of three becomes a draw of
+/// four rather than a draw of six.
+static RIDDLER_EXTRA_CARD: ReplacementAbilityDef = ReplacementAbilityDef::new()
+    .with_event(ReplacementEventDef::WouldDraw {
+        player: PlayerRelation::You,
+        during_own_draw_step: false,
+    })
+    .with_condition(ReplacementConditionDef::ControllerHandAtMost(1));
+
+// EOE 72 — Quantum Riddler
+pub(in crate::card::sets) static QUANTUM_RIDDLER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("120be808-ff3b-4fca-96a1-4db6b9825856"),
+    "Quantum Riddler",
+    CardArt::new("120be808-ff3b-4fca-96a1-4db6b9825856", "Izzy"),
+    CardSet::EdgeOfEternities,
+    // Five mana for a 4/6 flier that draws a card, or two mana for the same
+    // body until the end of turn and the card it comes back with later.
+    CardRules::new_creature(mana_cost!("{3}{U}{U}"), &["Sphinx"], 4, 6).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered(
+            "When this creature enters, draw a card.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::defined_replacement(
+            "As long as you have one or fewer cards in hand, if you would draw one or more \
+             cards, you draw that many cards plus one instead.",
+            RIDDLER_EXTRA_CARD,
+            ReplacementEffectDef::AddToEventAmount(1),
+        ),
+        abilities::warp(
+            mana_cost!("{1}{U}"),
+            "Warp {1}{U} (You may cast this card from your hand for its warp cost. Exile it at \
+             the beginning of the next end step, then you may cast it from exile on a later \
+             turn.)",
+        ),
+        abilities::warped_exile(),
+    ]),
+);
+
 // EOE 77 — Starbreach Whale
 // Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static STARBREACH_WHALE: CardRecord = CardRecord::new(
@@ -176,6 +226,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CRYOGEN_RELIC,
     &CRYOSHATTER,
     &MECHANOZOA,
+    &QUANTUM_RIDDLER,
     &STARBREACH_WHALE,
     &PLASMA_BOLT,
     &PINNACLE_KILL_SHIP,

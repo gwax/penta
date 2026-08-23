@@ -94,6 +94,11 @@ pub enum ReplacementConditionDef {
     /// Read as the replacement applies, so a creature dying in response
     /// changes the answer.
     CreatureDiedThisTurn,
+    /// The replacement's controller has no more than this many cards in
+    /// hand, read as the replacement applies. "As long as you have one or
+    /// fewer cards in hand" is a condition on the event rather than on the
+    /// permanent, which is why it lives here.
+    ControllerHandAtMost(u8),
 }
 
 /// A typed modification to the permanent an object would become as it enters
@@ -207,6 +212,11 @@ pub enum ReplacementEffectDef {
     ModifyBattlefieldEntry(BattlefieldEntryModificationDef),
     /// Multiply the amount carried by the prospective event.
     MultiplyEventAmount(u8),
+    /// Add to the amount carried by the prospective event. "You draw that
+    /// many cards plus one instead" is one replacement of the whole
+    /// instruction rather than one per card, which is why it is counted
+    /// where the instruction is rather than where a card is drawn.
+    AddToEventAmount(u16),
     /// Record a choice on the object that is entering.
     Choose(ReplacementChoiceDef),
     /// Optionally use another permanent's copiable values for the entering

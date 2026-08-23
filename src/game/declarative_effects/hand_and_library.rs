@@ -231,7 +231,7 @@ impl Game {
                 // to the general `EachPlayer` recipient.
                 players.sort_by_key(|player| (*player != self.active_player, player.index()));
                 for player in players {
-                    self.draw_cards(player, amount);
+                    self.draw_instruction(player, amount);
                 }
             }
             EffectDef::ShuffleLibrary { player: recipient } => {

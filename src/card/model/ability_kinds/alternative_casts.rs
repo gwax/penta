@@ -68,6 +68,11 @@ pub enum AlternativeCastKindDef {
     /// card is not exiled afterwards, so a creature that escaped and later
     /// dies may escape again.
     Escape,
+    /// Cast for its warp cost. Like a kicker it is an ordinary cast from
+    /// hand for a different price; what it changes is that the permanent is
+    /// exiled at the beginning of the next end step and may be cast again
+    /// from there on a later turn, which the card's own clauses say.
+    Warp,
     /// Cast for its dash cost (CR 702.109a). Like a kicker it is an
     /// ordinary cast from hand for a different price; what it changes is
     /// that the creature arrives hasty and goes back to its owner's hand at
@@ -141,6 +146,7 @@ impl AlternativeCastKindDef {
             Self::Escape => "Escape",
             Self::Impending => "Impending",
             Self::Dash => "Dash",
+            Self::Warp => "Warp",
             Self::Foretell => "Foretell",
             Self::WithoutPayingManaCost => "Without paying its mana cost",
             Self::FaceDown { label, .. } => label,
@@ -156,6 +162,7 @@ impl AlternativeCastKindDef {
             Self::Foretell,
             Self::Impending,
             Self::Dash,
+            Self::Warp,
             Self::WithoutPayingManaCost,
             Self::Flashback,
             Self::Overload,
@@ -189,6 +196,14 @@ impl AlternativeCastAbilityDef {
                 },
                 std::borrow::ToOwned::to_owned,
             ),
+            (AlternativeCastKindDef::Warp, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
+                format!(
+                    "Warp {mana_cost} (You may cast this card from your hand for its warp cost. Exile it at the beginning of the next end step, then you may cast it from exile on a later turn.)",
+                )
+            }
+            (AlternativeCastKindDef::Warp, AlternativeCastManaCostDef::ThisCardManaCost) => {
+                "Warp—the warp cost is equal to this card's mana cost.".into()
+            }
             (AlternativeCastKindDef::Dash, AlternativeCastManaCostDef::ThisCardManaCost) => {
                 "Dash—the dash cost is equal to this card's mana cost.".into()
             }

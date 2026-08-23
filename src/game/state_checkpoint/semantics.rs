@@ -652,6 +652,7 @@ fn collect_replacement_effects(
         | ReplacementEffectDef::Perform(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
         | ReplacementEffectDef::CopyEntering { .. } => {}
     }
@@ -698,6 +699,7 @@ pub(super) fn replacement_child_effects(effect: ReplacementEffectDef) -> Vec<Eff
         | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
         | ReplacementEffectDef::CopyEntering { .. } => Vec::new(),
     }

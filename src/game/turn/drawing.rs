@@ -164,7 +164,14 @@ impl Game {
                     Some(ReplacementConditionDef::CreatureDiedThisTurn) => {
                         self.creature_died_this_turn
                     }
-                    Some(ReplacementConditionDef::SourceCastWith(_)) => false,
+                    // A hand size is counted where the whole instruction is
+                    // rather than once per card, and this walk is the
+                    // per-card one; how a spell was paid for is a question
+                    // about an entry rather than a draw.
+                    Some(
+                        ReplacementConditionDef::SourceCastWith(_)
+                        | ReplacementConditionDef::ControllerHandAtMost(_),
+                    ) => false,
                 };
                 let event_context = TriggerContext {
                     event_player: Some(player),
@@ -395,6 +402,76 @@ impl Game {
             modes: None,
             x: 0,
         });
+    }
+
+    /// One printed draw instruction, which is where "you draw that many
+    /// cards plus one instead" applies: the whole instruction is replaced
+    /// once, not each of its cards. Resuming a deferred draw goes to
+    /// [`Self::draw_cards`] instead, which is why the addition lives here.
+    pub(in crate::game) fn draw_instruction(&mut self, player: PlayerId, count: u16) {
+        if count == 0 {
+            return;
+        }
+        let extra = self.additional_cards_drawn(player);
+        self.draw_cards(player, count.saturating_add(extra));
+    }
+
+    /// How many cards a static replacement adds to this player's next draw
+    /// instruction. Read as the instruction would happen, so a hand that is
+    /// small now counts however large it becomes while the cards arrive.
+    fn additional_cards_drawn(&self, player: PlayerId) -> u16 {
+        let mut extra = 0_u16;
+        for permanent in &self.battlefield {
+            self.for_each_effective_ability(permanent, |effective| {
+                let ability = effective.ability;
+                let DeclarativeAbilityDef::Replacement(definition) = ability.definition else {
+                    return;
+                };
+                let ReplacementEventDef::WouldDraw {
+                    player: relation,
+                    during_own_draw_step,
+                } = definition.event
+                else {
+                    return;
+                };
+                let Some(ReplacementEffectDef::AddToEventAmount(amount)) =
+                    ability.declarative_replacement()
+                else {
+                    return;
+                };
+                let condition_matches = match definition.condition {
+                    None => true,
+                    Some(ReplacementConditionDef::ControllerHandAtMost(most)) => {
+                        self.players[permanent.controller.index()].hand.len() <= usize::from(most)
+                    }
+                    Some(
+                        ReplacementConditionDef::SourceTapped
+                        | ReplacementConditionDef::CreatureDiedThisTurn
+                        | ReplacementConditionDef::SourceCastWith(_),
+                    ) => false,
+                };
+                let event_context = TriggerContext {
+                    event_player: Some(player),
+                    ..TriggerContext::empty()
+                };
+                if !ability.is_executable()
+                    || !definition.source_zones.contains(&ZoneKind::Battlefield)
+                    || (during_own_draw_step
+                        && (self.step != Step::Draw || self.active_player != player))
+                    || !condition_matches
+                    || !self.draw_replacement_relation_matches(
+                        permanent,
+                        player,
+                        relation,
+                        event_context,
+                    )
+                {
+                    return;
+                }
+                extra = extra.saturating_add(amount);
+            });
+        }
+        extra
     }
 
     pub(in crate::game) fn draw_cards(&mut self, player: PlayerId, count: u16) {

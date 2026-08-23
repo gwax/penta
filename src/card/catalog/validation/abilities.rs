@@ -702,6 +702,12 @@ fn validate_replacement_program_for_event(
 }
 
 fn validate_draw_replacement_program(effect: ReplacementEffectDef) -> Result<(), &'static str> {
+    // "You draw that many cards plus one instead" replaces the instruction
+    // with a larger one rather than with instructions of its own, so it is a
+    // whole program by itself.
+    if matches!(effect, ReplacementEffectDef::AddToEventAmount(_)) {
+        return Ok(());
+    }
     let ReplacementEffectDef::Sequence(effects) = effect else {
         return Err(replacement_operation_name(effect));
     };
@@ -728,6 +734,8 @@ fn validate_entry_replacement_program(effect: ReplacementEffectDef) -> Result<()
         // unpaid Mox Diamond reaches its owner's graveyard.
         | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::CopyEntering { .. } => Ok(()),
+        // Adding to an amount is a draw's clause, not an entry's.
+        ReplacementEffectDef::AddToEventAmount(_) => Err("AddToEventAmount"),
         ReplacementEffectDef::Sequence(effects) => {
             if effects.is_empty() {
                 return Err("empty Sequence");
@@ -795,6 +803,7 @@ fn validate_begin_turn_replacement_program(
         | ReplacementEffectDef::Perform(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
         | ReplacementEffectDef::CopyEntering { .. }
         | ReplacementEffectDef::Conditional { .. }
@@ -842,6 +851,7 @@ fn validate_battlefield_exit_replacement_program(
         | ReplacementEffectDef::Perform(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
+        | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
         | ReplacementEffectDef::CopyEntering { .. }
         | ReplacementEffectDef::Conditional { .. }
@@ -857,6 +867,7 @@ const fn replacement_operation_name(effect: ReplacementEffectDef) -> &'static st
         ReplacementEffectDef::Perform(_) => "Perform",
         ReplacementEffectDef::ModifyBattlefieldEntry(_) => "ModifyBattlefieldEntry",
         ReplacementEffectDef::MultiplyEventAmount(_) => "MultiplyEventAmount",
+        ReplacementEffectDef::AddToEventAmount(_) => "AddToEventAmount",
         ReplacementEffectDef::Choose(_) => "Choose",
         ReplacementEffectDef::CopyEntering { .. } => "CopyEntering",
         ReplacementEffectDef::Conditional { .. } => "Conditional",
