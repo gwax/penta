@@ -1,5 +1,5 @@
 import vinext from "vinext";
-import { defineConfig } from "vite";
+import { type Plugin, defineConfig } from "vite";
 import { getWorktreeDevPort } from "./worktree-port.js";
 
 // macOS Seatbelt blocks FSEvents, so sandboxed previews need polling for HMR.
@@ -39,6 +39,44 @@ const workerConfig = {
   ],
 };
 
+/**
+ * Drops asset files the ssr environment emits but never loads.
+ *
+ * The rsc and ssr environments both build into the single uploaded Worker
+ * script, and each emits its own copy of every asset it imports. The engine
+ * WASM is a genuine module import only in rsc, where the Worker instantiates
+ * it. In ssr it arrives through the client's `?url` import, which needs the
+ * hashed path but never the bytes: the browser fetches those from the client
+ * assets directory, which is served separately and does not count against the
+ * script size limit. Shipping them twice put a second full copy of the engine
+ * into the script for nothing.
+ *
+ * Nothing serves the ssr output directory, so an emitted asset no chunk
+ * imports is unreachable there by construction; only its URL matters, and that
+ * URL resolves against the client assets.
+ */
+function dropUnimportedSsrAssets(): Plugin {
+  return {
+    name: "penta:drop-unimported-ssr-assets",
+    generateBundle(_options, bundle) {
+      if (this.environment.name !== "ssr") return;
+
+      const imported = new Set<string>();
+      for (const output of Object.values(bundle)) {
+        if (output.type !== "chunk") continue;
+        for (const file of output.imports) imported.add(file);
+        for (const file of output.dynamicImports) imported.add(file);
+      }
+
+      for (const [fileName, output] of Object.entries(bundle)) {
+        if (output.type === "asset" && !imported.has(fileName)) {
+          delete bundle[fileName];
+        }
+      }
+    },
+  };
+}
+
 export default defineConfig(async () => {
   const devPort = getWorktreeDevPort();
 
@@ -73,6 +111,7 @@ export default defineConfig(async () => {
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         config: workerConfig,
       }),
+      dropUnimportedSsrAssets(),
     ],
   };
 });
