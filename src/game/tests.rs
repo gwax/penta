@@ -399,6 +399,7 @@ mod vintage_cube_ragavan;
 mod vintage_cube_relic;
 mod vintage_cube_saheeli;
 mod vintage_cube_sentinel_nameless_city;
+mod vintage_cube_shelldock_isle;
 mod vintage_cube_sheltering_landscape;
 mod vintage_cube_shieldbreaker;
 mod vintage_cube_spells;

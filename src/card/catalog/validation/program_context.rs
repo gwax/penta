@@ -704,7 +704,7 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
 
 fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
     match condition {
-        TriggerConditionDef::All(conditions) => conditions
+        TriggerConditionDef::All(conditions) | TriggerConditionDef::AnyOf(conditions) => conditions
             .iter()
             .copied()
             .all(static_trigger_condition_supported),
@@ -871,6 +871,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::GrantFlashToNextSorcery => "GrantFlashToNextSorcery",
         EffectDef::May { .. } => "May",
         EffectDef::ExileLinkedToSource { .. } => "ExileLinkedToSource",
+        EffectDef::PlayLinkedExiles { .. } => "PlayLinkedExiles",
         EffectDef::ExileGrantingOwnerPlay { .. } => "ExileGrantingOwnerPlay",
         EffectDef::ReturnLinkedExiles { .. } => "ReturnLinkedExiles",
         EffectDef::GainControl { .. } | EffectDef::ExchangeControl { .. } => "GainControl",

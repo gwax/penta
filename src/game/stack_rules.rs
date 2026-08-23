@@ -165,6 +165,7 @@ impl Game {
             | EffectDef::DamageCannotBePreventedThisTurn
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
+            | EffectDef::PlayLinkedExiles { .. }
             | EffectDef::ExileGrantingOwnerPlay { .. }
             | EffectDef::ReturnLinkedExiles { .. }
             | EffectDef::Detain { .. }

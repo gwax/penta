@@ -55,6 +55,11 @@ pub(super) struct ExilePlayPermission {
     /// Whether the card lies face down in exile. Only its owner sees what it
     /// is; everybody may count how many there are.
     pub(super) face_down: bool,
+    /// A permission to look and nothing more. Hideaway hides a card its
+    /// controller may see and nobody may play until the land's own second
+    /// ability says so, so the two halves are separate: this one records
+    /// that the card is theirs to look at.
+    pub(super) hidden_only: bool,
     /// The holder's turn whose end step this permission runs to, as their
     /// turn count. Unlike [`Self::until_end_of_turn`] this survives the turn
     /// it was granted on when that turn was somebody else's: "until your
@@ -115,6 +120,8 @@ impl Game {
             .find(|permission| {
                 permission.card == card
                     && permission.player == player
+                    // A look is not a permission to play.
+                    && !permission.hidden_only
                     && permission.until_end_of_turn.is_none_or(|(owner, turn)| {
                         self.turns_started[owner.index()] == turn && self.active_player == owner
                     })
@@ -131,6 +138,24 @@ impl Game {
             })
     }
 
+    /// "Look at the top four cards of your library, exile one face down."
+    /// What it buys is the looking: playing it waits for whatever clause
+    /// hid it to say so.
+    pub(super) fn permit_look_while_exiled(&mut self, card: GameObjectId, player: PlayerId) {
+        self.exile_play_permissions.push(ExilePlayPermission {
+            card,
+            player,
+            cost: ExilePlayCost::Printed,
+            until_end_of_turn: None,
+            adventure_return_only: false,
+            surcharge: ManaCost::default(),
+            not_before_turn: None,
+            face_down: true,
+            hidden_only: true,
+            until_holder_end_step: None,
+        });
+    }
+
     /// Records that a card on an adventure may come back as the creature it
     /// is. The permission never lapses: a crown that never moves keeps it,
     /// and so does an adventure nobody takes.
@@ -144,6 +169,7 @@ impl Game {
             surcharge: ManaCost::default(),
             not_before_turn: None,
             face_down: false,
+            hidden_only: false,
             until_holder_end_step: None,
         });
     }
@@ -161,6 +187,7 @@ impl Game {
             surcharge: ManaCost::default(),
             not_before_turn: None,
             face_down: false,
+            hidden_only: false,
             until_holder_end_step: None,
         });
     }
@@ -180,6 +207,7 @@ impl Game {
             surcharge: ManaCost::default(),
             not_before_turn: None,
             face_down: true,
+            hidden_only: false,
             until_holder_end_step: None,
         });
     }
@@ -204,6 +232,7 @@ impl Game {
             surcharge: ManaCost::default(),
             not_before_turn: None,
             face_down: false,
+            hidden_only: false,
             until_holder_end_step: Some((
                 player,
                 if self.active_player == player {
@@ -231,6 +260,7 @@ impl Game {
             surcharge: ManaCost::default(),
             not_before_turn: None,
             face_down: false,
+            hidden_only: false,
             until_holder_end_step: None,
         });
     }
@@ -248,6 +278,7 @@ impl Game {
             surcharge: ManaCost::default(),
             not_before_turn: None,
             face_down: false,
+            hidden_only: false,
             until_holder_end_step: None,
         });
     }
@@ -273,6 +304,7 @@ impl Game {
             surcharge,
             not_before_turn: None,
             face_down: false,
+            hidden_only: false,
             until_holder_end_step: None,
         });
     }
@@ -290,6 +322,7 @@ impl Game {
             surcharge: ManaCost::default(),
             not_before_turn: Some((owner, turn)),
             face_down: true,
+            hidden_only: false,
             until_holder_end_step: None,
         });
     }

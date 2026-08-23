@@ -14,6 +14,10 @@ pub enum TriggerConditionDef {
     /// once -- "if an opponent controls an Island and you control a Mountain"
     /// -- is one condition made of two rather than two clauses.
     All(&'static [TriggerConditionDef]),
+    /// Any one of these holds. "If a library has twenty or fewer cards in
+    /// it" is the pair of libraries asked separately, which neither a
+    /// conjunction nor a single count can say.
+    AnyOf(&'static [TriggerConditionDef]),
     /// The condition does not hold. Two clauses of one printed sentence --
     /// "if you do" and "if you don't" -- are written as complementary
     /// conditions rather than as an effect with two branches, so that the

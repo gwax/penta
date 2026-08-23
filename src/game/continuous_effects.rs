@@ -547,6 +547,7 @@ impl Game {
                 | EffectDef::DamageCannotBePreventedThisTurn
                 | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }
+                | EffectDef::PlayLinkedExiles { .. }
                 | EffectDef::ReturnLinkedExiles { .. }
                 | EffectDef::Detain { .. }
                 | EffectDef::GainControl { .. }

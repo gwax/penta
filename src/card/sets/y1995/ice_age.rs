@@ -67,6 +67,8 @@ static PORTENT_LOOK: TopCardSelectionDef = TopCardSelectionDef {
     rest_random_order: false,
     selected_order_follows_choice: true,
     then: Some(&PORTENT_SHUFFLE_AND_DRAW),
+    selected_hidden: false,
+    selected_linked_to_source: false,
     selected_face_down: None,
 };
 

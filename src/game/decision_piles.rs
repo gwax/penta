@@ -176,7 +176,8 @@ impl Game {
     ) {
         let (chosen, rest) = piles;
         let (count, mana_value) = self.selected_card_totals(&chosen);
-        self.finish_top_card_selection(player, chosen, rest, selection);
+        let hider = object.source.unwrap_or(object.id);
+        self.finish_top_card_selection_from(player, chosen, rest, selection, Some(hider));
         if let Some(then) = selection.then {
             let mut context = context;
             context.matched_count = Some(count);
@@ -198,13 +199,25 @@ impl Game {
         (count, mana_value)
     }
 
-    pub(super) fn finish_top_card_selection(
+    /// Places what a look selected and what it passed over, told which
+    /// object did the looking. Hideaway is why the source travels: the land
+    /// that took the card is the only thing that can name it again, and
+    /// exile says nothing about where a card came from.
+    pub(super) fn finish_top_card_selection_from(
         &mut self,
         player: PlayerId,
         chosen: Vec<CardInstance>,
         rest: Vec<CardInstance>,
         selection: &'static TopCardSelectionDef,
+        source: Option<GameObjectId>,
     ) {
+        let records_selection =
+            (selection.selected_linked_to_source && source.is_some()) || selection.selected_hidden;
+        let hidden = if records_selection {
+            chosen.iter().map(|card| card.id).collect::<Vec<_>>()
+        } else {
+            Vec::new()
+        };
         if selection.reveal_selected {
             self.events
                 .extend(chosen.iter().map(|card| GameEvent::CardRevealed {
@@ -240,6 +253,21 @@ impl Game {
             self.rng.shuffle(&mut rest);
         }
         self.place_revealed_remainder(player, rest, selection.rest_zone, selection.rest_placement);
+        // Both are settled after the move: a card in exile is a new object,
+        // and what names it has to name the one that is there now.
+        for card in hidden {
+            let Some(exiled) = self.successors.get(&card).copied() else {
+                continue;
+            };
+            if let Some(source) = source
+                && selection.selected_linked_to_source
+            {
+                self.linked_exiles.push((source, exiled));
+            }
+            if selection.selected_hidden {
+                self.permit_look_while_exiled(exiled, player);
+            }
+        }
     }
 
     pub(super) fn card_decision_options(

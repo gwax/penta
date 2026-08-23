@@ -78,6 +78,8 @@ static OPT_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     rest_random_order: false,
     selected_order_follows_choice: false,
     then: Some(&OPT_DRAW),
+    selected_hidden: false,
+    selected_linked_to_source: false,
     selected_face_down: None,
 };
 

@@ -116,6 +116,8 @@ static FATESEAL_ONE: TopCardSelectionDef = TopCardSelectionDef {
     rest_random_order: false,
     selected_order_follows_choice: false,
     then: None,
+    selected_hidden: false,
+    selected_linked_to_source: false,
     selected_face_down: None,
 };
 

@@ -20,6 +20,7 @@ pub(super) fn permission_snapshot(permission: &ExilePlayPermission) -> ExilePlay
             .not_before_turn
             .map(|(player, turn)| (player.index(), turn)),
         face_down: permission.face_down,
+        hidden_only: permission.hidden_only,
         until_holder_end_step: permission
             .until_holder_end_step
             .map(|(player, turn)| (player.index(), turn)),
@@ -47,6 +48,7 @@ pub(super) fn parse_permission(
             None => None,
         },
         face_down: permission.face_down,
+        hidden_only: permission.hidden_only,
         until_holder_end_step: match permission.until_holder_end_step {
             Some((player, turn)) => Some((wire::player_from_index(player)?, turn)),
             None => None,

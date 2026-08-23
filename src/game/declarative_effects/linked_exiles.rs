@@ -49,6 +49,9 @@ impl Game {
                     }
                 }
             }
+            EffectDef::PlayLinkedExiles { object: predicate } => {
+                self.permit_playing_linked_exiles(predicate, object);
+            }
             EffectDef::ReturnLinkedExiles {
                 object: predicate,
                 zone,
@@ -115,6 +118,21 @@ impl Game {
                 }
             }
             _ => {}
+        }
+    }
+    /// "You may play the exiled card without paying its mana cost." The
+    /// permission lasts the turn it was granted on, which is the turn the
+    /// ability resolved.
+    fn permit_playing_linked_exiles(
+        &mut self,
+        predicate: crate::card::ObjectPredicateDef,
+        object: &StackObject,
+    ) {
+        let source = object.source.unwrap_or(object.id);
+        for target in self.linked_exile_targets(predicate, source) {
+            if let Target::Card(card) = target {
+                self.permit_free_play_this_turn(card, object.controller);
+            }
         }
     }
 }

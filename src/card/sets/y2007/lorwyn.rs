@@ -2,10 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet, CardType,
-    ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef, ObjectChoiceBindingDef,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AddManaEffectDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef,
+    ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, TopCardSelectionDef, ValueDef, ZoneKind, ZonePlacement,
+    PlayerSetDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueComparisonDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -108,6 +110,8 @@ static PONDER_LOOK: TopCardSelectionDef = TopCardSelectionDef {
     rest_random_order: false,
     selected_order_follows_choice: true,
     then: Some(&PONDER_SHUFFLE_AND_DRAW),
+    selected_hidden: false,
+    selected_linked_to_source: false,
     selected_face_down: None,
 };
 
@@ -192,7 +196,104 @@ pub(in crate::card::sets) static THOUGHTSEIZE: CardRecord = CardRecord::new_with
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&CRYPTIC_COMMAND, &MULLDRIFTER, &PONDER, &THOUGHTSEIZE];
+/// Hideaway's look: four cards, one of them exiled face down and linked to
+/// the land that took it, and the rest back under the library in an order
+/// nobody knows.
+static HIDEAWAY_FOUR: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(4),
+    object: None,
+    minimum: 1,
+    maximum: 1,
+    select_all_matching: false,
+    reveal_selected: false,
+    selected_zone: ZoneKind::Exile,
+    selected_placement: ZonePlacement::Top,
+    selected_hidden: true,
+    selected_linked_to_source: true,
+    selected_face_down: None,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Bottom,
+    rest_random_order: true,
+    selected_order_follows_choice: false,
+    then: None,
+};
+
+/// "If a library has twenty or fewer cards in it" -- either library, which
+/// is why the two are asked separately rather than counted together.
+static A_LIBRARY_IS_NEARLY_EMPTY: TriggerConditionDef = TriggerConditionDef::AnyOf(&[
+    TriggerConditionDef::ValueComparison(&YOUR_LIBRARY_IS_NEARLY_EMPTY),
+    TriggerConditionDef::ValueComparison(&THEIR_LIBRARY_IS_NEARLY_EMPTY),
+]);
+
+static YOUR_LIBRARY_IS_NEARLY_EMPTY: ValueComparisonDef = ValueComparisonDef {
+    left: ValueDef::LibrarySize(PlayerRelation::You),
+    comparison: ComparisonDef::LessOrEqual,
+    right: ValueDef::Constant(20),
+};
+
+static THEIR_LIBRARY_IS_NEARLY_EMPTY: ValueComparisonDef = ValueComparisonDef {
+    left: ValueDef::LibrarySize(PlayerRelation::Opponent),
+    comparison: ComparisonDef::LessOrEqual,
+    right: ValueDef::Constant(20),
+};
+
+static SHELLDOCK_UNLOCK_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{U}")),
+    AbilityCostDef::TapSource,
+];
+
+// LRW 272 — Shelldock Isle
+pub(in crate::card::sets) static SHELLDOCK_ISLE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("4216656e-90e8-45fc-a0f6-0d0d79d0a021"),
+    "Shelldock Isle",
+    CardArt::new("4216656e-90e8-45fc-a0f6-0d0d79d0a021", "Mark Tedin"),
+    CardSet::Lorwyn,
+    // A tapped Island that hides your best card until the game is nearly
+    // over, and then plays it for nothing.
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::triggered(
+            "Hideaway 4 (When this land enters, look at the top four cards of your library, \
+             exile one face down, then put the rest on the bottom in a random order.)",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::LookAtTopAndSelect {
+                player: EffectRecipientDef::Controller,
+                looker: EffectRecipientDef::Controller,
+                selection: &HIDEAWAY_FOUR,
+            },
+        ),
+        abilities::enters_tapped("This land enters tapped."),
+        AbilityDef::activated_mana(
+            "{T}: Add {U}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Blue)),
+        ),
+        AbilityDef::activated(
+            "{U}, {T}: You may play the exiled card without paying its mana cost if a library \
+             has twenty or fewer cards in it.",
+            &SHELLDOCK_UNLOCK_COST,
+            EffectDef::PlayLinkedExiles {
+                object: ObjectPredicateDef::Any,
+            },
+        )
+        .with_activation_condition(&A_LIBRARY_IS_NEARLY_EMPTY)
+        .with_coverage(AbilityCoverageDef::partial(
+            "The card is playable for the rest of the turn rather than only while this ability \
+             resolves, so a player who waits keeps the option a little longer than the printed \
+             clause allows.",
+        )),
+    ]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &CRYPTIC_COMMAND,
+    &MULLDRIFTER,
+    &PONDER,
+    &THOUGHTSEIZE,
+    &SHELLDOCK_ISLE,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

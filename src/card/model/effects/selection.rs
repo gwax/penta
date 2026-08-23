@@ -33,6 +33,14 @@ pub struct TopCardSelectionDef {
     pub reveal_selected: bool,
     pub selected_zone: ZoneKind,
     pub selected_placement: ZonePlacement,
+    /// Whether the selected cards lie face down where they land, which only
+    /// exile supports: their controller may look at them and nobody else
+    /// sees what they are.
+    pub selected_hidden: bool,
+    /// Whether the selected cards are linked to the ability's own source.
+    /// Hideaway needs it: the land that hid the card is the only thing that
+    /// can name it afterwards, and nothing in exile says which card that is.
+    pub selected_linked_to_source: bool,
     /// Copiable values for selected cards put onto the battlefield face down.
     /// `None` places them normally. This belongs to the arrival: a card put
     /// down face down was never face up there.

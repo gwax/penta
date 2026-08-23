@@ -699,6 +699,8 @@ pub(in crate::card::sets) static GLIMPSE_THE_FUTURE: CardRecord = CardRecord::ne
                 rest_random_order: false,
                 selected_order_follows_choice: false,
                 then: None,
+            selected_hidden: false,
+            selected_linked_to_source: false,
             selected_face_down: None,},
         },
     )),
@@ -2380,6 +2382,8 @@ static INTO_THE_WILDS_LOOK: TopCardSelectionDef = TopCardSelectionDef {
     rest_random_order: false,
     selected_order_follows_choice: false,
     then: None,
+    selected_hidden: false,
+    selected_linked_to_source: false,
     selected_face_down: None,
 };
 

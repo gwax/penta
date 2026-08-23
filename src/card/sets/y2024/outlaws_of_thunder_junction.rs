@@ -153,6 +153,8 @@ static BRONCO_REVEAL: TopCardSelectionDef = TopCardSelectionDef {
     reveal_selected: true,
     selected_zone: ZoneKind::Hand,
     selected_placement: ZonePlacement::Top,
+    selected_hidden: false,
+    selected_linked_to_source: false,
     selected_face_down: None,
     rest_zone: ZoneKind::Library,
     rest_placement: ZonePlacement::Top,

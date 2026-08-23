@@ -936,6 +936,13 @@ pub enum EffectDef {
     Saddle {
         object: EffectRecipientDef,
     },
+    /// "You may play the exiled card without paying its mana cost."
+    /// Hideaway's second half: the permission names the cards this
+    /// permanent hid rather than anything in exile generally, and it lasts
+    /// the turn the ability resolved on.
+    PlayLinkedExiles {
+        object: ObjectPredicateDef,
+    },
     /// The object sits out this many of its controller's untap steps.
     SkipNextUntapSteps {
         object: EffectRecipientDef,

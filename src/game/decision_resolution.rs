@@ -233,7 +233,8 @@ impl Game {
                     });
                 }
                 let matched = self.selected_card_totals(&chosen);
-                self.finish_top_card_selection(player, chosen, rest, selection);
+                let hider = object.source.unwrap_or(object.id);
+                self.finish_top_card_selection_from(player, chosen, rest, selection, Some(hider));
                 if let Some(then) = selection.then {
                     let mut context = context;
                     context.matched_count = Some(matched.0);

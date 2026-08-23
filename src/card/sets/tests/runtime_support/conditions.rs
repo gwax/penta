@@ -10,7 +10,7 @@ use super::*;
 
 pub(in super::super) fn shared_trigger_condition(condition: TriggerConditionDef) -> bool {
     match condition {
-        TriggerConditionDef::All(conditions) => {
+        TriggerConditionDef::All(conditions) | TriggerConditionDef::AnyOf(conditions) => {
             conditions.iter().copied().all(shared_trigger_condition)
         }
         TriggerConditionDef::Not(condition) => shared_trigger_condition(*condition),

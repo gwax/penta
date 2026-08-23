@@ -527,6 +527,7 @@ impl Game {
             }
             EffectDef::ExileLinkedToSource { .. }
             | EffectDef::ExileGrantingOwnerPlay { .. }
+            | EffectDef::PlayLinkedExiles { .. }
             | EffectDef::ReturnLinkedExiles { .. } => {
                 self.resolve_linked_exile_effect(scoped, object, &context);
             }

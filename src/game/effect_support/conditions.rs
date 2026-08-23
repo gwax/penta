@@ -143,6 +143,11 @@ impl Game {
                         condition, source, controller, context, ability, object,
                     )
                 }),
+                TriggerConditionDef::AnyOf(conditions) => conditions.iter().any(|condition| {
+                    self.trigger_condition_holds(
+                        condition, source, controller, context, ability, object,
+                    )
+                }),
                 TriggerConditionDef::Not(condition) => !self.trigger_condition_holds(
                     condition, source, controller, context, ability, object,
                 ),

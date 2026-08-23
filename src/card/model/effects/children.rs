@@ -96,6 +96,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::DrawCards { .. }
         | EffectDef::EmptyManaPool { .. }
         | EffectDef::ExileLinkedToSource { .. }
+        | EffectDef::PlayLinkedExiles { .. }
         | EffectDef::ExileGrantingOwnerPlay { .. }
         | EffectDef::GainControl { .. }
         | EffectDef::ExchangeControl { .. }

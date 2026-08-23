@@ -382,6 +382,7 @@ fn validate_effect_target_shapes(
         | EffectDef::DamageCannotBePreventedThisTurn
             | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ReturnLinkedExiles { .. }
+        | EffectDef::PlayLinkedExiles { .. }
         | EffectDef::Cascade
         | EffectDef::Proliferate
         | EffectDef::CannotBeForcedToSacrifice
@@ -668,6 +669,8 @@ mod recipient_shape_tests {
             rest_random_order: false,
             selected_order_follows_choice: false,
             then: None,
+        selected_hidden: false,
+        selected_linked_to_source: false,
         selected_face_down: None,};
         static INVALID_ZONE: TopCardSelectionDef = TopCardSelectionDef {
             count: ValueDef::Constant(1),
@@ -685,6 +688,8 @@ mod recipient_shape_tests {
             rest_random_order: false,
             selected_order_follows_choice: false,
             then: None,
+        selected_hidden: false,
+        selected_linked_to_source: false,
         selected_face_down: None,};
 
         for selection in [&INVALID_BOUNDS, &INVALID_ZONE] {

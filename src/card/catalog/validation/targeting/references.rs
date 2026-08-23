@@ -699,7 +699,7 @@ fn validate_trigger_condition(
     scope: BindingScope,
 ) -> Result<(), GrantedAbilityValidationError> {
     match condition {
-        TriggerConditionDef::All(conditions) => conditions
+        TriggerConditionDef::All(conditions) | TriggerConditionDef::AnyOf(conditions) => conditions
             .iter()
             .copied()
             .try_for_each(|condition| validate_trigger_condition(condition, target_count, scope)),

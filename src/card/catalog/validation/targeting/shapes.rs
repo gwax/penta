@@ -431,7 +431,7 @@ fn validate_trigger_condition_shape(
     targets: &[AbilityTargetDef],
 ) -> Result<(), GrantedAbilityValidationError> {
     match condition {
-        TriggerConditionDef::All(conditions) => conditions
+        TriggerConditionDef::All(conditions) | TriggerConditionDef::AnyOf(conditions) => conditions
             .iter()
             .copied()
             .try_for_each(|condition| validate_trigger_condition_shape(condition, targets)),

@@ -30,6 +30,10 @@ pub(super) struct ExilePlayPermissionSnapshot {
     /// restores face up, which every permission but a foretell was.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) face_down: bool,
+    /// Additive: a checkpoint written before hideaway existed carries no
+    /// look-only permission, which is what every game without one has.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) hidden_only: bool,
     /// The holder's turn whose end step the permission runs to. Additive: a
     /// checkpoint written before any permission reached that far restores
     /// without one, which all of them did.
@@ -46,6 +50,7 @@ pub(super) fn is_zero_u16(value: &u16) -> bool {
 
 mod balance;
 mod continuation;
+mod continuous;
 mod objects;
 mod stack;
 mod triggers;
@@ -54,6 +59,7 @@ pub(in crate::game::state_checkpoint) use triggers::*;
 
 pub(super) use balance::{BalanceActionSnapshot, BalancePhaseSnapshot, BalanceTaskSnapshot};
 pub(super) use continuation::DecisionContinuationSnapshot;
+pub(in crate::game::state_checkpoint) use continuous::*;
 pub(super) use objects::{
     AbilityLocator, EmblemCharacteristicsLocator, FaceDownCharacteristicsSnapshot,
     ObjectCharacteristicsSnapshot, ObjectKindSnapshot, TokenCharacteristicsLocator,
@@ -444,97 +450,6 @@ pub(super) struct PermanentSnapshot {
     pub(super) has_dynamic_characteristics: bool,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct ResolvedContinuousEffectSnapshot {
-    pub(super) definition: AppliedEffectLocator,
-    pub(super) source: AbilitySourceSnapshot,
-    pub(super) timestamp: u64,
-    pub(super) component_order: u16,
-    pub(super) expiration: ContinuousEffectExpirationSnapshot,
-    pub(super) operation: ResolvedContinuousOperationSnapshot,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct ResolvedPlayPermissionSnapshot {
-    pub(super) definition: AppliedEffectLocator,
-    pub(super) source: AbilitySourceSnapshot,
-    pub(super) affected_seat: usize,
-    pub(super) expiration: ContinuousEffectExpirationSnapshot,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct ResolvedPlayRestrictionSnapshot {
-    pub(super) definition: AppliedEffectLocator,
-    pub(super) source: AbilitySourceSnapshot,
-    pub(super) affected_seat: usize,
-    pub(super) timestamp: u64,
-    pub(super) component_order: u16,
-    pub(super) expiration: ContinuousEffectExpirationSnapshot,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct ResolvedAttackRestrictionSnapshot {
-    pub(super) definition: AppliedEffectLocator,
-    pub(super) source: AbilitySourceSnapshot,
-    pub(super) affected_seat: usize,
-    pub(super) expiration: ContinuousEffectExpirationSnapshot,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) enum SetOperationSnapshot {
-    Add,
-    Remove,
-    Set,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(
-    tag = "kind",
-    rename_all = "camelCase",
-    rename_all_fields = "camelCase"
-)]
-pub(super) enum ResolvedContinuousOperationSnapshot {
-    AbilityAdd {
-        grant_id: u8,
-    },
-    AbilityRemove,
-    BasicLandTypes {
-        operation: SetOperationSnapshot,
-    },
-    CardTypes {
-        operation: SetOperationSnapshot,
-    },
-    Colors {
-        operation: SetOperationSnapshot,
-    },
-    CreatureTypes {
-        operation: SetOperationSnapshot,
-    },
-    Subtypes {
-        operation: SetOperationSnapshot,
-    },
-    ModifyPowerToughness {
-        power: i16,
-        toughness: i16,
-    },
-    Rule,
-    /// Layer 7e. It carries nothing on the wire because it carries nothing
-    /// in the effect: what matters is that one is applied.
-    SwitchPowerToughness,
-    SetBasePower {
-        power: i16,
-    },
-    SetBasePowerToughness {
-        power: i16,
-        toughness: i16,
-    },
-}
-
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct AbilityActivationSnapshot {
@@ -575,21 +490,6 @@ pub(super) struct CopiableAbilitySnapshot {
 #[serde(rename_all = "camelCase")]
 pub(super) struct CopiedFromSnapshot {
     pub(super) characteristics: ObjectCharacteristicsSnapshot,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(
-    tag = "kind",
-    rename_all = "camelCase",
-    rename_all_fields = "camelCase"
-)]
-pub(super) enum ContinuousEffectExpirationSnapshot {
-    EndOfTurn,
-    EndOfCombat,
-    UpkeepOf { seat: usize },
-    TurnOf { seat: usize, turn: u32 },
-    WhileSourceTapped,
-    Never,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

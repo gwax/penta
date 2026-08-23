@@ -421,7 +421,7 @@ impl Game {
     /// The cards exiled with `source` that match. Which permanent exiled
     /// them, not where they are: the pile is read off the link the exile
     /// recorded rather than found by looking.
-    fn linked_exile_targets(
+    pub(in crate::game) fn linked_exile_targets(
         &self,
         predicate: ObjectPredicateDef,
         source: GameObjectId,
