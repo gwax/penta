@@ -2,10 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CreatureTypeSetDef,
-    EffectDef, EffectRecipientDef, ObjectPredicateDef, ResolvedEffectDurationDef,
-    TriggerConditionDef, ValueDef, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet,
+    CreatureTypeSetDef, EffectDef, EffectRecipientDef, InstalledTriggerDef, ObjectPredicateDef,
+    PlayerRelation, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, abilities,
 };
+use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 /// Each step repaints the whole creature-type line rather than adding to it,
@@ -96,6 +98,66 @@ static FIGURE_OF_DESTINY_ABILITIES: [AbilityDef; 3] = [
     ),
 ];
 
+/// "Another target permanent": his own arrival cannot answer itself, and
+/// nothing else is out of reach -- a land is as blinkable as a creature,
+/// which is what separates him from every other flicker in white.
+static ANOTHER_PERMANENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+)];
+
+/// The delayed half, installed by the arrival rather than printed as its own
+/// clause: it fires once, at the next end step, whoever's turn that is, and
+/// it fires whether or not the Wisp is still around to see it.
+static FLICKERWISP_RETURN: AbilityDef = AbilityDef::triggered(
+    "Return that card to the battlefield under its owner's control at the beginning of the next \
+     end step.",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+    },
+    EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        zone: ZoneKind::Battlefield,
+        grant: None,
+        counters: None,
+        arrival_effect: None,
+        transformed: false,
+        controller: None,
+    },
+);
+
+static FLICKERWISP_EXILE: [EffectDef; 2] = [
+    EffectDef::ExileLinkedToSource {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&FLICKERWISP_RETURN)),
+];
+
+// EVE 6 — Flickerwisp
+pub(in crate::card::sets) static FLICKERWISP: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("5bb3cb5c-8d66-4f5e-a9a9-917e6045f024"),
+    "Flickerwisp",
+    CardArt::new("5bb3cb5c-8d66-4f5e-a9a9-917e6045f024", "Jeremy Enecio"),
+    CardSet::Eventide,
+    // Three mana for a 3/1 flier that also answers something for a turn:
+    // an attacker, a blocker, a land on the turn it matters, or one of your
+    // own permanents that would rather enter again.
+    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Elemental"], 3, 1).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, exile another target permanent. Return that card to the \
+             battlefield under its owner's control at the beginning of the next end step.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &ANOTHER_PERMANENT,
+            EffectDef::Sequence(&FLICKERWISP_EXILE),
+        ),
+    ]),
+);
+
 // EVE 41 — Raven's Crime
 // Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static RAVEN_S_CRIME: CardRecord = CardRecord::new(
@@ -128,7 +190,11 @@ pub(in crate::card::sets) static FIGURE_OF_DESTINY: CardRecord = CardRecord::new
         .with_abilities(&FIGURE_OF_DESTINY_ABILITIES),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&RAVEN_S_CRIME, &DESECRATOR_HAG, &FIGURE_OF_DESTINY];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &FLICKERWISP,
+    &RAVEN_S_CRIME,
+    &DESECRATOR_HAG,
+    &FIGURE_OF_DESTINY,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
