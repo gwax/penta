@@ -169,7 +169,8 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
             };
             source && recipient
         }
-        TriggerEventDef::AttacksAndIsNotBlocked { attacker: source }
+        TriggerEventDef::ObjectsDied { object: source }
+        | TriggerEventDef::AttacksAndIsNotBlocked { attacker: source }
         | TriggerEventDef::UnblockedAttackersDeclared {
             attacker: source, ..
         }

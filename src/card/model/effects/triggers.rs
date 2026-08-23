@@ -30,6 +30,14 @@ pub enum TriggerEventDef {
     AttacksAndIsNotBlocked {
         attacker: ObjectPredicateDef,
     },
+    /// "Whenever one or more creatures die." One trigger for the whole
+    /// simultaneous move rather than one apiece, which is what "one or more"
+    /// means: a board wipe gives one. Dying is the battlefield-to-graveyard
+    /// move (CR 700.4), so a permanent exiled instead is not in it, and the
+    /// predicate says which of the batch count toward the clause.
+    ObjectsDied {
+        object: ObjectPredicateDef,
+    },
     /// "Whenever one or more creatures an opponent controls attack you and
     /// aren't blocked." One trigger for the whole declaration, however many
     /// of them went unblocked, which is what "one or more" means -- distinct

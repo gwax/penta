@@ -237,6 +237,13 @@ pub(super) enum CommittedTriggerEvent {
         /// gets the quantity it is printed against without recounting.
         blockers_beyond_first: u16,
     },
+    /// Every object that went from the battlefield to a graveyard in one
+    /// batch, published once. The batched counterpart of the per-object zone
+    /// change beside it, for the clauses that read "one or more ... die" as
+    /// one event.
+    ObjectsDied {
+        objects: Vec<TriggerEventObject>,
+    },
     /// An attacker that no creature blocked, committed once blockers are
     /// declared.
     AttacksAndIsNotBlocked {
@@ -382,6 +389,17 @@ impl CommittedTriggerEvent {
             },
             // The event is the declaration rather than any creature in it,
             // so nothing here names one.
+            // The event is the batch rather than any one death in it. The
+            // amount is how many died, counted before the clause's own
+            // predicate narrows them -- no card reads it, and the two would
+            // only differ for a batch that mixed creatures with anything
+            // else.
+            Self::ObjectsDied { objects } => TriggerContext {
+                object: None,
+                object_controller: objects.first().map(|object| object.controller),
+                event_player: objects.first().map(|object| object.controller),
+                amount: Some(i32::try_from(objects.len()).unwrap_or(i32::MAX)),
+            },
             // The event is the batch rather than any creature in it. Who it
             // was aimed at is the defending player, and who aimed it is the
             // attackers' own controller, which is the player such a clause

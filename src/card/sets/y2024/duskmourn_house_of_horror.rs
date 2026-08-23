@@ -785,14 +785,71 @@ pub(in crate::card::sets) static CLOCKWORK_PERCUSSIONIST: CardRecord = CardRecor
     crate::card::CardRules::unsupported(),
 );
 
+/// "Up to one target creature": the Equipment arrives whether or not there
+/// is anything worth shooting.
+static CHAINSAW_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    1,
+)];
+
+static CHAINSAW_ABILITIES: [AbilityDef; 4] = [
+    AbilityDef::triggered_with_targets(
+        "When this Equipment enters, it deals 3 damage to up to one target creature.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        &CHAINSAW_TARGET,
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(3),
+        },
+    ),
+    // One counter for the batch rather than one per creature, which is what
+    // "one or more" means: a board wipe revs it once.
+    AbilityDef::triggered(
+        "Whenever one or more creatures die, put a rev counter on this Equipment.",
+        TriggerEventDef::ObjectsDied {
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+        },
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::Source,
+            kind: CounterKind::Rev,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    AbilityDef::static_ability(
+        "Equipped creature gets +X/+0, where X is the number of rev counters on this Equipment.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::AttachedPermanent,
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::CountersOnSource(CounterKind::Rev),
+                ValueDef::Constant(0),
+            ),
+        },
+    ),
+    abilities::equip(&CHAINSAW_EQUIP_COST, "Equip {3}"),
+];
+
+static CHAINSAW_EQUIP_COST: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{3}"))];
+
 // DSK 314 — Chainsaw
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static CHAINSAW: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1c8d0f4e-6b1e-4444-8851-adf857273964"),
     "Chainsaw",
-    crate::card::CardArt::new("1c8d0f4e-6b1e-4444-8851-adf857273964", "Alexis Ziritt"),
-    crate::card::CardSet::DuskmournHouseOfHorror,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("1c8d0f4e-6b1e-4444-8851-adf857273964", "Alexis Ziritt"),
+    CardSet::DuskmournHouseOfHorror,
+    // Two mana that shoots something on the way in and then grows for the
+    // rest of the game, on a board where creatures keep dying anyway.
+    CardRules::new_artifact(mana_cost!("{1}{R}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&CHAINSAW_ABILITIES),
 );
 
 // DSK 316 — Fear of Missing Out (alternate printing)

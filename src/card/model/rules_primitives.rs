@@ -100,10 +100,13 @@ pub enum CounterKind {
     /// untapped removes it instead and stays tapped, so what the counters
     /// measure is how many untaps the permanent still owes.
     Stun,
+    /// The Chainsaw's rev counter, which is a tally and nothing else: what
+    /// it does is what the Equipment's own static clause says it does.
+    Rev,
 }
 
 impl CounterKind {
-    pub const COUNT: usize = 33;
+    pub const COUNT: usize = 34;
 
     pub const ALL: [Self; Self::COUNT] = [
         Self::PlusOnePlusOne,
@@ -139,6 +142,7 @@ impl CounterKind {
         Self::Chorus,
         Self::Silver,
         Self::Stun,
+        Self::Rev,
     ];
 
     /// What one counter of this kind adds to power and toughness. The kinds
@@ -179,7 +183,8 @@ impl CounterKind {
             | Self::Age
             | Self::Chorus
             | Self::Silver
-            | Self::Stun => (0, 0),
+            | Self::Stun
+            | Self::Rev => (0, 0),
         }
     }
 
@@ -219,6 +224,7 @@ impl CounterKind {
             Self::Chorus => 30,
             Self::Silver => 31,
             Self::Stun => 32,
+            Self::Rev => 33,
         }
     }
 
@@ -258,6 +264,7 @@ impl CounterKind {
             Self::Chorus => "chorus",
             Self::Silver => "silver",
             Self::Stun => "stun",
+            Self::Rev => "rev",
         }
     }
 

@@ -2,14 +2,14 @@ use std::borrow::Cow;
 
 use super::{
     AbilitySourceRef, ApplicableZoneMoveReplacement, AppliedRuleDef, BattlefieldArrival,
-    BattlefieldExit, BattlefieldExitCompletion, CardInstance, CardPartId, CommittedTriggerEvent,
-    CounterKind, DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility,
-    DecisionZone, DeclarativeAbilityDef, EffectDef, EntryCompletion, FrozenZoneMoveReplacement,
-    Game, GameEvent, GameObjectId, KeywordAbility, ObjectInstance, PendingBattlefieldEntry,
-    PendingBattlefieldExitBatch, PendingBattlefieldExitMove, Permanent, PlayerId,
-    ReplacementConditionDef, ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef,
-    RetiredObject, ScopedEffect, StackObject, StackObjectKind, Step, Target, TargetSlotId,
-    TriggerContext, ZoneKind, ZoneMoveCauseDef, ZonePlacement, remove_card,
+    BattlefieldExit, BattlefieldExitCompletion, BattlefieldExitSnapshot, CardInstance, CardPartId,
+    CommittedTriggerEvent, CounterKind, DecisionContinuation, DecisionOption, DecisionPreference,
+    DecisionVisibility, DecisionZone, DeclarativeAbilityDef, EffectDef, EntryCompletion,
+    FrozenZoneMoveReplacement, Game, GameEvent, GameObjectId, KeywordAbility, ObjectInstance,
+    PendingBattlefieldEntry, PendingBattlefieldExitBatch, PendingBattlefieldExitMove, Permanent,
+    PlayerId, ReplacementConditionDef, ReplacementEffectContext, ReplacementEffectDef,
+    ReplacementEventDef, RetiredObject, ScopedEffect, StackObject, StackObjectKind, Step, Target,
+    TargetSlotId, TriggerContext, ZoneKind, ZoneMoveCauseDef, ZonePlacement, remove_card,
 };
 
 impl Game {

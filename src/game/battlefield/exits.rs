@@ -20,6 +20,19 @@ type ExitingPermanent = (
     CardPartId,
 );
 
+/// One permanent that has left the battlefield, with everything the events
+/// and the follow-up moves need to read about it: what it was as it left,
+/// what had damaged it, where it went, whether undying applies, and which
+/// face it was presenting.
+type RemovedBattlefieldObject = (
+    Permanent,
+    BattlefieldExitSnapshot,
+    Vec<GameObjectId>,
+    ZoneKind,
+    bool,
+    CardPartId,
+);
+
 impl Game {
     /// Adds work to the exit choice created since `pending_before`. Effect
     /// sequences use this after interpreting one clause so they can leave the
@@ -341,6 +354,35 @@ impl Game {
     /// counted as they happen rather than read off the board afterwards: a
     /// creature that died and was reanimated, and a permanent that left and
     /// was replaced, both leave a battlefield that looks untouched.
+    /// The events one exit batch publishes: one zone change per object, and
+    /// one "they died" for the whole batch.
+    ///
+    /// The batched one carries only the graveyard half. A permanent exiled
+    /// instead of dying did not die (CR 700.4), and the per-object zone
+    /// change beside it already says where each one actually went.
+    fn battlefield_exit_events(removed: &[RemovedBattlefieldObject]) -> Vec<CommittedTriggerEvent> {
+        let mut events = removed
+            .iter()
+            .map(
+                |(_, snapshot, damage_sources, to, _, _)| CommittedTriggerEvent::ZoneChanged {
+                    object: snapshot.object.clone(),
+                    from: ZoneKind::Battlefield,
+                    to: *to,
+                    damage_sources: damage_sources.clone(),
+                },
+            )
+            .collect::<Vec<_>>();
+        let died = removed
+            .iter()
+            .filter(|(_, _, _, to, _, _)| *to == ZoneKind::Graveyard)
+            .map(|(_, snapshot, _, _, _, _)| snapshot.object.clone())
+            .collect::<Vec<_>>();
+        if !died.is_empty() {
+            events.push(CommittedTriggerEvent::ObjectsDied { objects: died });
+        }
+        events
+    }
+
     fn record_exits_for_the_turn(&mut self, exits: &[ExitingPermanent]) {
         for (_, snapshot, _, _, _, _) in exits {
             self.permanent_left_battlefield_this_turn[snapshot.object.controller.index()] = true;
@@ -404,17 +446,7 @@ impl Game {
             ));
         }
 
-        let events = removed
-            .iter()
-            .map(
-                |(_, snapshot, damage_sources, to, _, _)| CommittedTriggerEvent::ZoneChanged {
-                    object: snapshot.object.clone(),
-                    from: ZoneKind::Battlefield,
-                    to: *to,
-                    damage_sources: damage_sources.clone(),
-                },
-            )
-            .collect::<Vec<_>>();
+        let events = Self::battlefield_exit_events(&removed);
         self.capture_battlefield_trigger_batch_from_snapshot(&listeners, &events);
 
         for ((permanent, snapshot, _, to, undying, presented), event) in

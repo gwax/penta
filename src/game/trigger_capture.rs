@@ -742,6 +742,16 @@ impl Game {
                     owner: exiled_by,
                 },
             ) => self.exile_move_matches(zones, owner, cards, *from, *exiled_by, controller),
+            // One batch, one trigger: the predicate says which of the dead
+            // count toward "one or more".
+            (
+                TriggerEventDef::ObjectsDied { object: predicate },
+                CommittedTriggerEvent::ObjectsDied { objects },
+            ) => objects.iter().any(|object| {
+                self.trigger_object_matches_for_controller(
+                    predicate, object, source, false, controller,
+                )
+            }),
             // One batch, one trigger: the predicate says which of the
             // unblocked attackers count, and the relation says whether the
             // player they were aimed at is the one the clause names.

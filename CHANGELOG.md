@@ -52,6 +52,13 @@ distinguishes snapshots of the covered source and build inputs.
   payment of the same cost and enumerating them all would grow with the size
   of a graveyard.
 
+- **"Whenever one or more creatures die."** One event for the whole
+  simultaneous exit rather than one per creature, published beside the
+  per-object zone changes that already describe the same move: a board wipe
+  gives one trigger, not one apiece. It carries only the graveyard half of
+  the batch, because a permanent exiled instead of dying did not die
+  (CR 700.4).
+
 - **"Whenever one or more creatures attack you and aren't blocked."** The
   batched counterpart of the per-attacker unblocked trigger, published once
   as blockers are declared for each player the unblocked attackers were

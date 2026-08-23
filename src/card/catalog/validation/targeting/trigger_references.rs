@@ -381,7 +381,17 @@ fn validate_trigger_event_references(
         {
             Err(unsupported_trigger_event(event))
         }
-        TriggerEventDef::AttacksAndIsNotBlocked {
+        // The batch is read from last-known information, so a predicate
+        // that needs the object still standing on the battlefield cannot
+        // answer it -- the same bar the battlefield-to-graveyard zone change
+        // beside it has to clear.
+        TriggerEventDef::ObjectsDied { object }
+            if trigger_predicate_requires_live_battlefield(object) =>
+        {
+            Err(unsupported_trigger_event(event))
+        }
+        TriggerEventDef::ObjectsDied { object: predicate }
+        | TriggerEventDef::AttacksAndIsNotBlocked {
             attacker: predicate,
         }
         | TriggerEventDef::UnblockedAttackersDeclared {

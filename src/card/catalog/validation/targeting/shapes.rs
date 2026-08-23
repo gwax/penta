@@ -32,6 +32,8 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         | TriggerEventDef::CardsExiled { .. }
         | TriggerEventDef::AttacksAndIsNotBlocked { .. }
         | TriggerEventDef::UnblockedAttackersDeclared { .. }
+        // The dead are read as they last stood on the battlefield.
+        | TriggerEventDef::ObjectsDied { .. }
         | TriggerEventDef::BecomesBlocked(_)
         | TriggerEventDef::BlocksOrBecomesBlockedBy { .. }
         | TriggerEventDef::Blocks { .. }
