@@ -4,7 +4,7 @@ use super::{
     BattlefieldExitSnapshot, CardPartId, CardRules, CardStructure, CardSupertype, CardType,
     CardTypeSet, CopiableCharacteristics, CounterKind, DeclarativeAbilityDef,
     DoubleFacedCopiableCharacteristics, Game, ObjectCharacteristics, ObjectKind, Permanent,
-    PermanentLastKnownInformation, TriggerEventObject,
+    PermanentLastKnownInformation, Target, TriggerEventObject,
 };
 
 impl Game {
@@ -122,6 +122,38 @@ impl Game {
                 _ => unreachable!("an emblem has emblem characteristics"),
             },
             ObjectKind::Ability => unreachable!("a stack ability cannot be a permanent"),
+        }
+    }
+
+    /// The copiable values of whatever a copy effect was pointed at.
+    ///
+    /// A permanent's are whatever it is currently copying, or its own. A card
+    /// that is not on the battlefield has none of that history: CR 707.2
+    /// leaves it with exactly what is printed on it, which is its front face
+    /// and nothing else. Shifting Woodland reads a card in a graveyard that
+    /// way, and so would any other clause that copies one.
+    pub(super) fn copiable_values_of(&self, target: Target) -> Option<CopiableCharacteristics> {
+        match target {
+            Target::Permanent(id) => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == id)
+                .map(Self::copiable_characteristics),
+            Target::Card(id) => {
+                let (_, card) = self.card_in_nonbattlefield_zone(id)?;
+                let definition = self.catalog.get(card.definition)?;
+                Some(CopiableCharacteristics {
+                    base: ObjectCharacteristics::card(
+                        card.definition,
+                        definition.primary_part_id(),
+                    ),
+                    added_types: CardTypeSet::empty(),
+                    added_abilities: Vec::new(),
+                    retain_printed_subtypes: false,
+                    base_power_toughness: None,
+                })
+            }
+            Target::Player(_) | Target::Spell(_) => None,
         }
     }
 

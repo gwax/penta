@@ -6,13 +6,13 @@ use crate::card::{
     AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardChoiceSourceDef, CardComposition,
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, DoubleFacedKind, EffectDef,
-    EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, SpellAdditionalCostDef, SpellForm, SpendModeDef,
-    TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    CardTypeSet, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, DoubleFacedKind,
+    EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
+    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, SpellAdditionalCostDef, SpellForm,
+    SpendModeDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{CardPartId, ObjectBindingIndex, ObjectSetBindingIndex, PlayOptionId};
 use crate::{TargetIndex, mana_cost};
@@ -1393,6 +1393,80 @@ pub(in crate::card::sets) static SHELTERING_LANDSCAPE: CardRecord = CardRecord::
     CardRules::new_land(&[]).with_abilities(&SHELTERING_LANDSCAPE_ABILITIES),
 );
 
+/// Delirium, as an activation restriction rather than a trigger condition:
+/// the ability is not offered at all while the graveyard is short of four
+/// card types.
+static WOODLAND_DELIRIUM: ValueComparisonDef = ValueComparisonDef {
+    left: ValueDef::CardTypesAmongGraveyards(PlayerRelation::You),
+    comparison: ComparisonDef::GreaterOrEqual,
+    right: ValueDef::Constant(4),
+};
+
+static WOODLAND_HAS_DELIRIUM: TriggerConditionDef =
+    TriggerConditionDef::ValueComparison(&WOODLAND_DELIRIUM);
+
+/// "Target permanent card in your graveyard": the five permanent types, in
+/// your own graveyard rather than either.
+static A_PERMANENT_CARD_IN_YOUR_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Artifact),
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::HasType(CardType::Enchantment),
+            ObjectPredicateDef::HasType(CardType::Land),
+            ObjectPredicateDef::HasType(CardType::Planeswalker),
+        ]),
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: Some(PlayerRelation::You),
+    },
+)];
+
+static WOODLAND_COPY_COST: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{2}{G}{G}"))];
+
+static SHIFTING_WOODLAND_ABILITIES: [AbilityDef; 3] = [
+    abilities::enters_tapped_unless_you_control(
+        "This land enters tapped unless you control a Forest.",
+        ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+    ),
+    AbilityDef::activated_mana(
+        "{T}: Add {G}.",
+        &WOODLAND_MANA_COST,
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green)),
+    ),
+    // No "except it has this ability" clause, unlike Thespian's Stage: the
+    // copy replaces every copiable value, so while it is a creature it is
+    // not a land, taps for nothing, and cannot do this again.
+    AbilityDef::activated_with_targets(
+        "Delirium — {2}{G}{G}: This land becomes a copy of target permanent card in your \
+         graveyard until end of turn. Activate only if there are four or more card types among \
+         cards in your graveyard.",
+        &WOODLAND_COPY_COST,
+        &A_PERMANENT_CARD_IN_YOUR_GRAVEYARD,
+        EffectDef::BecomeCopyOf {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            copier: None,
+            retain_source_ability: false,
+            added_types: CardTypeSet::EMPTY,
+            duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
+        },
+    )
+    .with_activation_condition(&WOODLAND_HAS_DELIRIUM),
+];
+
+static WOODLAND_MANA_COST: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
+// MH3 228 — Shifting Woodland
+pub(in crate::card::sets) static SHIFTING_WOODLAND: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("059164e1-894d-4586-9800-e60d6fbd6eb6"),
+    "Shifting Woodland",
+    CardArt::new("059164e1-894d-4586-9800-e60d6fbd6eb6", "Josu Hernaiz"),
+    CardSet::ModernHorizons3,
+    // A Forest that turns into the best thing you have already lost, once
+    // the graveyard is deep enough to be worth reading.
+    CardRules::new_land(&[]).with_abilities(&SHIFTING_WOODLAND_ABILITIES),
+);
+
 // MH3 231 — Tranquil Landscape
 // Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static TRANQUIL_LANDSCAPE: CardRecord = CardRecord::new(
@@ -1597,6 +1671,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SEETHING_LANDSCAPE,
     &SHATTERED_LANDSCAPE,
     &SHELTERING_LANDSCAPE,
+    &SHIFTING_WOODLAND,
     &TRANQUIL_LANDSCAPE,
     &TWISTED_LANDSCAPE,
     &AJANI_NACATL_PARIAH,

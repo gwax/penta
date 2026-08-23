@@ -758,7 +758,7 @@ impl Game {
                 added_types,
                 duration,
             } => {
-                let Some(Target::Permanent(target)) = self
+                let Some(target) = self
                     .effect_recipients(recipient, object, &context, scoped)
                     .into_iter()
                     .next()
@@ -778,12 +778,7 @@ impl Game {
                         _ => None,
                     },
                 };
-                let Some(mut copy) = self
-                    .battlefield
-                    .iter()
-                    .find(|permanent| permanent.card.id == target)
-                    .map(Self::copiable_characteristics)
-                else {
+                let Some(mut copy) = self.copiable_values_of(target) else {
                     return;
                 };
                 copy.added_types = copy.added_types.union(added_types);
