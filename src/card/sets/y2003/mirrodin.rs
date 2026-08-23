@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet,
-    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef, CardArt,
+    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -130,14 +130,35 @@ pub(in crate::card::sets) static TALISMAN_OF_DOMINANCE: CardRecord = CardRecord:
     crate::card::CardRules::unsupported(),
 );
 
+static TALISMAN_TAP: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
+/// The pair this Talisman is for. Which of the two an activation makes
+/// belongs to the activation, so the choice is one printed ability rather
+/// than two.
+static PROGRESS_COLORS: [ManaColor; 2] = [ManaColor::White, ManaColor::Blue];
+
+static TALISMAN_OF_PROGRESS_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::activated_mana(
+        "{T}: Add {C}.",
+        &TALISMAN_TAP,
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+    ),
+    AbilityDef::activated_mana(
+        "{T}: Add {W} or {U}. This artifact deals 1 damage to you.",
+        &TALISMAN_TAP,
+        EffectDef::AddMana(AddManaEffectDef::choice(&PROGRESS_COLORS).with_damage_to_controller(1)),
+    ),
+];
+
 // MRD 256 — Talisman of Progress
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static TALISMAN_OF_PROGRESS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("41ff849e-2439-4690-8aa4-769039b6da4c"),
     "Talisman of Progress",
-    crate::card::CardArt::new("41ff849e-2439-4690-8aa4-769039b6da4c", "Mike Dringenberg"),
-    crate::card::CardSet::Mirrodin,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("41ff849e-2439-4690-8aa4-769039b6da4c", "Mike Dringenberg"),
+    CardSet::Mirrodin,
+    // Two mana that fixes for a life a turn, or for nothing at all when
+    // colourless is what the next spell wants.
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&TALISMAN_OF_PROGRESS_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
