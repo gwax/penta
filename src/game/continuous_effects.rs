@@ -81,6 +81,26 @@ impl Game {
         .is_break()
     }
 
+    /// What a creature assigns in combat. Ordinarily its power; a creature
+    /// under "assigns combat damage equal to its toughness rather than its
+    /// power" assigns that instead, which changes neither number.
+    pub(super) fn combat_assigned_power(&self, permanent: &Permanent) -> Option<i16> {
+        let assigns_toughness = self
+            .visit_applied_rules(permanent, |applied| {
+                if applied.rule == AppliedRuleDef::AssignsCombatDamageEqualToToughness {
+                    ControlFlow::Break(())
+                } else {
+                    ControlFlow::Continue(())
+                }
+            })
+            .is_break();
+        if assigns_toughness {
+            self.toughness(permanent).or_else(|| self.power(permanent))
+        } else {
+            self.power(permanent)
+        }
+    }
+
     /// Visits static and resolved rule leaves in timestamp/component order.
     /// Static rules remain source-derived; resolved rules use the same stored
     /// expiration path as resolved characteristic operations.

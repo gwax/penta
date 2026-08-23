@@ -395,6 +395,12 @@ impl Game {
             | ObjectPredicateDef::ToughnessGreaterThan(_) => {
                 self.computed_stat_matches(predicate, object, source)
             }
+            // One object compared with itself: a 0/3 qualifies and a 3/3
+            // does not, whatever anything else on the board says.
+            ObjectPredicateDef::ToughnessGreaterThanItsPower => object
+                .power
+                .zip(object.toughness)
+                .is_some_and(|(power, toughness)| toughness > power),
             ObjectPredicateDef::Supertype(supertype) => object.supertypes[supertype.index()],
             // Read from the definition rather than the object: what matters
             // is where the card was first printed, not what it has become.

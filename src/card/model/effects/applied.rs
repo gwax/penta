@@ -188,6 +188,11 @@ pub enum AppliedRuleDef {
     /// under it is not asked how to divide its damage at all, so trample has
     /// nothing to spill and no blocker is dealt a lethal share.
     AssignsNoCombatDamage,
+    /// The affected creature assigns combat damage equal to its toughness
+    /// rather than its power. Not a change to power: what it is remains what
+    /// it is, and everything reading power sees the same number -- only the
+    /// combat assignment reads the other one.
+    AssignsCombatDamageEqualToToughness,
     CannotBeCountered,
     /// "You may play lands from your graveyard." The mirror of
     /// [`Self::CannotPlay`]: a permission rather than a prohibition, matched

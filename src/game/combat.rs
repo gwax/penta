@@ -711,7 +711,7 @@ impl Game {
                 continue;
             };
             let power = self
-                .power(&self.battlefield[attacker_index])
+                .combat_assigned_power(&self.battlefield[attacker_index])
                 .unwrap_or(0)
                 .max(0)
                 .cast_unsigned();

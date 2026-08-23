@@ -525,6 +525,7 @@ impl Game {
             | ObjectPredicateDef::ToughnessLessThan(_)
             | ObjectPredicateDef::PowerGreaterThan(_)
             | ObjectPredicateDef::PowerLessThan(_)
+            | ObjectPredicateDef::ToughnessGreaterThanItsPower
             | ObjectPredicateDef::ToughnessGreaterThan(_)
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::OwnedBy(_)

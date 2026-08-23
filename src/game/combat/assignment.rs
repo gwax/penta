@@ -117,7 +117,11 @@ impl Game {
         else {
             return Vec::new();
         };
-        let power = self.power(source).unwrap_or(0).max(0).cast_unsigned();
+        let power = self
+            .combat_assigned_power(source)
+            .unwrap_or(0)
+            .max(0)
+            .cast_unsigned();
         // Trample spills past blockers onto what the creature is attacking. A
         // blocker is attacking nothing, so trample on one has nowhere to go.
         let trample = source.attacking && self.has_trample(source);
@@ -184,7 +188,11 @@ impl Game {
         else {
             return Vec::new();
         };
-        let mut remaining = self.power(source).unwrap_or(0).max(0).cast_unsigned();
+        let mut remaining = self
+            .combat_assigned_power(source)
+            .unwrap_or(0)
+            .max(0)
+            .cast_unsigned();
         let trample = source.attacking && self.has_trample(source);
         let mut split = Vec::with_capacity(recipients.len() + 1);
         for recipient in recipients {

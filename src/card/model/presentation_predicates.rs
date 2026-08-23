@@ -65,6 +65,7 @@ pub(super) fn object_predicate_implies(
         | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::PowerGreaterThan(_)
         | ObjectPredicateDef::PowerLessThan(_)
+        | ObjectPredicateDef::ToughnessGreaterThanItsPower
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
@@ -125,6 +126,7 @@ pub(super) fn predicate_color(predicate: ObjectPredicateDef) -> Option<ManaColor
         | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::PowerGreaterThan(_)
         | ObjectPredicateDef::PowerLessThan(_)
+        | ObjectPredicateDef::ToughnessGreaterThanItsPower
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
@@ -188,6 +190,7 @@ pub(super) fn predicate_color_count(predicate: ObjectPredicateDef) -> Option<u8>
         | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::PowerGreaterThan(_)
         | ObjectPredicateDef::PowerLessThan(_)
+        | ObjectPredicateDef::ToughnessGreaterThanItsPower
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
@@ -251,6 +254,7 @@ pub(super) fn predicate_subtype(predicate: ObjectPredicateDef) -> Option<&'stati
         | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::PowerGreaterThan(_)
         | ObjectPredicateDef::PowerLessThan(_)
+        | ObjectPredicateDef::ToughnessGreaterThanItsPower
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
@@ -319,6 +323,7 @@ pub(super) fn predicate_negated_subtype(predicate: ObjectPredicateDef) -> Option
         | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::PowerGreaterThan(_)
         | ObjectPredicateDef::PowerLessThan(_)
+        | ObjectPredicateDef::ToughnessGreaterThanItsPower
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
@@ -352,6 +357,7 @@ pub(super) fn predicate_power_at_least(predicate: ObjectPredicateDef) -> Option<
         | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::PowerGreaterThan(_)
         | ObjectPredicateDef::PowerLessThan(_)
+        | ObjectPredicateDef::ToughnessGreaterThanItsPower
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
@@ -448,6 +454,7 @@ pub(super) fn predicate_mana_value_at_most(predicate: ObjectPredicateDef) -> Opt
         | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::PowerGreaterThan(_)
         | ObjectPredicateDef::PowerLessThan(_)
+        | ObjectPredicateDef::ToughnessGreaterThanItsPower
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)
@@ -514,6 +521,7 @@ pub(super) fn predicate_controller(predicate: ObjectPredicateDef) -> Option<Play
         | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::PowerGreaterThan(_)
         | ObjectPredicateDef::PowerLessThan(_)
+        | ObjectPredicateDef::ToughnessGreaterThanItsPower
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::Supertype(_)

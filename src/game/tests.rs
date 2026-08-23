@@ -399,6 +399,7 @@ mod vintage_cube_phantasmal_image;
 mod vintage_cube_phelia;
 mod vintage_cube_phlage;
 mod vintage_cube_pillage_the_bog;
+mod vintage_cube_plagon;
 mod vintage_cube_ponder;
 mod vintage_cube_portable_hole;
 mod vintage_cube_portal_to_phyrexia;

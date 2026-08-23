@@ -385,6 +385,7 @@ fn static_object_characteristic_supported(
 fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRuleDef) -> bool {
     match rule {
         AppliedRuleDef::AssignsNoCombatDamage
+        | AppliedRuleDef::AssignsCombatDamageEqualToToughness
         | AppliedRuleDef::CannotBeEnchanted
         | AppliedRuleDef::CannotBecomeEnchanted
         | AppliedRuleDef::CannotActivateAbilities
@@ -703,6 +704,9 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::Enchanted
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
+        // A comparison of the object with itself reads nothing the walk
+        // supplies, so there is no value to gate on.
+        | ObjectPredicateDef::ToughnessGreaterThanItsPower
         | ObjectPredicateDef::EnteredThisTurn
         | ObjectPredicateDef::AttackedDuringControllersLastTurn => true,
     }

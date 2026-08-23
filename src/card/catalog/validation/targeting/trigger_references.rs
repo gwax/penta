@@ -2,31 +2,11 @@ fn unsupported_trigger_event(event: TriggerEventDef) -> GrantedAbilityValidation
     GrantedAbilityValidationError::UnsupportedTriggerEvent { event }
 }
 
-fn validate_trigger_object_predicate(
-    predicate: ObjectPredicateDef,
-    event: TriggerEventDef,
-    target_count: usize,
-    scope: BindingScope,
-) -> Result<(), GrantedAbilityValidationError> {
-    match predicate {
-        ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => {
-            for predicate in predicates {
-                validate_trigger_object_predicate(*predicate, event, target_count, scope)?;
-            }
-            Ok(())
-        }
-        ObjectPredicateDef::Not(predicate) | ObjectPredicateDef::AttachedTo(predicate) => {
-            validate_trigger_object_predicate(*predicate, event, target_count, scope)
-        }
-        ObjectPredicateDef::ManaValueEqualTo(value)
-        | ObjectPredicateDef::ManaValueAtMostValue(value)
-        | ObjectPredicateDef::ToughnessLessThan(value)
-        | ObjectPredicateDef::PowerGreaterThan(value)
-        | ObjectPredicateDef::ToughnessGreaterThan(value)
-        | ObjectPredicateDef::PowerLessThan(value) => {
-            validate_value_target_references(value, target_count, scope)?;
-            if matches!(
-                value,
+/// The values a stat comparison in a trigger predicate may read. A list
+/// rather than part of the walk above, which is a match over predicates.
+fn trigger_stat_value_is_supported(value: ValueDef) -> bool {
+    matches!(
+        value,
                 ValueDef::CreaturesDiedThisTurn
                     | ValueDef::CardTypesAmongGraveyards(_)
                     | ValueDef::IfCardTypesAmongGraveyards(_)
@@ -52,7 +32,33 @@ fn validate_trigger_object_predicate(
                     | ValueDef::MatchedManaValue
                     | ValueDef::BoundObjectCount(_)
                     | ValueDef::SpellsCastBeforeThisTurn
-            ) {
+    )
+}
+
+fn validate_trigger_object_predicate(
+    predicate: ObjectPredicateDef,
+    event: TriggerEventDef,
+    target_count: usize,
+    scope: BindingScope,
+) -> Result<(), GrantedAbilityValidationError> {
+    match predicate {
+        ObjectPredicateDef::All(predicates) | ObjectPredicateDef::AnyOf(predicates) => {
+            for predicate in predicates {
+                validate_trigger_object_predicate(*predicate, event, target_count, scope)?;
+            }
+            Ok(())
+        }
+        ObjectPredicateDef::Not(predicate) | ObjectPredicateDef::AttachedTo(predicate) => {
+            validate_trigger_object_predicate(*predicate, event, target_count, scope)
+        }
+        ObjectPredicateDef::ManaValueEqualTo(value)
+        | ObjectPredicateDef::ManaValueAtMostValue(value)
+        | ObjectPredicateDef::ToughnessLessThan(value)
+        | ObjectPredicateDef::PowerGreaterThan(value)
+        | ObjectPredicateDef::ToughnessGreaterThan(value)
+        | ObjectPredicateDef::PowerLessThan(value) => {
+            validate_value_target_references(value, target_count, scope)?;
+            if trigger_stat_value_is_supported(value) {
                 Ok(())
             } else {
                 Err(unsupported_trigger_event(event))
@@ -106,6 +112,7 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::AttackedThisTurn
         | ObjectPredicateDef::CameUnderControlThisTurn
         | ObjectPredicateDef::EnteredThisTurn
+        | ObjectPredicateDef::ToughnessGreaterThanItsPower
         | ObjectPredicateDef::AttackedDuringControllersLastTurn => Ok(()),
     }
 }
@@ -146,6 +153,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::PowerGreaterThan(_)
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::PowerLessThan(_)
+        | ObjectPredicateDef::ToughnessGreaterThanItsPower
         | ObjectPredicateDef::HasCounter(_)
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::OwnedBy(_)

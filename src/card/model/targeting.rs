@@ -74,6 +74,11 @@ pub enum ObjectPredicateDef {
     /// Power strictly below a computed value, for "creatures with power less
     /// than this creature's power". The mirror of [`Self::PowerGreaterThan`].
     PowerLessThan(ValueDef),
+    /// The creature's own toughness is greater than its own power. A
+    /// comparison of one object with itself rather than with anything the
+    /// ability supplies, which is what "each creature you control with
+    /// toughness greater than its power" counts.
+    ToughnessGreaterThanItsPower,
     /// Carries at least one counter of this kind, for "each creature you
     /// control with a +1/+1 counter on it". Read live, so a creature that
     /// loses its last counter stops matching.

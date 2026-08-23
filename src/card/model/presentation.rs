@@ -110,6 +110,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::ToughnessLessThan(_)
         | ObjectPredicateDef::PowerGreaterThan(_)
         | ObjectPredicateDef::PowerLessThan(_)
+        | ObjectPredicateDef::ToughnessGreaterThanItsPower
         | ObjectPredicateDef::ToughnessGreaterThan(_)
         | ObjectPredicateDef::HasAnyBasicLandType(_)
         | ObjectPredicateDef::ControlledBy(_)

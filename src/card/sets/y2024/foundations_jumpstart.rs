@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, ComparisonDef, CounterKind, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, PlayerRelation, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
-    abilities, tokens,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
+    AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
+    CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    tokens,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -140,6 +141,70 @@ pub(in crate::card::sets) static SHARDLESS_OUTLANDER: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
+/// "Each creature you control with toughness greater than its power": the
+/// comparison is between one creature's own two numbers, which is what makes
+/// a board of defensive bodies into a handful of cards.
+static YOUR_DEFENSIVE_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::ToughnessGreaterThanItsPower,
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static PLAGON_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
+static PLAGON_COST: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{W/U}"))];
+
+// J25 37 — Plagon, Lord of the Beach
+pub(in crate::card::sets) static PLAGON_LORD_OF_THE_BEACH: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("7f8a6bfe-6033-4f6b-ab45-6b553f8b51a1"),
+    "Plagon, Lord of the Beach",
+    CardArt::new("7f8a6bfe-6033-4f6b-ab45-6b553f8b51a1", "GOSSAN"),
+    CardSet::FoundationsJumpstart,
+    // A 0/3 that pays for itself in a deck of walls and then turns them into
+    // an offense: the numbers stay what they are, and only the combat
+    // assignment reads the other one.
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Starfish", "Wizard"], 0, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::triggered(
+                "When Plagon enters, draw a card for each creature you control with toughness \
+                 greater than its power.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::CountMatchingObjects(&YOUR_DEFENSIVE_CREATURES),
+                },
+            ),
+            AbilityDef::activated_with_targets(
+                "{W/U}: Target creature you control assigns combat damage equal to its toughness \
+                 rather than its power this turn.",
+                &PLAGON_COST,
+                &PLAGON_TARGET,
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::Rule(
+                        AppliedRuleDef::AssignsCombatDamageEqualToToughness,
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ]),
+);
+
 // J25 50 — Ivora, Insatiable Heir
 pub(in crate::card::sets) static IVORA_INSATIABLE_HEIR: CardRecord = CardRecord::new_with_legacy_id(
     2148,
@@ -208,6 +273,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCHOLAR_OF_COMBUSTION,
     &SCYTHECAT_CUB,
     &SHARDLESS_OUTLANDER,
+    &PLAGON_LORD_OF_THE_BEACH,
     &IVORA_INSATIABLE_HEIR,
     &INSPIRING_OVERSEER,
     &PESTERMITE,
