@@ -170,6 +170,7 @@ pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
             | KeywordAbility::Infect
             | KeywordAbility::Devoid
             | KeywordAbility::Compleated
+            | KeywordAbility::SplitSecond
     )
 }
 

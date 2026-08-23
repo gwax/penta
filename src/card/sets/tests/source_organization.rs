@@ -294,6 +294,7 @@ fn set_source_for_file(path: &Path) -> SetSource {
         }
         Some("march_of_the_machine.rs") => source(CardSet::MarchOfTheMachine, "MOM"),
         Some("lord_of_the_rings.rs") => source(CardSet::LordOfTheRings, "LTR"),
+        Some("lord_of_the_rings_commander.rs") => source(CardSet::LordOfTheRingsCommander, "LTC"),
         Some("wilds_of_eldraine.rs") => source(CardSet::WildsOfEldraine, "WOE"),
         Some("lost_caverns_of_ixalan.rs") => source(CardSet::LostCavernsOfIxalan, "LCI"),
         Some("murders_at_karlov_manor.rs") => source(CardSet::MurdersAtKarlovManor, "MKM"),

@@ -349,6 +349,7 @@ mod vintage_cube_lands;
 mod vintage_cube_lavaspur_boots;
 mod vintage_cube_ledger_shredder;
 mod vintage_cube_legion_extruder;
+mod vintage_cube_legolas_reflexes;
 mod vintage_cube_library;
 mod vintage_cube_lion_sash;
 mod vintage_cube_lorien;

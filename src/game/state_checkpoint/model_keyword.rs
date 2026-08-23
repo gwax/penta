@@ -12,6 +12,7 @@ pub(super) enum KeywordSnapshot {
     Convoke,
     Devoid,
     Compleated,
+    SplitSecond,
     Infect,
     Flying,
     Trample,

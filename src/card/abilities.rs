@@ -193,6 +193,17 @@ pub const fn devoid() -> AbilityDef {
     keyword("Devoid (This card has no color.)", KeywordAbility::Devoid)
 }
 
+/// Split second (CR 702.19): while this spell is on the stack, nobody may
+/// cast a spell or activate anything that is not a mana ability.
+#[must_use]
+pub const fn split_second() -> AbilityDef {
+    keyword(
+        "Split second (As long as this spell is on the stack, players can't cast spells or \
+         activate abilities that aren't mana abilities.)",
+        KeywordAbility::SplitSecond,
+    )
+}
+
 /// Compleated (CR 702.150): this permanent enters with two fewer loyalty
 /// counters if life was paid for a Phyrexian mana symbol while casting it.
 #[must_use]

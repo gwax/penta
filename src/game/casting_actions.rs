@@ -89,6 +89,13 @@ impl Game {
     }
 
     pub(super) fn add_spell_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
+        // Split second stops the casting a player does with priority in hand
+        // and nothing else: an offer made inside a resolution is answered
+        // then or not at all, and cascade off a split-second spell still
+        // casts what it found.
+        if self.split_second_is_active() {
+            return;
+        }
         self.add_castable_spell_actions(player, None, actions);
     }
 

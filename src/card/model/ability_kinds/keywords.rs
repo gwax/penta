@@ -115,6 +115,11 @@ pub enum KeywordAbility {
     /// card's printed color set being empty, so what this variant adds is
     /// the printed keyword itself -- the name and its reminder text.
     Devoid,
+    /// CR 702.19. As long as a spell with split second is on the stack,
+    /// players can't cast spells or activate abilities that aren't mana
+    /// abilities. It is read off the spell rather than off any permanent,
+    /// which is why it carries no index: nothing grants or removes it.
+    SplitSecond,
     /// CR 702.150. A permanent cast using life for Phyrexian symbols enters
     /// with two fewer loyalty counters per such symbol. The payment count is
     /// recorded on the spell rather than inferred from mana spent.
@@ -192,6 +197,9 @@ impl KeywordAbility {
             Self::Compleated => 31,
             Self::ProtectionFrom(_)
             | Self::ProtectionFromCreatureType(_)
+            // Never granted, never removed, and never asked about as part of
+            // a set: split second is read off the one spell that has it.
+            | Self::SplitSecond
             | Self::BandsWithOther(_) => return None,
         })
     }

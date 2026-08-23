@@ -605,6 +605,11 @@ const SET_MODULES: &[SetModule] = &[
         y2023::lord_of_the_rings::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::LordOfTheRingsCommander,
+        y2023::lord_of_the_rings_commander::CARDS,
+        y2023::lord_of_the_rings_commander::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::WildsOfEldraine,
         y2023::wilds_of_eldraine::CARDS,
         y2023::wilds_of_eldraine::ADDITIONAL_PRINTINGS,

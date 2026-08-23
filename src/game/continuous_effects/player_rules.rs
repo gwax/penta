@@ -574,7 +574,31 @@ impl Game {
 impl Game {
     /// Whether a player is presently barred from activating anything but a
     /// mana ability. Abeyance is the printed form, and it lasts a turn.
+    /// Split second (CR 702.19a): while such a spell is on the stack nobody
+    /// may cast a spell or activate anything that is not a mana ability.
+    /// Read off the stack rather than off any permanent, which is why it
+    /// sits beside the restrictions rather than among them.
+    pub(in crate::game) fn split_second_is_active(&self) -> bool {
+        self.stack.iter().any(|object| {
+            object.kind == crate::game::StackObjectKind::Spell
+                && object
+                    .card
+                    .definition
+                    .card_definition()
+                    .and_then(|definition| self.catalog.get(definition))
+                    .is_some_and(|definition| {
+                        definition.parts.iter().any(|part| {
+                            part.rules
+                                .has_executable_keyword(crate::card::KeywordAbility::SplitSecond)
+                        })
+                    })
+        })
+    }
+
     pub(in crate::game) fn cannot_activate_nonmana_abilities(&self, player: PlayerId) -> bool {
+        if self.split_second_is_active() {
+            return true;
+        }
         self.visit_play_restrictions(player, |applied| {
             if matches!(
                 applied.restriction.action,

@@ -116,6 +116,7 @@ pub enum CardSet {
     PhyrexiaAllWillBeOneCommander,
     MarchOfTheMachine,
     LordOfTheRings,
+    LordOfTheRingsCommander,
     WildsOfEldraine,
     LostCavernsOfIxalan,
     MurdersAtKarlovManor,
