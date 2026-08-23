@@ -279,6 +279,9 @@ pub(super) fn parse_mana(
                 crate::card::ManaSelectionDef::One(expected) => expected != color,
                 crate::card::ManaSelectionDef::Choice(colors)
                 | crate::card::ManaSelectionDef::Combination(colors) => !colors.contains(&color),
+                // The same: an imprint's colours are read off the permanent,
+                // which this restore has not rebuilt yet.
+                crate::card::ManaSelectionDef::ColorsOfLinkedExiles => false,
             }) {
                 return Err("mana payload cannot produce its checkpoint color".into());
             }

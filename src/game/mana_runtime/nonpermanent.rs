@@ -71,6 +71,9 @@ impl Game {
                     }
                 }
             }
+            // Imprint belongs to a permanent that exiled something. A card
+            // being cast has exiled nothing, so there is no colour here.
+            ManaSelectionDef::ColorsOfLinkedExiles => {}
         }
         activations
     }

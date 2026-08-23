@@ -237,6 +237,9 @@ pub(super) fn shared_mana_effect(effect: EffectDef, choices_are_supported: bool)
         ManaSelectionDef::Choice(colors) | ManaSelectionDef::Combination(colors) => {
             choices_are_supported && !colors.is_empty()
         }
+        // The same choice of type, over a list the runtime reads off the
+        // permanent's own imprint rather than off the clause.
+        ManaSelectionDef::ColorsOfLinkedExiles => choices_are_supported,
     };
     // "Where X is this creature's power" is resolved against the permanent
     // as the ability is offered, exactly as the counted forms above are, so

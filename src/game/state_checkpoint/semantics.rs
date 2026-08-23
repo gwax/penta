@@ -712,6 +712,9 @@ fn mana_effect_matches(effect: AddManaEffectDef, mana: Mana) -> bool {
             crate::card::ManaSelectionDef::One(color) => color == mana.color,
             crate::card::ManaSelectionDef::Choice(colors)
             | crate::card::ManaSelectionDef::Combination(colors) => colors.contains(&mana.color),
+            // What an imprint could have made is a fact of the board rather
+            // than of the clause, and the board is not here to ask.
+            crate::card::ManaSelectionDef::ColorsOfLinkedExiles => true,
         }
 }
 

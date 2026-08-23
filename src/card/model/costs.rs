@@ -273,6 +273,13 @@ pub enum ManaSelectionDef {
     /// activation, the way a counter size or a sacrificed permanent already
     /// is: a mana ability has no window in which to ask afterwards.
     Combination(&'static [ManaColor]),
+    /// One colour picked from among the colours of the cards this permanent
+    /// exiled. Imprint is the only clause that says this, and it cannot be a
+    /// list: which colours the ability makes is decided by what was imprinted
+    /// on it, so the list is read off the board as the ability is offered.
+    /// A permanent that imprinted nothing, or imprinted a colourless card,
+    /// produces nothing at all.
+    ColorsOfLinkedExiles,
 }
 
 /// A restriction carried by produced mana until that mana is spent.
@@ -370,6 +377,23 @@ impl AddManaEffectDef {
         Self {
             mana: ManaSelectionDef::Combination(mana),
             amount,
+            also: None,
+            restrictions: &[],
+            spend_effects: &[],
+            damage_to_controller: 0,
+            recipient: PlayerRefDef::EffectController,
+            variable_amount: None,
+            amount_override: None,
+            sacrifice_source_when_out_of: None,
+        }
+    }
+
+    /// "Add one mana of any of the exiled card's colors."
+    #[must_use]
+    pub const fn colors_of_linked_exiles() -> Self {
+        Self {
+            mana: ManaSelectionDef::ColorsOfLinkedExiles,
+            amount: 1,
             also: None,
             restrictions: &[],
             spend_effects: &[],

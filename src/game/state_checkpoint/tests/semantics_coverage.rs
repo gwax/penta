@@ -197,6 +197,9 @@ fn produced_mana(effect: AddManaEffectDef) -> Vec<Mana> {
     let colors = match effect.mana {
         ManaSelectionDef::One(color) => vec![color],
         ManaSelectionDef::Choice(colors) | ManaSelectionDef::Combination(colors) => colors.to_vec(),
+        // Whatever was imprinted, which no printed clause names. Every
+        // colour is a possibility, so the sweep covers all five.
+        ManaSelectionDef::ColorsOfLinkedExiles => crate::card::ManaColor::COLORS.to_vec(),
     };
     colors
         .into_iter()

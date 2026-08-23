@@ -307,6 +307,7 @@ mod vintage_cube_cathar_commando;
 mod vintage_cube_caustic_bronco;
 mod vintage_cube_chainsaw;
 mod vintage_cube_chandra;
+mod vintage_cube_chrome_mox;
 mod vintage_cube_collective_brutality;
 mod vintage_cube_colonnade;
 mod vintage_cube_concealing_curtains;

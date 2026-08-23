@@ -3,9 +3,12 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef, CardArt,
-    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef,
+    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PlayerRefDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
+use crate::ids::ObjectBindingIndex;
 use crate::{TargetIndex, mana_cost};
 
 static SPELLBOMB_BOUNCE_COST: [AbilityCostDef; 2] = [
@@ -88,14 +91,68 @@ pub(in crate::card::sets) static BONESPLITTER: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+/// "A nonartifact, nonland card from your hand": the two types it may not
+/// take are the ones that would make it free twice over.
+static A_NONARTIFACT_NONLAND_CARD_IN_YOUR_HAND: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Artifact)),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+    ]),
+    &[ZoneKind::Hand],
+    PlayerRelation::You,
+);
+
+/// The exile is linked to the Mox, which is what makes the mana ability
+/// able to read the card's colours later.
+static MOX_EXILES_THE_CHOSEN_CARD: EffectDef = EffectDef::ExileLinkedToSource {
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+};
+
+/// "You may": a minimum of none, so a hand with nothing worth paying leaves
+/// the Mox on the battlefield making nothing.
+static MOX_IMPRINTS: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::Query(A_NONARTIFACT_NONLAND_CARD_IN_YOUR_HAND),
+    exclude: None,
+    minimum: 0,
+    maximum: 1,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &MOX_EXILES_THE_CHOSEN_CARD,
+});
+
+static MOX_TAP: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
+static CHROME_MOX_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::triggered(
+        "Imprint — When this artifact enters, you may exile a nonartifact, nonland card from \
+         your hand.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        MOX_IMPRINTS,
+    ),
+    AbilityDef::activated_mana(
+        "{T}: Add one mana of any of the exiled card's colors.",
+        &MOX_TAP,
+        EffectDef::AddMana(AddManaEffectDef::colors_of_linked_exiles()),
+    ),
+];
+
 // MRD 152 — Chrome Mox
 // Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static CHROME_MOX: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("6a058e68-70af-4a64-859c-c881e5578368"),
     "Chrome Mox",
-    crate::card::CardArt::new("6a058e68-70af-4a64-859c-c881e5578368", "Donato Giancola"),
-    crate::card::CardSet::Mirrodin,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("6a058e68-70af-4a64-859c-c881e5578368", "Donato Giancola"),
+    CardSet::Mirrodin,
+    // A free artifact whose cost is a card, paid in advance and in full: the
+    // imprinted card is gone, and what it leaves behind is one mana a turn
+    // in whatever colours it was.
+    CardRules::new_artifact(mana_cost!("{0}")).with_abilities(&CHROME_MOX_ABILITIES),
 );
 
 // MRD 199 — Lightning Greaves

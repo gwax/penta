@@ -638,6 +638,32 @@ impl Game {
 }
 
 impl Game {
+    /// The colours of every card exiled with `source`, deduplicated. Read
+    /// from the catalog for the same reason the stats below are: nothing
+    /// continuous applies outside the battlefield, so printed is what an
+    /// exiled card is.
+    pub(super) fn linked_exile_colors(&self, source: GameObjectId) -> Vec<crate::card::ManaColor> {
+        let mut colors = self
+            .linked_exiles
+            .iter()
+            .filter(|(linked_source, _)| *linked_source == source)
+            .filter_map(|(_, exiled)| {
+                self.card_in_nonbattlefield_zone(*exiled)
+                    .map(|(_, card)| card.definition)
+            })
+            .filter_map(|definition| self.catalog.get(definition))
+            .flat_map(|card| {
+                crate::card::ManaColor::COLORS
+                    .into_iter()
+                    .filter(|color| card.rules.has_color(*color))
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        colors.sort_unstable();
+        colors.dedup();
+        colors
+    }
+
     /// The printed power, or toughness, of every card exiled with `source`,
     /// added up. Exiled cards are read from the catalog: nothing continuous
     /// applies outside the battlefield, so printed is what they are.

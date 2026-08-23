@@ -310,6 +310,22 @@ impl Game {
                                 );
                             }
                         }
+                        // Imprint: which colours this makes was settled when
+                        // the card was exiled, so the list comes off the
+                        // board rather than off the printed clause. A
+                        // permanent that imprinted nothing offers nothing.
+                        ManaSelectionDef::ColorsOfLinkedExiles => {
+                            for color in self.linked_exile_colors(permanent.card.id) {
+                                add_activation(
+                                    color,
+                                    costs,
+                                    amount,
+                                    counters_removed,
+                                    *cost_object,
+                                    None,
+                                );
+                            }
+                        }
                         // "In any combination of" divides one amount across
                         // several types, so each division is its own
                         // activation. `color` names the first type the
@@ -446,6 +462,9 @@ impl Game {
                     ManaSelectionDef::One(kind) => colors.push(kind),
                     ManaSelectionDef::Choice(kinds) | ManaSelectionDef::Combination(kinds) => {
                         colors.extend_from_slice(kinds);
+                    }
+                    ManaSelectionDef::ColorsOfLinkedExiles => {
+                        colors.extend(self.linked_exile_colors(permanent.card.id));
                     }
                 }
             } else if let Some(behavior) =
