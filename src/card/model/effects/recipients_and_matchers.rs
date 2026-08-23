@@ -499,6 +499,11 @@ pub struct AttackEventMatcherDef {
     pub attacker: ObjectPredicateDef,
     pub declaration: AttackDeclarationRangeDef,
     pub attack_number: Option<u8>,
+    /// Who the attack has to be aimed at. "Whenever a creature attacks you
+    /// or a planeswalker you control" is one clause about one player: a
+    /// creature attacking a planeswalker is attacking the player who
+    /// controls it, so both halves are the same relation.
+    pub defender: Option<PlayerRelation>,
 }
 
 impl AttackEventMatcherDef {
@@ -508,7 +513,16 @@ impl AttackEventMatcherDef {
             attacker,
             declaration: AttackDeclarationRangeDef::ANY,
             attack_number: None,
+            defender: None,
         }
+    }
+
+    /// "Attacks <player>", for the clauses that care who is being attacked.
+    #[must_use]
+    pub const fn attacking(attacker: ObjectPredicateDef, defender: PlayerRelation) -> Self {
+        let mut matcher = Self::any(attacker);
+        matcher.defender = Some(defender);
+        matcher
     }
 
     #[must_use]
@@ -517,6 +531,7 @@ impl AttackEventMatcherDef {
             attacker,
             declaration: AttackDeclarationRangeDef::ANY,
             attack_number: Some(1),
+            defender: None,
         }
     }
 
@@ -530,6 +545,7 @@ impl AttackEventMatcherDef {
             attacker,
             declaration: AttackDeclarationRangeDef::between(minimum, maximum),
             attack_number: None,
+            defender: None,
         }
     }
 }

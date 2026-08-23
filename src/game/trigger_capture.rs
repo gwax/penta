@@ -784,13 +784,16 @@ impl Game {
                     object,
                     declaration_size,
                     attack_number,
-                    ..
+                    defending_player,
                 },
             ) => self.attacker_matches(
                 matcher,
                 object,
-                *declaration_size,
-                *attack_number,
+                AttackEventFacts {
+                    declaration_size: *declaration_size,
+                    attack_number: *attack_number,
+                    defending_player: *defending_player,
+                },
                 source,
                 controller,
             ),

@@ -6,6 +6,17 @@
 // one about a whole move rather than any card in it. Included textually into
 // `trigger_capture.rs`, so the imports here are the parent module's.
 
+/// What one attack declaration published about one attacker: how big the
+/// declaration was, how many times this creature has attacked this turn, and
+/// who it was aimed at. Three facts of the same event, carried together so
+/// the matcher below reads one argument rather than three.
+#[derive(Clone, Copy)]
+pub(in crate::game) struct AttackEventFacts {
+    pub(in crate::game) declaration_size: u8,
+    pub(in crate::game) attack_number: u8,
+    pub(in crate::game) defending_player: PlayerId,
+}
+
 impl Game {
     /// "Whenever one or more cards are put into exile from ...". Counted
     /// rather than matched: the move is the event, and what the clause asks
@@ -63,11 +74,30 @@ impl Game {
         &self,
         matcher: AttackEventMatcherDef,
         object: &TriggerEventObject,
-        declaration_size: u8,
-        attack_number: u8,
+        attack: AttackEventFacts,
         source: GameObjectId,
         controller: Option<PlayerId>,
     ) -> bool {
+        let AttackEventFacts {
+            declaration_size,
+            attack_number,
+            defending_player,
+        } = attack;
+        // Who is being attacked, for the clauses that ask. The event already
+        // resolves a planeswalker to the player who controls it, so "attacks
+        // you or a planeswalker you control" is one comparison.
+        if let Some(defender) = matcher.defender
+            && !controller.is_some_and(|controller| {
+                self.player_relation_matches(
+                    defending_player,
+                    defender,
+                    controller,
+                    crate::game::TriggerContext::empty(),
+                )
+            })
+        {
+            return false;
+        }
         declaration_size >= matcher.declaration.minimum
             && matcher
                 .declaration

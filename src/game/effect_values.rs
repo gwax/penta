@@ -387,7 +387,16 @@ impl Game {
                 // made it illegal, which is the only time it is interesting.
                 let matched = Self::chosen_targets(object, scoped.target_slot(condition.slot)).any(
                     |target| match target {
+                        // A card that has already moved is a new object in
+                        // its new zone, so follow the move: "if it's a green
+                        // card" asked after returning it to hand is the same
+                        // question about the same physical card.
                         Target::Card(id) => {
+                            let id = if self.card_in_nonbattlefield_zone(id).is_some() {
+                                id
+                            } else {
+                                self.successors.get(&id).copied().unwrap_or(id)
+                            };
                             self.card_in_nonbattlefield_zone(id)
                                 .is_some_and(|(zone, card)| {
                                     self.card_object_matches(condition.object, card, zone, source)

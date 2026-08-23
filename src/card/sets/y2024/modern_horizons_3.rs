@@ -3,16 +3,19 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
-    BattlefieldEntryModificationDef, CardArt, CardChoiceSourceDef, CardComposition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    CardTypeSet, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, DoubleFacedKind,
-    EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
-    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetDef, PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementEffectDef, ResolvedEffectDurationDef, SpellAdditionalCostCountDef,
-    SpellAdditionalCostDef, SpellForm, SpendModeDef, TokenCharacteristics, TriggerConditionDef,
+    AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef,
+    AttackEventMatcherDef, BasicLandType, BattlefieldEntryModificationDef, CardArt,
+    CardChoiceSourceDef, CardComposition, CardEffectStatus, CardPart, CardRules, CardSet,
+    CardStructure, CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef,
+    ComparisonDef, CounterKind, DoubleFacedKind, DrawEventMatcherDef, EffectDef,
+    EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, EmblemCharacteristics,
+    HalvedValueDef, InstalledTriggerDef, InstalledTriggerLifetimeDef, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, RoundingDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef,
+    SpellForm, SpendModeDef, TargetConditionDef, TokenCharacteristics, TriggerConditionDef,
     TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    tokens,
 };
 use crate::ids::{CardPartId, ObjectBindingIndex, ObjectSetBindingIndex, PlayOptionId};
 use crate::{TargetIndex, mana_cost};
@@ -1757,15 +1760,208 @@ pub(in crate::card::sets) static NADU_WINGED_WISDOM: CardRecord = CardRecord::ne
     crate::card::CardRules::unsupported(),
 );
 
+/// Exile and return, which is how a permanent turns over into a new object
+/// rather than merely flipping: the Tamiyo that comes back has no counters,
+/// no summoning history, and a fresh set of loyalty.
+static TAMIYO_TURNS_OVER: [EffectDef; 2] = [
+    EffectDef::ExileLinkedToSource {
+        object: EffectRecipientDef::Source,
+    },
+    EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
+        zone: ZoneKind::Battlefield,
+        grant: None,
+        controller: None,
+        transformed: true,
+    },
+];
+
+static TAMIYO_STUDENT_ABILITIES: [AbilityDef; 3] = [
+    abilities::flying(),
+    AbilityDef::triggered(
+        "Whenever Tamiyo attacks, investigate. (Create a Clue token. It's an artifact with \"{2}, \
+         Sacrifice this token: Draw a card.\")",
+        TriggerEventDef::Attacks(AttackEventMatcherDef::any(ObjectPredicateDef::Source)),
+        EffectDef::create_token(tokens::clue()),
+    ),
+    // The third card of the turn, counted over the whole turn rather than
+    // any one step: her own attack Clue and the draw step are usually two
+    // of the three.
+    AbilityDef::triggered(
+        "When you draw your third card in a turn, exile Tamiyo, then return her to the \
+         battlefield transformed under her owner's control.",
+        TriggerEventDef::DrewCard(DrawEventMatcherDef::nth_each_turn(PlayerRelation::You, 3)),
+        EffectDef::Sequence(&TAMIYO_TURNS_OVER),
+    ),
+];
+
+/// The attackers her plus ability shrinks. It is installed on resolution and
+/// watches until her controller's next turn, so it catches the attack it was
+/// played to blunt.
+static TAMIYO_SHRINKS_ATTACKERS: AbilityDef = AbilityDef::triggered(
+    "Whenever a creature attacks you or a planeswalker you control, it gets -1/-0 until end of \
+     turn.",
+    TriggerEventDef::Attacks(AttackEventMatcherDef::attacking(
+        ObjectPredicateDef::HasType(CardType::Creature),
+        PlayerRelation::You,
+    )),
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::TriggeringObject,
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(-1),
+            ValueDef::Constant(0),
+        ),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+);
+
+static AN_INSTANT_OR_SORCERY_IN_YOUR_GRAVEYARD: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one(
+        AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Instant),
+                ObjectPredicateDef::HasType(CardType::Sorcery),
+            ]),
+            zones: &[ZoneKind::Graveyard],
+            controller: None,
+            owner: Some(PlayerRelation::You),
+        },
+    )];
+
+/// "If it's a green card, add one mana of any color." One mana when the card
+/// returned was green and none otherwise, which is the whole rider: an
+/// amount rather than a branch, read off the target the clause already has.
+static TAMIYO_GREEN_REBATE: TargetConditionDef = TargetConditionDef {
+    slot: TargetIndex::PRIMARY,
+    object: ObjectPredicateDef::Color(ManaColor::Green),
+    then: ValueDef::Constant(1),
+    otherwise: ValueDef::Constant(0),
+};
+
+static TAMIYO_RETURNS_AND_REBATES: [EffectDef; 2] = [
+    EffectDef::MoveToZone {
+        counters: None,
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        zone: ZoneKind::Hand,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        attachment: None,
+        controller: None,
+    },
+    EffectDef::AddMana(
+        AddManaEffectDef::any_color()
+            .with_variable_amount(ValueDef::IfTargetMatches(&TAMIYO_GREEN_REBATE)),
+    ),
+];
+
+static TAMIYO_EMBLEM_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+    "You have no maximum hand size.",
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::Controller,
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::NoMaximumHandSize),
+    },
+)];
+
+static TAMIYO_EMBLEM: EmblemCharacteristics =
+    EmblemCharacteristics::new("Tamiyo, Seasoned Scholar emblem", &TAMIYO_EMBLEM_ABILITIES);
+
+static TAMIYO_HALF_HER_LIBRARY: HalvedValueDef =
+    HalvedValueDef::new(ValueDef::LibrarySize(PlayerRelation::You), RoundingDef::Up);
+
+static TAMIYO_ULTIMATE: [EffectDef; 2] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Halved(&TAMIYO_HALF_HER_LIBRARY),
+    },
+    EffectDef::CreateEmblem {
+        emblem: TAMIYO_EMBLEM,
+    },
+];
+
+static TAMIYO_PLUS_TWO_COST: [AbilityCostDef; 1] = [AbilityCostDef::Loyalty(2)];
+static TAMIYO_MINUS_THREE_COST: [AbilityCostDef; 1] = [AbilityCostDef::Loyalty(-3)];
+static TAMIYO_MINUS_SEVEN_COST: [AbilityCostDef; 1] = [AbilityCostDef::Loyalty(-7)];
+
+static TAMIYO_SCHOLAR_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::activated(
+        "+2: Until your next turn, whenever a creature attacks you or a planeswalker you \
+         control, it gets -1/-0 until end of turn.",
+        &TAMIYO_PLUS_TWO_COST,
+        EffectDef::InstallTrigger(InstalledTriggerDef {
+            ability: &TAMIYO_SHRINKS_ATTACKERS,
+            lifetime: InstalledTriggerLifetimeDef::UntilNextTurn(PlayerRefDef::EffectController),
+        }),
+    ),
+    AbilityDef::activated_with_targets(
+        "−3: Return target instant or sorcery card from your graveyard to your hand. If it's a \
+         green card, add one mana of any color.",
+        &TAMIYO_MINUS_THREE_COST,
+        &AN_INSTANT_OR_SORCERY_IN_YOUR_GRAVEYARD,
+        EffectDef::Sequence(&TAMIYO_RETURNS_AND_REBATES),
+    ),
+    AbilityDef::activated(
+        "−7: Draw cards equal to half the number of cards in your library, rounded up. You get \
+         an emblem with \"You have no maximum hand size.\"",
+        &TAMIYO_MINUS_SEVEN_COST,
+        EffectDef::Sequence(&TAMIYO_ULTIMATE),
+    ),
+];
+
+const fn tamiyo_inquisitive_student_rules() -> CardRules {
+    CardRules::new_creature(mana_cost!("{U}"), &["Moonfolk", "Wizard"], 0, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&TAMIYO_STUDENT_ABILITIES)
+}
+
+const fn tamiyo_seasoned_scholar_rules() -> CardRules {
+    CardRules::new_planeswalker_without_mana_cost(&["Tamiyo"])
+        .with_supertype(CardSupertype::Legendary)
+        .with_starting_loyalty(2)
+        .with_abilities(&TAMIYO_SCHOLAR_ABILITIES)
+}
+
+fn tamiyo_composition() -> CardComposition {
+    CardComposition {
+        parts: vec![
+            CardPart::new(
+                CardPartId::PRIMARY,
+                "Tamiyo, Inquisitive Student",
+                tamiyo_inquisitive_student_rules(),
+            ),
+            CardPart::new(
+                CardPartId(1),
+                "Tamiyo, Seasoned Scholar",
+                tamiyo_seasoned_scholar_rules(),
+            ),
+        ],
+        structure: CardStructure::DoubleFaced {
+            front: CardPartId::PRIMARY,
+            back: CardPartId(1),
+            kind: DoubleFacedKind::Transforming,
+        },
+        play_options: vec![PlayOptionDef::cast(
+            PlayOptionId::DEFAULT,
+            "Tamiyo, Inquisitive Student",
+            SpellForm::Part(CardPartId::PRIMARY),
+            mana_cost!("{U}"),
+            CardEffectStatus::Implemented,
+        )],
+    }
+}
+
 // MH3 443 — Tamiyo, Inquisitive Student
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static TAMIYO_INQUISITIVE_STUDENT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1b234fee-a2b6-4661-9f98-4da6fc26aebc"),
     "Tamiyo, Inquisitive Student",
-    crate::card::CardArt::new("1b234fee-a2b6-4661-9f98-4da6fc26aebc", "Evyn Fong"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
-);
+    CardArt::new("1b234fee-a2b6-4661-9f98-4da6fc26aebc", "Evyn Fong"),
+    CardSet::ModernHorizons3,
+    // One blue mana for a body that blocks, draws, and turns into a
+    // planeswalker on the turn the deck does what it was built to do.
+    tamiyo_inquisitive_student_rules(),
+)
+.with_composition(tamiyo_composition);
 
 // MH3 444 — Sorin of House Markov
 // Audit: metadata-only — Card rules have not been implemented.
