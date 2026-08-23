@@ -503,6 +503,7 @@ impl AbilityDef {
                 life: 0,
                 opponent_life_gain: 0,
                 minimum_x: 0,
+                from_graveyard: false,
             }),
             effect,
         )
@@ -529,6 +530,7 @@ impl AbilityDef {
                 life: 0,
                 opponent_life_gain: 0,
                 minimum_x: 0,
+                from_graveyard: false,
             }),
             effect,
         )
@@ -712,6 +714,22 @@ impl AbilityDef {
         };
         definition.life = life;
         self.definition = DeclarativeAbilityDef::AlternativeCast(definition);
+        self
+    }
+
+    /// The card's own permission to use this alternative from its owner's
+    /// graveyard, which only Detective's Phoenix prints so far.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the clause is not an alternative cast.
+    #[must_use]
+    pub const fn with_alternative_from_graveyard(mut self) -> Self {
+        let DeclarativeAbilityDef::AlternativeCast(mut alternative) = self.definition else {
+            panic!("only an alternative cast can be permitted from a graveyard");
+        };
+        alternative.from_graveyard = true;
+        self.definition = DeclarativeAbilityDef::AlternativeCast(alternative);
         self
     }
 

@@ -139,6 +139,26 @@ impl Game {
         combined
     }
 
+    /// How many objects one additional cost spends. A collect-evidence cost
+    /// has no printed answer: it takes whatever reaches its total, which is
+    /// `remaining` -- the objects the payment still has left over after the
+    /// counted costs before it. No card prints two of them, so there is
+    /// never a second one to divide the remainder with.
+    pub(in crate::game) fn additional_cost_object_count(
+        cost: SpellAdditionalCostDef,
+        scale: CastScale,
+        remaining: usize,
+    ) -> usize {
+        match cost.counted {
+            crate::card::SpellAdditionalCostCountDef::Printed => usize::from(cost.count),
+            crate::card::SpellAdditionalCostCountDef::ChosenX => usize::from(scale.x),
+            crate::card::SpellAdditionalCostCountDef::ModesBeyondFirst => {
+                usize::from(cost.count).saturating_mul(scale.modes.saturating_sub(1))
+            }
+            crate::card::SpellAdditionalCostCountDef::TotalManaValueAtLeast(_) => remaining,
+        }
+    }
+
     /// The spend operation paired with each object in one generated action.
     /// `additional_cost_choices` concatenates costs in this same order, so
     /// carrying the parallel list through payment preserves each cost's
@@ -150,20 +170,18 @@ impl Game {
         costs: &CostConfiguration,
         card: &CardInstance,
         scale: CastScale,
+        paid_objects: usize,
     ) -> Vec<crate::card::SpendModeDef> {
-        self.selected_object_additional_costs(definition, option, costs, card, scale.offer)
-            .into_iter()
-            .flat_map(|cost| {
-                let count = match cost.counted {
-                    crate::card::SpellAdditionalCostCountDef::Printed => usize::from(cost.count),
-                    crate::card::SpellAdditionalCostCountDef::ChosenX => usize::from(scale.x),
-                    crate::card::SpellAdditionalCostCountDef::ModesBeyondFirst => {
-                        usize::from(cost.count).saturating_mul(scale.modes.saturating_sub(1))
-                    }
-                };
-                core::iter::repeat_n(cost.spend, count)
-            })
-            .collect()
+        let mut modes = Vec::new();
+        let mut remaining = paid_objects;
+        for cost in
+            self.selected_object_additional_costs(definition, option, costs, card, scale.offer)
+        {
+            let count = Self::additional_cost_object_count(cost, scale, remaining);
+            remaining = remaining.saturating_sub(count);
+            modes.extend(core::iter::repeat_n(cost.spend, count));
+        }
+        modes
     }
 
     /// Every way to pay one half of a spell's additional cost.
@@ -219,6 +237,10 @@ impl Game {
         // object enumerates combinations rather than candidates. Order does
         // not matter -- exiling A then B is the same payment as B then A --
         // so each combination appears once, in candidate order.
+        if let crate::card::SpellAdditionalCostCountDef::TotalManaValueAtLeast(total) = cost.counted
+        {
+            return self.mana_value_combinations(&candidates, u16::from(total));
+        }
         let required = match cost.counted {
             crate::card::SpellAdditionalCostCountDef::Printed => usize::from(cost.count),
             crate::card::SpellAdditionalCostCountDef::ChosenX => usize::from(scale.x),
@@ -227,8 +249,60 @@ impl Game {
             crate::card::SpellAdditionalCostCountDef::ModesBeyondFirst => {
                 usize::from(cost.count).saturating_mul(scale.modes.saturating_sub(1))
             }
+            crate::card::SpellAdditionalCostCountDef::TotalManaValueAtLeast(_) => 0,
         };
         Self::object_combinations(&candidates, required)
+    }
+
+    /// Every way to reach `total` mana value that wastes nothing: a set
+    /// counts only if dropping any one of its cards would leave it short.
+    /// The rules permit exiling more than that, but every superset is a
+    /// strictly worse payment of the same cost, and enumerating them all
+    /// would grow the action list exponentially in the size of a graveyard.
+    fn mana_value_combinations(
+        &self,
+        candidates: &[GameObjectId],
+        total: u16,
+    ) -> Vec<Vec<GameObjectId>> {
+        let values = candidates
+            .iter()
+            .map(|id| {
+                self.card_in_nonbattlefield_zone(*id)
+                    .and_then(|(_, card)| self.catalog.get(card.definition))
+                    .map_or(0, |definition| {
+                        definition.rules.printed_mana_cost().mana_value()
+                    })
+            })
+            .collect::<Vec<_>>();
+        let mut payments = Vec::new();
+        for size in 1..=candidates.len() {
+            for combination in Self::object_combinations(candidates, size) {
+                let sum = combination
+                    .iter()
+                    .map(|id| {
+                        candidates
+                            .iter()
+                            .position(|candidate| candidate == id)
+                            .map_or(0, |index| values[index])
+                    })
+                    .fold(0_u16, u16::saturating_add);
+                if sum < total {
+                    continue;
+                }
+                // Minimal: with any one card taken out it no longer reaches.
+                let minimal = combination.iter().all(|id| {
+                    let value = candidates
+                        .iter()
+                        .position(|candidate| candidate == id)
+                        .map_or(0, |index| values[index]);
+                    sum.saturating_sub(value) < total
+                });
+                if minimal {
+                    payments.push(combination);
+                }
+            }
+        }
+        payments
     }
 
     /// Every `size`-element combination of `candidates`, in candidate order.
@@ -292,7 +366,15 @@ impl Game {
         context: CastCostContext,
         kind: Option<AlternativeCastKindDef>,
         origin: Option<AbilityOrigin>,
+        from_graveyard: bool,
     ) -> bool {
+        // A card that prints its own permission to use this alternative
+        // where it lies. Nothing else about the cast changes, so it is a
+        // second zone the same clause is offered from rather than a
+        // different clause.
+        if from_graveyard && context.source_zone == CastSourceZone::Graveyard {
+            return true;
+        }
         match (context.source_zone, kind) {
             // Miracle is permission supplied by its linked trigger, not an
             // alternative that is generally available from hand.
@@ -319,6 +401,9 @@ impl Game {
                         // creature is cast, and a trigger that asks whether
                         // it was paid.
                         | AlternativeCastKindDef::Offspring
+                        // Bestow is an ordinary cast from hand for a
+                        // different price and a different spell.
+                        | AlternativeCastKindDef::Bestow
                         | AlternativeCastKindDef::Warp
                         // Face down is a way of casting the card from hand,
                         // not a permission to cast it elsewhere.
@@ -430,7 +515,17 @@ impl Game {
                 },
                 None => false,
             };
-            let available = !gated && Self::alternative_is_castable_from(context, kind, origin);
+            let from_graveyard = match Self::alternative_cast_clause(definition, option, cost.id) {
+                Some((_, ability, _)) => match ability.definition {
+                    DeclarativeAbilityDef::AlternativeCast(alternative) => {
+                        alternative.from_graveyard
+                    }
+                    _ => false,
+                },
+                None => false,
+            };
+            let available =
+                !gated && Self::alternative_is_castable_from(context, kind, origin, from_graveyard);
             if available
                 && Self::visit_additional_cost_configurations(
                     option,

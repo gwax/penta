@@ -618,6 +618,15 @@ impl Game {
                     _ => None,
                 }),
         );
+        // The other half of bestow's type change: while attached it is an
+        // Aura, which is the subtype the enchantment half needs.
+        if Self::is_bestowed_aura(characteristic) {
+            operations.push((
+                characteristic.timestamp,
+                u16::MAX,
+                SubtypeLayerOperation::Named(SetOperationDef::Add(&["Aura"])),
+            ));
+        }
         if let Some(_pass) = StaticSetCharacteristicLayerGuard::enter() {
             let mut collect = |applied: super::StaticAppliedEffect| {
                 match applied.effect {

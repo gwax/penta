@@ -564,7 +564,7 @@ impl Game {
         costs: &CostConfiguration,
     ) -> Option<&'static [AbilityTargetDef]> {
         let selected = costs.alternative()?;
-        let (_, ability, AlternativeCastKindDef::Kicked) =
+        let (_, ability, AlternativeCastKindDef::Kicked | AlternativeCastKindDef::Bestow) =
             Self::alternative_cast_ability(definition, option, selected)?
         else {
             return None;

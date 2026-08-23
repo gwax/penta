@@ -2,17 +2,17 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardChoiceSourceDef, CardComposition,
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
     CardTypeSet, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, DoubleFacedKind,
     EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
     ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
     ObjectSetDef, PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementEffectDef, ResolvedEffectDurationDef, SpellAdditionalCostDef, SpellForm,
-    SpendModeDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    ReplacementEffectDef, ResolvedEffectDurationDef, SpellAdditionalCostCountDef,
+    SpellAdditionalCostDef, SpellForm, SpendModeDef, TokenCharacteristics, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{CardPartId, ObjectBindingIndex, ObjectSetBindingIndex, PlayOptionId};
 use crate::{TargetIndex, mana_cost};
@@ -553,6 +553,75 @@ pub(in crate::card::sets) static AMPED_RAPTOR: CardRecord = CardRecord::new_with
     // as the top of the deck is cheap enough for two energy to cover.
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Dinosaur"], 2, 1)
         .with_abilities(&AMPED_RAPTOR_ABILITIES),
+);
+
+/// Collect evidence 6 (CR 701.58a): cards out of your own graveyard whose
+/// mana values add up to six, however many that takes.
+static COLLECT_EVIDENCE_SIX: SpellAdditionalCostDef =
+    SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Graveyard, 0)
+        .counted(SpellAdditionalCostCountDef::TotalManaValueAtLeast(6))
+        .spent(SpendModeDef::Exile);
+
+static PHOENIX_FLYING: AbilityDef = abilities::flying();
+static PHOENIX_HASTE: AbilityDef = abilities::haste();
+
+static PHOENIX_GRANTS: [AppliedEffectDef; 3] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+    AppliedEffectDef::add_ability(&PHOENIX_FLYING),
+    AppliedEffectDef::add_ability(&PHOENIX_HASTE),
+];
+
+static PHOENIX_ABILITIES: [AbilityDef; 5] = [
+    AbilityDef::alternative_cast_with_targets(
+        mana_cost!("{R}"),
+        AlternativeCastKindDef::Bestow,
+        Some(
+            "Bestow—{R}, Collect evidence 6. (To pay this bestow cost, pay {R} and exile cards \
+             with total mana value 6 or greater from your graveyard.)",
+        ),
+        &abilities::ENCHANT_CREATURE_TARGET,
+        EffectDef::Attach {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    )
+    .with_alternative_additional_cost(&COLLECT_EVIDENCE_SIX)
+    .with_alternative_from_graveyard(),
+    abilities::flying(),
+    abilities::haste(),
+    // Only while it is an Aura: unattached, the recipient names nothing and
+    // the clause does nothing, which is exactly CR 702.103d.
+    AbilityDef::static_ability(
+        "Enchanted creature gets +2/+2 and has flying and haste.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::AttachedPermanent,
+            effect: AppliedEffectDef::Composite(&PHOENIX_GRANTS),
+        },
+    ),
+    AbilityDef::static_ability(
+        "You may cast this card from your graveyard using its bestow ability.",
+        EffectDef::None,
+    )
+    .with_source_zones(&[ZoneKind::Graveyard])
+    .with_coverage(AbilityCoverageDef::explained_complete(
+        "The permission is carried by the bestow clause, which this card marks as castable from \
+         its owner's graveyard.",
+    )),
+];
+
+// MH3 116 — Detective's Phoenix
+pub(in crate::card::sets) static DETECTIVES_PHOENIX: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("e2a01edd-dbc0-4ed4-b827-9b608290e9a1"),
+    "Detective's Phoenix",
+    CardArt::new(
+        "e2a01edd-dbc0-4ed4-b827-9b608290e9a1",
+        "Deruchenko Alexander",
+    ),
+    CardSet::ModernHorizons3,
+    // A three-mana hasty flier that never really dies: once the graveyard is
+    // six mana deep it comes back out of it for {R}, as an Aura, and comes
+    // back again as a creature when whatever it was wearing is gone.
+    CardRules::new_enchantment_creature(mana_cost!("{2}{R}"), &["Phoenix"], 2, 2)
+        .with_abilities(&PHOENIX_ABILITIES),
 );
 
 // MH3 122 — Galvanic Discharge
@@ -1770,6 +1839,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCURRILOUS_SENTRY,
     &WITHER_AND_BLOOM,
     &AMPED_RAPTOR,
+    &DETECTIVES_PHOENIX,
     &GALVANIC_DISCHARGE,
     &MOLTEN_GATEKEEPER,
     &BASKING_BROODSCALE,

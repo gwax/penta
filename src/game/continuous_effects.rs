@@ -458,7 +458,19 @@ impl Game {
     /// on the battlefield. The attachment-semantic gate preserves the window
     /// for permanents such as Necromancy: its model carries the eventual Aura
     /// subtype, but its own trigger has not made it an Aura until it attaches.
+    /// Bestow (CR 702.103c): a permanent cast for its bestow cost is an Aura
+    /// for exactly as long as it is attached to something. Structural rather
+    /// than a clause the card writes, the same way impending is: it follows
+    /// from how the spell was paid for, and the permanent records that.
+    pub(super) fn is_bestowed_aura(permanent: &Permanent) -> bool {
+        permanent.cast_alternative == Some(crate::card::AlternativeCastKindDef::Bestow)
+            && permanent.attached_to.is_some()
+    }
+
     pub(super) fn is_aura_permanent(&self, permanent: &Permanent) -> bool {
+        if Self::is_bestowed_aura(permanent) {
+            return true;
+        }
         self.effective_subtypes(permanent).contains(&"Aura")
             && self.effective_rules(permanent).is_some_and(|rules| {
                 (rules.enchant().is_some() && permanent.became_aura)
@@ -749,10 +761,18 @@ impl Game {
         }
         let Some(target) = rules.ability_clauses().iter().find_map(|ability| {
             let target = Self::immediate_attachment_target(ability.declarative_effect()?)?;
-            let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
-                return None;
-            };
-            spell.targets().get(target.index())
+            // A bestowed permanent's restriction is printed on the bestow
+            // clause rather than on a spell clause: bestow is what turned it
+            // into an Aura, so bestow is what says what it may enchant.
+            match ability.definition {
+                DeclarativeAbilityDef::Spell(spell) => spell.targets().get(target.index()),
+                DeclarativeAbilityDef::AlternativeCast(alternative)
+                    if alternative.kind == crate::card::AlternativeCastKindDef::Bestow =>
+                {
+                    alternative.targets.get(target.index())
+                }
+                _ => None,
+            }
         }) else {
             return false;
         };

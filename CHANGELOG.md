@@ -35,6 +35,23 @@ distinguishes snapshots of the covered source and build inputs.
   permission carries no sorcery-speed restriction of its own: every card that
   prints the keyword so far is a sorcery, and its type already says so.
 
+- **Bestow, and collect evidence.** Bestow is the first alternative cast
+  that changes what the spell *is* rather than only what it costs: the clause
+  carries its own enchant-creature target and its own attaching effect, so a
+  bestowed spell resolves as an Aura. While the permanent stays attached it
+  is an Aura enchantment and not a creature -- structural, the same way
+  impending is, because it follows from how the spell was paid for. When the
+  enchanted creature leaves it comes unattached and becomes a creature rather
+  than dying, which is checked ahead of the Aura state-based action so that
+  rule never sees an Aura to bin.
+
+  Collect evidence is an additional cost with no card count in it: what it
+  names is a total mana value the exiled cards have to reach between them.
+  Payments are enumerated minimally -- a set counts only if dropping any one
+  card leaves it short -- because every larger set is a strictly worse
+  payment of the same cost and enumerating them all would grow with the size
+  of a graveyard.
+
 - **"Whenever one or more creatures attack you and aren't blocked."** The
   batched counterpart of the per-attacker unblocked trigger, published once
   as blockers are declared for each player the unblocked attackers were

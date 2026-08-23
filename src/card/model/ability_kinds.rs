@@ -72,6 +72,11 @@ pub enum SpellAdditionalCostCountDef {
     /// One for each mode chosen past the first, which is escalate
     /// (CR 702.120a). A spell with one mode pays nothing extra.
     ModesBeyondFirst,
+    /// Collect evidence N (CR 701.58a): not a number of cards at all, but a
+    /// total mana value the chosen cards have to reach between them. How
+    /// many that takes is whatever the graveyard makes it -- one card of
+    /// mana value six, or six of one.
+    TotalManaValueAtLeast(u8),
 }
 
 /// An additional cost that selects objects to spend. The zone decides what
@@ -158,6 +163,15 @@ impl SpellAdditionalCostDef {
             spend: SpendModeDef::ByZone,
             or: None,
         }
+    }
+
+    /// Where the number of objects comes from, when the printed count is
+    /// not it -- an X, an escalate surcharge, or a total mana value to
+    /// reach.
+    #[must_use]
+    pub const fn counted(mut self, counted: SpellAdditionalCostCountDef) -> Self {
+        self.counted = counted;
+        self
     }
 
     /// "... or <the other way>." The caster picks one of the two.

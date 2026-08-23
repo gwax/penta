@@ -167,13 +167,7 @@ impl Game {
         let mut remaining = paid_objects;
         for cost in self.selected_object_additional_costs(definition, option, costs, card, scale.offer)
         {
-            let count = match cost.counted {
-                crate::card::SpellAdditionalCostCountDef::Printed => usize::from(cost.count),
-                crate::card::SpellAdditionalCostCountDef::ChosenX => usize::from(scale.x),
-                crate::card::SpellAdditionalCostCountDef::ModesBeyondFirst => {
-                    usize::from(cost.count).saturating_mul(scale.modes.saturating_sub(1))
-                }
-            };
+            let count = Self::additional_cost_object_count(cost, scale, remaining);
             let cheapest_life = cost.life_alternatives().into_iter().min();
             match cheapest_life {
                 Some(amount) if remaining < count => {
@@ -325,6 +319,7 @@ impl Game {
                     modes: signature.modes().len(),
                     offer,
                 },
+                sacrifices.len(),
             )
         };
         // A cost that could have been paid with life and was handed no

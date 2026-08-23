@@ -43,6 +43,7 @@ impl Game {
         self.annihilate_opposing_counters();
         self.unattach_illegal_non_aura_attachments();
         loop {
+            self.unbestow_permanents_without_a_host();
             let battlefield_len = self.battlefield.len();
             let mut regenerate = Vec::new();
             let mut die = Vec::new();
@@ -113,6 +114,27 @@ impl Game {
     /// unattached. Unlike an Aura with an illegal host these stay on the
     /// battlefield, so this is deliberately separate from the Aura move to
     /// the graveyard below.
+    /// CR 702.103c: a bestowed permanent whose enchanted creature is gone
+    /// does not go with it. It comes unattached and becomes a creature
+    /// instead, which is why this runs inside the loop and ahead of the Aura
+    /// rule below: by the time that rule reads it, it is no longer an Aura.
+    fn unbestow_permanents_without_a_host(&mut self) {
+        let loose = self
+            .battlefield
+            .iter()
+            .filter(|permanent| {
+                Self::is_bestowed_aura(permanent)
+                    && permanent
+                        .attached_to
+                        .is_none_or(|host| !self.is_legal_aura_host(permanent, host))
+            })
+            .map(|permanent| permanent.card.id)
+            .collect::<Vec<_>>();
+        for id in loose {
+            self.unattach(id);
+        }
+    }
+
     fn unattach_illegal_non_aura_attachments(&mut self) {
         let loose = self
             .battlefield

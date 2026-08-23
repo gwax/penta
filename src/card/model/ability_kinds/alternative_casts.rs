@@ -46,6 +46,13 @@ pub struct AlternativeCastAbilityDef {
     /// the only shape of it: what the caster spends is not their own life
     /// but the other player's gain, which costs them nothing they had.
     pub opponent_life_gain: u16,
+    /// Whether the card also prints a permission to use this alternative
+    /// from its owner's graveyard. Detective's Phoenix's "You may cast this
+    /// card from your graveyard using its bestow ability" is one clause
+    /// about one alternative, so it is recorded on that alternative: the
+    /// cast it permits is the same cast in every other respect, down to the
+    /// target it takes and the clause it resolves.
+    pub from_graveyard: bool,
     /// The smallest X this alternative may be cast for. "Kicker {X}. X can't
     /// be 0" is the whole reason it exists: casts are enumerated from zero,
     /// and a kick of nothing would be a kick that cost nothing.
@@ -94,6 +101,15 @@ pub enum AlternativeCastKindDef {
     /// ordinary cast from hand for a different price; what it changes is how
     /// the permanent arrives, which the card's own clauses say.
     Impending,
+    /// Bestow (CR 702.103a): cast as an Aura spell for its bestow cost.
+    /// Unlike every other kind here it changes what the spell is rather than
+    /// only what it costs -- an Aura spell with "enchant creature", which is
+    /// why the clause carries its own target and its own attaching effect.
+    /// While the permanent it becomes stays attached it is an Aura and not a
+    /// creature; when the enchanted creature leaves it becomes a creature
+    /// instead of dying, which is what the permanent's recorded kind is read
+    /// for.
+    Bestow,
     /// Cast where it lies without paying its mana cost, and exiled rather
     /// than buried afterwards. Dreadhorde Arcanist's clause is not flashback
     /// -- it grants no keyword and lasts only for the resolution that
@@ -175,6 +191,7 @@ impl AlternativeCastKindDef {
             Self::Foretell => "Foretell",
             Self::Offspring => "Offspring",
             Self::Plot => "Plot",
+            Self::Bestow => "Bestow",
             Self::WithoutPayingManaCost => "Without paying its mana cost",
             Self::FaceDown { label, .. } => label,
         }
@@ -189,6 +206,7 @@ impl AlternativeCastKindDef {
             Self::Foretell,
             Self::Offspring,
             Self::Plot,
+            Self::Bestow,
             Self::Impending,
             Self::Dash,
             Self::Warp,
@@ -220,6 +238,13 @@ impl AlternativeCastAbilityDef {
         }
     }
 
+    /// The two kinds whose reminder is the clause's own printed text: what
+    /// each does is too card-specific to rebuild from a cost.
+    fn printed_rules_text(self, default: &'static str) -> String {
+        self.stack_text
+            .map_or_else(|| default.to_owned(), std::borrow::ToOwned::to_owned)
+    }
+
     #[must_use]
     pub fn rules_text(self) -> String {
         match (self.kind, self.mana_cost) {
@@ -232,11 +257,14 @@ impl AlternativeCastAbilityDef {
                 AlternativeCastKindDef::Flashback,
                 AlternativeCastManaCostDef::ThisCardManaCost,
             ) => "Flashback—the flashback cost is equal to this card's mana cost. (You may cast this card from your graveyard for its flashback cost. Then exile it.)".into(),
-            (AlternativeCastKindDef::Impending, _) => self.stack_text.map_or_else(
-                || {
-                    "Impending (If you cast this spell for its impending cost, it enters with time counters and isn't a creature until the last is removed.)".into()
-                },
-                std::borrow::ToOwned::to_owned,
+            // Every printed bestow cost is a cost the card writes out, and
+            // Detective's Phoenix writes a nonmana one, so the reminder is
+            // taken from the clause rather than rebuilt from a mana cost.
+            (AlternativeCastKindDef::Bestow, _) => self.printed_rules_text(
+                "Bestow (If you cast this card for its bestow cost, it's an Aura spell with enchant creature. It becomes a creature again if it's not attached to a creature.)",
+            ),
+            (AlternativeCastKindDef::Impending, _) => self.printed_rules_text(
+                "Impending (If you cast this spell for its impending cost, it enters with time counters and isn't a creature until the last is removed.)",
             ),
             (AlternativeCastKindDef::Warp, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
                 format!(

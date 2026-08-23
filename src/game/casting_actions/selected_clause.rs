@@ -238,11 +238,18 @@ impl Game {
     ) -> Option<StackAbilityPayload> {
         let definition = self.catalog.get(definition_id)?;
         let option = definition.play_option(signature.play_option())?;
-        let (spell_origin, spell_ability) = Self::spell_ability(definition, option)?;
-        let DeclarativeAbilityDef::Spell(spell) = spell_ability.definition else {
-            unreachable!("spell_ability returns a spell clause")
-        };
-        let mut resolution_destination = spell.resolution_destination();
+        // A creature card has no spell clause at all. Ordinarily that means
+        // there is nothing to put on the stack beyond the card itself -- but
+        // a bestowed one resolves an Aura clause that is not the card's, so
+        // the base clause is looked up without being required.
+        let spell_clause = Self::spell_ability(definition, option);
+        let mut resolution_destination = spell_clause.map_or(
+            crate::card::SpellResolutionDestinationDef::Graveyard,
+            |(_, ability)| match ability.definition {
+                DeclarativeAbilityDef::Spell(spell) => spell.resolution_destination(),
+                _ => crate::card::SpellResolutionDestinationDef::Graveyard,
+            },
+        );
         for selected in signature.costs().additional() {
             if let Some((_, selected_ability, _)) =
                 Self::optional_additional_cost_clause(definition, option, *selected)
@@ -259,7 +266,12 @@ impl Game {
             && let Some((
                 origin,
                 ability,
-                AlternativeCastKindDef::Overload | AlternativeCastKindDef::Kicked,
+                AlternativeCastKindDef::Overload
+                | AlternativeCastKindDef::Kicked
+                // Bestow is not a cheaper way to cast the same spell: it is
+                // an Aura spell with a target of its own, so it resolves the
+                // clause that says so.
+                | AlternativeCastKindDef::Bestow,
             )) = Self::alternative_cast_ability(definition, option, selected)
             // A kicker that only costs more resolves the printed spell, so
             // it falls through to the base clause below rather than being
@@ -291,7 +303,7 @@ impl Game {
                 x: signature.x(),
             });
         }
-        let (origin, ability) = (spell_origin, spell_ability);
+        let (origin, ability) = spell_clause?;
         let AbilityOrigin::Printed {
             ability: ability_id,
             ..

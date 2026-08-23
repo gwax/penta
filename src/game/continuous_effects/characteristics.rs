@@ -83,6 +83,16 @@ impl Game {
                 SetOperationDef::Remove(CardTypeSet::single(CardType::Creature)),
             ));
         }
+        // Bestow (CR 702.103c): while a permanent cast for its bestow cost
+        // stays attached it is an Aura enchantment and not a creature. The
+        // same structural shape as impending above, and for the same reason.
+        if Self::is_bestowed_aura(permanent) {
+            operations.push((
+                permanent.timestamp,
+                u16::MAX,
+                SetOperationDef::Remove(CardTypeSet::single(CardType::Creature)),
+            ));
+        }
         if let Some(_pass) = StaticSetCharacteristicLayerGuard::enter() {
             let result = self.visit_static_applied_effects(permanent, |applied| {
                 if let AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(

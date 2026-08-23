@@ -317,6 +317,7 @@ mod vintage_cube_damn;
 mod vintage_cube_dark_confidant;
 mod vintage_cube_delayed_blast_fireball;
 mod vintage_cube_descendant_of_storms;
+mod vintage_cube_detectives_phoenix;
 mod vintage_cube_dreadhorde_arcanist;
 mod vintage_cube_duelist;
 mod vintage_cube_echo_of_eons;

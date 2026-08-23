@@ -923,7 +923,13 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             | AlternativeCastKindDef::FaceDown { .. } => effect == EffectDef::None,
             // Overload carries the instructions the modified spell resolves
             // with, so it has to be an effect the shared runtime can execute.
-            AlternativeCastKindDef::Overload => shared_stack_effect(effect),
+            // Overload and bestow both carry the instructions the modified
+            // spell resolves with -- "each" instead of "target" for one, an
+            // attach for the other -- so both have to be effects the shared
+            // runtime can execute.
+            AlternativeCastKindDef::Overload | AlternativeCastKindDef::Bestow => {
+                shared_stack_effect(effect)
+            }
             // A kicker either replaces the instructions or does not. When it
             // does not, the spell resolves exactly as printed and being
             // kicked is only a fact its other clauses can read.
