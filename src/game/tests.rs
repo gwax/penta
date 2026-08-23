@@ -281,6 +281,7 @@ mod vintage_cube_ajani;
 mod vintage_cube_amped_raptor;
 mod vintage_cube_arrival;
 mod vintage_cube_artifacts;
+mod vintage_cube_baleful_strix;
 mod vintage_cube_barrowgoyf;
 mod vintage_cube_bitter_triumph;
 mod vintage_cube_bloodbraid_challenger;

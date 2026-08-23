@@ -400,6 +400,11 @@ const SET_MODULES: &[SetModule] = &[
         y2013::theros::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Planechase2012,
+        y2012::planechase_2012::CARDS,
+        y2012::planechase_2012::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Commander2013,
         y2013::commander_2013::CARDS,
         y2013::commander_2013::ADDITIONAL_PRINTINGS,

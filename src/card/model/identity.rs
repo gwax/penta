@@ -82,6 +82,7 @@ pub enum CardSet {
     Magic2014,
     Magic2020,
     Theros,
+    Planechase2012,
     Commander2013,
     JourneyIntoNyx,
     Conspiracy,
