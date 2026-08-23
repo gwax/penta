@@ -756,6 +756,37 @@ pub(in crate::card::sets) static FARMSTEAD_GLEANER: CardRecord = CardRecord::new
         .with_abilities(&FARMSTEAD_GLEANER_ABILITIES),
 );
 
+/// The Talisman cycle's two halves: colorless for nothing, or the pair of
+/// colours the card is for at a life apiece. Which colour is chosen belongs
+/// to the activation, so the two are one printed ability.
+static TALISMAN_COLORS: [ManaColor; 2] = [ManaColor::Red, ManaColor::White];
+
+static TALISMAN_OF_CONVICTION_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::activated_mana(
+        "{T}: Add {C}.",
+        &TALISMAN_TAP,
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+    ),
+    AbilityDef::activated_mana(
+        "{T}: Add {R} or {W}. This artifact deals 1 damage to you.",
+        &TALISMAN_TAP,
+        EffectDef::AddMana(AddManaEffectDef::choice(&TALISMAN_COLORS).with_damage_to_controller(1)),
+    ),
+];
+
+static TALISMAN_TAP: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
+// MH1 230 — Talisman of Conviction
+pub(in crate::card::sets) static TALISMAN_OF_CONVICTION: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("71148fd3-0c2c-459e-b8f5-735a0a8dd87f"),
+    "Talisman of Conviction",
+    CardArt::new("71148fd3-0c2c-459e-b8f5-735a0a8dd87f", "Lindsey Look"),
+    CardSet::ModernHorizons1,
+    // Two mana that fixes for a life a turn, or for nothing at all when
+    // colorless is what the next spell wants.
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&TALISMAN_OF_CONVICTION_ABILITIES),
+);
+
 static SUNBAKED_CANYON_COLORS: [ManaColor; 2] = [ManaColor::Red, ManaColor::White];
 
 static SUNBAKED_CANYON_ABILITIES: [AbilityDef; 2] =
@@ -795,6 +826,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FALLEN_SHINOBI,
     &WRENN_AND_SIX,
     &FARMSTEAD_GLEANER,
+    &TALISMAN_OF_CONVICTION,
     &SUNBAKED_CANYON,
 ];
 
