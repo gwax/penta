@@ -112,6 +112,7 @@ pub enum CardSet {
     AetherRevolt,
     Amonkhet,
     PhyrexiaAllWillBeOne,
+    PhyrexiaAllWillBeOneCommander,
     MarchOfTheMachine,
     LordOfTheRings,
     WildsOfEldraine,

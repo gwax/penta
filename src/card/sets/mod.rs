@@ -585,6 +585,11 @@ const SET_MODULES: &[SetModule] = &[
         y2023::phyrexia_all_will_be_one::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::PhyrexiaAllWillBeOneCommander,
+        y2023::phyrexia_all_will_be_one_commander::CARDS,
+        y2023::phyrexia_all_will_be_one_commander::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::MarchOfTheMachine,
         y2023::march_of_the_machine::CARDS,
         y2023::march_of_the_machine::ADDITIONAL_PRINTINGS,

@@ -165,6 +165,32 @@ pub const fn living_weapon(token: crate::TokenCharacteristics) -> AbilityDef {
     )
 }
 
+/// The Mirran resistance's 2/2, the same one every "For Mirrodin!"
+/// Equipment brings with it.
+const REBEL: crate::TokenCharacteristics =
+    crate::TokenCharacteristics::creature(&["Rebel"], &[ManaColor::Red], 2, 2)
+        .with_art(crate::card::CardArt::new(
+            "a41eb9df-d8b4-4697-a759-886faf16754d",
+            "Bram Sels",
+        ));
+
+/// "For Mirrodin!" -- living weapon with the resistance's own token. The
+/// mechanism is identical; what differs is that the Rebel arrives able to
+/// attack on its own, where a Germ without its Equipment is a 0/0 that dies
+/// where it stands.
+#[must_use]
+pub const fn for_mirrodin() -> AbilityDef {
+    AbilityDef::triggered(
+        "For Mirrodin! (When this Equipment enters, create a 2/2 red Rebel creature token, then attach this to it.)",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        EffectDef::CreateAttachedToken { token: REBEL },
+    )
+}
+
 /// Reconfigure's paired sorcery-speed attachment procedures.
 #[must_use]
 pub const fn reconfigure(mana_cost: ManaCost, text: &'static str) -> AbilityDef {

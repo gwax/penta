@@ -324,6 +324,7 @@ mod vintage_cube_gadgeteer;
 mod vintage_cube_gau;
 mod vintage_cube_get_lost;
 mod vintage_cube_ghost_vacuum;
+mod vintage_cube_glimmer_lens;
 mod vintage_cube_glorybringer;
 mod vintage_cube_goblin_rabblemaster;
 mod vintage_cube_graveyard;

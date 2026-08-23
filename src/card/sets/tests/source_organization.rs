@@ -288,6 +288,9 @@ fn set_source_for_file(path: &Path) -> SetSource {
         Some("aether_revolt.rs") => source(CardSet::AetherRevolt, "AER"),
         Some("amonkhet.rs") => source(CardSet::Amonkhet, "AKH"),
         Some("phyrexia_all_will_be_one.rs") => source(CardSet::PhyrexiaAllWillBeOne, "ONE"),
+        Some("phyrexia_all_will_be_one_commander.rs") => {
+            source(CardSet::PhyrexiaAllWillBeOneCommander, "ONC")
+        }
         Some("march_of_the_machine.rs") => source(CardSet::MarchOfTheMachine, "MOM"),
         Some("lord_of_the_rings.rs") => source(CardSet::LordOfTheRings, "LTR"),
         Some("wilds_of_eldraine.rs") => source(CardSet::WildsOfEldraine, "WOE"),
