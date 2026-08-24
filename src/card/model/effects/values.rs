@@ -1,7 +1,8 @@
 use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 
 use super::super::{
-    BasicLandType, CounterKind, ManaColor, ObjectPredicateDef, PlayerRelation, ZoneKind,
+    BasicLandType, ComparisonDef, CounterKind, ManaColor, ObjectPredicateDef, PlayerRelation,
+    ZoneKind,
 };
 use super::{DamageSourceGroupDef, PlayerSetDef};
 
@@ -43,7 +44,12 @@ impl LifeConditionDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct CountConditionDef {
     pub query: ObjectQueryDef,
-    pub equals: u8,
+    /// How the count is compared, so that a threshold -- metalcraft's three
+    /// or more artifacts -- reads the same way an exact count does. The
+    /// mirror of [`super::ObjectCountConditionDef`], which asks the same
+    /// question of a condition rather than of an amount.
+    pub comparison: ComparisonDef,
+    pub amount: u8,
     pub then: ValueDef,
     pub otherwise: ValueDef,
 }

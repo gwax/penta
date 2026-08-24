@@ -364,6 +364,7 @@ mod vintage_cube_figure_of_destiny;
 mod vintage_cube_flickerwisp;
 mod vintage_cube_force_of_negation;
 mod vintage_cube_gadgeteer;
+mod vintage_cube_galvanic_blast;
 mod vintage_cube_gau;
 mod vintage_cube_get_lost;
 mod vintage_cube_ghost_vacuum;

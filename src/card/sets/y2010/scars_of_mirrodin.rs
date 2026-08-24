@@ -4,9 +4,10 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardType, DiscardSelectionDef,
-    EffectDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, PlayerRelation,
-    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardType, ComparisonDef,
+    CountConditionDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, KeywordAbility,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -1164,14 +1165,42 @@ pub(in crate::card::sets) static FURNACE_CELEBRATION: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
+static ARTIFACTS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+/// Metalcraft: an amount rather than a second effect, which is what
+/// "instead" means. Read as the spell resolves, so an artifact that left in
+/// response takes the four with it.
+static METALCRAFT_DAMAGE: CountConditionDef = CountConditionDef {
+    query: ARTIFACTS_YOU_CONTROL,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 3,
+    then: ValueDef::Constant(4),
+    otherwise: ValueDef::Constant(2),
+};
+
 // SOM 91 — Galvanic Blast
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static GALVANIC_BLAST: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("f5881bbc-8600-464d-9dcd-5a7780918d1d"),
     "Galvanic Blast",
-    crate::card::CardArt::new("f5881bbc-8600-464d-9dcd-5a7780918d1d", "Marc Simonetti"),
-    crate::card::CardSet::ScarsOfMirrodin,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("f5881bbc-8600-464d-9dcd-5a7780918d1d", "Marc Simonetti"),
+    CardSet::ScarsOfMirrodin,
+    // One red mana for two damage, or for four in the deck that is playing
+    // it -- which is every deck that plays it.
+    CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Galvanic Blast deals 2 damage to any target.\nMetalcraft — Galvanic Blast deals 4 \
+         damage instead if you control three or more artifacts.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::AnyTarget,
+        )],
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::IfMatchingObjectCount(&METALCRAFT_DAMAGE),
+        },
+    )),
 );
 
 // SOM 92 — Goblin Gaveleer

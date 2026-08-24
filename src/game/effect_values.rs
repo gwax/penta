@@ -422,7 +422,11 @@ impl Game {
                     context,
                     scoped,
                 );
-                let chosen = if count == i32::from(condition.equals) {
+                let chosen = if crate::game::effect_support::compare(
+                    &count,
+                    condition.comparison,
+                    &i32::from(condition.amount),
+                ) {
                     condition.then
                 } else {
                     condition.otherwise
