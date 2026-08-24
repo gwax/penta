@@ -1,6 +1,11 @@
 //! TSP card records required by supported formats.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::{
+    AbilityCostDef, AbilityDef, AddManaEffectDef, CardArt, CardRules, CardSet, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, TriggerEventDef, ValueDef, ZoneKind,
+};
+use crate::mana_cost;
 
 // TSP 29 — Momentary Blink
 // Audit: metadata-only — Card rules have not been implemented.
@@ -53,16 +58,47 @@ pub(in crate::card::sets) static SULFUROUS_BLAST: CardRecord = CardRecord::new(
 );
 
 // TSP 251 — Chromatic Star
-// Audit: metadata-only — Card rules have not been implemented.
+static STAR_COST: [AbilityCostDef; 3] = [
+    AbilityCostDef::Mana(mana_cost!("{1}")),
+    AbilityCostDef::TapSource,
+    AbilityCostDef::SacrificeSource,
+];
+
+/// The draw is a separate trigger rather than part of the mana ability,
+/// which is the whole difference from Chromatic Sphere: the mana arrives at
+/// once and the card waits on the stack, so anything that answers the Star
+/// after it has been sacrificed is already too late.
+static STAR_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::activated_mana(
+        "{1}, {T}, Sacrifice this artifact: Add one mana of any color.",
+        &STAR_COST,
+        EffectDef::AddMana(AddManaEffectDef::any_color()),
+    ),
+    AbilityDef::triggered(
+        "When this artifact is put into a graveyard from the battlefield, draw a card.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            Some(ZoneKind::Battlefield),
+            Some(ZoneKind::Graveyard),
+        ),
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static CHROMATIC_STAR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1d7a1357-debd-49b0-9fd5-560d5b3f589e"),
     "Chromatic Star",
-    crate::card::CardArt::new(
+    CardArt::new(
         "1d7a1357-debd-49b0-9fd5-560d5b3f589e",
         "Alex Horley-Orlandelli",
     ),
-    crate::card::CardSet::TimeSpiral,
-    crate::card::CardRules::unsupported(),
+    CardSet::TimeSpiral,
+    // A card that fixes one mana and replaces itself, and does the second
+    // half however it dies rather than only when it is spent.
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&STAR_ABILITIES),
 );
 
 // TSP 264 — Stuffy Doll
