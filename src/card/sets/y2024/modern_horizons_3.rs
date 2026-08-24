@@ -1963,13 +1963,70 @@ pub(in crate::card::sets) static CRABOMINATION: CardRecord = CardRecord::new(
 // MH3 457 — Detective's Phoenix (alternate printing)
 
 // MH3 460 — Wight of the Reliquary
-// Audit: metadata-only — Card rules have not been implemented.
+/// Your own graveyard, which is what makes the sacrifice cost pay twice: the
+/// creature it eats is a land and a point of power both.
+static RELIQUARY_CREATURE_CARDS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Graveyard],
+    PlayerRelation::You,
+);
+
+static ANOTHER_CREATURE_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+]);
+
+static RELIQUARY_FETCH_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::TapSource,
+    AbilityCostDef::SacrificePermanent {
+        object: ANOTHER_CREATURE_YOU_CONTROL,
+        controller: PlayerRelation::You,
+    },
+];
+
+static RELIQUARY_ABILITIES: [AbilityDef; 3] = [
+    abilities::vigilance(),
+    AbilityDef::static_ability(
+        "This creature gets +1/+1 for each creature card in your graveyard.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::CountMatchingObjects(&RELIQUARY_CREATURE_CARDS),
+                ValueDef::CountMatchingObjects(&RELIQUARY_CREATURE_CARDS),
+            ),
+        },
+    ),
+    AbilityDef::activated(
+        "{T}, Sacrifice another creature: Search your library for a land card, put it onto the \
+         battlefield tapped, then shuffle.",
+        &RELIQUARY_FETCH_COST,
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::HasType(CardType::Land),
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: false,
+            destination: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: true,
+            attachment: None,
+            binding: None,
+            then: None,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static WIGHT_OF_THE_RELIQUARY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("915715f7-5487-47aa-ada5-de1bce282164"),
     "Wight of the Reliquary",
-    crate::card::CardArt::new("915715f7-5487-47aa-ada5-de1bce282164", "Scott Murphy"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("915715f7-5487-47aa-ada5-de1bce282164", "Scott Murphy"),
+    CardSet::ModernHorizons3,
+    // Two mana for a body that grows with the graveyard it is filling, and
+    // turns every spare creature into whatever land the deck needs.
+    CardRules::new_creature(mana_cost!("{B}{G}"), &["Zombie", "Knight"], 2, 2)
+        .with_abilities(&RELIQUARY_ABILITIES),
 );
 
 // MH3 484 — Six (alternate printing)
