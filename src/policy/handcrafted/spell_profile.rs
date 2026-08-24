@@ -402,7 +402,12 @@ impl HandcraftedPolicy {
                         )
                 });
             }
-            EffectDef::Destroy { object, .. } => Self::collect_destroy_profile(object, profile),
+            EffectDef::Destroy { object, then, .. } => {
+                Self::collect_destroy_profile(object, profile);
+                if let Some(follow_up) = then {
+                    Self::collect_spell_effect_profile(*follow_up.effect, x, targets, profile);
+                }
+            }
             EffectDef::MoveToZone {
                 object,
                 zone: ZoneKind::Exile,

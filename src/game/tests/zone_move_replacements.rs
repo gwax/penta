@@ -1,4 +1,6 @@
 use super::*;
+use crate::ObjectSetBindingIndex;
+use crate::card::DestroyFollowUpDef;
 
 fn setup_nexus_and_rest_in_peace() -> (Game, GameObjectId, GameObjectId) {
     let mut game = ready_game();
@@ -232,6 +234,48 @@ fn divine_offering_waits_for_ugins_nexus_replacement_before_gaining_life() {
 }
 
 #[test]
+fn destroy_outcome_followup_waits_for_replacements_and_counts_only_graveyard_moves() {
+    static FOLLOWUP_EFFECTS: [EffectDef; 2] = [
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::BoundObjectCount(ObjectSetBindingIndex::PRIMARY),
+        },
+    ];
+    const DESTROY_AND_COUNT: EffectDef = EffectDef::Destroy {
+        object: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::HasType(CardType::Artifact),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::Any,
+        ),
+        can_regenerate: true,
+        then: Some(DestroyFollowUpDef {
+            binding: ObjectSetBindingIndex::PRIMARY,
+            effect: &EffectDef::Sequence(&FOLLOWUP_EFFECTS),
+        }),
+    };
+
+    let (mut game, _nexus, rest) = setup_nexus_and_rest_in_peace();
+    let object = spell(20_001, cards::PARASELENE, PlayerId::One, 0);
+    game.resolve_effect_def(
+        ScopedEffect::primary(DESTROY_AND_COUNT),
+        &object,
+        TriggerContext::empty(),
+    );
+
+    assert_eq!(game.players[PlayerId::One.index()].life, 20);
+    choose_replacement_from(&mut game, PlayerId::One, rest);
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        21,
+        "the follow-up ran, but the permanent exiled instead was not counted",
+    );
+}
+
+#[test]
 fn activated_ability_resolves_only_after_ugins_nexus_replacement_choice() {
     let (mut game, nexus, rest) = setup_nexus_and_rest_in_peace();
     let vraska = game
@@ -273,6 +317,7 @@ fn custom_spell_followup_waits_for_ugins_nexus_replacement_choice() {
             PlayerRelation::Any,
         ),
         can_regenerate: true,
+        then: None,
     };
 
     let (mut game, nexus, rest) = setup_nexus_and_rest_in_peace();

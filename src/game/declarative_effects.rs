@@ -1,9 +1,10 @@
 use super::{
-    AbilityProcedureDef, AbilitySourceRef, ArrivalAttachment, BattlefieldArrival, CardPartId,
-    CopiableAbility, CounteredSpellZone, DeclarativeAbilityDef, EffectDef, EffectResolutionContext,
-    Game, InstalledTrigger, InstalledTriggerLifetime, Permanent, ResolvedOngoingEffect,
-    SacrificeDeclined, SacrificeFollowup, ScopedEffect, StackAbilityResolver, StackObject, Target,
-    TriggerCapture, ZoneKind, ZoneMoveCause, ZonePlacement,
+    AbilityProcedureDef, AbilitySourceRef, ArrivalAttachment, BattlefieldArrival,
+    BattlefieldExitCompletion, CardPartId, CopiableAbility, CounteredSpellZone,
+    DeclarativeAbilityDef, EffectDef, EffectResolutionContext, Game, InstalledTrigger,
+    InstalledTriggerLifetime, Permanent, ResolvedOngoingEffect, SacrificeDeclined,
+    SacrificeFollowup, ScopedEffect, StackAbilityResolver, StackObject, Target, TriggerCapture,
+    ZoneKind, ZoneMoveCause, ZonePlacement,
 };
 use crate::card::{ArrivalAttachmentDef, InstalledTriggerLifetimeDef};
 use move_to_zone::MoveToZoneClause;
@@ -210,6 +211,7 @@ impl Game {
             EffectDef::Destroy {
                 object: recipient,
                 can_regenerate,
+                then,
             } => {
                 let permanents = self
                     .effect_recipients(recipient, object, &context, scoped)
@@ -219,7 +221,14 @@ impl Game {
                         Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
                     })
                     .collect::<Vec<_>>();
-                self.destroy_permanents(&permanents, can_regenerate);
+                let completion = then.map(|follow_up| BattlefieldExitCompletion::DestroyFollowup {
+                    candidates: permanents.clone(),
+                    binding: follow_up.binding,
+                    object: Box::new(object.clone()),
+                    context,
+                    effect: scoped.with_effect(*follow_up.effect),
+                });
+                self.destroy_permanents_then(&permanents, can_regenerate, completion);
             }
             EffectDef::Sacrifice { object: recipient } => {
                 let permanents = self

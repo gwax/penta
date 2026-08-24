@@ -9,8 +9,8 @@ use crate::card::{
     BattlefieldEntryModificationDef, CardAbilityBinding, CardArt, CardBehavior, CardComposition,
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
     ComparisonDef, ConditionalValueDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
-    DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectExecutionDef, EffectPaymentDef,
-    EffectRecipientDef, HalvedValueDef, KeywordAbility, ManaColor, MillUntilDef,
+    DestroyFollowUpDef, DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectExecutionDef,
+    EffectPaymentDef, EffectRecipientDef, HalvedValueDef, KeywordAbility, ManaColor, MillUntilDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayOptionDef,
     PlayerRefDef, PlayerRelation, PlayerSetDef, QuantifierDef, ReplacementConditionDef,
     ReplacementEffectDef, ResolvedEffectDurationDef, RoundingDef, SacrificedAmountDef,
@@ -422,6 +422,7 @@ pub(in crate::card::sets) static DEARLY_DEPARTED: CardRecord = CardRecord::new(
 static DIVINE_RECKONING_DESTROY_REST: EffectDef = EffectDef::Destroy {
     object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::new(1))),
     can_regenerate: true,
+    then: None,
 };
 
 static DIVINE_RECKONING_CHOICE: SimultaneousChooseDef = SimultaneousChooseDef {
@@ -869,13 +870,31 @@ pub(in crate::card::sets) static NEVERMORE: CardRecord = CardRecord::new(
 );
 
 // ISD 26 — Paraselene
-// Audit: metadata-only — Needs a linked count of enchantments actually destroyed before gaining that much life.
+static PARASELENE_GAIN_LIFE: EffectDef = EffectDef::GainLife {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::BoundObjectCount(ObjectSetBindingIndex::PRIMARY),
+};
+
 pub(in crate::card::sets) static PARASELENE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("406380ab-2695-4084-99a5-f5560304f8cb"),
     "Paraselene",
-    crate::card::CardArt::new("406380ab-2695-4084-99a5-f5560304f8cb", "Ryan Yee"),
-    crate::card::CardSet::Innistrad,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("406380ab-2695-4084-99a5-f5560304f8cb", "Ryan Yee"),
+    CardSet::Innistrad,
+    CardRules::new_sorcery(mana_cost!("{2}{W}")).with_ability(AbilityDef::spell(
+        "Destroy all enchantments. You gain 1 life for each enchantment destroyed this way.",
+        EffectDef::Destroy {
+            object: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Enchantment),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            can_regenerate: true,
+            then: Some(DestroyFollowUpDef {
+                binding: ObjectSetBindingIndex::PRIMARY,
+                effect: &PARASELENE_GAIN_LIFE,
+            }),
+        },
+    )),
 );
 
 // ISD 27 — Purify the Grave
@@ -1034,6 +1053,7 @@ pub(in crate::card::sets) static SLAYER_OF_THE_WICKED: CardRecord = CardRecord::
             EffectDef::Destroy {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 can_regenerate: true,
+                then: None,
             },
         ),
     ),
@@ -1239,6 +1259,7 @@ pub(in crate::card::sets) static URGENT_EXORCISM: CardRecord = CardRecord::new_w
         EffectDef::Destroy {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             can_regenerate: true,
+            then: None,
         },
     )]),
 );
@@ -2824,6 +2845,7 @@ pub(in crate::card::sets) static MAW_OF_THE_MIRE: CardRecord = CardRecord::new_w
             EffectDef::Destroy {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 can_regenerate: true,
+                then: None,
             },
             EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
@@ -3737,6 +3759,7 @@ pub(in crate::card::sets) static INTO_THE_MAW_OF_HELL: CardRecord = CardRecord::
             EffectDef::Destroy {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 can_regenerate: true,
+                then: None,
             },
             EffectDef::DealDamage {
                 recipient: EffectRecipientDef::Target(TargetIndex(1)),
@@ -5966,6 +5989,7 @@ pub(in crate::card::sets) static WOODEN_STAKE: CardRecord = CardRecord::new_with
                 EffectDef::Destroy {
                     object: EffectRecipientDef::TriggeringObject,
                     can_regenerate: false,
+                    then: None,
                 },
             ),
             abilities::equip(
@@ -6041,6 +6065,7 @@ pub(in crate::card::sets) static GHOST_QUARTER: CardRecord = CardRecord::new_wit
                 EffectDef::Destroy {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     can_regenerate: true,
+                    then: None,
                 },
                 // Declining the printed "may" skips the entire search, including
                 // its shuffle. If accepted, the qualified hidden-zone search
