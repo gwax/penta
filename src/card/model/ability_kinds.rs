@@ -553,6 +553,27 @@ pub struct ActivatedAbilityDef {
     /// clause of its own with its own targets, exactly as a modal spell's
     /// modes are.
     pub modes: Option<ModalSpellDef>,
+    /// "This ability costs {1} less to activate for each legendary creature
+    /// you control." A discount the ability prints about itself rather than
+    /// one a permanent hands out, which is why it is not a
+    /// [`CostModificationDef`]: those are read off the battlefield, and a
+    /// channel ability is activated from hand, where its own card has no
+    /// static abilities at all.
+    pub cost_reduction: Option<AbilityCostReductionDef>,
+}
+
+/// What an ability's own printed discount takes off its activation cost.
+///
+/// Like every cost reduction it touches generic mana only (CR 601.2f), so
+/// the coloured half of a channel cost survives any board.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct AbilityCostReductionDef {
+    pub amount: ValueDef,
+    /// The least mana the cost may be left with, for the abilities that
+    /// print "this effect can't reduce the mana in that cost to less than
+    /// one mana". Nothing is stopping a reduction without one from taking
+    /// the generic half away entirely.
+    pub minimum: u16,
 }
 
 impl ActivatedAbilityDef {
@@ -574,6 +595,7 @@ impl ActivatedAbilityDef {
             any_player_may_activate: false,
             condition: None,
             modes: None,
+            cost_reduction: None,
         }
     }
 
@@ -634,6 +656,13 @@ impl ActivatedAbilityDef {
     #[must_use]
     pub const fn with_activation_limit(mut self, limit: u8) -> Self {
         self.activation_limit = Some(limit);
+        self
+    }
+
+    /// "This ability costs {N} less to activate for each ..."
+    #[must_use]
+    pub const fn with_cost_reduction(mut self, amount: ValueDef, minimum: u16) -> Self {
+        self.cost_reduction = Some(AbilityCostReductionDef { amount, minimum });
         self
     }
 }

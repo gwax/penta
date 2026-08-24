@@ -286,12 +286,57 @@ impl Game {
     pub(super) fn priced_ability_mana_cost(
         &self,
         source: GameObjectId,
-        costs: &[AbilityCostDef],
+        definition: &ActivatedAbilityDef,
     ) -> Option<ManaCost> {
-        costs.iter().find_map(|cost| match cost {
-            AbilityCostDef::Mana(cost) => Some(self.ability_mana_cost_for_source(source, *cost)),
-            _ => None,
-        })
+        definition
+            .costs
+            .as_slice()
+            .iter()
+            .find_map(|cost| match cost {
+                AbilityCostDef::Mana(cost) => Some(*cost),
+                _ => None,
+            })
+            .map(|cost| self.activation_mana_cost(definition, source, cost))
+    }
+
+    /// What activating this ability costs in mana: the increases and
+    /// discounts the battlefield supplies first, then the discount the
+    /// ability prints about itself.
+    ///
+    /// The order matters for the same reason it does between increases and
+    /// discounts (CR 601.2f): a printed floor is a floor on the finished
+    /// cost, not on some intermediate one.
+    pub(super) fn activation_mana_cost(
+        &self,
+        definition: &ActivatedAbilityDef,
+        source: GameObjectId,
+        cost: ManaCost,
+    ) -> ManaCost {
+        let cost = self.ability_mana_cost_for_source(source, cost);
+        let Some(reduction) = definition.cost_reduction else {
+            return cost;
+        };
+        let Some(player) = self.ability_cost_payer(source) else {
+            return cost;
+        };
+        let amount = self.cost_reduction_value(reduction.amount, player, source);
+        Self::reduce_ability_cost(cost, amount, reduction.minimum)
+    }
+
+    /// Whose board a printed activation discount reads. A permanent's
+    /// controller activates its abilities; a card anywhere else is activated
+    /// by the player holding it, which for every printed channel cost is its
+    /// owner.
+    fn ability_cost_payer(&self, source: GameObjectId) -> Option<PlayerId> {
+        if let Some(permanent) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source)
+        {
+            return Some(permanent.controller);
+        }
+        self.card_in_nonbattlefield_zone(source)
+            .map(|(_, card)| card.owner)
     }
 
     fn ability_cost_effect_applies(

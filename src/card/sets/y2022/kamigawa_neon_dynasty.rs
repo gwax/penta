@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
-    AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CostModificationDef, CounterKind,
-    CreatedTokensDef, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
+    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules,
+    CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CostModificationDef,
+    CounterKind, CreatedTokensDef, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TokenCharacteristics,
     TokenCopyExceptionsDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
@@ -531,14 +531,78 @@ pub(in crate::card::sets) static IRON_APPRENTICE: CardRecord = CardRecord::new(
 );
 
 // NEO 271 — Otawara, Soaring City
-// Audit: metadata-only — Card rules have not been implemented.
+/// Everything a bounce spell would want and nothing else: a land answers a
+/// creature, but not another land.
+static AN_ARTIFACT_CREATURE_ENCHANTMENT_OR_PLANESWALKER: ObjectPredicateDef =
+    ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::HasType(CardType::Artifact),
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::HasType(CardType::Enchantment),
+        ObjectPredicateDef::HasType(CardType::Planeswalker),
+    ]);
+
+static ONE_NONLAND_PERMANENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    AN_ARTIFACT_CREATURE_ENCHANTMENT_OR_PLANESWALKER,
+)];
+
+/// The discount, which is what makes the land a spell: a legendary board
+/// takes the channel cost down toward the {U} that cannot be reduced away.
+static LEGENDARY_CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Supertype(CardSupertype::Legendary),
+        ObjectPredicateDef::HasType(CardType::Creature),
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static OTAWARA_CHANNEL_COST: AbilityCostList = AbilityCostList::two(
+    AbilityCostDef::Mana(mana_cost!("{3}{U}")),
+    AbilityCostDef::DiscardSource,
+);
+
 pub(in crate::card::sets) static OTAWARA_SOARING_CITY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("486d7edc-d983-41f0-8b78-c99aecd72996"),
     "Otawara, Soaring City",
-    crate::card::CardArt::new("486d7edc-d983-41f0-8b78-c99aecd72996", "Alayna Danner"),
-    crate::card::CardSet::KamigawaNeonDynasty,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("486d7edc-d983-41f0-8b78-c99aecd72996", "Alayna Danner"),
+    CardSet::KamigawaNeonDynasty,
+    // A land that costs nothing to play and is never a dead draw, which is
+    // the whole of why the cycle is in the cube.
+    CardRules::new_land(&[])
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::activated_mana(
+                "{T}: Add {U}.",
+                &OTAWARA_MANA_COST,
+                EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Blue)),
+            ),
+            AbilityDef::activated_with_cost_list_and_targets(
+                "Channel — {3}{U}, Discard this card: Return target artifact, creature, \
+                 enchantment, or planeswalker to its owner\'s hand. This ability costs {1} less \
+                 to activate for each legendary creature you control.",
+                OTAWARA_CHANNEL_COST,
+                &ONE_NONLAND_PERMANENT,
+                EffectDef::MoveToZone {
+                    counters: None,
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    from: None,
+                    zone: ZoneKind::Hand,
+                    placement: ZonePlacement::Top,
+                    arrival_effect: None,
+                    attachment: None,
+                    controller: None,
+                    tapped: false,
+                },
+            )
+            .with_source_zones(&[ZoneKind::Hand])
+            .with_activation_cost_reduction(
+                ValueDef::CountMatchingObjects(&LEGENDARY_CREATURES_YOU_CONTROL),
+                0,
+            ),
+        ]),
 );
+
+static OTAWARA_MANA_COST: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
 
 // NEO 357 — Fable of the Mirror-Breaker // Reflection of Kiki-Jiki
 /// The Goblin's own clause, printed on the token rather than on the Saga.

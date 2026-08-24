@@ -462,6 +462,7 @@ mod vintage_cube_omnath;
 mod vintage_cube_once_upon_a_time;
 mod vintage_cube_oracle;
 mod vintage_cube_orcish_bowmasters;
+mod vintage_cube_otawara;
 mod vintage_cube_ouroboroid;
 mod vintage_cube_overlord;
 mod vintage_cube_paradoxical_outcome;

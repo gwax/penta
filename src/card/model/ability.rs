@@ -10,7 +10,8 @@ use super::{
     ManaCost, ModalSpellDef, OptionalAdditionalCostAbilityDef, ReplacementAbilityDef,
     ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, SpecialActionDef,
     SpellAbilityDef, SpellAdditionalCostDef, SpellLifeCostDef, SpellResolutionDestinationDef,
-    StaticAbilityDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, ZoneKind,
+    StaticAbilityDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, ValueDef,
+    ZoneKind,
 };
 
 /// One printed rules clause and its implementation.
@@ -147,6 +148,25 @@ impl AbilityDef {
             )),
             EffectDef::None,
         )
+    }
+
+    /// "This ability costs {N} less to activate for each ...", printed on
+    /// the ability itself. The discount travels with the ability rather than
+    /// being read off the battlefield, which is what a channel cost needs:
+    /// the card is in hand, where nothing it says is a static ability.
+    ///
+    /// # Panics
+    ///
+    /// Panics for any ability that is not an activated one, since nothing
+    /// else has an activation cost to discount.
+    #[must_use]
+    pub const fn with_activation_cost_reduction(mut self, amount: ValueDef, minimum: u16) -> Self {
+        let DeclarativeAbilityDef::Activated(activated) = self.definition else {
+            panic!("only an activated ability has an activation cost");
+        };
+        self.definition =
+            DeclarativeAbilityDef::Activated(activated.with_cost_reduction(amount, minimum));
+        self
     }
 
     /// A cost paid as the whole spell is cast, on top of its mana. Escalate

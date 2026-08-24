@@ -138,7 +138,7 @@ impl Game {
             taps_source: false,
             leaves_source: true,
         };
-        let priced_mana_cost = self.priced_ability_mana_cost(source, definition.costs.as_slice());
+        let priced_mana_cost = self.priced_ability_mana_cost(source, &definition);
         for cost in definition.costs.as_slice() {
             match cost {
                 AbilityCostDef::Mana(cost) => {
@@ -324,8 +324,7 @@ impl Game {
                 taps_source: false,
                 leaves_source: false,
             };
-            let priced_mana_cost =
-                self.priced_ability_mana_cost(source, definition.costs.as_slice());
+            let priced_mana_cost = self.priced_ability_mana_cost(source, &definition);
             for cost in definition.costs.as_slice() {
                 match cost {
                     AbilityCostDef::Mana(cost) => {
@@ -555,9 +554,10 @@ impl Game {
             for cost in definition.costs.as_slice() {
                 match cost {
                     AbilityCostDef::Mana(cost) => {
-                        // Read through any increase on the battlefield, so
-                        // what is paid is what the offer was priced at.
-                        let cost = self.ability_mana_cost_for_source(source, *cost);
+                        // Read through any increase on the battlefield and
+                        // any discount, printed or granted, so what is paid
+                        // is what the offer was priced at.
+                        let cost = self.activation_mana_cost(&definition, source, *cost);
                         let payment_purpose = ManaPaymentPurpose::Ability {
                             source,
                             taps_source,

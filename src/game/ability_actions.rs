@@ -318,7 +318,7 @@ impl Game {
                     || definition.costs.iter().any(|cost| match cost {
                         AbilityCostDef::Mana(cost) => !self.can_pay_cost_for(
                             player,
-                            self.ability_mana_cost(permanent, *cost),
+                            self.activation_mana_cost(&definition, permanent.card.id, *cost),
                             0,
                             &payment_purpose,
                         ),
@@ -406,7 +406,7 @@ impl Game {
                 let taps_chosen_permanent =
                     matches!(object_cost, Some(AbilityCostDef::TapPermanent { .. }));
                 let payable_mana_cost = Self::activated_ability_mana_cost(&definition)
-                    .map(|cost| self.ability_mana_cost(permanent, cost));
+                    .map(|cost| self.activation_mana_cost(&definition, permanent.card.id, cost));
                 let cost_object_choices = match object_cost {
                     None => vec![Vec::new()],
                     Some(AbilityCostDef::SacrificePermanent { object, controller }) => self
@@ -540,7 +540,7 @@ impl Game {
                     .find_map(|cost| match cost {
                         AbilityCostDef::Mana(cost) if cost.variable_x => Some(self.maximum_x_for(
                             player,
-                            self.ability_mana_cost(permanent, *cost),
+                            self.activation_mana_cost(&definition, permanent.card.id, *cost),
                             &payment_purpose,
                         )),
                         _ => None,
@@ -813,7 +813,7 @@ impl Game {
                         | AbilityCostDef::Special(_) => supported = false,
                     }
                 }
-                mana_cost = self.ability_mana_cost_for_source(card.id, mana_cost);
+                mana_cost = self.activation_mana_cost(&definition, card.id, mana_cost);
                 let payment_purpose = ManaPaymentPurpose::Ability {
                     source: card.id,
                     taps_source: false,
@@ -940,7 +940,7 @@ impl Game {
                     };
                     // Nothing offers a graveyard activation more than once, so
                     // a variable X would silently be chosen as zero.
-                    mana_cost = self.ability_mana_cost_for_source(card.id, mana_cost);
+                    mana_cost = self.activation_mana_cost(&definition, card.id, mana_cost);
                     if !supported
                         || mana_cost.variable_x
                         || !self.can_pay_cost_for(player, mana_cost, 0, &payment_purpose)
