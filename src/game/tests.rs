@@ -345,6 +345,7 @@ mod vintage_cube_chrome_mox;
 mod vintage_cube_collective_brutality;
 mod vintage_cube_colonnade;
 mod vintage_cube_concealing_curtains;
+mod vintage_cube_consider;
 mod vintage_cube_consult_star_charts;
 mod vintage_cube_coveted_jewel;
 mod vintage_cube_creatures;

@@ -17,8 +17,8 @@ use super::model::{
     PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef, ReplacementConditionDef,
     ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
     ScaledValueDef, SpellAdditionalCostDef, SpellResolutionDestinationDef, SplitIntoPilesDef,
-    TokenCopyExceptionsDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement,
+    TokenCopyExceptionsDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 /// The target an "Enchant creature" Aura spell chooses.
@@ -623,40 +623,6 @@ pub const fn bloodrush(
     .with_source_zones(&[ZoneKind::Hand])
 }
 
-/// Populate's copy step, made once its choice has landed.
-static POPULATE_COPY: EffectDef = EffectDef::CreateTokenCopyOf {
-    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
-    exceptions: TokenCopyExceptionsDef::NONE,
-    created: None,
-};
-
-/// Populate: choose a creature token you control, then create a copy of it.
-/// The choice is not a target -- nothing about it is checked again -- and a
-/// player with no creature tokens simply does nothing.
-#[must_use]
-pub const fn populate() -> EffectDef {
-    EffectDef::Choose(ChooseDef {
-        binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
-        unchosen: None,
-        chooser: PlayerRefDef::EffectController,
-        candidates: ObjectSetDef::Query(ObjectQueryDef::controlled_by(
-            ObjectPredicateDef::All(&POPULATE_CANDIDATE),
-            &[ZoneKind::Battlefield],
-            PlayerSetDef::One(PlayerRefDef::EffectController),
-        )),
-        exclude: None,
-        minimum: 1,
-        maximum: 1,
-        visibility: ChoiceVisibilityDef::Public,
-        then: &POPULATE_COPY,
-    })
-}
-
-static POPULATE_CANDIDATE: [ObjectPredicateDef; 2] = [
-    ObjectPredicateDef::HasType(CardType::Creature),
-    ObjectPredicateDef::Token,
-];
-
 /// Connive, on the permanent doing it: draw a card, then discard a card, and
 /// take a +1/+1 counter for the discard if what went was not a land.
 ///
@@ -988,6 +954,7 @@ pub const fn cannot_be_blocked(text: &'static str) -> AbilityDef {
     )
 }
 
+include!("abilities/keyword_actions.rs");
 include!("abilities/sagas.rs");
 include!("abilities/lands.rs");
 include!("abilities/repeated_clauses.rs");

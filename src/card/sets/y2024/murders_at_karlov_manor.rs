@@ -4,33 +4,11 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, CostModificationDef,
     EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TopCardSelectionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    TriggerEventDef, ValueDef, abilities, tokens,
 };
 use crate::mana_cost;
 
-/// Surveil 1: look at the top card and choose whether to bin it. Nothing is
-/// revealed and nothing has to go, so the minimum is zero and the card that
-/// stays goes back where it came from.
-static SURVEIL_ONE: TopCardSelectionDef = TopCardSelectionDef {
-    count: ValueDef::Constant(1),
-    object: None,
-    minimum: 0,
-    maximum: 1,
-    select_all_matching: false,
-    reveal_selected: false,
-    counted: None,
-    selected_zone: ZoneKind::Graveyard,
-    selected_placement: ZonePlacement::Top,
-    rest_zone: ZoneKind::Library,
-    rest_placement: ZonePlacement::Top,
-    rest_random_order: false,
-    rest_counters: None,
-    selected_order_follows_choice: false,
-    then: None,
-    selected_hidden: false,
-    selected_linked_to_source: false,
-    selected_face_down: None,
-};
+static SURVEIL_ONE: TopCardSelectionDef = abilities::surveil(1, None);
 
 static SURVEIL_LAND_ABILITIES: [AbilityDef; 2] = [
     abilities::enters_tapped("This land enters tapped."),

@@ -512,28 +512,8 @@ static KAITO_EMBLEM_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
 static KAITO_EMBLEM: EmblemCharacteristics =
     EmblemCharacteristics::new("Kaito, Bane of Nightmares emblem", &KAITO_EMBLEM_ABILITIES);
 
-/// Surveil 2: look at two, bin as many of them as you like, and the rest go
-/// back on top in the order you leave them.
-static KAITO_SURVEILS: TopCardSelectionDef = TopCardSelectionDef {
-    count: ValueDef::Constant(2),
-    object: None,
-    minimum: 0,
-    maximum: 2,
-    select_all_matching: false,
-    reveal_selected: false,
-    counted: None,
-    selected_zone: ZoneKind::Graveyard,
-    selected_placement: ZonePlacement::Top,
-    rest_zone: ZoneKind::Library,
-    rest_placement: ZonePlacement::Top,
-    rest_random_order: false,
-    rest_counters: None,
-    selected_order_follows_choice: false,
-    then: Some(&KAITO_DRAWS),
-    selected_hidden: false,
-    selected_linked_to_source: false,
-    selected_face_down: None,
-};
+/// Surveil 2, and the draw it pays for.
+static KAITO_SURVEILS: TopCardSelectionDef = abilities::surveil(2, Some(&KAITO_DRAWS));
 
 /// "A card for each opponent who lost life this turn" is a count of players
 /// rather than of life, which in a two-player game is one card or none.
