@@ -2,22 +2,168 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AlternativeCastKindDef, CardArt, CardRules, CardSet, CardType, CounterKind,
-    EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
-    PlayerRelation, ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef,
-    ReplacementEventDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AlternativeCastKindDef, AppliedEffectDef,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, CounterKind,
+    CreatureTypeSetDef, EffectDef, EffectRecipientDef, EmblemCharacteristics, ObjectPredicateDef,
+    ObjectQueryDef, ObjectSetDef, PlayerRelation, ReplacementAbilityDef, ReplacementConditionDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 // EOE 2 — Tezzeret, Cruel Captain
-// Audit: metadata-only — Card rules have not been implemented.
+static AN_ARTIFACT_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+static AN_ARTIFACT_OR_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::HasType(CardType::Artifact),
+        ObjectPredicateDef::HasType(CardType::Creature),
+    ]),
+)];
+
+/// The rider is asked of the target as the ability resolves, so an artifact
+/// animated in response is a legal thing to grow.
+static TEZZERET_TARGET_IS_AN_ARTIFACT_CREATURE: TriggerConditionDef =
+    TriggerConditionDef::TargetMatches {
+        slot: TargetIndex::PRIMARY,
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Artifact),
+            ObjectPredicateDef::HasType(CardType::Creature),
+        ]),
+    };
+
+static TEZZERET_UNTAPS: [EffectDef; 2] = [
+    EffectDef::Untap {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::IfCondition {
+        condition: &TEZZERET_TARGET_IS_AN_ARTIFACT_CREATURE,
+        then: &EffectDef::AddCounters {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            kind: CounterKind::PlusOnePlusOne,
+            amount: ValueDef::Constant(1),
+        },
+    },
+];
+
+/// A one-mana artifact, which is what the deck this is in is made of.
+static A_CHEAP_ARTIFACT_CARD: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::ManaValueAtMost(1),
+]);
+
+static AN_ARTIFACT_YOU_CONTROL_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        AN_ARTIFACT_YOU_CONTROL,
+    )];
+
+/// "If it's not a creature, it becomes a 0/0 Robot artifact creature." The
+/// counters go on first, so an artifact that was not a creature ends up a
+/// 3/3: the base is what changes, and the counters sit on top of it.
+static TEZZERET_ROBOT: [AppliedEffectDef; 3] = [
+    AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature)),
+    AppliedEffectDef::set_creature_types(CreatureTypeSetDef::named(&["Robot"])),
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(0), ValueDef::Constant(0)),
+];
+
+static TEZZERET_TARGET_IS_NOT_A_CREATURE: TriggerConditionDef =
+    TriggerConditionDef::TargetMatches {
+        slot: TargetIndex::PRIMARY,
+        object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+    };
+
+static TEZZERET_EMBLEM_EFFECTS: [EffectDef; 2] = [
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::IfCondition {
+        condition: &TEZZERET_TARGET_IS_NOT_A_CREATURE,
+        then: &EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::Composite(&TEZZERET_ROBOT),
+            duration: ResolvedEffectDurationDef::Permanent,
+        },
+    },
+];
+
+static TEZZERET_EMBLEM_ABILITIES: [AbilityDef; 1] = [AbilityDef::triggered_with_targets(
+    "At the beginning of combat on your turn, put three +1/+1 counters on target artifact you \
+     control. If it's not a creature, it becomes a 0/0 Robot artifact creature.",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::BeginningOfCombat,
+        player: PlayerRelation::You,
+    },
+    &AN_ARTIFACT_YOU_CONTROL_TARGET,
+    EffectDef::Sequence(&TEZZERET_EMBLEM_EFFECTS),
+)];
+
+static TEZZERET_EMBLEM: EmblemCharacteristics =
+    EmblemCharacteristics::new("Tezzeret, Cruel Captain emblem", &TEZZERET_EMBLEM_ABILITIES);
+
+static TEZZERET_ABILITIES: [AbilityDef; 4] = [
+    AbilityDef::triggered(
+        "Whenever an artifact you control enters, put a loyalty counter on Tezzeret.",
+        TriggerEventDef::zone_changed(AN_ARTIFACT_YOU_CONTROL, None, Some(ZoneKind::Battlefield)),
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::Source,
+            kind: CounterKind::Loyalty,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    AbilityDef::activated_with_targets(
+        "0: Untap target artifact or creature. If it\'s an artifact creature, put a +1/+1 counter \
+         on it.",
+        &[AbilityCostDef::Loyalty(0)],
+        &AN_ARTIFACT_OR_CREATURE,
+        EffectDef::Sequence(&TEZZERET_UNTAPS),
+    ),
+    AbilityDef::activated(
+        "−3: Search your library for an artifact card with mana value 1 or less, reveal it, put \
+         it into your hand, then shuffle.",
+        &[AbilityCostDef::Loyalty(-3)],
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: A_CHEAP_ARTIFACT_CARD,
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: true,
+            destination: ZoneKind::Hand,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+            attachment: None,
+            binding: None,
+            then: None,
+        },
+    ),
+    AbilityDef::activated(
+        "−7: You get an emblem with \"At the beginning of combat on your turn, put three +1/+1 \
+         counters on target artifact you control. If it\'s not a creature, it becomes a 0/0 Robot \
+         artifact creature.\"",
+        &[AbilityCostDef::Loyalty(-7)],
+        EffectDef::CreateEmblem {
+            emblem: TEZZERET_EMBLEM,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static TEZZERET_CRUEL_CAPTAIN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("02e8e540-8aa3-4e6a-9a11-c3949cab5f0f"),
     "Tezzeret, Cruel Captain",
-    crate::card::CardArt::new("02e8e540-8aa3-4e6a-9a11-c3949cab5f0f", "Chris Rahn"),
-    crate::card::CardSet::EdgeOfEternities,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("02e8e540-8aa3-4e6a-9a11-c3949cab5f0f", "Chris Rahn"),
+    CardSet::EdgeOfEternities,
+    // Three colourless for a planeswalker that an artifact deck keeps
+    // topping up, and whose zero is free every turn.
+    CardRules::new_planeswalker(mana_cost!("{3}"), &["Tezzeret"], 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&TEZZERET_ABILITIES),
 );
 
 // EOE 9 — Cosmogrand Zenith
