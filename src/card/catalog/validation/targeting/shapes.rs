@@ -82,6 +82,7 @@ fn target_matches_expectation(
             AbilityTargetPredicate::Object { .. }
                 | AbilityTargetPredicate::StackObject { .. }
                 | AbilityTargetPredicate::ControlledByTargetOf { .. }
+                | AbilityTargetPredicate::OwnedByTargetPlayer { .. }
         ),
         RecipientExpectation::Player => matches!(predicate, AbilityTargetPredicate::Player(_)),
     }
@@ -95,6 +96,7 @@ fn target_can_project(predicate: AbilityTargetPredicate, expected: RecipientExpe
             predicate,
             AbilityTargetPredicate::Object { .. }
                 | AbilityTargetPredicate::ControlledByTargetOf { .. }
+                | AbilityTargetPredicate::OwnedByTargetPlayer { .. }
         ),
     }
 }
