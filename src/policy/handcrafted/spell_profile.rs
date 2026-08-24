@@ -522,6 +522,7 @@ impl HandcraftedPolicy {
             | EffectDef::PairWithSource { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::CreateAttachedToken { .. }
+            | EffectDef::CreateTokenAttachedTo { .. }
             | EffectDef::CreateTokenCopyOf { .. }
             | EffectDef::Endure { .. }
             | EffectDef::CreateMyriadTokens

@@ -270,6 +270,14 @@ pub enum EffectDef {
     CreateAttachedToken {
         token: TokenCharacteristics,
     },
+    /// Creates one token already attached to what the clause names, which is
+    /// [`Self::CreateAttachedToken`] with the roles reversed: there the
+    /// resolving permanent is what moves. A Role token is created this way,
+    /// and carries its own enchant restriction because it is never cast.
+    CreateTokenAttachedTo {
+        token: TokenCharacteristics,
+        object: EffectRecipientDef,
+    },
     /// Creates a token copying the recipient's copiable values. Populate uses
     /// this after its generic choice has selected a creature token.
     CreateTokenCopyOf {
@@ -966,11 +974,10 @@ pub enum EffectDef {
     Tap {
         object: EffectRecipientDef,
     },
-    /// "Put it onto the battlefield, then <clause about it>."
-    ///
-    /// The clause is separate because what enters is a new object: a
-    /// following effect in a sequence would have nothing left to point at,
-    /// so the arrival is saved in `binding` for the clause that names it.
+    /// "Put it onto the battlefield, then <clause about it>." The clause is
+    /// separate because what enters is a new object: a following effect in a
+    /// sequence would have nothing left to point at, so the arrival is saved
+    /// in `binding` for the clause that names it.
     PutOntoBattlefieldThen {
         object: EffectRecipientDef,
         binding: ObjectSetBindingIndex,

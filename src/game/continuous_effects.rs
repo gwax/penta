@@ -625,6 +625,11 @@ impl Game {
                 | EffectDef::Attach { .. }
                 | EffectDef::PhaseOut { .. }
                 | EffectDef::CreateToken { .. }
+                // Both put something else onto a permanent rather than
+                // attaching the resolving object, which is the only kind of
+                // attachment an Aura's own spell procedure performs.
+                | EffectDef::CreateAttachedToken { .. }
+                | EffectDef::CreateTokenAttachedTo { .. }
                 | EffectDef::CreateTokenCopyOf { .. }
                 | EffectDef::StaticApply { .. }
                 | EffectDef::Apply { .. }

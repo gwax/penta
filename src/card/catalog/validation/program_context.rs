@@ -874,6 +874,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::Saddle { .. } => "Saddle",
         EffectDef::CreateToken { .. } => "CreateToken",
         EffectDef::CreateAttachedToken { .. } => "CreateAttachedToken",
+        EffectDef::CreateTokenAttachedTo { .. } => "CreateTokenAttachedTo",
         EffectDef::CreateTokenCopyOf { .. } => "CreateTokenCopyOf",
         EffectDef::Endure { .. } => "Endure",
         EffectDef::CreateMyriadTokens => "CreateMyriadTokens",

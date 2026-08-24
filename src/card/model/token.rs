@@ -5,7 +5,7 @@ use crate::ids::CardPartId;
 
 use super::{
     AbilityDef, CardArt, CardRules, CardSupertype, CardType, CardTypeSet, CreatureStats, ManaColor,
-    inline_rules::InlineRules,
+    ObjectPredicateDef, inline_rules::InlineRules,
 };
 
 fn derived_token_name(
@@ -162,6 +162,21 @@ impl TokenCharacteristics {
         )
     }
 
+    /// One noncreature enchantment token. A Role is one of these: an Aura
+    /// token, colorless, created already attached rather than cast.
+    #[must_use]
+    pub const fn enchantment(
+        subtypes: &'static [&'static str],
+        colors: &'static [ManaColor],
+    ) -> Self {
+        Self::new(
+            CardTypeSet::single(CardType::Enchantment),
+            subtypes,
+            colors,
+            None,
+        )
+    }
+
     #[must_use]
     pub const fn artifact(subtypes: &'static [&'static str], colors: &'static [ManaColor]) -> Self {
         Self::new(
@@ -199,6 +214,15 @@ impl TokenCharacteristics {
     #[must_use]
     pub const fn with_abilities(mut self, abilities: &'static [AbilityDef]) -> Self {
         self.rules = self.rules.with_abilities(abilities);
+        self
+    }
+
+    /// "Enchant creature". An Aura token is created already attached, so the
+    /// restriction on what it may be attached to is printed on the token
+    /// rather than read off the spell that made it.
+    #[must_use]
+    pub const fn enchanting(mut self, object: &'static ObjectPredicateDef) -> Self {
+        self.rules = self.rules.with_enchant(object);
         self
     }
 

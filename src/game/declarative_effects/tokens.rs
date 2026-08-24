@@ -10,6 +10,33 @@ use super::super::{EffectResolutionContext, Game, ScopedEffect, StackObject, Tar
 use crate::card::EffectDef;
 
 impl Game {
+    /// "Create a <token> attached to it." One host, because one token is
+    /// made: a clause naming several would have to say how many it makes.
+    fn resolve_token_attached_to(
+        &mut self,
+        token: crate::card::TokenCharacteristics,
+        recipient: crate::card::EffectRecipientDef,
+        scoped: ScopedEffect,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+    ) {
+        let Some(Target::Permanent(host)) = self
+            .effect_recipients(recipient, object, context, scoped)
+            .into_iter()
+            .next()
+        else {
+            return;
+        };
+        // A doubled token-creation makes the second one with nothing to
+        // attach to, which is what an Aura token arriving unattached already
+        // is: it is put into the graveyard by the ordinary Aura rule.
+        for extra in 1..self.tokens_created(object.controller, 1) {
+            let _ = extra;
+            self.create_token_from(object.controller, token, None);
+        }
+        self.create_token_attached_to(object.controller, token, host);
+    }
+
     pub(super) fn resolve_token_effect(
         &mut self,
         scoped: ScopedEffect,
@@ -80,6 +107,10 @@ impl Game {
                     self.create_attached_token(object.controller, token, source);
                 }
             }
+            EffectDef::CreateTokenAttachedTo {
+                token,
+                object: recipient,
+            } => self.resolve_token_attached_to(token, recipient, scoped, object, context),
             EffectDef::CreateTokenCopyOf {
                 object: recipient,
                 exceptions,

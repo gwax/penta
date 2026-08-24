@@ -91,6 +91,31 @@ impl Game {
         });
     }
 
+    /// A token that arrives already attached to a permanent that is
+    /// there. The mirror of [`Self::create_attached_token`], where the
+    /// resolving permanent is the one that moves.
+    pub(super) fn create_token_attached_to(
+        &mut self,
+        controller: PlayerId,
+        token: TokenCharacteristics,
+        host: GameObjectId,
+    ) {
+        let card = self.unbacked_token(controller, CharacteristicSource::Token(token));
+        let permanent = Permanent::entering_token(
+            card,
+            token,
+            controller,
+            self.turns_started[controller.index()],
+            self.turn,
+        );
+        self.enqueue_battlefield_entry(PendingBattlefieldEntry {
+            permanent,
+            from: ZoneKind::Stack,
+            completion: EntryCompletion::AttachToHost { host },
+            redirected_to: None,
+        });
+    }
+
     /// The same, for a token whose card says it arrives tapped.
     #[allow(clippy::too_many_arguments)]
     pub(super) fn create_token_arriving(

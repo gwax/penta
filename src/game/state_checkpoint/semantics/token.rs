@@ -57,9 +57,9 @@ pub(in crate::game::state_checkpoint) fn catalog_token_characteristics(
         TokenCharacteristicsLocator::EffectPath { effect_path, .. } => {
             let effect = effect_at_path(&creator, effect_path)?;
             match effect {
-                EffectDef::CreateToken { token, .. } | EffectDef::CreateAttachedToken { token } => {
-                    Some(token)
-                }
+                EffectDef::CreateToken { token, .. }
+                | EffectDef::CreateAttachedToken { token }
+                | EffectDef::CreateTokenAttachedTo { token, .. } => Some(token),
                 _ => None,
             }
         }

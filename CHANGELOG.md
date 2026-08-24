@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Role tokens: an Aura created already attached, and the rule that keeps
+  one.** A token can now be created attached to something the clause names --
+  the mirror of the living-weapon shape, where the resolving permanent is
+  what moves -- and such a token carries its own "enchant" restriction,
+  since it is never cast and has no spell target to read one from. A player
+  controlling two Roles on one permanent now keeps the newest and puts the
+  rest into the graveyard (CR 704.5s). Monstrous Rage prints all of it.
+
 - **One combat damage step is one event, and a delayed trigger can end with
   the turn.** Combat damage dealt to players is now published once for the
   whole step beside its per-source events, so "whenever one or more creatures

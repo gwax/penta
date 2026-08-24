@@ -202,6 +202,7 @@ impl Game {
             }
             EffectDef::CreateToken { .. }
             | EffectDef::CreateAttachedToken { .. }
+            | EffectDef::CreateTokenAttachedTo { .. }
             | EffectDef::CreateTokenCopyOf { .. } => {
                 self.resolve_token_effect(scoped, object, &context);
             }

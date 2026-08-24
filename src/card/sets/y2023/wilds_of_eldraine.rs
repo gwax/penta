@@ -5,8 +5,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityOperationDef, AbilityTargetDef, AbilityTargetPredicate,
     AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     CharacteristicOperationDef, CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectSetDef, PlayerRelation, PlayerSetDef, TriggerConditionDef, ValueDef,
-    ZoneKind,
+    ObjectQueryDef, ObjectSetDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
+    TokenCharacteristics, TriggerConditionDef, ValueDef, ZoneKind, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -52,13 +52,69 @@ pub(in crate::card::sets) static GNAWING_CRESCENDO: CardRecord = CardRecord::new
 );
 
 // WOE 142 — Monstrous Rage
-// Audit: metadata-only — Card rules have not been implemented.
+static MONSTER_ROLE_GRANT: AbilityDef = abilities::trample();
+
+/// What a Role may be attached to. Held as a static because the token
+/// carries it by reference.
+static ENCHANT_CREATURE: ObjectPredicateDef = ObjectPredicateDef::HasType(CardType::Creature);
+
+static MONSTER_ROLE_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+    AppliedEffectDef::add_ability(&MONSTER_ROLE_GRANT),
+];
+
+static MONSTER_ROLE_ABILITIES: [AbilityDef; 1] = [AbilityDef::static_ability(
+    "Enchanted creature gets +1/+1 and has trample.",
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::AttachedPermanent,
+        effect: AppliedEffectDef::Composite(&MONSTER_ROLE_BONUS),
+    },
+)];
+
+/// The Monster Role: an Aura token that is never cast, so it carries no
+/// enchant clause of its own -- what it attaches to is decided by the effect
+/// that creates it. Two Roles from one player on one creature is the older
+/// one's problem, which the Role rule settles.
+static MONSTER_ROLE: TokenCharacteristics =
+    TokenCharacteristics::enchantment(&["Aura", "Role"], &[])
+        .enchanting(&ENCHANT_CREATURE)
+        .with_abilities(&MONSTER_ROLE_ABILITIES);
+
+static A_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+/// The pump is until end of turn and the Role is not: the +2/+0 lapses with
+/// the turn and the +1/+1 stays for as long as the token does.
+static MONSTROUS_RAGE_EFFECT: EffectDef = EffectDef::Sequence(&[
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(2),
+            ValueDef::Constant(0),
+        ),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::CreateTokenAttachedTo {
+        token: MONSTER_ROLE,
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+]);
+
 pub(in crate::card::sets) static MONSTROUS_RAGE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("eef5a0ae-5907-42c9-a097-3f973737e392"),
     "Monstrous Rage",
-    crate::card::CardArt::new("eef5a0ae-5907-42c9-a097-3f973737e392", "Borja Pindado"),
-    crate::card::CardSet::WildsOfEldraine,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("eef5a0ae-5907-42c9-a097-3f973737e392", "Borja Pindado"),
+    CardSet::WildsOfEldraine,
+    // One mana for three power and trample this turn, two of which stay
+    // afterwards on the back of the Role.
+    CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Target creature gets +2/+0 until end of turn. Create a Monster Role token attached to \
+         it. (If you control another Role on it, put that one into the graveyard. Enchanted \
+         creature gets +1/+1 and has trample.)",
+        &A_CREATURE,
+        MONSTROUS_RAGE_EFFECT,
+    )),
 );
 
 // WOE 242 — Agatha's Soul Cauldron

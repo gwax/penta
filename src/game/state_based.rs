@@ -1,6 +1,6 @@
 use super::{
-    AppliedRuleDef, CardSupertype, CardType, CounterKind, Game, GameObjectId, GameResult, PlayerId,
-    TriggerEventDef, WinReason,
+    AppliedRuleDef, CardSupertype, CardType, CounterKind, Game, GameObjectId, GameResult,
+    ObjectKind, Permanent, PlayerId, TriggerEventDef, WinReason,
 };
 
 /// CR 704.5c. Ten is a rules constant, not a format setting: no supported
@@ -105,6 +105,7 @@ impl Game {
                 return;
             }
             self.apply_legend_rule();
+            self.apply_role_rule();
             if self.battlefield.len() == battlefield_len {
                 break;
             }
@@ -262,6 +263,57 @@ impl Game {
         for listener in listeners {
             self.capture_trigger(&listener.capture);
         }
+    }
+
+    /// CR 704.5s: a player controlling two or more Role tokens attached to
+    /// the same permanent keeps the newest and puts the rest into the
+    /// graveyard. Unlike the legend rule this asks nobody -- the rules name
+    /// which one stays -- and it is per host rather than per name, so the
+    /// same player may hold Roles on several creatures at once.
+    pub(super) fn apply_role_rule(&mut self) {
+        loop {
+            let mut extra: Option<GameObjectId> = None;
+            'search: for permanent in &self.battlefield {
+                let Some(host) = permanent.attached_to else {
+                    continue;
+                };
+                if !self.is_role_token(permanent) {
+                    continue;
+                }
+                for other in &self.battlefield {
+                    if other.card.id == permanent.card.id
+                        || other.controller != permanent.controller
+                        || other.attached_to != Some(host)
+                        || !self.is_role_token(other)
+                    {
+                        continue;
+                    }
+                    // The newest stays, and a token made later has the
+                    // larger identity.
+                    extra = Some(if permanent.card.id.0 > other.card.id.0 {
+                        other.card.id
+                    } else {
+                        permanent.card.id
+                    });
+                    break 'search;
+                }
+            }
+            let Some(extra) = extra else {
+                return;
+            };
+            self.move_permanents_to_graveyard(&[extra]);
+            if !self.pending_decisions.is_empty() || !self.pending_events.is_empty() {
+                return;
+            }
+        }
+    }
+
+    /// Whether this permanent is a Role token: the rule is about tokens
+    /// specifically, so an ordinary Aura that somehow had the subtype would
+    /// not be one.
+    fn is_role_token(&self, permanent: &Permanent) -> bool {
+        permanent.card.definition == ObjectKind::Token
+            && self.effective_subtypes(permanent).contains(&"Role")
     }
 
     /// The legend rule as a state-based action: a player controlling two or

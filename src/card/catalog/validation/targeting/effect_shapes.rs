@@ -253,6 +253,7 @@ fn validate_effect_target_shapes(
         EffectDef::DiscardCards { object }
         | EffectDef::Explore { object }
         | EffectDef::Regenerate { object }
+        | EffectDef::CreateTokenAttachedTo { object, .. }
         | EffectDef::Tap { object }
         | EffectDef::RemoveFromCombat { object }
         | EffectDef::Untap { object }

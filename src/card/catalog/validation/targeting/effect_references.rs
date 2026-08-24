@@ -192,6 +192,7 @@ fn validate_effect_references(
         | EffectDef::BuryGraveyard { player: object }
         | EffectDef::EmptyManaPool { player: object }
         | EffectDef::Regenerate { object }
+        | EffectDef::CreateTokenAttachedTo { object, .. }
         | EffectDef::Tap { object }
         | EffectDef::RemoveFromCombat { object }
         | EffectDef::SkipNextUntapSteps { object, .. }

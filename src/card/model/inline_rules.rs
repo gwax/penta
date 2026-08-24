@@ -1,7 +1,8 @@
 use std::hash::{Hash, Hasher};
 
 use super::{
-    AbilityDef, CardRules, CardSupertype, CardType, CardTypeSet, ColorSet, CreatureStats, ManaColor,
+    AbilityDef, CardRules, CardSupertype, CardType, CardTypeSet, ColorSet, CreatureStats,
+    ManaColor, ObjectPredicateDef,
 };
 
 /// Compact rules shared by inline virtual-object and face-down values.
@@ -17,6 +18,11 @@ pub(super) struct InlineRules {
     colors: ColorSet,
     creature_stats: Option<CreatureStats>,
     abilities: &'static [AbilityDef],
+    /// "Enchant creature" on an Aura that was never cast. A Role token is
+    /// created already attached, so its restriction has to be printed on it
+    /// rather than read off a spell's target. Held by reference to keep
+    /// these values inside their inline size budget.
+    enchant: Option<&'static ObjectPredicateDef>,
 }
 
 impl PartialEq for InlineRules {
@@ -26,6 +32,7 @@ impl PartialEq for InlineRules {
             && self.subtypes == other.subtypes
             && self.colors == other.colors
             && self.creature_stats == other.creature_stats
+            && self.enchant == other.enchant
             && std::ptr::eq(self.abilities, other.abilities)
     }
 }
@@ -39,6 +46,7 @@ impl Hash for InlineRules {
         self.subtypes.hash(state);
         self.colors.hash(state);
         self.creature_stats.hash(state);
+        self.enchant.hash(state);
         self.abilities.as_ptr().hash(state);
         self.abilities.len().hash(state);
     }
@@ -58,6 +66,7 @@ impl InlineRules {
             colors: ColorSet::from_colors(colors),
             creature_stats,
             abilities: &[],
+            enchant: None,
         }
     }
 
@@ -76,18 +85,27 @@ impl InlineRules {
         self
     }
 
+    pub(super) const fn with_enchant(mut self, object: &'static ObjectPredicateDef) -> Self {
+        self.enchant = Some(object);
+        self
+    }
+
     pub(super) const fn subtypes(self) -> &'static [&'static str] {
         self.subtypes
     }
 
     pub(super) const fn materialize(self) -> CardRules {
-        CardRules::from_inline_characteristics(
+        let rules = CardRules::from_inline_characteristics(
             self.card_types,
             self.supertypes,
             self.subtypes,
             self.colors,
             self.creature_stats,
             self.abilities,
-        )
+        );
+        match self.enchant {
+            Some(object) => rules.enchanting(*object),
+            None => rules,
+        }
     }
 }
