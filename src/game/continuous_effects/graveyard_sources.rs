@@ -32,7 +32,7 @@ impl<'a> StaticEffectSource<'a> {
 }
 
 impl Game {
-    fn graveyard_static_sources(&self) -> Vec<Permanent> {
+    pub(in crate::game) fn graveyard_static_sources(&self) -> Vec<Permanent> {
         [PlayerId::One, PlayerId::Two]
             .into_iter()
             .flat_map(|owner| {

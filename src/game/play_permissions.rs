@@ -10,11 +10,11 @@ use std::ops::ControlFlow;
 
 use super::{
     AppliedEffectDef, AppliedRuleDef, CardInstance, CharacteristicContext, DeclarativeAbilityDef,
-    Game, GameObjectId, PlayActionKind, PlayOptionDef, PlayerId,
+    Game, GameObjectId, Permanent, PlayActionKind, PlayOptionDef, PlayerId,
 };
 use crate::card::{
     AbilityDef, GraveyardPlayPermissionDef, ObjectPredicateDef, PlayRestrictionDef,
-    TopOfLibraryCostDef,
+    TopOfLibraryCostDef, ZoneKind,
 };
 
 /// One printed permission to play a card from a zone the ordinary rules
@@ -352,51 +352,84 @@ impl Game {
             );
             found?;
         }
-        for source in self.battlefield.iter().chain(self.emblems.iter()) {
-            let Some(rules) = self.effective_rules(source) else {
+        for source in &self.battlefield {
+            self.visit_static_play_permissions(
+                source,
+                Some(ZoneKind::Battlefield),
+                affected_player,
+                &mut visitor,
+            )?;
+        }
+        for source in &self.emblems {
+            self.visit_static_play_permissions(source, None, affected_player, &mut visitor)?;
+        }
+        // Reuse the shared graveyard static sources so play permissions have
+        // the same source identity and effective rules as other static effects.
+        let graveyard_sources = self.graveyard_static_sources();
+        for source in &graveyard_sources {
+            self.visit_static_play_permissions(
+                source,
+                Some(ZoneKind::Graveyard),
+                affected_player,
+                &mut visitor,
+            )?;
+        }
+        ControlFlow::Continue(())
+    }
+
+    fn visit_static_play_permissions(
+        &self,
+        source: &Permanent,
+        required_source_zone: Option<ZoneKind>,
+        affected_player: PlayerId,
+        visitor: &mut impl FnMut(GameObjectId, PlayPermission) -> ControlFlow<()>,
+    ) -> ControlFlow<()> {
+        let Some(rules) = self.effective_rules(source) else {
+            return ControlFlow::Continue(());
+        };
+        for ability in rules.ability_clauses() {
+            let DeclarativeAbilityDef::Static(definition) = ability.definition else {
                 continue;
             };
-            for ability in rules.ability_clauses() {
-                if !ability.is_executable()
-                    || !matches!(ability.definition, DeclarativeAbilityDef::Static(_))
-                {
-                    continue;
-                }
-                let Some(effect) = ability.declarative_effect() else {
-                    continue;
-                };
-                // "During your turn, ... have retrace": a permission can be
-                // gated, and a gate that is shut is not a permission at all.
-                let effect = match effect {
-                    super::EffectDef::IfCondition { condition, then }
-                        if self.trigger_condition_holds(
-                            condition,
-                            source.card.id,
-                            source.controller,
-                            super::TriggerContext::empty(),
-                            None,
-                            None,
-                        ) =>
-                    {
-                        *then
-                    }
-                    super::EffectDef::IfCondition { .. } => continue,
-                    effect => effect,
-                };
-                let super::EffectDef::StaticApply { recipient, effect } = effect else {
-                    continue;
-                };
-                if !self.static_player_recipient_matches(recipient, source, affected_player) {
-                    continue;
-                }
-                let mut found = ControlFlow::Continue(());
-                Self::visit_play_permission_components(effect, &mut |permission| {
-                    if found.is_continue() {
-                        found = visitor(source.card.id, permission);
-                    }
-                });
-                found?;
+            if !ability.is_executable()
+                || required_source_zone.is_some_and(|zone| !definition.source_zones.contains(&zone))
+            {
+                continue;
             }
+            let Some(effect) = ability.declarative_effect() else {
+                continue;
+            };
+            // "During your turn, ... have retrace": a permission can be
+            // gated, and a gate that is shut is not a permission at all.
+            let effect = match effect {
+                super::EffectDef::IfCondition { condition, then }
+                    if self.trigger_condition_holds(
+                        condition,
+                        source.card.id,
+                        source.controller,
+                        super::TriggerContext::empty(),
+                        None,
+                        None,
+                    ) =>
+                {
+                    *then
+                }
+                super::EffectDef::IfCondition { .. } => continue,
+                effect => effect,
+            };
+            let super::EffectDef::StaticApply { recipient, effect } = effect else {
+                continue;
+            };
+            if !self.static_player_recipient_matches(recipient, source, affected_player) {
+                continue;
+            }
+            let mut found = ControlFlow::Continue(());
+            Self::visit_play_permission_components(effect, &mut |permission| {
+                if found.is_continue() {
+                    found = visitor(source.card.id, permission);
+                }
+            });
+            found?;
         }
         ControlFlow::Continue(())
     }
