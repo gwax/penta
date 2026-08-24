@@ -4,8 +4,8 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet,
     CardSupertype, CardType, DrawEventMatcherDef, EffectDef, EffectRecipientDef,
-    InstalledTriggerDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    InstalledTriggerDef, ObjectPredicateDef, PlayerRelation, StackTargetKindDef, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -212,16 +212,101 @@ pub(in crate::card::sets) static TEAR_ASUNDER: CardRecord = CardRecord::new(
 );
 
 // DMU 339 — Ertai Resurrected
-// Audit: metadata-only — Card rules have not been implemented.
+/// "Spell, activated ability, or triggered ability" is every stack object
+/// there is: mana abilities never use the stack, so the wider slot needs no
+/// clause excluding them.
+static A_SPELL_OR_ABILITY: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::StackObject {
+        object: ObjectPredicateDef::Any,
+        controller: None,
+        kind: StackTargetKindDef::SpellOrAbility,
+    },
+)];
+
+/// "Another" is the exclusion; Ertai himself has just arrived, so without it
+/// he would be a legal answer to his own trigger.
+static ANOTHER_CREATURE_OR_PLANESWALKER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::HasType(CardType::Planeswalker),
+            ]),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
+/// Both modes pay the same compensation, and both read it off the target
+/// after that target is gone: the countered or destroyed object is retired
+/// with its controller recorded, which is what "its controller" wants.
+static ERTAI_MODES: [AbilityDef; 2] = [
+    AbilityDef::spell_with_targets(
+        "Counter target spell, activated ability, or triggered ability. Its controller draws a \
+         card.",
+        &A_SPELL_OR_ABILITY,
+        EffectDef::Sequence(&[
+            EffectDef::Counter {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
+            },
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ]),
+    ),
+    AbilityDef::spell_with_targets(
+        "Destroy another target creature or planeswalker. Its controller draws a card.",
+        &ANOTHER_CREATURE_OR_PLANESWALKER,
+        EffectDef::Sequence(&[
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: true,
+            },
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ]),
+    ),
+];
+
 pub(in crate::card::sets) static ERTAI_RESURRECTED: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("2c46a2ca-27fd-44d4-80d0-7c83ed0a564e"),
     "Ertai Resurrected",
-    crate::card::CardArt::new(
+    CardArt::new(
         "2c46a2ca-27fd-44d4-80d0-7c83ed0a564e",
         "Justin Hernandez & Alexis Hernandez",
     ),
-    crate::card::CardSet::DominariaUnited,
-    crate::card::CardRules::unsupported(),
+    CardSet::DominariaUnited,
+    // A flash body that answers something on the way in, and pays for the
+    // privilege with the card its victim's controller draws.
+    CardRules::new_creature(
+        mana_cost!("{2}{U}{B}"),
+        &["Phyrexian", "Human", "Wizard"],
+        3,
+        2,
+    )
+    .with_supertype(CardSupertype::Legendary)
+    .with_abilities(&[
+        abilities::flash(),
+        AbilityDef::modal_triggered_up_to_one(
+            "When this creature enters, choose up to one —\n• Counter target spell, activated \
+             ability, or triggered ability. Its controller draws a card.\n• Destroy another \
+             target creature or planeswalker. Its controller draws a card.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &ERTAI_MODES,
+        ),
+    ]),
 );
 
 // DMU 387 — Leyline Binding (alternate printing)

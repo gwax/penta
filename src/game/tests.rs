@@ -351,6 +351,7 @@ mod vintage_cube_emperor_of_bones;
 mod vintage_cube_endurance;
 mod vintage_cube_enduring_innocence;
 mod vintage_cube_ephemerate;
+mod vintage_cube_ertai_resurrected;
 mod vintage_cube_eternal_witness;
 mod vintage_cube_exhume;
 mod vintage_cube_expedition_map;

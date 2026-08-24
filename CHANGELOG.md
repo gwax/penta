@@ -25,6 +25,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Choose up to one" on a triggered ability.** A modal trigger settles its
+  mode as it is put onto the stack, and a minimum of zero now makes declining
+  every mode an answer in its own right: the question is asked even when only
+  one mode is executable, and a trigger placed with no mode goes onto the
+  stack carrying nothing. Ertai Resurrected is the first card to print it.
+
 - **Predicate-driven blocking restrictions and declaration costs.** Blocking
   now uses the same declarative shape as attacking: a rule records which side
   of the block carries it, predicates the creature on the other side, and can

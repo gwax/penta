@@ -189,7 +189,13 @@ impl Game {
             .enumerate()
             .filter(|(_, mode)| mode.is_executable())
             .collect::<Vec<_>>();
-        let Some((only, _)) = offered.first().filter(|_| offered.len() == 1) else {
+        // "Choose up to one" makes declining an answer in its own right, so
+        // a lone executable mode is still a question worth asking.
+        let required = usize::from(modal.minimum.min(1));
+        let Some((only, _)) = offered
+            .first()
+            .filter(|_| offered.len() == 1 && required == 1)
+        else {
             if offered.is_empty() {
                 let mut continued = vec![trigger];
                 continued.extend(pending);
@@ -221,10 +227,14 @@ impl Game {
                         player: trigger.controller,
                         kind: DecisionKind::TriggerPlacement,
                         order_semantics: None,
-                        prompt: format!("{source_name}: choose one"),
+                        prompt: if required == 1 {
+                            format!("{source_name}: choose one")
+                        } else {
+                            format!("{source_name}: choose up to one")
+                        },
                         visibility: DecisionVisibility::Public,
                         preference: DecisionPreference::Neutral,
-                        minimum: 1,
+                        minimum: required,
                         maximum: 1,
                         cancellable: false,
                         options,

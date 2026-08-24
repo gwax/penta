@@ -876,10 +876,12 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     .condition
                     .is_none_or(|condition| shared_trigger_condition(*condition))
                 && definition.modes.is_none_or(|modal| {
-                    // One mode, because a trigger carries one program: what
-                    // placement puts on the stack is the mode's own effect
-                    // and targets.
-                    modal.minimum == 1
+                    // At most one mode, because a trigger carries one
+                    // program: what placement puts on the stack is the
+                    // mode's own effect and targets. A minimum of zero is
+                    // the printed "choose up to one", where declining
+                    // leaves the trigger carrying nothing.
+                    modal.minimum <= 1
                         && modal.maximum == 1
                         && !modal.may_repeat
                         && modal.additional_cost.is_none()
