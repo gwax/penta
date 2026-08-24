@@ -456,6 +456,7 @@ mod vintage_cube_multiversal_passage;
 mod vintage_cube_mystic_confluence;
 mod vintage_cube_natural_order;
 mod vintage_cube_necromancy;
+mod vintage_cube_nethergoyf;
 mod vintage_cube_nights_whisper;
 mod vintage_cube_ninjutsu;
 mod vintage_cube_nissa;

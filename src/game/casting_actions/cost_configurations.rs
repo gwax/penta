@@ -165,7 +165,9 @@ impl Game {
             crate::card::SpellAdditionalCostCountDef::ModesBeyondFirst => {
                 usize::from(cost.count).saturating_mul(scale.modes.saturating_sub(1))
             }
-            crate::card::SpellAdditionalCostCountDef::TotalManaValueAtLeast(_) => remaining,
+            // Both open-ended measures take whatever the payment had left.
+            crate::card::SpellAdditionalCostCountDef::TotalManaValueAtLeast(_)
+            | crate::card::SpellAdditionalCostCountDef::CardTypesAtLeast(_) => remaining,
         }
     }
 
@@ -251,6 +253,9 @@ impl Game {
         {
             return self.mana_value_combinations(&candidates, u16::from(total));
         }
+        if let crate::card::SpellAdditionalCostCountDef::CardTypesAtLeast(types) = cost.counted {
+            return self.card_type_combinations(&candidates, u16::from(types));
+        }
         let required = match cost.counted {
             crate::card::SpellAdditionalCostCountDef::Printed => usize::from(cost.count),
             crate::card::SpellAdditionalCostCountDef::ChosenX => usize::from(scale.x),
@@ -259,7 +264,8 @@ impl Game {
             crate::card::SpellAdditionalCostCountDef::ModesBeyondFirst => {
                 usize::from(cost.count).saturating_mul(scale.modes.saturating_sub(1))
             }
-            crate::card::SpellAdditionalCostCountDef::TotalManaValueAtLeast(_) => 0,
+            crate::card::SpellAdditionalCostCountDef::TotalManaValueAtLeast(_)
+            | crate::card::SpellAdditionalCostCountDef::CardTypesAtLeast(_) => 0,
         };
         Self::object_combinations(&candidates, required)
     }
@@ -306,6 +312,57 @@ impl Game {
                         .position(|candidate| candidate == id)
                         .map_or(0, |index| values[index]);
                     sum.saturating_sub(value) < total
+                });
+                if minimal {
+                    payments.push(combination);
+                }
+            }
+        }
+        payments
+    }
+
+    /// Every way to reach `types` distinct card types between the chosen
+    /// cards, minimal in the same sense the mana-value search is: a set
+    /// counts only if dropping any one of its cards would leave it short.
+    /// One Artifact Creature Land pays for three of them at once, which is
+    /// what makes the cost cheap in the deck that wants it.
+    fn card_type_combinations(
+        &self,
+        candidates: &[GameObjectId],
+        types: u16,
+    ) -> Vec<Vec<GameObjectId>> {
+        let sets = candidates
+            .iter()
+            .map(|id| {
+                self.card_in_nonbattlefield_zone(*id)
+                    .and_then(|(_, card)| self.catalog.get(card.definition))
+                    .map_or_else(crate::card::CardTypeSet::empty, |definition| {
+                        definition.rules.types()
+                    })
+            })
+            .collect::<Vec<_>>();
+        let union = |combination: &[GameObjectId]| {
+            combination
+                .iter()
+                .filter_map(|id| candidates.iter().position(|candidate| candidate == id))
+                .fold(crate::card::CardTypeSet::empty(), |seen, index| {
+                    seen.union(sets[index])
+                })
+        };
+        let mut payments = Vec::new();
+        for size in 1..=candidates.len() {
+            for combination in Self::object_combinations(candidates, size) {
+                if union(&combination).count() < types {
+                    continue;
+                }
+                // Minimal: with any one card taken out it no longer reaches.
+                let minimal = combination.iter().all(|dropped| {
+                    let without = combination
+                        .iter()
+                        .copied()
+                        .filter(|id| id != dropped)
+                        .collect::<Vec<_>>();
+                    union(&without).count() < types
                 });
                 if minimal {
                     payments.push(combination);

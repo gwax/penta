@@ -458,13 +458,56 @@ pub(in crate::card::sets) static EMPEROR_OF_BONES: CardRecord = CardRecord::new_
 );
 
 // MH3 103 — Nethergoyf
-// Audit: metadata-only — Card rules have not been implemented.
+// Audit: partial — Power and toughness are a battlefield-only continuous effect rather than a characteristic-defining ability, so another zone reads the printed 0/1.
+/// The escape cost counts card types rather than cards: one Artifact
+/// Creature Land pays three quarters of it by itself, which is why the deck
+/// playing this is the one with a graveyard full of odd things.
+static NETHERGOYF_ESCAPE_COST: SpellAdditionalCostDef =
+    SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Graveyard, 0)
+        .counted(SpellAdditionalCostCountDef::CardTypesAtLeast(4))
+        .spent(SpendModeDef::Exile);
+
+static NETHERGOYF_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::static_ability(
+        "This creature\'s power is equal to the number of card types among cards in your \
+         graveyard and its toughness is equal to that number plus 1.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Source,
+            // The printed 0/1 carries the "plus 1", so the counted part is
+            // the same number on both sides -- the way Barrowgoyf reads it.
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::CardTypesAmongGraveyards(PlayerRelation::You),
+                ValueDef::CardTypesAmongGraveyards(PlayerRelation::You),
+            ),
+        },
+    )
+    .with_coverage(AbilityCoverageDef::partial(
+        "A characteristic-defining ability sets power and toughness in every zone. This is a \
+         battlefield-only continuous effect, so the value is right wherever the card is played \
+         and absent for anything reading it in another zone.",
+    )),
+    AbilityDef::alternative_cast(
+        mana_cost!("{2}{B}"),
+        AlternativeCastKindDef::Escape,
+        Some(
+            "Escape—{2}{B}, Exile any number of other cards from your graveyard with four or \
+             more card types among them. (You may cast this card from your graveyard for its \
+             escape cost.)",
+        ),
+        EffectDef::None,
+    )
+    .with_alternative_additional_cost(&NETHERGOYF_ESCAPE_COST),
+];
+
 pub(in crate::card::sets) static NETHERGOYF: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("3ee3945e-5089-4751-b7b3-5961c39d2a33"),
     "Nethergoyf",
-    crate::card::CardArt::new("3ee3945e-5089-4751-b7b3-5961c39d2a33", "Xavier Ribeiro"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("3ee3945e-5089-4751-b7b3-5961c39d2a33", "Xavier Ribeiro"),
+    CardSet::ModernHorizons3,
+    // One mana for whatever the graveyard has made of it, and the graveyard
+    // pays a second time to buy it back.
+    CardRules::new_creature(mana_cost!("{B}"), &["Lhurgoyf"], 0, 1)
+        .with_abilities(&NETHERGOYF_ABILITIES),
 );
 
 // MH3 106 — Retrofitted Transmogrant

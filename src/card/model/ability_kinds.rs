@@ -82,6 +82,11 @@ pub enum SpellAdditionalCostCountDef {
     /// many that takes is whatever the graveyard makes it -- one card of
     /// mana value six, or six of one.
     TotalManaValueAtLeast(u8),
+    /// "With four or more card types among them": the same shape measured a
+    /// different way. What the chosen cards have to reach between them is a
+    /// count of distinct card types, so one Artifact Creature Land pays as
+    /// much of it as three separate cards would.
+    CardTypesAtLeast(u8),
 }
 
 /// An additional cost that selects objects to spend. The zone decides what
