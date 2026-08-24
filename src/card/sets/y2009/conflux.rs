@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectRefDef, PlayerRefDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef,
+    BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PlayerRefDef,
+    PlayerRelation, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -95,13 +96,72 @@ pub(in crate::card::sets) static NOBLE_HIERARCH: CardRecord = CardRecord::new(
 );
 
 // CON 113 — Knight of the Reliquary
-// Audit: metadata-only — Card rules have not been implemented.
+/// Land cards rather than creature cards, and your own graveyard: what she
+/// sacrifices to fetch is what makes her bigger, so each activation pays
+/// twice.
+static RELIQUARY_LAND_CARDS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Land),
+    &[ZoneKind::Graveyard],
+    PlayerRelation::You,
+);
+
+/// A Forest or a Plains by basic land type rather than by name, so a dual
+/// with either type pays for her too.
+static A_FOREST_OR_PLAINS: ObjectPredicateDef =
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest, BasicLandType::Plains]);
+
+static KNIGHT_FETCH_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::TapSource,
+    AbilityCostDef::SacrificePermanent {
+        object: A_FOREST_OR_PLAINS,
+        controller: PlayerRelation::You,
+    },
+];
+
+static KNIGHT_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::static_ability(
+        "This creature gets +1/+1 for each land card in your graveyard.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::CountMatchingObjects(&RELIQUARY_LAND_CARDS),
+                ValueDef::CountMatchingObjects(&RELIQUARY_LAND_CARDS),
+            ),
+        },
+    ),
+    AbilityDef::activated(
+        "{T}, Sacrifice a Forest or Plains: Search your library for a land card, put it onto the \
+         battlefield, then shuffle.",
+        &KNIGHT_FETCH_COST,
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::HasType(CardType::Land),
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: false,
+            destination: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            // Untapped, unlike the Wight's: the land she finds can be used
+            // the turn it arrives.
+            enters_tapped: false,
+            attachment: None,
+            binding: None,
+            then: None,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static KNIGHT_OF_THE_RELIQUARY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ad8b8518-c09e-4cb7-95b2-08e4e370d89c"),
     "Knight of the Reliquary",
-    crate::card::CardArt::new("ad8b8518-c09e-4cb7-95b2-08e4e370d89c", "Michael Komarck"),
-    crate::card::CardSet::Conflux,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("ad8b8518-c09e-4cb7-95b2-08e4e370d89c", "Michael Komarck"),
+    CardSet::Conflux,
+    // Three mana for a body that grows a point every time it fetches, which
+    // is what makes the utility lands in the deck worth a card each.
+    CardRules::new_creature(mana_cost!("{1}{G}{W}"), &["Human", "Knight"], 2, 2)
+        .with_abilities(&KNIGHT_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =
