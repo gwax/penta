@@ -478,6 +478,12 @@ fn shared_static_applied_rule(recipient: EffectRecipientDef, rule: AppliedRuleDe
             matches!(recipient.0, EffectRecipientSetDef::Players(_))
                 && shared_object_predicate(restriction.object)
         }
+        // Read where a cast is offered, against the card being cast, so what
+        // it names has to be answerable there the same way.
+        AppliedRuleDef::MayCastAsThoughItHadFlash(object) => {
+            matches!(recipient.0, EffectRecipientSetDef::Players(_))
+                && shared_object_predicate(object)
+        }
         _ => true,
     }
 }

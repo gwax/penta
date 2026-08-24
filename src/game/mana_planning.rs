@@ -488,6 +488,11 @@ impl Game {
             return false;
         };
         self.visit_play_restrictions(controller, |applied| {
+            // A sorcery-speed restriction bars nothing at the moments a
+            // sorcery could be cast, which is the whole of what it says.
+            if applied.restriction.only_at_sorcery_speed && self.sorcery_speed_window(controller) {
+                return ControlFlow::Continue(());
+            }
             if applied.restriction.action.matches(option.action)
                 && self.trigger_object_matches(
                     applied.restriction.object,

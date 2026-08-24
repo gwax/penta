@@ -579,6 +579,9 @@ fn validate_resolving_applied_effect(
         AppliedEffectDef::Rule(
             AppliedRuleDef::CannotPlay(_)
             | AppliedRuleDef::MayPlayFromGraveyard(_)
+            // A timing permission is aimed at a player the same way a
+            // prohibition is: no object has a casting window of its own.
+            | AppliedRuleDef::MayCastAsThoughItHadFlash(_)
             | AppliedRuleDef::RedirectDamageFromTo { .. },
         ) => {
             if matches!(recipient.0, EffectRecipientSetDef::Objects(_)) {

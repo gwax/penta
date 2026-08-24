@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Casting windows can be taken away and handed out.** A play restriction
+  can now be narrowed to the moments its player could cast a sorcery, which
+  is what "can cast spells only any time they could cast a sorcery" prints;
+  and a player can hold a permission to cast matching spells as though they
+  had flash, for whatever duration granted it. Unlike the counted grant that
+  covers one sorcery, the permission is spent by nothing and lasts on its
+  own terms. Teferi, Time Raveler prints both halves.
+
 - **A printed "while" clause is part of the event.** A trigger can now carry
   a condition checked where its event is matched and never rechecked as the
   ability resolves, which is the difference between "attacks while you have

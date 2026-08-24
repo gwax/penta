@@ -454,6 +454,11 @@ pub enum AppliedRuleDef {
         matcher: DamageEventMatcherDef,
         limit: DamageLimitDef,
     },
+    /// "You may cast <these> spells as though they had flash." A timing
+    /// permission rather than a granted keyword: nothing about the card
+    /// changes, and the permission belongs to the player it was given to for
+    /// as long as its own duration lasts.
+    MayCastAsThoughItHadFlash(ObjectPredicateDef),
     /// An unlimited prevention rule derived live while this static applied
     /// effect exists. Two-sided prevention is an
     /// [`AppliedEffectDef::Composite`] of source and recipient matchers.
@@ -535,6 +540,11 @@ impl PlayActionMatcherDef {
 pub struct PlayRestrictionDef {
     pub action: PlayActionMatcherDef,
     pub object: ObjectPredicateDef,
+    /// "... only any time they could cast a sorcery." A timing restriction
+    /// rather than a flat prohibition: matching plays are barred only at the
+    /// moments a sorcery could not be cast, which is every moment except the
+    /// player's own main phase with an empty stack.
+    pub only_at_sorcery_speed: bool,
 }
 
 /// What a spell cast off the top of a library costs its caster.
@@ -592,7 +602,20 @@ impl GraveyardPlayPermissionDef {
 impl PlayRestrictionDef {
     #[must_use]
     pub const fn new(action: PlayActionMatcherDef, object: ObjectPredicateDef) -> Self {
-        Self { action, object }
+        Self {
+            action,
+            object,
+            only_at_sorcery_speed: false,
+        }
+    }
+
+    /// The same restriction, narrowed to the moments a sorcery could not be
+    /// cast. This is what "can cast spells only any time they could cast a
+    /// sorcery" prints.
+    #[must_use]
+    pub const fn only_at_sorcery_speed(mut self) -> Self {
+        self.only_at_sorcery_speed = true;
+        self
     }
 }
 

@@ -675,12 +675,14 @@ fn validate_applied_effect_shapes(
             }
             Ok(())
         }
-        // A grant over a whole graveyard names the player whose graveyard
-        // it is, the same way the permissions below name a player.
-        AppliedEffectDef::Rule(AppliedRuleDef::GrantsAlternativeCastFromGraveyard {
-            object,
-            ..
-        }) => {
+        // A grant over a whole graveyard names the player whose graveyard it
+        // is, the same way the permissions below name a player. A timing
+        // permission names its player for the same reason: no object has a
+        // casting window of its own.
+        AppliedEffectDef::Rule(
+            AppliedRuleDef::GrantsAlternativeCastFromGraveyard { object, .. }
+            | AppliedRuleDef::MayCastAsThoughItHadFlash(object),
+        ) => {
             validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
             validate_object_predicate_shape(object, targets)
         }

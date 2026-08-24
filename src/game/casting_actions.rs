@@ -19,6 +19,12 @@ mod mana_payments;
 pub(in crate::game) use cost_configurations::CastScale;
 
 impl Game {
+    /// Whether this player could cast a sorcery right now: their own main
+    /// phase, with nothing waiting on the stack (CR 307.1).
+    pub(super) fn sorcery_speed_window(&self, player: PlayerId) -> bool {
+        player == self.active_player && self.step.is_main() && self.stack.is_empty()
+    }
+
     pub(super) fn add_land_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
         let state = &self.players[player.index()];
         if player != self.active_player
@@ -245,9 +251,13 @@ impl Game {
                     }),
                 };
                 // A granted flash covers the next sorcery whenever it is
-                // cast, so it only matters when the timing would refuse.
-                let granted_flash = types.contains(CardType::Sorcery)
-                    && self.sorcery_flash_grants[player.index()] > 0;
+                // cast, so it only matters when the timing would refuse. The
+                // counted grant is spent by one spell; a permission that
+                // names what it covers lasts for its own duration and is
+                // spent by nothing.
+                let granted_flash = (types.contains(CardType::Sorcery)
+                    && self.sorcery_flash_grants[player.index()] > 0)
+                    || self.cast_as_though_it_had_flash(card, player, option);
                 // An offer made during a resolution is answered then or not
                 // at all (CR 608.2f), so it ignores the timing the card's
                 // type would otherwise impose -- which is the only way a
@@ -257,9 +267,7 @@ impl Game {
                     && !types.contains(CardType::Instant)
                     && !part_has_flash
                     && !granted_flash
-                    && (player != self.active_player
-                        || !self.step.is_main()
-                        || !self.stack.is_empty())
+                    && !self.sorcery_speed_window(player)
                 {
                     continue;
                 }

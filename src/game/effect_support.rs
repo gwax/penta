@@ -376,6 +376,7 @@ impl Game {
         match rule {
             AppliedRuleDef::MayPlayFromGraveyard(_)
             | AppliedRuleDef::MayPlayFromTopOfLibrary { .. }
+            | AppliedRuleDef::MayCastAsThoughItHadFlash(_)
             | AppliedRuleDef::GrantsAlternativeCastFromGraveyard { .. } => {
                 if let Target::Player(affected_player) = target {
                     self.resolved_play_permissions.push(ResolvedPlayPermission {

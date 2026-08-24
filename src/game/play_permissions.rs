@@ -33,6 +33,9 @@ pub(super) enum PlayPermission {
         object: ObjectPredicateDef,
         ability: &'static AbilityDef,
     },
+    /// Not a permission to play from a zone but one to play at a time: the
+    /// matching spells may be cast whenever an instant could be.
+    AsThoughItHadFlash(ObjectPredicateDef),
 }
 
 impl PlayPermission {
@@ -40,7 +43,7 @@ impl PlayPermission {
         match self {
             Self::Graveyard(permission) => Some(permission.restriction),
             Self::TopOfLibrary { restriction, .. } => Some(restriction),
-            Self::GraveyardAlternativeCast { .. } => None,
+            Self::GraveyardAlternativeCast { .. } | Self::AsThoughItHadFlash(_) => None,
         }
     }
 }
@@ -96,6 +99,36 @@ impl Game {
         }
     }
 
+    /// Whether a permission lets this player cast this card as though it had
+    /// flash. Such a permission names what it covers with a predicate of its
+    /// own rather than through a play restriction: what it grants is a time
+    /// rather than a zone, so there is no play action to match.
+    pub(super) fn cast_as_though_it_had_flash(
+        &self,
+        card: &CardInstance,
+        player: PlayerId,
+        option: &PlayOptionDef,
+    ) -> bool {
+        let context = CharacteristicContext::Stack {
+            form: option.form.clone(),
+        };
+        let Some(object) =
+            self.printed_trigger_event_object(card.id, card.definition, player, &context)
+        else {
+            return false;
+        };
+        self.visit_play_permissions(player, |source, permission| {
+            if let PlayPermission::AsThoughItHadFlash(wanted) = permission
+                && self.trigger_object_matches(wanted, &object, source, true)
+            {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .is_break()
+    }
+
     /// Whether this player may play this card out of a graveyard right now.
     pub(super) fn graveyard_play_is_permitted(
         &self,
@@ -119,7 +152,9 @@ impl Game {
     ) -> Option<TopOfLibraryCostDef> {
         self.matching_play_permission(card, player, option, |permission| match permission {
             PlayPermission::TopOfLibrary { cost, .. } => Some(cost),
-            PlayPermission::Graveyard(_) | PlayPermission::GraveyardAlternativeCast { .. } => None,
+            PlayPermission::Graveyard(_)
+            | PlayPermission::GraveyardAlternativeCast { .. }
+            | PlayPermission::AsThoughItHadFlash(_) => None,
         })
     }
 
@@ -390,6 +425,9 @@ impl Game {
                 ability,
             }) => {
                 visitor(PlayPermission::GraveyardAlternativeCast { object, ability });
+            }
+            AppliedEffectDef::Rule(AppliedRuleDef::MayCastAsThoughItHadFlash(object)) => {
+                visitor(PlayPermission::AsThoughItHadFlash(object));
             }
             _ => {}
         }

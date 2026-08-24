@@ -447,6 +447,8 @@ fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRule
         | AppliedRuleDef::RevealsDrawnCards
         | AppliedRuleDef::DoublesTokensCreated
         | AppliedRuleDef::CannotPlay(_)
+        // A timing permission belongs to a player too.
+        | AppliedRuleDef::MayCastAsThoughItHadFlash(_)
         | AppliedRuleDef::MayPlayFromGraveyard(_)
         | AppliedRuleDef::MayPlayFromTopOfLibrary { .. }
         | AppliedRuleDef::GrantsAlternativeCastFromGraveyard { .. }

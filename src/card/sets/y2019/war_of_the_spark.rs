@@ -447,13 +447,89 @@ pub(in crate::card::sets) static TAMIYO_COLLECTOR_OF_TALES: CardRecord =
     ));
 
 // WAR 221 — Teferi, Time Raveler
-// Audit: metadata-only — Card rules have not been implemented.
+/// Every spell, restricted to the moments its caster could cast a sorcery.
+/// The restriction is the whole clause: it bars nothing during their own
+/// main phase with an empty stack, and everything else.
+static ONLY_AT_SORCERY_SPEED: PlayRestrictionDef =
+    PlayRestrictionDef::new(PlayActionMatcherDef::CastSpell, ObjectPredicateDef::Any)
+        .only_at_sorcery_speed();
+
+/// The mirror of the static, pointed at his own controller and at sorceries
+/// alone. A permission rather than a granted keyword: nothing about the
+/// cards changes, so a sorcery countered by something reading its keywords
+/// still has none.
+static SORCERIES_AS_THOUGH_THEY_HAD_FLASH: AppliedEffectDef = AppliedEffectDef::Rule(
+    AppliedRuleDef::MayCastAsThoughItHadFlash(ObjectPredicateDef::HasType(CardType::Sorcery)),
+);
+
+static AN_ARTIFACT_CREATURE_OR_ENCHANTMENT: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Artifact),
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::HasType(CardType::Enchantment),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    1,
+)];
+
+/// The draw is not conditional on the bounce: "up to one" target means the
+/// ability resolves and draws whether or not anything was named.
+static TEFERI_BOUNCES_AND_DRAWS: EffectDef = EffectDef::Sequence(&[
+    EffectDef::MoveToZone {
+        counters: None,
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        zone: ZoneKind::Hand,
+        controller: None,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        attachment: None,
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+]);
+
+static TEFERI_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::static_ability(
+        "Each opponent can cast spells only any time they could cast a sorcery.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::Opponent)),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(ONLY_AT_SORCERY_SPEED)),
+        },
+    ),
+    AbilityDef::activated(
+        "+1: Until your next turn, you may cast sorcery spells as though they had flash.",
+        &[AbilityCostDef::Loyalty(1)],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Controller,
+            effect: SORCERIES_AS_THOUGH_THEY_HAD_FLASH,
+            duration: ResolvedEffectDurationDef::UntilYourNextTurn,
+        },
+    ),
+    AbilityDef::activated_with_targets(
+        "\u{2212}3: Return up to one target artifact, creature, or enchantment to its owner's \
+         hand. Draw a card.",
+        &[AbilityCostDef::Loyalty(-3)],
+        &AN_ARTIFACT_CREATURE_OR_ENCHANTMENT,
+        TEFERI_BOUNCES_AND_DRAWS,
+    ),
+];
+
 pub(in crate::card::sets) static TEFERI_TIME_RAVELER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5cb76266-ae50-4bbc-8f96-d98f309b02d3"),
     "Teferi, Time Raveler",
-    crate::card::CardArt::new("5cb76266-ae50-4bbc-8f96-d98f309b02d3", "Chris Rallis"),
-    crate::card::CardSet::WarOfTheSpark,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("5cb76266-ae50-4bbc-8f96-d98f309b02d3", "Chris Rallis"),
+    CardSet::WarOfTheSpark,
+    // Three mana that takes the other player's instant speed away and hands
+    // it to you, with a bounce-and-draw underneath it.
+    CardRules::new_planeswalker(mana_cost!("{1}{W}{U}"), &["Teferi"], 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&TEFERI_ABILITIES),
 );
 
 // WAR 222 — Tenth District Legionnaire
