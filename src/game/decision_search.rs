@@ -193,7 +193,13 @@ impl Game {
         let maximum = maximum.min(options.len()).max(minimum);
         self.queue_decision(
             player,
-            "Choose an owned card to put into your hand",
+            match destination {
+                ZoneKind::Battlefield => "Choose an owned card to put onto the battlefield",
+                ZoneKind::Graveyard => "Choose an owned card to put into your graveyard",
+                ZoneKind::Exile => "Choose an owned card to exile",
+                ZoneKind::Library => "Choose an owned card to put into your library",
+                _ => "Choose an owned card to put into your hand",
+            },
             if sources.iter().any(|source| {
                 matches!(
                     source,

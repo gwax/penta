@@ -946,13 +946,48 @@ pub(in crate::card::sets) static SANDBAR_SERPENT: CardRecord = CardRecord::new(
 );
 
 // USG 96 — Show and Tell
-// Audit: metadata-only — Card rules have not been implemented.
+/// Each player looks only at their own hand, and what they put down arrives
+/// under their own control. The active player chooses first and the other
+/// knows what they chose (CR 101.4a); what this cannot do is land both
+/// cards at the same instant, so the first is already a permanent as the
+/// second is chosen.
+static SHOW_AND_TELL_EACH_HAND: [CardChoiceSourceDef; 1] =
+    [CardChoiceSourceDef::Zone(ZoneKind::Hand)];
+
+/// Everything a permanent card can be except a planeswalker or a battle,
+/// which is what the card listed before either existed.
+static A_PERMANENT_CARD_IT_NAMES: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::HasType(CardType::Enchantment),
+    ObjectPredicateDef::HasType(CardType::Land),
+]);
+
 pub(in crate::card::sets) static SHOW_AND_TELL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4b851c17-55ed-4671-b471-dc7b34944432"),
     "Show and Tell",
-    crate::card::CardArt::new("4b851c17-55ed-4671-b471-dc7b34944432", "Jeff Laubenstein"),
-    crate::card::CardSet::UrzasSaga,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("4b851c17-55ed-4671-b471-dc7b34944432", "Jeff Laubenstein"),
+    CardSet::UrzasSaga,
+    // Three mana to skip the mana cost of the biggest thing in your deck,
+    // and to let them do it too -- which the deck playing it is built to
+    // win anyway.
+    CardRules::new_sorcery(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell(
+        "Each player may put an artifact, creature, enchantment, or land card from their hand \
+         onto the battlefield.",
+        EffectDef::ChooseCards {
+            player: EffectRecipientDef::players(PlayerSetDef::All),
+            sources: &SHOW_AND_TELL_EACH_HAND,
+            object: A_PERMANENT_CARD_IT_NAMES,
+            // "May": nobody has to, and a player with nothing it names is
+            // never asked.
+            minimum: 0,
+            maximum: 1,
+            reveal: false,
+            destination: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            arrival_effect: None,
+        },
+    )),
 );
 
 // USG 97 — Somnophore
