@@ -11,9 +11,10 @@ use crate::card::{
     CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
     ConditionalValueDef, ControlDurationDef, CostModificationDef, CounterKind,
     DamageEventMatcherDef, DestroyFollowUpDef, DiscardSelectionDef, EffectDef, EffectExecutionDef,
-    EffectPaymentDef, EffectRecipientDef, HalvedValueDef, KeywordAbility, ManaColor, MillUntilDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, QuantifierDef, ReplacementConditionDef, ReplacementEffectDef,
+    EffectPaymentDef, EffectRecipientDef, GraveyardPlayPermissionDef, HalvedValueDef,
+    KeywordAbility, ManaColor, MillUntilDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, QuantifierDef, ReplacementConditionDef, ReplacementEffectDef,
     ResolvedEffectDurationDef, RoundingDef, SacrificedAmountDef, SimultaneousChooseDef,
     SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef, TargetConditionDef,
     TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
@@ -2174,17 +2175,20 @@ pub(in crate::card::sets) static SILENT_DEPARTURE: CardRecord = CardRecord::new_
 );
 
 // ISD 76 — Skaab Goliath
+/// `SpendModeDef::ByZone` would also exile a graveyard card, but the
+/// Skaabs print "exile" and keep that operation explicit in their definitions.
+const fn exile_creature_cards_from_graveyard(count: u8) -> SpellAdditionalCostDef {
+    SpellAdditionalCostDef::new(
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ZoneKind::Graveyard,
+        count,
+    )
+    .spent(SpendModeDef::Exile)
+}
+
 /// Two so a graveyard holding one creature cannot pay at all and a
 /// graveyard holding several offers every pair.
-static EXILE_TWO_CREATURE_CARDS: SpellAdditionalCostDef = SpellAdditionalCostDef {
-    or_life: None,
-    object: ObjectPredicateDef::HasType(CardType::Creature),
-    zone: ZoneKind::Graveyard,
-    count: 2,
-    counted: SpellAdditionalCostCountDef::Printed,
-    spend: SpendModeDef::ByZone,
-    or: None,
-};
+static EXILE_TWO_CREATURE_CARDS: SpellAdditionalCostDef = exile_creature_cards_from_graveyard(2);
 
 pub(in crate::card::sets) static SKAAB_GOLIATH: CardRecord = CardRecord::new_with_legacy_id(
     1964,
@@ -2204,13 +2208,38 @@ pub(in crate::card::sets) static SKAAB_GOLIATH: CardRecord = CardRecord::new_wit
 );
 
 // ISD 77 — Skaab Ruinator
-// Audit: metadata-only — Needs a three-card graveyard exile casting cost and permission to cast this card from your graveyard.
+static EXILE_THREE_CREATURE_CARDS: SpellAdditionalCostDef = exile_creature_cards_from_graveyard(3);
+
+static CAST_SKAAB_RUINATOR_FROM_GRAVEYARD: PlayRestrictionDef =
+    PlayRestrictionDef::new(PlayActionMatcherDef::CastSpell, ObjectPredicateDef::Source);
+
 pub(in crate::card::sets) static SKAAB_RUINATOR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("44c40cdc-a11a-47df-b902-d8fbe9014d03"),
     "Skaab Ruinator",
-    crate::card::CardArt::new("44c40cdc-a11a-47df-b902-d8fbe9014d03", "Chris Rahn"),
-    crate::card::CardSet::Innistrad,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("44c40cdc-a11a-47df-b902-d8fbe9014d03", "Chris Rahn"),
+    CardSet::Innistrad,
+    CardRules::new_creature(mana_cost!("{1}{U}{U}"), &["Zombie", "Horror"], 5, 6).with_abilities(
+        &[
+            AbilityDef::spell_with_additional_cost(
+                "As an additional cost to cast this spell, exile three creature cards from your \
+                 graveyard.",
+                &[],
+                EXILE_THREE_CREATURE_CARDS,
+                EffectDef::None,
+            ),
+            abilities::flying(),
+            AbilityDef::static_ability(
+                "You may cast this card from your graveyard.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::Controller,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(
+                        GraveyardPlayPermissionDef::unlimited(CAST_SKAAB_RUINATOR_FROM_GRAVEYARD),
+                    )),
+                },
+            )
+            .with_source_zones(&[ZoneKind::Graveyard]),
+        ],
+    ),
 );
 
 // ISD 78 — Snapcaster Mage
@@ -2885,12 +2914,14 @@ pub(in crate::card::sets) static GHOULCALLERS_CHANT: CardRecord = CardRecord::ne
 static GHOULRAISER_ZOMBIE_CARD: ObjectPredicateDef = ObjectPredicateDef::Subtype("Zombie");
 static GHOULRAISER_RETURN: EffectDef = EffectDef::MoveToZone {
     object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+    from: Some(ZoneKind::Graveyard),
     zone: ZoneKind::Hand,
     controller: None,
     placement: ZonePlacement::Top,
     arrival_effect: None,
     attachment: None,
     counters: None,
+    tapped: false,
 };
 
 pub(in crate::card::sets) static GHOULRAISER: CardRecord = CardRecord::new(
@@ -3629,12 +3660,14 @@ static CHARMBREAKER_INSTANT_OR_SORCERY: ObjectPredicateDef = ObjectPredicateDef:
 ]);
 static CHARMBREAKER_RETURN: EffectDef = EffectDef::MoveToZone {
     object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+    from: Some(ZoneKind::Graveyard),
     zone: ZoneKind::Hand,
     controller: None,
     placement: ZonePlacement::Top,
     arrival_effect: None,
     attachment: None,
     counters: None,
+    tapped: false,
 };
 
 pub(in crate::card::sets) static CHARMBREAKER_DEVILS: CardRecord = CardRecord::new(
