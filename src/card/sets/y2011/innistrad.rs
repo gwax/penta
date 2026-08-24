@@ -1463,6 +1463,7 @@ pub(in crate::card::sets) static DISSIPATE: CardRecord = CardRecord::new_with_le
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Exile,
+                placement: ZonePlacement::Top,
             },
         ),
     ),
@@ -1670,6 +1671,7 @@ pub(in crate::card::sets) static LOST_IN_THE_MIST: CardRecord = CardRecord::new_
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
             EffectDef::MoveToZone {
                 counters: None,

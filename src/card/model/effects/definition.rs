@@ -183,10 +183,14 @@ pub enum EffectDef {
         object: EffectRecipientDef,
     },
     /// Counter a spell and put its card into `zone`. Ordinary counters use
-    /// the graveyard; replacement-style counters such as Dissipate use exile.
+    /// the graveyard; replacement-style counters such as Dissipate use
+    /// exile, and Memory Lapse uses the top of its owner's library.
     Counter {
         object: EffectRecipientDef,
         zone: ZoneKind,
+        /// Which end of a library the card lands on. Meaningless for every
+        /// other destination, the same way it is for a plain move.
+        placement: ZonePlacement,
     },
     /// Saves a set of objects for the rest of this resolution and continues.
     /// Nothing is asked and nothing moves: Haunting Echoes needs to know

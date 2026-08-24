@@ -680,11 +680,12 @@ impl Game {
             EffectDef::Counter {
                 object: recipient,
                 zone,
+                placement,
             } => {
-                let zone = if zone == ZoneKind::Exile {
-                    CounteredSpellZone::Exile
-                } else {
-                    CounteredSpellZone::Graveyard
+                let zone = match zone {
+                    ZoneKind::Exile => CounteredSpellZone::Exile,
+                    ZoneKind::Library => CounteredSpellZone::Library(placement),
+                    _ => CounteredSpellZone::Graveyard,
                 };
                 for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Spell(spell) = target {

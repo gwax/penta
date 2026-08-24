@@ -692,6 +692,7 @@ pub(in crate::card::sets) static BONE_TO_ASH: CardRecord = CardRecord::new_with_
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,

@@ -430,6 +430,7 @@ static DECREE_OF_SILENCE_ANSWER: EffectDef = EffectDef::Sequence(&[
     EffectDef::Counter {
         object: EffectRecipientDef::TriggeringObject,
         zone: ZoneKind::Graveyard,
+        placement: ZonePlacement::Top,
     },
     EffectDef::AddCounters {
         object: EffectRecipientDef::Source,
@@ -477,6 +478,7 @@ pub(in crate::card::sets) static DECREE_OF_SILENCE: CardRecord = CardRecord::new
                 effect: &EffectDef::Counter {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Graveyard,
+                    placement: ZonePlacement::Top,
                 },
             },
         ),
@@ -698,6 +700,7 @@ pub(in crate::card::sets) static STIFLE: CardRecord = CardRecord::new_with_legac
         EffectDef::Counter {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Graveyard,
+            placement: ZonePlacement::Top,
         },
     )),
 );

@@ -697,6 +697,7 @@ pub(in crate::card::sets) static PRESENCE_OF_THE_MASTER: CardRecord =
             EffectDef::Counter {
                 object: EffectRecipientDef::TriggeringObject,
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
         )),
     );
@@ -1296,6 +1297,7 @@ static MANA_DRAIN_EFFECT: [EffectDef; 2] = [
     EffectDef::Counter {
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         zone: ZoneKind::Graveyard,
+        placement: ZonePlacement::Top,
     },
     EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
         "At the beginning of your next precombat main phase, add colorless mana equal to that spell's mana value.",

@@ -3592,6 +3592,7 @@ pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new_with_
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
         ),
         abilities::overload(
@@ -3604,6 +3605,7 @@ pub(in crate::card::sets) static COUNTERFLUX: CardRecord = CardRecord::new_with_
                     PlayerRelation::NotYou,
                 ),
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
         ),
     ]),
@@ -3756,6 +3758,7 @@ pub(in crate::card::sets) static ESSENCE_BACKLASH: CardRecord = CardRecord::new_
                 EffectDef::Counter {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     zone: ZoneKind::Graveyard,
+                    placement: ZonePlacement::Top,
                 },
                 EffectDef::DealDamage {
                     recipient: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
@@ -3782,6 +3785,7 @@ pub(in crate::card::sets) static FALL_OF_THE_GAVEL: CardRecord = CardRecord::new
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
             EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,

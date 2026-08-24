@@ -439,6 +439,7 @@ pub(in crate::card::sets) static HALT_ORDER: CardRecord = CardRecord::new(
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,

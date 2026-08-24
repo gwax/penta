@@ -159,6 +159,7 @@ fn modal_spell_semantics_derive_their_presentation_modes() {
         Some(EffectDef::Counter {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Graveyard,
+            placement: super::ZonePlacement::Top,
         })
     );
     assert_eq!(

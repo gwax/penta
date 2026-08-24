@@ -1,6 +1,11 @@
 //! HML card records required by supported formats.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::{
+    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef,
+    ObjectPredicateDef, ZoneKind, ZonePlacement,
+};
+use crate::{TargetIndex, mana_cost};
 
 // HML 1 — Abbey Gargoyles
 // Audit: metadata-only — Card rules have not been implemented.
@@ -328,14 +333,32 @@ pub(in crate::card::sets) static MARJHAN: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+/// "Put it on top of its owner's library instead of into that player's
+/// graveyard": the counter still happens, and what changes is only where
+/// the card lands afterwards.
+static MEMORY_LAPSE_COUNTERS: EffectDef = EffectDef::Counter {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    zone: ZoneKind::Library,
+    placement: ZonePlacement::Top,
+};
+
+static MEMORY_LAPSE_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)];
+
 // HML 32a — Memory Lapse
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static MEMORY_LAPSE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("3d2cc591-3a81-468a-91a4-3c3aac83a21a"),
     "Memory Lapse",
-    crate::card::CardArt::new("3d2cc591-3a81-468a-91a4-3c3aac83a21a", "Mark Tedin"),
-    crate::card::CardSet::Homelands,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("3d2cc591-3a81-468a-91a4-3c3aac83a21a", "Mark Tedin"),
+    CardSet::Homelands,
+    // Two mana that buys a turn rather than a card, which in a deck built to
+    // use the turn is the better half of the trade.
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Counter target spell. If that spell is countered this way, put it on top of its owner's \
+         library instead of into that player's graveyard.",
+        &MEMORY_LAPSE_TARGET,
+        MEMORY_LAPSE_COUNTERS,
+    )),
 );
 
 // HML 32b — Memory Lapse (alternate printing)

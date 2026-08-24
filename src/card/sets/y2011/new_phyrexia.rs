@@ -584,6 +584,7 @@ pub(in crate::card::sets) static MENTAL_MISSTEP: CardRecord = CardRecord::new(
         EffectDef::Counter {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Graveyard,
+            placement: ZonePlacement::Top,
         },
     )),
 );
@@ -662,6 +663,7 @@ pub(in crate::card::sets) static PSYCHIC_BARRIER: CardRecord = CardRecord::new(
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
             EffectDef::LoseLife {
                 recipient: EffectRecipientDef::player(PlayerRefDef::ControllerOf(

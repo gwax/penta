@@ -315,6 +315,7 @@ pub(in crate::card::sets) static ARCANE_DENIAL: CardRecord = CardRecord::new_wit
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
             DENIAL_DRAWS,
         ]),

@@ -620,6 +620,7 @@ pub(in crate::card::sets) static FLASHFREEZE: CardRecord = CardRecord::new(
         EffectDef::Counter {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Graveyard,
+            placement: ZonePlacement::Top,
         },
     )),
 );

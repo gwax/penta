@@ -1228,6 +1228,7 @@ pub(in crate::card::sets) static COUNTERSPELL: CardRecord = CardRecord::new_with
         EffectDef::Counter {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zone: ZoneKind::Graveyard,
+            placement: ZonePlacement::Top,
         },
     )]),
 );
@@ -2061,6 +2062,7 @@ pub(in crate::card::sets) static DEATHGRIP: CardRecord = CardRecord::new_with_le
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
         ),
     ]),
@@ -4256,6 +4258,7 @@ pub(in crate::card::sets) static LIFEFORCE: CardRecord = CardRecord::new_with_le
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
         ),
     ]),

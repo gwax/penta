@@ -1062,6 +1062,7 @@ pub(in crate::card::sets) static SCATTER_ARC: CardRecord = CardRecord::new_with_
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,
@@ -4129,6 +4130,7 @@ pub(in crate::card::sets) static PSYCHIC_STRIKE: CardRecord = CardRecord::new_wi
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
             EffectDef::Mill {
                 player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),

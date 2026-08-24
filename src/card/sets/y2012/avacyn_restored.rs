@@ -1258,6 +1258,7 @@ pub(in crate::card::sets) static GEIST_SNATCH: CardRecord = CardRecord::new_with
             EffectDef::Counter {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 zone: ZoneKind::Graveyard,
+                placement: ZonePlacement::Top,
             },
             EffectDef::create_creature_token(&["Spirit"], &[ManaColor::Blue], 1, 1)
                 .with_abilities(&[abilities::flying()])

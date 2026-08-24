@@ -841,14 +841,17 @@ pub const fn shield_against_a_chosen_source(
 static COUNTER_PRIMARY_TARGET: EffectDef = EffectDef::Counter {
     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
     zone: ZoneKind::Graveyard,
+    placement: ZonePlacement::Top,
 };
 static COUNTER_PRIMARY_TARGET_TO_EXILE: EffectDef = EffectDef::Counter {
     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
     zone: ZoneKind::Exile,
+    placement: ZonePlacement::Top,
 };
 static COUNTER_TRIGGERING_SPELL: EffectDef = EffectDef::Counter {
     object: EffectRecipientDef::TriggeringObject,
     zone: ZoneKind::Graveyard,
+    placement: ZonePlacement::Top,
 };
 
 const fn pay_or_counter(

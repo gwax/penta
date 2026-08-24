@@ -723,6 +723,7 @@ static TARGET_SPELL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
 static COUNTER_TARGET_SPELL: EffectDef = EffectDef::Counter {
     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
     zone: ZoneKind::Graveyard,
+    placement: ZonePlacement::Top,
 };
 
 static SMALL_ENOUGH_TO_COUNTER: TriggerConditionDef = TriggerConditionDef::TargetMatches {
@@ -892,6 +893,7 @@ static RESPONSE_EFFECT: EffectDef = EffectDef::Sequence(&[
     EffectDef::Counter {
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         zone: ZoneKind::Graveyard,
+        placement: ZonePlacement::Top,
     },
     EffectDef::Destroy {
         object: EffectRecipientDef::object(ObjectRefDef::SourceOfTargetedStackObject(

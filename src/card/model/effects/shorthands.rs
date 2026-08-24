@@ -9,6 +9,7 @@ impl EffectDef {
         Self::Counter {
             object: EffectRecipientDef::Target(target),
             zone: ZoneKind::Graveyard,
+            placement: ZonePlacement::Top,
         }
     }
 
