@@ -261,27 +261,48 @@ impl Game {
             .any(|action| self.required_block(action).is_some())
     }
 
-    /// Whether some menacing attacker is blocked by exactly one creature.
+    /// How many creatures it takes to block this one. One ordinarily; two
+    /// for menace; whatever a printed "except by N or more" says. Several at
+    /// once take the largest, which is the only reading under which each of
+    /// them is still true.
+    pub(super) fn minimum_blockers(&self, attacker: &Permanent) -> usize {
+        let mut minimum = if self.permanent_has_executable_keyword(attacker, KeywordAbility::Menace)
+        {
+            2
+        } else {
+            1
+        };
+        let _ = self.visit_applied_rules(attacker, |applied| {
+            if let AppliedRuleDef::CannotBeBlockedExceptByAtLeast(required) = applied.rule {
+                minimum = minimum.max(usize::from(required));
+            }
+            ControlFlow::Continue(())
+        });
+        minimum
+    }
+
+    /// Whether some attacker that takes more than one blocker is blocked by
+    /// too few.
     ///
     /// CR 702.110a is a constraint on the finished declaration, not on any
     /// single block: the first blocker is perfectly legal and only becomes
     /// illegal by being the last. So it is checked where the declaration
-    /// ends rather than where each block is offered.
+    /// ends rather than where each block is offered. Blocked by nobody is
+    /// not blocked by too few.
     pub(super) fn menace_is_unsatisfied(&self, player: PlayerId) -> bool {
         self.battlefield
             .iter()
-            .filter(|permanent| {
-                permanent.attacking
-                    && self.permanent_has_executable_keyword(permanent, KeywordAbility::Menace)
-            })
-            .any(|menacing| {
-                self.battlefield
+            .filter(|permanent| permanent.attacking)
+            .any(|attacker| {
+                let minimum = self.minimum_blockers(attacker);
+                let blockers = self
+                    .battlefield
                     .iter()
                     .filter(|candidate| {
-                        candidate.controller == player && candidate.is_blocking(menacing.card.id)
+                        candidate.controller == player && candidate.is_blocking(attacker.card.id)
                     })
-                    .count()
-                    == 1
+                    .count();
+                blockers > 0 && blockers < minimum
             })
     }
 

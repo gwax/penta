@@ -270,6 +270,12 @@ pub enum AppliedRuleDef {
     /// combat assignment reads the other one.
     AssignsCombatDamageEqualToToughness,
     CannotBeCountered,
+    /// "This creature can't be blocked except by N or more creatures."
+    /// Menace is this rule with a two on it, printed as a keyword; the
+    /// creatures that name a larger number write the clause out. It is a
+    /// constraint on the finished declaration rather than on any one block,
+    /// so a partial block is legal right up until it is the last one.
+    CannotBeBlockedExceptByAtLeast(u8),
     /// "You may play lands from your graveyard." The mirror of
     /// [`Self::CannotPlay`]: a permission rather than a prohibition, matched
     /// against the same action and object the prohibition names, plus

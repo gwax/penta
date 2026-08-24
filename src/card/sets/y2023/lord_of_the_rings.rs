@@ -244,14 +244,34 @@ static ANOTHER_CREATURE_YOU_CONTROL: [AbilityTargetDef; 1] =
         ]),
     )];
 
+static TROLL_ABILITIES: [AbilityDef; 2] = [
+    // Menace with a bigger number, which is why it is written out rather
+    // than printed as the keyword.
+    AbilityDef::static_ability(
+        "This creature can't be blocked except by three or more creatures.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeBlockedExceptByAtLeast(3)),
+        },
+    ),
+    abilities::typecycling(
+        "Swampcycling {1} ({1}, Discard this card: Search your library for a Swamp card, reveal \
+         it, put it into your hand, then shuffle.)",
+        mana_cost!("{1}"),
+        ObjectPredicateDef::Subtype("Swamp"),
+    ),
+];
+
 // LTR 111 — Troll of Khazad-dûm
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static TROLL_OF_KHAZAD_DUM: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a6539e26-b63b-4725-9407-caaf451de084"),
     "Troll of Khazad-dûm",
-    crate::card::CardArt::new("a6539e26-b63b-4725-9407-caaf451de084", "Simon Dominic"),
-    crate::card::CardSet::LordOfTheRings,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("a6539e26-b63b-4725-9407-caaf451de084", "Simon Dominic"),
+    CardSet::LordOfTheRings,
+    // Six mana for a body nobody blocks, or one mana for the Swamp the deck
+    // was missing. It is in the cube for the second half.
+    CardRules::new_creature(mana_cost!("{5}{B}"), &["Troll"], 6, 5)
+        .with_abilities(&TROLL_ABILITIES),
 );
 
 // LTR 137 — Improvised Club
