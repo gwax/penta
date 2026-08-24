@@ -2,9 +2,11 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
-    CardSet, EffectDef, EffectRecipientDef, InstalledTriggerDef, PlayerRelation,
-    TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, ComparisonDef,
+    CounterKind, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, PlayerRelation,
+    ReplacementEffectDef, TokenCharacteristics, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -82,13 +84,82 @@ pub(in crate::card::sets) static MISHRA_S_BAUBLE: CardRecord = CardRecord::new(
 );
 
 // CSP 145 — Dark Depths
-// Audit: metadata-only — Card rules have not been implemented.
+static MARIT_LAGE_ABILITIES: [AbilityDef; 2] = [abilities::flying(), abilities::indestructible()];
+
+/// Twenty power for no mana at all, which is what the ten counters are
+/// paying for. Legendary, so a second one is not a plan.
+static MARIT_LAGE: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Avatar"], &[ManaColor::Black], 20, 20)
+        .with_supertype(CardSupertype::Legendary)
+        .with_name("Marit Lage")
+        .with_abilities(&MARIT_LAGE_ABILITIES);
+
+static DEPTHS_HAS_NO_ICE: TriggerConditionDef = TriggerConditionDef::SourceCounters {
+    kind: CounterKind::Ice,
+    comparison: ComparisonDef::Equal,
+    amount: 0,
+};
+
+/// "Sacrifice it. If you do, create Marit Lage." Nothing stops a player
+/// sacrificing their own permanent, so the only way the sacrifice fails is
+/// that the land is no longer there to sacrifice -- which is what this asks,
+/// and why an answer in response to the trigger denies the token.
+static DEPTHS_TRADES_ITSELF: EffectDef = EffectDef::IfCondition {
+    condition: &TriggerConditionDef::SourceOnBattlefield,
+    then: &EffectDef::Sequence(&DEPTHS_SACRIFICE_AND_TOKEN),
+};
+
+static DEPTHS_SACRIFICE_AND_TOKEN: [EffectDef; 2] = [
+    EffectDef::Sacrifice {
+        object: EffectRecipientDef::Source,
+    },
+    EffectDef::create_token(MARIT_LAGE),
+];
+
+static DEPTHS_REMOVE_COST: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{3}"))];
+
+static DEPTHS_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::as_enters(
+        "Dark Depths enters with ten ice counters on it.",
+        ReplacementEffectDef::ModifyBattlefieldEntry(
+            BattlefieldEntryModificationDef::AddCounters {
+                kind: CounterKind::Ice,
+                amount: 10,
+            },
+        ),
+    ),
+    AbilityDef::activated(
+        "{3}: Remove an ice counter from Dark Depths.",
+        &DEPTHS_REMOVE_COST,
+        EffectDef::RemoveCounters {
+            object: EffectRecipientDef::Source,
+            kind: CounterKind::Ice,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    // A state trigger (CR 603.8): it has no event, and it fires whenever the
+    // counters are gone -- however they went. Removing them all at once is
+    // what the deck is really built to do.
+    AbilityDef::triggered_if(
+        "When Dark Depths has no ice counters on it, sacrifice it. If you do, create Marit Lage, \
+         a legendary 20/20 black Avatar creature token with flying and indestructible.",
+        TriggerEventDef::StateCondition,
+        &DEPTHS_HAS_NO_ICE,
+        DEPTHS_TRADES_ITSELF,
+    ),
+];
+
 pub(in crate::card::sets) static DARK_DEPTHS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("92409c3a-fb1a-4205-9fe1-0f5affc7b21d"),
     "Dark Depths",
-    crate::card::CardArt::new("92409c3a-fb1a-4205-9fe1-0f5affc7b21d", "Stephan Martiniere"),
-    crate::card::CardSet::Coldsnap,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("92409c3a-fb1a-4205-9fe1-0f5affc7b21d", "Stephan Martiniere"),
+    CardSet::Coldsnap,
+    // Thirty mana the long way round, or none at all if something else takes
+    // the counters off.
+    CardRules::new_land(&[])
+        .with_supertype(CardSupertype::Legendary)
+        .with_supertype(CardSupertype::Snow)
+        .with_abilities(&DEPTHS_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&MISHRA_S_BAUBLE, &DARK_DEPTHS];

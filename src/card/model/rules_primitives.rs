@@ -199,6 +199,9 @@ impl CounterKind {
     /// Dauthi Voidwalker's mark on a card it exiled, which is how its own
     /// activation finds that pile again later.
     pub const Void: Self = Self::named("void");
+    /// Dark Depths counts down to nothing with these, which is the whole of
+    /// what the land does.
+    pub const Ice: Self = Self::named("ice");
 
     /// Whether this is the counter a Saga reads its chapters with.
     #[must_use]
@@ -209,7 +212,7 @@ impl CounterKind {
     /// The counter names currently authored in the catalog or interpreted by
     /// the engine. This is a serialization registry, not a storage layout:
     /// its order has no rules or checkpoint meaning.
-    pub const KNOWN: [Self; 49] = [
+    pub const KNOWN: [Self; 50] = [
         Self::PlusOnePlusOne,
         Self::Lore,
         Self::named("javelin"),
@@ -259,9 +262,10 @@ impl CounterKind {
         Self::Poison,
         Self::Energy,
         Self::Void,
+        Self::Ice,
     ];
 
-    const KNOWN_NAMES: [&'static str; 49] = [
+    const KNOWN_NAMES: [&'static str; 50] = [
         "+1/+1",
         "lore",
         "javelin",
@@ -311,6 +315,7 @@ impl CounterKind {
         "poison",
         "energy",
         "void",
+        "ice",
     ];
 
     #[must_use]
