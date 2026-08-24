@@ -197,3 +197,51 @@ fn the_blazemire_verge_offers_its_own_two_colours() {
     expected.sort_unstable();
     assert_eq!(offered, expected, "a Mountain switches the red half on");
 }
+
+/// Bleachbone Verge is the Orzhov member: black unconditionally, white once
+/// a Plains or a Swamp is out.
+#[test]
+fn the_bleachbone_verge_offers_its_own_two_colours() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let verge = game
+        .put_onto_battlefield(PlayerId::One, cards::BLEACHBONE_VERGE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(offered_colors(&game, verge), vec![ManaColor::Black]);
+
+    // An Island is neither of its types.
+    game.put_onto_battlefield(PlayerId::One, cards::ISLAND)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(offered_colors(&game, verge), vec![ManaColor::Black]);
+
+    game.put_onto_battlefield(PlayerId::One, cards::PLAINS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let mut offered = offered_colors(&game, verge);
+    offered.sort_unstable();
+    let mut expected = vec![ManaColor::Black, ManaColor::White];
+    expected.sort_unstable();
+    assert_eq!(offered, expected, "a Plains switches the white half on");
+}
+
+/// A Swamp answers the same condition, and it is the land the Verge's own
+/// unconditional half already wants.
+#[test]
+fn a_swamp_switches_the_bleachbone_verge_on_too() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let verge = game
+        .put_onto_battlefield(PlayerId::One, cards::BLEACHBONE_VERGE)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::One, cards::SWAMP)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let mut offered = offered_colors(&game, verge);
+    offered.sort_unstable();
+    let mut expected = vec![ManaColor::Black, ManaColor::White];
+    expected.sort_unstable();
+    assert_eq!(offered, expected);
+}

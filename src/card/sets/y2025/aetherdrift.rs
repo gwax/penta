@@ -131,13 +131,40 @@ pub(in crate::card::sets) static BRIGHTGLASS_GEARHULK: CardRecord = CardRecord::
 );
 
 // DFT 250 — Bleachbone Verge
-// Audit: metadata-only — Card rules have not been implemented.
+/// The verge condition in this cycle's Orzhov colours. Either type answers
+/// it, so a Godless Shrine is both halves at once.
+static A_PLAINS_OR_A_SWAMP_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains, BasicLandType::Swamp]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static BLEACHBONE_HAS_ITS_LAND: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: A_PLAINS_OR_A_SWAMP_YOU_CONTROL,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
 pub(in crate::card::sets) static BLEACHBONE_VERGE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("52dcdabd-a186-45fe-9fee-6c0f1afeaf16"),
     "Bleachbone Verge",
-    crate::card::CardArt::new("52dcdabd-a186-45fe-9fee-6c0f1afeaf16", "Mark Tedin"),
-    crate::card::CardSet::Aetherdrift,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("52dcdabd-a186-45fe-9fee-6c0f1afeaf16", "Mark Tedin"),
+    CardSet::Aetherdrift,
+    // Untapped and free either way: the black is unconditional, and the
+    // white is what the rest of the mana base is for.
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {B}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Black)),
+        ),
+        AbilityDef::activated_mana_if(
+            "{T}: Add {W}. Activate only if you control a Plains or a Swamp.",
+            &[AbilityCostDef::TapSource],
+            &BLEACHBONE_HAS_ITS_LAND,
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::White)),
+        ),
+    ]),
 );
 
 // DFT 258 — Night Market
