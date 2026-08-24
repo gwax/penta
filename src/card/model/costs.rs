@@ -328,6 +328,11 @@ pub enum ManaSelectionDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ManaRestrictionDef {
     CastSpell(ObjectPredicateDef),
+    /// "This mana can't be spent to cast nonartifact spells." A prohibition
+    /// rather than a permission: unlike [`Self::CastSpell`] every other use
+    /// stays open, so a Powerstone's mana still activates abilities and pays
+    /// for anything that is not a cast at all.
+    CannotCastSpell(ObjectPredicateDef),
     CastCreatureSpellOfChosenType,
     ActivateAbility(ObjectPredicateDef),
     Special(&'static str),

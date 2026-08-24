@@ -501,6 +501,7 @@ mod vintage_cube_teferi_time_raveler;
 mod vintage_cube_tendrils;
 mod vintage_cube_territorial_kavu;
 mod vintage_cube_tersa_lightshatter;
+mod vintage_cube_the_mightstone_and_weakstone;
 mod vintage_cube_thieving_skydiver;
 mod vintage_cube_thoughtseize;
 mod vintage_cube_thundertrap_trainer;

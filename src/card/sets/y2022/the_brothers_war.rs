@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, CharacteristicOperationDef,
-    CreatureTypeSetDef, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    CharacteristicOperationDef, CreatureTypeSetDef, EffectDef, EffectRecipientDef, ManaColor,
+    ManaRestrictionDef, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
     SetOperationDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
@@ -172,13 +173,73 @@ pub(in crate::card::sets) static THIRD_PATH_ICONOCLAST: CardRecord = CardRecord:
 );
 
 // BRO 238 — The Mightstone and Weakstone
-// Audit: metadata-only — Card rules have not been implemented.
+static A_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+static MIGHTSTONE_MODES: [AbilityDef; 2] = [
+    AbilityDef::spell(
+        "Draw two cards.",
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(2),
+        },
+    ),
+    AbilityDef::spell_with_targets(
+        "Target creature gets -5/-5 until end of turn.",
+        &A_CREATURE,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-5),
+                ValueDef::Constant(-5),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    ),
+];
+
+/// A Powerstone's restriction is a prohibition rather than a permission:
+/// this mana activates abilities and pays for artifact spells, and the one
+/// thing it cannot do is cast a spell that is not an artifact.
+static POWERSTONE_RESTRICTIONS: [ManaRestrictionDef; 1] = [ManaRestrictionDef::CannotCastSpell(
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Artifact)),
+)];
+
+static MIGHTSTONE_TAP: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
 pub(in crate::card::sets) static THE_MIGHTSTONE_AND_WEAKSTONE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("02aea379-b444-46a3-82f4-3038f698d4f4"),
     "The Mightstone and Weakstone",
-    crate::card::CardArt::new("02aea379-b444-46a3-82f4-3038f698d4f4", "Ryan Pancoast"),
-    crate::card::CardSet::TheBrothersWar,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("02aea379-b444-46a3-82f4-3038f698d4f4", "Ryan Pancoast"),
+    CardSet::TheBrothersWar,
+    // Five mana for two cards or a dead creature, and two mana a turn
+    // afterwards. The meld is Urza's ability rather than this card's: the
+    // parenthesis here only says which card it pairs with.
+    CardRules::new_artifact(mana_cost!("{5}"))
+        .with_supertype(CardSupertype::Legendary)
+        .with_subtypes(&["Powerstone"])
+        .with_abilities(&[
+            AbilityDef::modal_triggered(
+                "When this artifact enters, choose one —\n• Draw two cards.\n• Target creature \
+                 gets -5/-5 until end of turn.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                &MIGHTSTONE_MODES,
+            ),
+            AbilityDef::activated_mana(
+                "{T}: Add {C}{C}. This mana can't be spent to cast nonartifact spells.",
+                &MIGHTSTONE_TAP,
+                EffectDef::AddMana(
+                    AddManaEffectDef::one(ManaColor::Colorless)
+                        .with_amount(2)
+                        .with_restrictions(&POWERSTONE_RESTRICTIONS),
+                ),
+            ),
+        ]),
 );
 
 // BRO 240 — Portal to Phyrexia

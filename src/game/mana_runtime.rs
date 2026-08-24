@@ -691,6 +691,14 @@ impl Game {
                         is_spell
                             && self.trigger_object_matches(*predicate, &object, object.id, true)
                     }),
+                // Nothing to check when the payment is not a cast: what the
+                // clause forbids is one kind of spell, not one kind of use.
+                ManaRestrictionDef::CannotCastSpell(predicate) => !self
+                    .payment_object(purpose)
+                    .is_some_and(|(object, is_spell)| {
+                        is_spell
+                            && self.trigger_object_matches(*predicate, &object, object.id, true)
+                    }),
                 ManaRestrictionDef::CastCreatureSpellOfChosenType => {
                     let Some(source) = mana.source else {
                         return false;

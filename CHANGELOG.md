@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Mana that forbids one kind of spell rather than permitting one.** A
+  produced mana unit can now carry a prohibition -- "this mana can't be spent
+  to cast nonartifact spells" -- which leaves every other use open, so a
+  Powerstone's mana still activates abilities and pays for anything that is
+  not a cast. The existing permission restriction, which Mishra's Workshop
+  prints, refuses those uses instead. The Mightstone and Weakstone is the
+  first card with the prohibition.
+
 - **Role tokens: an Aura created already attached, and the rule that keeps
   one.** A token can now be created attached to something the clause names --
   the mirror of the living-weapon shape, where the resolving permanent is

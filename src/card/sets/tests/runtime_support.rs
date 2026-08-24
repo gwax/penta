@@ -256,7 +256,8 @@ pub(super) fn shared_mana_effect(effect: EffectDef, choices_are_supported: bool)
             .iter()
             .copied()
             .all(|restriction| match restriction {
-                ManaRestrictionDef::CastSpell(object) => shared_object_predicate(object),
+                ManaRestrictionDef::CastSpell(object)
+                | ManaRestrictionDef::CannotCastSpell(object) => shared_object_predicate(object),
                 ManaRestrictionDef::CastCreatureSpellOfChosenType => true,
                 ManaRestrictionDef::ActivateAbility(_) | ManaRestrictionDef::Special(_) => false,
             })
