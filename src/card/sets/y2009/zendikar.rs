@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, ObjectRefDef, PlayerRelation, TriggerConditionDef,
-    TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType,
+    ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef,
+    PlayerRelation, TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -224,13 +225,37 @@ pub(in crate::card::sets) static GOBLIN_BUSHWHACKER: CardRecord = CardRecord::ne
 );
 
 // ZEN 168 — Lotus Cobra
-// Audit: metadata-only — Card rules have not been implemented.
+/// A land you control, not any land: their fetchland does nothing for her.
+static A_LAND_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Land),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+static ANY_COLOR: [ManaColor; 5] = [
+    ManaColor::White,
+    ManaColor::Blue,
+    ManaColor::Black,
+    ManaColor::Red,
+    ManaColor::Green,
+];
+
+/// Not a mana ability: it triggers off a land entering rather than off mana
+/// being made (CR 605.1b), so it uses the stack, and the colour is named as
+/// it resolves rather than when it triggers.
+static COBRA_LANDFALL: AbilityDef = AbilityDef::triggered(
+    "Landfall — Whenever a land you control enters, add one mana of any color.",
+    TriggerEventDef::zone_changed(A_LAND_YOU_CONTROL, None, Some(ZoneKind::Battlefield)),
+    EffectDef::AddMana(AddManaEffectDef::choice(&ANY_COLOR)),
+);
+
 pub(in crate::card::sets) static LOTUS_COBRA: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("19adde22-e5eb-4815-beb6-c520b3274cc9"),
     "Lotus Cobra",
-    crate::card::CardArt::new("19adde22-e5eb-4815-beb6-c520b3274cc9", "Chippy"),
-    crate::card::CardSet::Zendikar,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("19adde22-e5eb-4815-beb6-c520b3274cc9", "Chippy"),
+    CardSet::Zendikar,
+    // Two mana that turns every land after it into a Lotus Petal, which is
+    // what makes a fetchland a ritual.
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Snake"], 2, 1).with_ability(COBRA_LANDFALL),
 );
 
 // ZEN 193 — Vines of Vastwood
