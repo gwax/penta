@@ -2,11 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectSetDef, PlayerRefDef, PlayerRelation, SpellAdditionalCostDef,
-    SpendModeDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef,
+    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectSetDef, PlayerRefDef,
+    PlayerRelation, SpellAdditionalCostDef, SpendModeDef, TriggerEventDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -209,14 +210,76 @@ pub(in crate::card::sets) static BLOODBRAID_CHALLENGER: CardRecord = CardRecord:
         .with_abilities(&BLOODBRAID_CHALLENGER_ABILITIES),
 );
 
+static TALON_GATES_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    1,
+)];
+
+static TALON_GATES_TAP: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
+static TALON_GATES_FILTER: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{1}")),
+    AbilityCostDef::TapSource,
+];
+
+static TALON_GATES_CRASH: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{4}"))];
+
+static TALON_GATES_ABILITIES: [AbilityDef; 4] = [
+    AbilityDef::triggered_with_targets(
+        "When this land enters, up to one target creature phases out.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        &TALON_GATES_TARGET,
+        EffectDef::PhaseOut {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    ),
+    AbilityDef::activated_mana(
+        "{T}: Add {C}.",
+        &TALON_GATES_TAP,
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+    ),
+    AbilityDef::activated_mana(
+        "{1}, {T}: Add one mana of any color.",
+        &TALON_GATES_FILTER,
+        EffectDef::AddMana(AddManaEffectDef::any_color()),
+    ),
+    // Activated from hand, which is the only zone the clause names: what it
+    // does is move itself, so the land arrives without using a land drop and
+    // its enter trigger fires like any other.
+    AbilityDef::activated(
+        "{4}: Put this card from your hand onto the battlefield.",
+        &TALON_GATES_CRASH,
+        EffectDef::MoveToZone {
+            counters: None,
+            object: EffectRecipientDef::Source,
+            zone: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            arrival_effect: None,
+            attachment: None,
+            controller: None,
+        },
+    )
+    .with_source_zones(&[ZoneKind::Hand]),
+];
+
 // M3C 134 — Talon Gates of Madara
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static TALON_GATES_OF_MADARA: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c565f8fe-acf7-40dd-8100-8f692d1e232c"),
     "Talon Gates of Madara",
-    crate::card::CardArt::new("c565f8fe-acf7-40dd-8100-8f692d1e232c", "Steven Belledin"),
-    crate::card::CardSet::ModernHorizons3Commander,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("c565f8fe-acf7-40dd-8100-8f692d1e232c", "Steven Belledin"),
+    CardSet::ModernHorizons3Commander,
+    // A land that answers a creature on the way in, and four mana that puts
+    // it there on a turn the land drop is already spent.
+    CardRules::new_land(&["Gate"]).with_abilities(&TALON_GATES_ABILITIES),
 );
 
 // M3C 320 — Basilisk Gate

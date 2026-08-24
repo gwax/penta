@@ -469,6 +469,7 @@ mod vintage_cube_surveil_land;
 mod vintage_cube_sword_of_the_meek;
 mod vintage_cube_talisman_of_conviction;
 mod vintage_cube_talisman_of_progress;
+mod vintage_cube_talon_gates_of_madara;
 mod vintage_cube_tamiyo;
 mod vintage_cube_tamiyo_inquisitive_student;
 mod vintage_cube_tear_asunder;
