@@ -5,7 +5,7 @@ use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet,
     CardSupertype, CardType, DrawEventMatcherDef, EffectDef, EffectRecipientDef,
     InstalledTriggerDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
-    abilities,
+    ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -165,14 +165,55 @@ pub(in crate::card::sets) static LIGHTNING_STRIKE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+/// What two mana buys, on either side of the board.
+static AN_ARTIFACT_OR_ENCHANTMENT: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Artifact),
+            ObjectPredicateDef::HasType(CardType::Enchantment),
+        ]),
+    )];
+
+/// What four buys instead. "Instead" is the point: the kicked spell targets
+/// once, not twice, and what it may name is wider rather than longer.
+static A_NONLAND_PERMANENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+)];
+
+static TEAR_ASUNDER_EXILES: EffectDef = EffectDef::MoveToZone {
+    counters: None,
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    zone: ZoneKind::Exile,
+    placement: ZonePlacement::Top,
+    arrival_effect: None,
+    attachment: None,
+    controller: None,
+};
+
 // DMU 183 — Tear Asunder
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static TEAR_ASUNDER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("629aa907-9533-4681-9bf2-9e56450a4cc2"),
     "Tear Asunder",
-    crate::card::CardArt::new("629aa907-9533-4681-9bf2-9e56450a4cc2", "Dave Kendall"),
-    crate::card::CardSet::DominariaUnited,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("629aa907-9533-4681-9bf2-9e56450a4cc2", "Dave Kendall"),
+    CardSet::DominariaUnited,
+    // Two mana for the artifact or enchantment the deck was worried about,
+    // or four for anything at all -- and exile rather than destruction,
+    // which is what the extra mana is really paying for.
+    CardRules::new_instant(mana_cost!("{1}{G}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Kicker {1}{B} (You may pay an additional {1}{B} as you cast this spell.)\nExile \
+             target artifact or enchantment. If this spell was kicked, exile target nonland \
+             permanent instead.",
+            &AN_ARTIFACT_OR_ENCHANTMENT,
+            TEAR_ASUNDER_EXILES,
+        ),
+        abilities::kicker(
+            mana_cost!("{2}{G}{B}"),
+            "Exile target nonland permanent.",
+            &A_NONLAND_PERMANENT,
+            TEAR_ASUNDER_EXILES,
+        ),
+    ]),
 );
 
 // DMU 339 — Ertai Resurrected

@@ -469,6 +469,7 @@ mod vintage_cube_talisman_of_conviction;
 mod vintage_cube_talisman_of_progress;
 mod vintage_cube_tamiyo;
 mod vintage_cube_tamiyo_inquisitive_student;
+mod vintage_cube_tear_asunder;
 mod vintage_cube_tendrils;
 mod vintage_cube_territorial_kavu;
 mod vintage_cube_tersa_lightshatter;
