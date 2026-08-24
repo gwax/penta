@@ -6,8 +6,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
     CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
-    tokens,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, tokens,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -238,13 +238,37 @@ pub(in crate::card::sets) static PESTERMITE: CardRecord = CardRecord::new(
 );
 
 // J25 349 — Remand
-// Audit: metadata-only — Card rules have not been implemented.
+/// The countered card goes to its owner's hand rather than their graveyard,
+/// which the counter effect's own destination says. The draw is a second
+/// clause and happens whether or not the counter found anything to do.
+static REMAND_EFFECT: EffectDef = EffectDef::Sequence(&[
+    EffectDef::Counter {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        zone: ZoneKind::Hand,
+        placement: ZonePlacement::Top,
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+]);
+
+static A_SPELL: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)];
+
 pub(in crate::card::sets) static REMAND: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("581f3780-c480-48c6-b15c-1618f2feccb9"),
     "Remand",
-    crate::card::CardArt::new("36de9999-8d0a-4174-8e38-549bacdc128b", "Mark A. Nelson"),
-    crate::card::CardSet::FoundationsJumpstart,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("36de9999-8d0a-4174-8e38-549bacdc128b", "Mark A. Nelson"),
+    CardSet::FoundationsJumpstart,
+    // Two mana to buy a turn and replace itself. What it answers comes back,
+    // so this is tempo rather than an answer.
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Counter target spell. If that spell is countered this way, put it into its owner's hand \
+         instead of into that player's graveyard.\nDraw a card.",
+        &A_SPELL,
+        REMAND_EFFECT,
+    )),
 );
 
 // J25 641 — Bushwhack

@@ -507,13 +507,12 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             deferred_decision_allowed && shared_effect_recipient(object)
         }
         EffectDef::Counter { object, zone, .. } => {
-            // The three places a countered card can end up. A library is one
+            // The four places a countered card can end up. A library is one
             // of them because Memory Lapse puts it back on top rather than
-            // into a graveyard, which the countering path already knows how
-            // to do.
+            // into a graveyard, and a hand is another because Remand does.
             matches!(
                 zone,
-                ZoneKind::Graveyard | ZoneKind::Exile | ZoneKind::Library
+                ZoneKind::Graveyard | ZoneKind::Exile | ZoneKind::Hand | ZoneKind::Library
             ) && shared_effect_recipient(object)
         }
         // Neither needs a recipient: both concern the resolving controller.

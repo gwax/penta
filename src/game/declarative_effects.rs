@@ -712,6 +712,7 @@ impl Game {
             } => {
                 let zone = match zone {
                     ZoneKind::Exile => CounteredSpellZone::Exile,
+                    ZoneKind::Hand => CounteredSpellZone::Hand,
                     ZoneKind::Library => CounteredSpellZone::Library(placement),
                     _ => CounteredSpellZone::Graveyard,
                 };
