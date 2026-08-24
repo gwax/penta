@@ -105,6 +105,13 @@ impl Game {
                 .battlefield
                 .iter()
                 .any(|permanent| permanent.card.id == source && permanent.tapped),
+            // The same question with the tap dropped: a source that has left
+            // takes what it did with it, and one that came back is a new
+            // object that never did it.
+            ContinuousEffectExpiration::WhileSourceRemains => self
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == source),
             ContinuousEffectExpiration::EndOfTurn
             | ContinuousEffectExpiration::EndOfCombat
             | ContinuousEffectExpiration::UpkeepOf(_)

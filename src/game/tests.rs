@@ -521,6 +521,7 @@ mod vintage_cube_thoughtseize;
 mod vintage_cube_thundertrap_trainer;
 mod vintage_cube_time_spiral;
 mod vintage_cube_tireless_tracker;
+mod vintage_cube_tishanas_tidebinder;
 mod vintage_cube_titania;
 mod vintage_cube_touch_spirit_realm;
 mod vintage_cube_troll_of_khazad_dum;

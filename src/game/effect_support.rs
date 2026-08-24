@@ -154,6 +154,7 @@ impl Game {
                 | ResolvedEffectDurationDef::UntilYourNextUpkeep
                 | ResolvedEffectDurationDef::UntilYourNextTurn
                 | ResolvedEffectDurationDef::WhileSourceTapped
+                | ResolvedEffectDurationDef::WhileSourceRemains
         ));
     }
 
@@ -257,6 +258,9 @@ impl Game {
             ResolvedEffectDurationDef::Permanent => ContinuousEffectExpiration::Never,
             ResolvedEffectDurationDef::WhileSourceTapped => {
                 ContinuousEffectExpiration::WhileSourceTapped
+            }
+            ResolvedEffectDurationDef::WhileSourceRemains => {
+                ContinuousEffectExpiration::WhileSourceRemains
             }
         }
     }

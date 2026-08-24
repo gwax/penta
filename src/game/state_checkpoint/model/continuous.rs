@@ -108,8 +108,16 @@ pub(in crate::game::state_checkpoint) enum ResolvedContinuousOperationSnapshot {
 pub(in crate::game::state_checkpoint) enum ContinuousEffectExpirationSnapshot {
     EndOfTurn,
     EndOfCombat,
-    UpkeepOf { seat: usize },
-    TurnOf { seat: usize, turn: u32 },
+    UpkeepOf {
+        seat: usize,
+    },
+    TurnOf {
+        seat: usize,
+        turn: u32,
+    },
     WhileSourceTapped,
+    /// Additive: a checkpoint written before this duration existed restores
+    /// no such effect, because nothing could have made one.
+    WhileSourceRemains,
     Never,
 }

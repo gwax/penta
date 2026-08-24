@@ -2,14 +2,15 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
     AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, DiscardFollowUpDef,
     DiscardSelectionDef, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
     ExilePlayDurationDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SpellAdditionalCostDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities, tokens,
+    StackTargetKindDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, tokens,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 use crate::{TargetIndex, mana_cost};
@@ -394,13 +395,76 @@ pub(in crate::card::sets) static SENTINEL_OF_THE_NAMELESS_CITY: CardRecord = Car
 );
 
 // LCI 335 — Tishana's Tidebinder
-// Audit: metadata-only — Card rules have not been implemented.
+/// An ability and not a spell, and up to one of them: a Tidebinder flashed
+/// in with nothing on the stack is still a 3/2. Mana abilities never use the
+/// stack, so nothing has to exclude them.
+static UP_TO_ONE_ABILITY: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::StackObject {
+        object: ObjectPredicateDef::Any,
+        controller: None,
+        kind: StackTargetKindDef::AbilityOnly,
+    },
+    1,
+)];
+
+/// The rider names three permanent types and not the other two: an
+/// enchantment or a land whose ability is countered keeps everything it has.
+static AN_ARTIFACT_CREATURE_OR_PLANESWALKER: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::HasType(CardType::Planeswalker),
+]);
+
+/// The permanent the countered ability came from, read after the counter has
+/// retired it, then narrowed to the types the rider names. A countered
+/// ability whose source was an enchantment binds nothing here, which is the
+/// "if" doing its work.
+static TIDEBINDER_SILENCES_ITS_SOURCE: EffectDef = EffectDef::BindMatching {
+    objects: ObjectSetDef::One(ObjectRefDef::SourceOfTargetedStackObject(
+        TargetIndex::PRIMARY,
+    )),
+    binding: ObjectSetBindingIndex::PRIMARY,
+    then: &EffectDef::Apply {
+        recipient: EffectRecipientDef::objects(ObjectSetDef::MatchingBinding {
+            binding: ObjectSetBindingIndex::PRIMARY,
+            object: AN_ARTIFACT_CREATURE_OR_PLANESWALKER,
+        }),
+        effect: AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
+        // Not a turn and not forever: the silence lasts exactly as long as
+        // the Tidebinder is standing there.
+        duration: ResolvedEffectDurationDef::WhileSourceRemains,
+    },
+};
+
+static TIDEBINDER_ANSWERS: EffectDef = EffectDef::Sequence(&[
+    EffectDef::Counter {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        zone: ZoneKind::Graveyard,
+        placement: ZonePlacement::Top,
+    },
+    TIDEBINDER_SILENCES_ITS_SOURCE,
+]);
+
+static TIDEBINDER_ABILITIES: [AbilityDef; 2] = [
+    abilities::flash(),
+    abilities::enters_trigger_with_targets(
+        "When this creature enters, counter up to one target activated or triggered ability. If \
+         an ability of an artifact, creature, or planeswalker is countered this way, that \
+         permanent loses all abilities for as long as this creature remains on the battlefield.",
+        &UP_TO_ONE_ABILITY,
+        TIDEBINDER_ANSWERS,
+    ),
+];
+
 pub(in crate::card::sets) static TISHANA_S_TIDEBINDER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("604e2bfc-655d-4d3e-98aa-374780ca4016"),
     "Tishana's Tidebinder",
-    crate::card::CardArt::new("604e2bfc-655d-4d3e-98aa-374780ca4016", "LeDania"),
-    crate::card::CardSet::LostCavernsOfIxalan,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("604e2bfc-655d-4d3e-98aa-374780ca4016", "LeDania"),
+    CardSet::LostCavernsOfIxalan,
+    // Three mana at instant speed for a body, an answer, and a permanent
+    // that never does anything again.
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Merfolk", "Wizard"], 3, 2)
+        .with_abilities(&TIDEBINDER_ABILITIES),
 );
 
 // LCI 367 — Preacher of the Schism

@@ -27,6 +27,9 @@ pub(super) enum ContinuousEffectExpiration {
         turn: u32,
     },
     WhileSourceTapped,
+    /// For as long as the source is still on the battlefield. Read live, so
+    /// nothing has to notice the moment it leaves.
+    WhileSourceRemains,
     Never,
 }
 
@@ -47,6 +50,7 @@ impl ContinuousEffectExpiration {
             | Self::EndOfTurn
             | Self::EndOfCombat
             | Self::WhileSourceTapped
+            | Self::WhileSourceRemains
             | Self::Never => true,
         }
     }
@@ -59,6 +63,7 @@ impl ContinuousEffectExpiration {
             | Self::EndOfTurn
             | Self::EndOfCombat
             | Self::WhileSourceTapped
+            | Self::WhileSourceRemains
             | Self::Never => true,
         }
     }

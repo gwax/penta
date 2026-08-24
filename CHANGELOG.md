@@ -25,6 +25,18 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A resolving effect that lasts as long as its source is there.** Until now
+  a resolved continuous effect ended on a deadline -- a turn, an upkeep, a
+  combat -- or never; the one open-ended form asked whether its source was
+  still tapped. "For as long as this creature remains on the battlefield" is
+  the same shape with the tap dropped, read live off the battlefield, so a
+  source that leaves takes what it did with it and a source that returns is
+  a new object that never did it. Tishana's Tidebinder prints it, countering
+  an activated or triggered ability and leaving the artifact, creature, or
+  planeswalker that made it with no abilities at all. The duration is an
+  additive checkpoint tag; checkpoint format 8, replay version 2, and
+  protocol 29 are unchanged.
+
 - **Shadow, and a counter that rides a replaced zone change.** Shadow is one
   keyword read from both sides: a creature with it and a creature without
   are simply unable to meet in combat, whichever is attacking. Alongside it,

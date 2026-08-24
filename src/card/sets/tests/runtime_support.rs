@@ -294,7 +294,11 @@ pub(super) fn shared_resolving_apply(
             duration,
             ResolvedEffectDurationDef::UntilYourNextTurn | ResolvedEffectDurationDef::Permanent
         ) && long_lived
-        || duration == ResolvedEffectDurationDef::WhileSourceTapped && while_source_tapped;
+        || duration == ResolvedEffectDurationDef::WhileSourceTapped && while_source_tapped
+        // Stored exactly the way an indefinite effect is; what differs is
+        // only the question asked before it is read, and the source being
+        // there is asked of the same battlefield the layers walk.
+        || duration == ResolvedEffectDurationDef::WhileSourceRemains && long_lived;
     if !duration_is_supported || !shared_effect_recipient(recipient) {
         return false;
     }

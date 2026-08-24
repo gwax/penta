@@ -712,6 +712,14 @@ impl Game {
             .filter(|permanent| permanent.tapped)
             .map(|permanent| permanent.card.id)
             .collect();
+        // The same for a source that had only to remain: it is already inert
+        // once its source has left, and dropping it here keeps a permanent
+        // from carrying components nothing will ever read again.
+        let still_present: Vec<_> = self
+            .battlefield
+            .iter()
+            .map(|permanent| permanent.card.id)
+            .collect();
         for permanent in &mut self.battlefield {
             permanent.damage = 0;
             permanent.exile_instead_of_dying = false;
@@ -723,6 +731,10 @@ impl Game {
                         effect.expiration,
                         ContinuousEffectExpiration::WhileSourceTapped
                     ) || still_tapped.contains(&effect.source.object))
+                    && (!matches!(
+                        effect.expiration,
+                        ContinuousEffectExpiration::WhileSourceRemains
+                    ) || still_present.contains(&effect.source.object))
             });
             if permanent
                 .copy_expiration

@@ -116,6 +116,9 @@ const fn expiration_snapshot(
         ContinuousEffectExpiration::WhileSourceTapped => {
             ContinuousEffectExpirationSnapshot::WhileSourceTapped
         }
+        ContinuousEffectExpiration::WhileSourceRemains => {
+            ContinuousEffectExpirationSnapshot::WhileSourceRemains
+        }
         ContinuousEffectExpiration::Never => ContinuousEffectExpirationSnapshot::Never,
     }
 }
@@ -139,6 +142,9 @@ fn parse_expiration(
         }
         ContinuousEffectExpirationSnapshot::WhileSourceTapped => {
             Ok(ContinuousEffectExpiration::WhileSourceTapped)
+        }
+        ContinuousEffectExpirationSnapshot::WhileSourceRemains => {
+            Ok(ContinuousEffectExpiration::WhileSourceRemains)
         }
         ContinuousEffectExpirationSnapshot::Never => Ok(ContinuousEffectExpiration::Never),
     }

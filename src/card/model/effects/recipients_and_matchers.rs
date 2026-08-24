@@ -355,6 +355,12 @@ pub enum ResolvedEffectDurationDef {
     /// other resolving duration this one has no deadline: the artifact that
     /// tapped to make it decides when it ends by untapping.
     WhileSourceTapped,
+    /// "For as long as this creature remains on the battlefield." The same
+    /// open-ended shape as [`Self::WhileSourceTapped`] with a weaker
+    /// condition: the source has only to still be there. A source that
+    /// leaves and returns is a new object, so what it left behind stays
+    /// ended.
+    WhileSourceRemains,
 }
 
 /// How long a resolved control-changing effect lasts.
