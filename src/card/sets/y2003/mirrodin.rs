@@ -174,13 +174,32 @@ pub(in crate::card::sets) static LIGHTNING_GREAVES: CardRecord = CardRecord::new
 );
 
 // MRD 253 — Talisman of Dominance
-// Audit: metadata-only — Card rules have not been implemented.
+/// The pair this Talisman is for, read the same way its siblings are.
+static DOMINANCE_COLORS: [ManaColor; 2] = [ManaColor::Blue, ManaColor::Black];
+
+static TALISMAN_OF_DOMINANCE_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::activated_mana(
+        "{T}: Add {C}.",
+        &TALISMAN_TAP,
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+    ),
+    AbilityDef::activated_mana(
+        "{T}: Add {U} or {B}. This artifact deals 1 damage to you.",
+        &TALISMAN_TAP,
+        EffectDef::AddMana(
+            AddManaEffectDef::choice(&DOMINANCE_COLORS).with_damage_to_controller(1),
+        ),
+    ),
+];
+
 pub(in crate::card::sets) static TALISMAN_OF_DOMINANCE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("991037a2-fea2-49f5-8ace-ebbf9f678cff"),
     "Talisman of Dominance",
-    crate::card::CardArt::new("991037a2-fea2-49f5-8ace-ebbf9f678cff", "Mike Dringenberg"),
-    crate::card::CardSet::Mirrodin,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("991037a2-fea2-49f5-8ace-ebbf9f678cff", "Mike Dringenberg"),
+    CardSet::Mirrodin,
+    // Two mana that fixes for a life a turn, or for nothing at all when
+    // colourless is what the next spell wants.
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&TALISMAN_OF_DOMINANCE_ABILITIES),
 );
 
 // MRD 256 — Talisman of Progress
