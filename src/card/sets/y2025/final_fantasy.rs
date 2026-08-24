@@ -1,12 +1,14 @@
 //! Final Fantasy cards cataloged for the Vintage Cube pool.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::TargetIndex;
 use crate::card::{
-    AbilityCostDef, AbilityDef, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, CardArt,
-    CardRules, CardSet, CardSupertype, CardType, CounterKind, DamageEventMatcherDef, DamageKindDef,
-    DamageRecipientMatcherDef, DamageSourceMatcherDef, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, ObjectRefDef, PlayerRelation, ResolvedEffectDurationDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, ActivationTimingDef, AddManaEffectDef,
+    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    CounterKind, DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef,
+    DamageSourceMatcherDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectRefDef, PlayerRelation, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::mana_cost;
 
@@ -120,13 +122,67 @@ pub(in crate::card::sets) static RESENTFUL_REVELATION: CardRecord = CardRecord::
 );
 
 // FIN 164 — Suplex
-// Audit: metadata-only — Card rules have not been implemented.
+static A_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+static AN_ARTIFACT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+)];
+
+/// The second sentence is about the creature, not about the damage: it is
+/// applied to the target whether or not three damage was enough, or arrived
+/// at all, so the two clauses resolve in order rather than as one linked
+/// effect. A creature that shrugs the three off is still exiled if
+/// something else finishes it before the turn ends.
+static SUPLEX_SLAMS: EffectDef = EffectDef::Sequence(&[
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::ExileInsteadOfDying),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+]);
+
+static SUPLEX_MODES: [AbilityDef; 2] = [
+    AbilityDef::spell_with_targets(
+        "Suplex deals 3 damage to target creature. If that creature would die this turn, exile it \
+         instead.",
+        &A_CREATURE,
+        SUPLEX_SLAMS,
+    ),
+    AbilityDef::spell_with_targets(
+        "Exile target artifact.",
+        &AN_ARTIFACT,
+        EffectDef::MoveToZone {
+            counters: None,
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            from: None,
+            zone: ZoneKind::Exile,
+            placement: ZonePlacement::Top,
+            arrival_effect: None,
+            attachment: None,
+            controller: None,
+            tapped: false,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static SUPLEX: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("f61693a2-7042-44e0-85ba-9bf12ab94e7e"),
     "Suplex",
-    crate::card::CardArt::new("f61693a2-7042-44e0-85ba-9bf12ab94e7e", "Fang Xinyu"),
-    crate::card::CardSet::FinalFantasy,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("f61693a2-7042-44e0-85ba-9bf12ab94e7e", "Fang Xinyu"),
+    CardSet::FinalFantasy,
+    // Three damage that answers a recursive creature for good, or the
+    // artifact half when there is nothing to throw.
+    CardRules::new_sorcery(mana_cost!("{1}{R}")).with_ability(AbilityDef::choose_one_spell(
+        "Choose one —\n• Suplex deals 3 damage to target creature. If that creature would die \
+         this turn, exile it instead.\n• Exile target artifact.",
+        &SUPLEX_MODES,
+    )),
 );
 
 // FIN 206 — Tifa Lockhart

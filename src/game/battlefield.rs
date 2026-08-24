@@ -300,9 +300,12 @@ impl Game {
                         // A finality counter says the same thing a
                         // turn-long exile-instead effect says (CR 122.1h),
                         // and outlasts it: the counter is on the permanent
-                        // rather than on the turn.
+                        // rather than on the turn. The flag beside it is
+                        // Pillar of Flame's older card-local route to the
+                        // same replacement.
                         destination: if permanent.exile_instead_of_dying
                             || permanent.counters(CounterKind::Finality) > 0
+                            || self.has_applied_rule(permanent, AppliedRuleDef::ExileInsteadOfDying)
                         {
                             ZoneKind::Exile
                         } else {

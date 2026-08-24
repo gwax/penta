@@ -438,6 +438,9 @@ fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRule
         // gaining life.
         | AppliedRuleDef::MayCastAsThoughItHadFlash(_)
         | AppliedRuleDef::CannotGainLife
+        // No printed static says "if it would die, exile it instead": every
+        // card that says it is a resolving effect with a duration on it.
+        | AppliedRuleDef::ExileInsteadOfDying
         | AppliedRuleDef::MayPlayFromGraveyard(_)
         | AppliedRuleDef::MayPlayFromTopOfLibrary { .. }
         | AppliedRuleDef::GrantsAlternativeCastFromGraveyard { .. }

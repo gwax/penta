@@ -464,6 +464,13 @@ pub enum AppliedRuleDef {
     /// changes, and the permission belongs to the player it was given to for
     /// as long as its own duration lasts.
     MayCastAsThoughItHadFlash(ObjectPredicateDef),
+    /// "If that creature would die this turn, exile it instead." A
+    /// replacement over the death itself rather than over the damage that
+    /// caused it: it applies however the creature would die, and it outlives
+    /// the damage, which is why it is a rule with a duration instead of a
+    /// property of the damage event. A finality counter says the same thing
+    /// permanently (CR 122.1h).
+    ExileInsteadOfDying,
     /// An unlimited prevention rule derived live while this static applied
     /// effect exists. Two-sided prevention is an
     /// [`AppliedEffectDef::Composite`] of source and recipient matchers.
