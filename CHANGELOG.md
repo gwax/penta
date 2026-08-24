@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A replacement effect that outlives the card that made it.** A resolving
+  spell can now create an effect object carrying a replacement rather than
+  granting one to a permanent, and both zone-move walks read it there. That
+  is the only honest home for "if a card would be put into your graveyard
+  this turn, exile it instead" on a card that is itself in the graveyard by
+  the time the clause applies. Yawgmoth's Will is the first card with it.
+
 - **"Any other target", and a player who cannot gain life.** A target slot
   can now exclude the ability's own source, which is what "any other target"
   prints and what stops a damage-reflecting creature from answering itself.

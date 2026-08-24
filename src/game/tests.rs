@@ -534,6 +534,7 @@ mod vintage_cube_witch_enchanter;
 mod vintage_cube_witherbloom_apprentice;
 mod vintage_cube_worldspine_wurm;
 mod vintage_cube_wrenn_and_six;
+mod vintage_cube_yawgmoths_will;
 mod vintage_cube_zirda;
 mod wards;
 mod while_source_tapped;

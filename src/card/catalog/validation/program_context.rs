@@ -5,8 +5,8 @@ use crate::card::{
     DamageEventMatcherDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
     DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EffectRecipientSetDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, PowerToughnessOperationDef, SetOperationDef, TriggerConditionDef, ValueDef,
-    ZoneKind,
+    PlayerSetDef, PowerToughnessOperationDef, ReplacementEffectDef, ReplacementEventDef,
+    SetOperationDef, TriggerConditionDef, ValueDef, ZoneKind,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -488,6 +488,32 @@ fn validate_resolving_effect(
                 return Err("InstallTrigger with a non-declarative program");
             };
             validate_resolving_effect(effect, source_zones)
+        }
+        // A turn-scoped replacement has nowhere else to live: the card that
+        // made it is gone by the time it applies, so the effect object is
+        // its home rather than a permanent it could be granted to.
+        EffectDef::CreateOngoingEffect(ongoing)
+            if matches!(
+                ongoing.ability.definition,
+                DeclarativeAbilityDef::Replacement(_)
+            ) =>
+        {
+            let DeclarativeAbilityDef::Replacement(definition) = ongoing.ability.definition else {
+                unreachable!("the guard above matched a replacement")
+            };
+            let Some(effect) = ongoing.ability.declarative_replacement() else {
+                return Err("CreateOngoingEffect with a non-declarative replacement");
+            };
+            if !matches!(
+                (definition.event, effect),
+                (
+                    ReplacementEventDef::AnyObjectWouldMove { .. },
+                    ReplacementEffectDef::MoveToZone(_),
+                )
+            ) {
+                return Err("CreateOngoingEffect with an unsupported replacement");
+            }
+            Ok(())
         }
         EffectDef::CreateOngoingEffect(ongoing) => {
             let (definition, mana) = match ongoing.ability.definition {

@@ -362,6 +362,42 @@ impl Game {
                 break;
             }
         }
+        // And the same replacement made by a resolving spell rather than
+        // printed on a permanent: the effect object holds it for as long as
+        // it lasts, which is where Yawgmoth's Will keeps its turn.
+        if replacement.is_none() {
+            for ongoing in &self.ongoing_effects {
+                let ability = ongoing.ability;
+                let DeclarativeAbilityDef::Replacement(definition) = ability.definition else {
+                    continue;
+                };
+                let ReplacementEventDef::AnyObjectWouldMove {
+                    to: watched,
+                    owner: watched_owner,
+                    tokens,
+                } = definition.event
+                else {
+                    continue;
+                };
+                if watched != to
+                    || (!tokens && is_token)
+                    || !self.player_relation_matches(
+                        owner,
+                        watched_owner,
+                        ongoing.controller,
+                        TriggerContext::empty(),
+                    )
+                {
+                    continue;
+                }
+                if let Some(ReplacementEffectDef::MoveToZone(zone)) =
+                    ability.declarative_replacement()
+                {
+                    replacement = Some(zone);
+                    break;
+                }
+            }
+        }
         replacement
     }
 

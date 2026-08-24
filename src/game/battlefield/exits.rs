@@ -92,6 +92,29 @@ impl Game {
                 });
             });
         }
+        // An effect object is not on the battlefield and is in no zone at
+        // all, so nothing about where it sits gates it: it applies for as
+        // long as it lasts.
+        for ongoing in &self.ongoing_effects {
+            let ability = ongoing.ability;
+            let DeclarativeAbilityDef::Replacement(replacement) = ability.definition else {
+                continue;
+            };
+            let Some(effect) = ability.declarative_replacement() else {
+                continue;
+            };
+            if !ability.is_executable() {
+                continue;
+            }
+            replacements.push(FrozenZoneMoveReplacement {
+                source: ongoing.source,
+                controller: ongoing.controller,
+                presentation: ongoing.presentation,
+                text: ability.text,
+                replacement,
+                effect,
+            });
+        }
         replacements
     }
 

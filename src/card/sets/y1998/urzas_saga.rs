@@ -11,10 +11,12 @@ use crate::card::sets::y2024::modern_horizons_3 as catalog_mh3;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     AppliedRuleDef, CardArt, CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType,
-    ChoiceVisibilityDef, ChooseDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, SpellResolutionDestinationDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    ChoiceVisibilityDef, ChooseDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
+    GraveyardPlayPermissionDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectSetDef, OngoingEffectDef, PlayActionMatcherDef, PlayRestrictionDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, SpellResolutionDestinationDef, TriggerEventDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -1752,13 +1754,53 @@ pub(in crate::card::sets) static YAWGMOTH_S_EDICT: CardRecord = CardRecord::new(
 );
 
 // USG 171 — Yawgmoth's Will
-// Audit: metadata-only — Card rules have not been implemented.
+/// Everything, played every way: the permission names no card type and no
+/// one play action, which is the whole of "play lands and cast spells".
+static ANY_CARD_ANY_WAY: PlayRestrictionDef =
+    PlayRestrictionDef::new(PlayActionMatcherDef::Any, ObjectPredicateDef::Any);
+
+/// "A card", not "a card or token": a token put into a graveyard goes there
+/// and ceases to exist as it always would.
+static WILL_EXILES_INSTEAD: AbilityDef = AbilityDef::replacement_for(
+    "If a card would be put into your graveyard from anywhere this turn, exile that card instead.",
+    ReplacementEventDef::AnyObjectWouldMove {
+        to: ZoneKind::Graveyard,
+        owner: PlayerRelation::You,
+        tokens: false,
+    },
+    ReplacementEffectDef::MoveToZone(ZoneKind::Exile),
+);
+
+/// The permission belongs to the player. The replacement belongs to nothing
+/// at all: the card making it is in the graveyard -- or in exile, by its own
+/// clause -- before it applies, so it is created as an effect object that
+/// lasts the turn rather than granted to a source that will not be there.
+static WILL_UNLOCKS_THE_GRAVEYARD: [EffectDef; 2] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Controller,
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(
+            GraveyardPlayPermissionDef::unlimited(ANY_CARD_ANY_WAY),
+        )),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::CreateOngoingEffect(OngoingEffectDef::unbound(
+        &WILL_EXILES_INSTEAD,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
+    )),
+];
+
 pub(in crate::card::sets) static YAWGMOTH_S_WILL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("6d3e3c3a-d351-4d91-8884-312d4b6f540d"),
     "Yawgmoth's Will",
-    crate::card::CardArt::new("6d3e3c3a-d351-4d91-8884-312d4b6f540d", "Ron Spencer"),
-    crate::card::CardSet::UrzasSaga,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("6d3e3c3a-d351-4d91-8884-312d4b6f540d", "Ron Spencer"),
+    CardSet::UrzasSaga,
+    // Three mana to play the turn over again out of the graveyard, and the
+    // exile clause is what stops it being played a third time.
+    CardRules::new_sorcery(mana_cost!("{2}{B}")).with_ability(AbilityDef::spell(
+        "Until end of turn, you may play lands and cast spells from your graveyard.\nIf a card \
+         would be put into your graveyard from anywhere this turn, exile that card instead.",
+        EffectDef::Sequence(&WILL_UNLOCKS_THE_GRAVEYARD),
+    )),
 );
 
 // USG 172 — Acidic Soil

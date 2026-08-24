@@ -553,6 +553,27 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         // Installing an ability is a resolution like any other; what it
         // installs has to be an ability the shared runtime can fire.
         EffectDef::InstallTrigger(trigger) => shared_definition_ability(trigger.ability),
+        // The effect object is where a turn-scoped replacement lives, and
+        // both zone-move walks read it there.
+        EffectDef::CreateOngoingEffect(ongoing)
+            if matches!(
+                ongoing.ability.definition,
+                DeclarativeAbilityDef::Replacement(_)
+            ) =>
+        {
+            let DeclarativeAbilityDef::Replacement(definition) = ongoing.ability.definition else {
+                return false;
+            };
+            ongoing.affected.is_none()
+                && matches!(
+                    definition.event,
+                    ReplacementEventDef::AnyObjectWouldMove { .. }
+                )
+                && matches!(
+                    ongoing.ability.declarative_replacement(),
+                    Some(ReplacementEffectDef::MoveToZone(_))
+                )
+        }
         EffectDef::CreateOngoingEffect(ongoing) => {
             let (definition, mana) = match ongoing.ability.definition {
                 DeclarativeAbilityDef::Activated(definition) => (definition, false),
