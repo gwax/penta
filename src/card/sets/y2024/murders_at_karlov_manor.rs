@@ -257,13 +257,14 @@ pub(in crate::card::sets) static SHADOWY_BACKSTREET: CardRecord = CardRecord::ne
 );
 
 // MKM 333 — Underground Mortuary
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static UNDERGROUND_MORTUARY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("0d8938e4-bfa5-47e1-8c71-9c6583346300"),
     "Underground Mortuary",
-    crate::card::CardArt::new("0d8938e4-bfa5-47e1-8c71-9c6583346300", "Sergey Glushakov"),
-    crate::card::CardSet::MurdersAtKarlovManor,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("0d8938e4-bfa5-47e1-8c71-9c6583346300", "Sergey Glushakov"),
+    CardSet::MurdersAtKarlovManor,
+    // The black-green half, whose deck is usually pleased to bin whatever
+    // the look turns up: half of what it wants is already in the graveyard.
+    surveil_land(&["Swamp", "Forest"]),
 );
 
 // MKM 396 — Proft's Eidetic Memory

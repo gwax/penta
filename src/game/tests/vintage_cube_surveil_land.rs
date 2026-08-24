@@ -193,6 +193,45 @@ fn the_red_green_land_taps_for_its_own_two() {
     assert_eq!(colors.len(), 2, "and nothing else");
 }
 
+/// And the black-green one, which is the half of the cycle the graveyard
+/// decks are actually playing.
+#[test]
+fn the_black_green_land_taps_for_its_own_two() {
+    let (mut game, land) = staged_with(cards::UNDERGROUND_MORTUARY, cards::LIGHTNING_BOLT);
+    play_and_surveil(&mut game, land, true);
+    let id = the_land_named(&game, cards::UNDERGROUND_MORTUARY)
+        .expect("it is on the battlefield")
+        .card
+        .id;
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "its surveil bins what it was told to",
+    );
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == id)
+    {
+        permanent.tapped = false;
+    }
+
+    let colors = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility { source, color, .. } if source == id => Some(color),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert!(colors.contains(&ManaColor::Black), "Swamp");
+    assert!(colors.contains(&ManaColor::Green), "Forest");
+    assert_eq!(colors.len(), 2, "and nothing else");
+}
+
 /// The mana abilities come from the basic land types rather than a printed
 /// clause, so both colours are on offer.
 #[test]
