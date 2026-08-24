@@ -5,8 +5,8 @@
 //! reach for, rather than a variant of any one of them.
 
 use super::super::{
-    AbilityDef, ChoiceVisibilityDef, CounterKind, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerSetDef,
+    AbilityDef, ChoiceVisibilityDef, ColorSet, CounterKind, CreatureTypeSetDef, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerSetDef,
     ResolvedEffectDurationDef, ValueDef, ZoneKind,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
@@ -259,4 +259,60 @@ pub enum ExilePlayDurationDef {
     /// whatever the clause granting it says: Robber of the Rich hands one
     /// out that only works on the turns you attacked with a Rogue.
     WhileExiled,
+}
+
+/// What a token copy is created "except" for.
+///
+/// Offspring names one of these and embalm and eternalize name four, but
+/// they are the same kind of thing: copy exceptions, which CR 707.9a makes
+/// copiable values in their own right. A later copy of the token copies
+/// them along with everything else.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct TokenCopyExceptionsDef {
+    /// "Except it's a 1/1", or a 4/4.
+    pub base_power_toughness: Option<(i16, i16)>,
+    /// "Except it's black": the colours it has instead of the ones it
+    /// copied, rather than in addition to them.
+    pub colors: Option<ColorSet>,
+    /// "Except it's a Zombie <its own types>": creature types on top of the
+    /// ones it copied.
+    pub added_creature_types: CreatureTypeSetDef,
+    /// "With no mana cost", which is what makes an eternalized card's mana
+    /// value zero.
+    pub no_mana_cost: bool,
+}
+
+impl TokenCopyExceptionsDef {
+    /// A plain copy, with nothing said after "except".
+    pub const NONE: Self = Self {
+        base_power_toughness: None,
+        colors: None,
+        added_creature_types: CreatureTypeSetDef::named(&[]),
+        no_mana_cost: false,
+    };
+
+    #[must_use]
+    pub const fn power_toughness(power: i16, toughness: i16) -> Self {
+        Self {
+            base_power_toughness: Some((power, toughness)),
+            ..Self::NONE
+        }
+    }
+
+    /// The list embalm and eternalize print: a body, a colour, a type on
+    /// top of the ones it had, and no mana cost.
+    #[must_use]
+    pub const fn undead(
+        power: i16,
+        toughness: i16,
+        colors: ColorSet,
+        added_creature_types: &'static [&'static str],
+    ) -> Self {
+        Self {
+            base_power_toughness: Some((power, toughness)),
+            colors: Some(colors),
+            added_creature_types: CreatureTypeSetDef::named(added_creature_types),
+            no_mana_cost: true,
+        }
+    }
 }

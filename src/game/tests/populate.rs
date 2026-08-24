@@ -72,6 +72,9 @@ fn populate_preserves_the_tokens_complete_copiable_values() {
         added_abilities: Vec::new(),
         retain_printed_subtypes: false,
         base_power_toughness: None,
+        colors: None,
+        added_creature_types: Vec::new(),
+        no_mana_cost: false,
     });
     game.battlefield.push(original);
 

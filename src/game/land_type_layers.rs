@@ -8,11 +8,15 @@ use super::{
     SetOperationDef, TriggerContext, ZoneKind,
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 enum SubtypeLayerOperation {
     BasicLand(LandTypeOperation),
     Creature(SetOperationDef<CreatureTypeSetDef>),
     Named(SetOperationDef<&'static [&'static str]>),
+    /// The same as adding named subtypes, over a list a copy carries rather
+    /// than one a card printed. Owned because the copy's exceptions are
+    /// interned per game rather than authored as a static slice.
+    AddedNamed(Vec<&'static str>),
 }
 
 /// Land subtype vocabulary from CR 205.3i. Type-setting effects must remove
@@ -620,6 +624,19 @@ impl Game {
                     _ => None,
                 }),
         );
+        // "Except it's a Zombie ...": a copy exception, added on top of the
+        // types it copied rather than replacing them.
+        if let Some(added) = characteristic
+            .active_copy_values()
+            .map(|copy| copy.added_creature_types.clone())
+            .filter(|added| !added.is_empty())
+        {
+            operations.push((
+                characteristic.timestamp,
+                0,
+                SubtypeLayerOperation::AddedNamed(added),
+            ));
+        }
         // The other half of bestow's type change: while attached it is an
         // Aura, which is the subtype the enchantment half needs.
         if Self::is_bestowed_aura(characteristic) {
@@ -795,6 +812,13 @@ impl Game {
                     }
                     for subtype in types.named {
                         if !subtypes.contains(subtype) {
+                            subtypes.push(subtype);
+                        }
+                    }
+                }
+                SubtypeLayerOperation::AddedNamed(types) => {
+                    for subtype in types {
+                        if !subtypes.contains(&subtype) {
                             subtypes.push(subtype);
                         }
                     }

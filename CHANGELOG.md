@@ -68,6 +68,16 @@ distinguishes snapshots of the covered source and build inputs.
   permission carries no sorcery-speed restriction of its own: every card that
   prints the keyword so far is a sorcery, and its type already says so.
 
+- **Eternalize, and copy exceptions generally.** A token copy could say one
+  thing after "except": that it is a 1/1. Embalm and eternalize say four --
+  a body, a colour, a creature type on top of the ones it had, and no mana
+  cost -- so the exceptions are now a set the clause carries rather than a
+  single field, and each of them is a copiable value in its own right
+  (CR 707.9a), so a later copy of the token copies them too.
+
+  A token copy can also be made of a card rather than a permanent now, which
+  is what eternalize copies: the card it exiled to pay for itself.
+
 - **Rebound.** Two halves that only make sense together: a spell cast from
   hand exiles itself as it resolves, and a delayed trigger offers it back for
   nothing at the caster's next upkeep. Both are gated on the same question --

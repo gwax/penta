@@ -349,3 +349,36 @@ pub const fn rebound_offer() -> EffectDef {
 pub const fn rebound_text() -> &'static str {
     REBOUND_TEXT
 }
+
+/// "Eternalize {cost}" (CR 702.129a).
+///
+/// An activated ability of the card in its owner's graveyard: it exiles
+/// itself as a cost and makes a token copy of what it just exiled, except
+/// for the four things the keyword fixes -- a 4/4 body, black, a Zombie on
+/// top of the types it already had, and no mana cost. Sorcery timing,
+/// because the reminder says so.
+///
+/// The caller supplies the printed text, which repeats both the cost and the
+/// card's own creature types.
+#[must_use]
+pub const fn eternalize(text: &'static str, cost: ManaCost) -> AbilityDef {
+    AbilityDef::activated_with_cost_list_and_targets(
+        text,
+        AbilityCostList::two(AbilityCostDef::Mana(cost), AbilityCostDef::ExileSource),
+        &[],
+        EffectDef::CreateTokenCopyOf {
+            object: EffectRecipientDef::Source,
+            exceptions: TokenCopyExceptionsDef::undead(
+                4,
+                4,
+                ColorSet::from_colors(&[ManaColor::Black]),
+                &ETERNALIZE_ADDED_TYPES,
+            ),
+        },
+    )
+    .with_source_zones(&[ZoneKind::Graveyard])
+    .with_activation_timing(ActivationTimingDef::SorcerySpeed)
+}
+
+/// The one type every eternalized token gains, whatever it was before.
+static ETERNALIZE_ADDED_TYPES: [&str; 1] = ["Zombie"];

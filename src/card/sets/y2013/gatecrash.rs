@@ -14,8 +14,9 @@ use crate::card::{
     MillUntilDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
     ObjectSetDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
     QuantifierDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, SumValueDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
-    TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    SacrificedAmountDef, SumValueDef, TokenCopyExceptionsDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -2582,7 +2583,7 @@ pub(in crate::card::sets) static GIANT_ADEPHAGE: CardRecord = CardRecord::new_wi
             TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
             EffectDef::CreateTokenCopyOf {
                 object: EffectRecipientDef::Source,
-                base_power_toughness: None,
+                exceptions: TokenCopyExceptionsDef::NONE,
             },
         ),
     ]),

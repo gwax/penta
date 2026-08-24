@@ -13,9 +13,9 @@ use crate::card::{
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
     PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
     ResolvedEffectDurationDef, RoundingDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef,
-    SpellForm, SpendModeDef, TargetConditionDef, TokenCharacteristics, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
-    tokens,
+    SpellForm, SpendModeDef, TargetConditionDef, TokenCharacteristics, TokenCopyExceptionsDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, tokens,
 };
 use crate::ids::{CardPartId, ObjectBindingIndex, ObjectSetBindingIndex, PlayOptionId};
 use crate::{TargetIndex, mana_cost};
@@ -36,7 +36,7 @@ static YOUR_NEW_TOKENS: ObjectQueryDef = ObjectQueryDef::controlled_by(
 
 static OCELOT_DOUBLES_THEM: EffectDef = EffectDef::CreateTokenCopyOf {
     object: EffectRecipientDef::objects(ObjectSetDef::Query(YOUR_NEW_TOKENS)),
-    base_power_toughness: None,
+    exceptions: TokenCopyExceptionsDef::NONE,
 };
 
 static OCELOT_END_STEP: [EffectDef; 2] = [
@@ -768,14 +768,56 @@ pub(in crate::card::sets) static EVOLUTION_WITNESS: CardRecord = CardRecord::new
     crate::card::CardRules::unsupported(),
 );
 
+/// Ferocious: a creature with power four or greater, which the Fanatic is
+/// not, so something else has to be there.
+static A_CREATURE_WITH_POWER_FOUR_OR_GREATER: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::PowerAtLeast(4),
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static FEROCIOUS: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: A_CREATURE_WITH_POWER_FOUR_OR_GREATER,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+static FANATIC_TAP: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
+static FANATIC_OF_RHONAS_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::activated_mana(
+        "{T}: Add {G}.",
+        &FANATIC_TAP,
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green)),
+    ),
+    AbilityDef::activated_mana_if(
+        "Ferocious — {T}: Add {G}{G}{G}{G}. Activate only if you control a creature with power 4 \
+         or greater.",
+        &FANATIC_TAP,
+        &FEROCIOUS,
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green).with_amount(4)),
+    ),
+    abilities::eternalize(
+        "Eternalize {2}{G}{G} ({2}{G}{G}, Exile this card from your graveyard: Create a token \
+         that's a copy of it, except it's a 4/4 black Zombie Snake Druid with no mana cost. \
+         Eternalize only as a sorcery.)",
+        mana_cost!("{2}{G}{G}"),
+    ),
+];
+
 // MH3 152 — Fanatic of Rhonas
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static FANATIC_OF_RHONAS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1f9fb33a-3b39-4aff-93b8-aedafe0ea694"),
     "Fanatic of Rhonas",
-    crate::card::CardArt::new("1f9fb33a-3b39-4aff-93b8-aedafe0ea694", "Scott Murphy"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("1f9fb33a-3b39-4aff-93b8-aedafe0ea694", "Scott Murphy"),
+    CardSet::ModernHorizons3,
+    // Two mana for a 1/4 that taps for one, and for four the moment anything
+    // large is beside it -- and a 4/4 out of the graveyard afterwards.
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Snake", "Druid"], 1, 4)
+        .with_abilities(&FANATIC_OF_RHONAS_ABILITIES),
 );
 
 // MH3 157 — Horrific Assault

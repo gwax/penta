@@ -68,6 +68,17 @@ pub(super) struct CopiableCharacteristics {
     /// (CR 707.9a), so it rides here rather than being applied to the token
     /// afterwards: a later copy of an offspring token is 1/1 as well.
     pub(super) base_power_toughness: Option<(i16, i16)>,
+    /// "Except it's black." The colours the copy has instead of the ones it
+    /// copied, which is what makes an eternalized token black whatever the
+    /// card it came from was.
+    pub(super) colors: Option<crate::card::ColorSet>,
+    /// "Except it's a Zombie ...": creature types on top of the copied
+    /// ones. Interned names rather than the authored slice, so a restored
+    /// copy holds the same `&'static str` the cards do.
+    pub(super) added_creature_types: Vec<&'static str>,
+    /// "With no mana cost", which is what zeroes an eternalized token's mana
+    /// value.
+    pub(super) no_mana_cost: bool,
 }
 
 /// The permanent, two-face copiable values of a double-faced token created as

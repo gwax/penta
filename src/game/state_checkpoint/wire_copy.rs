@@ -23,6 +23,26 @@ pub(super) fn parse_copiable_characteristics(
         base_power_toughness: snapshot
             .base_power_toughness
             .map(|stats| (stats[0], stats[1])),
+        colors: snapshot.colors.map(|flags| {
+            let mut colors = crate::card::ColorSet::empty();
+            for (color, present) in crate::card::ManaColor::COLORS.into_iter().zip(flags) {
+                if present {
+                    colors = colors.with(color);
+                }
+            }
+            colors
+        }),
+        // Interned against the catalog's own vocabulary, so a checkpoint
+        // naming a type nothing prints is refused rather than inventing one.
+        added_creature_types: snapshot
+            .added_creature_types
+            .iter()
+            .map(|name| {
+                crate::card::creature_type_name(name)
+                    .ok_or_else(|| "checkpoint copy names an unknown creature type".to_owned())
+            })
+            .collect::<Result<Vec<_>, String>>()?,
+        no_mana_cost: snapshot.no_mana_cost,
         added_abilities: snapshot
             .added_abilities
             .iter()

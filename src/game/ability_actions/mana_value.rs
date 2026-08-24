@@ -5,6 +5,15 @@ use super::{
 
 impl Game {
     pub(in crate::game) fn permanent_mana_value(&self, permanent: &Permanent) -> u16 {
+        // "With no mana cost" is a copy exception, so it answers before
+        // anything reads the card it copied (CR 202.3a: no mana cost is a
+        // mana value of zero).
+        if permanent
+            .active_copy_values()
+            .is_some_and(|copy| copy.no_mana_cost)
+        {
+            return 0;
+        }
         // A transforming double-faced permanent keeps the mana value of its
         // front face while its back face is up. A permanent merely copying a
         // back face is not itself that transforming double-faced card, so its

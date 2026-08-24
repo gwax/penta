@@ -72,32 +72,44 @@ impl Game {
             }
             EffectDef::CreateTokenCopyOf {
                 object: recipient,
-                base_power_toughness,
+                exceptions,
             } => {
                 let copies = self
                     .effect_recipients(recipient, object, context, scoped)
                     .into_iter()
-                    .filter_map(|target| match target {
-                        Target::Permanent(id) => self
-                            .battlefield
-                            .iter()
-                            .find(|permanent| permanent.card.id == id)
-                            // Freeze the source's complete copiable values. Its
-                            // token nature is deliberately not among them: the
-                            // newly created object is independently a token.
-                            .map(|permanent| {
-                                let mut copy = Self::copiable_characteristics(permanent);
-                                // The exception rides on the copy rather than
-                                // being applied to the token afterwards: it is
-                                // itself a copiable value.
-                                copy.base_power_toughness = base_power_toughness;
+                    .filter_map(|target| {
+                        // Freeze the source's complete copiable values. Its
+                        // token nature is deliberately not among them: the
+                        // newly created object is independently a token.
+                        //
+                        // A card rather than a permanent is what eternalize
+                        // copies: the card it exiled as its cost, whose
+                        // copiable values are simply what is printed on it.
+                        let mut copy = self.copiable_values_of(target)?;
+                        // The exceptions ride on the copy rather than being
+                        // applied to the token afterwards: each is itself a
+                        // copiable value.
+                        copy.base_power_toughness = exceptions.base_power_toughness;
+                        copy.colors = exceptions.colors;
+                        copy.added_creature_types = exceptions.added_creature_types.named.to_vec();
+                        copy.no_mana_cost = exceptions.no_mana_cost;
+                        let permanent = match target {
+                            Target::Permanent(id) => self
+                                .battlefield
+                                .iter()
+                                .find(|permanent| permanent.card.id == id),
+                            _ => None,
+                        };
+                        let (double_faced, presented) = permanent.map_or_else(
+                            || (None, crate::CardPartId::PRIMARY),
+                            |permanent| {
                                 (
-                                    copy,
                                     self.double_faced_copiable_characteristics(permanent),
                                     permanent.presented,
                                 )
-                            }),
-                        _ => None,
+                            },
+                        );
+                        Some((copy, double_faced, presented))
                     })
                     .collect::<Vec<_>>();
                 for (copy, double_faced, presented) in copies {

@@ -205,6 +205,13 @@ fn copiable_characteristics_snapshot(
             base_power_toughness: copy
                 .base_power_toughness
                 .map(|(power, toughness)| [power, toughness]),
+            colors: copy.colors.map(crate::card::ColorSet::to_flags),
+            added_creature_types: copy
+                .added_creature_types
+                .iter()
+                .map(|creature_type| (*creature_type).to_owned())
+                .collect(),
+            no_mana_cost: copy.no_mana_cost,
             added_abilities,
             retain_printed_subtypes: copy.retain_printed_subtypes,
         },

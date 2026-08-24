@@ -270,9 +270,10 @@ pub enum EffectDef {
     /// this after its generic choice has selected a creature token.
     CreateTokenCopyOf {
         object: EffectRecipientDef,
-        /// "Except it's a 1/1": a copy exception, so a copy of the token
-        /// copies it too.
-        base_power_toughness: Option<(i16, i16)>,
+        /// What the token is "except" for. Every one of them is itself a
+        /// copiable value (CR 707.9a), so a later copy of the token copies
+        /// them too.
+        exceptions: TokenCopyExceptionsDef,
     },
     CreateMyriadTokens, // Exact no-op in two-player games: there is no other opponent.
     /// Endure N (CR 702.183a): put N +1/+1 counters on the object, or create

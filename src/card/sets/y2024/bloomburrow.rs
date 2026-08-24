@@ -5,8 +5,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AlternativeCastKindDef, CardArt, CardRules, CardSet, CardType, ComparisonDef, CounterKind,
     EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    TokenCopyExceptionsDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -147,7 +147,7 @@ static TRAINER_HAD_OFFSPRING: TriggerConditionDef =
 /// to it -- the whole reason the extra four mana is worth paying.
 static TRAINER_OFFSPRING_TOKEN: EffectDef = EffectDef::CreateTokenCopyOf {
     object: EffectRecipientDef::Source,
-    base_power_toughness: Some((1, 1)),
+    exceptions: TokenCopyExceptionsDef::power_toughness(1, 1),
 };
 
 /// A noncreature, nonland card among the four, which is what the deck

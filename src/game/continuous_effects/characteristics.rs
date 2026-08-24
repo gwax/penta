@@ -146,7 +146,13 @@ impl Game {
 
     /// The colours a permanent actually is after layer-5 operations.
     pub(super) fn effective_colors(&self, permanent: &Permanent, rules: &CardRules) -> [bool; 5] {
-        let mut colors = rules.color_set();
+        // A copy exception replaces the colours it copied rather than adding
+        // to them, and is itself a copiable value: this is the line an
+        // eternalized token starts from before anything else touches it.
+        let mut colors = permanent
+            .active_copy_values()
+            .and_then(|copy| copy.colors)
+            .unwrap_or_else(|| rules.color_set());
         let mut operations = permanent
             .resolved_continuous_effects
             .iter()

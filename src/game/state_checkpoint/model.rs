@@ -506,6 +506,15 @@ pub(super) struct CopiableCharacteristicsSnapshot {
     /// a checkpoint written before it existed restores a copy with none.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) base_power_toughness: Option<[i16; 2]>,
+    /// The other exceptions embalm and eternalize print. Additive for the
+    /// same reason: a checkpoint written before they existed restores a copy
+    /// that made none of them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) colors: Option<[bool; 5]>,
+    #[serde(default, skip_serializing_if = "<[String]>::is_empty")]
+    pub(super) added_creature_types: Vec<String>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) no_mana_cost: bool,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

@@ -7,16 +7,18 @@ use super::model::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef,
     AppliedRuleDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef,
-    CardChoiceSourceDef, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, ConditionDef,
-    CounterKind, DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef,
-    DiscardFollowUpDef, DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
-    InstalledTriggerDef, InstalledTriggerLifetimeDef, KeywordAbility, ManaColor, ManaCost,
-    ObjectChoiceBindingDef, ObjectCountConditionDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, OptionalAdditionalCostAbilityDef, OptionalAdditionalCostKindDef,
-    PartitionItemsDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    ScaledValueDef, SpellAdditionalCostDef, SpellResolutionDestinationDef, SplitIntoPilesDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    CardChoiceSourceDef, CardType, ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef,
+    ConditionDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
+    DamageRecipientMatcherDef, DiscardFollowUpDef, DiscardSelectionDef, EffectDef,
+    EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, InstalledTriggerLifetimeDef,
+    KeywordAbility, ManaColor, ManaCost, ObjectChoiceBindingDef, ObjectCountConditionDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    OptionalAdditionalCostAbilityDef, OptionalAdditionalCostKindDef, PartitionItemsDef, PayOrDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef,
+    SpellAdditionalCostDef, SpellResolutionDestinationDef, SplitIntoPilesDef,
+    TokenCopyExceptionsDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -578,7 +580,7 @@ pub const fn bloodrush(
 /// Populate's copy step, made once its choice has landed.
 static POPULATE_COPY: EffectDef = EffectDef::CreateTokenCopyOf {
     object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
-    base_power_toughness: None,
+    exceptions: TokenCopyExceptionsDef::NONE,
 };
 
 /// Populate: choose a creature token you control, then create a copy of it.

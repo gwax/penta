@@ -33,6 +33,9 @@ fn synthetic_double_faced_token(
             added_abilities: Vec::new(),
             retain_printed_subtypes: false,
             base_power_toughness: None,
+            colors: None,
+            added_creature_types: Vec::new(),
+            no_mana_cost: false,
         },
     });
     permanent
@@ -49,6 +52,9 @@ fn single_faced_card_copying_incubator_cannot_transform() {
         added_abilities: Vec::new(),
         retain_printed_subtypes: false,
         base_power_toughness: None,
+        colors: None,
+        added_creature_types: Vec::new(),
+        no_mana_cost: false,
     });
     let copier_id = copier.card.id;
     game.battlefield.push(copier);
@@ -225,6 +231,9 @@ fn sacrificed_card_copying_token_remains_nontoken_on_the_stack() {
         added_abilities: Vec::new(),
         retain_printed_subtypes: false,
         base_power_toughness: None,
+        colors: None,
+        added_creature_types: Vec::new(),
+        no_mana_cost: false,
     });
     let source = copier.card.id;
     game.battlefield.push(copier);

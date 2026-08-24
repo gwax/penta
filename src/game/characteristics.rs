@@ -151,6 +151,9 @@ impl Game {
                     added_abilities: Vec::new(),
                     retain_printed_subtypes: false,
                     base_power_toughness: None,
+                    colors: None,
+                    added_creature_types: Vec::new(),
+                    no_mana_cost: false,
                 })
             }
             Target::Player(_) | Target::Spell(_) => None,
@@ -167,6 +170,9 @@ impl Game {
                 added_abilities: Vec::new(),
                 retain_printed_subtypes: false,
                 base_power_toughness: None,
+                colors: None,
+                added_creature_types: Vec::new(),
+                no_mana_cost: false,
             })
     }
 
@@ -239,6 +245,9 @@ impl Game {
             added_abilities: Vec::new(),
             retain_printed_subtypes: false,
             base_power_toughness: None,
+            colors: None,
+            added_creature_types: Vec::new(),
+            no_mana_cost: false,
         };
         let mut faces = match permanent.card.definition {
             ObjectKind::Card(definition) => {
