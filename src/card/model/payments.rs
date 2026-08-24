@@ -5,8 +5,8 @@
 //! each answer.
 
 use super::{
-    ChoiceVisibilityDef, EffectDef, ManaColor, ManaCost, ObjectPredicateDef, PlayerRefDef,
-    PlayerSetDef, ValueDef,
+    ChoiceVisibilityDef, EffectDef, EffectRecipientDef, ManaColor, ManaCost, ObjectPredicateDef,
+    PlayerRefDef, PlayerSetDef, ValueDef,
 };
 
 /// The supported cost of an optional effect payment.
@@ -25,6 +25,14 @@ pub enum EffectPaymentCostDef {
     ColoredMana {
         color: ManaColor,
         amount: ValueDef,
+    },
+    /// "Its mana cost reduced by {2}": the printed cost of an object named
+    /// earlier in the same resolution, less that much generic. Not a generic
+    /// amount, which is the whole point -- the coloured pips still have to
+    /// be paid in their own colours.
+    ObjectManaCostReducedBy {
+        object: EffectRecipientDef,
+        generic: u16,
     },
     Life(u16),
     /// "Unless you pay {E}." Energy is spent all at once or not at all: a

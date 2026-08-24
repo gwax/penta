@@ -26,6 +26,12 @@ fn resolved_effect_payment(
     };
     let payment = match payment.cost {
         EffectPaymentCostDef::Mana(cost) => super::super::ResolvedEffectPayment::Mana(cost),
+        EffectPaymentCostDef::ObjectManaCostReducedBy {
+            object: reference,
+            generic,
+        } => super::super::ResolvedEffectPayment::Mana(
+            game.object_mana_cost_reduced_by(reference, generic, object, context, scoped),
+        ),
         EffectPaymentCostDef::GenericMana(amount) => {
             let amount = game
                 .effect_value(amount, object, context, scoped)

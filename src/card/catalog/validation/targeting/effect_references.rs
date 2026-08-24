@@ -252,7 +252,12 @@ fn validate_effect_references(
             }
             Ok(())
         }
-        EffectDef::ReturnWithHasteAndFinality {
+        EffectDef::PutOntoBattlefieldThen {
+            object,
+            binding,
+            then,
+        }
+        | EffectDef::ReturnWithHasteAndFinality {
             object,
             binding,
             then,

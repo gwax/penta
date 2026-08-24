@@ -99,6 +99,7 @@ impl Game {
             | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
             | EffectDef::CreateEmblem { .. }
             | EffectDef::CreateOngoingEffect(_)
+            | EffectDef::PutOntoBattlefieldThen { .. }
             | EffectDef::ReturnWithHasteAndFinality { .. }
             | EffectDef::Transform { .. }
             | EffectDef::ScheduleTurnPhases(_)

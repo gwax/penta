@@ -1,12 +1,11 @@
 use super::{
     AbilityProcedureDef, AbilitySourceRef, ArrivalAttachment, BattlefieldArrival, CardPartId,
     CopiableAbility, CounteredSpellZone, DeclarativeAbilityDef, EffectDef, EffectResolutionContext,
-    Game, InstalledTrigger, InstalledTriggerLifetime, Permanent, ResolvedEffectPayment,
-    ResolvedOngoingEffect, SacrificeDeclined, SacrificeFollowup, ScopedEffect,
-    StackAbilityResolver, StackObject, Target, TriggerCapture, ZoneKind, ZoneMoveCause,
-    ZonePlacement,
+    Game, InstalledTrigger, InstalledTriggerLifetime, Permanent, ResolvedOngoingEffect,
+    SacrificeDeclined, SacrificeFollowup, ScopedEffect, StackAbilityResolver, StackObject, Target,
+    TriggerCapture, ZoneKind, ZoneMoveCause, ZonePlacement,
 };
-use crate::card::{ArrivalAttachmentDef, EffectPaymentCostDef, InstalledTriggerLifetimeDef};
+use crate::card::{ArrivalAttachmentDef, InstalledTriggerLifetimeDef};
 use move_to_zone::MoveToZoneClause;
 
 mod damage;
@@ -79,44 +78,8 @@ impl Game {
                     }
                     return;
                 };
-                let payment = match definition.payment.cost {
-                    EffectPaymentCostDef::Mana(cost) => ResolvedEffectPayment::Mana(cost),
-                    EffectPaymentCostDef::GenericMana(amount) => {
-                        let amount = self
-                            .effect_value(amount, object, &context, scoped)
-                            .max(0)
-                            .try_into()
-                            .unwrap_or(u16::MAX);
-                        ResolvedEffectPayment::Mana(crate::ManaCost::new(amount, 0))
-                    }
-                    EffectPaymentCostDef::ColoredMana { color, amount } => {
-                        let amount = self
-                            .effect_value(amount, object, &context, scoped)
-                            .max(0)
-                            .try_into()
-                            .unwrap_or(u16::MAX);
-                        ResolvedEffectPayment::Mana(crate::ManaCost::of_color(color, amount))
-                    }
-                    EffectPaymentCostDef::Life(amount) => ResolvedEffectPayment::Life(amount),
-                    EffectPaymentCostDef::Energy(amount) => ResolvedEffectPayment::Energy(amount),
-                    EffectPaymentCostDef::Mill(amount) => ResolvedEffectPayment::Mill(amount),
-                    EffectPaymentCostDef::Discard(amount) => ResolvedEffectPayment::Discard(amount),
-                    EffectPaymentCostDef::SacrificePermanentMatching(predicate) => {
-                        ResolvedEffectPayment::SacrificePermanentMatching(predicate)
-                    }
-                    EffectPaymentCostDef::SacrificeCreaturesWithTotalPower(total) => {
-                        ResolvedEffectPayment::SacrificeCreaturesWithTotalPower(total)
-                    }
-                    EffectPaymentCostDef::ReturnPermanentMatching(predicate) => {
-                        ResolvedEffectPayment::ReturnPermanentMatching(predicate)
-                    }
-                    EffectPaymentCostDef::ChosenGenericMana => {
-                        ResolvedEffectPayment::ChosenGenericMana
-                    }
-                    EffectPaymentCostDef::DiscardMatching(predicate) => {
-                        ResolvedEffectPayment::DiscardMatching(predicate)
-                    }
-                };
+                let payment =
+                    self.resolved_effect_payment(definition.payment.cost, object, &context, scoped);
                 self.queue_pay_or(
                     *player,
                     payment,
@@ -392,6 +355,13 @@ impl Game {
                         );
                     }
                 }
+            }
+            EffectDef::PutOntoBattlefieldThen {
+                object: recipient,
+                binding,
+                then,
+            } => {
+                self.put_onto_battlefield_then(recipient, binding, then, object, context, scoped);
             }
             EffectDef::ReturnWithHasteAndFinality {
                 object: recipient,

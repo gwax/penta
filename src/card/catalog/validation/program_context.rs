@@ -931,6 +931,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::ScheduleTurnPhases(_) => "ScheduleTurnPhases",
         EffectDef::TakeExtraTurn { .. } => "TakeExtraTurn",
         EffectDef::CreateEmblem { .. } => "CreateEmblem",
+        EffectDef::PutOntoBattlefieldThen { .. } => "PutOntoBattlefieldThen",
         EffectDef::ReturnWithHasteAndFinality { .. } => "ReturnWithHasteAndFinality",
         EffectDef::Transform { .. } => "Transform",
         EffectDef::PutIntoLibraryBeneathTop { .. } => "PutIntoLibraryBeneathTop",

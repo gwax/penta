@@ -279,6 +279,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::MoveToZone { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::CreateOngoingEffect(_)
+        | EffectDef::PutOntoBattlefieldThen { .. }
         | EffectDef::ReturnWithHasteAndFinality { .. }
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)

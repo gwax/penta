@@ -2,13 +2,12 @@ use super::{
     AbilitySourceRef, ApplicableReplacement, BasicLandType, BattlefieldEntryModificationDef,
     ColorChoiceOperationDef, ColorSet, CommittedTriggerEvent, ConditionDef, ControlFlow,
     DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
-    DeclarativeAbilityDef, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
-    EffectResolutionContext, EntryCompletion, Game, GameEvent, Mana, ManaColor,
-    ObjectCountConditionDef, PendingBattlefieldEntry, PendingEvent, PendingReplacementEffect,
-    PlayerId, ReplaceableEvent, ReplacementChoiceDef, ReplacementConditionDef,
-    ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    ResolvedEffectPayment, ScopedEffect, StackObject, StackObjectKind, Target, TriggerContext,
-    ZoneKind,
+    DeclarativeAbilityDef, EffectDef, EffectPaymentDef, EffectResolutionContext, EntryCompletion,
+    Game, GameEvent, Mana, ManaColor, ObjectCountConditionDef, PendingBattlefieldEntry,
+    PendingEvent, PendingReplacementEffect, PlayerId, ReplaceableEvent, ReplacementChoiceDef,
+    ReplacementConditionDef, ReplacementEffectContext, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, ResolvedEffectPayment, ScopedEffect, StackObject, StackObjectKind,
+    Target, TriggerContext, ZoneKind,
 };
 
 mod discovery;
@@ -378,42 +377,7 @@ impl Game {
         let [player] = payers.as_slice() else {
             return None;
         };
-        let resolved = match payment.cost {
-            EffectPaymentCostDef::Mana(cost) => ResolvedEffectPayment::Mana(cost),
-            EffectPaymentCostDef::GenericMana(amount) => {
-                let amount = self
-                    .effect_value(amount, &object, &resolution, scoped)
-                    .max(0)
-                    .try_into()
-                    .unwrap_or(u16::MAX);
-                ResolvedEffectPayment::Mana(crate::ManaCost::new(amount, 0))
-            }
-            EffectPaymentCostDef::ColoredMana { color, amount } => {
-                let amount = self
-                    .effect_value(amount, &object, &resolution, scoped)
-                    .max(0)
-                    .try_into()
-                    .unwrap_or(u16::MAX);
-                ResolvedEffectPayment::Mana(crate::ManaCost::of_color(color, amount))
-            }
-            EffectPaymentCostDef::Life(amount) => ResolvedEffectPayment::Life(amount),
-            EffectPaymentCostDef::Energy(amount) => ResolvedEffectPayment::Energy(amount),
-            EffectPaymentCostDef::Mill(amount) => ResolvedEffectPayment::Mill(amount),
-            EffectPaymentCostDef::Discard(amount) => ResolvedEffectPayment::Discard(amount),
-            EffectPaymentCostDef::ChosenGenericMana => ResolvedEffectPayment::ChosenGenericMana,
-            EffectPaymentCostDef::SacrificePermanentMatching(predicate) => {
-                ResolvedEffectPayment::SacrificePermanentMatching(predicate)
-            }
-            EffectPaymentCostDef::SacrificeCreaturesWithTotalPower(total) => {
-                ResolvedEffectPayment::SacrificeCreaturesWithTotalPower(total)
-            }
-            EffectPaymentCostDef::ReturnPermanentMatching(predicate) => {
-                ResolvedEffectPayment::ReturnPermanentMatching(predicate)
-            }
-            EffectPaymentCostDef::DiscardMatching(predicate) => {
-                ResolvedEffectPayment::DiscardMatching(predicate)
-            }
-        };
+        let resolved = self.resolved_effect_payment(payment.cost, &object, &resolution, scoped);
         Some((*player, resolved))
     }
 

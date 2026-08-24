@@ -739,6 +739,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::MillUntil { .. }
                     | EffectDef::ExileFromTopUntil { .. }
                     | EffectDef::ManifestDread { .. }
+                    | EffectDef::PutOntoBattlefieldThen { .. }
                     | EffectDef::ReturnWithHasteAndFinality { .. }
                     | EffectDef::Cascade
                     | EffectDef::Proliferate

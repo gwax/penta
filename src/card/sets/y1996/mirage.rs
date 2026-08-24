@@ -11,12 +11,13 @@ use crate::card::sets::y2011::magic_2012 as catalog_m12;
 use crate::card::sets::y2012::magic_2013 as catalog_m13;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef,
-    AppliedRuleDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectPaymentCostDef,
-    EffectPaymentDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectSetDef, PayOrDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    AppliedRuleDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef,
+    EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
-use crate::ids::TargetIndex;
+use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
 
 // MIR 1 — Afterlife
@@ -645,14 +646,68 @@ pub(in crate::card::sets) static ETHER_WELL: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+/// Where the creature that arrived is saved. What enters is a new object,
+/// so "sacrifice it unless you pay" cannot name the card that was in hand.
+const FLASH_ARRIVAL: ObjectSetBindingIndex = ObjectSetBindingIndex::PRIMARY;
+
+static FLASH_SACRIFICE: EffectDef = EffectDef::Sacrifice {
+    object: EffectRecipientDef::objects(ObjectSetDef::Binding(FLASH_ARRIVAL)),
+};
+
+/// "Its mana cost reduced by {2}", which is a discount on the generic half
+/// and nothing else: the coloured pips are still paid in their colours.
+static FLASH_UNLESS_PAID: EffectDef = EffectDef::PayOr(PayOrDef {
+    payment: EffectPaymentDef {
+        payer: PlayerSetDef::Related(PlayerRelation::You),
+        cost: EffectPaymentCostDef::ObjectManaCostReducedBy {
+            object: EffectRecipientDef::objects(ObjectSetDef::Binding(FLASH_ARRIVAL)),
+            generic: 2,
+        },
+    },
+    if_paid: None,
+    otherwise: Some(&FLASH_SACRIFICE),
+    visibility: ChoiceVisibilityDef::Public,
+});
+
+static FLASH_PUTS_IT_IN: EffectDef = EffectDef::PutOntoBattlefieldThen {
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    binding: FLASH_ARRIVAL,
+    then: &FLASH_UNLESS_PAID,
+};
+
+static A_CREATURE_CARD_IN_YOUR_HAND: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Hand],
+    PlayerRelation::You,
+);
+
+/// "You may": a minimum of none, so a hand with nothing worth cheating in
+/// leaves the spell doing nothing at all.
+static FLASH_CHOOSES: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::Query(A_CREATURE_CARD_IN_YOUR_HAND),
+    exclude: None,
+    minimum: 0,
+    maximum: 1,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &FLASH_PUTS_IT_IN,
+});
+
 // MIR 66 — Flash
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static FLASH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("63af3c26-5b1f-46f6-9aa2-036c615bf5ea"),
     "Flash",
-    crate::card::CardArt::new("63af3c26-5b1f-46f6-9aa2-036c615bf5ea", "David Ho"),
-    crate::card::CardSet::Mirage,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("63af3c26-5b1f-46f6-9aa2-036c615bf5ea", "David Ho"),
+    CardSet::Mirage,
+    // Two mana that puts anything onto the battlefield for two less, and a
+    // real card in a deck that would rather the creature died anyway.
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell(
+        "You may put a creature card from your hand onto the battlefield. If you do, sacrifice \
+         it unless you pay its mana cost reduced by {2}.",
+        FLASH_CHOOSES,
+    )),
 );
 
 // MIR 67 — Floodgate

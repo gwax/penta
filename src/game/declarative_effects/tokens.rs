@@ -146,6 +146,35 @@ impl Game {
     /// delayed sacrifice all read the identity the arrival minted rather
     /// than the card that was in exile.
     #[allow(clippy::too_many_arguments)]
+    /// "Put it onto the battlefield, then ...": the move, the binding, and
+    /// the clause that names what arrived.
+    pub(super) fn put_onto_battlefield_then(
+        &mut self,
+        recipient: crate::card::EffectRecipientDef,
+        binding: crate::ObjectSetBindingIndex,
+        then: &'static EffectDef,
+        object: &StackObject,
+        context: EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) {
+        let controller = object.controller;
+        let mut arrivals = Vec::new();
+        for target in self.effect_recipients(recipient, object, &context, scoped) {
+            if let Some(arrived) = self.move_target_to_zone(
+                target,
+                crate::card::ZoneKind::Battlefield,
+                super::super::ZoneMoveCause::Effect { controller },
+                Some(super::super::BattlefieldArrival::under(controller)),
+                crate::card::ZonePlacement::Top,
+            ) {
+                arrivals.push(Target::Permanent(arrived));
+            }
+        }
+        let mut context = context;
+        context.bind_object_group(binding, arrivals);
+        self.resolve_effect_def(scoped.with_effect(*then), object, context);
+    }
+
     pub(super) fn return_with_haste_and_finality(
         &mut self,
         recipient: crate::card::EffectRecipientDef,

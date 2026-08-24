@@ -93,6 +93,86 @@ impl Game {
         }
     }
 
+    /// What one printed payment actually costs, worked out where it is
+    /// asked.
+    ///
+    /// Shared by the three places that ask -- a resolving `PayOr`, an entry
+    /// replacement's "unless you pay", and the checkpoint that rebuilds a
+    /// standing payment decision -- because all three are the same question
+    /// about the same clause, and a cost that answered differently in one of
+    /// them would be a different card there.
+    pub(in crate::game) fn resolved_effect_payment(
+        &self,
+        cost: crate::card::EffectPaymentCostDef,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) -> crate::game::ResolvedEffectPayment {
+        use crate::card::EffectPaymentCostDef as Cost;
+        use crate::game::ResolvedEffectPayment as Resolved;
+        let amount_of = |value| {
+            u16::try_from(self.effect_value(value, object, context, scoped).max(0))
+                .unwrap_or(u16::MAX)
+        };
+        match cost {
+            Cost::Mana(cost) => Resolved::Mana(cost),
+            Cost::GenericMana(amount) => Resolved::Mana(crate::ManaCost::new(amount_of(amount), 0)),
+            Cost::ColoredMana { color, amount } => {
+                Resolved::Mana(crate::ManaCost::of_color(color, amount_of(amount)))
+            }
+            Cost::ObjectManaCostReducedBy {
+                object: recipient,
+                generic,
+            } => Resolved::Mana(
+                self.object_mana_cost_reduced_by(recipient, generic, object, context, scoped),
+            ),
+            Cost::Life(amount) => Resolved::Life(amount),
+            Cost::Energy(amount) => Resolved::Energy(amount),
+            Cost::Mill(amount) => Resolved::Mill(amount),
+            Cost::Discard(amount) => Resolved::Discard(amount),
+            Cost::SacrificePermanentMatching(predicate) => {
+                Resolved::SacrificePermanentMatching(predicate)
+            }
+            Cost::SacrificeCreaturesWithTotalPower(total) => {
+                Resolved::SacrificeCreaturesWithTotalPower(total)
+            }
+            Cost::ReturnPermanentMatching(predicate) => Resolved::ReturnPermanentMatching(predicate),
+            Cost::ChosenGenericMana => Resolved::ChosenGenericMana,
+            Cost::DiscardMatching(predicate) => Resolved::DiscardMatching(predicate),
+        }
+    }
+
+    /// "Its mana cost reduced by {N}": the printed cost of whatever the
+    /// reference names, less that much generic. Coloured pips stand: what
+    /// the reduction touches is the generic part and nothing else.
+    pub(in crate::game) fn object_mana_cost_reduced_by(
+        &self,
+        recipient: crate::card::EffectRecipientDef,
+        generic: u16,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) -> crate::ManaCost {
+        let Some(Target::Permanent(id)) = self
+            .effect_recipients(recipient, object, context, scoped)
+            .into_iter()
+            .next()
+        else {
+            return crate::ManaCost::default();
+        };
+        let Some(mut cost) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .and_then(|permanent| self.effective_rules(permanent))
+            .and_then(|rules| rules.mana_cost())
+        else {
+            return crate::ManaCost::default();
+        };
+        cost.generic = cost.generic.saturating_sub(generic);
+        cost
+    }
+
     fn object_reference_id(
         &self,
         reference: ObjectRefDef,

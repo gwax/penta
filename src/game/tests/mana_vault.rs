@@ -238,7 +238,7 @@ fn uses_declarative_ability_constructs() {
             otherwise: None,
             visibility: ChoiceVisibilityDef::Private,
         })) if payment.payer == PlayerSetDef::Related(PlayerRelation::You)
-            && payment.cost == EffectPaymentCostDef::Mana(ManaCost::new(4, 0))
+            && payment.cost == crate::card::EffectPaymentCostDef::Mana(ManaCost::new(4, 0))
     ));
     let DeclarativeAbilityDef::Triggered(draw) = abilities[2].definition else {
         panic!("the draw-step clause is a trigger");
