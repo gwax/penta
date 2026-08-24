@@ -431,6 +431,7 @@ mod vintage_cube_mastery;
 mod vintage_cube_memory_lapse;
 mod vintage_cube_metamorphosis_fanatic;
 mod vintage_cube_mine_collapse;
+mod vintage_cube_mishras_bauble;
 mod vintage_cube_monarch;
 mod vintage_cube_monstrous_rage;
 mod vintage_cube_more_spells;
