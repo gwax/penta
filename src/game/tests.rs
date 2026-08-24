@@ -327,6 +327,7 @@ mod vintage_cube_bolass_citadel;
 mod vintage_cube_bountiful_landscape;
 mod vintage_cube_brainstorm;
 mod vintage_cube_brainsurge;
+mod vintage_cube_brazen_borrower;
 mod vintage_cube_breach;
 mod vintage_cube_brightglass_gearhulk;
 mod vintage_cube_cankerbloom;

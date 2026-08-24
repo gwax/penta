@@ -5,13 +5,14 @@ use crate::card::PlayOptionDef;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
     AbilityTargetPredicate, ActivationTimingDef, AlternateSpellKind, AlternativeCastKindDef,
-    AppliedEffectDef, BattlefieldEntryModificationDef, CardArt, CardComposition, CardEffectStatus,
-    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet, ColorSet,
-    ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef, EffectDef,
-    EffectRecipientDef, ExilePlayConditionDef, ExilePlayDurationDef, ManaColor, ObjectPredicateDef,
-    PlayerRefDef, PlayerRelation, ReplacementEffectDef, ResolvedEffectDurationDef, SpellForm,
-    SpellResolutionDestinationDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
-    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardComposition,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
+    CardTypeSet, ColorSet, ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef,
+    EffectDef, EffectRecipientDef, ExilePlayConditionDef, ExilePlayDurationDef, KeywordAbility,
+    ManaColor, ObjectPredicateDef, PlayerRefDef, PlayerRelation, ReplacementEffectDef,
+    ResolvedEffectDurationDef, SpellForm, SpellResolutionDestinationDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, tokens,
 };
 use crate::{CardPartId, PlayOptionId, TargetIndex, mana_cost};
 
@@ -36,14 +37,108 @@ pub(in crate::card::sets) static FAERIE_GUIDEMOTHER: CardRecord = CardRecord::ne
 );
 
 // ELD 39 — Brazen Borrower
-// Audit: metadata-only — Card rules have not been implemented.
+static A_NONLAND_PERMANENT_THEY_CONTROL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+)];
+
+const fn petty_theft_rules() -> CardRules {
+    CardRules::new_instant(mana_cost!("{1}{U}"))
+        .with_subtypes(&["Adventure"])
+        .with_ability(
+            AbilityDef::spell_with_targets(
+                "Return target nonland permanent an opponent controls to its owner's hand.",
+                &A_NONLAND_PERMANENT_THEY_CONTROL,
+                EffectDef::MoveToZone {
+                    counters: None,
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    from: None,
+                    zone: ZoneKind::Hand,
+                    placement: ZonePlacement::Top,
+                    arrival_effect: None,
+                    attachment: None,
+                    controller: None,
+                    tapped: false,
+                },
+            )
+            .with_resolution_destination(SpellResolutionDestinationDef::ExileOnAdventure),
+        )
+}
+
+/// "Can block only creatures with flying" is the price of a 3/1 flier with
+/// flash: it answers what is in the air and nothing on the ground.
+static A_FLYER: ObjectPredicateDef = ObjectPredicateDef::HasKeyword(KeywordAbility::Flying);
+
+static BORROWER_BLOCKS_ONLY_FLYERS: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::Rule(AppliedRuleDef::can_block_only(A_FLYER)),
+};
+
+static BORROWER_ABILITIES: [AbilityDef; 3] = [
+    abilities::flash(),
+    abilities::flying(),
+    AbilityDef::static_ability(
+        "This creature can block only creatures with flying.",
+        BORROWER_BLOCKS_ONLY_FLYERS,
+    ),
+];
+
+const fn brazen_borrower_rules() -> CardRules {
+    CardRules::new_creature(mana_cost!("{1}{U}{U}"), &["Faerie", "Rogue"], 3, 1)
+        .with_abilities(&BORROWER_ABILITIES)
+}
+
+fn brazen_borrower_composition() -> CardComposition {
+    let borrower = brazen_borrower_rules();
+    let theft = petty_theft_rules();
+    CardComposition {
+        parts: vec![
+            CardPart::new(CardPartId::PRIMARY, "Brazen Borrower", borrower),
+            CardPart::new(CardPartId(1), "Petty Theft", theft),
+        ],
+        structure: CardStructure::AlternateSpell {
+            main: CardPartId::PRIMARY,
+            alternate: CardPartId(1),
+            kind: AlternateSpellKind::Adventure,
+        },
+        play_options: vec![
+            PlayOptionDef::cast(
+                PlayOptionId::DEFAULT,
+                "Brazen Borrower",
+                SpellForm::Part(CardPartId::PRIMARY),
+                borrower
+                    .mana_cost()
+                    .expect("the Faerie has a printed mana cost"),
+                CardEffectStatus::Implemented,
+            ),
+            PlayOptionDef::cast(
+                PlayOptionId(1),
+                "Petty Theft",
+                SpellForm::Part(CardPartId(1)),
+                theft
+                    .mana_cost()
+                    .expect("Petty Theft has a printed mana cost"),
+                CardEffectStatus::Implemented,
+            ),
+        ],
+    }
+    .with_derived_spell_targets()
+}
+
 pub(in crate::card::sets) static BRAZEN_BORROWER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c2089ec9-0665-448f-bfe9-d181de127814"),
     "Brazen Borrower",
-    crate::card::CardArt::new("c2089ec9-0665-448f-bfe9-d181de127814", "Eric Deschamps"),
-    crate::card::CardSet::ThroneOfEldraine,
-    crate::card::CardRules::unsupported(),
-);
+    CardArt::new("c2089ec9-0665-448f-bfe9-d181de127814", "Eric Deschamps"),
+    CardSet::ThroneOfEldraine,
+    // Bounce something at the end of their turn, then flash in the body it
+    // came back on: one card that answers a threat and becomes one.
+    brazen_borrower_rules(),
+)
+.with_composition(brazen_borrower_composition);
 
 // ELD 110 — Wishclaw Talisman
 static WISHCLAW_COSTS: [AbilityCostDef; 3] = [
