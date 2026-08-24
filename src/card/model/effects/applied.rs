@@ -270,6 +270,13 @@ pub enum AppliedRuleDef {
     /// combat assignment reads the other one.
     AssignsCombatDamageEqualToToughness,
     CannotBeCountered,
+    /// "If one or more tokens would be created under your control, twice
+    /// that many of those tokens are created instead." A replacement on the
+    /// creation rather than an effect of its own, so it applies to every
+    /// clause that makes a token and to copies as much as to fresh ones.
+    /// Several at once multiply, which is what each of them says on its own
+    /// terms (CR 616.1).
+    DoublesTokensCreated,
     /// "This creature can't be blocked except by N or more creatures."
     /// Menace is this rule with a two on it, printed as a keyword; the
     /// creatures that name a larger number write the clause out. It is a

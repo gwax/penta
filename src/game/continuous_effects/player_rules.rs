@@ -368,7 +368,7 @@ impl Game {
     /// battlefield order. The walk is the one every player-facing rule uses:
     /// such a rule has no anchor object, so each static ability on the
     /// battlefield is asked whether its recipient is this player.
-    fn visit_player_static_rules(
+    pub(in crate::game) fn visit_player_static_rules(
         &self,
         affected_player: PlayerId,
         mut visitor: impl FnMut(AppliedRuleDef),

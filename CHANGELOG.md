@@ -68,6 +68,13 @@ distinguishes snapshots of the covered source and build inputs.
   permission carries no sorcery-speed restriction of its own: every card that
   prints the keyword so far is a sorcery, and its type already says so.
 
+- **Token doubling.** "If one or more tokens would be created under your
+  control, twice that many of those tokens are created instead" is a rule a
+  player carries rather than an effect of its own, so it applies wherever
+  tokens are made -- a printed clause, a token copy, or the Germ a living
+  weapon brings. Several doublers multiply, which is what each of them says
+  on its own terms.
+
 - **Eternalize, and copy exceptions generally.** A token copy could say one
   thing after "except": that it is a 1/1. Embalm and eternalize say four --
   a body, a colour, a creature type on top of the ones it had, and no mana

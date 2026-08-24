@@ -52,7 +52,10 @@ impl Game {
                     )
                 });
                 let mut minted = Vec::new();
-                for _ in 0..self.effect_value(count, object, context, scoped).max(0) {
+                let count =
+                    usize::try_from(self.effect_value(count, object, context, scoped).max(0))
+                        .unwrap_or(usize::MAX);
+                for _ in 0..self.tokens_created(controller, count) {
                     minted.push(Target::Permanent(self.create_token_arriving(
                         controller, token, None, tapped, defender, counters,
                     )));
@@ -67,6 +70,13 @@ impl Game {
             }
             EffectDef::CreateAttachedToken { token } => {
                 if let Some(source) = object.source {
+                    // The Equipment attaches to one of them. A doubled
+                    // living weapon makes the second Germ with nothing on
+                    // it, which is what the second one would be anyway.
+                    for extra in 1..self.tokens_created(object.controller, 1) {
+                        let _ = extra;
+                        self.create_token_from(object.controller, token, None);
+                    }
                     self.create_attached_token(object.controller, token, source);
                 }
             }
@@ -113,7 +123,14 @@ impl Game {
                     })
                     .collect::<Vec<_>>();
                 for (copy, double_faced, presented) in copies {
-                    self.create_token_copy(object.controller, copy, double_faced, presented);
+                    for _ in 0..self.tokens_created(object.controller, 1) {
+                        self.create_token_copy(
+                            object.controller,
+                            copy.clone(),
+                            double_faced.clone(),
+                            presented,
+                        );
+                    }
                 }
             }
             _ => unreachable!("the caller admits only token-making clauses"),

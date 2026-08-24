@@ -4,11 +4,12 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    ChoiceVisibilityDef, ChooseDef, ComparisonDef, CreatedTokensDef, EffectDef, EffectPaymentDef,
-    EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, CreatedTokensDef, EffectDef,
+    EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -408,14 +409,95 @@ pub(in crate::card::sets) static CORI_STEEL_CUTTER: CardRecord = CardRecord::new
     crate::card::CardRules::unsupported(),
 );
 
+static ELSPETH_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static ELSPETH_FLYING: AbilityDef = abilities::flying();
+
+/// "Those creatures" is the set the counters went on. Nothing can join or
+/// leave the battlefield between the two halves of one resolution, so
+/// naming the same query twice names the same creatures -- and unlike a
+/// binding it says outright that they are on the battlefield.
+static ELSPETH_ANTHEM_STEPS: [EffectDef; 2] = [
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::objects(ObjectSetDef::Query(ELSPETH_CREATURES)),
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::objects(ObjectSetDef::Query(ELSPETH_CREATURES)),
+        effect: AppliedEffectDef::add_ability(&ELSPETH_FLYING),
+        duration: ResolvedEffectDurationDef::UntilYourNextTurn,
+    },
+];
+
+static ELSPETH_ANTHEM: EffectDef = EffectDef::Sequence(&ELSPETH_ANTHEM_STEPS);
+
+/// "Mana value 3 or greater", which for a whole number is everything that is
+/// not two or less.
+static A_BIG_CREATURE_AN_OPPONENT_CONTROLS: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one(
+        AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::ManaValueAtMost(2)),
+            ]),
+            zones: &[ZoneKind::Battlefield],
+            controller: Some(PlayerRelation::Opponent),
+            owner: None,
+        },
+    )];
+
+static ELSPETH_PLUS_ONE_COST: [AbilityCostDef; 1] = [AbilityCostDef::Loyalty(1)];
+static ELSPETH_ZERO_COST: [AbilityCostDef; 1] = [AbilityCostDef::Loyalty(0)];
+static ELSPETH_MINUS_THREE_COST: [AbilityCostDef; 1] = [AbilityCostDef::Loyalty(-3)];
+
+static ELSPETH_ABILITIES: [AbilityDef; 4] = [
+    // The doubling is what every other line on the card is written against:
+    // her plus makes two Soldiers, and so does anything else you were
+    // already doing.
+    AbilityDef::static_ability(
+        "If one or more tokens would be created under your control, twice that many of those \
+         tokens are created instead.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Controller,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::DoublesTokensCreated),
+        },
+    ),
+    AbilityDef::activated(
+        "+1: Create a 1/1 white Soldier creature token.",
+        &ELSPETH_PLUS_ONE_COST,
+        EffectDef::create_creature_token(&["Soldier"], &[ManaColor::White], 1, 1),
+    ),
+    AbilityDef::activated(
+        "0: Put a +1/+1 counter on each creature you control. Those creatures gain flying until \
+         your next turn.",
+        &ELSPETH_ZERO_COST,
+        ELSPETH_ANTHEM,
+    ),
+    AbilityDef::activated_with_targets(
+        "−3: Destroy target creature an opponent controls with mana value 3 or greater.",
+        &ELSPETH_MINUS_THREE_COST,
+        &A_BIG_CREATURE_AN_OPPONENT_CONTROLS,
+        EffectDef::destroy_target(TargetIndex::PRIMARY, true),
+    ),
+];
+
 // TDM 398 — Elspeth, Storm Slayer
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static ELSPETH_STORM_SLAYER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1fdf9438-fd5f-4638-8f41-dae35ae8f257"),
     "Elspeth, Storm Slayer",
-    crate::card::CardArt::new("1fdf9438-fd5f-4638-8f41-dae35ae8f257", "Jeremy Wilson"),
-    crate::card::CardSet::TarkirDragonstorm,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("1fdf9438-fd5f-4638-8f41-dae35ae8f257", "Jeremy Wilson"),
+    CardSet::TarkirDragonstorm,
+    // Five mana whose first line is worth more than the three below it: in a
+    // deck that makes tokens at all, everything it was already doing happens
+    // twice.
+    CardRules::new_planeswalker(mana_cost!("{3}{W}{W}"), &["Elspeth"], 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&ELSPETH_ABILITIES),
 );
 
 // TDM 409 — Ugin, Eye of the Storms (alternate printing)

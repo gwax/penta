@@ -6,7 +6,7 @@
 //! that differs: minting the object.
 
 use super::{
-    CardPartId, CharacteristicSource, CopiableCharacteristics, CounterKind,
+    AppliedRuleDef, CardPartId, CharacteristicSource, CopiableCharacteristics, CounterKind,
     DoubleFacedCopiableCharacteristics, EntryCompletion, Game, GameObjectId, ObjectBacking,
     ObjectCharacteristics, ObjectInstance, ObjectKind, PendingBattlefieldEntry, Permanent,
     PlayerId, TokenCharacteristics, ZoneKind,
@@ -27,6 +27,24 @@ impl Game {
             characteristics,
             counters: [0; CounterKind::COUNT],
         }
+    }
+
+    /// How many tokens one instruction actually makes for this player.
+    ///
+    /// "Twice that many of those tokens are created instead" is a
+    /// replacement on the creation, so it applies wherever tokens are made
+    /// and to copies as much as to fresh ones. Several doublers multiply,
+    /// which is what each of them says on its own terms (CR 616.1).
+    pub(super) fn tokens_created(&self, controller: PlayerId, count: usize) -> usize {
+        let mut doublers = 0_u32;
+        self.visit_player_static_rules(controller, |rule| {
+            if rule == AppliedRuleDef::DoublesTokensCreated {
+                doublers = doublers.saturating_add(1);
+            }
+        });
+        // Bounded rather than trusting the board: a runaway multiplier must
+        // not be able to ask for more tokens than a game could hold.
+        count.saturating_mul(1_usize << doublers.min(8))
     }
 
     /// Test/setup shorthand for creating an ordinary unlinked token.
