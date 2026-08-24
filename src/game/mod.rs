@@ -858,6 +858,11 @@ pub struct Game {
     /// How many of each player's next sorceries may be cast as though they
     /// had flash. Quicken grants one, and the grant lapses with the turn.
     sorcery_flash_grants: [u8; 2],
+    /// Combat damage dealt to players so far in the combat damage step being
+    /// dealt, for the batched event published when that step finishes.
+    /// Emptied at both ends of the step, so nothing outside one is ever
+    /// holding it.
+    combat_damage_to_players: Vec<(TriggerEventObject, PlayerId)>,
     /// Additional major phases that will happen after the current phase. New
     /// sequences are prepended, matching the newest-first ordering rule for
     /// multiple effects that add phases after the same boundary.

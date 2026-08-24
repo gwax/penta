@@ -66,6 +66,9 @@ pub(super) fn installed_trigger_snapshot(
         context: effect_resolution_context_snapshot(&capture.context),
         lifetime: match trigger.lifetime {
             InstalledTriggerLifetime::Once => InstalledTriggerLifetimeSnapshot::Once,
+            InstalledTriggerLifetime::ThisTurn { turn } => {
+                InstalledTriggerLifetimeSnapshot::ThisTurn { turn }
+            }
             InstalledTriggerLifetime::UntilTurn { player, turn } => {
                 InstalledTriggerLifetimeSnapshot::UntilTurn {
                     seat: player.index(),
@@ -133,6 +136,9 @@ pub(super) fn parse_installed_trigger(
         },
         lifetime: match snapshot.lifetime {
             InstalledTriggerLifetimeSnapshot::Once => InstalledTriggerLifetime::Once,
+            InstalledTriggerLifetimeSnapshot::ThisTurn { turn } => {
+                InstalledTriggerLifetime::ThisTurn { turn }
+            }
             InstalledTriggerLifetimeSnapshot::UntilTurn { seat, turn } => {
                 InstalledTriggerLifetime::UntilTurn {
                     player: player_from_index(seat)?,

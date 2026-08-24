@@ -25,6 +25,16 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **One combat damage step is one event, and a delayed trigger can end with
+  the turn.** Combat damage dealt to players is now published once for the
+  whole step beside its per-source events, so "whenever one or more creatures
+  you control deal combat damage to one or more players" is one trigger
+  however many creatures connected. And an installed trigger can be scoped to
+  the turn it was made on rather than to a player's next turn. Forth
+  Eorlingas! prints both. The new closed installed-trigger lifetime tag is
+  additive; checkpoint format 8, replay version 2, and protocol 29 are
+  unchanged.
+
 - **Casting windows can be taken away and handed out.** A play restriction
   can now be narrowed to the moments its player could cast a sorcery, which
   is what "can cast spells only any time they could cast a sorcery" prints;

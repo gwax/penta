@@ -103,6 +103,9 @@ pub struct SplitIntoPilesDef {
 pub enum InstalledTriggerLifetimeDef {
     Once,
     UntilNextTurn(PlayerRefDef),
+    /// "This turn": the listener stops when the turn it was installed on
+    /// ends, whoever the next turn belongs to.
+    ThisTurn,
 }
 
 /// A triggered ability installed by a resolving effect.
@@ -170,6 +173,16 @@ impl InstalledTriggerDef {
         Self {
             ability,
             lifetime: InstalledTriggerLifetimeDef::Once,
+        }
+    }
+
+    /// "... this turn", which stops listening when the turn it was made on
+    /// ends rather than when any player's next one begins.
+    #[must_use]
+    pub const fn this_turn(ability: &'static AbilityDef) -> Self {
+        Self {
+            ability,
+            lifetime: InstalledTriggerLifetimeDef::ThisTurn,
         }
     }
 

@@ -415,6 +415,9 @@ fn validate_trigger_event_references(
             attacker: predicate,
             ..
         }
+        | TriggerEventDef::CombatDamageDealtToPlayers {
+            sources: predicate, ..
+        }
         | TriggerEventDef::BecomesBlocked(predicate)
         | TriggerEventDef::Blocks { blocked: predicate }
         | TriggerEventDef::BecomesBlockedBy { blocker: predicate }

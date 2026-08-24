@@ -197,6 +197,31 @@ impl Game {
                     )
                 })
             }
+            // One creature of theirs damaging one player they name is the
+            // whole of "one or more ... to one or more": the batch is the
+            // event, and the predicates say which of it counts.
+            (
+                TriggerEventDef::CombatDamageDealtToPlayers {
+                    sources: wanted,
+                    players: relation,
+                },
+                CommittedTriggerEvent::CombatDamageDealtToPlayers { sources, players },
+            ) => {
+                controller.is_some_and(|controller| {
+                    players.iter().any(|player| {
+                        self.player_relation_matches(
+                            *player,
+                            relation,
+                            controller,
+                            crate::game::TriggerContext::empty(),
+                        )
+                    })
+                }) && sources.iter().any(|object| {
+                    self.trigger_object_matches_for_controller(
+                        wanted, object, source, false, controller,
+                    )
+                })
+            }
             (
                 TriggerEventDef::AttackDeclared {
                     attacker,

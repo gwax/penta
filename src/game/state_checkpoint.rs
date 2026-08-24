@@ -845,6 +845,9 @@ impl Game {
                 })
                 .collect(),
             sorcery_flash_grants: checkpoint.sorcery_flash_grants,
+            // Only ever holds anything while one combat damage step is being
+            // dealt, which is not a moment a checkpoint is taken.
+            combat_damage_to_players: Vec::new(),
             turn_phase_queue: checkpoint
                 .turn_phase_queue
                 .iter()

@@ -184,6 +184,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         | TriggerEventDef::UnblockedAttackersDeclared {
             attacker: source, ..
         }
+        | TriggerEventDef::CombatDamageDealtToPlayers {
+            sources: source, ..
+        }
         | TriggerEventDef::Blocks { blocked: source }
         | TriggerEventDef::BecomesBlockedBy { blocker: source } => shared_object_predicate(source),
         TriggerEventDef::BlocksOrBecomesBlockedBy { creature, other } => {

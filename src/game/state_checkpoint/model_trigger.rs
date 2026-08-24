@@ -14,6 +14,7 @@ use super::model::{
 pub(super) enum InstalledTriggerLifetimeSnapshot {
     Once,
     UntilTurn { seat: usize, turn: u32 },
+    ThisTurn { turn: u32 },
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

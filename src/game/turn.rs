@@ -467,6 +467,9 @@ impl Game {
         self.installed_triggers
             .retain(|installed| match installed.lifetime {
                 InstalledTriggerLifetime::Once => true,
+                // The turn it was installed on is over: this runs as the
+                // next one begins, whoever it belongs to.
+                InstalledTriggerLifetime::ThisTurn { turn } => self.turn == turn,
                 InstalledTriggerLifetime::UntilTurn { player, turn } => {
                     player != self.active_player || self.turns_started[player.index()] < turn
                 }

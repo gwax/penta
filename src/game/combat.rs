@@ -720,7 +720,30 @@ impl Game {
         }
     }
 
+    /// "Whenever one or more creatures you control deal combat damage to one
+    /// or more players." One event for the step, published after every
+    /// creature in it has dealt its damage and before state-based actions
+    /// take the casualties away.
+    fn publish_combat_damage_to_players(&mut self) {
+        let dealt = std::mem::take(&mut self.combat_damage_to_players);
+        if dealt.is_empty() {
+            return;
+        }
+        let mut players = Vec::new();
+        for (_, player) in &dealt {
+            if !players.contains(player) {
+                players.push(*player);
+            }
+        }
+        let sources = dealt.into_iter().map(|(source, _)| source).collect();
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::CombatDamageDealtToPlayers {
+            sources,
+            players,
+        });
+    }
+
     pub(super) fn deal_combat_damage(&mut self) {
+        self.combat_damage_to_players.clear();
         let attackers: Vec<_> = self
             .battlefield
             .iter()
@@ -763,6 +786,7 @@ impl Game {
             }
         }
         self.deal_blocker_combat_damage();
+        self.publish_combat_damage_to_players();
         self.check_state_based_actions();
     }
 }

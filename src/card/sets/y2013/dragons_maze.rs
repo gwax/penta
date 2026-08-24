@@ -809,7 +809,7 @@ pub(in crate::card::sets) static PYREWILD_SHAMAN: CardRecord = CardRecord::new_w
         ),
         AbilityDef::not_implemented(
             "Whenever one or more creatures you control deal combat damage to a player, if this card is in your graveyard, you may pay {3}. If you do, return this card to your hand.",
-            "Combat damage from multiple creatures is captured as separate events instead of one ‘one or more’ event, and the combined graveyard payment continuation is unavailable.",
+            "The combined graveyard payment continuation is unavailable: the clause asks its controller to pay {3} while this card sits in a graveyard, and a trigger has no way to offer that payment from there.",
         ),
     ]),
 );

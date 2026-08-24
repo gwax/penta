@@ -58,6 +58,15 @@ pub enum TriggerEventDef {
         attacker: ObjectPredicateDef,
         defender: PlayerRelation,
     },
+    /// "Whenever one or more creatures you control deal combat damage to one
+    /// or more players." One trigger for the whole combat damage step,
+    /// however many creatures dealt it and however many players took it,
+    /// which is what "one or more" means. First strike gives a step of its
+    /// own, and so a batch of its own.
+    CombatDamageDealtToPlayers {
+        sources: ObjectPredicateDef,
+        players: PlayerRelation,
+    },
     /// CR 509.1h: the attacker became blocked. The event carries how many
     /// creatures are blocking it beyond the first, which is the quantity
     /// every rampage-style clause is written against.

@@ -572,6 +572,9 @@ impl Game {
                 };
                 let lifetime = match installed.lifetime {
                     InstalledTriggerLifetimeDef::Once => InstalledTriggerLifetime::Once,
+                    InstalledTriggerLifetimeDef::ThisTurn => {
+                        InstalledTriggerLifetime::ThisTurn { turn: self.turn }
+                    }
                     InstalledTriggerLifetimeDef::UntilNextTurn(player) => {
                         let Some(player) =
                             self.effect_player_reference(player, object, &context, scoped)

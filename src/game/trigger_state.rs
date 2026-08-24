@@ -263,6 +263,16 @@ pub(super) enum CommittedTriggerEvent {
         attackers: Vec<TriggerEventObject>,
         defending_player: PlayerId,
     },
+    /// One combat damage step's worth of combat damage to players, published
+    /// once however many creatures dealt it. The batched counterpart of the
+    /// per-source [`Self::DamageDealt`], for the clauses that read "one or
+    /// more creatures ... deal combat damage to one or more players" as one
+    /// event. Damage redirected onto a permanent is not in it: what lands on
+    /// a player is what the clause counts.
+    CombatDamageDealtToPlayers {
+        sources: Vec<TriggerEventObject>,
+        players: Vec<PlayerId>,
+    },
     /// One side of one blocking relationship. Emitted once per ordered pair,
     /// so a clause on either creature sees the other as the triggering
     /// object without having to know which of them attacked.
@@ -429,6 +439,15 @@ impl CommittedTriggerEvent {
                 object_controller: attackers.first().map(|attacker| attacker.controller),
                 event_player: Some(*defending_player),
                 amount: Some(i32::try_from(attackers.len()).unwrap_or(i32::MAX)),
+                damaged_object: None,
+            },
+            // The event is the whole step rather than any creature in it, and
+            // the amount is how many players took damage.
+            Self::CombatDamageDealtToPlayers { sources, players } => TriggerContext {
+                object: None,
+                object_controller: sources.first().map(|source| source.controller),
+                event_player: players.first().copied(),
+                amount: Some(i32::try_from(players.len()).unwrap_or(i32::MAX)),
                 damaged_object: None,
             },
             Self::AttackersDeclared { attackers } => TriggerContext {
@@ -607,6 +626,10 @@ pub(super) enum InstalledTriggerLifetime {
     Once,
     /// Stop listening when this player's frozen future turn begins.
     UntilTurn { player: PlayerId, turn: u32 },
+    /// Stop listening when the frozen turn it was installed on ends. The
+    /// turn number is the game's own count, so an extra turn ends this the
+    /// same way an ordinary one does.
+    ThisTurn { turn: u32 },
 }
 
 /// A triggered ability installed by a resolved effect. Everything needed to

@@ -737,6 +737,9 @@ impl Game {
         {
             self.gain_life(controller, amount);
         }
+        if dealt_damage && amount > 0 && combat {
+            self.record_combat_damage_to_player(target, source_object.as_ref());
+        }
         if dealt_damage
             && amount > 0
             && let Some(recipient) = target
@@ -752,6 +755,24 @@ impl Game {
             self.capture_battlefield_triggers(&event);
         }
         if dealt_damage { amount } else { 0 }
+    }
+
+    /// Notes combat damage that landed on a player, for the batch published
+    /// when the combat damage step finishes. Recorded where the damage is
+    /// dealt rather than where the step deals it because redirection can
+    /// move damage onto a permanent, and what lands on a player is what the
+    /// batched clause counts.
+    fn record_combat_damage_to_player(
+        &mut self,
+        target: Option<Target>,
+        source_object: Option<&TriggerEventObject>,
+    ) {
+        if let Some(Target::Player(player)) = target
+            && let Some(source_object) = source_object
+        {
+            self.combat_damage_to_players
+                .push((source_object.clone(), player));
+        }
     }
 
     pub(super) fn damage_source_event_object(

@@ -4,19 +4,54 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
-    EffectDef, EffectRecipientDef, ObjectPredicateDef, ResolvedEffectDurationDef, TriggerEventDef,
-    ValueDef, abilities,
+    EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef,
+    PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef, ValueDef, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
 // LTC 56 — Forth Eorlingas!
-// Audit: metadata-only — Card rules have not been implemented.
+static RIDER_KEYWORDS: [AbilityDef; 2] = [abilities::trample(), abilities::haste()];
+
+/// The crown is claimed once for the whole combat damage step, however many
+/// Riders connected: the batched event is one event.
+static EORLINGAS_CLAIM_THE_CROWN: AbilityDef = AbilityDef::triggered(
+    "Whenever one or more creatures you control deal combat damage to one or more players this \
+     turn, you become the monarch.",
+    TriggerEventDef::CombatDamageDealtToPlayers {
+        sources: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+        ]),
+        players: PlayerRelation::Any,
+    },
+    EffectDef::BecomeMonarch {
+        player: PlayerRefDef::EffectController,
+    },
+);
+
+/// The delayed trigger watches every creature you control rather than only
+/// the Riders this made, and it watches for the rest of the turn -- so a
+/// creature that was already attacking claims the crown just as well.
+static FORTH_EORLINGAS_EFFECT: EffectDef = EffectDef::Sequence(&[
+    EffectDef::create_creature_token(&["Human", "Knight"], &[ManaColor::Red], 2, 2)
+        .with_count(ValueDef::ChosenX)
+        .with_abilities(&RIDER_KEYWORDS),
+    EffectDef::InstallTrigger(InstalledTriggerDef::this_turn(&EORLINGAS_CLAIM_THE_CROWN)),
+]);
+
 pub(in crate::card::sets) static FORTH_EORLINGAS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("06c053d3-028e-4961-93a5-5b7bb5a8601c"),
     "Forth Eorlingas!",
-    crate::card::CardArt::new("06c053d3-028e-4961-93a5-5b7bb5a8601c", "Filipe Pagliuso"),
-    crate::card::CardSet::LordOfTheRingsCommander,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("06c053d3-028e-4961-93a5-5b7bb5a8601c", "Filipe Pagliuso"),
+    CardSet::LordOfTheRingsCommander,
+    // A haste-and-trample army for X, cast on an empty board or added to an
+    // attack already underway, with the crown as the reward for connecting.
+    CardRules::new_sorcery(mana_cost!("{X}{R}{W}")).with_ability(AbilityDef::spell(
+        "Create X 2/2 red Human Knight creature tokens with trample and haste.\nWhenever one or \
+         more creatures you control deal combat damage to one or more players this turn, you \
+         become the monarch.",
+        FORTH_EORLINGAS_EFFECT,
+    )),
 );
 
 // LTC 159 — Relic of Sauron
