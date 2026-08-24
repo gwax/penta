@@ -99,7 +99,10 @@ impl Game {
         source_card: &CardInstance,
     ) {
         let ActivationChoices {
-            targets, x, modes, ..
+            targets,
+            cost_objects,
+            x,
+            modes,
         } = choices;
         let Some(effective) = self.find_printed_card_ability(
             source_card,
@@ -139,47 +142,14 @@ impl Game {
             taps_source: false,
             leaves_source: true,
         };
-        let priced_mana_cost = self.priced_ability_mana_cost(source, &definition);
-        for cost in definition.costs.as_slice() {
-            match cost {
-                AbilityCostDef::Mana(cost) => {
-                    let cost = priced_mana_cost.unwrap_or(*cost);
-                    self.activate_mana_for_cost_avoiding_for(
-                        player,
-                        cost,
-                        x,
-                        None,
-                        &payment_purpose,
-                    );
-                    let _ = self.pay_player_cost_for(player, cost, x, &payment_purpose);
-                }
-                AbilityCostDef::ExileSource => self.exile_graveyard_source(player, source),
-                AbilityCostDef::TapSource
-                | AbilityCostDef::UntapSource
-                | AbilityCostDef::SacrificeSource
-                | AbilityCostDef::SacrificeObject(_)
-                | AbilityCostDef::ReturnSourceToHand
-                | AbilityCostDef::RemoveCountersFromSource { .. }
-                | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
-                | AbilityCostDef::PayLife(_)
-                | AbilityCostDef::MillCards(_)
-                | AbilityCostDef::DiscardSource
-                | AbilityCostDef::DiscardCards(_)
-                | AbilityCostDef::DiscardCardMatching(_)
-                | AbilityCostDef::ExileCardFromHand(_)
-                | AbilityCostDef::DiscardCardsAtRandom(_)
-                | AbilityCostDef::SacrificePermanent { .. }
-                | AbilityCostDef::SacrificePermanents { .. }
-                | AbilityCostDef::ReturnUnblockedAttackerToHand
-                | AbilityCostDef::TapPermanent { .. }
-                | AbilityCostDef::TapCreaturesWithTotalPower { .. }
-                | AbilityCostDef::Loyalty(_)
-                | AbilityCostDef::ExileCardsFromGraveyard { .. }
-                | AbilityCostDef::Special(_) => {
-                    unreachable!("unsupported graveyard-zone costs are not offered")
-                }
-            }
-        }
+        self.pay_graveyard_activation_costs(
+            player,
+            source,
+            &definition,
+            cost_objects,
+            x,
+            &payment_purpose,
+        );
         let chosen_permanents = targets
             .iter()
             .flat_map(TargetSelection::targets)
@@ -198,6 +168,48 @@ impl Game {
         );
         self.consecutive_passes = 0;
         self.check_state_based_actions();
+    }
+
+    /// Pays what a graveyard activation owes. The permanent it taps goes
+    /// first, so automatic mana payment cannot tap it out from under the
+    /// cost it is paying.
+    fn pay_graveyard_activation_costs(
+        &mut self,
+        player: PlayerId,
+        source: GameObjectId,
+        definition: &crate::card::ActivatedAbilityDef,
+        cost_objects: &[GameObjectId],
+        x: u16,
+        payment_purpose: &ManaPaymentPurpose,
+    ) {
+        let priced_mana_cost = self.priced_ability_mana_cost(source, definition);
+        if definition
+            .costs
+            .iter()
+            .any(|cost| matches!(cost, AbilityCostDef::TapPermanent { .. }))
+            && let Some(chosen) = cost_objects.first()
+        {
+            let _ = self.tap_permanent(*chosen);
+        }
+        for cost in definition.costs.as_slice() {
+            match cost {
+                AbilityCostDef::Mana(printed) => {
+                    let cost = priced_mana_cost.unwrap_or(*printed);
+                    self.activate_mana_for_cost_avoiding_for(
+                        player,
+                        cost,
+                        x,
+                        None,
+                        payment_purpose,
+                    );
+                    let _ = self.pay_player_cost_for(player, cost, x, payment_purpose);
+                }
+                // Paid above, before anything else could tap it.
+                AbilityCostDef::TapPermanent { .. } => {}
+                AbilityCostDef::ExileSource => self.exile_graveyard_source(player, source),
+                _ => unreachable!("unsupported graveyard-zone costs are not offered"),
+            }
+        }
     }
 
     /// Activates the ability carried by a resolved ongoing effect. The effect

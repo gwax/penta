@@ -204,6 +204,10 @@ impl CounterKind {
     pub const Ice: Self = Self::named("ice");
     /// What Staff of the Storyteller counts its draws with.
     pub const Story: Self = Self::named("story");
+    /// A counter a player keeps rather than a permanent, like poison and
+    /// energy: "you get an experience counter" adds to the player's own
+    /// pile, and nothing takes them away again.
+    pub const Experience: Self = Self::named("experience");
 
     /// Whether this is the counter a Saga reads its chapters with.
     #[must_use]
@@ -214,7 +218,7 @@ impl CounterKind {
     /// The counter names currently authored in the catalog or interpreted by
     /// the engine. This is a serialization registry, not a storage layout:
     /// its order has no rules or checkpoint meaning.
-    pub const KNOWN: [Self; 51] = [
+    pub const KNOWN: [Self; 52] = [
         Self::PlusOnePlusOne,
         Self::Lore,
         Self::named("javelin"),
@@ -266,9 +270,10 @@ impl CounterKind {
         Self::Void,
         Self::Ice,
         Self::Story,
+        Self::Experience,
     ];
 
-    const KNOWN_NAMES: [&'static str; 51] = [
+    const KNOWN_NAMES: [&'static str; 52] = [
         "+1/+1",
         "lore",
         "javelin",
@@ -320,6 +325,7 @@ impl CounterKind {
         "void",
         "ice",
         "story",
+        "experience",
     ];
 
     #[must_use]

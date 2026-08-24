@@ -129,14 +129,26 @@ impl Game {
                     .unwrap_or(u16::MAX);
                 let mut placed = Vec::new();
                 for target in self.effect_recipients(recipient, object, context, scoped) {
-                    if let Target::Permanent(permanent) = target
-                        && let Some(permanent) = self
-                            .battlefield
-                            .iter_mut()
-                            .find(|candidate| candidate.card.id == permanent)
-                    {
-                        permanent.add_counters(kind, amount);
-                        placed.push(permanent.card.id);
+                    match target {
+                        Target::Permanent(permanent) => {
+                            if let Some(permanent) = self
+                                .battlefield
+                                .iter_mut()
+                                .find(|candidate| candidate.card.id == permanent)
+                            {
+                                permanent.add_counters(kind, amount);
+                                placed.push(permanent.card.id);
+                            }
+                        }
+                        // "You get an experience counter." A player keeps
+                        // their own pile the way they keep poison and
+                        // energy, and nothing on the battlefield is
+                        // involved -- so nothing watching permanents for
+                        // counters sees this one.
+                        Target::Player(player) => {
+                            self.players[player.index()].counters.add(kind, amount);
+                        }
+                        Target::Card(_) | Target::Spell(_) => {}
                     }
                 }
                 self.capture_counters_placed(&placed, kind, amount);

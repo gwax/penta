@@ -357,8 +357,13 @@ fn validate_effect_target_shapes(
             validate_recipient_shape(object, targets, RecipientExpectation::Object)?;
             validate_effect_target_shapes(*then, targets, triggering_object_zone)
         }
-        EffectDef::AddCounters { object, amount, .. }
-        | EffectDef::RemoveCounters { object, amount, .. } => {
+        // A player keeps counters too -- experience is put on the player
+        // rather than on anything they control -- so this admits either.
+        EffectDef::AddCounters { object, amount, .. } => {
+            validate_recipient_shape(object, targets, RecipientExpectation::Any)?;
+            validate_value_shape(amount, targets)
+        }
+        EffectDef::RemoveCounters { object, amount, .. } => {
             validate_recipient_shape(object, targets, RecipientExpectation::Object)?;
             validate_value_shape(amount, targets)
         }

@@ -408,11 +408,16 @@ pub(super) fn shared_activated_costs(source_zones: &[ZoneKind], costs: &[Ability
             // enumeration, which asks the same question of the same walk.
             AbilityCostDef::SacrificePermanent { object, .. }
             | AbilityCostDef::SacrificePermanents { object, .. }
-            | AbilityCostDef::TapPermanent { object, .. }
             | AbilityCostDef::ExileCardsFromGraveyard { object, .. }
             | AbilityCostDef::DiscardCardMatching(object)
             | AbilityCostDef::ExileCardFromHand(object) => {
                 battlefield && shared_object_predicate(*object)
+            }
+            // What pays the tap is out on the battlefield wherever the
+            // ability is activated from, so a card in a graveyard can name
+            // one too.
+            AbilityCostDef::TapPermanent { object, .. } => {
+                (battlefield || graveyard) && shared_object_predicate(*object)
             }
             // Exiling the source is the one cost a card can pay from its own
             // graveyard; the rest of these need a permanent to act on.

@@ -567,6 +567,7 @@ impl HandcraftedPolicy {
             | ValueDef::MatchedManaValue
             | ValueDef::BoundObjectCount(_)
             | ValueDef::SpellsCastBeforeThisTurn
+            | ValueDef::PlayerCounters { .. }
             | ValueDef::SacrificedManaValue
             | ValueDef::TimesAdditionalCostPaid
             | ValueDef::DividedAmongTargets

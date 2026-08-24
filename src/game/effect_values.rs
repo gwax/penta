@@ -220,6 +220,22 @@ impl Game {
                 .and_then(|source| self.current_or_last_known_toughness(source))
                 .map_or(0, i32::from),
             ValueDef::TriggerEventAmount => context.trigger.amount.unwrap_or(0),
+            // A pile the player keeps rather than one on a permanent, so
+            // nothing on the battlefield has to be found to read it.
+            ValueDef::PlayerCounters { player, kind } => {
+                [crate::ids::PlayerId::One, crate::ids::PlayerId::Two]
+                    .into_iter()
+                    .filter(|seat| {
+                        self.player_relation_matches(
+                            *seat,
+                            player,
+                            object.controller,
+                            crate::game::TriggerContext::empty(),
+                        )
+                    })
+                    .map(|seat| i32::from(self.players[seat.index()].counters.count(kind)))
+                    .sum()
+            }
             // Frozen when the cost was paid: the permanents it names are
             // already in a graveyard by the time anything reads this.
             ValueDef::SacrificedManaValue => object

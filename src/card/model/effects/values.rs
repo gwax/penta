@@ -278,6 +278,13 @@ pub enum ValueDef {
     Halved(&'static HalvedValueDef),
     /// How many counters of one kind sit on the ability's own source.
     CountersOnSource(CounterKind),
+    /// How many counters of one kind a player has. The player-held pile
+    /// rather than a permanent's: experience, poison, and energy are all
+    /// counted here.
+    PlayerCounters {
+        player: PlayerRelation,
+        kind: CounterKind,
+    },
     /// How many spells were cast before this one this turn, by anybody. The
     /// spell carrying the ability is already counted when it is cast, so this
     /// subtracts it: storm copies what came before, not itself.

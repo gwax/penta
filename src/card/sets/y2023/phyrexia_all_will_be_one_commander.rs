@@ -3,9 +3,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, CardArt, CardRules, CardSet, CardType, CounterKind, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef,
-    abilities,
+    AbilityCostDef, AbilityDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind,
+    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::mana_cost;
 
@@ -44,14 +44,76 @@ pub(in crate::card::sets) static GLIMMER_LENS: CardRecord = CardRecord::new(
         ]),
 );
 
-// ONC 39 — Otharri, Suns' Glory
-// Audit: metadata-only — Card rules have not been implemented.
+// ONC 39 — Otharri, Suns\' Glory
+/// The counter goes on the player, not on him: it stays through his death
+/// and counts for whatever he comes back to.
+static OTHARRI_EXPERIENCE: ValueDef = ValueDef::PlayerCounters {
+    player: PlayerRelation::You,
+    kind: CounterKind::Experience,
+};
+
+/// "Then" is the order that matters: the counter is his first, so the
+/// attack he arrives on already makes one Rebel.
+static OTHARRI_ATTACK: [EffectDef; 2] = [
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Controller,
+        kind: CounterKind::Experience,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::create_creature_token(&["Rebel"], &[ManaColor::Red], 2, 2)
+        .entering_tapped()
+        .entering_attacking()
+        .with_count(OTHARRI_EXPERIENCE),
+];
+
+static OTHARRI_RETURN_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{2}{R}{W}")),
+    AbilityCostDef::TapPermanent {
+        object: ObjectPredicateDef::Subtype("Rebel"),
+        controller: PlayerRelation::You,
+    },
+];
+
+static OTHARRI_ABILITIES: [AbilityDef; 5] = [
+    abilities::flying(),
+    abilities::lifelink(),
+    abilities::haste(),
+    AbilityDef::triggered(
+        "Whenever this creature attacks, you get an experience counter. Then create a 2/2 red \
+         Rebel creature token that\'s tapped and attacking for each experience counter you have.",
+        TriggerEventDef::attacks(ObjectPredicateDef::Source),
+        EffectDef::Sequence(&OTHARRI_ATTACK),
+    ),
+    AbilityDef::activated(
+        "{2}{R}{W}, Tap an untapped Rebel you control: Return this card from your graveyard to \
+         the battlefield tapped.",
+        &OTHARRI_RETURN_COST,
+        EffectDef::MoveToZone {
+            counters: None,
+            object: EffectRecipientDef::Source,
+            from: None,
+            zone: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            controller: None,
+            arrival_effect: None,
+            attachment: None,
+            tapped: true,
+        },
+    )
+    .with_source_zones(&[ZoneKind::Graveyard]),
+];
+
 pub(in crate::card::sets) static OTHARRI_SUNS_GLORY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("348e0927-1d8f-4723-879d-f7e95ac60c27"),
-    "Otharri, Suns' Glory",
-    crate::card::CardArt::new("348e0927-1d8f-4723-879d-f7e95ac60c27", "Marta Nael"),
-    crate::card::CardSet::PhyrexiaAllWillBeOneCommander,
-    crate::card::CardRules::unsupported(),
+    "Otharri, Suns\' Glory",
+    CardArt::new("348e0927-1d8f-4723-879d-f7e95ac60c27", "Marta Nael"),
+    CardSet::PhyrexiaAllWillBeOneCommander,
+    // Five mana for a hasty lifelinking flier that pays out more every time
+    // it connects, and buys itself back out of the graveyard with what it
+    // left behind.
+    CardRules::new_creature(mana_cost!("{3}{R}{W}"), &["Phoenix"], 3, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&OTHARRI_ABILITIES),
 );
 
 // ONC 48 — Staff of the Storyteller

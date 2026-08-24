@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Counters a player keeps.** Poison and energy each had their own effect
+  because the runtime does something with them -- one is a clock, the other
+  is spent. An experience counter is neither: it is only counted. So the
+  ordinary "put a counter on it" now puts one on a player when that is what
+  the clause names, and a value can read any player's pile back. A graveyard
+  activation can also pay by tapping a permanent, which it could not before:
+  what pays the tap is out on the battlefield wherever the ability is
+  activated from. Otharri, Suns' Glory prints all of it.
+
 - **Creating tokens is an event.** "Whenever you create one or more creature
   tokens" reads one instruction rather than one token, the way the batched
   death, exile, and attack events already do: an instruction that makes three
