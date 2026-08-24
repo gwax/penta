@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, PlayerRelation, ValueDef, abilities,
+    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef, ValueDef,
+    ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -13,13 +14,63 @@ static ANY_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
 )];
 
 // BIG 9 — Harvester of Misery
-// Audit: metadata-only — Card rules have not been implemented.
+/// "Other creatures": everyone's, and not the Spirit itself, which is what
+/// lets a 5/4 sweep a board of two-toughness creatures and survive it.
+static EVERY_OTHER_CREATURE: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::matching_objects(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::Any,
+    ),
+    effect: AppliedEffectDef::modify_power_toughness(
+        ValueDef::Constant(-2),
+        ValueDef::Constant(-2),
+    ),
+    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+};
+
+static A_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+/// The same shrink, aimed at one creature. The card is discarded to pay for
+/// it, so this is what the Spirit does on the turns five mana is too much.
+static HARVESTER_SHRINKS_ONE: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    effect: AppliedEffectDef::modify_power_toughness(
+        ValueDef::Constant(-2),
+        ValueDef::Constant(-2),
+    ),
+    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+};
+
 pub(in crate::card::sets) static HARVESTER_OF_MISERY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a3012af9-621d-4fae-b00d-079a89ae35fe"),
     "Harvester of Misery",
-    crate::card::CardArt::new("a3012af9-621d-4fae-b00d-079a89ae35fe", "Jorge Jacinto"),
-    crate::card::CardSet::TheBigScore,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("a3012af9-621d-4fae-b00d-079a89ae35fe", "Jorge Jacinto"),
+    CardSet::TheBigScore,
+    // Five mana for a board sweep on a hard-to-block body, or two mana from
+    // the hand for one creature when the board does not need sweeping.
+    CardRules::new_creature(mana_cost!("{3}{B}{B}"), &["Spirit"], 5, 4).with_abilities(&[
+        abilities::menace(),
+        abilities::enters_trigger(
+            "When this creature enters, other creatures get -2/-2 until end of turn.",
+            EVERY_OTHER_CREATURE,
+        ),
+        AbilityDef::activated_with_targets(
+            "{1}{B}, Discard this card: Target creature gets -2/-2 until end of turn.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}{B}")),
+                AbilityCostDef::DiscardSource,
+            ],
+            &A_CREATURE,
+            HARVESTER_SHRINKS_ONE,
+        )
+        .with_source_zones(&[ZoneKind::Hand]),
+    ]),
 );
 
 // BIG 12 — Legion Extruder
