@@ -1375,6 +1375,7 @@ static FIRE_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
     maximum: 2,
     divided_total: Some(DividedTotal::Fixed(2)),
     another: false,
+    excludes_source: false,
 }];
 
 const fn fire_rules() -> CardRules {

@@ -36,6 +36,7 @@ static OUTCOME_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
     maximum: AbilityTargetDef::UNLIMITED,
     divided_total: None,
     another: false,
+    excludes_source: false,
 }];
 
 static OUTCOME_OWNED_BY_YOU: ObjectSetBindingIndex = ObjectSetBindingIndex::new(1);

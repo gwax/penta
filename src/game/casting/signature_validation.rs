@@ -82,12 +82,16 @@ impl Game {
                             .map_or_else(Vec::new, |owner| {
                                 self.targets_owned_by_player_matching(object, zones, owner, card_id)
                             }),
-                        _ => self.ability_targets_matching_at(
-                            slot.predicate,
-                            player,
+                        _ => Self::without_excluded_source(
+                            slot,
                             card_id,
-                            TriggerContext::empty(),
-                            choices.x(),
+                            self.ability_targets_matching_at(
+                                slot.predicate,
+                                player,
+                                card_id,
+                                TriggerContext::empty(),
+                                choices.x(),
+                            ),
                         ),
                     };
                     // Read through the same sentinel the enumerator used, so

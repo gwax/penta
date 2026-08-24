@@ -175,6 +175,7 @@ fn one_ability_target_slot_resolves_for_every_selected_legal_target() {
         maximum: 2,
         divided_total: None,
         another: false,
+        excludes_source: false,
     }];
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::activated_with_targets(
         "Deal 1 damage to up to two target creatures an opponent controls.",

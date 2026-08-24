@@ -2894,6 +2894,7 @@ static GHOULCALLERS_CHANT_TWO_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef
     maximum: 2,
     divided_total: None,
     another: false,
+    excludes_source: false,
 }];
 
 static GHOULCALLERS_CHANT_MODES: [AbilityDef; 2] = [

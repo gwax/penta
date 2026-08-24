@@ -598,6 +598,9 @@ fn a_checkpoint_missing_any_required_field_is_rejected_by_name() {
         // Defaults to no predicate-filterable cast history, matching a
         // checkpoint written before that event history existed.
         "spellCastHistoryThisTurn",
+        // Defaults to nobody being barred from gaining life, which is where
+        // every game starts.
+        "cannotGainLife",
     ];
 
     let fixture = Fixture::played(120, 8_101);

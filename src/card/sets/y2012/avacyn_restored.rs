@@ -2796,6 +2796,7 @@ pub(in crate::card::sets) static GANG_OF_DEVILS: CardRecord = CardRecord::new_wi
                 maximum: 3,
                 divided_total: Some(DividedTotal::Fixed(3)),
                 another: false,
+                excludes_source: false,
             }], EffectDef::DealDamage {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::DividedAmongTargets,

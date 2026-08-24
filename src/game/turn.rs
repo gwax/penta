@@ -167,8 +167,16 @@ impl Game {
         true
     }
 
+    /// Whether this player has been told they cannot gain life for the rest
+    /// of the game (Screaming Nemesis). A prohibition rather than a
+    /// replacement: the life never arrives, so nothing watching for a gain
+    /// sees one.
+    pub(super) const fn cannot_gain_life(&self, player: PlayerId) -> bool {
+        self.cannot_gain_life[player.index()]
+    }
+
     pub(super) fn gain_life(&mut self, player: PlayerId, amount: u16) {
-        if amount == 0 {
+        if amount == 0 || self.cannot_gain_life(player) {
             return;
         }
         let amount = amount.saturating_mul(self.life_gain_multiplier(player));

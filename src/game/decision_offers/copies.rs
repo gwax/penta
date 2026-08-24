@@ -189,16 +189,19 @@ impl Game {
                 };
                 let mut combined = Vec::new();
                 for prefix in &choices {
-                    let candidates = self
-                        .targets_owned_by_target_player(slot.predicate, prefix, spell.id)
-                        .unwrap_or_else(|| {
-                            self.ability_targets_matching(
-                                slot.predicate,
-                                player,
-                                spell.id,
-                                context,
-                            )
-                        });
+                    let candidates = Self::without_excluded_source(
+                        slot,
+                        spell.id,
+                        self.targets_owned_by_target_player(slot.predicate, prefix, spell.id)
+                            .unwrap_or_else(|| {
+                                self.ability_targets_matching(
+                                    slot.predicate,
+                                    player,
+                                    spell.id,
+                                    context,
+                                )
+                            }),
+                    );
                     let mut replacements = target_combinations(
                         &candidates,
                         original.targets().len(),

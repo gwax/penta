@@ -857,6 +857,11 @@ pub struct Game {
     /// How many of each player's next sorceries may be cast as though they
     /// had flash. Quicken grants one, and the grant lapses with the turn.
     sorcery_flash_grants: [u8; 2],
+    /// Whether each player has been told they cannot gain life for the rest
+    /// of the game. A flag rather than an expiring rule because that is the
+    /// only duration the clause is printed with; a turn-scoped version would
+    /// belong with the resolved rules that know how to end.
+    cannot_gain_life: [bool; 2],
     /// Combat damage dealt to players so far in the combat damage step being
     /// dealt, for the batched event published when that step finishes.
     /// Emptied at both ends of the step, so nothing outside one is ever

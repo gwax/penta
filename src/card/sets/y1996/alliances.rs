@@ -983,6 +983,7 @@ static PYROKINESIS_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
     maximum: AbilityTargetDef::UNLIMITED,
     divided_total: Some(DividedTotal::Fixed(4)),
     another: false,
+    excludes_source: false,
 }];
 
 /// Exiled from hand rather than discarded: the card is spent without ever

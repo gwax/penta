@@ -3321,6 +3321,7 @@ pub(in crate::card::sets) static PYROTECHNICS: CardRecord = CardRecord::new_with
             maximum: 4,
             divided_total: Some(DividedTotal::Fixed(4)),
             another: false,
+            excludes_source: false,
         }],
         EffectDef::DealDamage {
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),

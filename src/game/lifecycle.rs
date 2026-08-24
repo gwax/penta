@@ -188,6 +188,7 @@ impl Game {
             exile_play_permissions: Vec::new(),
             damage_cannot_be_prevented_this_turn: false,
             sorcery_flash_grants: [0; 2],
+            cannot_gain_life: [false; 2],
             combat_damage_to_players: Vec::new(),
             turn_phase_queue: VecDeque::new(),
             turn_phase_resume: None,

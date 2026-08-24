@@ -809,6 +809,7 @@ pub(in crate::card::sets) static ASHES_TO_ASHES: CardRecord = CardRecord::new_wi
                 maximum: 2,
                 divided_total: None,
                 another: false,
+                excludes_source: false,
             }],
             EffectDef::Sequence(&[
                 EffectDef::MoveToZone {

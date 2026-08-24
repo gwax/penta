@@ -25,6 +25,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Any other target", and a player who cannot gain life.** A target slot
+  can now exclude the ability's own source, which is what "any other target"
+  prints and what stops a damage-reflecting creature from answering itself.
+  And a player can be barred from gaining life for the rest of the game --
+  a prohibition rather than a replacement scaled to zero, so nothing
+  watching for a life gain sees one. Damage riders reach damaged players as
+  well as damaged permanents, so "if a player is dealt damage this way" is
+  linked to what actually landed. Screaming Nemesis prints all three. The
+  bar is an additive checkpoint member; checkpoint format 8, replay version
+  2, and protocol 29 are unchanged.
+
 - **Replicate: an optional additional cost paid as many times as you like.**
   An optional additional cost can now be declared repeatable, in which case a
   cast enumerates paying it any number of times its caster could afford, and

@@ -476,6 +476,7 @@ mod vintage_cube_ragavan;
 mod vintage_cube_relic;
 mod vintage_cube_robber_of_the_rich;
 mod vintage_cube_saheeli;
+mod vintage_cube_screaming_nemesis;
 mod vintage_cube_scythecat_cub;
 mod vintage_cube_seasoned_pyromancer;
 mod vintage_cube_senseis_divining_top;

@@ -26,18 +26,6 @@ impl<'de> Deserialize<'de> for CounterKindSnapshot {
     }
 }
 
-// serde hands `skip_serializing_if` a reference, so this signature is fixed.
-#[allow(clippy::trivially_copy_pass_by_ref)]
-fn is_zero_u8(value: &u8) -> bool {
-    *value == 0
-}
-
-// The same, for the turn a permanent entered on.
-#[allow(clippy::trivially_copy_pass_by_ref)]
-fn is_zero_turn(value: &u32) -> bool {
-    *value == 0
-}
-
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -79,19 +67,14 @@ pub(super) struct ExilePlayPermissionSnapshot {
     pub(super) until_holder_end_step: Option<(usize, u32)>,
 }
 
-/// Taken by reference because that is the signature serde's
-/// `skip_serializing_if` requires.
-#[allow(clippy::trivially_copy_pass_by_ref)]
-pub(super) fn is_zero_u16(value: &u16) -> bool {
-    *value == 0
-}
-
 mod balance;
 mod continuation;
 mod continuous;
+mod emptiness;
 mod objects;
 mod stack;
 mod triggers;
+pub(in crate::game::state_checkpoint) use emptiness::is_zero_u16;
 pub(in crate::game::state_checkpoint) use stack::*;
 pub(in crate::game::state_checkpoint) use triggers::*;
 
@@ -138,7 +121,7 @@ pub(super) struct GameSnapshot {
     pub(super) creature_died_this_turn: bool,
     /// Additive: a checkpoint written before the count existed restores as
     /// zero, which is what a turn with no recorded deaths means anyway.
-    #[serde(default, skip_serializing_if = "is_zero_u16")]
+    #[serde(default, skip_serializing_if = "emptiness::is_zero_u16")]
     pub(super) creatures_died_this_turn: u16,
     pub(super) linked_exiles: Vec<[u32; 2]>,
     /// Uses of a limited graveyard permission this turn. Additive: a
@@ -162,6 +145,11 @@ pub(super) struct GameSnapshot {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) monarch: Option<usize>,
     pub(super) sorcery_flash_grants: [u8; 2],
+    /// Who has been told they cannot gain life for the rest of the game.
+    /// Additive: a checkpoint written before this existed means nobody had
+    /// been, which is where every game starts.
+    #[serde(default, skip_serializing_if = "emptiness::is_unset_for_both")]
+    pub(super) cannot_gain_life: [bool; 2],
     pub(super) turn_phase_queue: Vec<TurnPhaseSnapshot>,
     pub(super) turn_phase_resume: Option<TurnPhaseResumeSnapshot>,
     /// Resolving play prohibitions. Static restrictions remain source-derived.
@@ -422,13 +410,13 @@ pub(super) struct PermanentSnapshot {
     /// Additive: a checkpoint written before it existed restores a permanent
     /// that entered on turn zero, which is what one that has been there all
     /// along would say anyway.
-    #[serde(default, skip_serializing_if = "is_zero_turn")]
+    #[serde(default, skip_serializing_if = "emptiness::is_zero_turn")]
     pub(super) entered_turn: u32,
     /// Detained until this seat's next turn, with the turn count it landed on.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) detained_until_turn_of: Option<(usize, u32)>,
     /// Untap steps this permanent still owes before it untaps normally.
-    #[serde(default, skip_serializing_if = "is_zero_u8")]
+    #[serde(default, skip_serializing_if = "emptiness::is_zero_u8")]
     pub(super) skipped_untap_steps: u8,
     pub(super) control_reverts_to: Option<usize>,
     /// The permanent sustaining a duration-scoped control change, absent for
@@ -444,7 +432,7 @@ pub(super) struct PermanentSnapshot {
     pub(super) control_requires_source_attached: bool,
     pub(super) chosen_player: Option<usize>,
     /// The X the spell that made this permanent was cast for.
-    #[serde(default, skip_serializing_if = "is_zero_u16")]
+    #[serde(default, skip_serializing_if = "emptiness::is_zero_u16")]
     pub(super) cast_x: u16,
     /// The alternative this permanent's spell was cast with, by its stable
     /// name. Stored as a string so the wire form does not depend on the
@@ -662,7 +650,7 @@ pub(super) struct EmblemSnapshot {
     /// Additive: a checkpoint written before it existed restores a permanent
     /// that entered on turn zero, which is what one that has been there all
     /// along would say anyway.
-    #[serde(default, skip_serializing_if = "is_zero_turn")]
+    #[serde(default, skip_serializing_if = "emptiness::is_zero_turn")]
     pub(super) entered_turn: u32,
 }
 

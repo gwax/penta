@@ -512,6 +512,7 @@ impl Game {
                 .collect(),
             monarch: self.monarch.map(PlayerId::index),
             sorcery_flash_grants: self.sorcery_flash_grants,
+            cannot_gain_life: self.cannot_gain_life,
             turn_phase_queue: self
                 .turn_phase_queue
                 .iter()
@@ -853,6 +854,7 @@ impl Game {
                 })
                 .collect(),
             sorcery_flash_grants: checkpoint.sorcery_flash_grants,
+            cannot_gain_life: checkpoint.cannot_gain_life,
             // Only ever holds anything while one combat damage step is being
             // dealt, which is not a moment a checkpoint is taken.
             combat_damage_to_players: Vec::new(),

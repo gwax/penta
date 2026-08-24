@@ -61,6 +61,7 @@ fn semantic_target(minimum: u8, maximum: u8) -> AbilityTargetDef {
         maximum,
         divided_total: None,
         another: false,
+        excludes_source: false,
     }
 }
 

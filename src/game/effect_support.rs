@@ -389,6 +389,15 @@ impl Game {
                 }
                 true
             }
+            // "For the rest of the game" is the only duration this is
+            // printed with, so what it leaves behind is a flag on the player
+            // rather than an entry in a list that has to expire.
+            AppliedRuleDef::CannotGainLife => {
+                if let Target::Player(affected_player) = target {
+                    self.cannot_gain_life[affected_player.index()] = true;
+                }
+                true
+            }
             AppliedRuleDef::CannotPlay(restriction) => {
                 if let Target::Player(affected_player) = target {
                     self.resolved_play_restrictions
@@ -732,11 +741,15 @@ impl Game {
                 .targets_owned_by_player_matching(predicate, zones, owner, source)
                 .contains(&target);
         }
-        self.ability_targets_matching(
-            definition.predicate,
-            object.controller,
+        Self::without_excluded_source(
+            definition,
             source,
-            ability.context.trigger,
+            self.ability_targets_matching(
+                definition.predicate,
+                object.controller,
+                source,
+                ability.context.trigger,
+            ),
         )
         .contains(&target)
     }

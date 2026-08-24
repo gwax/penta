@@ -171,19 +171,21 @@ impl Game {
         trigger: &PendingTrigger,
         target: AbilityTargetDef,
     ) -> Vec<Target> {
-        self.targets_owned_by_target_player(
-            target.predicate,
-            &trigger.targets,
-            trigger.source.object,
-        )
-        .unwrap_or_else(|| {
-            self.ability_targets_matching(
+        let candidates = self
+            .targets_owned_by_target_player(
                 target.predicate,
-                trigger.controller,
+                &trigger.targets,
                 trigger.source.object,
-                trigger.context.trigger,
             )
-        })
+            .unwrap_or_else(|| {
+                self.ability_targets_matching(
+                    target.predicate,
+                    trigger.controller,
+                    trigger.source.object,
+                    trigger.context.trigger,
+                )
+            });
+        Self::without_excluded_source(&target, trigger.source.object, candidates)
     }
 
     /// Asks which mode a modal trigger was put onto the stack with. Only

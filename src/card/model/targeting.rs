@@ -274,6 +274,10 @@ pub struct AbilityTargetDef {
     /// named. Enforced as targets are chosen rather than checked afterwards,
     /// because a declaration that repeats itself is not legal to begin with.
     pub another: bool,
+    /// "Any other target": the ability's own source is not among the choices.
+    /// Distinct from [`Self::another`], which is about what a previous slot
+    /// took rather than about the source.
+    pub excludes_source: bool,
 }
 
 impl AbilityTargetDef {
@@ -281,6 +285,14 @@ impl AbilityTargetDef {
     #[must_use]
     pub const fn another(mut self) -> Self {
         self.another = true;
+        self
+    }
+
+    /// The same slot, restricted to something other than the ability's own
+    /// source. "Any other target" is this over an any-target slot.
+    #[must_use]
+    pub const fn excluding_source(mut self) -> Self {
+        self.excludes_source = true;
         self
     }
 }
@@ -317,6 +329,7 @@ impl AbilityTargetDef {
             maximum: Self::CHOSEN_X,
             divided_total: None,
             another: false,
+            excludes_source: false,
         }
     }
 
@@ -357,6 +370,7 @@ impl AbilityTargetDef {
             maximum: 1,
             divided_total: None,
             another: false,
+            excludes_source: false,
         }
     }
 
@@ -373,6 +387,7 @@ impl AbilityTargetDef {
             maximum: Self::UNLIMITED,
             divided_total: None,
             another: false,
+            excludes_source: false,
         }
     }
 
@@ -386,6 +401,7 @@ impl AbilityTargetDef {
             maximum,
             divided_total: None,
             another: false,
+            excludes_source: false,
         }
     }
 

@@ -7,13 +7,15 @@ use crate::card::{
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     CardTypeSet, CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, ComparisonDef,
-    CounterKind, CreatureTypeSetDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
-    EmblemCharacteristics, GraveyardPlayPermissionDef, ManaColor, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef, PlayRestrictionDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementConditionDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef, SpellAdditionalCostDef,
-    SpendModeDef, TokenCountersDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
-    TurnPhaseDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, EffectDef,
+    EffectRecipientDef, EmblemCharacteristics, GraveyardPlayPermissionDef, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementConditionDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef,
+    SpellAdditionalCostDef, SpendModeDef, TokenCountersDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueComparisonDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -854,13 +856,45 @@ pub(in crate::card::sets) static CHAINSAW: CardRecord = CardRecord::new(
 // DSK 329 — Blazemire Verge (alternate printing)
 
 // DSK 348 — Screaming Nemesis
-// Audit: metadata-only — Card rules have not been implemented.
+/// "Any other target": everything an ordinary any-target slot offers, minus
+/// the Spirit itself. Without the exclusion it could answer its own trigger
+/// and hit itself, which would trigger it again.
+static ANY_OTHER_TARGET: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one(AbilityTargetPredicate::AnyTarget).excluding_source()];
+
+/// The damage and the rider are one effect rather than a sequence, because
+/// the rider is about what actually took the damage: prevented damage stops
+/// nothing from being gained.
+static NEMESIS_SCREAMS: EffectDef = EffectDef::DealDamageAndApply {
+    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    amount: ValueDef::TriggerEventAmount,
+    applied: AppliedEffectDef::Rule(AppliedRuleDef::CannotGainLife),
+    duration: ResolvedEffectDurationDef::Permanent,
+};
+
 pub(in crate::card::sets) static SCREAMING_NEMESIS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ad3f4c72-ff6e-4d7f-8eb8-45a0a9605fc0"),
     "Screaming Nemesis",
-    crate::card::CardArt::new("ad3f4c72-ff6e-4d7f-8eb8-45a0a9605fc0", "Inkognit"),
-    crate::card::CardSet::DuskmournHouseOfHorror,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("ad3f4c72-ff6e-4d7f-8eb8-45a0a9605fc0", "Inkognit"),
+    CardSet::DuskmournHouseOfHorror,
+    // Three mana that attacks into anything: blocking it, burning it, or
+    // fighting it all send the damage somewhere else, and a player who takes
+    // it is out of lifegain for good.
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Spirit"], 3, 3).with_abilities(&[
+        abilities::haste(),
+        AbilityDef::triggered_with_targets(
+            "Whenever this creature is dealt damage, it deals that much damage to any other \
+             target. If a player is dealt damage this way, they can't gain life for the rest of \
+             the game.",
+            TriggerEventDef::DamageDealt(DamageEventMatcherDef {
+                kind: DamageKindDef::Any,
+                source: DamageSourceMatcherDef::Any,
+                recipient: DamageRecipientMatcherDef::MatchingObject(ObjectPredicateDef::Source),
+            }),
+            &ANY_OTHER_TARGET,
+            NEMESIS_SCREAMS,
+        ),
+    ]),
 );
 
 // DSK 387 — Overlord of the Mistmoors

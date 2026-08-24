@@ -887,8 +887,11 @@ impl Game {
                 selections = self.linked_owner_target_selections(&selections, *slot, id, source, x);
                 continue;
             }
-            let candidates =
-                self.ability_targets_matching_at(slot.predicate, controller, source, context, x);
+            let candidates = Self::without_excluded_source(
+                slot,
+                source,
+                self.ability_targets_matching_at(slot.predicate, controller, source, context, x),
+            );
             let mut choices = Vec::new();
             if let Some(total) = slot.divided_total {
                 let total = match total {

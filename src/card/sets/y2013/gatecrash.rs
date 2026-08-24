@@ -3039,6 +3039,7 @@ pub(in crate::card::sets) static AURELIAS_FURY: CardRecord = CardRecord::new_wit
                 maximum: u8::MAX,
                 divided_total: Some(DividedTotal::ChosenX),
                 another: false,
+                excludes_source: false,
             }],
             // Everything chosen took damage, so the tap and the lock are the
             // same set of targets read again; each ignores what it cannot

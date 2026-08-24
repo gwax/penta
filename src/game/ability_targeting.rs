@@ -5,9 +5,9 @@
 //! question of a single object; this asks it of every candidate.
 
 use super::{
-    AbilityTargetPredicate, CardInstance, CardType, CharacteristicContext, Game, GameObjectId,
-    ObjectPredicateDef, PlayerId, PlayerRelation, StackObjectKind, StackTargetKindDef, Target,
-    TargetSelection, TriggerContext, ZoneKind,
+    AbilityTargetDef, AbilityTargetPredicate, CardInstance, CardType, CharacteristicContext, Game,
+    GameObjectId, ObjectPredicateDef, PlayerId, PlayerRelation, StackObjectKind,
+    StackTargetKindDef, Target, TargetSelection, TriggerContext, ZoneKind,
 };
 
 impl Game {
@@ -77,6 +77,20 @@ impl Game {
         let targets =
             self.ability_targets_matching_for(predicate, controller, source, context, true);
         self.prospective_x.set(previous);
+        targets
+    }
+
+    /// "Any other target": the ability's own source is dropped from what a
+    /// slot may name. Applied where candidates are offered and where a
+    /// declaration is checked, so the two agree.
+    pub(super) fn without_excluded_source(
+        slot: &AbilityTargetDef,
+        source: GameObjectId,
+        mut targets: Vec<Target>,
+    ) -> Vec<Target> {
+        if slot.excludes_source {
+            targets.retain(|target| *target != Target::Permanent(source));
+        }
         targets
     }
 

@@ -454,6 +454,11 @@ pub enum AppliedRuleDef {
         matcher: DamageEventMatcherDef,
         limit: DamageLimitDef,
     },
+    /// "That player can't gain life for the rest of the game." A prohibition
+    /// on the player rather than a replacement of the gain: nothing is
+    /// multiplied down to zero, the life simply never arrives, and nothing
+    /// watching for a life gain sees one.
+    CannotGainLife,
     /// "You may cast <these> spells as though they had flash." A timing
     /// permission rather than a granted keyword: nothing about the card
     /// changes, and the permission belongs to the player it was given to for

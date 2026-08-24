@@ -86,8 +86,11 @@ impl Game {
             // decided, and answered the same way the deal itself will answer
             // it. Nothing between the two calls can change it.
             let landed = self.redirected_damage_target(source, Some(target));
+            // Players count as well as permanents: "if a player is dealt
+            // damage this way" is a rider on the same linkage, and a rule
+            // aimed at an object simply finds nothing on a player.
             if self.damage_target_from(source, Some(target), amount) > 0
-                && let Some(landed @ Target::Permanent(_)) = landed
+                && let Some(landed @ (Target::Permanent(_) | Target::Player(_))) = landed
                 && !damaged.contains(&landed)
             {
                 damaged.push(landed);
