@@ -334,6 +334,14 @@ impl Game {
         {
             return false;
         }
+        // CR 702.27b. One keyword read from both sides: shadow creatures and
+        // ordinary ones are simply unable to meet in combat, whichever of
+        // them is attacking.
+        if self.permanent_has_executable_keyword(attacker_permanent, KeywordAbility::Shadow)
+            != self.permanent_has_executable_keyword(blocker_permanent, KeywordAbility::Shadow)
+        {
+            return false;
+        }
         if self.permanent_has_executable_keyword(attacker_permanent, KeywordAbility::Intimidate)
             && !self.is_artifact_permanent(blocker_permanent)
         {

@@ -2,10 +2,10 @@ use crate::card::{ManaCost, ReplacementAbilityDef, ReplacementEffectDef, SpendMo
 use crate::ids::{CardDefinitionId, GameObjectId, ObjectSetBindingIndex, PlayerId};
 
 use super::{
-    AbilitySourceRef, BalancePhase, BalanceTask, EffectResolutionContext, FrozenActivatedAbility,
-    Game, Mana, ManaAbilityActivation, ManaPaymentPurpose, ObjectCharacteristics, ObjectInstance,
-    Permanent, PlannedManaActivation, SacrificeFollowup, ScopedEffect, StackObject, Target,
-    TargetSelection,
+    AbilitySourceRef, BalancePhase, BalanceTask, CounterKind, EffectResolutionContext,
+    FrozenActivatedAbility, Game, Mana, ManaAbilityActivation, ManaPaymentPurpose,
+    ObjectCharacteristics, ObjectInstance, Permanent, PlannedManaActivation, SacrificeFollowup,
+    ScopedEffect, StackObject, Target, TargetSelection,
 };
 
 /// One replacement effect that currently applies to a prospective event.
@@ -54,6 +54,10 @@ pub(super) struct PendingBattlefieldExitMove {
     pub(super) object: GameObjectId,
     pub(super) controller: PlayerId,
     pub(super) destination: ZoneKind,
+    /// A counter the replacement puts on the card as it leaves, which the
+    /// card carries into its new zone. Dauthi Voidwalker's void counter is
+    /// the only one printed this way.
+    pub(super) counters: Option<(CounterKind, u16)>,
     pub(super) replaced_with_nothing: bool,
     pub(super) applied: Vec<AbilitySourceRef>,
 }

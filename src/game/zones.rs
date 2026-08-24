@@ -1,11 +1,19 @@
 use super::{
     ArrivalAttachment, BattlefieldArrival, CardDefinitionId, CardInstance, CardPartId,
-    CardStructure, CharacteristicContext, CharacteristicSource, CommittedTriggerEvent,
+    CardStructure, CharacteristicContext, CharacteristicSource, CommittedTriggerEvent, CounterKind,
     DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EntryCompletion, Game, GameEvent,
     GameObjectId, KeywordAbility, ObjectBacking, PendingBattlefieldEntry, Permanent, PlayerId,
     PublicCard, ReplacementEffectDef, ReplacementEventDef, Target, TriggerContext, ZoneCard,
     ZoneError, ZoneKind, ZoneMoveCause, ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
 };
+
+/// Where a card headed for one zone actually goes when something on the
+/// battlefield replaces the move, and what that replacement puts on it.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct ExternalZoneMoveReplacement {
+    pub(super) zone: ZoneKind,
+    pub(super) counters: Option<(CounterKind, u16)>,
+}
 
 impl Game {
     /// Every card of this name in one player's zone, as targets. Cabal
@@ -322,7 +330,7 @@ impl Game {
         to: ZoneKind,
         owner: PlayerId,
         is_token: bool,
-    ) -> Option<ZoneKind> {
+    ) -> Option<ExternalZoneMoveReplacement> {
         let mut replacement = None;
         for permanent in &self.battlefield {
             self.for_each_effective_ability(permanent, |effective| {
@@ -352,10 +360,13 @@ impl Game {
                 {
                     return;
                 }
-                if let Some(ReplacementEffectDef::MoveToZone(zone)) =
-                    ability.declarative_replacement()
+                if let Some(program) = ability.declarative_replacement()
+                    && let Some(zone) = Self::replacement_move_destination(program)
                 {
-                    replacement = Some(zone);
+                    replacement = Some(ExternalZoneMoveReplacement {
+                        zone,
+                        counters: Self::replacement_move_counters(program),
+                    });
                 }
             });
             if replacement.is_some() {
@@ -390,10 +401,13 @@ impl Game {
                 {
                     continue;
                 }
-                if let Some(ReplacementEffectDef::MoveToZone(zone)) =
-                    ability.declarative_replacement()
+                if let Some(program) = ability.declarative_replacement()
+                    && let Some(zone) = Self::replacement_move_destination(program)
                 {
-                    replacement = Some(zone);
+                    replacement = Some(ExternalZoneMoveReplacement {
+                        zone,
+                        counters: Self::replacement_move_counters(program),
+                    });
                     break;
                 }
             }
@@ -403,13 +417,37 @@ impl Game {
 
     /// The one way a card reaches a graveyard, so a replacement that sends it
     /// somewhere else has a single place to apply.
-    pub(super) fn put_card_into_graveyard(&mut self, owner: PlayerId, card: CardInstance) {
+    pub(super) fn put_card_into_graveyard(&mut self, owner: PlayerId, mut card: CardInstance) {
         // Tokens cease to exist as they leave the battlefield and never become
         // `CardInstance`s. A physical card remains a nontoken here even when
         // its former permanent was copying token characteristics.
         match self.external_zone_move_replacement(ZoneKind::Graveyard, owner, false) {
-            Some(ZoneKind::Exile) => self.players[owner.index()].exile.push(card),
+            Some(ExternalZoneMoveReplacement {
+                zone: ZoneKind::Exile,
+                counters,
+            }) => {
+                if let Some((kind, amount)) = counters {
+                    card.add_counters(kind, amount);
+                }
+                self.players[owner.index()].exile.push(card);
+            }
             _ => self.players[owner.index()].graveyard.push(card),
+        }
+    }
+
+    /// What a replacement program puts on the card it moves, if anything.
+    /// Read the same way the destination beside it is: a sequence carries
+    /// the counter alongside the move rather than as an effect of its own.
+    fn replacement_move_counters(effect: ReplacementEffectDef) -> Option<(CounterKind, u16)> {
+        match effect {
+            ReplacementEffectDef::PlaceCountersOnMovedObject { kind, amount } => {
+                Some((kind, amount))
+            }
+            ReplacementEffectDef::Sequence(effects) => effects
+                .iter()
+                .copied()
+                .find_map(Self::replacement_move_counters),
+            _ => None,
         }
     }
 
@@ -447,7 +485,7 @@ impl Game {
     /// Where a replacement program sends the card, if it sends it anywhere.
     /// A sequence carries the move alongside whatever else it does, and the
     /// move is the part a zone change needs to know about.
-    fn replacement_move_destination(effect: ReplacementEffectDef) -> Option<ZoneKind> {
+    pub(super) fn replacement_move_destination(effect: ReplacementEffectDef) -> Option<ZoneKind> {
         match effect {
             ReplacementEffectDef::MoveToZone(zone) => Some(zone),
             ReplacementEffectDef::Sequence(effects) => effects

@@ -86,6 +86,12 @@ pub enum KeywordAbility {
     /// as the permanent enters, and no blocking while it carries one.
     Unleash,
     Intimidate,
+    /// CR 702.27. The creature can block or be blocked by only creatures
+    /// with shadow. Both halves of one keyword: a creature with it is as
+    /// unable to block the ordinary board as the ordinary board is unable to
+    /// block it, which is what makes shadow a separate battlefield rather
+    /// than plain evasion.
+    Shadow,
     /// CR 702.110. The creature cannot be blocked except by two or more
     /// creatures. A constraint on the completed declaration rather than on
     /// any one block: the first blocker is always legal, and it is finishing
@@ -173,6 +179,7 @@ impl KeywordAbility {
             Self::Devoid => 28,
             Self::Infect => 29,
             Self::Compleated => 31,
+            Self::Shadow => 34,
             Self::ProtectionFrom(_)
             // Never granted, never removed, and never asked about as part of
             // a set: split second is read off the one spell that has it.

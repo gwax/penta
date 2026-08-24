@@ -676,10 +676,16 @@ fn validate_replacement_program_for_event(
         } if effect == ReplacementEffectDef::MoveToZone(ZoneKind::Battlefield) => Ok(()),
         // "From anywhere" replaces the same move wherever it starts, so it
         // is held to the same program as the battlefield exit it includes.
+        // The watching-permanent form beside it says the same thing about
+        // somebody else's card and is read the same way.
         ReplacementEventDef::WouldMove {
             from: None | Some(ZoneKind::Battlefield),
             to: ZoneKind::Graveyard,
             cause: ZoneMoveCauseDef::Any,
+        }
+        | ReplacementEventDef::AnyObjectWouldMove {
+            to: ZoneKind::Graveyard,
+            ..
         } => validate_battlefield_exit_replacement_program(effect),
         ReplacementEventDef::WouldGainLife(_)
             if matches!(effect, ReplacementEffectDef::MultiplyEventAmount(_)) =>
@@ -690,10 +696,6 @@ fn validate_replacement_program_for_event(
             validate_begin_turn_replacement_program(effect)
         }
         ReplacementEventDef::WouldDraw { .. } => validate_draw_replacement_program(effect),
-        ReplacementEventDef::AnyObjectWouldMove {
-            to: ZoneKind::Graveyard,
-            ..
-        } if effect == ReplacementEffectDef::MoveToZone(ZoneKind::Exile) => Ok(()),
         ReplacementEventDef::WouldMove { .. }
         | ReplacementEventDef::WouldGainLife(_)
         | ReplacementEventDef::AnyObjectWouldMove { .. }
@@ -766,6 +768,7 @@ fn validate_entry_replacement_program(effect: ReplacementEffectDef) -> Result<()
         }
         ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::Perform(_)
+        | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
         | ReplacementEffectDef::MultiplyEventAmount(_) => Err(replacement_operation_name(effect)),
     }
 }
@@ -803,6 +806,7 @@ fn validate_begin_turn_replacement_program(
         ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::Perform(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
@@ -817,10 +821,11 @@ fn validate_battlefield_exit_replacement_program(
     effect: ReplacementEffectDef,
 ) -> Result<(), &'static str> {
     match effect {
-        // Exile and library are the two destinations that answer "instead":
-        // one takes the card out of the game, the other puts it back where
-        // it came from.
-        ReplacementEffectDef::MoveToZone(ZoneKind::Exile | ZoneKind::Library) => Ok(()),
+        // Exile and library are the two destinations that answer "instead",
+        // and a mark the card carries there only means anything beside one
+        // of them -- the Sequence rule below is what requires it.
+        ReplacementEffectDef::MoveToZone(ZoneKind::Exile | ZoneKind::Library)
+        | ReplacementEffectDef::PlaceCountersOnMovedObject { .. } => Ok(()),
         ReplacementEffectDef::Perform(effect)
             if matches!(
                 *effect,
@@ -876,6 +881,7 @@ const fn replacement_operation_name(effect: ReplacementEffectDef) -> &'static st
         ReplacementEffectDef::CopyEntering { .. } => "CopyEntering",
         ReplacementEffectDef::Conditional { .. } => "Conditional",
         ReplacementEffectDef::PayOr { .. } => "PayOr",
+        ReplacementEffectDef::PlaceCountersOnMovedObject { .. } => "PlaceCountersOnMovedObject",
     }
 }
 

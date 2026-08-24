@@ -311,6 +311,7 @@ impl Game {
                         } else {
                             ZoneKind::Graveyard
                         },
+                        counters: None,
                         replaced_with_nothing: false,
                         applied: Vec::new(),
                     })

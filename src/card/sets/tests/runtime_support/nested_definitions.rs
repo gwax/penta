@@ -259,6 +259,7 @@ pub(super) fn shared_entry_replacement_effect(effect: ReplacementEffectDef) -> b
         ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::Perform(_)
+        | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
         | ReplacementEffectDef::MultiplyEventAmount(_)
         // A draw's clause rather than an entry's.
         | ReplacementEffectDef::AddToEventAmount(_) => false,
@@ -286,6 +287,7 @@ pub(in super::super) fn shared_begin_turn_replacement_effect(effect: Replacement
         }
         ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
@@ -353,6 +355,9 @@ pub(in super::super) fn shared_battlefield_exit_replacement_effect(
         ReplacementEffectDef::MoveToZone(zone) => {
             matches!(zone, ZoneKind::Exile | ZoneKind::Library)
         }
+        // A mark the runtime carries with the card into its new zone. The
+        // Sequence rule below is what requires a destination beside it.
+        ReplacementEffectDef::PlaceCountersOnMovedObject { .. } => true,
         ReplacementEffectDef::Perform(effect) => matches!(
             *effect,
             EffectDef::TakeExtraTurn {
@@ -480,6 +485,7 @@ pub(in super::super) fn assert_nested_replacement_definition_abilities(
         ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)

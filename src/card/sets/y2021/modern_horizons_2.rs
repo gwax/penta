@@ -4,14 +4,15 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef,
-    DamageSourceMatcherDef, DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef,
-    EffectRecipientDef, ExilePlayDurationDef, GraveyardTypeConditionDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PlayerRefDef, PlayerRelation,
-    SacrificedAmountDef, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CounterKind, DamageEventMatcherDef,
+    DamageKindDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardFollowUpDef,
+    DiscardSelectionDef, DividedTotal, EffectDef, EffectRecipientDef, ExilePlayDurationDef,
+    GraveyardTypeConditionDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, ReplacementEffectDef,
+    ReplacementEventDef, SacrificedAmountDef, SpellAdditionalCostDef, SpendModeDef,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
-use crate::{TargetIndex, mana_cost};
+use crate::{ObjectSetBindingIndex, TargetIndex, mana_cost};
 
 // MH2 25 — Prismatic Ending
 /// A nonland permanent of any size may be targeted; whether it is actually
@@ -944,16 +945,80 @@ pub(in crate::card::sets) static GOBLIN_ANARCHOMANCER: CardRecord = CardRecord::
 );
 
 // MH2 450 — Dauthi Voidwalker
-// Audit: metadata-only — Card rules have not been implemented.
+/// The counter is the whole point: it marks the pile this creature is
+/// allowed to reach back into, which is what separates it from the
+/// graveyard hate that only takes things away.
+static VOIDWALKER_EXILES_IT: [ReplacementEffectDef; 2] = [
+    ReplacementEffectDef::MoveToZone(ZoneKind::Exile),
+    ReplacementEffectDef::PlaceCountersOnMovedObject {
+        kind: CounterKind::Void,
+        amount: 1,
+    },
+];
+
+/// Their cards, not yours, and cards rather than tokens: a token that would
+/// die still dies, and ceases to exist as it always would.
+static VOIDWALKER_WATCHES_THEIR_GRAVEYARD: ReplacementEventDef =
+    ReplacementEventDef::AnyObjectWouldMove {
+        to: ZoneKind::Graveyard,
+        owner: PlayerRelation::Opponent,
+        tokens: false,
+    };
+
+static VOIDWALKER_MARKED_CARDS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasCounter(CounterKind::Void),
+    &[ZoneKind::Exile],
+    PlayerRelation::Opponent,
+);
+
+/// One card, chosen as the ability resolves, playable for the rest of the
+/// turn. What it costs is nothing at all, which is why the creature has to
+/// die to ask.
+static VOIDWALKER_TAKES_ONE: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::Query(VOIDWALKER_MARKED_CARDS),
+    exclude: None,
+    minimum: 1,
+    maximum: 1,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &EffectDef::MayPlayWithoutPaying {
+        objects: ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY),
+    },
+});
+
+static VOIDWALKER_COST: [AbilityCostDef; 2] =
+    [AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource];
+
+static VOIDWALKER_ABILITIES: [AbilityDef; 3] = [
+    abilities::shadow(),
+    AbilityDef::replacement_for(
+        "If a card would be put into an opponent\'s graveyard from anywhere, instead exile it \
+         with a void counter on it.",
+        VOIDWALKER_WATCHES_THEIR_GRAVEYARD,
+        ReplacementEffectDef::Sequence(&VOIDWALKER_EXILES_IT),
+    ),
+    AbilityDef::activated(
+        "{T}, Sacrifice this creature: Choose an exiled card an opponent owns with a void counter \
+         on it. You may play it this turn without paying its mana cost.",
+        &VOIDWALKER_COST,
+        VOIDWALKER_TAKES_ONE,
+    ),
+];
+
 pub(in crate::card::sets) static DAUTHI_VOIDWALKER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9b7029b0-cd20-4970-9355-a27611b817bc"),
     "Dauthi Voidwalker",
-    crate::card::CardArt::new(
+    CardArt::new(
         "29632951-3c3d-478c-8c5a-9a34f30a5c28",
         "Sidharth Chaturvedi",
     ),
-    crate::card::CardSet::ModernHorizons2,
-    crate::card::CardRules::unsupported(),
+    CardSet::ModernHorizons2,
+    // Two mana for a body nothing ordinary can block, a graveyard nobody
+    // else gets to use, and one card off the top of that pile.
+    CardRules::new_creature(mana_cost!("{B}{B}"), &["Dauthi", "Rogue"], 3, 2)
+        .with_abilities(&VOIDWALKER_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

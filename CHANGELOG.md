@@ -25,6 +25,19 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Shadow, and a counter that rides a replaced zone change.** Shadow is one
+  keyword read from both sides: a creature with it and a creature without
+  are simply unable to meet in combat, whichever is attacking. Alongside it,
+  a zone-move replacement can now put a counter on the card it moves, which
+  is the only way "instead exile it with a void counter on it" can mean
+  anything -- what arrives in the new zone is a new object, so nothing
+  resolving later could name it. Both replacement walks carry the counter,
+  so a card exiled from the battlefield and one exiled from a hand are
+  marked the same way. Dauthi Voidwalker prints all of it, and finds that
+  pile again with a choice over the exile zone. The keyword is an additive
+  checkpoint tag; checkpoint format 8, replay version 2, and protocol 29 are
+  unchanged.
+
 - **Sagas.** Nothing about a Saga's progress is printed on the card, so the
   rules now keep it: a lore counter as it enters and another after its
   controller's draw step, chapter abilities that trigger on the counter

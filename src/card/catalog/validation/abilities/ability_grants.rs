@@ -91,6 +91,7 @@ fn collect_replacement_ability_grants(
         ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
@@ -170,6 +171,7 @@ fn replacement_ability_grant_sites(effect: ReplacementEffectDef) -> usize {
         ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)

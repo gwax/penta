@@ -258,6 +258,16 @@ pub const fn intimidate() -> AbilityDef {
     keyword("Intimidate", KeywordAbility::Intimidate)
 }
 
+/// "Shadow (This creature can block or be blocked by only creatures with
+/// shadow.)"
+#[must_use]
+pub const fn shadow() -> AbilityDef {
+    keyword(
+        "Shadow (This creature can block or be blocked by only creatures with shadow.)",
+        KeywordAbility::Shadow,
+    )
+}
+
 /// "Menace (This creature can't be blocked except by two or more
 /// creatures.)"
 #[must_use]

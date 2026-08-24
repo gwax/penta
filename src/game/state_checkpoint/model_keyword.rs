@@ -34,6 +34,9 @@ pub(super) enum KeywordSnapshot {
     Shroud,
     Unleash,
     Intimidate,
+    /// Additive: a checkpoint written before shadow existed restores no
+    /// creature with it, because none could have had one.
+    Shadow,
     Menace,
     Undying,
     Indestructible,

@@ -15,7 +15,7 @@ type ExitingPermanent = (
     GameObjectId,
     super::BattlefieldExitSnapshot,
     Vec<GameObjectId>,
-    ZoneKind,
+    BattlefieldExitDestination,
     bool,
     CardPartId,
 );
@@ -28,10 +28,20 @@ type RemovedBattlefieldObject = (
     Permanent,
     BattlefieldExitSnapshot,
     Vec<GameObjectId>,
-    ZoneKind,
+    BattlefieldExitDestination,
     bool,
     CardPartId,
 );
+
+/// Where a leaving permanent's card is going, and what the replacement that
+/// sent it there put on it. The counter travels with the destination because
+/// it is part of the same replaced move: what arrives is a new object, so
+/// nothing afterwards could name it.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct BattlefieldExitDestination {
+    zone: ZoneKind,
+    counters: Option<(CounterKind, u16)>,
+}
 
 impl Game {
     /// Adds work to the exit choice created since `pending_before`. Effect
@@ -317,6 +327,9 @@ impl Game {
             ReplacementEffectDef::Perform(effect) => {
                 self.perform_battlefield_exit_replacement_effect(context, *effect);
             }
+            ReplacementEffectDef::PlaceCountersOnMovedObject { kind, amount } => {
+                batch.moves[move_index].counters = Some((kind, amount));
+            }
             ReplacementEffectDef::ModifyBattlefieldEntry(_)
             | ReplacementEffectDef::MultiplyEventAmount(_)
             | ReplacementEffectDef::AddToEventAmount(_)
@@ -392,14 +405,14 @@ impl Game {
                 |(_, snapshot, damage_sources, to, _, _)| CommittedTriggerEvent::ZoneChanged {
                     object: snapshot.object.clone(),
                     from: ZoneKind::Battlefield,
-                    to: *to,
+                    to: to.zone,
                     damage_sources: damage_sources.clone(),
                 },
             )
             .collect::<Vec<_>>();
         let died = removed
             .iter()
-            .filter(|(_, _, _, to, _, _)| *to == ZoneKind::Graveyard)
+            .filter(|(_, _, _, to, _, _)| to.zone == ZoneKind::Graveyard)
             .map(|(_, snapshot, _, _, _, _)| snapshot.object.clone())
             .collect::<Vec<_>>();
         if !died.is_empty() {
@@ -415,7 +428,7 @@ impl Game {
         let died = exits
             .iter()
             .filter(|(_, snapshot, _, destination, _, _)| {
-                *destination == ZoneKind::Graveyard && snapshot.object.types.is_creature()
+                destination.zone == ZoneKind::Graveyard && snapshot.object.types.is_creature()
             })
             .count();
         self.creature_died_this_turn |= died > 0;
@@ -431,7 +444,7 @@ impl Game {
         events: &[CommittedTriggerEvent],
     ) {
         for ((permanent, _, _, destination, _, _), event) in removed.iter().zip(events) {
-            if *destination == ZoneKind::Graveyard
+            if destination.zone == ZoneKind::Graveyard
                 && let Some(card) = permanent.card.clone().into_card()
             {
                 self.extend_with_card_graveyard_arrival_trigger_listeners(listeners, &card, event);
@@ -458,7 +471,10 @@ impl Game {
                             proposed.object,
                             self.battlefield_exit_snapshot(permanent),
                             damage_sources,
-                            proposed.destination,
+                            BattlefieldExitDestination {
+                                zone: proposed.destination,
+                                counters: proposed.counters,
+                            },
                             self.has_undying(permanent)
                                 && permanent.counters(CounterKind::PlusOnePlusOne) == 0,
                             permanent.presented,
@@ -468,7 +484,7 @@ impl Game {
             .collect::<Vec<_>>();
         let moved_to_graveyard = exits
             .iter()
-            .filter(|(_, _, _, destination, _, _)| *destination == ZoneKind::Graveyard)
+            .filter(|(_, _, _, destination, _, _)| destination.zone == ZoneKind::Graveyard)
             .map(|(object, _, _, _, _, _)| *object)
             .collect::<Vec<_>>();
 
@@ -503,7 +519,7 @@ impl Game {
         for ((permanent, snapshot, _, to, undying, presented), event) in
             removed.into_iter().zip(events)
         {
-            let exit = match to {
+            let exit = match to.zone {
                 ZoneKind::Exile => BattlefieldExit::Exile,
                 ZoneKind::Graveyard => BattlefieldExit::Graveyard,
                 ZoneKind::Hand => BattlefieldExit::Hand,
@@ -520,13 +536,18 @@ impl Game {
                 continue;
             }
             let owner = permanent.card.owner;
-            let (card, _zone_change) = self.zone_change_card(
+            let (mut card, _zone_change) = self.zone_change_card(
                 permanent
                     .card
                     .into_card()
                     .expect("a nontoken permanent is backed by a card definition"),
             );
-            match to {
+            // The card is a new object in its new zone, so the counter goes
+            // on after the identity change rather than before it.
+            if let Some((kind, amount)) = to.counters {
+                card.add_counters(kind, amount);
+            }
+            match to.zone {
                 ZoneKind::Exile => self.players[owner.index()].exile.push(card),
                 ZoneKind::Graveyard => self.players[owner.index()].graveyard.push(card),
                 ZoneKind::Hand => self.players[owner.index()].hand.push(card),
@@ -538,7 +559,7 @@ impl Game {
 
             // Undying observes the creature as it died, then returns the card
             // from the graveyard as a fresh object under its owner's control.
-            if to == ZoneKind::Graveyard && undying {
+            if to.zone == ZoneKind::Graveyard && undying {
                 self.return_top_graveyard_card_with_undying(owner, presented);
             }
         }

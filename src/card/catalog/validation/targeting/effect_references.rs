@@ -563,6 +563,7 @@ fn validate_replacement_effect_target_references(
         ReplacementEffectDef::ReplaceEventWithNothing
         | ReplacementEffectDef::MoveToZone(_)
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)

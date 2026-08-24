@@ -242,6 +242,15 @@ pub enum ReplacementEffectDef {
     /// Perform an ordinary declarative effect as part of replacing the event.
     /// The replacement source and controller provide the effect context.
     Perform(&'static EffectDef),
+    /// "Instead exile it with a void counter on it." The counter is placed
+    /// as the replaced move happens rather than afterwards: what arrives in
+    /// the new zone is a new object, so nothing resolving later could name
+    /// it. Meaningful only alongside a [`Self::MoveToZone`] in the same
+    /// program, whose destination it follows.
+    PlaceCountersOnMovedObject {
+        kind: CounterKind,
+        amount: u16,
+    },
     ModifyBattlefieldEntry(BattlefieldEntryModificationDef),
     /// Multiply the amount carried by the prospective event.
     MultiplyEventAmount(u8),

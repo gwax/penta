@@ -160,6 +160,7 @@ pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
             | KeywordAbility::Hexproof
             | KeywordAbility::Shroud
             | KeywordAbility::Intimidate
+            | KeywordAbility::Shadow
             | KeywordAbility::Menace
             | KeywordAbility::Undying
             | KeywordAbility::Indestructible
@@ -533,7 +534,11 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     && definition.condition.is_none()
                     && battlefield_only(definition.source_zones)
                     && shared_replacement_event(definition.event)
-                    && effect == ReplacementEffectDef::MoveToZone(ZoneKind::Exile)
+                    // The same program a battlefield exit is held to: this
+                    // event is that one plus every other zone it can start
+                    // in, and both paths read the destination and the mark
+                    // the same way.
+                    && shared_battlefield_exit_replacement_effect(effect)
             }
             ReplacementEventDef::WouldGainLife(_) => {
                 !definition.optional
