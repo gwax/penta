@@ -4,10 +4,11 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardType, ComparisonDef,
-    CountConditionDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, KeywordAbility,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    ComparisonDef, CountConditionDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
+    KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -2219,13 +2220,33 @@ pub(in crate::card::sets) static MORIOK_REPLICA: CardRecord = CardRecord::new(
 );
 
 // SOM 179 — Mox Opal
-// Audit: metadata-only — Card rules have not been implemented.
+/// The same three artifacts Galvanic Blast counts, asked as a gate rather
+/// than as an amount. The Mox is one of them: it counts itself, which is
+/// what makes two other artifacts enough.
+static METALCRAFT: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ARTIFACTS_YOU_CONTROL,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 3,
+};
+
+static MOX_OPAL_TAP: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
 pub(in crate::card::sets) static MOX_OPAL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("6be9b1d5-9ab8-4adb-ba54-2c0117e842fa"),
     "Mox Opal",
-    crate::card::CardArt::new("6be9b1d5-9ab8-4adb-ba54-2c0117e842fa", "Volkan Baǵa"),
-    crate::card::CardSet::ScarsOfMirrodin,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("6be9b1d5-9ab8-4adb-ba54-2c0117e842fa", "Volkan Baǵa"),
+    CardSet::ScarsOfMirrodin,
+    // A free artifact that does nothing on its own and any color once the
+    // board has caught up with it.
+    CardRules::new_artifact(mana_cost!("{0}"))
+        .with_supertype(CardSupertype::Legendary)
+        .with_ability(AbilityDef::activated_mana_if(
+            "Metalcraft — {T}: Add one mana of any color. Activate only if you control three or \
+             more artifacts.",
+            &MOX_OPAL_TAP,
+            &METALCRAFT,
+            EffectDef::AddMana(AddManaEffectDef::any_color()),
+        )),
 );
 
 // SOM 180 — Myr Battlesphere
