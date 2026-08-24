@@ -5,6 +5,7 @@ use crate::card::{
     AbilityCoverageDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef, CardArt,
     CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
     ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -44,13 +45,35 @@ pub(in crate::card::sets) static BESEECH_THE_QUEEN: CardRecord = CardRecord::new
 );
 
 // SHM 135 — Woodfall Primus
-// Audit: metadata-only — Card rules have not been implemented.
+/// A noncreature permanent: lands and artifacts above all, which is what
+/// eight mana of Treefolk is being paid to answer twice.
+static A_NONCREATURE_PERMANENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+)];
+
+static PRIMUS_ABILITIES: [AbilityDef; 3] = [
+    abilities::trample(),
+    abilities::enters_trigger_with_targets(
+        "When this creature enters, destroy target noncreature permanent.",
+        &A_NONCREATURE_PERMANENT,
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            can_regenerate: true,
+            then: None,
+        },
+    ),
+    abilities::persist(),
+];
+
 pub(in crate::card::sets) static WOODFALL_PRIMUS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("43aa7e35-55ee-4e02-a8aa-ea2b267055d1"),
     "Woodfall Primus",
-    crate::card::CardArt::new("43aa7e35-55ee-4e02-a8aa-ea2b267055d1", "Adam Rex"),
-    crate::card::CardSet::Shadowmoor,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("43aa7e35-55ee-4e02-a8aa-ea2b267055d1", "Adam Rex"),
+    CardSet::Shadowmoor,
+    // Eight mana for two Naturalizes and a trampling body that has to be
+    // answered twice.
+    CardRules::new_creature(mana_cost!("{5}{G}{G}{G}"), &["Treefolk", "Shaman"], 6, 6)
+        .with_abilities(&PRIMUS_ABILITIES),
 );
 
 // SHM 211 — Manamorphose

@@ -549,6 +549,7 @@ mod vintage_cube_walking_ballista;
 mod vintage_cube_wandering_emperor;
 mod vintage_cube_witch_enchanter;
 mod vintage_cube_witherbloom_apprentice;
+mod vintage_cube_woodfall_primus;
 mod vintage_cube_worldspine_wurm;
 mod vintage_cube_wrenn_and_six;
 mod vintage_cube_yawgmoths_will;

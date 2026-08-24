@@ -341,10 +341,13 @@ impl Game {
         });
     }
 
-    pub(super) fn return_top_graveyard_card_with_undying(
+    /// Undying and persist both bring the card straight back with one
+    /// counter on it; which counter is the whole of the difference.
+    pub(super) fn return_top_graveyard_card_with_counter(
         &mut self,
         owner: PlayerId,
         presented: CardPartId,
+        counter: CounterKind,
     ) {
         let Some(card) = self.players[owner.index()].graveyard.pop() else {
             return;
@@ -356,7 +359,7 @@ impl Game {
             self.turns_started[owner.index()],
             self.turn,
         );
-        permanent.add_counters(CounterKind::PlusOnePlusOne, 1);
+        permanent.add_counters(counter, 1);
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from: ZoneKind::Graveyard,

@@ -3,10 +3,11 @@ use std::cell::Cell;
 use super::continuous_effects::StaticEffectKind;
 use super::{
     AppliedEffectDef, BasicLandType, CardBehavior, CardSupertype, CardType,
-    CharacteristicOperationDef, ContinuousEffectTimestamp, ControlFlow, DeclarativeAbilityDef,
-    EffectDef, Game, GameObjectId, KeywordAbility, ObjectPredicateDef, ObjectQueryDef, Permanent,
-    PlayerId, PlayerRelation, PowerToughnessOperationDef, ResolvedContinuousEffectKind,
-    ResolvedPowerToughnessOperation, RetiredObject, TriggerContext, ValueDef,
+    CharacteristicOperationDef, ContinuousEffectTimestamp, ControlFlow, CounterKind,
+    DeclarativeAbilityDef, EffectDef, Game, GameObjectId, KeywordAbility, ObjectPredicateDef,
+    ObjectQueryDef, Permanent, PlayerId, PlayerRelation, PowerToughnessOperationDef,
+    ResolvedContinuousEffectKind, ResolvedPowerToughnessOperation, RetiredObject, TriggerContext,
+    ValueDef,
 };
 
 type BaseStatSetter = (ContinuousEffectTimestamp, u16, Option<i16>, Option<i16>);
@@ -515,6 +516,23 @@ impl Game {
 
     pub(super) fn has_undying(&self, permanent: &Permanent) -> bool {
         self.permanent_has_executable_keyword(permanent, KeywordAbility::Undying)
+    }
+
+    /// Which counter a dying creature comes back with, if any. Undying and
+    /// persist are the same clause read from opposite ends, and each is
+    /// barred by the counter it puts on: a creature that has already come
+    /// back stays where it lands the second time. A creature with both is
+    /// answered by undying, since one return is all either of them gets.
+    pub(super) fn returns_from_death_with(&self, permanent: &Permanent) -> Option<CounterKind> {
+        if self.has_undying(permanent) && permanent.counters(CounterKind::PlusOnePlusOne) == 0 {
+            return Some(CounterKind::PlusOnePlusOne);
+        }
+        if self.permanent_has_executable_keyword(permanent, KeywordAbility::Persist)
+            && permanent.counters(CounterKind::MinusOneMinusOne) == 0
+        {
+            return Some(CounterKind::MinusOneMinusOne);
+        }
+        None
     }
 
     pub(super) fn has_indestructible(&self, permanent: &Permanent) -> bool {

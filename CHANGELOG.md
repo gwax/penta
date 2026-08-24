@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Persist.** Undying's mirror, and now the same code: a creature that dies
+  comes back with a counter on it, and which counter -- a +1/+1 or a -1/-1 --
+  is the whole of the difference. Each is barred by the counter it puts on,
+  so either way the creature returns once. Woodfall Primus prints it, which
+  is two Naturalizes for eight mana. The keyword is an additive checkpoint
+  tag; checkpoint format 8, replay version 2, and protocol 29 are unchanged.
+
 - **Counters a player keeps.** Poison and energy each had their own effect
   because the runtime does something with them -- one is a clock, the other
   is spent. An experience counter is neither: it is only counted. So the

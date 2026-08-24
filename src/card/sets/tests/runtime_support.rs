@@ -163,6 +163,7 @@ pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
             | KeywordAbility::Shadow
             | KeywordAbility::Menace
             | KeywordAbility::Undying
+            | KeywordAbility::Persist
             | KeywordAbility::Indestructible
             | KeywordAbility::Landwalk(_)
             | KeywordAbility::LegendaryLandwalk

@@ -42,6 +42,7 @@ pub(in crate::game::state_checkpoint) fn keyword_snapshot(
         KeywordAbility::Shadow => KeywordSnapshot::Shadow,
         KeywordAbility::Menace => KeywordSnapshot::Menace,
         KeywordAbility::Undying => KeywordSnapshot::Undying,
+        KeywordAbility::Persist => KeywordSnapshot::Persist,
         KeywordAbility::Indestructible => KeywordSnapshot::Indestructible,
         KeywordAbility::AttacksEachCombatIfAble => KeywordSnapshot::AttacksEachCombatIfAble,
         KeywordAbility::LegendaryLandwalk => KeywordSnapshot::LegendaryLandwalk,
@@ -159,6 +160,7 @@ pub(in crate::game::state_checkpoint) const fn parse_keyword(
         KeywordSnapshot::Shadow => KeywordAbility::Shadow,
         KeywordSnapshot::Menace => KeywordAbility::Menace,
         KeywordSnapshot::Undying => KeywordAbility::Undying,
+        KeywordSnapshot::Persist => KeywordAbility::Persist,
         KeywordSnapshot::Indestructible => KeywordAbility::Indestructible,
         KeywordSnapshot::AttacksEachCombatIfAble => KeywordAbility::AttacksEachCombatIfAble,
         KeywordSnapshot::LegendaryLandwalk => KeywordAbility::LegendaryLandwalk,
@@ -167,6 +169,32 @@ pub(in crate::game::state_checkpoint) const fn parse_keyword(
         KeywordSnapshot::Swampwalk => KeywordAbility::Landwalk(BasicLandType::Swamp),
         KeywordSnapshot::Mountainwalk => KeywordAbility::Landwalk(BasicLandType::Mountain),
         KeywordSnapshot::Forestwalk => KeywordAbility::Landwalk(BasicLandType::Forest),
+        // The protection family is one keyword per quality, so it parses
+        // in its own place rather than swelling this one.
+        KeywordSnapshot::ProtectionFromWhite
+        | KeywordSnapshot::ProtectionFromBlue
+        | KeywordSnapshot::ProtectionFromBlack
+        | KeywordSnapshot::ProtectionFromRed
+        | KeywordSnapshot::ProtectionFromGreen
+        | KeywordSnapshot::ProtectionFromColorless
+        | KeywordSnapshot::ProtectionFromZombies
+        | KeywordSnapshot::ProtectionFromVampires
+        | KeywordSnapshot::ProtectionFromWerewolves
+        | KeywordSnapshot::ProtectionFromVampiresWerewolvesAndZombies
+        | KeywordSnapshot::ProtectionFromCreatures
+        | KeywordSnapshot::ProtectionFromMulticolored
+        | KeywordSnapshot::ProtectionFromNonHumanCreatures
+        | KeywordSnapshot::ProtectionFromEnchantments
+        | KeywordSnapshot::ProtectionFromInstantAndSorcerySpells
+        | KeywordSnapshot::ProtectionFromColoredSpells
+        | KeywordSnapshot::ProtectionFromChosenPlayer => parse_protection_keyword(value),
+    }
+}
+
+/// The protection qualities, split out of [`parse_keyword`]: there is one
+/// tag per printed quality and they are all one keyword.
+const fn parse_protection_keyword(value: KeywordSnapshot) -> KeywordAbility {
+    match value {
         KeywordSnapshot::ProtectionFromWhite => protection_color(ManaColor::White),
         KeywordSnapshot::ProtectionFromBlue => protection_color(ManaColor::Blue),
         KeywordSnapshot::ProtectionFromBlack => protection_color(ManaColor::Black),
@@ -225,6 +253,8 @@ pub(in crate::game::state_checkpoint) const fn parse_keyword(
         KeywordSnapshot::ProtectionFromChosenPlayer => KeywordAbility::ProtectionFrom(
             &ObjectPredicateDef::ControlledBy(PlayerRelation::ChosenPlayer),
         ),
+        // Only protection tags reach here; the caller matches the rest.
+        _ => panic!("only protection tags reach the protection parser"),
     }
 }
 

@@ -283,6 +283,18 @@ pub const fn undying() -> AbilityDef {
     keyword("Undying", KeywordAbility::Undying)
 }
 
+/// "Persist (When this creature dies, if it had no -1/-1 counters on it,
+/// return it to the battlefield under its owner's control with a -1/-1
+/// counter on it.)"
+#[must_use]
+pub const fn persist() -> AbilityDef {
+    keyword(
+        "Persist (When this creature dies, if it had no -1/-1 counters on it, return it to the \
+         battlefield under its owner's control with a -1/-1 counter on it.)",
+        KeywordAbility::Persist,
+    )
+}
+
 #[must_use]
 pub const fn indestructible() -> AbilityDef {
     keyword("Indestructible", KeywordAbility::Indestructible)

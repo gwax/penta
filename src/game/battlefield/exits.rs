@@ -9,27 +9,27 @@
 use super::{BattlefieldTriggerListener, PlayerRelation};
 
 /// One permanent on its way off the battlefield, as the exit batch collects
-/// it: what it was, what had damaged it, where it is going, whether undying
+/// it: what it was, what had damaged it, where it is going, which counter it
 /// will bring it back, and which face it was showing.
 type ExitingPermanent = (
     GameObjectId,
     super::BattlefieldExitSnapshot,
     Vec<GameObjectId>,
     BattlefieldExitDestination,
-    bool,
+    Option<CounterKind>,
     CardPartId,
 );
 
 /// One permanent that has left the battlefield, with everything the events
 /// and the follow-up moves need to read about it: what it was as it left,
-/// what had damaged it, where it went, whether undying applies, and which
+/// what had damaged it, where it went, which counter brings it back, and which
 /// face it was presenting.
 type RemovedBattlefieldObject = (
     Permanent,
     BattlefieldExitSnapshot,
     Vec<GameObjectId>,
     BattlefieldExitDestination,
-    bool,
+    Option<CounterKind>,
     CardPartId,
 );
 
@@ -475,8 +475,7 @@ impl Game {
                                 zone: proposed.destination,
                                 counters: proposed.counters,
                             },
-                            self.has_undying(permanent)
-                                && permanent.counters(CounterKind::PlusOnePlusOne) == 0,
+                            self.returns_from_death_with(permanent),
                             permanent.presented,
                         )
                     })
@@ -490,7 +489,7 @@ impl Game {
 
         self.record_exits_for_the_turn(&exits);
         let mut removed = Vec::new();
-        for (id, snapshot, damage_sources, destination, undying, presented) in exits {
+        for (id, snapshot, damage_sources, destination, returns_with, presented) in exits {
             let index = self
                 .battlefield
                 .iter()
@@ -502,7 +501,7 @@ impl Game {
                 snapshot,
                 damage_sources,
                 destination,
-                undying,
+                returns_with,
                 presented,
             ));
         }
@@ -516,7 +515,7 @@ impl Game {
         self.extend_with_graveyard_arrival_listeners(&mut listeners, &removed, &events);
         self.capture_battlefield_trigger_batch_from_snapshot(&listeners, &events);
 
-        for ((permanent, snapshot, _, to, undying, presented), event) in
+        for ((permanent, snapshot, _, to, returns_with, presented), event) in
             removed.into_iter().zip(events)
         {
             let exit = match to.zone {
@@ -559,8 +558,10 @@ impl Game {
 
             // Undying observes the creature as it died, then returns the card
             // from the graveyard as a fresh object under its owner's control.
-            if to.zone == ZoneKind::Graveyard && undying {
-                self.return_top_graveyard_card_with_undying(owner, presented);
+            if to.zone == ZoneKind::Graveyard
+                && let Some(counter) = returns_with
+            {
+                self.return_top_graveyard_card_with_counter(owner, presented, counter);
             }
         }
 

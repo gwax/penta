@@ -98,6 +98,10 @@ pub enum KeywordAbility {
     /// with exactly one that the rules forbid.
     Menace,
     Undying,
+    /// CR 702.79. Undying's mirror: a creature that dies with no -1/-1
+    /// counter on it comes back with one, so it returns once and comes back
+    /// smaller rather than bigger.
+    Persist,
     Indestructible,
     /// "Attacks each combat if able." Not a printed keyword, but it behaves
     /// like one: a static requirement with no parameters that several cards
@@ -180,6 +184,7 @@ impl KeywordAbility {
             Self::Infect => 29,
             Self::Compleated => 31,
             Self::Shadow => 34,
+            Self::Persist => 35,
             Self::ProtectionFrom(_)
             // Never granted, never removed, and never asked about as part of
             // a set: split second is read off the one spell that has it.

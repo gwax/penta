@@ -39,6 +39,9 @@ pub(super) enum KeywordSnapshot {
     Shadow,
     Menace,
     Undying,
+    /// Additive: a checkpoint written before persist existed restores no
+    /// creature with it, because none could have had one.
+    Persist,
     Indestructible,
     AttacksEachCombatIfAble,
     Mountainwalk,
