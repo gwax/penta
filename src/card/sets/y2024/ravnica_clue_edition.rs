@@ -4,10 +4,10 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
-    CounterKind, EffectDef, EffectRecipientDef, ExilePlayDurationDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    CounterKind, DiscardSelectionDef, EffectDef, EffectRecipientDef, ExilePlayDurationDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
     ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, abilities,
+    ZoneKind, abilities, tokens,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -71,13 +71,73 @@ pub(in crate::card::sets) static HEADLINER_SCARLETT: CardRecord = CardRecord::ne
 );
 
 // CLU 26 — Carnage Interpreter
-// Audit: metadata-only — Card rules have not been implemented.
+/// "Discard your hand": as many cards as there are, so the count is the
+/// hand rather than a number the card names.
+static INTERPRETER_EMPTIES_YOUR_HAND: EffectDef = EffectDef::Discard {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::Constant(i32::MAX),
+    selection: DiscardSelectionDef::RecipientChooses,
+    then: None,
+};
+
+/// Four Clues in one instruction. Investigating four times is four events
+/// where the card is played, and nothing in the catalog watches for one, so
+/// the four tokens arrive together.
+static INTERPRETER_INVESTIGATES: [EffectDef; 2] = [
+    INTERPRETER_EMPTIES_YOUR_HAND,
+    EffectDef::create_token(tokens::clue()).with_count(ValueDef::Constant(4)),
+];
+
+/// "One or fewer cards in hand", read live off the hand rather than off what
+/// the discard left: a card drawn afterwards turns the bonus off again.
+static YOUR_HAND_IS_EMPTY_ENOUGH: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef::owned_by(
+        ObjectPredicateDef::Any,
+        &[ZoneKind::Hand],
+        PlayerSetDef::One(PlayerRefDef::EffectController),
+    ),
+    comparison: ComparisonDef::LessOrEqual,
+    amount: 1,
+};
+
+static INTERPRETER_MENACE: AbilityDef = abilities::menace();
+
+static INTERPRETER_BONUS: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)),
+    AppliedEffectDef::add_ability(&INTERPRETER_MENACE),
+];
+
+static INTERPRETER_IS_BIGGER: EffectDef = EffectDef::StaticApply {
+    recipient: EffectRecipientDef::Source,
+    effect: AppliedEffectDef::Composite(&INTERPRETER_BONUS),
+};
+
+static INTERPRETER_ABILITIES: [AbilityDef; 2] = [
+    abilities::enters_trigger(
+        "When this creature enters, discard your hand, then investigate four times. (To \
+         investigate, create a Clue token. It's an artifact with \"{2}, Sacrifice this token: \
+         Draw a card.\")",
+        EffectDef::Sequence(&INTERPRETER_INVESTIGATES),
+    ),
+    AbilityDef::static_ability(
+        "As long as you have one or fewer cards in hand, this creature gets +2/+2 and has menace.",
+        EffectDef::IfCondition {
+            condition: &YOUR_HAND_IS_EMPTY_ENOUGH,
+            then: &INTERPRETER_IS_BIGGER,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static CARNAGE_INTERPRETER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("f6fb576e-a4a4-496b-b553-3f81cc651210"),
     "Carnage Interpreter",
-    crate::card::CardArt::new("f6fb576e-a4a4-496b-b553-3f81cc651210", "Justine Cruz"),
-    crate::card::CardSet::RavnicaClueEdition,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("f6fb576e-a4a4-496b-b553-3f81cc651210", "Justine Cruz"),
+    CardSet::RavnicaClueEdition,
+    // Three mana for a 5/5 with menace and four cards' worth of Clues, paid
+    // for with whatever was left in hand -- which is nothing, on the turn
+    // the deck wants to cast it.
+    CardRules::new_creature(mana_cost!("{1}{B/R}{B/R}"), &["Devil", "Detective"], 3, 3)
+        .with_abilities(&INTERPRETER_ABILITIES),
 );
 
 // CLU 50 — Unruly Krasis
