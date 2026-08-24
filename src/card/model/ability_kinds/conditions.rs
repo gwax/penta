@@ -134,6 +134,11 @@ pub enum TriggerConditionDef {
     /// from the format rather than fixed at ten -- the fateful-hour cards
     /// print the literal instead and use [`Self::ControllerLifeAtMost`].
     ControllerLifeAtMostHalfStartingLife,
+    /// Whether some player the relation names is at or above every other
+    /// player's life total, which is what "the player with the most life or
+    /// tied for most life" asks. A tie counts, so this asks whether anybody
+    /// is strictly ahead rather than whether one player is alone in front.
+    PlayerHasMostLife(PlayerRelation),
     /// Whether this ability's controller controls a creature whose power is
     /// at least every other creature's, which is what "the greatest power or
     /// tied for the greatest power" asks. False when no creature is on the

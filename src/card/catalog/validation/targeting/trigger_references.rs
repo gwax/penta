@@ -355,6 +355,11 @@ fn validate_trigger_event_references(
         TriggerEventDef::AnyOf(events) => events
             .iter()
             .try_for_each(|event| validate_trigger_event_references(*event, target_count, scope)),
+        // The condition is validated where every trigger condition is; what
+        // this walk asks is only about the event it wraps.
+        TriggerEventDef::While { event, .. } => {
+            validate_trigger_event_references(*event, target_count, scope)
+        }
         TriggerEventDef::ZoneChanged(matcher) => {
             validate_zone_change_references(event, matcher, target_count, scope)
         }

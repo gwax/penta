@@ -6,7 +6,7 @@ use super::{
     AttackDeclarationRangeDef, AttackEventMatcherDef, DamageEventMatcherDef, DamageKindDef,
     DamageRecipientMatcherDef, DamageSourceMatcherDef, DrawEventMatcherDef, EffectRecipientDef,
     ObjectPredicateDef, ObjectRefDef, PlayerRelation, PlayerSetDef, TapEventMatcherDef,
-    TurnStepDef, ZoneChangeEventMatcherDef, ZoneKind,
+    TriggerConditionDef, TurnStepDef, ZoneChangeEventMatcherDef, ZoneKind,
 };
 
 /// The committed event observed by a triggered ability.
@@ -17,6 +17,15 @@ pub enum TriggerEventDef {
     /// card into two abilities would misreport what it prints and would count
     /// as two triggered abilities where the card has one.
     AnyOf(&'static [TriggerEventDef]),
+    /// A printed "while ...": a condition that belongs to the event rather
+    /// than being an intervening if. Checked once, where the event is
+    /// matched, and never rechecked as the ability resolves -- which is the
+    /// whole difference between "attacks while you have the most life" and
+    /// "attacks. If you have the most life, ..." (CR 603.2 against 603.4).
+    While {
+        event: &'static TriggerEventDef,
+        condition: &'static TriggerConditionDef,
+    },
     ZoneChanged(ZoneChangeEventMatcherDef),
     /// A permanent changed from untapped to tapped. The matcher can narrow
     /// this to a tap that paid for that permanent's mana ability.

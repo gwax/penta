@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A printed "while" clause is part of the event.** A trigger can now carry
+  a condition checked where its event is matched and never rechecked as the
+  ability resolves, which is the difference between "attacks while you have
+  the most life" and an intervening if (CR 603.2 against 603.4). The first
+  condition to use it asks whether a player has the most life or is tied for
+  it. Preacher of the Schism prints both.
+
 - **"Choose up to one" on a triggered ability.** A modal trigger settles its
   mode as it is put onto the stack, and a minimum of zero now makes declining
   every mode an answer in its own right: the question is asked even when only

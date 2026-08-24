@@ -2,14 +2,14 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, AppliedEffectDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef,
-    ComparisonDef, CounterKind, DiscardFollowUpDef, DiscardSelectionDef, EffectDef,
-    EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, ExilePlayDurationDef,
-    InstalledTriggerDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
-    SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
-    tokens,
+    AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, DiscardFollowUpDef,
+    DiscardSelectionDef, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
+    ExilePlayDurationDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SpellAdditionalCostDef,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities, tokens,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 use crate::{TargetIndex, mana_cost};
@@ -403,13 +403,63 @@ pub(in crate::card::sets) static TISHANA_S_TIDEBINDER: CardRecord = CardRecord::
 );
 
 // LCI 367 — Preacher of the Schism
-// Audit: metadata-only — Card rules have not been implemented.
+/// "Attacks the player with the most life": the condition belongs to the
+/// attack rather than being an intervening if, and the player it asks about
+/// is the one the attack was aimed at, which the event names.
+static PREACHER_ATTACKS_THE_LEADER: TriggerEventDef = TriggerEventDef::While {
+    event: &TriggerEventDef::attacks(ObjectPredicateDef::Source),
+    condition: &TriggerConditionDef::PlayerHasMostLife(PlayerRelation::EventPlayer),
+};
+
+/// The same attack, asked about his own controller instead. Both clauses
+/// read one attack, so a creature attacking the player who is ahead while
+/// its controller is also tied for the lead triggers both.
+static PREACHER_ATTACKS_WHILE_AHEAD: TriggerEventDef = TriggerEventDef::While {
+    event: &TriggerEventDef::attacks(ObjectPredicateDef::Source),
+    condition: &TriggerConditionDef::PlayerHasMostLife(PlayerRelation::You),
+};
+
+static PREACHER_LIFELINK: [AbilityDef; 1] = [abilities::lifelink()];
+
+static PREACHER_DRAWS_AND_PAYS: EffectDef = EffectDef::Sequence(&[
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+]);
+
 pub(in crate::card::sets) static PREACHER_OF_THE_SCHISM: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("3a0db433-7ca2-48d6-b60c-0a9a9149378a"),
     "Preacher of the Schism",
-    crate::card::CardArt::new("3a0db433-7ca2-48d6-b60c-0a9a9149378a", "Donato Giancola"),
-    crate::card::CardSet::LostCavernsOfIxalan,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("3a0db433-7ca2-48d6-b60c-0a9a9149378a", "Donato Giancola"),
+    CardSet::LostCavernsOfIxalan,
+    // A 2/4 deathtouch body that punishes whoever is ahead on life, and
+    // draws while she is the one ahead.
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Vampire", "Cleric"], 2, 4).with_abilities(&[
+        abilities::deathtouch(),
+        AbilityDef::triggered(
+            "Whenever this creature attacks the player with the most life or tied for most life, \
+             create a 1/1 white Vampire creature token with lifelink.",
+            PREACHER_ATTACKS_THE_LEADER,
+            EffectDef::create_creature_token(&["Vampire"], &[ManaColor::White], 1, 1)
+                .with_abilities(&PREACHER_LIFELINK),
+        )
+        .with_coverage(AbilityCoverageDef::partial(
+            "An attack event resolves a planeswalker to the player who controls it, so a creature \
+             attacking the leading player's planeswalker triggers this where the printed clause \
+             names the player alone.",
+        )),
+        AbilityDef::triggered(
+            "Whenever this creature attacks while you have the most life or are tied for most \
+             life, you draw a card and you lose 1 life.",
+            PREACHER_ATTACKS_WHILE_AHEAD,
+            PREACHER_DRAWS_AND_PAYS,
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

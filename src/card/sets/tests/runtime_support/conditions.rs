@@ -46,6 +46,7 @@ pub(in super::super) fn shared_trigger_condition(condition: TriggerConditionDef)
         | TriggerConditionDef::SourceIsTapped
         | TriggerConditionDef::SourceIsUntapped
         | TriggerConditionDef::ControllerLifeAtMost(_)
+        | TriggerConditionDef::PlayerHasMostLife(_)
         | TriggerConditionDef::ControllerLifeAtMostHalfStartingLife
         | TriggerConditionDef::SpellsCastThisTurn { .. }
         | TriggerConditionDef::SpellsCastLastTurn { .. } => true,

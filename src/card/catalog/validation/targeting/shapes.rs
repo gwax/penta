@@ -23,6 +23,9 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
             let first = zones.next()?;
             zones.all(|zone| zone == first).then_some(first)?
         }
+        // The condition narrows when the event counts, not what it names,
+        // so the object comes from the event it wraps.
+        TriggerEventDef::While { event, .. } => trigger_event_object_zone(*event),
         TriggerEventDef::ZoneChanged(matcher) => matcher.to,
         TriggerEventDef::Tapped(_)
         | TriggerEventDef::Attacks(_)
@@ -480,6 +483,7 @@ fn validate_trigger_condition_shape(
         | TriggerConditionDef::SourceIsTapped
         | TriggerConditionDef::SourceIsUntapped
         | TriggerConditionDef::ControllerLifeAtMost(_)
+        | TriggerConditionDef::PlayerHasMostLife(_)
         | TriggerConditionDef::ControllerLifeAtMostHalfStartingLife
         | TriggerConditionDef::ControlsGreatestPowerCreature
         | TriggerConditionDef::SourceCounters { .. } => Ok(()),

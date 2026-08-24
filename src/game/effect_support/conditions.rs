@@ -259,6 +259,23 @@ impl Game {
                 TriggerConditionDef::ActivePlayer(relation) => {
                     self.player_relation_matches(self.active_player, *relation, controller, context)
                 }
+                // A tie counts, so this asks whether anybody is strictly
+                // ahead of the players the relation names rather than
+                // whether one of them is alone in front. A relation that
+                // names nobody is false: there is no player to be ahead.
+                TriggerConditionDef::PlayerHasMostLife(relation) => {
+                    let best = [PlayerId::One, PlayerId::Two]
+                        .into_iter()
+                        .map(|player| self.players[player.index()].life)
+                        .max();
+                    let mut matching =
+                        [PlayerId::One, PlayerId::Two].into_iter().filter(|player| {
+                            self.player_relation_matches(*player, *relation, controller, context)
+                        });
+                    best.is_some_and(|best| {
+                        matching.any(|player| self.players[player.index()].life >= best)
+                    })
+                }
                 TriggerConditionDef::SpellsCastThisTurn {
                     quantifier,
                     player: relation,

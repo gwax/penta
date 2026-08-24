@@ -743,6 +743,9 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         TriggerConditionDef::Not(condition) => static_trigger_condition_supported(*condition),
         TriggerConditionDef::ObjectCount { query, .. } => static_query_supported(query),
         TriggerConditionDef::ActivePlayer(relation)
+        // Life totals are plain state, so reading them cannot re-enter the
+        // static walk the way a power comparison would.
+        | TriggerConditionDef::PlayerHasMostLife(relation)
         | TriggerConditionDef::SpellsCastThisTurn {
             player: relation, ..
         }

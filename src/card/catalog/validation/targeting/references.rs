@@ -352,6 +352,7 @@ fn validate_trigger_condition(
         | TriggerConditionDef::SourceIsTapped
         | TriggerConditionDef::SourceIsUntapped
         | TriggerConditionDef::ControllerLifeAtMost(_)
+        | TriggerConditionDef::PlayerHasMostLife(_)
         | TriggerConditionDef::ControllerLifeAtMostHalfStartingLife => Ok(()),
     }
 }

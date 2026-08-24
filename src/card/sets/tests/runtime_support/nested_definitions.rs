@@ -20,6 +20,11 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
     match event {
         // One ability, so it is only runnable if every way into it is.
         TriggerEventDef::AnyOf(events) => events.iter().copied().all(shared_trigger_event),
+        // Both halves have to be runnable: the event it wraps, and the
+        // condition the runtime asks where that event is matched.
+        TriggerEventDef::While { event, condition } => {
+            shared_trigger_event(*event) && shared_trigger_condition(*condition)
+        }
         TriggerEventDef::ZoneChanged(matcher) => {
             const COMMITTED_TRANSITIONS: [(ZoneKind, ZoneKind); 9] = [
                 (ZoneKind::Library, ZoneKind::Battlefield),
