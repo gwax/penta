@@ -605,6 +605,7 @@ pub const fn bloodrush(
 static POPULATE_COPY: EffectDef = EffectDef::CreateTokenCopyOf {
     object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
     exceptions: TokenCopyExceptionsDef::NONE,
+    created: None,
 };
 
 /// Populate: choose a creature token you control, then create a copy of it.
@@ -965,6 +966,7 @@ pub const fn cannot_be_blocked(text: &'static str) -> AbilityDef {
     )
 }
 
+include!("abilities/sagas.rs");
 include!("abilities/lands.rs");
 include!("abilities/repeated_clauses.rs");
 include!("abilities/keyword_mechanics.rs");

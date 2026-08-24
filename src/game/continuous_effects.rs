@@ -631,8 +631,7 @@ impl Game {
                 // attaching the resolving object, which is the only kind of
                 // attachment an Aura's own spell procedure performs.
                 | EffectDef::CreateAttachedToken { .. }
-                | EffectDef::CreateTokenAttachedTo { .. }
-                | EffectDef::CreateTokenCopyOf { .. }
+                    | EffectDef::CreateTokenCopyOf { .. }
                 | EffectDef::StaticApply { .. }
                 | EffectDef::Apply { .. }
                 | EffectDef::Special(_)

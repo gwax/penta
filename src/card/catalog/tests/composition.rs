@@ -105,6 +105,7 @@ fn creator_owned_token_abilities_receive_catalog_validation() {
         &[],
         EffectDef::CreateAttachedToken {
             token: INVALID_TOKEN,
+            host: None,
         },
     )];
 

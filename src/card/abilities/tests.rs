@@ -19,7 +19,8 @@ mod tests {
 
     #[test]
     fn living_weapon_owns_its_rules_defined_germ() {
-        let Some(EffectDef::CreateAttachedToken { token }) = living_weapon().declarative_effect()
+        let Some(EffectDef::CreateAttachedToken { token, .. }) =
+            living_weapon().declarative_effect()
         else {
             panic!("living weapon should create and attach its Germ")
         };

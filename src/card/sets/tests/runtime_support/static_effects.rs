@@ -289,7 +289,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::PairWithSource { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateAttachedToken { .. }
-        | EffectDef::CreateTokenAttachedTo { .. }
+        | EffectDef::ExileAndReturnTransformed { .. }
         | EffectDef::CreateTokenCopyOf { .. }
         | EffectDef::Endure { .. }
         | EffectDef::Destroy { .. }

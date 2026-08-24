@@ -175,7 +175,7 @@ impl Game {
         copy: CopiableCharacteristics,
         double_faced: Option<DoubleFacedCopiableCharacteristics>,
         presented: CardPartId,
-    ) {
+    ) -> GameObjectId {
         let source = match copy.base {
             ObjectCharacteristics::Card { definition, .. } => {
                 CharacteristicSource::Copy(definition)
@@ -205,11 +205,18 @@ impl Game {
         } else {
             permanent.copy_effect = Some(copy);
         }
+        let prospective = permanent.card.id;
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from: ZoneKind::Stack,
             completion: EntryCompletion::None,
             redirected_to: None,
         });
+        // The same fresh identity every arrival takes, for the same reason:
+        // a clause naming what it just made has to name what is there.
+        self.successors
+            .get(&prospective)
+            .copied()
+            .unwrap_or(prospective)
     }
 }

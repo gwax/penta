@@ -203,7 +203,10 @@ const GERM: crate::TokenCharacteristics = crate::TokenCharacteristics::creature(
 pub const fn living_weapon() -> AbilityDef {
     enters_trigger(
         "Living weapon (When this Equipment enters, create a 0/0 black Phyrexian Germ creature token, then attach this to it.)",
-        EffectDef::CreateAttachedToken { token: GERM },
+        EffectDef::CreateAttachedToken {
+            token: GERM,
+            host: None,
+        },
     )
 }
 
@@ -224,7 +227,10 @@ const REBEL: crate::TokenCharacteristics =
 pub const fn for_mirrodin() -> AbilityDef {
     enters_trigger(
         "For Mirrodin! (When this Equipment enters, create a 2/2 red Rebel creature token, then attach this to it.)",
-        EffectDef::CreateAttachedToken { token: REBEL },
+        EffectDef::CreateAttachedToken {
+            token: REBEL,
+            host: None,
+        },
     )
 }
 

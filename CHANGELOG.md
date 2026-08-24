@@ -25,6 +25,18 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Sagas.** Nothing about a Saga's progress is printed on the card, so the
+  rules now keep it: a lore counter as it enters and another after its
+  controller's draw step, chapter abilities that trigger on the counter
+  reaching their number, and a sacrifice once the last chapter has been read
+  and left the stack. A chapter reads its number as part of the event rather
+  than as an intervening if, so a counter arriving later cannot undo a
+  chapter already read. Alongside it: a permanent can exile itself and
+  return transformed as a new object, a token copy can carry an added
+  ability among its copiable values ("except it has haste"), and a copy
+  clause can name what it just made. Fable of the Mirror-Breaker prints all
+  of it.
+
 - **A replacement effect that outlives the card that made it.** A resolving
   spell can now create an effect object carrying a replacement rather than
   granting one to a permanent, and both zone-move walks read it there. That

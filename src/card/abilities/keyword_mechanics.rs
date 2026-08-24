@@ -396,6 +396,7 @@ pub const fn eternalize(text: &'static str, cost: ManaCost) -> AbilityDef {
                 ColorSet::from_colors(&[ManaColor::Black]),
                 &ETERNALIZE_ADDED_TYPES,
             ),
+            created: None,
         },
     )
     .with_source_zones(&[ZoneKind::Graveyard])

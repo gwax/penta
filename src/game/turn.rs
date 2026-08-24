@@ -376,6 +376,13 @@ impl Game {
 
     fn finish_step_advance(&mut self) {
         if self.result.is_none() {
+            // CR 714.2b: the lore counter goes on after the draw step, which
+            // is as the precombat main phase begins -- before anything in
+            // that phase, including the chapter it reads.
+            if self.step == Step::PrecombatMain {
+                let active = self.active_player;
+                self.place_draw_step_lore_counters(active);
+            }
             self.begin_step_triggers();
             self.priority = self.active_player;
             self.events.push(GameEvent::StepChanged {

@@ -373,6 +373,7 @@ mod vintage_cube_eternal_witness;
 mod vintage_cube_exhume;
 mod vintage_cube_expedition_map;
 mod vintage_cube_exploration;
+mod vintage_cube_fable_of_the_mirror_breaker;
 mod vintage_cube_faerie_mastermind;
 mod vintage_cube_fanatic_of_rhonas;
 mod vintage_cube_fatal_push;

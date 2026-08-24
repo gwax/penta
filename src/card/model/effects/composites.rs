@@ -318,6 +318,11 @@ pub struct TokenCopyExceptionsDef {
     /// "With no mana cost", which is what makes an eternalized card's mana
     /// value zero.
     pub no_mana_cost: bool,
+    /// "Except it has haste": an ability the copy has on top of the ones it
+    /// copied. It is part of what the token copies rather than something
+    /// granted to it afterwards (CR 707.9a), so a copy of the copy has it
+    /// too.
+    pub added_ability: Option<&'static AbilityDef>,
 }
 
 impl TokenCopyExceptionsDef {
@@ -327,7 +332,17 @@ impl TokenCopyExceptionsDef {
         colors: None,
         added_creature_types: CreatureTypeSetDef::named(&[]),
         no_mana_cost: false,
+        added_ability: None,
     };
+
+    /// "Except it has haste", and its relatives.
+    #[must_use]
+    pub const fn with_ability(ability: &'static AbilityDef) -> Self {
+        Self {
+            added_ability: Some(ability),
+            ..Self::NONE
+        }
+    }
 
     #[must_use]
     pub const fn power_toughness(power: i16, toughness: i16) -> Self {
@@ -351,6 +366,7 @@ impl TokenCopyExceptionsDef {
             colors: Some(colors),
             added_creature_types: CreatureTypeSetDef::named(added_creature_types),
             no_mana_cost: true,
+            added_ability: None,
         }
     }
 }

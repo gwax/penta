@@ -106,6 +106,7 @@ impl Game {
             }
             self.apply_legend_rule();
             self.apply_role_rule();
+            self.sacrifice_completed_sagas();
             if self.battlefield.len() == battlefield_len {
                 break;
             }

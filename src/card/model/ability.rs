@@ -742,6 +742,35 @@ impl AbilityDef {
     /// carries its own, chosen as it is activated (CR 601.2b). Everything
     /// downstream -- validation, grant numbering, mode selection -- treats
     /// the two identically, so it asks here rather than matching the kind.
+    /// Which chapter of a Saga this ability is, if it is one. Read off the
+    /// shape `abilities::saga_chapter` builds rather than stored beside it:
+    /// the number the chapter waits for is the number it is.
+    #[must_use]
+    pub const fn saga_chapter(self) -> Option<u8> {
+        let DeclarativeAbilityDef::Triggered(triggered) = self.definition else {
+            return None;
+        };
+        let TriggerEventDef::While { event, condition } = triggered.event else {
+            return None;
+        };
+        let TriggerEventDef::CountersPlaced { kind, .. } = *event else {
+            return None;
+        };
+        let TriggerConditionDef::SourceCounters {
+            kind: counted,
+            amount,
+            ..
+        } = *condition
+        else {
+            return None;
+        };
+        if kind.is_lore() && counted.is_lore() {
+            Some(amount)
+        } else {
+            None
+        }
+    }
+
     #[must_use]
     pub const fn modal(self) -> Option<ModalSpellDef> {
         match self.definition {

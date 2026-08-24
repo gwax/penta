@@ -175,9 +175,8 @@ pub enum EffectDef {
     ReturnSpellToHand {
         object: EffectRecipientDef,
     },
-    /// Counter a spell and put its card into `zone`. Ordinary counters use
-    /// the graveyard; replacement-style counters such as Dissipate use
-    /// exile, and Memory Lapse uses the top of its owner's library.
+    /// Counter a spell and put its card into `zone`: a graveyard ordinarily,
+    /// exile for Dissipate, a library's top for Memory Lapse.
     Counter {
         object: EffectRecipientDef,
         zone: ZoneKind,
@@ -267,20 +266,12 @@ pub enum EffectDef {
         /// about the board could tell them apart.
         created: Option<CreatedTokensDef>,
     },
-    /// Creates one token, then attaches the resolving permanent to that
-    /// exact battlefield incarnation before state-based actions run. This is
-    /// the common living-weapon shape; the delayed entry completion keeps it
-    /// correct through replacement effects and zone-change identity.
+    /// Creates one token and attaches it in whichever direction the clause
+    /// says: `host` is what the token goes onto, which is how a Role is made,
+    /// and `None` is living weapon, where the permanent goes onto the token.
     CreateAttachedToken {
         token: TokenCharacteristics,
-    },
-    /// Creates one token already attached to what the clause names, which is
-    /// [`Self::CreateAttachedToken`] with the roles reversed: there the
-    /// resolving permanent is what moves. A Role token is created this way,
-    /// and carries its own enchant restriction because it is never cast.
-    CreateTokenAttachedTo {
-        token: TokenCharacteristics,
-        object: EffectRecipientDef,
+        host: Option<EffectRecipientDef>,
     },
     /// Creates a token copying the recipient's copiable values. Populate uses
     /// this after its generic choice has selected a creature token.
@@ -290,6 +281,13 @@ pub enum EffectDef {
         /// copiable value (CR 707.9a), so a later copy of the token copies
         /// them too.
         exceptions: TokenCopyExceptionsDef,
+        /// What to do with the copy this made, for a clause naming exactly it.
+        created: Option<CreatedTokensDef>,
+    },
+    /// Exiles a permanent and returns it transformed under the resolving
+    /// controller, as a new object: no counters, and no history to attack on.
+    ExileAndReturnTransformed {
+        object: EffectRecipientDef,
     },
     CreateMyriadTokens, // Exact no-op in two-player games: there is no other opponent.
     /// Endure N (CR 702.183a): put N +1/+1 counters on the object, or create
@@ -487,9 +485,8 @@ pub enum EffectDef {
     VoteForPermanentToExile {
         object: ObjectPredicateDef,
     },
-    /// The named player becomes the monarch (CR 720.2). There is only ever
-    /// one, so this takes the crown from whoever held it; a player who
-    /// already has it keeps it and nothing happens.
+    /// The named player becomes the monarch (CR 720.2), taking the crown from
+    /// whoever held it; a player who has it keeps it.
     BecomeMonarch {
         player: PlayerRefDef,
     },
@@ -720,9 +717,8 @@ pub enum EffectDef {
         binding: ObjectBindingIndex,
         effect: &'static EffectDef,
     },
-    /// "Damage can't be prevented this turn." Not a prevention of its own
-    /// but a rule about every other one, including what protection prevents
-    /// (CR 702.16e). Damage limits are not prevention and still apply.
+    /// "Damage can't be prevented this turn." A rule about every prevention
+    /// rather than one of them, protection included (CR 702.16e).
     DamageCannotBePreventedThisTurn,
     /// Install a resolved damage-prevention rule for the named duration.
     PreventDamage {
@@ -972,10 +968,9 @@ pub enum EffectDef {
     Tap {
         object: EffectRecipientDef,
     },
-    /// "Put it onto the battlefield, then <clause about it>." The clause is
-    /// separate because what enters is a new object: a following effect in a
-    /// sequence would have nothing left to point at, so the arrival is saved
-    /// in `binding` for the clause that names it.
+    /// "Put it onto the battlefield, then <clause about it>." What enters is
+    /// a new object, so the arrival is saved in `binding` for the clause that
+    /// names it.
     PutOntoBattlefieldThen {
         object: EffectRecipientDef,
         binding: ObjectSetBindingIndex,

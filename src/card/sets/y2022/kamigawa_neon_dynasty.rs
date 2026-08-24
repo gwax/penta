@@ -4,12 +4,14 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
     AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, CostModificationDef, CounterKind, EffectDef, EffectRecipientDef,
-    InstalledTriggerDef, ManaColor, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
-    TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CostModificationDef, CounterKind,
+    CreatedTokensDef, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TokenCharacteristics,
+    TokenCopyExceptionsDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, tokens,
 };
-use crate::ids::TargetIndex;
+use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
 
 // NEO 17 — Imperial Oath
@@ -539,13 +541,143 @@ pub(in crate::card::sets) static OTAWARA_SOARING_CITY: CardRecord = CardRecord::
 );
 
 // NEO 357 — Fable of the Mirror-Breaker // Reflection of Kiki-Jiki
-// Audit: metadata-only — Card rules have not been implemented.
-pub(in crate::card::sets) static FABLE_OF_THE_MIRROR_BREAKER: CardRecord = CardRecord::new(
+/// The Goblin's own clause, printed on the token rather than on the Saga.
+static GOBLIN_MAKES_TREASURE: [AbilityDef; 1] = [AbilityDef::triggered(
+    "Whenever this token attacks, create a Treasure token.",
+    TriggerEventDef::attacks(ObjectPredicateDef::Source),
+    EffectDef::create_token(tokens::treasure()),
+)];
+
+/// "Discard up to two cards. If you do, draw that many." The size is the
+/// player's to choose, so the discard is a choice with a floor of none and
+/// what is drawn is however many that turned out to be.
+static FABLE_REFILLS: [EffectDef; 2] = [
+    EffectDef::DiscardCards {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::BoundObjectCount(ObjectSetBindingIndex::PRIMARY),
+    },
+];
+
+static FABLE_LOOTS: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+        ObjectPredicateDef::Any,
+        &[ZoneKind::Hand],
+        PlayerSetDef::One(PlayerRefDef::EffectController),
+    )),
+    exclude: None,
+    minimum: 0,
+    maximum: 2,
+    visibility: ChoiceVisibilityDef::Private,
+    then: &EffectDef::Sequence(&FABLE_REFILLS),
+});
+
+static FABLE_CHAPTERS: [AbilityDef; 3] = [
+    abilities::saga_chapter(
+        1,
+        "I — Create a 2/2 red Goblin Shaman creature token with \"Whenever this token attacks, \
+         create a Treasure token.\"",
+        EffectDef::create_creature_token(&["Goblin", "Shaman"], &[ManaColor::Red], 2, 2)
+            .with_abilities(&GOBLIN_MAKES_TREASURE),
+    ),
+    abilities::saga_chapter(
+        2,
+        "II — You may discard up to two cards. If you do, draw that many cards.",
+        FABLE_LOOTS,
+    ),
+    abilities::saga_chapter(
+        3,
+        "III — Exile this Saga, then return it to the battlefield transformed under your control.",
+        EffectDef::ExileAndReturnTransformed {
+            object: EffectRecipientDef::Source,
+        },
+    ),
+];
+
+const fn fable_front_rules() -> CardRules {
+    CardRules::new_enchantment(mana_cost!("{2}{R}"))
+        .with_subtypes(&["Saga"])
+        .with_abilities(&FABLE_CHAPTERS)
+}
+
+/// "Another target nonlegendary creature you control": the Reflection may
+/// not copy itself, and a legendary copy would be put into a graveyard by
+/// the legend rule the moment it arrived.
+static ANOTHER_NONLEGENDARY_CREATURE_YOU_CONTROL: [AbilityTargetDef; 1] = [
+    AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(CardSupertype::Legendary)),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    })
+    .excluding_source(),
+];
+
+static KIKI_GRANTS_HASTE: AbilityDef = abilities::haste();
+
+static KIKI_SACRIFICES_IT: AbilityDef = AbilityDef::triggered(
+    "Sacrifice it at the beginning of the next end step.",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+    },
+    EffectDef::Sacrifice {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(KIKI_COPY)),
+    },
+);
+
+const KIKI_COPY: ObjectSetBindingIndex = ObjectSetBindingIndex::PRIMARY;
+
+static KIKI_COPIES: EffectDef = EffectDef::CreateTokenCopyOf {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    exceptions: TokenCopyExceptionsDef::with_ability(&KIKI_GRANTS_HASTE),
+    created: Some(CreatedTokensDef {
+        binding: KIKI_COPY,
+        then: &EffectDef::InstallTrigger(InstalledTriggerDef::once(&KIKI_SACRIFICES_IT)),
+    }),
+};
+
+static KIKI_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{1}")),
+    AbilityCostDef::TapSource,
+];
+
+static KIKI_ABILITIES: [AbilityDef; 1] = [AbilityDef::activated_with_targets(
+    "{1}, {T}: Create a token that's a copy of another target nonlegendary creature you control, \
+     except it has haste. Sacrifice it at the beginning of the next end step.",
+    &KIKI_COST,
+    &ANOTHER_NONLEGENDARY_CREATURE_YOU_CONTROL,
+    KIKI_COPIES,
+)];
+
+const fn fable_back_rules() -> CardRules {
+    CardRules::new_creature_without_mana_cost(&["Goblin", "Shaman"], 2, 2)
+        .with_type(CardType::Enchantment)
+        .printed_colors(&[ManaColor::Red])
+        .with_abilities(&KIKI_ABILITIES)
+}
+
+static FABLE_FACES: [(&str, CardRules); 2] = [
+    ("Fable of the Mirror-Breaker", fable_front_rules()),
+    ("Reflection of Kiki-Jiki", fable_back_rules()),
+];
+
+pub(in crate::card::sets) static FABLE_OF_THE_MIRROR_BREAKER: CardRecord = CardRecord::new_dfc(
     PrintingAnchor::scryfall("0b696cd1-0d72-4df5-bacc-dc77e62f9a13"),
-    "Fable of the Mirror-Breaker",
-    crate::card::CardArt::new("0b696cd1-0d72-4df5-bacc-dc77e62f9a13", "akio"),
-    crate::card::CardSet::KamigawaNeonDynasty,
-    crate::card::CardRules::unsupported(),
+    "Fable of the Mirror-Breaker // Reflection of Kiki-Jiki",
+    CardArt::new("0b696cd1-0d72-4df5-bacc-dc77e62f9a13", "akio"),
+    CardSet::KamigawaNeonDynasty,
+    // Three mana that pays for itself twice over: a body, a loot, and then
+    // the half nobody reads the Saga for.
+    &FABLE_FACES,
 );
 
 // NEO 412 — Boseiju, Who Endures

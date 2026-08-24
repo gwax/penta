@@ -189,16 +189,26 @@ impl CounterKind {
     pub const Vigilance: Self = Self::keyword(KeywordCounter::Vigilance);
 
     pub const Loyalty: Self = Self::named("loyalty");
+    /// The counter a Saga counts its chapters with (CR 714). Placed by the
+    /// rules rather than by anything printed on the card.
+    pub const Lore: Self = Self::named("lore");
     pub const Finality: Self = Self::named("finality");
     pub const Stun: Self = Self::named("stun");
     pub const Poison: Self = Self::named("poison");
     pub const Energy: Self = Self::named("energy");
 
+    /// Whether this is the counter a Saga reads its chapters with.
+    #[must_use]
+    pub const fn is_lore(self) -> bool {
+        self.0 == Self::Lore.0
+    }
+
     /// The counter names currently authored in the catalog or interpreted by
     /// the engine. This is a serialization registry, not a storage layout:
     /// its order has no rules or checkpoint meaning.
-    pub const KNOWN: [Self; 47] = [
+    pub const KNOWN: [Self; 48] = [
         Self::PlusOnePlusOne,
+        Self::Lore,
         Self::named("javelin"),
         Self::named("muster"),
         Self::named("charge"),
@@ -247,8 +257,9 @@ impl CounterKind {
         Self::Energy,
     ];
 
-    const KNOWN_NAMES: [&'static str; 47] = [
+    const KNOWN_NAMES: [&'static str; 48] = [
         "+1/+1",
+        "lore",
         "javelin",
         "muster",
         "charge",

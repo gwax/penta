@@ -533,7 +533,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::AddManaEqualTo { .. }
         | EffectDef::CreateAttachedToken { .. }
-        | EffectDef::CreateTokenAttachedTo { .. }
+        | EffectDef::ExileAndReturnTransformed { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::Transform { .. }
         | EffectDef::ScheduleTurnPhases(_)

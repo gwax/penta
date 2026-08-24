@@ -6,7 +6,9 @@
 //! the resolving permanent then wears, and a copy of something already on
 //! the battlefield.
 
-use super::super::{EffectResolutionContext, Game, ScopedEffect, StackObject, Target};
+use super::super::{
+    CopiableAbility, EffectResolutionContext, Game, ScopedEffect, StackObject, Target,
+};
 use crate::card::EffectDef;
 
 impl Game {
@@ -35,6 +37,88 @@ impl Game {
             self.create_token_from(object.controller, token, None);
         }
         self.create_token_attached_to(object.controller, token, host);
+    }
+
+    /// "Create a token that's a copy of <something>." The copiable values
+    /// are frozen from the source and the "except" clauses ride on them, so
+    /// a later copy of this token copies those too.
+    #[allow(clippy::too_many_arguments)]
+    fn resolve_token_copies(
+        &mut self,
+        recipient: crate::card::EffectRecipientDef,
+        exceptions: crate::card::TokenCopyExceptionsDef,
+        created: Option<crate::card::CreatedTokensDef>,
+        scoped: ScopedEffect,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+    ) {
+        let copies = self
+            .effect_recipients(recipient, object, context, scoped)
+            .into_iter()
+            .filter_map(|target| {
+                // Freeze the source's complete copiable values. Its
+                // token nature is deliberately not among them: the
+                // newly created object is independently a token.
+                //
+                // A card rather than a permanent is what eternalize
+                // copies: the card it exiled as its cost, whose
+                // copiable values are simply what is printed on it.
+                let mut copy = self.copiable_values_of(target)?;
+                // The exceptions ride on the copy rather than being
+                // applied to the token afterwards: each is itself a
+                // copiable value.
+                copy.base_power_toughness = exceptions.base_power_toughness;
+                copy.colors = exceptions.colors;
+                copy.added_creature_types = exceptions.added_creature_types.named.to_vec();
+                copy.no_mana_cost = exceptions.no_mana_cost;
+                // "Except it has haste": part of what the token
+                // copies rather than a grant made to it afterwards,
+                // and attributed to the clause that said so.
+                if let Some(added) = exceptions.added_ability
+                    && let Some(payload) = object.ability.as_ref()
+                {
+                    copy.added_abilities.push(CopiableAbility {
+                        origin: payload.origin,
+                        definition: *added,
+                    });
+                }
+                let permanent = match target {
+                    Target::Permanent(id) => self
+                        .battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == id),
+                    _ => None,
+                };
+                let (double_faced, presented) = permanent.map_or_else(
+                    || (None, crate::CardPartId::PRIMARY),
+                    |permanent| {
+                        (
+                            self.double_faced_copiable_characteristics(permanent),
+                            permanent.presented,
+                        )
+                    },
+                );
+                Some((copy, double_faced, presented))
+            })
+            .collect::<Vec<_>>();
+        let mut minted = Vec::new();
+        for (copy, double_faced, presented) in copies {
+            for _ in 0..self.tokens_created(object.controller, 1) {
+                minted.push(Target::Permanent(self.create_token_copy(
+                    object.controller,
+                    copy.clone(),
+                    double_faced.clone(),
+                    presented,
+                )));
+            }
+        }
+        // Bound after every copy is made, so a clause naming them
+        // names the whole batch rather than the last of them.
+        if let Some(created) = created {
+            let mut context = context.clone();
+            context.bind_object_group(created.binding, minted);
+            self.resolve_effect_def(scoped.with_effect(*created.then), object, context);
+        }
     }
 
     pub(super) fn resolve_token_effect(
@@ -95,75 +179,30 @@ impl Game {
                     self.resolve_effect_def(scoped.with_effect(*created.then), object, context);
                 }
             }
-            EffectDef::CreateAttachedToken { token } => {
-                if let Some(source) = object.source {
-                    // The Equipment attaches to one of them. A doubled
-                    // living weapon makes the second Germ with nothing on
-                    // it, which is what the second one would be anyway.
-                    for extra in 1..self.tokens_created(object.controller, 1) {
-                        let _ = extra;
-                        self.create_token_from(object.controller, token, None);
-                    }
-                    self.create_attached_token(object.controller, token, source);
+            // The two directions of one instruction: a named host means the
+            // token goes onto it, and no host means the resolving permanent
+            // goes onto the token.
+            EffectDef::CreateAttachedToken { token, host } => match host {
+                Some(recipient) => {
+                    self.resolve_token_attached_to(token, recipient, scoped, object, context);
                 }
-            }
-            EffectDef::CreateTokenAttachedTo {
-                token,
-                object: recipient,
-            } => self.resolve_token_attached_to(token, recipient, scoped, object, context),
+                None => {
+                    if let Some(source) = object.source {
+                        // A doubled living weapon makes the second Germ with
+                        // nothing on it, which is what it would be anyway.
+                        for extra in 1..self.tokens_created(object.controller, 1) {
+                            let _ = extra;
+                            self.create_token_from(object.controller, token, None);
+                        }
+                        self.create_attached_token(object.controller, token, source);
+                    }
+                }
+            },
             EffectDef::CreateTokenCopyOf {
                 object: recipient,
                 exceptions,
-            } => {
-                let copies = self
-                    .effect_recipients(recipient, object, context, scoped)
-                    .into_iter()
-                    .filter_map(|target| {
-                        // Freeze the source's complete copiable values. Its
-                        // token nature is deliberately not among them: the
-                        // newly created object is independently a token.
-                        //
-                        // A card rather than a permanent is what eternalize
-                        // copies: the card it exiled as its cost, whose
-                        // copiable values are simply what is printed on it.
-                        let mut copy = self.copiable_values_of(target)?;
-                        // The exceptions ride on the copy rather than being
-                        // applied to the token afterwards: each is itself a
-                        // copiable value.
-                        copy.base_power_toughness = exceptions.base_power_toughness;
-                        copy.colors = exceptions.colors;
-                        copy.added_creature_types = exceptions.added_creature_types.named.to_vec();
-                        copy.no_mana_cost = exceptions.no_mana_cost;
-                        let permanent = match target {
-                            Target::Permanent(id) => self
-                                .battlefield
-                                .iter()
-                                .find(|permanent| permanent.card.id == id),
-                            _ => None,
-                        };
-                        let (double_faced, presented) = permanent.map_or_else(
-                            || (None, crate::CardPartId::PRIMARY),
-                            |permanent| {
-                                (
-                                    self.double_faced_copiable_characteristics(permanent),
-                                    permanent.presented,
-                                )
-                            },
-                        );
-                        Some((copy, double_faced, presented))
-                    })
-                    .collect::<Vec<_>>();
-                for (copy, double_faced, presented) in copies {
-                    for _ in 0..self.tokens_created(object.controller, 1) {
-                        self.create_token_copy(
-                            object.controller,
-                            copy.clone(),
-                            double_faced.clone(),
-                            presented,
-                        );
-                    }
-                }
-            }
+                created,
+            } => self.resolve_token_copies(recipient, exceptions, created, scoped, object, context),
             _ => unreachable!("the caller admits only token-making clauses"),
         }
     }

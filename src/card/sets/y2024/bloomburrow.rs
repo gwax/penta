@@ -146,6 +146,7 @@ static TRAINER_HAD_OFFSPRING: TriggerConditionDef =
 static TRAINER_OFFSPRING_TOKEN: EffectDef = EffectDef::CreateTokenCopyOf {
     object: EffectRecipientDef::Source,
     exceptions: TokenCopyExceptionsDef::power_toughness(1, 1),
+    created: None,
 };
 
 /// A noncreature, nonland card among the four, which is what the deck

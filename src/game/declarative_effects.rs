@@ -202,9 +202,28 @@ impl Game {
             }
             EffectDef::CreateToken { .. }
             | EffectDef::CreateAttachedToken { .. }
-            | EffectDef::CreateTokenAttachedTo { .. }
             | EffectDef::CreateTokenCopyOf { .. } => {
                 self.resolve_token_effect(scoped, object, &context);
+            }
+            // Two steps that are one instruction: what comes back is a new
+            // object, so nothing between them could name it.
+            EffectDef::ExileAndReturnTransformed { object: recipient } => {
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    let Target::Permanent(permanent) = target else {
+                        continue;
+                    };
+                    let Some(exiled) = self.exile_permanent_returning_card(permanent) else {
+                        continue;
+                    };
+                    self.return_exiled_card(
+                        exiled,
+                        ZoneKind::Battlefield,
+                        None,
+                        Some(object.controller),
+                        true,
+                        None,
+                    );
+                }
             }
             EffectDef::PreventDamage { .. } => {
                 self.resolve_prevention_effect(scoped, object, &context);

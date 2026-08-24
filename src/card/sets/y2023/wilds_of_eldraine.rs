@@ -98,9 +98,9 @@ static MONSTROUS_RAGE_EFFECT: EffectDef = EffectDef::Sequence(&[
         ),
         duration: ResolvedEffectDurationDef::UntilEndOfTurn,
     },
-    EffectDef::CreateTokenAttachedTo {
+    EffectDef::CreateAttachedToken {
         token: MONSTER_ROLE,
-        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        host: Some(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
     },
 ]);
 

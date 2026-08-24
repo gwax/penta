@@ -133,7 +133,7 @@ fn collect_effects(
     found: &mut AuthoredVirtualObjects,
 ) {
     match effect {
-        EffectDef::CreateToken { token, .. } | EffectDef::CreateAttachedToken { token } => {
+        EffectDef::CreateToken { token, .. } | EffectDef::CreateAttachedToken { token, .. } => {
             found.tokens.push((
                 token,
                 TokenCharacteristicsLocator::EffectPath {

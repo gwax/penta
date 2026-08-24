@@ -194,7 +194,7 @@ impl EffectDef {
 
     const fn authored_token_mut(&mut self) -> &mut TokenCharacteristics {
         match self {
-            Self::CreateToken { token, .. } | Self::CreateAttachedToken { token } => token,
+            Self::CreateToken { token, .. } | Self::CreateAttachedToken { token, .. } => token,
             _ => panic!("token modifier requires authored token characteristics"),
         }
     }

@@ -191,7 +191,7 @@ impl Game {
             | EffectDef::MoveToZone { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::CreateAttachedToken { .. }
-            | EffectDef::CreateTokenAttachedTo { .. }
+            | EffectDef::ExileAndReturnTransformed { .. }
             | EffectDef::CreateTokenCopyOf { .. }
             | EffectDef::Endure { .. }
             | EffectDef::CreateMyriadTokens
