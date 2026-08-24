@@ -413,6 +413,7 @@ mod vintage_cube_kaito;
 mod vintage_cube_kaldra_compleat;
 mod vintage_cube_kappa_cannoneer;
 mod vintage_cube_karn_scion_of_urza;
+mod vintage_cube_kellan;
 mod vintage_cube_laelia;
 mod vintage_cube_lands;
 mod vintage_cube_lavaspur_boots;
