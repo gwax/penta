@@ -319,8 +319,7 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::MayPlayAdditionalLands(_)
             | AppliedRuleDef::NoMaximumHandSize
-            | AppliedRuleDef::DoublesTokensCreated
-            | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary,
+            | AppliedRuleDef::DoublesTokensCreated,
         ) => true,
         AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
     }
@@ -431,7 +430,6 @@ fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRule
         | AppliedRuleDef::MayPlayAdditionalLands(_)
         | AppliedRuleDef::NoMaximumHandSize
         | AppliedRuleDef::DoublesTokensCreated
-        | AppliedRuleDef::WinsInsteadOfDrawingFromEmptyLibrary
         | AppliedRuleDef::CannotPlay(_)
         | AppliedRuleDef::MayPlayFromGraveyard(_)
         | AppliedRuleDef::MayPlayFromTopOfLibrary { .. }
