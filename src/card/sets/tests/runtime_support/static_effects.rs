@@ -238,6 +238,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::SimultaneousChoose(_)
         | EffectDef::ChooseCardName { .. }
         | EffectDef::BindMatching { .. }
+        | EffectDef::SelectAtRandomFromZone { .. }
         | EffectDef::ForEachInBinding { .. }
         | EffectDef::PayOr(_)
         | EffectDef::SplitIntoPiles(_)
@@ -247,6 +248,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::MayPlayWithoutPaying { .. }
         | EffectDef::ExileGrantingOwnerPlay { .. }
+        | EffectDef::ExileGrantingControllerPlayThisTurn { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::Detain { .. }
         | EffectDef::ExchangeControl { .. }
@@ -294,7 +296,6 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Sacrifice { .. }
         | EffectDef::SacrificeOfChoice { .. }
         | EffectDef::ExileTopOfLibraryToPlay { .. }
-        | EffectDef::ExileAtRandomFromGraveyardToPlay { .. }
         | EffectDef::ExileTopAndMayCast { .. }
         | EffectDef::MayCastTargetWithoutPaying { .. }
         | EffectDef::Mill { .. }
