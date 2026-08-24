@@ -459,6 +459,7 @@ mod vintage_cube_sheltering_landscape;
 mod vintage_cube_shieldbreaker;
 mod vintage_cube_shifting_woodland;
 mod vintage_cube_six;
+mod vintage_cube_smugglers_copter;
 mod vintage_cube_spells;
 mod vintage_cube_static_prison;
 mod vintage_cube_stoneforge;

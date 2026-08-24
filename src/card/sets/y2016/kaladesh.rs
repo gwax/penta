@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, ObjectSetDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    AttackEventMatcherDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectSetDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -201,17 +201,63 @@ pub(in crate::card::sets) static RENEGADE_FREIGHTER: CardRecord = CardRecord::ne
     crate::card::CardRules::unsupported(),
 );
 
+/// "Attacks or blocks" is one printed clause with two ways in, so it is one
+/// ability rather than two: a Copter that does both in a turn still loots
+/// once for each.
+static COPTER_ATTACKS_OR_BLOCKS: TriggerEventDef = TriggerEventDef::AnyOf(&[
+    TriggerEventDef::Attacks(AttackEventMatcherDef::any(ObjectPredicateDef::Source)),
+    TriggerEventDef::Blocks {
+        blocked: ObjectPredicateDef::Any,
+    },
+]);
+
+static COPTER_LOOTS: [EffectDef; 2] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+        selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
+    },
+];
+
+/// "If you do" rather than a second clause: declining the draw declines the
+/// discard with it.
+static COPTER_MAY_LOOT: EffectDef = EffectDef::Sequence(&COPTER_LOOTS);
+
+static SMUGGLER_S_COPTER_ABILITIES: [AbilityDef; 3] = [
+    abilities::flying(),
+    AbilityDef::triggered(
+        "Whenever this Vehicle attacks or blocks, you may draw a card. If you do, discard a card.",
+        COPTER_ATTACKS_OR_BLOCKS,
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &COPTER_MAY_LOOT,
+        },
+    ),
+    abilities::crew(
+        "Crew 1 (Tap any number of creatures you control with total power 1 or more: This \
+         Vehicle becomes an artifact creature until end of turn.)",
+        1,
+    ),
+];
+
 // KLD 235 — Smuggler's Copter
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static SMUGGLER_S_COPTER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("7832abb5-5107-4603-904e-491b221bd3e3"),
     "Smuggler's Copter",
-    crate::card::CardArt::new(
+    CardArt::new(
         "7832abb5-5107-4603-904e-491b221bd3e3",
         "Florian de Gesincourt",
     ),
-    crate::card::CardSet::Kaladesh,
-    crate::card::CardRules::unsupported(),
+    CardSet::Kaladesh,
+    // Two mana for a 3/3 flier that any one creature can turn on, and that
+    // fixes every draw it connects with. Banned in Standard for exactly
+    // that.
+    CardRules::new_vehicle(mana_cost!("{2}"), 3, 3).with_abilities(&SMUGGLER_S_COPTER_ABILITIES),
 );
 
 // KLD 243 — Blooming Marsh

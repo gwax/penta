@@ -68,6 +68,13 @@ distinguishes snapshots of the covered source and build inputs.
   permission carries no sorcery-speed restriction of its own: every card that
   prints the keyword so far is a sorcery, and its type already says so.
 
+- **Vehicles and crew.** A Vehicle is the one noncreature card type that
+  prints power and toughness, which the card-coherence check previously
+  refused outright. Crewing is an activated ability whose cost is tapping
+  creatures rather than paying mana -- that cost already existed with no
+  card using it -- and what it buys is the creature half of "artifact
+  creature", until end of turn.
+
 - **Token doubling.** "If one or more tokens would be created under your
   control, twice that many of those tokens are created instead" is a rule a
   player carries rather than an effect of its own, so it applies wherever

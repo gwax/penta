@@ -382,3 +382,43 @@ pub const fn eternalize(text: &'static str, cost: ManaCost) -> AbilityDef {
 
 /// The one type every eternalized token gains, whatever it was before.
 static ETERNALIZE_ADDED_TYPES: [&str; 1] = ["Zombie"];
+
+/// The one type crewing adds. A Vehicle is already an artifact, so what
+/// crewing gives it is the creature half of "artifact creature".
+static CREW_ADDS_CREATURE: AppliedEffectDef =
+    AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature));
+
+/// "Crew N" (CR 702.122a).
+///
+/// An activated ability whose cost is tapping creatures rather than mana:
+/// any number of untapped creatures you control whose power adds up to N or
+/// more. What it buys lasts until end of turn, so a Vehicle crewed to block
+/// is an artifact again by the next turn.
+///
+/// The caller supplies the printed text, which repeats the number.
+#[must_use]
+pub const fn crew(text: &'static str, minimum: u8) -> AbilityDef {
+    AbilityDef::activated(
+        text,
+        crew_cost(minimum),
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: CREW_ADDS_CREATURE,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )
+}
+
+/// Crew's cost, kept beside it because a const slice cannot be built from a
+/// parameter inline.
+const fn crew_cost(minimum: u8) -> &'static [AbilityCostDef] {
+    match minimum {
+        1 => &[AbilityCostDef::TapCreaturesWithTotalPower { minimum: 1 }],
+        2 => &[AbilityCostDef::TapCreaturesWithTotalPower { minimum: 2 }],
+        3 => &[AbilityCostDef::TapCreaturesWithTotalPower { minimum: 3 }],
+        4 => &[AbilityCostDef::TapCreaturesWithTotalPower { minimum: 4 }],
+        5 => &[AbilityCostDef::TapCreaturesWithTotalPower { minimum: 5 }],
+        6 => &[AbilityCostDef::TapCreaturesWithTotalPower { minimum: 6 }],
+        _ => panic!("no printed Vehicle asks for more crew than six"),
+    }
+}

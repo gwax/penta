@@ -155,6 +155,11 @@ const fn hybrid_includes(cost: ManaCost, color: ManaColor) -> bool {
     false
 }
 
+/// The one subtype every Vehicle prints.
+static VEHICLE_SUBTYPES: &[&str] = &["Vehicle"];
+
+const VEHICLE: &[u8] = b"Vehicle";
+
 impl CardRules {
     const fn base(card_types: CardTypeSet, printed_mana_cost: PrintedManaCost) -> Self {
         let mana_cost = match printed_mana_cost {
@@ -251,12 +256,53 @@ impl CardRules {
         rules
     }
 
+    /// A Vehicle (CR 301.7): an artifact with printed power and toughness
+    /// that is not a creature until something crews it.
+    ///
+    /// The stats are on the card rather than granted by the crewing, which
+    /// is why this is its own constructor: `with_creature_stats` is for
+    /// cards whose type line already says creature, and a Vehicle's does
+    /// not until an effect adds it.
+    #[must_use]
+    pub const fn new_vehicle(mana_cost: ManaCost, power: i16, toughness: i16) -> Self {
+        let mut rules = Self::base(
+            CardTypeSet::single(CardType::Artifact),
+            PrintedManaCost::Cost(mana_cost),
+        );
+        rules.subtypes = VEHICLE_SUBTYPES;
+        rules.creature_stats = Some(CreatureStats { power, toughness });
+        rules
+    }
+
     /// Keeps printed creature characteristics as metadata without exposing
     /// the baseline creature spell or permanent as executable behavior.
     #[must_use]
     pub const fn with_metadata_only_creature_body(mut self) -> Self {
         self.creature_body_is_executable = false;
         self
+    }
+
+    /// Whether this is a Vehicle, which is the one noncreature card type
+    /// that prints power and toughness.
+    #[must_use]
+    pub const fn is_vehicle(&self) -> bool {
+        let mut index = 0;
+        while index < self.subtypes.len() {
+            // Compared byte by byte because the coherence check that reads
+            // this runs in a const context, where `==` on strings does not.
+            let candidate = self.subtypes[index].as_bytes();
+            if candidate.len() == VEHICLE.len() {
+                let mut byte = 0;
+                while byte < candidate.len() && candidate[byte] == VEHICLE[byte] {
+                    byte += 1;
+                }
+                if byte == candidate.len() {
+                    return true;
+                }
+            }
+            index += 1;
+        }
+        false
     }
 
     #[must_use]
@@ -536,7 +582,11 @@ impl CardRules {
         if self.has_type(CardType::Creature) && self.creature_stats.is_none() {
             return Some("a creature must have power and toughness");
         }
-        if !self.has_type(CardType::Creature) && self.creature_stats.is_some() {
+        // CR 208.1 was written before Vehicles: they are the one printed
+        // exception, carrying power and toughness that mean nothing until
+        // something crews them into being a creature.
+        if !self.has_type(CardType::Creature) && self.creature_stats.is_some() && !self.is_vehicle()
+        {
             return Some("a noncreature cannot have creature power and toughness");
         }
         if !self.has_type(CardType::Planeswalker) && self.starting_loyalty.is_some() {
