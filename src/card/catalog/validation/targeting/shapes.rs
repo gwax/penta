@@ -43,6 +43,7 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         // Both name the spell rather than what it points at, and a spell
         // is on the stack.
         TriggerEventDef::SpellCast(_)
+        | TriggerEventDef::SpellCopied(_)
         | TriggerEventDef::BecomesTargetOfSpell(_)
         | TriggerEventDef::BecomesTargetOfSpellOrAbility(_) => {
             Some(ZoneKind::Stack)

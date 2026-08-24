@@ -312,6 +312,14 @@ impl Game {
         spell.text_changes.clear();
         spell.phyrexian_symbols_paid_with_life = 0;
         spell.is_copy = true;
+        // Published where the copy actually lands, so a clause reading "or
+        // copy" sees the same object anything else on the stack would.
+        let copied = self.stack_trigger_event_object(&spell);
         self.stack.push(spell);
+        if let Some(object) = copied {
+            self.capture_battlefield_triggers(&crate::game::CommittedTriggerEvent::SpellCopied {
+                object,
+            });
+        }
     }
 }

@@ -284,6 +284,12 @@ pub(super) enum CommittedTriggerEvent {
     SpellCast {
         object: TriggerEventObject,
     },
+    /// A copy of a spell was put on the stack. Not a cast: nothing was
+    /// announced, nothing was paid, and only the clauses that say "or copy"
+    /// watch for it.
+    SpellCopied {
+        object: TriggerEventObject,
+    },
     /// A player became the monarch.
     BecameMonarch {
         player: PlayerId,
@@ -498,6 +504,7 @@ impl CommittedTriggerEvent {
             },
             Self::BecameTargetOfSpell { object, .. }
             | Self::BecameTargetOfAbility { object, .. }
+            | Self::SpellCopied { object }
             | Self::SpellCast { object } => TriggerContext {
                 object: Some(object.id),
                 object_controller: Some(object.controller),

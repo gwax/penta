@@ -893,6 +893,10 @@ impl Game {
             (
                 TriggerEventDef::SpellCast(predicate),
                 CommittedTriggerEvent::SpellCast { object },
+            )
+            | (
+                TriggerEventDef::SpellCopied(predicate),
+                CommittedTriggerEvent::SpellCopied { object },
             ) => self
                 .trigger_object_matches_for_controller(predicate, object, source, true, controller),
             (

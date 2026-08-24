@@ -68,6 +68,12 @@ distinguishes snapshots of the covered source and build inputs.
   permission carries no sorcery-speed restriction of its own: every card that
   prints the keyword so far is a sorcery, and its type already says so.
 
+- **"Whenever you cast or copy a spell."** A copy put on the stack now
+  publishes an event of its own. It is not a cast -- nothing was announced
+  and nothing was paid (CR 707.12) -- so it is a separate event rather than a
+  second way to raise the casting one: magecraft prints both halves in one
+  clause, and every other clause that watches casting means casting only.
+
 - **Vehicles and crew.** A Vehicle is the one noncreature card type that
   prints power and toughness, which the card-coherence check previously
   refused outright. Crewing is an activated ability whose cost is tapping

@@ -98,6 +98,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         // Both read the spell rather than the battlefield, and a spell on
         // the stack is not a permanent the predicate can interrogate.
         TriggerEventDef::SpellCast(object)
+        | TriggerEventDef::SpellCopied(object)
         | TriggerEventDef::BecomesTargetOfSpell(object)
         | TriggerEventDef::BecomesTargetOfSpellOrAbility(object) => {
             shared_object_predicate(object) && !trigger_predicate_requires_live_battlefield(object)

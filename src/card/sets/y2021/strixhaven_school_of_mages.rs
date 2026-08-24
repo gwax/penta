@@ -5,8 +5,8 @@ use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, CardArt,
     CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerConditionDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerConditionDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -180,14 +180,51 @@ pub(in crate::card::sets) static QUANDRIX_PLEDGEMAGE: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
+/// An instant or sorcery spell of yours, which is the whole of what
+/// magecraft watches: what the spell does is no part of the condition.
+static YOUR_INSTANT_OR_SORCERY: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::HasType(CardType::Instant),
+        ObjectPredicateDef::HasType(CardType::Sorcery),
+    ]),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+/// "Cast or copy" is one printed clause with two ways in, so it is one
+/// ability: a copy is not cast, and every other clause that watches casting
+/// means casting only.
+static MAGECRAFT: TriggerEventDef = TriggerEventDef::AnyOf(&[
+    TriggerEventDef::SpellCast(YOUR_INSTANT_OR_SORCERY),
+    TriggerEventDef::SpellCopied(YOUR_INSTANT_OR_SORCERY),
+]);
+
+static APPRENTICE_DRAIN: [EffectDef; 2] = [
+    EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Opponent,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+];
+
 // STX 247 — Witherbloom Apprentice
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static WITHERBLOOM_APPRENTICE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("7f80a11b-188b-464c-b00d-c9d1cfb8ddee"),
     "Witherbloom Apprentice",
-    crate::card::CardArt::new("7f80a11b-188b-464c-b00d-c9d1cfb8ddee", "Josh Hass"),
-    crate::card::CardSet::StrixhavenSchoolOfMages,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("7f80a11b-188b-464c-b00d-c9d1cfb8ddee", "Josh Hass"),
+    CardSet::StrixhavenSchoolOfMages,
+    // Two mana for a 2/2 that turns a deck full of cheap spells into a
+    // clock, two life at a time.
+    CardRules::new_creature(mana_cost!("{B}{G}"), &["Human", "Druid"], 2, 2).with_ability(
+        AbilityDef::triggered(
+            "Magecraft — Whenever you cast or copy an instant or sorcery spell, each opponent \
+             loses 1 life and you gain 1 life.",
+            MAGECRAFT,
+            EffectDef::Sequence(&APPRENTICE_DRAIN),
+        ),
+    ),
 );
 
 // STX 271 — Quandrix Campus

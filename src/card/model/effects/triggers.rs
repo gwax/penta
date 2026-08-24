@@ -77,6 +77,11 @@ pub enum TriggerEventDef {
         blocker: ObjectPredicateDef,
     },
     SpellCast(ObjectPredicateDef),
+    /// A copy of a matching spell was created on the stack. Distinct from
+    /// [`Self::SpellCast`] because a copy is not cast (CR 707.12): magecraft
+    /// prints both halves in one clause, and every other clause that watches
+    /// casting means casting only.
+    SpellCopied(ObjectPredicateDef),
     /// This object became the target of a spell the predicate matches.
     /// Raised where the targets are locked in -- as the spell is cast, which
     /// is what "becomes the target" means -- and once per targeting spell
