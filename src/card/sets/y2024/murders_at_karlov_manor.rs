@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardType, CostModificationDef, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TopCardSelectionDef, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, CostModificationDef,
+    EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TopCardSelectionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::mana_cost;
 
@@ -134,13 +134,22 @@ pub(in crate::card::sets) static DOG_WALKER: CardRecord = CardRecord::new(
 );
 
 // MKM 221 — No More Lies
-// Audit: metadata-only — Card rules have not been implemented.
+static A_SPELL: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)];
+
 pub(in crate::card::sets) static NO_MORE_LIES: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1e0c695d-62f9-4805-9e2f-7032e8464136"),
     "No More Lies",
-    crate::card::CardArt::new("1e0c695d-62f9-4805-9e2f-7032e8464136", "Liiga Smilshkalne"),
-    crate::card::CardSet::MurdersAtKarlovManor,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("1e0c695d-62f9-4805-9e2f-7032e8464136", "Liiga Smilshkalne"),
+    CardSet::MurdersAtKarlovManor,
+    // Mana Leak that eats what it catches: the exile is what makes it worth
+    // a second color, since nothing gets the spell back afterwards.
+    CardRules::new_instant(mana_cost!("{W}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Counter target spell unless its controller pays {3}. If that spell is countered this \
+         way, exile it instead of putting it into its owner's graveyard.",
+        &A_SPELL,
+        abilities::counter_target_to_exile_unless_paid(ValueDef::Constant(3)),
+    )),
 );
 
 // MKM 259 — Commercial District
