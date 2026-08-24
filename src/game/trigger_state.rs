@@ -231,6 +231,13 @@ pub(super) enum CommittedTriggerEvent {
         from: ZoneKind,
         owner: PlayerId,
     },
+    /// Every token one instruction created, published once. A token is
+    /// created as it enters (CR 111.11), so what is published here is what
+    /// actually arrived rather than what was asked for.
+    TokensCreated {
+        tokens: Vec<TriggerEventObject>,
+        controller: PlayerId,
+    },
     /// One whole attack declaration, published once however many creatures
     /// were declared. "Whenever you attack" watches this rather than any of
     /// the attackers in it (CR 508.1).
@@ -402,6 +409,15 @@ impl CommittedTriggerEvent {
                 object_controller: Some(object.controller),
                 event_player: Some(*player),
                 amount: None,
+                damaged_object: None,
+            },
+            // The event is the instruction rather than any token in it, so
+            // nothing here names one; how many were made is the amount.
+            Self::TokensCreated { tokens, controller } => TriggerContext {
+                object: None,
+                object_controller: Some(*controller),
+                event_player: Some(*controller),
+                amount: Some(i32::try_from(tokens.len()).unwrap_or(i32::MAX)),
                 damaged_object: None,
             },
             // The event is the move rather than any card in it, so nothing

@@ -174,6 +174,32 @@ impl Game {
                     predicate, object, source, false, controller,
                 )
             }),
+            // The same shape for one instruction's worth of tokens: the
+            // relation says whose they are, and the predicate says which of
+            // them count toward "one or more".
+            (
+                TriggerEventDef::TokensCreated {
+                    player,
+                    token: predicate,
+                },
+                CommittedTriggerEvent::TokensCreated {
+                    tokens,
+                    controller: created_by,
+                },
+            ) => {
+                controller.is_some_and(|controller| {
+                    self.player_relation_matches(
+                        *created_by,
+                        player,
+                        controller,
+                        crate::game::TriggerContext::empty(),
+                    )
+                }) && tokens.iter().any(|token| {
+                    self.trigger_object_matches_for_controller(
+                        predicate, token, source, false, controller,
+                    )
+                })
+            }
             // One batch, one trigger: the predicate says which of the
             // unblocked attackers count, and the relation says whether the
             // player they were aimed at is the one the clause names.

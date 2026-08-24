@@ -408,6 +408,9 @@ fn validate_trigger_event_references(
             Err(unsupported_trigger_event(event))
         }
         TriggerEventDef::ObjectsDied { object: predicate }
+        | TriggerEventDef::TokensCreated {
+            token: predicate, ..
+        }
         | TriggerEventDef::AttacksAndIsNotBlocked {
             attacker: predicate,
         }

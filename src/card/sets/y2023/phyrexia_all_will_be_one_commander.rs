@@ -3,8 +3,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, TriggerEventDef, ValueDef, abilities,
+    AbilityCostDef, AbilityDef, CardArt, CardRules, CardSet, CardType, CounterKind, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef,
+    abilities,
 };
 use crate::mana_cost;
 
@@ -54,13 +55,63 @@ pub(in crate::card::sets) static OTHARRI_SUNS_GLORY: CardRecord = CardRecord::ne
 );
 
 // ONC 48 — Staff of the Storyteller
-// Audit: metadata-only — Card rules have not been implemented.
+static STAFF_SPIRIT: [AbilityDef; 1] = [abilities::flying()];
+
+/// The Staff pays for itself the moment it lands: the Spirit it makes is a
+/// creature token you created, so its own trigger sees it.
+static STAFF_MAKES_A_SPIRIT: EffectDef =
+    EffectDef::create_creature_token(&["Spirit"], &[ManaColor::White], 1, 1)
+        .with_abilities(&STAFF_SPIRIT);
+
+/// One instruction, one counter, however many tokens it made -- which is
+/// what "one or more" says and what makes a wide token maker no better here
+/// than a narrow one.
+static STAFF_COUNTS_THE_STORY: TriggerEventDef = TriggerEventDef::TokensCreated {
+    player: PlayerRelation::You,
+    token: ObjectPredicateDef::HasType(CardType::Creature),
+};
+
+static STAFF_DRAW_COST: [AbilityCostDef; 3] = [
+    AbilityCostDef::Mana(mana_cost!("{W}")),
+    AbilityCostDef::TapSource,
+    AbilityCostDef::RemoveCountersFromSource {
+        kind: CounterKind::Story,
+        amount: 1,
+    },
+];
+
+static STAFF_ABILITIES: [AbilityDef; 3] = [
+    abilities::enters_trigger(
+        "When this artifact enters, create a 1/1 white Spirit creature token with flying.",
+        STAFF_MAKES_A_SPIRIT,
+    ),
+    AbilityDef::triggered(
+        "Whenever you create one or more creature tokens, put a story counter on this artifact.",
+        STAFF_COUNTS_THE_STORY,
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::Source,
+            kind: CounterKind::Story,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    AbilityDef::activated(
+        "{W}, {T}, Remove a story counter from this artifact: Draw a card.",
+        &STAFF_DRAW_COST,
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static STAFF_OF_THE_STORYTELLER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("17be11f2-f2db-40c4-8fc1-2ed7173f9a1a"),
     "Staff of the Storyteller",
-    crate::card::CardArt::new("17be11f2-f2db-40c4-8fc1-2ed7173f9a1a", "Dan Murayama Scott"),
-    crate::card::CardSet::PhyrexiaAllWillBeOneCommander,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("17be11f2-f2db-40c4-8fc1-2ed7173f9a1a", "Dan Murayama Scott"),
+    CardSet::PhyrexiaAllWillBeOneCommander,
+    // Two mana for a flier, and a card for every turn the deck keeps making
+    // tokens afterwards.
+    CardRules::new_artifact(mana_cost!("{1}{W}")).with_abilities(&STAFF_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

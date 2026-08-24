@@ -32,11 +32,13 @@ impl Game {
         // A doubled token-creation makes the second one with nothing to
         // attach to, which is what an Aura token arriving unattached already
         // is: it is put into the graveyard by the ordinary Aura rule.
+        let mut minted = Vec::new();
         for extra in 1..self.tokens_created(object.controller, 1) {
             let _ = extra;
-            self.create_token_from(object.controller, token, None);
+            minted.push(self.create_token_from(object.controller, token, None));
         }
-        self.create_token_attached_to(object.controller, token, host);
+        minted.push(self.create_token_attached_to(object.controller, token, host));
+        self.capture_tokens_created(object.controller, &minted);
     }
 
     /// "Create a token that's a copy of <something>." The copiable values
@@ -112,6 +114,7 @@ impl Game {
                 )));
             }
         }
+        self.capture_created_token_batch(object.controller, &minted);
         // Bound after every copy is made, so a clause naming them
         // names the whole batch rather than the last of them.
         if let Some(created) = created {
@@ -119,6 +122,19 @@ impl Game {
             context.bind_object_group(created.binding, minted);
             self.resolve_effect_def(scoped.with_effect(*created.then), object, context);
         }
+    }
+
+    /// The batch a token-creating instruction actually made, as the
+    /// creation event the "whenever you create one or more" clauses read.
+    fn capture_created_token_batch(&mut self, controller: crate::PlayerId, minted: &[Target]) {
+        let ids = minted
+            .iter()
+            .filter_map(|target| match target {
+                Target::Permanent(id) => Some(*id),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        self.capture_tokens_created(controller, &ids);
     }
 
     pub(super) fn resolve_token_effect(
@@ -171,6 +187,7 @@ impl Game {
                         controller, token, None, tapped, defender, counters,
                     )));
                 }
+                self.capture_created_token_batch(controller, &minted);
                 // Bound after every one is made, so a clause naming them
                 // names the whole batch rather than the last of them.
                 if let Some(created) = created {
@@ -188,13 +205,15 @@ impl Game {
                 }
                 None => {
                     if let Some(source) = object.source {
+                        let mut minted = Vec::new();
                         // A doubled living weapon makes the second Germ with
                         // nothing on it, which is what it would be anyway.
                         for extra in 1..self.tokens_created(object.controller, 1) {
                             let _ = extra;
-                            self.create_token_from(object.controller, token, None);
+                            minted.push(self.create_token_from(object.controller, token, None));
                         }
-                        self.create_attached_token(object.controller, token, source);
+                        minted.push(self.create_attached_token(object.controller, token, source));
+                        self.capture_tokens_created(object.controller, &minted);
                     }
                 }
             },

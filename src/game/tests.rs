@@ -500,6 +500,7 @@ mod vintage_cube_shifting_woodland;
 mod vintage_cube_six;
 mod vintage_cube_smugglers_copter;
 mod vintage_cube_spells;
+mod vintage_cube_staff_of_the_storyteller;
 mod vintage_cube_static_prison;
 mod vintage_cube_stoneforge;
 mod vintage_cube_stormchasers_talent;

@@ -47,10 +47,34 @@ impl Game {
         count.saturating_mul(1_usize << doublers.min(8))
     }
 
+    /// Publishes one instruction's worth of token creation, for the clauses
+    /// that read "whenever you create one or more tokens". A token is
+    /// created as it enters (CR 111.11), so an entry that was replaced or is
+    /// still waiting on a decision is not in the batch.
+    pub(super) fn capture_tokens_created(&mut self, controller: PlayerId, tokens: &[GameObjectId]) {
+        let created = tokens
+            .iter()
+            .filter_map(|id| {
+                self.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == *id)
+            })
+            .map(|permanent| self.trigger_event_object(permanent))
+            .collect::<Vec<_>>();
+        if created.is_empty() {
+            return;
+        }
+        self.capture_battlefield_triggers(&super::CommittedTriggerEvent::TokensCreated {
+            tokens: created,
+            controller,
+        });
+    }
+
     /// Test/setup shorthand for creating an ordinary unlinked token.
     #[cfg(test)]
     pub(super) fn create_token(&mut self, controller: PlayerId, token: TokenCharacteristics) {
-        self.create_token_from(controller, token, None);
+        let created = self.create_token_from(controller, token, None);
+        self.capture_tokens_created(controller, &[created]);
     }
 
     /// Puts one token onto the battlefield, remembering which permanent's
@@ -61,8 +85,8 @@ impl Game {
         controller: PlayerId,
         token: TokenCharacteristics,
         creator: Option<GameObjectId>,
-    ) {
-        self.create_token_arriving(controller, token, creator, false, None, None);
+    ) -> GameObjectId {
+        self.create_token_arriving(controller, token, creator, false, None, None)
     }
 
     /// Creates one token whose committed battlefield incarnation becomes the
@@ -74,7 +98,7 @@ impl Game {
         controller: PlayerId,
         token: TokenCharacteristics,
         source: GameObjectId,
-    ) {
+    ) -> GameObjectId {
         let card = self.unbacked_token(controller, CharacteristicSource::Token(token));
         let permanent = Permanent::entering_token(
             card,
@@ -83,12 +107,17 @@ impl Game {
             self.turns_started[controller.index()],
             self.turn,
         );
+        let prospective = permanent.card.id;
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from: ZoneKind::Stack,
             completion: EntryCompletion::AttachSource { source },
             redirected_to: None,
         });
+        self.successors
+            .get(&prospective)
+            .copied()
+            .unwrap_or(prospective)
     }
 
     /// A token that arrives already attached to a permanent that is
@@ -99,7 +128,7 @@ impl Game {
         controller: PlayerId,
         token: TokenCharacteristics,
         host: GameObjectId,
-    ) {
+    ) -> GameObjectId {
         let card = self.unbacked_token(controller, CharacteristicSource::Token(token));
         let permanent = Permanent::entering_token(
             card,
@@ -108,12 +137,17 @@ impl Game {
             self.turns_started[controller.index()],
             self.turn,
         );
+        let prospective = permanent.card.id;
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from: ZoneKind::Stack,
             completion: EntryCompletion::AttachToHost { host },
             redirected_to: None,
         });
+        self.successors
+            .get(&prospective)
+            .copied()
+            .unwrap_or(prospective)
     }
 
     /// The same, for a token whose card says it arrives tapped.

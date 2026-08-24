@@ -884,13 +884,15 @@ impl Game {
                 }
                 permanent.remove_counters(CounterKind::PlusOnePlusOne, removed);
                 let controller = permanent.controller;
+                let mut minted = Vec::new();
                 for _ in 0..removed {
-                    self.create_token_from(
+                    minted.push(self.create_token_from(
                         controller,
                         crate::card::tokens::tetravite(),
                         Some(source),
-                    );
+                    ));
                 }
+                self.capture_tokens_created(controller, &minted);
             }
             DecisionContinuation::TetravusAssemble { source } => {
                 let exiled = pending

@@ -69,6 +69,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                 })
         }
         TriggerEventDef::Tapped(matcher) => shared_object_predicate(matcher.object),
+        // The batch is read where the tokens arrived, so the predicate is
+        // asked of live battlefield permanents.
+        TriggerEventDef::TokensCreated { token, .. } => shared_object_predicate(token),
         // The zones are printed constants and the owner a relation, so
         // there is nothing here that could read the board.
         TriggerEventDef::CardsExiled { zones, .. } => !zones.is_empty(),

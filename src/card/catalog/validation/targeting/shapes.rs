@@ -40,6 +40,8 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         | TriggerEventDef::CombatDamageDealtToPlayers { .. }
         // The dead are read as they last stood on the battlefield.
         | TriggerEventDef::ObjectsDied { .. }
+        // A token is created as it enters, so the batch is read there.
+        | TriggerEventDef::TokensCreated { .. }
         | TriggerEventDef::BecomesBlocked(_)
         | TriggerEventDef::BlocksOrBecomesBlockedBy { .. }
         | TriggerEventDef::Blocks { .. }

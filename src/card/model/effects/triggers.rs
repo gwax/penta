@@ -126,6 +126,16 @@ pub enum TriggerEventDef {
         zones: &'static [ZoneKind],
         owner: PlayerRelation,
     },
+    /// "Whenever you create one or more creature tokens." One trigger for
+    /// the whole instruction however many tokens it made, which is what
+    /// "one or more" means: a clause that fired once per token would give a
+    /// three-token instruction three counters. The predicate says which of
+    /// them count toward the batch rather than which one the trigger is
+    /// about.
+    TokensCreated {
+        player: PlayerRelation,
+        token: ObjectPredicateDef,
+    },
     /// "Whenever you attack." One declaration, one trigger, however many
     /// creatures were declared (CR 508.1). Distinct from [`Self::Attacks`]
     /// because the event is the declaration rather than any creature in it:

@@ -74,11 +74,12 @@ impl Game {
     ) {
         if chosen.first().copied() == Some(TOKEN) {
             let power = i16::try_from(amount).unwrap_or(i16::MAX);
-            self.create_token_from(
+            let created = self.create_token_from(
                 player,
                 TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], power, power),
                 None,
             );
+            self.capture_tokens_created(player, &[created]);
             return;
         }
         // The counters go on whatever is still there. A creature that left

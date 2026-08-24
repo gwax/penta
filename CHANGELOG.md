@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Creating tokens is an event.** "Whenever you create one or more creature
+  tokens" reads one instruction rather than one token, the way the batched
+  death, exile, and attack events already do: an instruction that makes three
+  fires it once. A token is created as it enters (CR 111.11), so what the
+  event carries is what actually arrived. Every path that mints tokens
+  publishes it -- the ordinary creation, token copies, the attached forms
+  that living weapon and Roles use, endure, and Tetravus assembling itself.
+  Staff of the Storyteller counts its own Spirit with it.
+
 - **An ability can read what its own cost sacrificed.** Paying is what puts
   an activated ability on the stack, so a permanent sacrificed to activate it
   is already in a graveyard before anything resolves. What it was worth is
