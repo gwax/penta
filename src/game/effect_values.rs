@@ -220,6 +220,12 @@ impl Game {
                 .and_then(|source| self.current_or_last_known_toughness(source))
                 .map_or(0, i32::from),
             ValueDef::TriggerEventAmount => context.trigger.amount.unwrap_or(0),
+            // Frozen when the cost was paid: the permanents it names are
+            // already in a graveyard by the time anything reads this.
+            ValueDef::SacrificedManaValue => object
+                .ability
+                .as_ref()
+                .map_or(0, |ability| i32::from(ability.sacrificed_mana_value)),
             // Resolved per target by the divided-damage path; anything else
             // reading it has no target in hand and so no share.
             // Neither has an answer while an effect resolves: nothing is

@@ -136,6 +136,7 @@ impl Game {
                 mode_effects: frozen.mode_effects,
                 resolution_destination: None,
                 x: frozen.x,
+                sacrificed_mana_value: frozen.sacrificed_mana_value,
             }),
             controller,
             signature: None,

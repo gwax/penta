@@ -129,6 +129,7 @@ fn stack_ability_snapshot_with(
             .map(|effect| scoped_effect_snapshot(&ability, effect))
             .collect::<Option<Vec<_>>>()?,
         x: payload.x,
+        sacrificed_mana_value: payload.sacrificed_mana_value,
     })
 }
 
@@ -461,6 +462,7 @@ pub(super) fn parse_stack(
                         .collect::<Result<Vec<_>, _>>()?,
                     resolution_destination: None,
                     x: payload_state.x,
+                    sacrificed_mana_value: payload_state.sacrificed_mana_value,
                 };
                 if usize_field(shown, "x")? != usize::from(payload_state.x) {
                     return Err("checkpoint stack ability X does not match observation".into());
@@ -698,6 +700,7 @@ fn parse_ability_payload(
             .collect::<Result<Vec<_>, _>>()?,
         resolution_destination: None,
         x: state.x,
+        sacrificed_mana_value: state.sacrificed_mana_value,
     })
 }
 

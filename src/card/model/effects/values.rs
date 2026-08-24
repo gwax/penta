@@ -287,6 +287,12 @@ pub enum ValueDef {
     /// counts copies with: the payment appears once per payment in the cast's
     /// own record, so the number of times it was paid is how many are there.
     TimesAdditionalCostPaid,
+    /// What the permanents sacrificed to pay this ability's activation cost
+    /// added up to in mana value, read from last-known information: they are
+    /// already gone by the time the ability resolves, because paying is what
+    /// put it on the stack. A cost that sacrifices exactly one permanent --
+    /// every printed one so far -- reads that permanent's mana value.
+    SacrificedManaValue,
     /// How many objects the step before this one matched: the land cards a
     /// discard actually took. Zero without such a step behind it.
     MatchedCount,

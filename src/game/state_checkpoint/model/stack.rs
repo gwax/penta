@@ -67,6 +67,12 @@ pub(in crate::game::state_checkpoint) struct StackAbilitySnapshot {
     pub(in crate::game::state_checkpoint) context: EffectResolutionContextSnapshot,
     pub(in crate::game::state_checkpoint) mode_effects: Vec<ScopedEffectSnapshot>,
     pub(in crate::game::state_checkpoint) x: u16,
+    /// What this activation's sacrificed costs added up to in mana value.
+    /// Additive: a checkpoint written before abilities read their own costs
+    /// back restores zero, which is what every ability that sacrifices
+    /// nothing carries anyway.
+    #[serde(default, skip_serializing_if = "super::is_zero_u16")]
+    pub(in crate::game::state_checkpoint) sacrificed_mana_value: u16,
     /// Where the ability's source card sits when it is somewhere the viewer
     /// cannot read -- a library, or somebody else's hand, which is where a
     /// Miracle's revealed card is while its trigger waits.

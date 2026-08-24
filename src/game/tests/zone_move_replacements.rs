@@ -348,6 +348,7 @@ fn custom_spell_followup_waits_for_ugins_nexus_replacement_choice() {
         mode_effects: Vec::new(),
         resolution_destination: None,
         x: 0,
+        sacrificed_mana_value: 0,
     });
     game.stack.push(object);
 

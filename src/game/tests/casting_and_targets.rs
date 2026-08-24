@@ -434,6 +434,7 @@ fn selected_modal_effects_resolve_distinct_and_deferred_flattened_targets() {
                 mode_effects: plan.mode_effects,
                 resolution_destination: None,
                 x: 0,
+                sacrificed_mana_value: 0,
             }),
             controller: PlayerId::One,
             signature: Some(CastSignature::from_validated_choices(

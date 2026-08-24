@@ -377,6 +377,7 @@ fn direct_object_target_references_recheck_legality() {
         mode_effects: Vec::new(),
         resolution_destination: None,
         x: 0,
+        sacrificed_mana_value: 0,
     });
     game.battlefield
         .iter_mut()

@@ -383,6 +383,7 @@ fn validate_value_shape(
         | ValueDef::MatchedManaValue
         | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
+        | ValueDef::SacrificedManaValue
         | ValueDef::TimesAdditionalCostPaid
         | ValueDef::DividedAmongTargets => Ok(()),
     }

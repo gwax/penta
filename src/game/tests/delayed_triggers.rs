@@ -129,6 +129,7 @@ pub(super) fn installing_object(
         mode_effects: Vec::new(),
         resolution_destination: None,
         x,
+        sacrificed_mana_value: 0,
     });
     object
 }

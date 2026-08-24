@@ -345,6 +345,7 @@ impl Game {
                 mode_effects: Vec::new(),
                 resolution_destination: Some(resolution_destination),
                 x: signature.x(),
+                sacrificed_mana_value: 0,
             });
         }
         let (origin, ability) = spell_clause?;
@@ -385,6 +386,7 @@ impl Game {
             mode_effects: plan.mode_effects,
             resolution_destination: Some(resolution_destination),
             x: signature.x(),
+            sacrificed_mana_value: 0,
         })
     }
 }

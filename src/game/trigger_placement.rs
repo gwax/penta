@@ -478,6 +478,7 @@ impl Game {
                 mode_effects: Vec::new(),
                 resolution_destination: None,
                 x: trigger.x,
+                sacrificed_mana_value: 0,
             }),
             controller: trigger.controller,
             signature: None,

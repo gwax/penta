@@ -25,6 +25,16 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **An ability can read what its own cost sacrificed.** Paying is what puts
+  an activated ability on the stack, so a permanent sacrificed to activate it
+  is already in a graveyard before anything resolves. What it was worth is
+  now frozen at payment time alongside the X the same activation chose, and
+  an effect can read that total back. Broadside Bombardiers throws another
+  creature or artifact for two plus its mana value, and boast is exactly two
+  restrictions on an ordinary activation: only after attacking, and only once
+  each turn. The frozen amount is an additive checkpoint member; checkpoint
+  format 8, replay version 2, and protocol 29 are unchanged.
+
 - **A resolving effect that lasts as long as its source is there.** Until now
   a resolved continuous effect ended on a deadline -- a turn, an upkeep, a
   combat -- or never; the one open-ended form asked whether its source was

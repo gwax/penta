@@ -441,6 +441,10 @@ struct StackAbilityPayload {
     /// The X chosen when the ability was activated, so its effects read the
     /// same number the cost was paid for.
     x: u16,
+    /// What this activation's sacrificed costs added up to in mana value,
+    /// read the same way and for the same reason: the permanents are gone
+    /// before the ability resolves.
+    sacrificed_mana_value: u16,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

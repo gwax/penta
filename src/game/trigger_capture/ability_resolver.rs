@@ -76,6 +76,7 @@ impl Game {
             // modes are chosen.
             mode_effects: Vec::new(),
             x: 0,
+            sacrificed_mana_value: 0,
         }
     }
 }

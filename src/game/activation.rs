@@ -132,6 +132,7 @@ impl Game {
             resolver: Self::ability_resolver(effective.origin, &effective.ability),
             mode_effects: plan.mode_effects,
             x,
+            sacrificed_mana_value: 0,
         };
         let payment_purpose = ManaPaymentPurpose::Ability {
             source,
@@ -249,6 +250,7 @@ impl Game {
             resolver: Self::ability_resolver(ongoing.source.ability, &ongoing.ability),
             mode_effects: Vec::new(),
             x: 0,
+            sacrificed_mana_value: 0,
         };
         self.push_activated_ability_with_context(
             source,
@@ -318,6 +320,7 @@ impl Game {
                 resolver: Self::ability_resolver(effective.origin, &effective.ability),
                 mode_effects: plan.mode_effects,
                 x,
+                sacrificed_mana_value: 0,
             };
             let payment_purpose = ManaPaymentPurpose::Ability {
                 source,
@@ -696,6 +699,13 @@ impl Game {
                     remaining_sacrifices.push(sacrificed);
                 }
             }
+            // Read while they are all still on the battlefield, which is the
+            // last moment anything can: the ability resolves long after they
+            // have gone, and what it owes is measured by what paid for it.
+            frozen_ability.sacrificed_mana_value = remaining_sacrifices
+                .iter()
+                .filter_map(|sacrificed| self.current_or_last_known_mana_value(*sacrificed))
+                .fold(0u16, u16::saturating_add);
             if definition.costs.contains(&AbilityCostDef::ExileSource) {
                 self.exile_permanent(source);
             } else if definition

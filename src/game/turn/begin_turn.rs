@@ -334,6 +334,7 @@ impl Game {
                 mode_effects: Vec::new(),
                 resolution_destination: None,
                 x: 0,
+                sacrificed_mana_value: 0,
             }),
             controller: replacement.controller,
             signature: None,

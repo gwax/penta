@@ -35,6 +35,11 @@ pub(super) struct FrozenActivatedAbility {
     /// The X chosen at activation, frozen alongside everything else the
     /// ability will resolve with.
     pub(super) x: u16,
+    /// What the permanents sacrificed to pay this activation added up to in
+    /// mana value. Frozen here for the same reason X is: paying is what put
+    /// the ability on the stack, so by the time it resolves the permanents
+    /// are gone and the number is all that is left of them.
+    pub(super) sacrificed_mana_value: u16,
 }
 
 /// One activation whose costs are not finished being paid.

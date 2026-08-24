@@ -1,15 +1,73 @@
 //! The Lost Caverns of Ixalan Commander card records required by supported formats.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::{
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
+    CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    SumValueDef, TriggerConditionDef, ValueDef, abilities,
+};
+use crate::{TargetIndex, mana_cost};
 
 // LCC 86 — Broadside Bombardiers
-// Audit: metadata-only — Card rules have not been implemented.
+/// "Another creature or artifact": the Goblin cannot throw itself, which is
+/// what keeps the ability from being a one-shot Shock.
+static ANOTHER_CREATURE_OR_ARTIFACT: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::HasType(CardType::Creature),
+        ObjectPredicateDef::HasType(CardType::Artifact),
+    ]),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+]);
+
+static BOAST_COST: [AbilityCostDef; 1] = [AbilityCostDef::SacrificePermanent {
+    object: ANOTHER_CREATURE_OR_ARTIFACT,
+    controller: PlayerRelation::You,
+}];
+
+/// Two plus what was thrown. The sacrifice is a cost, so the permanent is
+/// gone before the ability is even on the stack: what it was worth is read
+/// back from the payment rather than from the board.
+static BOMBARDIERS_DAMAGE: SumValueDef = SumValueDef {
+    left: ValueDef::Constant(2),
+    right: ValueDef::SacrificedManaValue,
+};
+
+static ANY_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
+/// Boast (CR 702.141) is those two restrictions and nothing else: it can
+/// only be activated by a creature that attacked, and only once a turn.
+static BOMBARDIERS_ATTACKED: TriggerConditionDef = TriggerConditionDef::SourceMatches {
+    object: ObjectPredicateDef::AttackedThisTurn,
+};
+
+static BOMBARDIERS_ABILITIES: [AbilityDef; 3] = [
+    abilities::menace(),
+    abilities::haste(),
+    AbilityDef::activated_with_targets(
+        "Boast — Sacrifice another creature or artifact: This creature deals damage equal to 2 \
+         plus the sacrificed permanent\'s mana value to any target. (Activate only if this \
+         creature attacked this turn and only once each turn.)",
+        &BOAST_COST,
+        &ANY_TARGET,
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Sum(&BOMBARDIERS_DAMAGE),
+        },
+    )
+    .with_activation_condition(&BOMBARDIERS_ATTACKED)
+    .activations_each_turn(1),
+];
+
 pub(in crate::card::sets) static BROADSIDE_BOMBARDIERS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9721f8da-39ed-4ada-a571-61e08a86032b"),
     "Broadside Bombardiers",
-    crate::card::CardArt::new("9721f8da-39ed-4ada-a571-61e08a86032b", "Tomek Larek"),
-    crate::card::CardSet::LostCavernsOfIxalanCommander,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("9721f8da-39ed-4ada-a571-61e08a86032b", "Tomek Larek"),
+    CardSet::LostCavernsOfIxalanCommander,
+    // A hasty attacker that turns whatever else is lying around into reach.
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin", "Pirate"], 2, 2)
+        .with_abilities(&BOMBARDIERS_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&BROADSIDE_BOMBARDIERS];

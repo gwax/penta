@@ -464,6 +464,7 @@ fn validate_value_target_references(
         ValueDef::CountSpellsCastThisTurn(_)
         | ValueDef::Constant(_)
         | ValueDef::ChosenX
+        | ValueDef::SacrificedManaValue
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
         | ValueDef::AffectedManaValue
