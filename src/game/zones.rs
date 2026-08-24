@@ -590,6 +590,9 @@ impl Game {
             self.turns_started[controller.index()],
             self.turn,
         );
+        if let Some(ArrivalAttachment::ArrivalToPlayer(player)) = arrival.attachment {
+            permanent.attached_player = Some(player);
+        }
         // Set before entry replacements run, the same way an as-enters clause
         // would, so nothing observes the permanent arriving untapped first.
         permanent.tapped = arrival.tapped;
@@ -617,7 +620,7 @@ impl Game {
                 Some(ArrivalAttachment::ArrivalToHost(host)) => {
                     EntryCompletion::AttachToHost { host }
                 }
-                None => EntryCompletion::None,
+                Some(ArrivalAttachment::ArrivalToPlayer(_)) | None => EntryCompletion::None,
             },
             redirected_to: None,
         });

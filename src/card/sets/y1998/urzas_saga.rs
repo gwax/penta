@@ -2048,6 +2048,7 @@ pub(in crate::card::sets) static GOBLIN_MATRON: CardRecord = CardRecord::new_wit
                 placement: ZonePlacement::Top,
                 shuffle: true,
                 enters_tapped: false,
+                attachment: None,
                 binding: None,
                 then: None,
             }),
