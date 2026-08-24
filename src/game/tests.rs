@@ -519,6 +519,7 @@ mod vintage_cube_urza;
 mod vintage_cube_urzas_bauble;
 mod vintage_cube_vampire_hexmage;
 mod vintage_cube_verge;
+mod vintage_cube_virtue_of_loyalty;
 mod vintage_cube_voice_of_victory;
 mod vintage_cube_vote;
 mod vintage_cube_walk_in_closet;

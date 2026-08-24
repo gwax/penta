@@ -1,15 +1,18 @@
 //! Wilds of Eldraine cards cataloged for the Vintage Cube pool.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::PlayOptionDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityOperationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CharacteristicOperationDef, CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectSetDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
-    TokenCharacteristics, TriggerConditionDef, ValueDef, ZoneKind, abilities,
+    AlternateSpellKind, AppliedEffectDef, AppliedRuleDef, CardArt, CardComposition,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
+    CharacteristicOperationDef, CounterKind, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRelation, PlayerSetDef,
+    ResolvedEffectDurationDef, SpellForm, SpellResolutionDestinationDef, TokenCharacteristics,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
 };
 use crate::ids::TargetIndex;
-use crate::mana_cost;
+use crate::{CardPartId, PlayOptionId, mana_cost};
 
 // WOE 62 — Mocking Sprite
 // Audit: metadata-only — Card rules have not been implemented.
@@ -233,14 +236,98 @@ pub(in crate::card::sets) static CANDY_TRAIL: CardRecord = CardRecord::new(
 );
 
 // WOE 277 — Virtue of Loyalty
-// Audit: metadata-only — Card rules have not been implemented.
+static KNIGHT_KEYWORDS: [AbilityDef; 1] = [abilities::vigilance()];
+
+const fn ardenvale_fealty_rules() -> CardRules {
+    CardRules::new_instant(mana_cost!("{1}{W}"))
+        .with_subtypes(&["Adventure"])
+        .with_ability(
+            AbilityDef::spell(
+                "Create a 2/2 white Knight creature token with vigilance.",
+                EffectDef::create_creature_token(&["Knight"], &[ManaColor::White], 2, 2)
+                    .with_abilities(&KNIGHT_KEYWORDS),
+            )
+            .with_resolution_destination(SpellResolutionDestinationDef::ExileOnAdventure),
+        )
+}
+
+/// "Those creatures" is the same set the clause just counted: nothing joins
+/// or leaves the battlefield while one effect resolves, so asking twice and
+/// binding the first answer come to the same thing.
+static YOUR_CREATURES: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static LOYALTY_REWARDS_THEM: [EffectDef; 2] = [
+    EffectDef::AddCounters {
+        object: YOUR_CREATURES,
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::Untap {
+        object: YOUR_CREATURES,
+    },
+];
+
+const fn virtue_of_loyalty_rules() -> CardRules {
+    CardRules::new_enchantment(mana_cost!("{3}{W}{W}")).with_ability(AbilityDef::triggered(
+        "At the beginning of your end step, put a +1/+1 counter on each creature you control. \
+         Untap those creatures.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::You,
+        },
+        EffectDef::Sequence(&LOYALTY_REWARDS_THEM),
+    ))
+}
+
+fn virtue_of_loyalty_composition() -> CardComposition {
+    let virtue = virtue_of_loyalty_rules();
+    let fealty = ardenvale_fealty_rules();
+    CardComposition {
+        parts: vec![
+            CardPart::new(CardPartId::PRIMARY, "Virtue of Loyalty", virtue),
+            CardPart::new(CardPartId(1), "Ardenvale Fealty", fealty),
+        ],
+        structure: CardStructure::AlternateSpell {
+            main: CardPartId::PRIMARY,
+            alternate: CardPartId(1),
+            kind: AlternateSpellKind::Adventure,
+        },
+        play_options: vec![
+            PlayOptionDef::cast(
+                PlayOptionId::DEFAULT,
+                "Virtue of Loyalty",
+                SpellForm::Part(CardPartId::PRIMARY),
+                virtue
+                    .mana_cost()
+                    .expect("the enchantment has a printed mana cost"),
+                CardEffectStatus::Implemented,
+            ),
+            PlayOptionDef::cast(
+                PlayOptionId(1),
+                "Ardenvale Fealty",
+                SpellForm::Part(CardPartId(1)),
+                fealty
+                    .mana_cost()
+                    .expect("the Adventure has a printed mana cost"),
+                CardEffectStatus::Implemented,
+            ),
+        ],
+    }
+    .with_derived_spell_targets()
+}
+
 pub(in crate::card::sets) static VIRTUE_OF_LOYALTY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9622e597-dc7c-4198-9ce5-4df53bb0c96c"),
     "Virtue of Loyalty",
-    crate::card::CardArt::new("9622e597-dc7c-4198-9ce5-4df53bb0c96c", "Keith Garletts"),
-    crate::card::CardSet::WildsOfEldraine,
-    crate::card::CardRules::unsupported(),
-);
+    CardArt::new("9622e597-dc7c-4198-9ce5-4df53bb0c96c", "Keith Garletts"),
+    CardSet::WildsOfEldraine,
+    virtue_of_loyalty_rules(),
+)
+.with_composition(virtue_of_loyalty_composition);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MOCKING_SPRITE,
