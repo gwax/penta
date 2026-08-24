@@ -146,6 +146,7 @@ fn cast_validation_rejects_unrecognized_structured_choices() {
         id: additional_id,
         label: "Additional cost".into(),
         mana_cost: Some(ManaCost::new(2, 0)),
+        repeatable: false,
     }];
     definition.play_options = vec![option];
 
@@ -269,6 +270,7 @@ fn cost_configuration_visitor_preserves_option_order() {
             id,
             label: format!("Additional {}", id.0),
             mana_cost: Some(ManaCost::new(1, 0)),
+            repeatable: false,
         })
         .collect();
 

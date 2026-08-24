@@ -13,6 +13,7 @@ use super::super::{
     configured_base_mana_cost,
 };
 use crate::card::SpellAdditionalCostDef;
+use crate::game::ManaPaymentPurpose;
 
 /// The chosen quantities a cost can be counted from: the X the spell is cast
 /// for, and how many modes it was cast with.
@@ -462,6 +463,34 @@ impl Game {
         }
     }
 
+    /// How many times over a repeatable optional additional cost could be
+    /// paid on this cast: what the player could pay for at all, divided by
+    /// what one payment costs. A ceiling for the enumeration rather than an
+    /// answer -- a configuration nobody can actually pay for is dropped
+    /// where every unpayable cast is.
+    fn repeatable_additional_cost_bound(
+        &self,
+        definition: &CardDefinition,
+        card: GameObjectId,
+        player: PlayerId,
+        option: &PlayOptionDef,
+    ) -> u16 {
+        let Some(repeatable) = option.additional_costs.iter().find(|cost| cost.repeatable) else {
+            return 0;
+        };
+        let purpose = ManaPaymentPurpose::Spell {
+            object: card,
+            definition: definition.id,
+            controller: player,
+            form: option.form.clone(),
+            reserved_life_payment: 0,
+        };
+        let each = repeatable
+            .mana_cost
+            .map_or(1, |cost| cost.mana_value().max(1));
+        self.available_mana_ceiling(player, &purpose) / each
+    }
+
     pub(in crate::game) fn visit_cost_configurations(
         &self,
         definition: &CardDefinition,
@@ -473,6 +502,7 @@ impl Game {
     ) -> ControlFlow<()> {
         let CastCostContext { source_zone, offer } = context;
         let mut selected_additional = Vec::with_capacity(option.additional_costs.len());
+        let repeats = self.repeatable_additional_cost_bound(definition, card, player, option);
         let printed_cost_available =
             self.printed_cost_is_available_from(source_zone, card, player, option);
         if matches!(offer, None | Some(CastOfferCost::Any))
@@ -481,6 +511,7 @@ impl Game {
                 option,
                 None,
                 option.additional_costs.len(),
+                repeats,
                 &mut selected_additional,
                 &mut visitor,
             )
@@ -497,6 +528,7 @@ impl Game {
                     option,
                     context,
                 },
+                repeats,
                 &mut selected_additional,
                 &mut visitor,
             )
@@ -512,6 +544,7 @@ impl Game {
                     player,
                     card,
                     option,
+                    repeats,
                     &mut selected_additional,
                     &mut visitor,
                 )
@@ -532,6 +565,7 @@ impl Game {
                 option,
                 Some(granted),
                 option.additional_costs.len(),
+                repeats,
                 &mut selected_additional,
                 &mut visitor,
             )
@@ -546,6 +580,7 @@ impl Game {
     fn visit_printed_alternative_configurations(
         &self,
         request: PrintedAlternativeRequest<'_>,
+        repeats: u16,
         selected_additional: &mut Vec<AdditionalCostId>,
         visitor: &mut impl FnMut(CostConfiguration) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
@@ -609,6 +644,7 @@ impl Game {
                     option,
                     Some(cost.id),
                     option.additional_costs.len(),
+                    repeats,
                     selected_additional,
                     visitor,
                 )
@@ -625,6 +661,7 @@ impl Game {
         player: PlayerId,
         card: GameObjectId,
         option: &PlayOptionDef,
+        repeats: u16,
         selected_additional: &mut Vec<AdditionalCostId>,
         visitor: &mut impl FnMut(CostConfiguration) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
@@ -640,6 +677,7 @@ impl Game {
                 option,
                 Some(alternative),
                 option.additional_costs.len(),
+                repeats,
                 selected_additional,
                 visitor,
             )
@@ -651,10 +689,15 @@ impl Game {
         ControlFlow::Continue(())
     }
 
+    /// Every combination of optional additional costs, as a walk over the
+    /// list: each is taken or left. A repeatable cost is taken any number of
+    /// times up to `repeats`, and appears in the configuration once per
+    /// payment -- which is how many times it was paid.
     pub(in crate::game) fn visit_additional_cost_configurations(
         option: &PlayOptionDef,
         alternative: Option<AlternativeCostId>,
         remaining: usize,
+        repeats: u16,
         selected_reversed: &mut Vec<AdditionalCostId>,
         visitor: &mut impl FnMut(CostConfiguration) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
@@ -667,6 +710,7 @@ impl Game {
             option,
             alternative,
             index,
+            repeats,
             selected_reversed,
             visitor,
         )
@@ -674,16 +718,25 @@ impl Game {
         {
             return ControlFlow::Break(());
         }
-        selected_reversed.push(option.additional_costs[index].id);
-        let result = Self::visit_additional_cost_configurations(
-            option,
-            alternative,
-            index,
-            selected_reversed,
-            visitor,
-        );
-        selected_reversed.pop();
-        result
+        let cost = &option.additional_costs[index];
+        let most = if cost.repeatable { repeats.max(1) } else { 1 };
+        for payments in 1..=most {
+            selected_reversed.push(cost.id);
+            let result = Self::visit_additional_cost_configurations(
+                option,
+                alternative,
+                index,
+                repeats,
+                selected_reversed,
+                visitor,
+            );
+            if result.is_break() {
+                selected_reversed.truncate(selected_reversed.len() - usize::from(payments));
+                return ControlFlow::Break(());
+            }
+        }
+        selected_reversed.truncate(selected_reversed.len() - usize::from(most));
+        ControlFlow::Continue(())
     }
 
     pub(in crate::game) fn configured_cast_mana_cost(

@@ -512,14 +512,18 @@ impl Game {
         .is_break()
     }
 
-    pub(super) fn maximum_x_for(
+    /// The most mana this player could possibly bring to one payment: what
+    /// is already in the pool, what every permanent they control could still
+    /// make, and whatever the payment's own contributions add. A ceiling for
+    /// a search rather than an answer -- nothing here asks whether the
+    /// colours line up.
+    pub(super) fn available_mana_ceiling(
         &self,
         player: PlayerId,
-        cost: ManaCost,
         purpose: &ManaPaymentPurpose,
     ) -> u16 {
         let contributions = self.payment_contributions(purpose);
-        let maximum = self.players[player.index()]
+        self.players[player.index()]
             .mana_pool
             .total()
             .saturating_add(
@@ -534,7 +538,16 @@ impl Game {
             } else {
                 0
             })
-            .saturating_add(self.repeatable_life_mana_available(player));
+            .saturating_add(self.repeatable_life_mana_available(player))
+    }
+
+    pub(super) fn maximum_x_for(
+        &self,
+        player: PlayerId,
+        cost: ManaCost,
+        purpose: &ManaPaymentPurpose,
+    ) -> u16 {
+        let maximum = self.available_mana_ceiling(player, purpose);
         // The upper bound is only a search ceiling; can_pay_cost_for is
         // what rules each X in or out, including the barred source.
         (0..=maximum)

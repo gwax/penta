@@ -421,6 +421,7 @@ mod vintage_cube_lion_sash;
 mod vintage_cube_loot_pathfinder;
 mod vintage_cube_loran;
 mod vintage_cube_lorien;
+mod vintage_cube_lose_focus;
 mod vintage_cube_luminarch_aspirant;
 mod vintage_cube_lurrus;
 mod vintage_cube_magda;

@@ -282,6 +282,11 @@ pub enum ValueDef {
     /// spell carrying the ability is already counted when it is cast, so this
     /// subtracts it: storm copies what came before, not itself.
     SpellsCastBeforeThisTurn,
+    /// How many times the source spell paid a repeatable optional additional
+    /// cost. Replicate is the only one, and this is what its cast trigger
+    /// counts copies with: the payment appears once per payment in the cast's
+    /// own record, so the number of times it was paid is how many are there.
+    TimesAdditionalCostPaid,
     /// How many objects the step before this one matched: the land cards a
     /// discard actually took. Zero without such a step behind it.
     MatchedCount,

@@ -14,6 +14,11 @@ pub enum OptionalAdditionalCostKindDef {
     /// Buyback (CR 702.27): if this cost was paid, a resolving spell card goes
     /// to its owner's hand instead of its graveyard.
     Buyback,
+    /// Replicate (CR 702.55): the cost may be paid any number of times, and
+    /// what it buys is a copy of the spell for each payment. The copies come
+    /// from a cast trigger the card prints beside this, which reads how many
+    /// times the cost was paid.
+    Replicate,
 }
 
 impl OptionalAdditionalCostKindDef {
@@ -21,7 +26,15 @@ impl OptionalAdditionalCostKindDef {
     pub const fn label(self) -> &'static str {
         match self {
             Self::Buyback => "Buyback",
+            Self::Replicate => "Replicate",
         }
+    }
+
+    /// Whether one cast may pay this cost more than once. Only replicate
+    /// does: every other optional additional cost is paid once or not at all.
+    #[must_use]
+    pub const fn repeatable(self) -> bool {
+        matches!(self, Self::Replicate)
     }
 }
 
@@ -43,6 +56,11 @@ impl OptionalAdditionalCostAbilityDef {
                  do, put this card into your hand as it resolves.)"
             ),
             (OptionalAdditionalCostKindDef::Buyback, None) => "Buyback".into(),
+            (OptionalAdditionalCostKindDef::Replicate, Some(cost)) => format!(
+                "Replicate {cost} (When you cast this spell, copy it for each time you paid its \
+                 replicate cost. You may choose new targets for the copies.)"
+            ),
+            (OptionalAdditionalCostKindDef::Replicate, None) => "Replicate".into(),
         }
     }
 
@@ -52,6 +70,7 @@ impl OptionalAdditionalCostAbilityDef {
             id: AdditionalCostId(ability.0),
             label: self.kind.label().into(),
             mana_cost: self.mana_cost,
+            repeatable: self.kind.repeatable(),
         }
     }
 }

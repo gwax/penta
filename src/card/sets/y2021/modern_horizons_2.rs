@@ -7,9 +7,9 @@ use crate::card::{
     CardSupertype, CardType, DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef,
     DamageSourceMatcherDef, DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef,
     EffectRecipientDef, ExilePlayDurationDef, GraveyardTypeConditionDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PlayerRelation, SacrificedAmountDef,
-    SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, tokens,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PlayerRefDef, PlayerRelation,
+    SacrificedAmountDef, SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -87,13 +87,38 @@ pub(in crate::card::sets) static HARD_EVIDENCE: CardRecord = CardRecord::new(
 );
 
 // MH2 49 — Lose Focus
-// Audit: metadata-only — Card rules have not been implemented.
+/// The copies are a cast trigger rather than part of the spell's own clause,
+/// exactly as storm is: what differs is only where the count comes from, and
+/// replicate counts what was paid rather than what was cast.
+static LOSE_FOCUS_REPLICATES: EffectDef = EffectDef::CopyResolvingSpell {
+    chooser: PlayerRefDef::EffectController,
+    count: ValueDef::TimesAdditionalCostPaid,
+};
+
+static A_SPELL: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_spell(ObjectPredicateDef::Any)];
+
 pub(in crate::card::sets) static LOSE_FOCUS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("985bdb0c-ce6c-4506-8163-76f3b2fdf5fb"),
     "Lose Focus",
-    crate::card::CardArt::new("985bdb0c-ce6c-4506-8163-76f3b2fdf5fb", "Martina Fačková"),
-    crate::card::CardSet::ModernHorizons2,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("985bdb0c-ce6c-4506-8163-76f3b2fdf5fb", "Martina Fačková"),
+    CardSet::ModernHorizons2,
+    // A soft counter that stops being soft once there is spare mana: each
+    // replicate is another {2} the other player has to find.
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
+        abilities::replicate(mana_cost!("{U}")),
+        AbilityDef::spell_with_targets(
+            "Counter target spell unless its controller pays {2}.",
+            &A_SPELL,
+            abilities::counter_target_unless_paid(ValueDef::Constant(2)),
+        ),
+        AbilityDef::triggered(
+            "Replicate {U} (When you cast this spell, copy it for each time you paid its \
+             replicate cost. You may choose new targets for the copies.)",
+            TriggerEventDef::SpellCast(ObjectPredicateDef::Source),
+            LOSE_FOCUS_REPLICATES,
+        ),
+    ]),
 );
 
 // MH2 67 — Subtlety

@@ -490,6 +490,7 @@ fn validate_value_target_references(
         | ValueDef::MatchedManaValue
         | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
+        | ValueDef::TimesAdditionalCostPaid
         | ValueDef::CreaturesDiedThisTurn
         | ValueDef::OpponentsWhoLostLifeThisTurn
         | ValueDef::CardTypesAmongGraveyards(_)

@@ -27,6 +27,44 @@ fn devotion_symbols(cost: crate::card::ManaCost, color: crate::card::ManaColor) 
 }
 
 impl Game {
+    /// How many times a spell paid a repeatable optional additional cost.
+    /// The cast's record lists one entry per payment, so this is how many of
+    /// those entries name a cost the card lets you pay more than once.
+    pub(super) fn repeatable_additional_cost_payments(&self, spell: GameObjectId) -> u16 {
+        let object = self
+            .stack
+            .iter()
+            .find(|candidate| candidate.id == spell)
+            .or_else(|| match self.retired_objects.get(&spell) {
+                Some(RetiredObject::Stack(object)) => Some(object),
+                Some(RetiredObject::Card(_) | RetiredObject::Permanent { .. }) | None => None,
+            });
+        let Some(signature) = object.and_then(|object| object.signature.as_ref()) else {
+            return 0;
+        };
+        let Some(option) = object
+            .and_then(|object| object.card.definition.card_definition())
+            .and_then(|definition| self.catalog.get(definition))
+            .and_then(|definition| definition.play_option(signature.play_option()))
+        else {
+            return 0;
+        };
+        u16::try_from(
+            signature
+                .costs()
+                .additional()
+                .iter()
+                .filter(|paid| {
+                    option
+                        .additional_costs
+                        .iter()
+                        .any(|cost| cost.id == **paid && cost.repeatable)
+                })
+                .count(),
+        )
+        .unwrap_or(u16::MAX)
+    }
+
     pub(super) fn spells_cast_matching_this_turn(
         &self,
         query: SpellCastQueryDef,
@@ -301,6 +339,13 @@ impl Game {
                     .copied()
                     .fold(0_u16, u16::saturating_add)
                     .saturating_sub(1),
+            ),
+            // Replicate: how many times the spell that raised this trigger
+            // paid its repeatable cost. The spell is still on the stack --
+            // a cast trigger resolves above it -- so the count is read off
+            // its own record of what was paid for it.
+            ValueDef::TimesAdditionalCostPaid => i32::from(
+                self.repeatable_additional_cost_payments(object.source.unwrap_or(object.id)),
             ),
             ValueDef::CountersOnSource(kind) => object.source.map_or(0, |source| {
                 i32::from(self.current_or_last_known_counters(source, kind))

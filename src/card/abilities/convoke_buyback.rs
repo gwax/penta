@@ -50,6 +50,23 @@ pub const fn buyback(mana_cost: ManaCost) -> AbilityDef {
     )
 }
 
+/// Replicate (CR 702.55): an optional additional cost payable any number of
+/// times. The copies are not this ability's business -- the card prints a
+/// cast trigger beside it that counts the payments -- so all this says is
+/// what one payment costs and that it may be made again.
+#[must_use]
+pub const fn replicate(mana_cost: ManaCost) -> AbilityDef {
+    AbilityDef::optional_additional_cost(
+        OptionalAdditionalCostKindDef::Replicate.label(),
+        OptionalAdditionalCostAbilityDef {
+            kind: OptionalAdditionalCostKindDef::Replicate,
+            mana_cost: Some(mana_cost),
+            additional_cost: None,
+            resolution_destination: SpellResolutionDestinationDef::Graveyard,
+        },
+    )
+}
+
 /// Buyback paid with a selected nonmana object, such as sacrificing a land.
 #[must_use]
 pub const fn buyback_with_additional_cost(

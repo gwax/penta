@@ -75,6 +75,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::MatchedManaValue
         | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
+        | ValueDef::TimesAdditionalCostPaid
         | ValueDef::SpellsCastThisGame(_)
         | ValueDef::TargetPower(_)
         | ValueDef::TargetToughness(_)
@@ -134,6 +135,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::MatchedManaValue
         | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
+        | ValueDef::TimesAdditionalCostPaid
         | ValueDef::SpellsCastThisGame(_)
         | ValueDef::CountSpellsCastThisTurn(_)
         | ValueDef::TargetPower(_)

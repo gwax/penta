@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Replicate: an optional additional cost paid as many times as you like.**
+  An optional additional cost can now be declared repeatable, in which case a
+  cast enumerates paying it any number of times its caster could afford, and
+  the cast's own record lists one entry per payment. A value reads that count
+  back, which is what the cast trigger beside it copies the spell with --
+  storm's shape, counting payments rather than spells. Lose Focus is the
+  first card with it.
+
 - **Mana that forbids one kind of spell rather than permitting one.** A
   produced mana unit can now carry a prohibition -- "this mana can't be spent
   to cast nonartifact spells" -- which leaves every other use open, so a

@@ -197,11 +197,13 @@ fn mode_and_alternative_cost_ids_are_local_to_options() {
             id: AdditionalCostId(5),
             label: "first".into(),
             mana_cost: None,
+            repeatable: false,
         },
         AdditionalCostDef {
             id: AdditionalCostId(5),
             label: "second".into(),
             mana_cost: None,
+            repeatable: false,
         },
     ];
     assert_eq!(
