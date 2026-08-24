@@ -317,6 +317,7 @@ mod vintage_cube_aether_spellbomb;
 mod vintage_cube_agathas_soul_cauldron;
 mod vintage_cube_ajani;
 mod vintage_cube_amped_raptor;
+mod vintage_cube_animate_dead;
 mod vintage_cube_archon_of_cruelty;
 mod vintage_cube_arrival;
 mod vintage_cube_artifacts;

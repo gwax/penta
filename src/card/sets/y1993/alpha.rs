@@ -1,7 +1,7 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef,
+    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, ArrivalAttachmentDef,
     AttackDefenderScopeDef, AttackRestrictionDef, BasicLandType, CardArt, CardBehavior, CardRules,
     CardSet, CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef, ColorSet,
     ComparisonDef, ControlDurationDef, CostModificationDef, CounterKind, CreatureTypeSetDef,
@@ -1932,13 +1932,97 @@ pub(in crate::card::sets) static WATER_ELEMENTAL: CardRecord = CardRecord::new_w
 );
 
 // LEA 92 — Animate Dead
-// Audit: metadata-only — Needs a zone-object query and identity-preserving continuation for “When this Aura enters, if it's on the battlefield, it loses "enchant creature card in a graveyard" and gains "enchant creature put onto the battlefield with this Aura." Return enchanted…”.
+// Audit: partial — The creature card is chosen as the enters trigger goes on the stack rather than as the Aura spell is cast.
+/// Any graveyard, not only your own, and a creature card rather than a
+/// creature: what it enchants is still a card when it is chosen.
+static A_CREATURE_CARD_IN_A_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: None,
+    },
+)];
+
+/// The reanimation and the attachment are one step: what arrives is a new
+/// object, so a following effect would have nothing left to name.
+static ANIMATE_DEAD_REANIMATES: EffectDef = EffectDef::MoveToZone {
+    counters: None,
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    from: None,
+    zone: ZoneKind::Battlefield,
+    placement: ZonePlacement::Top,
+    controller: Some(PlayerRelation::You),
+    arrival_effect: None,
+    attachment: Some(ArrivalAttachmentDef::SourceToArrival),
+    tapped: false,
+};
+
+/// "If it's on the battlefield" is an intervening if, and it is what makes
+/// the clause safe to write at all: an Aura answered in response does
+/// nothing rather than reanimating from a graveyard.
+static ANIMATE_DEAD_IS_STILL_THERE: TriggerConditionDef = TriggerConditionDef::SourceOnBattlefield;
+
+static ANIMATE_DEAD_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::triggered_if_with_targets(
+        "When this Aura enters, if it's on the battlefield, it loses \"enchant creature card in a \
+         graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\" \
+         Return enchanted creature card to the battlefield under your control and attach this \
+         Aura to it.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        &ANIMATE_DEAD_IS_STILL_THERE,
+        &A_CREATURE_CARD_IN_A_GRAVEYARD,
+        ANIMATE_DEAD_REANIMATES,
+    )
+    .with_coverage(AbilityCoverageDef::partial(
+        "The card is chosen as this trigger goes on the stack rather than as the Aura spell is \
+         cast: an Aura enters attached to a battlefield permanent here, and a graveyard card is \
+         not one. So this can be cast with no creature card anywhere, and an Aura whose card is \
+         answered in response stays on the battlefield enchanting nothing; the printed card \
+         could not have been cast at all in the first case, and would have been countered on \
+         resolution in the second. Neither reanimates anything.",
+    )),
+    AbilityDef::triggered(
+        "When this Aura leaves the battlefield, that creature's controller sacrifices it.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            Some(ZoneKind::Battlefield),
+            None,
+        ),
+        EffectDef::Sacrifice {
+            object: EffectRecipientDef::AttachedPermanent,
+        },
+    ),
+    AbilityDef::static_ability(
+        "Enchanted creature gets -1/-0.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::AttachedPermanent,
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-1),
+                ValueDef::Constant(0),
+            ),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static ANIMATE_DEAD: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8fd7861d-925f-4b4c-a4ab-60be6f43d50b"),
     "Animate Dead",
-    crate::card::CardArt::new("8fd7861d-925f-4b4c-a4ab-60be6f43d50b", "Anson Maddocks"),
-    crate::card::CardSet::Alpha,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("8fd7861d-925f-4b4c-a4ab-60be6f43d50b", "Anson Maddocks"),
+    CardSet::Alpha,
+    // Two mana for anything that died, at the price of a point of power and
+    // of losing it again when the Aura goes.
+    CardRules::new_enchantment(mana_cost!("{1}{B}"))
+        .with_subtypes(&["Aura"])
+        // "Enchant creature put onto the battlefield with this Aura" is
+        // narrower than this, but the card guarantees the narrowing itself:
+        // it only ever attaches to the creature it just returned.
+        .enchanting(ObjectPredicateDef::HasType(CardType::Creature))
+        .with_abilities(&ANIMATE_DEAD_ABILITIES),
 );
 
 // LEA 93 — Bad Moon
