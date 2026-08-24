@@ -967,13 +967,45 @@ pub(in crate::card::sets) static GLISSA_S_COURIER: CardRecord = CardRecord::new(
 );
 
 // MBS 81 — Green Sun's Zenith
-// Audit: metadata-only — Card rules have not been implemented.
+/// "With mana value X or less", where X is what this spell was cast for. The
+/// bound is read off the spell's own record, which outlives its move off the
+/// stack, so the search still knows how big it may go.
+static A_GREEN_CREATURE_WORTH_X: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Color(ManaColor::Green),
+    ObjectPredicateDef::ManaValueAtMostValue(ValueDef::ChosenX),
+]);
+
 pub(in crate::card::sets) static GREEN_SUN_S_ZENITH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("02335747-54e3-4827-ae19-4e362863da9b"),
     "Green Sun's Zenith",
-    crate::card::CardArt::new("02335747-54e3-4827-ae19-4e362863da9b", "David Rapoza"),
-    crate::card::CardSet::MirrodinBesieged,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("02335747-54e3-4827-ae19-4e362863da9b", "David Rapoza"),
+    CardSet::MirrodinBesieged,
+    // A green creature of your choosing for one more than it costs, and the
+    // card goes back into the deck to be drawn again rather than to a
+    // graveyard.
+    CardRules::new_sorcery(mana_cost!("{X}{G}")).with_ability(
+        AbilityDef::spell(
+            "Search your library for a green creature card with mana value X or less, put it \
+             onto the battlefield, then shuffle. Shuffle Green Sun's Zenith into its owner's \
+             library.",
+            EffectDef::SearchZone {
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: A_GREEN_CREATURE_WORTH_X,
+                minimum: 0,
+                maximum: ValueDef::Constant(1),
+                reveal: false,
+                destination: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: false,
+                binding: None,
+                then: None,
+            },
+        )
+        .with_resolution_destination(SpellResolutionDestinationDef::LibraryShuffled),
+    ),
 );
 
 // MBS 82 — Lead the Stampede
