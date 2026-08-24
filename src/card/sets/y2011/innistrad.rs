@@ -11,12 +11,12 @@ use crate::card::{
     ComparisonDef, ConditionalValueDef, ControlDurationDef, CounterKind, DamageEventMatcherDef,
     DiscardSelectionDef, DoubleFacedKind, EffectDef, EffectExecutionDef, EffectPaymentDef,
     EffectRecipientDef, HalvedValueDef, KeywordAbility, ManaColor, MillUntilDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayOptionDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, QuantifierDef, ReplacementConditionDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, RoundingDef, SacrificedAmountDef, SpellAdditionalCostCountDef,
-    SpellAdditionalCostDef, SpellForm, SpendModeDef, TargetConditionDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneChangeEventMatcherDef,
-    ZoneKind, ZonePlacement, abilities,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayOptionDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, QuantifierDef, ReplacementConditionDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, RoundingDef, SacrificedAmountDef,
+    SimultaneousChooseDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpellForm,
+    SpendModeDef, TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::game::{
     CardAbilityResolver, CardRuntime, PileChoice, PileChosen, PileSplit, PilesSeparated,
@@ -419,13 +419,32 @@ pub(in crate::card::sets) static DEARLY_DEPARTED: CardRecord = CardRecord::new(
 );
 
 // ISD 10 — Divine Reckoning
-// Audit: metadata-only — Needs simultaneous per-player creature choices followed by destroying every unchosen creature.
+static DIVINE_RECKONING_DESTROY_REST: EffectDef = EffectDef::Destroy {
+    object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::new(1))),
+    can_regenerate: true,
+};
+
+static DIVINE_RECKONING_CHOICE: SimultaneousChooseDef = SimultaneousChooseDef {
+    player: EffectRecipientDef::EachPlayer,
+    candidates: ObjectPredicateDef::HasType(CardType::Creature),
+    one_of_each: &[ObjectPredicateDef::Any],
+    chosen: ObjectSetBindingIndex::PRIMARY,
+    unchosen: ObjectSetBindingIndex::new(1),
+    then: &DIVINE_RECKONING_DESTROY_REST,
+};
+
 pub(in crate::card::sets) static DIVINE_RECKONING: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("446ea3a4-206a-4097-87c1-c04bb7812972"),
     "Divine Reckoning",
     crate::card::CardArt::new("446ea3a4-206a-4097-87c1-c04bb7812972", "Greg Staples"),
     crate::card::CardSet::Innistrad,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{2}{W}{W}")).with_abilities(&[
+        AbilityDef::spell(
+            "Each player chooses a creature they control. Destroy the rest.",
+            EffectDef::SimultaneousChoose(DIVINE_RECKONING_CHOICE),
+        ),
+        abilities::flashback(mana_cost!("{5}{W}{W}")),
+    ]),
 );
 
 // ISD 11 — Doomed Traveler

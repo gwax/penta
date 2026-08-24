@@ -155,6 +155,12 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
     ChooseForEffect {
         continuation: EffectContinuationSnapshot,
     },
+    SimultaneousChoose {
+        continuation: EffectContinuationSnapshot,
+        task: usize,
+        players: Vec<usize>,
+        chosen: Vec<u32>,
+    },
     PayOr {
         player: usize,
         payment: ResolvedEffectPaymentSnapshot,
@@ -280,15 +286,6 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
     ChooseColor {
         continuation: Box<EffectContinuationSnapshot>,
         targets: Vec<TargetSnapshot>,
-    },
-    KeepOnePerType {
-        player: usize,
-        controller: usize,
-        /// Indices into `CardType::ALL`, in the order the printed clause
-        /// names them. The same positional encoding a copied entry's added
-        /// types already uses.
-        remaining: Vec<usize>,
-        kept: Vec<u32>,
     },
     ChosenColorMana {
         controller: usize,

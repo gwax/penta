@@ -866,7 +866,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::Detain { .. } => "Detain",
         EffectDef::Regenerate { .. } => "Regenerate",
         EffectDef::Sacrifice { .. } => "Sacrifice",
-        EffectDef::SacrificeKeepingOnePerType { .. } => "SacrificeKeepingOnePerType",
+        EffectDef::SimultaneousChoose(_) => "SimultaneousChoose",
         EffectDef::SacrificeOfChoice { .. } => "SacrificeOfChoice",
         EffectDef::ExileTopOfLibraryToPlay { .. } => "ExileTopOfLibraryToPlay",
         EffectDef::ExileAtRandomFromGraveyardToPlay { .. } => "ExileAtRandomFromGraveyardToPlay",

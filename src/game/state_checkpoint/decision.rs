@@ -420,6 +420,32 @@ fn continuation_snapshot(
                 )?,
             }
         }
+        DecisionContinuation::SimultaneousChoose {
+            definition,
+            task,
+            players,
+            chosen,
+            object,
+            context,
+            ..
+        } => {
+            if !matches!(definition.effect, EffectDef::SimultaneousChoose(_)) {
+                return None;
+            }
+            DecisionContinuationSnapshot::SimultaneousChoose {
+                continuation: effect_continuation_snapshot(
+                    game,
+                    viewer,
+                    object,
+                    context,
+                    *definition,
+                    visible_rebindings,
+                )?,
+                task: *task,
+                players: players.iter().map(|player| player.index()).collect(),
+                chosen: chosen.iter().map(|id| id.0).collect(),
+            }
+        }
         DecisionContinuation::PayOr {
             player,
             payment,
@@ -703,24 +729,6 @@ fn continuation_snapshot(
                 visible_rebindings,
             )?),
             targets: targets.iter().copied().map(target_snapshot).collect(),
-        },
-        DecisionContinuation::KeepOnePerType {
-            player,
-            controller,
-            remaining,
-            kept,
-        } => DecisionContinuationSnapshot::KeepOnePerType {
-            player: player.index(),
-            controller: controller.index(),
-            remaining: remaining
-                .iter()
-                .map(|kind| {
-                    CardType::ALL
-                        .into_iter()
-                        .position(|candidate| candidate == *kind)
-                })
-                .collect::<Option<Vec<_>>>()?,
-            kept: kept.iter().map(|id| id.0).collect(),
         },
         DecisionContinuation::ChosenColorMana {
             controller,

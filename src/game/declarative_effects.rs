@@ -55,6 +55,9 @@ impl Game {
             EffectDef::Choose(definition) => {
                 self.queue_effect_choice(definition, object, context, scoped);
             }
+            EffectDef::SimultaneousChoose(definition) => {
+                self.queue_simultaneous_choice(definition, object, context, scoped);
+            }
             EffectDef::ForEachInBinding {
                 objects,
                 binding,
@@ -338,21 +341,6 @@ impl Game {
                         context: frozen_context,
                         expiration,
                     });
-                }
-            }
-            EffectDef::SacrificeKeepingOnePerType {
-                player: recipient,
-                types,
-            } => {
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Player(player) = target {
-                        self.queue_keep_one_per_type(
-                            player,
-                            object.controller,
-                            types.to_vec(),
-                            Vec::new(),
-                        );
-                    }
                 }
             }
             EffectDef::PutOntoBattlefieldThen {

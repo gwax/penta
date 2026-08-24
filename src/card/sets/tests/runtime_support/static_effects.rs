@@ -186,6 +186,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::GrantFlashToNextSorcery
         | EffectDef::Randomized { .. }
         | EffectDef::Choose(_)
+        | EffectDef::SimultaneousChoose(_)
         | EffectDef::ChooseCardName { .. }
         | EffectDef::BindMatching { .. }
         | EffectDef::ForEachInBinding { .. }
@@ -242,7 +243,6 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Endure { .. }
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
-        | EffectDef::SacrificeKeepingOnePerType { .. }
         | EffectDef::SacrificeOfChoice { .. }
         | EffectDef::ExileTopOfLibraryToPlay { .. }
         | EffectDef::ExileAtRandomFromGraveyardToPlay { .. }

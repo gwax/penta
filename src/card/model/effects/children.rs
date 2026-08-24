@@ -137,7 +137,6 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::Proliferate
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::Sacrifice { .. }
-        | EffectDef::SacrificeKeepingOnePerType { .. }
         | EffectDef::ScheduleTurnPhases(_)
         | EffectDef::BuryGraveyard { .. }
         | EffectDef::ShuffleLibrary { .. }
@@ -149,6 +148,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::Transform { .. }
         | EffectDef::Saddle { .. }
         | EffectDef::Untap { .. } => Vec::new(),
+        EffectDef::SimultaneousChoose(definition) => vec![*definition.then],
     }
 }
 
