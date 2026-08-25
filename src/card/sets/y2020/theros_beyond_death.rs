@@ -2,11 +2,13 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules,
-    CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    PlayerRelation, PlayerSetDef, SpellAdditionalCostDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
+    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardType, ComparisonDef,
+    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, PlayerSetDef,
+    SpellAdditionalCostDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
+use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 // THB 20 — Heliod's Pilgrim
@@ -205,13 +207,83 @@ pub(in crate::card::sets) static URO_TITAN_OF_NATURE_S_WRATH: CardRecord = CardR
 );
 
 // THB 237 — Soul-Guide Lantern
-// Audit: metadata-only — Card rules have not been implemented.
+/// One card out of one graveyard, chosen when the Lantern arrives. Any
+/// graveyard: the Lantern is as happy to eat your own flashback card as
+/// theirs.
+static LANTERN_EXILES_ONE_CARD: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Any,
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: None,
+    },
+)];
+
+/// The two sacrifice abilities differ only in what they buy, so the shared
+/// half of the cost is written once.
+static LANTERN_CASHES_IN: [AbilityCostDef; 2] =
+    [AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource];
+
+static LANTERN_CASHES_IN_FOR_A_CARD: [AbilityCostDef; 3] = [
+    AbilityCostDef::Mana(mana_cost!("{1}")),
+    AbilityCostDef::TapSource,
+    AbilityCostDef::SacrificeSource,
+];
+
+static SOUL_GUIDE_LANTERN_ABILITIES: [AbilityDef; 3] = [
+    abilities::enters_trigger_with_targets(
+        "When this artifact enters, exile target card from a graveyard.",
+        &LANTERN_EXILES_ONE_CARD,
+        EffectDef::MoveToZone {
+            counters: None,
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            from: None,
+            zone: ZoneKind::Exile,
+            placement: ZonePlacement::Top,
+            arrival_effect: None,
+            attachment: None,
+            controller: None,
+            tapped: false,
+        },
+    ),
+    // Untargeted, so it does not care whether those graveyards hold
+    // anything: unlike Tormod's Crypt this one can be cashed in against an
+    // empty board purely to stop what has not happened yet.
+    AbilityDef::activated(
+        "{T}, Sacrifice this artifact: Exile each opponent's graveyard.",
+        &LANTERN_CASHES_IN,
+        EffectDef::MoveToZone {
+            counters: None,
+            object: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Any,
+                &[ZoneKind::Graveyard],
+                PlayerRelation::Opponent,
+            ),
+            from: None,
+            zone: ZoneKind::Exile,
+            placement: ZonePlacement::Top,
+            arrival_effect: None,
+            attachment: None,
+            controller: None,
+            tapped: false,
+        },
+    ),
+    AbilityDef::activated(
+        "{1}, {T}, Sacrifice this artifact: Draw a card.",
+        &LANTERN_CASHES_IN_FOR_A_CARD,
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static SOUL_GUIDE_LANTERN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("7c850b94-75c9-4457-8b5e-1193352d6fcb"),
     "Soul-Guide Lantern",
     crate::card::CardArt::new("7c850b94-75c9-4457-8b5e-1193352d6fcb", "Cliff Childs"),
     crate::card::CardSet::TherosBeyondDeath,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&SOUL_GUIDE_LANTERN_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
