@@ -77,6 +77,11 @@ pub enum CostDef {
         controller: PlayerRelation,
     },
     ExileSource,
+    /// Exert the permanent carrying this ability (CR 701.39): it will not
+    /// untap during its controller's next untap step. Unlike tapping it,
+    /// exerting costs nothing now and everything next turn, and unlike a
+    /// sacrifice the permanent is still there in the meantime.
+    ExertSource,
     /// Return the permanent carrying this ability to its owner's hand. Like
     /// a sacrifice the source leaves the battlefield to pay, but unlike one
     /// it comes back to be cast again, which is the whole shape of
@@ -342,6 +347,15 @@ pub enum ManaRestrictionDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ManaSpendEffectDef {
     ApplyToPaidSpell(AppliedEffectDef),
+    /// "If that mana is spent on a creature spell, it gains haste until end
+    /// of turn." The same rider with a question in front of it: what the
+    /// mana pays for decides whether the effect applies at all. An effect
+    /// that grants an ability keeps applying to the permanent a paid
+    /// permanent spell becomes, which is the only reason a land prints this.
+    ApplyToPaidSpellMatching {
+        object: ObjectPredicateDef,
+        effect: AppliedEffectDef,
+    },
     ApplyToPaidAbility(AppliedEffectDef),
     Special(&'static str),
 }

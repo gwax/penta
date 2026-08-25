@@ -685,7 +685,7 @@ impl Game {
         };
         let spent_mana =
             self.pay_player_cost_for(stack_object.controller, mana_cost, mana_x, &payment_purpose);
-        Self::apply_spent_mana_to_spell(&mut stack_object, &spent_mana);
+        self.apply_spent_mana_to_spell(&mut stack_object, &spent_mana);
         // Recorded whether or not this spell counts them: what paid for a
         // spell is a fact about the cast, and a clause that asks later has
         // nothing else to read it from.

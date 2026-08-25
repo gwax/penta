@@ -400,6 +400,7 @@ impl Game {
                         }
                     }
                     AbilityCostDef::TapSource
+                    | AbilityCostDef::ExertSource
                     | AbilityCostDef::UntapSource
                     | AbilityCostDef::SacrificeSource
                     | AbilityCostDef::SacrificeObject(_)
@@ -598,6 +599,20 @@ impl Game {
                     }
                     AbilityCostDef::TapSource => {
                         let _ = self.tap_permanent(source);
+                    }
+                    // Exerting costs nothing now: what it spends is one
+                    // untap step, owed and paid whenever that step next
+                    // comes around.
+                    AbilityCostDef::ExertSource => {
+                        if let Some(permanent) = self
+                            .battlefield
+                            .iter_mut()
+                            .find(|permanent| permanent.card.id == source)
+                        {
+                            permanent.exerted = true;
+                            permanent.skipped_untap_steps =
+                                permanent.skipped_untap_steps.saturating_add(1);
+                        }
                     }
                     AbilityCostDef::UntapSource => {
                         self.battlefield

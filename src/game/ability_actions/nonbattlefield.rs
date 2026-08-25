@@ -4,6 +4,43 @@
 // module's.
 
 impl Game {
+    /// What an activation from hand costs in mana, or nothing at all when
+    /// the ability's cost names something a card in a hand cannot spend.
+    fn hand_activation_mana_cost(definition: &ActivatedAbilityDef) -> Option<ManaCost> {
+        let mut mana_cost = ManaCost::default();
+        for cost in definition.costs.as_slice() {
+            match cost {
+                AbilityCostDef::Mana(cost) => {
+                    mana_cost = add_mana_cost(mana_cost, *cost);
+                }
+                AbilityCostDef::DiscardSource | AbilityCostDef::ReturnUnblockedAttackerToHand => {}
+                AbilityCostDef::TapSource
+                | AbilityCostDef::ExertSource
+                | AbilityCostDef::UntapSource
+                | AbilityCostDef::SacrificeSource
+                | AbilityCostDef::SacrificeObject(_)
+                | AbilityCostDef::ReturnSourceToHand
+                | AbilityCostDef::RemoveCountersFromSource { .. }
+                | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
+                | AbilityCostDef::PayLife(_)
+                | AbilityCostDef::MillCards(_)
+                | AbilityCostDef::DiscardCards(_)
+                | AbilityCostDef::DiscardCardMatching(_)
+                | AbilityCostDef::ExileCardFromHand(_)
+                | AbilityCostDef::DiscardCardsAtRandom(_)
+                | AbilityCostDef::SacrificePermanent { .. }
+                | AbilityCostDef::SacrificePermanents { .. }
+                | AbilityCostDef::TapPermanent { .. }
+                | AbilityCostDef::TapCreaturesWithTotalPower { .. }
+                | AbilityCostDef::ExileSource
+                | AbilityCostDef::Loyalty(_)
+                | AbilityCostDef::ExileCardsFromGraveyard { .. }
+                | AbilityCostDef::Special(_) => return None,
+            }
+        }
+        Some(mana_cost)
+    }
+
     pub(super) fn add_hand_ability_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
         for card in &self.players[player.index()].hand {
             if self.nonbattlefield_ability_activation_is_prohibited(
@@ -25,45 +62,16 @@ impl Game {
                 {
                     return;
                 }
-                let mut mana_cost = ManaCost::default();
-                let mut supported = true;
-                for cost in definition.costs.as_slice() {
-                    match cost {
-                        AbilityCostDef::Mana(cost) => {
-                            mana_cost = add_mana_cost(mana_cost, *cost);
-                        }
-                        AbilityCostDef::DiscardSource
-                        | AbilityCostDef::ReturnUnblockedAttackerToHand => {}
-                        AbilityCostDef::TapSource
-                        | AbilityCostDef::UntapSource
-                        | AbilityCostDef::SacrificeSource
-                        | AbilityCostDef::SacrificeObject(_)
-                        | AbilityCostDef::ReturnSourceToHand
-                        | AbilityCostDef::RemoveCountersFromSource { .. }
-                        | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
-                        | AbilityCostDef::PayLife(_)
-                        | AbilityCostDef::MillCards(_)
-                        | AbilityCostDef::DiscardCards(_)
-                        | AbilityCostDef::DiscardCardMatching(_)
-                        | AbilityCostDef::ExileCardFromHand(_)
-                        | AbilityCostDef::DiscardCardsAtRandom(_)
-                        | AbilityCostDef::SacrificePermanent { .. }
-                        | AbilityCostDef::SacrificePermanents { .. }
-                        | AbilityCostDef::TapPermanent { .. }
-                        | AbilityCostDef::TapCreaturesWithTotalPower { .. }
-                        | AbilityCostDef::ExileSource
-                        | AbilityCostDef::Loyalty(_)
-                        | AbilityCostDef::ExileCardsFromGraveyard { .. }
-                        | AbilityCostDef::Special(_) => supported = false,
-                    }
-                }
-                mana_cost = self.activation_mana_cost(&definition, card.id, mana_cost);
+                let Some(mana_cost) = Self::hand_activation_mana_cost(&definition) else {
+                    return;
+                };
+                let mana_cost = self.activation_mana_cost(&definition, card.id, mana_cost);
                 let payment_purpose = ManaPaymentPurpose::Ability {
                     source: card.id,
                     taps_source: false,
                     leaves_source: false,
                 };
-                if !supported || !self.can_pay_cost_for(player, mana_cost, 0, &payment_purpose) {
+                if !self.can_pay_cost_for(player, mana_cost, 0, &payment_purpose) {
                     return;
                 }
                 let max_x = if mana_cost.variable_x {

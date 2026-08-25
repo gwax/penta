@@ -41,6 +41,7 @@ impl Game {
                 AbilityCostDef::RemoveCountersFromSource { .. }
                 | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                 | AbilityCostDef::TapSource
+                | AbilityCostDef::ExertSource
                 | AbilityCostDef::UntapSource
                 | AbilityCostDef::SacrificeSource
                 | AbilityCostDef::SacrificeObject(_)
@@ -94,6 +95,10 @@ impl Game {
     ) -> bool {
         match cost {
             AbilityCostDef::TapSource
+            // Exerting spends the source's next untap step, which is a
+            // finite thing to spend: the land is not producing this mana
+            // again next turn.
+            | AbilityCostDef::ExertSource
             | AbilityCostDef::SacrificeSource
             | AbilityCostDef::ReturnSourceToHand
             | AbilityCostDef::ExileSource
@@ -121,6 +126,7 @@ impl Game {
                         matches!(
                             cost,
                             AbilityCostDef::TapSource
+                                | AbilityCostDef::ExertSource
                                 | AbilityCostDef::SacrificeSource
                                 | AbilityCostDef::ReturnSourceToHand
                                 | AbilityCostDef::ExileSource

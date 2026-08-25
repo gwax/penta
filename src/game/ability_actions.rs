@@ -350,6 +350,10 @@ impl Game {
                         AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                         | AbilityCostDef::RemoveCountersFromSource { .. }
                         | AbilityCostDef::TapSource
+                        // Always payable: what it spends is a future untap
+                        // step, and the permanent has one whatever state it
+                        // is in now.
+                        | AbilityCostDef::ExertSource
                         | AbilityCostDef::UntapSource
                         | AbilityCostDef::SacrificeSource
                         | AbilityCostDef::SacrificeObject(_)

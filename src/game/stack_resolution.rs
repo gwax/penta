@@ -6,6 +6,9 @@ use super::{
     Target, ZoneKind,
 };
 use crate::SpellResolutionDestinationDef;
+use crate::card::{
+    AbilityOperationDef, AppliedEffectDef, CharacteristicOperationDef, DeclarativeAbilityDef,
+};
 
 impl Game {
     pub(super) fn pass_priority(&mut self, _player: PlayerId) {
@@ -121,6 +124,16 @@ impl Game {
                 let option = card.play_option(signature.play_option())?;
                 self.selected_alternative_kind(card, option, object.id, signature.costs())
             });
+            // "It gains haste until end of turn": an ability granted by the
+            // mana that paid for a permanent spell keeps applying to the
+            // permanent it becomes (CR 611.2c). Only keyword grants are
+            // carried over, which is the only shape mana riders take.
+            permanent.temporary_keywords.extend(
+                object
+                    .applied_effects
+                    .iter()
+                    .filter_map(|applied| Self::granted_keyword(applied.effect)),
+            );
             permanent.cast_at_instant_speed = object.cast_at_instant_speed;
             permanent.cast_from_zone = object.cast_from_zone;
             permanent.text_changes = object.text_changes;
@@ -274,6 +287,25 @@ impl Game {
             card: card_id,
             definition,
         });
+    }
+
+    /// The keyword one applied effect grants, when granting a keyword is all
+    /// it does. Reads through a composite, so a rider that grants two says
+    /// the first of them and nothing else in the engine has to know it was
+    /// compound.
+    fn granted_keyword(effect: AppliedEffectDef) -> Option<crate::card::KeywordAbility> {
+        match effect {
+            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+                AbilityOperationDef::Add(ability),
+            )) => match ability.definition {
+                DeclarativeAbilityDef::Keyword(keyword) => Some(keyword),
+                _ => None,
+            },
+            AppliedEffectDef::Composite(effects) => {
+                effects.iter().copied().find_map(Self::granted_keyword)
+            }
+            AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => None,
+        }
     }
 
     fn finish_spell_destination(

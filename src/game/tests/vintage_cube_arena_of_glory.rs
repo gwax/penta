@@ -1,0 +1,187 @@
+//! Arena of Glory: a red source that buys one creature a surprise, paid for
+//! out of next turn's untap step.
+
+use super::*;
+
+/// The Arena on the battlefield since last turn, with `mountains` Mountains
+/// beside it and a Dwarven Soldier in hand.
+fn staged(mountains: usize) -> (Game, GameObjectId, GameObjectId) {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    for _ in 0..mountains {
+        game.put_onto_battlefield(PlayerId::One, cards::MOUNTAIN)
+            .expect("cataloged");
+    }
+    let arena = game
+        .put_onto_battlefield(PlayerId::One, cards::ARENA_OF_GLORY)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    let soldier = game
+        .build_zone(PlayerId::One, &[cards::DWARVEN_SOLDIER])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let soldier_id = soldier.id;
+    game.players[0].hand.push(soldier);
+    game.turns_started = [2, 1];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    drain_pending(&mut game);
+    (game, arena, soldier_id)
+}
+
+fn arena_abilities(game: &Game, arena: GameObjectId) -> Vec<Action> {
+    game.legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(
+            |action| matches!(action, Action::ActivateManaAbility { source, .. } if *source == arena),
+        )
+        .collect()
+}
+
+fn permanent(game: &Game, id: GameObjectId) -> &Permanent {
+    game.battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == id)
+        .expect("it is on the battlefield")
+}
+
+/// Activates the exert ability, which is the one that costs mana.
+fn exert_for_two_red(game: &mut Game, arena: GameObjectId) {
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    let action = arena_abilities(game, arena)
+        .into_iter()
+        .find(|action| {
+            let Action::ActivateManaAbility { ability, .. } = action else {
+                return false;
+            };
+            matches!(ability, crate::AbilityOrigin::Printed { ability, .. } if ability.0 == 2)
+        })
+        .expect("the exert ability is offered");
+    game.apply(PlayerId::One, action).expect("it activates");
+}
+
+fn cast_soldier(game: &mut Game, soldier: GameObjectId) {
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == soldier))
+        .expect("two red casts a {1}{R} creature");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+}
+
+fn soldier_on_battlefield(game: &Game) -> &Permanent {
+    game.battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::DWARVEN_SOLDIER)
+        .expect("the Soldier resolved")
+}
+
+/// A Mountain lets it come down untapped; without one it arrives tapped.
+#[test]
+fn it_enters_tapped_without_a_mountain() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+
+    let arena = game
+        .put_onto_battlefield(PlayerId::One, cards::ARENA_OF_GLORY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert!(
+        permanent(&game, arena).tapped,
+        "no Mountain, no untapped land"
+    );
+
+    let (game, second, _) = staged(1);
+    assert!(
+        !permanent(&game, second).tapped,
+        "a Mountain lets it come down ready",
+    );
+}
+
+/// The plain ability adds one red and nothing else.
+#[test]
+fn the_plain_ability_adds_one_red() {
+    let (mut game, arena, _) = staged(1);
+
+    let tap = arena_abilities(&game, arena)
+        .into_iter()
+        .find(|action| {
+            let Action::ActivateManaAbility { ability, .. } = action else {
+                return false;
+            };
+            matches!(ability, crate::AbilityOrigin::Printed { ability, .. } if ability.0 == 1)
+        })
+        .expect("the plain tap is offered");
+    game.apply(PlayerId::One, tap).expect("it activates");
+
+    assert_eq!(game.players[0].mana_pool.red, 1);
+    assert!(permanent(&game, arena).tapped);
+}
+
+/// The exert ability turns one red into two, and the land pays for it by
+/// missing its next untap step.
+#[test]
+fn exerting_it_costs_an_untap_step() {
+    let (mut game, arena, _) = staged(1);
+
+    exert_for_two_red(&mut game, arena);
+
+    assert_eq!(game.players[0].mana_pool.red, 2, "one red in, two out");
+    assert!(permanent(&game, arena).tapped);
+
+    game.start_next_turn();
+    game.start_next_turn();
+
+    assert!(
+        permanent(&game, arena).tapped,
+        "and it does not untap on your next turn",
+    );
+}
+
+/// Mana spent on a creature spell gives that creature haste, and the haste
+/// outlives the spell.
+#[test]
+fn mana_spent_on_a_creature_gives_it_haste() {
+    let (mut game, arena, soldier) = staged(1);
+    exert_for_two_red(&mut game, arena);
+
+    cast_soldier(&mut game, soldier);
+
+    assert!(
+        game.permanent_has_executable_keyword(soldier_on_battlefield(&game), KeywordAbility::Haste),
+        "the creature it paid for can attack at once",
+    );
+}
+
+/// Ordinary red does not: the haste comes from the mana rather than from the
+/// creature.
+#[test]
+fn other_mana_leaves_it_summoning_sick() {
+    let (mut game, _arena, soldier) = staged(1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 2);
+
+    cast_soldier(&mut game, soldier);
+
+    assert!(
+        !game
+            .permanent_has_executable_keyword(soldier_on_battlefield(&game), KeywordAbility::Haste),
+        "nothing about the Soldier gives it haste",
+    );
+}

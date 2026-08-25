@@ -9,8 +9,8 @@ use crate::card::{
     ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, DrawEventMatcherDef, EffectDef,
     EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, EmblemCharacteristics,
     HalvedValueDef, InstalledTriggerDef, InstalledTriggerLifetimeDef, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ManaSpendEffectDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
     ResolvedEffectDurationDef, RoundingDef, SimultaneousChooseDef, SpellAdditionalCostCountDef,
     SpellAdditionalCostDef, SpendModeDef, TargetConditionDef, TokenCopyExceptionsDef,
     TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
@@ -1773,13 +1773,55 @@ pub(in crate::card::sets) static PRIEST_OF_TITANIA: CardRecord = CardRecord::new
 );
 
 // MH3 351 — Arena of Glory
-// Audit: metadata-only — Card rules have not been implemented.
+static ARENA_HASTE: AbilityDef = abilities::haste();
+
+/// The rider asks what the mana paid for rather than restricting what it may
+/// pay for: this mana casts anything, and only a creature gets anything out
+/// of it.
+static ARENA_MANA_GRANTS_HASTE: [ManaSpendEffectDef; 1] =
+    [ManaSpendEffectDef::ApplyToPaidSpellMatching {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        effect: AppliedEffectDef::add_ability(&ARENA_HASTE),
+    }];
+
+/// {R} in, {R}{R} out, and one untap step owed: the land pays for the haste
+/// out of next turn rather than out of this one.
+static ARENA_EXERT_COST: [AbilityCostDef; 3] = [
+    AbilityCostDef::Mana(mana_cost!("{R}")),
+    AbilityCostDef::TapSource,
+    AbilityCostDef::ExertSource,
+];
+
+static ARENA_OF_GLORY_ABILITIES: [AbilityDef; 3] = [
+    abilities::check_land_enters(
+        "This land enters tapped unless you control a Mountain.",
+        &[BasicLandType::Mountain],
+    ),
+    AbilityDef::activated_mana(
+        "{T}: Add {R}.",
+        &[AbilityCostDef::TapSource],
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red)),
+    ),
+    AbilityDef::activated_mana(
+        "{R}, {T}, Exert this land: Add {R}{R}. If that mana is spent on a creature spell, it \
+         gains haste until end of turn.",
+        &ARENA_EXERT_COST,
+        EffectDef::AddMana(
+            AddManaEffectDef::one(ManaColor::Red)
+                .with_amount(2)
+                .with_spend_effects(&ARENA_MANA_GRANTS_HASTE),
+        ),
+    ),
+];
+
 pub(in crate::card::sets) static ARENA_OF_GLORY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("3d7d07bb-b875-4a6d-8b87-4187e823af75"),
     "Arena of Glory",
     crate::card::CardArt::new("3d7d07bb-b875-4a6d-8b87-4187e823af75", "Piotr Dura"),
     crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    // A red source that costs nothing to play and turns one creature a game
+    // into a surprise, which is what a haste land is for.
+    CardRules::new_land(&[]).with_abilities(&ARENA_OF_GLORY_ABILITIES),
 );
 
 // MH3 377 — Nadu, Winged Wisdom

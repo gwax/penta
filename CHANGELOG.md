@@ -25,6 +25,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Exert as a cost, and a mana rider that asks what it paid for.** Exert
+  existed only as the choice a creature makes when it attacks; it is now also
+  a cost an ability can print, spending the source's next untap step rather
+  than anything it has now. Alongside it, a mana rider can be conditional:
+  "if that mana is spent on a creature spell" asks what the mana paid for
+  rather than restricting what it may pay for, and an ability it grants keeps
+  applying to the permanent that spell becomes. Arena of Glory prints both --
+  {R} in, {R}{R} out, one untap step owed, and one creature a game that
+  attacks the turn it lands. Nothing new is stored: exert already spent an
+  untap step the permanent was counting.
+
 - **Multikicker.** Replicate was already an additional cost a caster could
   pay any number of times, so multikicker is the same shape with nothing
   attached to it: what the payments buy is printed separately as a clause

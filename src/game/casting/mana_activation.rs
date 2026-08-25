@@ -12,6 +12,19 @@ impl Game {
                     // tap triggers and mana-tap triggers scan one event.
                     let _ = self.tap_permanent_for_mana(source);
                 }
+                // Paid now, like the tap: what it spends is the source's
+                // next untap step, and the ability is over long before that.
+                AbilityCostDef::ExertSource => {
+                    if let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == source)
+                    {
+                        permanent.exerted = true;
+                        permanent.skipped_untap_steps =
+                            permanent.skipped_untap_steps.saturating_add(1);
+                    }
+                }
                 // The open-ended removal never arrives: enumeration sized it
                 // before the activation was built. The two sacrifices and the
                 // exile are deferred to the batch below, so that a Goblin

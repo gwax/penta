@@ -531,6 +531,7 @@ fn a_mana_spend_rider_attaches_to_the_paid_spell_with_its_source() {
     static RIDERS: [ManaSpendEffectDef; 1] = [ManaSpendEffectDef::ApplyToPaidSpell(
         crate::AppliedEffectDef::Rule(crate::AppliedRuleDef::CannotBeCountered),
     )];
+    let game = ready_game();
     let mut object = spell(77, cards::SAVANNAH_LIONS, PlayerId::One, 0);
     let mana = Mana::from_ability(
         ManaColor::White,
@@ -546,7 +547,7 @@ fn a_mana_spend_rider_attaches_to_the_paid_spell_with_its_source() {
         &RIDERS,
     );
 
-    Game::apply_spent_mana_to_spell(&mut object, &[mana]);
+    game.apply_spent_mana_to_spell(&mut object, &[mana]);
 
     assert_eq!(object.applied_effects.len(), 1);
     assert_eq!(object.applied_effects[0].source, mana.source);
