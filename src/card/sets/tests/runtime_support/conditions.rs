@@ -35,7 +35,7 @@ fn shared_condition_value(value: ValueDef, static_context: bool) -> bool {
     match value {
         ValueDef::Constant(_) | ValueDef::LifeTotal(_) => true,
         ValueDef::CountSpellsCastThisTurn(query) => shared_object_predicate(query.spell),
-        ValueDef::CountMatchingObjects(query) => {
+        ValueDef::CountMatchingObjects(query) | ValueDef::DistinctNamesAmong(query) => {
             (!static_context || query.relative_position.is_none()) && shared_query(*query)
         }
         // A per-turn tally the game keeps and clears with the turn, which a

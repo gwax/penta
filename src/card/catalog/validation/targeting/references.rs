@@ -452,6 +452,7 @@ fn validate_value_target_references(
         }
         ValueDef::CountMatchingObjects(query)
         | ValueDef::AnyMatchingObject(query)
+        | ValueDef::DistinctNamesAmong(query)
         | ValueDef::GreatestPowerAmong(query) => {
             validate_query(*query, target_count, scope)
         }

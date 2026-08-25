@@ -43,6 +43,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::LibrarySize(_) => true,
         ValueDef::CountMatchingObjects(query)
         | ValueDef::AnyMatchingObject(query)
+        | ValueDef::DistinctNamesAmong(query)
         | ValueDef::GreatestPowerAmong(query) => static_query_supported(*query),
         ValueDef::Scaled(scaled) => static_power_toughness_value_supported(scaled.value),
         ValueDef::Halved(halved) => static_power_toughness_value_supported(halved.value),
@@ -104,6 +105,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         ValueDef::CreaturesDiedThisTurn
         | ValueDef::CountMatchingPlayerAttachments(_)
         | ValueDef::OpponentsWhoLostLifeThisTurn
+        | ValueDef::DistinctNamesAmong(_)
         | ValueDef::CardTypesAmongGraveyards(_)
         | ValueDef::IfCardTypesAmongGraveyards(_)
         | ValueDef::GreatestPowerAmong(_)

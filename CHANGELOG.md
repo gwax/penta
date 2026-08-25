@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Counting names rather than objects.** "Seven or more lands with different
+  names" had nothing to read: a query could say how many objects it matched
+  and not how many names they had between them. The count is now a value like
+  the others, readable from a resolving effect and from an intervening-if
+  alike. A nameless object counts for nothing, since it shares its lack of a
+  name with every other one.
+
 - **A linked exile can be face down.** Exiling with a link back to the source
   always showed the cards to the table, which is wrong for the clause that
   wants both hands put away without either player learning what the other

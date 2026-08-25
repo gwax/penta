@@ -553,6 +553,7 @@ impl HandcraftedPolicy {
             | ValueDef::CardsInHandAbove { .. }
             | ValueDef::DamageTakenThisTurn { .. }
             | ValueDef::CountMatchingObjects(_)
+            | ValueDef::DistinctNamesAmong(_)
             | ValueDef::CountMatchingPlayerAttachments(_)
             | ValueDef::CountSpellsCastThisTurn(_)
             | ValueDef::GreatestPowerAmong(_)

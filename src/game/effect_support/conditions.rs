@@ -75,6 +75,12 @@ impl Game {
                     .len(),
             )
             .unwrap_or(i32::MAX),
+            // Counted the same way and from the same walk, over names rather
+            // than over objects: "seven or more lands with different names"
+            // is an intervening-if, asked before anything is resolving.
+            crate::card::ValueDef::DistinctNamesAmong(query) => self.distinct_names_among(
+                &self.objects_matching_query(*query, controller, source, context),
+            ),
             crate::card::ValueDef::CountSpellsCastThisTurn(query) => {
                 self.spells_cast_matching_this_turn(*query, controller, source, context)
             }

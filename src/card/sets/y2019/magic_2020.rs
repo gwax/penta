@@ -3,9 +3,10 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, AppliedRuleDef, CardArt,
-    CardRules, CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TriggerConditionDef,
-    ValueDef, ZoneKind, ZonePlacement,
+    CardRules, CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
+    TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -165,13 +166,53 @@ pub(in crate::card::sets) static MANIFOLD_KEY: CardRecord = CardRecord::new_with
 );
 
 // M20 247 — Field of the Dead
-// Audit: metadata-only — Card rules have not been implemented.
+/// The Field itself is one of the seven, and so is every other land you
+/// control -- what is counted is names rather than lands, which is why a
+/// deck built for this plays one of each dual rather than four of one.
+static SEVEN_DIFFERENT_LAND_NAMES: ValueComparisonDef = ValueComparisonDef {
+    left: ValueDef::DistinctNamesAmong(&LANDS_YOU_CONTROL),
+    comparison: ComparisonDef::GreaterOrEqual,
+    right: ValueDef::Constant(7),
+};
+
+static LANDS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Land),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static FIELD_HAS_SEVEN_NAMES: TriggerConditionDef =
+    TriggerConditionDef::ValueComparison(&SEVEN_DIFFERENT_LAND_NAMES);
+
+/// "This land or another land you control": the Field's own arrival counts,
+/// which is what makes the seventh land the one that starts it.
+static A_LAND_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Land),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+static FIELD_OF_THE_DEAD_ABILITIES: [AbilityDef; 3] = [
+    abilities::enters_tapped("This land enters tapped."),
+    abilities::tap_for(ManaColor::Colorless),
+    AbilityDef::triggered_if(
+        "Whenever this land or another land you control enters, if you control seven or more \
+         lands with different names, create a 2/2 black Zombie creature token.",
+        TriggerEventDef::zone_changed(A_LAND_YOU_CONTROL, None, Some(ZoneKind::Battlefield)),
+        &FIELD_HAS_SEVEN_NAMES,
+        EffectDef::create_creature_token(&["Zombie"], &[ManaColor::Black], 2, 2).with_art(
+            CardArt::new("18f0436e-9328-4266-9cf8-80b557a0c17c", "Anna Steinbauer"),
+        ),
+    ),
+];
+
 pub(in crate::card::sets) static FIELD_OF_THE_DEAD: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("470ca3f4-29aa-4c4c-8ff2-8cdd70c69943"),
     "Field of the Dead",
-    crate::card::CardArt::new("470ca3f4-29aa-4c4c-8ff2-8cdd70c69943", "Kev Walker"),
-    crate::card::CardSet::Magic2020,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("470ca3f4-29aa-4c4c-8ff2-8cdd70c69943", "Kev Walker"),
+    CardSet::Magic2020,
+    // A land that makes colourless and comes in tapped, which is what a deck
+    // pays for turning every land drop after the seventh into a 2/2.
+    CardRules::new_land(&[]).with_abilities(&FIELD_OF_THE_DEAD_ABILITIES),
 );
 
 // M20 297 — Wildfire Elemental

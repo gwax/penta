@@ -340,6 +340,7 @@ fn validate_value_shape(
         }
         ValueDef::CountMatchingObjects(query)
         | ValueDef::AnyMatchingObject(query)
+        | ValueDef::DistinctNamesAmong(query)
         | ValueDef::GreatestPowerAmong(query) => validate_query_shape(*query, targets),
         ValueDef::CountMatchingPlayerAttachments(query) => {
             validate_object_predicate_shape(query.object, targets)

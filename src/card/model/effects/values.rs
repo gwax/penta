@@ -389,6 +389,12 @@ pub enum ValueDef {
     /// another below it. This is delirium, which changes an amount rather
     /// than switching an effect on.
     IfCardTypesAmongGraveyards(&'static GraveyardTypeConditionDef),
+    /// How many distinct names appear among the objects a query matches.
+    /// Names, not objects: four Mountains are one, and the count is what
+    /// "seven or more lands with different names" asks about. A nameless
+    /// object -- a token with no card behind it -- counts for nothing,
+    /// since it shares its name with every other one.
+    DistinctNamesAmong(&'static ObjectQueryDef),
     /// The morbid condition. Held by reference so that `ValueDef` stays one
     /// word wide; a second inline value would grow everything embedding it.
     IfCreatureDiedThisTurn(&'static ConditionalValueDef),

@@ -437,6 +437,9 @@ impl Game {
                     .len(),
             )
             .unwrap_or(i32::MAX),
+            ValueDef::DistinctNamesAmong(query) => self.distinct_names_among(
+                &self.objects_matching_effect_query(*query, object, context, scoped),
+            ),
             ValueDef::CountMatchingPlayerAttachments(query) => {
                 let source = object.source.unwrap_or(object.id);
                 i32::try_from(
@@ -632,6 +635,25 @@ impl Game {
     /// Types rather than cards, and the union across both players: a single
     /// artifact creature card is worth two, and twenty cards split between
     /// artifacts and creatures are worth the same two.
+    /// How many distinct names a set of objects has between them. A nameless
+    /// object is not a name: a token with no card behind it shares "no name"
+    /// with every other one, and "lands with different names" does not mean
+    /// to count them.
+    pub(super) fn distinct_names_among(&self, objects: &[Target]) -> i32 {
+        let mut names = objects
+            .iter()
+            .filter_map(|target| match target {
+                Target::Permanent(id) | Target::Card(id) | Target::Spell(id) => {
+                    self.object_card_name(*id)
+                }
+                Target::Player(_) => None,
+            })
+            .collect::<Vec<_>>();
+        names.sort_unstable();
+        names.dedup();
+        i32::try_from(names.len()).unwrap_or(i32::MAX)
+    }
+
     pub(super) fn card_types_among_graveyards(
         &self,
         relation: PlayerRelation,
