@@ -85,6 +85,14 @@ impl InlineRules {
         self
     }
 
+    /// Replaces the printed power and toughness. "An X/X blue Illusion" has
+    /// no printed size at all: the effect that creates it works one out, and
+    /// what arrives is a token of that size.
+    pub(super) const fn with_creature_stats(mut self, stats: CreatureStats) -> Self {
+        self.creature_stats = Some(stats);
+        self
+    }
+
     pub(super) const fn with_enchant(mut self, object: &'static ObjectPredicateDef) -> Self {
         self.enchant = Some(object);
         self

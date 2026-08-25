@@ -317,6 +317,18 @@ impl Game {
                     })
                     .map_or(0, i32::from)
             }
+            // "Where X is the mana value of the exiled card": read from
+            // wherever the named object is now, or from last-known
+            // information once it is gone.
+            ValueDef::ObjectManaValue(reference) => self
+                .object_reference_target(reference, object, context, scoped)
+                .and_then(|target| match target {
+                    Target::Permanent(id) | Target::Card(id) | Target::Spell(id) => {
+                        self.current_or_last_known_mana_value(id)
+                    }
+                    Target::Player(_) => None,
+                })
+                .map_or(0, i32::from),
             // Zero without a payment behind it: a branch that reads this
             // outside a chosen-amount payment does nothing rather than
             // guessing at a number.

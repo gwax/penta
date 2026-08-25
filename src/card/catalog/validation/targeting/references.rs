@@ -462,6 +462,11 @@ fn validate_value_target_references(
         | ValueDef::TargetToughness(target)
         | ValueDef::TargetLibrarySize(target)
         | ValueDef::TargetManaValue(target) => validate_target_index(target, target_count),
+        // Whatever the amount reads has to be nameable where it is read, the
+        // same as any other object reference in the program.
+        ValueDef::ObjectManaValue(reference) => {
+            validate_object_reference(reference, target_count, scope)
+        }
         ValueDef::CountSpellsCastThisTurn(_)
         | ValueDef::Constant(_)
         | ValueDef::ChosenX

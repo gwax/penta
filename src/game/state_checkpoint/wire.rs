@@ -565,6 +565,26 @@ fn parse_permanent(
                 .ok_or_else(|| "checkpoint token locator is absent from this catalog".to_owned())
         })
         .transpose()?;
+    // An X/X token is rebuilt at the size it came out at: the locator finds
+    // the authored token, which carries the amounts rather than a size.
+    let token_characteristics = match (token_characteristics, state.token_stats) {
+        (Some(token), Some([power, toughness])) => {
+            if token.variable_stats.is_none() {
+                return Err("checkpoint token has a size its authored token prints".into());
+            }
+            Some(token.with_resolved_stats(power, toughness))
+        }
+        (Some(token), None) => {
+            if token.variable_stats.is_some() {
+                return Err("checkpoint X/X token does not say what size it came out at".into());
+            }
+            Some(token)
+        }
+        (None, Some(_)) => {
+            return Err("checkpoint token size names no token".into());
+        }
+        (None, None) => None,
+    };
     let object_kind = object_kind_from_snapshot(state.object_kind, catalog)?;
     let characteristics = match object_kind {
         ObjectKind::Card(definition) => {
@@ -791,142 +811,7 @@ fn parse_permanent(
     Ok(permanent)
 }
 
-pub(super) fn parse_retired_objects(
-    snapshots: &[RetiredObjectSnapshot],
-    game: &Game,
-) -> Result<BTreeMap<GameObjectId, RetiredObject>, String> {
-    snapshots
-        .iter()
-        .map(|snapshot| match snapshot {
-            RetiredObjectSnapshot::Card { card: snapshot } => {
-                let parsed = card(
-                    GameObjectId(snapshot.object_id),
-                    snapshot.definition,
-                    player_from_index(snapshot.owner)?,
-                    &game.catalog,
-                )?;
-                Ok((parsed.id, RetiredObject::Card(parsed)))
-            }
-            RetiredObjectSnapshot::Stack { object } => {
-                let parsed = parse_detached_stack(object, game)?;
-                Ok((parsed.id, RetiredObject::Stack(Box::new(parsed))))
-            }
-            RetiredObjectSnapshot::Permanent {
-                permanent,
-                power,
-                toughness,
-                mana_value,
-                keywords,
-            } => {
-                let parsed = parse_detached_permanent(permanent, &game.catalog)?;
-                Ok((
-                    parsed.card.id,
-                    RetiredObject::Permanent {
-                        permanent: Box::new(parsed),
-                        power: *power,
-                        toughness: *toughness,
-                        mana_value: *mana_value,
-                        keywords: keywords.iter().copied().map(parse_keyword).collect(),
-                    },
-                ))
-            }
-        })
-        .collect()
-}
-
-pub(super) fn parse_pending_events(
-    snapshots: &[PendingEventSnapshot],
-    catalog: &CardCatalog,
-) -> Result<VecDeque<PendingEvent>, String> {
-    snapshots
-        .iter()
-        .map(|snapshot| {
-            Ok(PendingEvent {
-                event: ReplaceableEvent::BattlefieldEntry(PendingBattlefieldEntry {
-                    permanent: parse_detached_permanent(&snapshot.entry.permanent, catalog)?,
-                    from: parse_zone_kind(snapshot.entry.from),
-                    completion: parse_completion(snapshot.entry.completion)?,
-                    redirected_to: None,
-                }),
-                applied: snapshot
-                    .applied
-                    .iter()
-                    .copied()
-                    .map(|source| AbilitySourceRef {
-                        object: GameObjectId(source.object),
-                        ability: ability_origin_from_snapshot(source.ability),
-                    })
-                    .collect(),
-                effects: snapshot
-                    .effects
-                    .iter()
-                    .map(|effect| {
-                        let context = parse_replacement_context_snapshot(effect.context)?;
-                        if !replacement_effect_locator_matches_source(
-                            &effect.effect,
-                            context.source,
-                        ) {
-                            return Err(
-                                "pending entry replacement locator disagrees with its source"
-                                    .into(),
-                            );
-                        }
-                        Ok(PendingReplacementEffect {
-                            context,
-                            effect: catalog_entry_replacement_effect(catalog, &effect.effect)?,
-                        })
-                    })
-                    .collect::<Result<Vec<_>, String>>()?,
-            })
-        })
-        .collect()
-}
-
-pub(super) const fn parse_zone_kind(zone: ZoneKindSnapshot) -> ZoneKind {
-    match zone {
-        ZoneKindSnapshot::Library => ZoneKind::Library,
-        ZoneKindSnapshot::Hand => ZoneKind::Hand,
-        ZoneKindSnapshot::Battlefield => ZoneKind::Battlefield,
-        ZoneKindSnapshot::Graveyard => ZoneKind::Graveyard,
-        ZoneKindSnapshot::Stack => ZoneKind::Stack,
-        ZoneKindSnapshot::Exile => ZoneKind::Exile,
-        ZoneKindSnapshot::Command => ZoneKind::Command,
-    }
-}
-
-pub(super) fn parse_completion(
-    completion: EntryCompletionSnapshot,
-) -> Result<EntryCompletion, String> {
-    match completion {
-        EntryCompletionSnapshot::LandPlayed { seat } => Ok(EntryCompletion::LandPlayed {
-            player: player_from_index(seat)?,
-        }),
-        EntryCompletionSnapshot::SpellResolved { card, definition } => {
-            Ok(EntryCompletion::SpellResolved {
-                card: GameObjectId(card),
-                definition,
-            })
-        }
-        EntryCompletionSnapshot::AttachSource { source } => Ok(EntryCompletion::AttachSource {
-            source: GameObjectId(source),
-        }),
-        EntryCompletionSnapshot::AttachToHost { host } => Ok(EntryCompletion::AttachToHost {
-            host: GameObjectId(host),
-        }),
-        EntryCompletionSnapshot::Attacking { defender } => Ok(EntryCompletion::Attacking {
-            defender: match defender {
-                AttackDefenderSnapshot::Player { seat } => {
-                    AttackDefender::Player(player_from_index(seat)?)
-                }
-                AttackDefenderSnapshot::Planeswalker { object_id } => {
-                    AttackDefender::Planeswalker(GameObjectId(object_id))
-                }
-            },
-        }),
-        EntryCompletionSnapshot::Setup => Ok(EntryCompletion::Setup),
-        EntryCompletionSnapshot::None => Ok(EntryCompletion::None),
-    }
-}
+include!("wire/pending.rs");
 
 pub(super) fn parse_detached_permanent(
     snapshot: &DetachedPermanentSnapshot,

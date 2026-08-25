@@ -2,13 +2,13 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AddManaEffectDef, AlternativeCastKindDef, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, ComparisonDef, ControlDurationDef, CounterKind, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
-    PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    abilities,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef, AlternativeCastKindDef,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef, ControlDurationDef,
+    CounterKind, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, TokenStatsDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
 };
-use crate::{TargetIndex, mana_cost};
+use crate::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex, mana_cost};
 
 // ZNR 9 — Dauntless Unity
 // Audit: metadata-only — Card rules have not been implemented.
@@ -21,13 +21,87 @@ pub(in crate::card::sets) static DAUNTLESS_UNITY: CardRecord = CardRecord::new(
 );
 
 // ZNR 39 — Skyclave Apparition
-// Audit: metadata-only — Card rules have not been implemented.
+/// Everything the exile clause excludes, in one predicate: a land is safe, a
+/// token is safe, and anything expensive is safe. "You don't control" is the
+/// controller half rather than part of the predicate.
+static A_CHEAP_NONLAND_NONTOKEN: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+            ObjectPredicateDef::ManaValueAtMost(4),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+    1,
+)];
+
+/// "Where X is the mana value of the exiled card": both halves read the same
+/// card, which is the one the leave trigger just bound.
+static ILLUSION_SIZE: TokenStatsDef = TokenStatsDef {
+    power: ValueDef::ObjectManaValue(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    toughness: ValueDef::ObjectManaValue(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+};
+
+/// The token is the exiled card's owner's, not the Apparition controller's:
+/// what they get back for the permanent that is not coming back.
+static APPARITION_PAYS_FOR_IT: EffectDef =
+    EffectDef::create_creature_token(&["Illusion"], &[ManaColor::Blue], 0, 0)
+        .with_variable_token_stats(&ILLUSION_SIZE)
+        .with_controller(PlayerRefDef::OwnerOf(ObjectRefDef::Binding(
+            ObjectBindingIndex::PRIMARY,
+        )));
+
+/// One token per exiled card, which is one token: the exile clause is "up to
+/// one target". Binding the pile is also what makes the clause do nothing at
+/// all when nothing was exiled -- the Apparition that entered with no legal
+/// target leaves without paying anybody.
+static APPARITION_NAMES_WHAT_IT_TOOK: EffectDef = EffectDef::ForEachInBinding {
+    objects: ObjectSetBindingIndex::PRIMARY,
+    binding: ObjectBindingIndex::PRIMARY,
+    effect: &APPARITION_PAYS_FOR_IT,
+};
+
+static APPARITION_LEAVES: EffectDef = EffectDef::BindMatching {
+    objects: ObjectSetDef::LinkedExiles(ObjectPredicateDef::Any),
+    binding: ObjectSetBindingIndex::PRIMARY,
+    then: &APPARITION_NAMES_WHAT_IT_TOOK,
+};
+
+static SKYCLAVE_APPARITION_ABILITIES: [AbilityDef; 2] = [
+    abilities::enters_trigger_with_targets(
+        "When this creature enters, exile up to one target nonland, nontoken permanent you don't \
+         control with mana value 4 or less.",
+        &A_CHEAP_NONLAND_NONTOKEN,
+        EffectDef::ExileLinkedToSource {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    ),
+    // Leaves, not dies: the card stays in exile whatever happened to the
+    // Apparition, and the token is what its owner gets instead.
+    AbilityDef::triggered(
+        "When this creature leaves the battlefield, the exiled card's owner creates an X/X blue \
+         Illusion creature token, where X is the mana value of the exiled card.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            Some(ZoneKind::Battlefield),
+            None,
+        ),
+        APPARITION_LEAVES,
+    ),
+];
+
 pub(in crate::card::sets) static SKYCLAVE_APPARITION: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b83cfbaa-7890-4f6f-878b-4edb45677371"),
     "Skyclave Apparition",
     crate::card::CardArt::new("b83cfbaa-7890-4f6f-878b-4edb45677371", "Donato Giancola"),
     crate::card::CardSet::ZendikarRising,
-    crate::card::CardRules::unsupported(),
+    // Three mana for a body and an answer, and the answer is only undone by
+    // killing the body -- which hands back an Illusion rather than the card.
+    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Kor", "Spirit"], 2, 2)
+        .with_abilities(&SKYCLAVE_APPARITION_ABILITIES),
 );
 
 // ZNR 85 — Thieving Skydiver

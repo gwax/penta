@@ -352,6 +352,9 @@ fn validate_value_shape(
         | ValueDef::TargetManaValue(target) => {
             validate_target_shape(target, targets, RecipientExpectation::Object, true)
         }
+        ValueDef::ObjectManaValue(reference) => {
+            validate_object_reference_shape(reference, targets)
+        }
         ValueDef::CountSpellsCastThisTurn(_)
         | ValueDef::CreaturesDiedThisTurn
         | ValueDef::OpponentsWhoLostLifeThisTurn

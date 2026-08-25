@@ -54,11 +54,20 @@ pub(super) fn permanent_snapshot(
         .face_down
         .and_then(face_down_characteristics_snapshot);
     let has_unlocated_face_down = permanent.face_down.is_some() && face_down.is_none();
+    // The locator finds the authored X/X token; the size it actually came
+    // out at travels beside it, because nothing on the board says what the
+    // amounts were read as.
+    let token_stats = permanent
+        .token_characteristics
+        .filter(|token| token.variable_stats.is_some())
+        .and_then(|token| token.rules().creature_stats())
+        .map(|stats| [stats.power, stats.toughness]);
     PermanentSnapshot {
         object_id: permanent.card.id.0,
         owner: permanent.card.owner.index(),
         object_kind: object_kind_snapshot(permanent.card.definition),
         token_characteristics,
+        token_stats,
         double_faced_token_copy: double_faced_token_copy.map(|(snapshot, _)| snapshot),
         face_down,
         turn_up_for_mana_cost: permanent.turn_up_for_mana_cost,

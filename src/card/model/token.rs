@@ -5,7 +5,7 @@ use crate::ids::CardPartId;
 
 use super::{
     AbilityDef, CardArt, CardRules, CardSupertype, CardType, CardTypeSet, CreatureStats, ManaColor,
-    ObjectPredicateDef, inline_rules::InlineRules,
+    ObjectPredicateDef, ValueDef, inline_rules::InlineRules,
 };
 
 fn derived_token_name(
@@ -112,6 +112,20 @@ pub struct TokenCharacteristics {
     pub art: Option<CardArt>,
     rules: InlineRules,
     pub structure: TokenStructure,
+    /// "An X/X blue Illusion creature token, where X is ...": the size is
+    /// not printed on the token but worked out by the effect that creates
+    /// it, and what arrives is a token of that size rather than a smaller
+    /// one wearing counters. The authored token carries the two amounts;
+    /// the one on the battlefield carries the numbers they came to, which is
+    /// what a copy of it would copy.
+    pub variable_stats: Option<&'static TokenStatsDef>,
+}
+
+/// The two amounts an X/X token's size is read from.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct TokenStatsDef {
+    pub power: ValueDef,
+    pub toughness: ValueDef,
 }
 
 impl TokenCharacteristics {
@@ -129,6 +143,7 @@ impl TokenCharacteristics {
             art: None,
             rules: InlineRules::new(card_types, subtypes, colors, creature_stats),
             structure: TokenStructure::Single,
+            variable_stats: None,
         }
     }
 
@@ -185,6 +200,27 @@ impl TokenCharacteristics {
             colors,
             None,
         )
+    }
+
+    /// "Create an X/X blue Illusion creature token." The printed stats stay
+    /// as the placeholder the authored token was built with; what the
+    /// amounts come to is settled when a token is actually created.
+    #[must_use]
+    pub const fn with_variable_stats(mut self, stats: &'static TokenStatsDef) -> Self {
+        self.variable_stats = Some(stats);
+        self
+    }
+
+    /// The same token with the size an effect just worked out. The variable
+    /// amounts stay on it: they are what says this token's size was computed
+    /// rather than printed, and the checkpoint reads them to tell the two
+    /// apart.
+    #[must_use]
+    pub(crate) const fn with_resolved_stats(mut self, power: i16, toughness: i16) -> Self {
+        self.rules = self
+            .rules
+            .with_creature_stats(CreatureStats { power, toughness });
+        self
     }
 
     #[must_use]
@@ -249,7 +285,14 @@ impl TokenCharacteristics {
     /// ability that may create this token again.
     #[must_use]
     pub(crate) const fn semantic_identity(self) -> Self {
-        self
+        // A token whose size was computed is the authored token with numbers
+        // filled in, so the placeholder size is what both are compared by:
+        // one authored X/X token is the origin of every size it comes out
+        // at, and the checkpoint records the numbers separately.
+        match self.variable_stats {
+            Some(_) => self.with_resolved_stats(0, 0),
+            None => self,
+        }
     }
 
     #[must_use]

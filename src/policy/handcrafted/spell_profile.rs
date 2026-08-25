@@ -543,6 +543,7 @@ impl HandcraftedPolicy {
             | ValueDef::AffectedColorCount
             | ValueDef::TotalPowerOfLinkedExiles
             | ValueDef::TotalToughnessOfLinkedExiles
+            | ValueDef::ObjectManaValue(_)
             | ValueDef::TriggeringObjectPower
             | ValueDef::TriggeringObjectToughness
             | ValueDef::SourceToughness

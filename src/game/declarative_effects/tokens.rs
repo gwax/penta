@@ -9,7 +9,7 @@
 use super::super::{
     CopiableAbility, EffectResolutionContext, Game, ScopedEffect, StackObject, Target,
 };
-use crate::card::EffectDef;
+use crate::card::{EffectDef, TokenCharacteristics};
 
 impl Game {
     /// "Create a <token> attached to it." One host, because one token is
@@ -178,6 +178,9 @@ impl Game {
                         .unwrap_or(u16::MAX),
                     )
                 });
+                // "An X/X blue Illusion": the size is worked out once, here,
+                // and the tokens arrive that size rather than growing into it.
+                let token = self.resolved_token_stats(token, object, context, scoped);
                 let mut minted = Vec::new();
                 let count =
                     usize::try_from(self.effect_value(count, object, context, scoped).max(0))
@@ -224,6 +227,29 @@ impl Game {
             } => self.resolve_token_copies(recipient, exceptions, created, scoped, object, context),
             _ => unreachable!("the caller admits only token-making clauses"),
         }
+    }
+
+    /// The token an effect is actually creating: an authored token whose
+    /// size is a pair of amounts becomes one with the numbers those amounts
+    /// came to, and every other token is itself.
+    pub(super) fn resolved_token_stats(
+        &self,
+        token: TokenCharacteristics,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) -> TokenCharacteristics {
+        let Some(stats) = token.variable_stats else {
+            return token;
+        };
+        let amount = |value| {
+            i16::try_from(
+                self.effect_value(value, object, context, scoped)
+                    .clamp(i32::from(i16::MIN), i32::from(i16::MAX)),
+            )
+            .expect("the amount was clamped to i16")
+        };
+        token.with_resolved_stats(amount(stats.power), amount(stats.toughness))
     }
 
     /// "Put that card onto the battlefield under your control with a

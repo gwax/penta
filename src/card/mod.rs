@@ -69,10 +69,10 @@ pub use model::{
     SpellLifeCostDef, SpellResolutionDestinationDef, SpendModeDef, SplitIntoPilesDef,
     StackTargetKindDef, StaticAbilityDef, SumValueDef, TapEventMatcherDef, TapPurposeDef,
     TargetConditionDef, TargetPredicate, TargetSlotDef, TokenCharacteristics,
-    TokenCopyExceptionsDef, TokenCountersDef, TokenPart, TokenStructure, TopCardSelectionDef,
-    TopOfLibraryCostDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, TurnKindDef,
-    TurnPhaseDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneChangeEventMatcherDef, ZoneKind,
-    ZoneMoveCauseDef, ZonePlacement, ZoneRelativePositionDef,
+    TokenCopyExceptionsDef, TokenCountersDef, TokenPart, TokenStatsDef, TokenStructure,
+    TopCardSelectionDef, TopOfLibraryCostDef, TriggerConditionDef, TriggerEventDef,
+    TriggeredAbilityDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueComparisonDef, ValueDef,
+    ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, ZoneRelativePositionDef,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every

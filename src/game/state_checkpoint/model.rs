@@ -395,6 +395,13 @@ pub(super) struct PermanentSnapshot {
     /// or frozen double-faced values supply its copiable characteristics;
     /// `object_kind` still records that it is a token.
     pub(super) token_characteristics: Option<TokenCharacteristicsLocator>,
+    /// The size an X/X token came out at. The locator above names the
+    /// authored token, which carries the two amounts rather than a size;
+    /// these are the numbers they came to, which is a copiable value of the
+    /// token and cannot be worked out again from the board. Additive, and
+    /// absent for every token whose size is printed on it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) token_stats: Option<[i16; 2]>,
     /// Both intrinsic faces of a token created as a copy of a double-faced
     /// permanent. Additive because older checkpoints could not represent this
     /// state faithfully at all.

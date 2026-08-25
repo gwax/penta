@@ -118,6 +118,15 @@ fn double_faced_copy_token_game() -> (Game, GameObjectId, CardPartId, CardPartId
     (game, token_id, front, back)
 }
 
+fn checkpoint_permanent(wire: &Value, id: GameObjectId) -> &Value {
+    wire["checkpoint"]["battlefield"]
+        .as_array()
+        .expect("checkpoint battlefield is an array")
+        .iter()
+        .find(|permanent| permanent["objectId"] == json!(id.0))
+        .expect("the checkpoint carries the permanent")
+}
+
 fn checkpoint_permanent_mut(wire: &mut Value, id: GameObjectId) -> &mut Value {
     wire["checkpoint"]["battlefield"]
         .as_array_mut()
@@ -197,6 +206,46 @@ fn checkpoint_round_trips_authored_and_card_copy_tokens() {
             CardPartId::PRIMARY,
         )),
     );
+}
+
+/// An X/X token's size is a copiable value the board cannot recompute: the
+/// card it was read from is in exile and the creature that exiled it is
+/// gone. The checkpoint carries the numbers beside the authored token.
+#[test]
+fn checkpoint_round_trips_the_size_an_x_x_token_came_out_at() {
+    let mut game = crate::game::tests::ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.put_onto_battlefield(PlayerId::Two, crate::card::cards::ICY_MANIPULATOR)
+        .expect("cataloged");
+    let apparition = game
+        .put_onto_battlefield(PlayerId::One, crate::card::cards::SKYCLAVE_APPARITION)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.destroy_permanent(apparition);
+    drain_pending(&mut game);
+
+    let illusion = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Token)
+        .expect("the Illusion arrived");
+    let illusion_id = illusion.card.id;
+    assert_eq!(game.power(illusion), Some(4), "four for a four-mana card");
+
+    let (wire, rebuilt) = rebuild_current_checkpoint(&game, PlayerId::One, 81_021);
+    assert_eq!(
+        checkpoint_permanent(&wire, illusion_id)["tokenStats"],
+        json!([4, 4]),
+        "the size travels with the token",
+    );
+    let rebuilt_illusion = rebuilt
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == illusion_id)
+        .expect("the Illusion reconstructs");
+    assert_eq!(rebuilt.power(rebuilt_illusion), Some(4));
+    assert_eq!(rebuilt.toughness(rebuilt_illusion), Some(4));
 }
 
 #[test]

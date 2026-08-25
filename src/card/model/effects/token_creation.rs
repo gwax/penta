@@ -1,4 +1,4 @@
-use crate::card::{AbilityDef, CardArt, ManaColor, TokenCharacteristics};
+use crate::card::{AbilityDef, CardArt, ManaColor, TokenCharacteristics, TokenStatsDef};
 
 use super::{CreatedTokensDef, EffectDef, PlayerRefDef, TokenCountersDef, ValueDef};
 
@@ -93,6 +93,21 @@ impl EffectDef {
     pub const fn with_name(mut self, name: &'static str) -> Self {
         let token = self.authored_token_mut();
         *token = (*token).with_name(name);
+        self
+    }
+
+    /// "Create an X/X blue Illusion creature token." The size is a pair of
+    /// amounts the creating effect works out rather than anything printed on
+    /// the token.
+    ///
+    /// # Panics
+    ///
+    /// Panics when called on an effect that does not carry authored token
+    /// characteristics.
+    #[must_use]
+    pub const fn with_variable_token_stats(mut self, stats: &'static TokenStatsDef) -> Self {
+        let token = self.authored_token_mut();
+        *token = (*token).with_variable_stats(stats);
         self
     }
 

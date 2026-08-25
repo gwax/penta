@@ -25,6 +25,19 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **X/X tokens, and reading one object's mana value.** A token's size was a
+  printed pair of numbers, so "an X/X blue Illusion creature token, where X
+  is the mana value of the exiled card" had nowhere to put the X. An authored
+  token can now carry two amounts instead of a size, worked out once when the
+  token is created: what arrives is a token of that size rather than a
+  smaller one wearing counters, which is what a copy of it would copy. An
+  amount can also read the mana value of any object the resolution has in
+  hand rather than only of a target slot. Skyclave Apparition prints both --
+  it exiles a cheap nonland, nontoken permanent you don't control, and when
+  it leaves, that card's owner gets the Illusion instead of the card. The
+  size an X/X token came out at is an additive checkpoint member; checkpoint
+  format 8, replay version 2, and protocol 29 are unchanged.
+
 - **One pick per card type.** A look at the top of a library asked one
   bounded question: take up to N of what you see. "For each card type, you
   may put a card of that type from among them into your hand" is a different

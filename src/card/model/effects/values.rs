@@ -409,6 +409,12 @@ pub enum ValueDef {
     /// The mana value of what a target slot points at, read from last-known
     /// information after a permanent or spell has left its zone.
     TargetManaValue(TargetIndex),
+    /// The mana value of one named object, wherever it is. Distinct from
+    /// [`Self::TargetManaValue`], which can only name a target slot: this
+    /// reads a card an earlier step in the same resolution bound, which is
+    /// how "where X is the mana value of the exiled card" finds the card it
+    /// means.
+    ObjectManaValue(ObjectRefDef),
 }
 
 /// A value and the constant it is multiplied by, for "+N/+N for each ...".
