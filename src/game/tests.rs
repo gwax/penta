@@ -394,6 +394,7 @@ mod vintage_cube_fatal_push;
 mod vintage_cube_fear_of_missing_out;
 mod vintage_cube_fiery_confluence;
 mod vintage_cube_figure_of_destiny;
+mod vintage_cube_fire_covenant;
 mod vintage_cube_flash;
 mod vintage_cube_flickerwisp;
 mod vintage_cube_force_of_negation;

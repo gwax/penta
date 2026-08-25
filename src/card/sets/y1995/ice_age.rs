@@ -5,10 +5,10 @@ use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y1993::beta as catalog_leb;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef,
+    AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType, DividedTotal, EffectDef,
     EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef, PlayerRelation,
-    ResolvedEffectDurationDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    ResolvedEffectDurationDef, SpellLifeCostDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -2895,13 +2895,43 @@ pub(in crate::card::sets) static FIERY_JUSTICE: CardRecord = CardRecord::new(
 );
 
 // ICE 289 — Fire Covenant
-// Audit: metadata-only — Card rules have not been implemented.
+/// "Any number of target creatures" is however many shares X splits into,
+/// and X is the life its caster was willing to spend rather than anything in
+/// the mana cost -- three mana kills a board if you have the life for it.
+static FIRE_COVENANT_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
+    predicate: AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    minimum: 0,
+    maximum: AbilityTargetDef::UNLIMITED,
+    divided_total: Some(DividedTotal::ChosenX),
+    another: false,
+    excludes_source: false,
+}];
+
 pub(in crate::card::sets) static FIRE_COVENANT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("6a0139c2-ad86-4c71-ab6d-4840c37d5d20"),
     "Fire Covenant",
-    crate::card::CardArt::new("6a0139c2-ad86-4c71-ab6d-4840c37d5d20", "Dan Frazier"),
-    crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("6a0139c2-ad86-4c71-ab6d-4840c37d5d20", "Dan Frazier"),
+    CardSet::IceAge,
+    // The life is paid as it is cast, so it is spent whether or not the
+    // spell resolves -- and it is life, so nothing about the board caps how
+    // much damage three mana can deal.
+    CardRules::new_instant(mana_cost!("{1}{B}{R}")).with_ability(
+        AbilityDef::spell_with_targets(
+            "As an additional cost to cast this spell, pay X life. This spell deals X damage \
+             divided as you choose among any number of target creatures.",
+            &FIRE_COVENANT_TARGETS,
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::DividedAmongTargets,
+            },
+        )
+        .with_spell_life_cost(SpellLifeCostDef::variable()),
+    ),
 );
 
 // ICE 290 — Flooded Woodlands
