@@ -421,6 +421,7 @@ mod vintage_cube_goldspan_dragon;
 mod vintage_cube_grave_titan;
 mod vintage_cube_graveyard;
 mod vintage_cube_green_suns_zenith;
+mod vintage_cube_grief;
 mod vintage_cube_gut;
 mod vintage_cube_hand_attack;
 mod vintage_cube_harvester_of_misery;

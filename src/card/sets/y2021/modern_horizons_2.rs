@@ -8,10 +8,12 @@ use crate::card::{
     DamageKindDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardFollowUpDef,
     DiscardSelectionDef, DividedTotal, EffectDef, EffectRecipientDef, ExilePlayDurationDef,
     GraveyardTypeConditionDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, ReplacementEffectDef,
-    ReplacementEventDef, SacrificedAmountDef, SpellAdditionalCostDef, SpendModeDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ReplacementEventDef, SacrificedAmountDef, SpellAdditionalCostDef,
+    SpendModeDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, tokens,
 };
+use crate::ids::ObjectBindingIndex;
 use crate::{ObjectSetBindingIndex, TargetIndex, mana_cost};
 
 // MH2 25 — Prismatic Ending
@@ -345,13 +347,72 @@ pub(in crate::card::sets) static DAMN: CardRecord = CardRecord::new_with_legacy_
 );
 
 // MH2 87 — Grief
-// Audit: metadata-only — Card rules have not been implemented.
+static EXILE_A_BLACK_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::Color(ManaColor::Black),
+    ZoneKind::Hand,
+    1,
+)
+.spent(SpendModeDef::Exile);
+
+static GRIEF_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+)];
+
+static GRIEF_TAKES_IT: EffectDef = EffectDef::DiscardCards {
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+};
+
+/// Thoughtseize's clause without the life, and aimed at an opponent rather
+/// than any player: revealed rather than looked at, so the choice is one
+/// both players can check.
+static GRIEF_SEIZES: [EffectDef; 2] = [
+    EffectDef::RevealHand {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::Choose(ChooseDef {
+        binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+        unchosen: None,
+        chooser: PlayerRefDef::EffectController,
+        candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+            ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+            &[ZoneKind::Hand],
+            PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+        )),
+        exclude: None,
+        minimum: 1,
+        maximum: 1,
+        visibility: ChoiceVisibilityDef::Public,
+        then: &GRIEF_TAKES_IT,
+    }),
+];
+
+static GRIEF_ABILITIES: [AbilityDef; 4] = [
+    abilities::menace(),
+    abilities::enters_trigger_with_targets(
+        "When this creature enters, target opponent reveals their hand. You choose a nonland \
+         card from it. That player discards that card.",
+        &GRIEF_TARGET,
+        EffectDef::Sequence(&GRIEF_SEIZES),
+    ),
+    AbilityDef::alternative_cast(
+        mana_cost!("{0}"),
+        AlternativeCastKindDef::AlternativeCost,
+        Some("Evoke—Exile a black card from your hand."),
+        EffectDef::None,
+    )
+    .with_alternative_additional_cost(&EXILE_A_BLACK_CARD),
+    abilities::evoke_sacrifice("When this creature enters, if it was evoked, sacrifice it."),
+];
+
 pub(in crate::card::sets) static GRIEF: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("40d77804-b81f-4e89-8528-1f3970ef3cd6"),
     "Grief",
-    crate::card::CardArt::new("e6befbc4-1320-4f26-bd9f-b1814fedda10", "Nicholas Gregory"),
-    crate::card::CardSet::ModernHorizons2,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("e6befbc4-1320-4f26-bd9f-b1814fedda10", "Nicholas Gregory"),
+    CardSet::ModernHorizons2,
+    // Two black cards for a Thoughtseize on turn one, and a 3/2 that is
+    // hard to block on the turns you have four mana instead.
+    CardRules::new_creature(mana_cost!("{2}{B}{B}"), &["Elemental", "Incarnation"], 3, 2)
+        .with_abilities(&GRIEF_ABILITIES),
 );
 
 // MH2 91 — Loathsome Curator
