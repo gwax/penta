@@ -25,6 +25,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Copying a creature that is already gone, and adding a type to the copy.**
+  "When this dies, create a token that's a copy of it" names something that
+  is no longer on the battlefield, so copying now falls back to what the
+  permanent last was (CR 608.2h) rather than finding nothing -- a creature
+  that grew before it died comes back the size it was. The "except" clause
+  can also add card types on top of the ones it copied, which is what makes
+  the returning body an artifact in addition to everything else it is.
+  Vaultborn Tyrant prints both, over a trigger that pays its controller
+  whenever it or another big creature they control arrives. Nothing about
+  the checkpoint changes.
+
 - **A look that sends each card somewhere different.** Looking at the top of
   a library split the group in two: what was selected, and the rest. "Put one
   of them into your hand, put one of them on the bottom of your library, and

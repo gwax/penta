@@ -72,6 +72,9 @@ impl Game {
                 copy.base_power_toughness = exceptions.base_power_toughness;
                 copy.colors = exceptions.colors;
                 copy.added_creature_types = exceptions.added_creature_types.named.to_vec();
+                // "In addition to its other types", so the copied types stay
+                // and these join them.
+                copy.added_types = copy.added_types.union(exceptions.added_types);
                 copy.no_mana_cost = exceptions.no_mana_cost;
                 // "Except it has haste": part of what the token
                 // copies rather than a grant made to it afterwards,

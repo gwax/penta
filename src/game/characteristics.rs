@@ -152,11 +152,24 @@ impl Game {
     /// way, and so would any other clause that copies one.
     pub(super) fn copiable_values_of(&self, target: Target) -> Option<CopiableCharacteristics> {
         match target {
-            Target::Permanent(id) => self
-                .battlefield
-                .iter()
-                .find(|permanent| permanent.card.id == id)
-                .map(Self::copiable_characteristics),
+            // A permanent that has left is copied as it last existed
+            // (CR 608.2h): "when this dies, create a token that's a copy of
+            // it" names something that is no longer there, and what it means
+            // is the creature that died rather than the card in the
+            // graveyard.
+            Target::Permanent(id) => {
+                self.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == id)
+                    .or_else(|| match self.retired_objects.get(&id) {
+                        Some(super::RetiredObject::Permanent { permanent, .. }) => {
+                            Some(permanent.as_ref())
+                        }
+                        Some(super::RetiredObject::Card(_) | super::RetiredObject::Stack(_))
+                        | None => None,
+                    })
+                    .map(Self::copiable_characteristics)
+            }
             Target::Card(id) => {
                 let (_, card) = self.card_in_nonbattlefield_zone(id)?;
                 let definition = self.catalog.get(card.definition)?;

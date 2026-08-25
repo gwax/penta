@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef, ValueDef,
-    ZoneKind, abilities,
+    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
+    TokenCopyExceptionsDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -196,13 +196,76 @@ pub(in crate::card::sets) static GENEROUS_PLUNDERER: CardRecord = CardRecord::ne
 );
 
 // BIG 85 — Vaultborn Tyrant
-// Audit: metadata-only — Card rules have not been implemented.
+/// "This creature or another creature you control with power 4 or greater":
+/// one predicate covers both halves, because the Tyrant is a 6/6 and so
+/// matches the size clause itself.
+static A_BIG_CREATURE_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+    ObjectPredicateDef::PowerAtLeast(4),
+]);
+
+static TYRANT_PAYS_ITS_CONTROLLER: [EffectDef; 2] = [
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+];
+
+/// "If it's not a token", read off the creature that died rather than off
+/// the card in the graveyard: without it every copy would make another copy
+/// and the Tyrant would never stay dead.
+static TYRANT_IS_NOT_A_TOKEN: TriggerConditionDef = TriggerConditionDef::SourceMatches {
+    object: ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+};
+
+/// The copy is of the creature as it last existed on the battlefield
+/// (CR 608.2h), which is why a Tyrant that grew before it died comes back
+/// the size it was.
+static TYRANT_COPIES_ITSELF: EffectDef = EffectDef::CreateTokenCopyOf {
+    object: EffectRecipientDef::Source,
+    exceptions: TokenCopyExceptionsDef::with_added_types(CardTypeSet::single(CardType::Artifact)),
+    created: None,
+};
+
+static VAULTBORN_TYRANT_ABILITIES: [AbilityDef; 3] = [
+    abilities::trample(),
+    AbilityDef::triggered(
+        "Whenever this creature or another creature you control with power 4 or greater enters, \
+         you gain 3 life and draw a card.",
+        TriggerEventDef::zone_changed(
+            A_BIG_CREATURE_YOU_CONTROL,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        EffectDef::Sequence(&TYRANT_PAYS_ITS_CONTROLLER),
+    ),
+    AbilityDef::triggered_if(
+        "When this creature dies, if it's not a token, create a token that's a copy of it, \
+         except it's an artifact in addition to its other types.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            Some(ZoneKind::Battlefield),
+            Some(ZoneKind::Graveyard),
+        ),
+        &TYRANT_IS_NOT_A_TOKEN,
+        TYRANT_COPIES_ITSELF,
+    ),
+];
+
 pub(in crate::card::sets) static VAULTBORN_TYRANT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("07ca436a-e992-40a9-978a-501a82e443ed"),
     "Vaultborn Tyrant",
     crate::card::CardArt::new("07ca436a-e992-40a9-978a-501a82e443ed", "Loïc Canavaggia"),
     crate::card::CardSet::TheBigScore,
-    crate::card::CardRules::unsupported(),
+    // Seven mana that draws a card the moment it lands, and killing it hands
+    // the same body back once.
+    CardRules::new_creature(mana_cost!("{5}{G}{G}"), &["Dinosaur"], 6, 6)
+        .with_abilities(&VAULTBORN_TYRANT_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

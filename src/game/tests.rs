@@ -564,6 +564,7 @@ mod vintage_cube_ursine;
 mod vintage_cube_urza;
 mod vintage_cube_urzas_bauble;
 mod vintage_cube_vampire_hexmage;
+mod vintage_cube_vaultborn_tyrant;
 mod vintage_cube_verge;
 mod vintage_cube_virtue_of_loyalty;
 mod vintage_cube_voice_of_victory;

@@ -5,9 +5,9 @@
 //! reach for, rather than a variant of any one of them.
 
 use super::super::{
-    AbilityDef, ChoiceVisibilityDef, ColorSet, CounterKind, CreatureTypeSetDef, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerSetDef,
-    ResolvedEffectDurationDef, ValueDef, ZoneKind,
+    AbilityDef, CardTypeSet, ChoiceVisibilityDef, ColorSet, CounterKind, CreatureTypeSetDef,
+    EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectRefDef, ObjectSetDef, PlayerRefDef,
+    PlayerSetDef, ResolvedEffectDurationDef, ValueDef, ZoneKind,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 
@@ -315,6 +315,11 @@ pub struct TokenCopyExceptionsDef {
     /// "Except it's a Zombie <its own types>": creature types on top of the
     /// ones it copied.
     pub added_creature_types: CreatureTypeSetDef,
+    /// "Except it's an artifact in addition to its other types": card types
+    /// the copy has on top of the ones it copied, rather than instead of
+    /// them. Like every other exception it is a copiable value, so a copy of
+    /// the copy is an artifact too.
+    pub added_types: CardTypeSet,
     /// "With no mana cost", which is what makes an eternalized card's mana
     /// value zero.
     pub no_mana_cost: bool,
@@ -331,9 +336,19 @@ impl TokenCopyExceptionsDef {
         base_power_toughness: None,
         colors: None,
         added_creature_types: CreatureTypeSetDef::named(&[]),
+        added_types: CardTypeSet::empty(),
         no_mana_cost: false,
         added_ability: None,
     };
+
+    /// "Except it's an artifact in addition to its other types."
+    #[must_use]
+    pub const fn with_added_types(added_types: CardTypeSet) -> Self {
+        Self {
+            added_types,
+            ..Self::NONE
+        }
+    }
 
     /// "Except it has haste", and its relatives.
     #[must_use]
@@ -365,6 +380,7 @@ impl TokenCopyExceptionsDef {
             base_power_toughness: Some((power, toughness)),
             colors: Some(colors),
             added_creature_types: CreatureTypeSetDef::named(added_creature_types),
+            added_types: CardTypeSet::empty(),
             no_mana_cost: true,
             added_ability: None,
         }
