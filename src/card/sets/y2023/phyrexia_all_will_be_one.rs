@@ -3,8 +3,8 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, TopCardSelectionDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, SacrificedAmountDef,
+    TopCardSelectionDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::mana_cost;
 
@@ -19,13 +19,65 @@ pub(in crate::card::sets) static PLANAR_DISRUPTION: CardRecord = CardRecord::new
 );
 
 // ONE 108 — Sheoldred's Edict
-// Audit: metadata-only — Card rules have not been implemented.
+/// Three edicts in one card, and the split is what makes it an answer
+/// rather than a gamble: the mode that names tokens leaves the real
+/// creature alone, and the mode that names nontokens cannot be paid with a
+/// Servo.
+static A_NONTOKEN_CREATURE: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+]);
+
+static A_CREATURE_TOKEN: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::Token,
+]);
+
+/// "Of their choice", which is what makes it an edict: the sacrifice is
+/// theirs to make, so hexproof and protection never come into it.
+const fn edict(text: &'static str, object: ObjectPredicateDef) -> AbilityDef {
+    AbilityDef::spell(
+        text,
+        EffectDef::SacrificeOfChoice {
+            player: EffectRecipientDef::Opponent,
+            object,
+            count: ValueDef::Constant(1),
+            then: None,
+            amount: SacrificedAmountDef::Power,
+            otherwise: None,
+            optional: false,
+        },
+    )
+}
+
+static SHEOLDRED_S_EDICT_MODES: [AbilityDef; 3] = [
+    edict(
+        "Each opponent sacrifices a nontoken creature of their choice.",
+        A_NONTOKEN_CREATURE,
+    ),
+    edict(
+        "Each opponent sacrifices a creature token of their choice.",
+        A_CREATURE_TOKEN,
+    ),
+    edict(
+        "Each opponent sacrifices a planeswalker of their choice.",
+        ObjectPredicateDef::HasType(CardType::Planeswalker),
+    ),
+];
+
 pub(in crate::card::sets) static SHEOLDRED_S_EDICT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a9225cc3-90f0-448f-a8d9-7c6c2796d077"),
     "Sheoldred's Edict",
-    crate::card::CardArt::new("a9225cc3-90f0-448f-a8d9-7c6c2796d077", "Helge C. Balzer"),
-    crate::card::CardSet::PhyrexiaAllWillBeOne,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("a9225cc3-90f0-448f-a8d9-7c6c2796d077", "Helge C. Balzer"),
+    CardSet::PhyrexiaAllWillBeOne,
+    // Two mana at instant speed for the one creature a protected threat
+    // cannot dodge, as long as it is the only one they have.
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_ability(AbilityDef::choose_one_spell(
+        "Choose one —\n• Each opponent sacrifices a nontoken creature of their choice.\n• Each \
+         opponent sacrifices a creature token of their choice.\n• Each opponent sacrifices a \
+         planeswalker of their choice.",
+        &SHEOLDRED_S_EDICT_MODES,
+    )),
 );
 
 // ONE 121 — Barbed Batterfist

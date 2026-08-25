@@ -518,6 +518,7 @@ mod vintage_cube_senseis_divining_top;
 mod vintage_cube_sentinel_nameless_city;
 mod vintage_cube_shelldock_isle;
 mod vintage_cube_sheltering_landscape;
+mod vintage_cube_sheoldreds_edict;
 mod vintage_cube_shieldbreaker;
 mod vintage_cube_shifting_woodland;
 mod vintage_cube_show_and_tell;
