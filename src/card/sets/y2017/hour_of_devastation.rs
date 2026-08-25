@@ -1,6 +1,11 @@
 //! HOU card records required by supported formats.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::{
+    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, ValueDef,
+};
+use crate::{TargetIndex, mana_cost};
 
 // HOU 48 — Striped Riverwinder
 // Audit: metadata-only — Card rules have not been implemented.
@@ -13,13 +18,49 @@ pub(in crate::card::sets) static STRIPED_RIVERWINDER: CardRecord = CardRecord::n
 );
 
 // HOU 83 — Abrade
-// Audit: metadata-only — Card rules have not been implemented.
+static A_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+static AN_ARTIFACT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+)];
+
+/// One of two, chosen as it is cast: each half carries its own slot, so a
+/// board with neither a creature nor an artifact leaves nothing to cast it
+/// at.
+static ABRADE_MODES: [AbilityDef; 2] = [
+    AbilityDef::spell_with_targets(
+        "Abrade deals 3 damage to target creature.",
+        &A_CREATURE,
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(3),
+        },
+    ),
+    AbilityDef::spell_with_targets(
+        "Destroy target artifact.",
+        &AN_ARTIFACT,
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            can_regenerate: true,
+            then: None,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static ABRADE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("84319dfb-eaf7-4b98-8c4f-30f5e779591b"),
     "Abrade",
-    crate::card::CardArt::new("84319dfb-eaf7-4b98-8c4f-30f5e779591b", "Jonas De Ro"),
-    crate::card::CardSet::HourOfDevastation,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("84319dfb-eaf7-4b98-8c4f-30f5e779591b", "Jonas De Ro"),
+    CardSet::HourOfDevastation,
+    // Two mana that is never dead: the half a red deck wants is whichever
+    // one the board is holding.
+    CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(AbilityDef::choose_one_spell(
+        "Choose one \u{2014}\n\u{2022} Abrade deals 3 damage to target creature.\n\u{2022} \
+         Destroy target artifact.",
+        &ABRADE_MODES,
+    )),
 );
 
 // HOU 92 — Firebrand Archer
