@@ -349,6 +349,9 @@ impl Game {
                         // already replaced it with a sized removal.
                         AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
                         | AbilityCostDef::RemoveCountersFromSource { .. }
+                        // Always payable: a hand of nothing discards nothing,
+                        // which is a legal way to pay it.
+                        | AbilityCostDef::DiscardHand
                         | AbilityCostDef::TapSource
                         // Always payable: what it spends is a future untap
                         // step, and the permanent has one whatever state it

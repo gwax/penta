@@ -88,6 +88,9 @@ pub(in super::super) fn shared_activated_costs(
             // decision procedure -- only a permanent to activate from. A
             // mill cost similarly names the top cards without a choice.
             | AbilityCostDef::DiscardCardsAtRandom(_)
+            // "Discard your hand" takes every card and asks nothing, so like
+            // the random discard it needs only a permanent to activate from.
+            | AbilityCostDef::DiscardHand
             | AbilityCostDef::MillCards(_)
             // Crew and saddle name no predicate: what may pay is every other
             // untapped creature the payer controls, and the decision that

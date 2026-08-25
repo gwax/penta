@@ -508,6 +508,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                             cost,
                             AbilityCostDef::TapSource
                                 | AbilityCostDef::ExertSource
+                                | AbilityCostDef::DiscardHand
                                 | AbilityCostDef::SacrificeSource
                                 | AbilityCostDef::ExileSource
                                 // Sacrificing another permanent bounds the
@@ -546,6 +547,10 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                             // Exerting spends the source's next untap step,
                             // which the mana path pays where it pays the tap.
                             | AbilityCostDef::ExertSource
+                            // Discarding a hand takes every card and asks
+                            // nothing, which is what a mana ability needs of
+                            // a cost: no window in which to choose.
+                            | AbilityCostDef::DiscardHand
                             | AbilityCostDef::SacrificeSource
                             | AbilityCostDef::ExileSource
                             | AbilityCostDef::RemoveCountersFromSource { .. }

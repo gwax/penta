@@ -46,6 +46,16 @@ impl Game {
                 AbilityCostDef::PayLife(amount) => {
                     self.lose_life(player, *amount);
                 }
+                // Paid now, before the mana arrives: what is discarded is the
+                // hand as it stood when the ability was activated.
+                AbilityCostDef::DiscardHand => {
+                    let hand = self.players[player.index()]
+                        .hand
+                        .iter()
+                        .map(|card| card.id)
+                        .collect::<Vec<_>>();
+                    self.discard_cards(player, &hand);
+                }
                 AbilityCostDef::Mana(cost) => {
                     // Out of the pool, never by planning: the mana this
                     // ability is about to make is not available to pay for

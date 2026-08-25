@@ -51,6 +51,7 @@ impl Game {
                 ability: origin,
                 color,
                 costs: definition.costs,
+                only_as_instant: definition.only_as_instant,
                 effect,
                 counters_removed: None,
                 cost_object: None,

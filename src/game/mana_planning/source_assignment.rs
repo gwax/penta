@@ -455,6 +455,10 @@ impl Game {
         Self::mana_for_activation(activation)
             .first()
             .is_some_and(|mana| self.mana_can_pay_for(*mana, request.purpose))
+            // "Activate only as an instant": paying for a spell is not a
+            // moment an instant could be cast, so the planner leaves it to
+            // the player and their priority.
+            && !activation.only_as_instant
             && preserves_tap_cost_payer
             && preserves_required_source
             && !costs_mana

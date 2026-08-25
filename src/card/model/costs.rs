@@ -35,6 +35,10 @@ pub enum CostDef {
     RemoveAnyNumberOfCountersFromSource(CounterKind),
     /// Discard the card that carries this ability from its owner's hand.
     DiscardSource,
+    /// "Discard your hand." Every card at once and no choice about which, so
+    /// unlike [`Self::DiscardCards`] it needs no window to ask in -- and a
+    /// player with nothing in hand pays it by discarding nothing.
+    DiscardHand,
     PayLife(u16),
     /// Put exactly this many cards from the top of the payer's library into
     /// their graveyard. Unlike milling as an effect, a cost cannot be paid

@@ -631,6 +631,23 @@ impl AbilityDef {
         self
     }
 
+    /// A printed "Activate only as an instant" on a mana ability: it may be
+    /// activated whenever its controller holds priority and never as part of
+    /// paying for something.
+    ///
+    /// # Panics
+    ///
+    /// Panics for anything but a mana ability, which is the only place the
+    /// clause is printed and the only place the distinction is visible.
+    #[must_use]
+    pub const fn only_as_instant(mut self) -> Self {
+        let DeclarativeAbilityDef::ActivatedMana(definition) = self.definition else {
+            panic!("only a mana ability is restricted to instant speed");
+        };
+        self.definition = DeclarativeAbilityDef::ActivatedMana(definition.only_as_instant());
+        self
+    }
+
     /// A printed "activate only if ..." restriction on an activated ability.
     ///
     /// # Panics

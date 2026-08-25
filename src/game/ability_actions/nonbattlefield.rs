@@ -14,7 +14,11 @@ impl Game {
                     mana_cost = add_mana_cost(mana_cost, *cost);
                 }
                 AbilityCostDef::DiscardSource | AbilityCostDef::ReturnUnblockedAttackerToHand => {}
-                AbilityCostDef::TapSource
+                // Nothing in a hand pays for an ability activated from that
+                // same hand: the card doing the paying would be discarding
+                // itself along with everything else.
+                AbilityCostDef::DiscardHand
+                | AbilityCostDef::TapSource
                 | AbilityCostDef::ExertSource
                 | AbilityCostDef::UntapSource
                 | AbilityCostDef::SacrificeSource

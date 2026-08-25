@@ -538,6 +538,14 @@ pub struct ActivatedAbilityDef {
     /// each turn" clause allows this ability to be activated per turn from
     /// one object. `None` is the ordinary unlimited case.
     pub activation_limit: Option<u8>,
+    /// "Activate only as an instant." A mana ability may ordinarily be
+    /// activated whenever mana is called for, including while a spell is
+    /// being paid for; this one may be activated only at a time its
+    /// controller could cast an instant, which is to say while they hold
+    /// priority. Lion's Eye Diamond is the whole point of the clause: it
+    /// cannot be cracked to pay for the spell being cast, because the hand
+    /// it discards would be the hand that spell came out of.
+    pub only_as_instant: bool,
     /// Exhaust (CR 702.184a): "Activate each exhaust ability only once."
     /// A cap on the permanent's whole lifetime rather than on its turn,
     /// which is why it is counted apart from the limit above -- that one
@@ -596,12 +604,20 @@ impl ActivatedAbilityDef {
             procedure: AbilityProcedureDef::Shared,
             timing: ActivationTimingDef::Any,
             activation_limit: None,
+            only_as_instant: false,
             exhaust: false,
             any_player_may_activate: false,
             condition: None,
             modes: None,
             cost_reduction: None,
         }
+    }
+
+    /// "Activate only as an instant."
+    #[must_use]
+    pub const fn only_as_instant(mut self) -> Self {
+        self.only_as_instant = true;
+        self
     }
 
     /// "Choose one --" on an activated ability.
@@ -930,56 +946,7 @@ impl AbilityEffectDef {
     }
 }
 
-/// Clause-level implementation coverage, independent of effect dispatch.
-///
-/// An explanation is optional only for an ordinary complete declarative
-/// clause. Complete custom and compatibility clauses keep a note explaining
-/// their implementation; partial and metadata-only clauses explain the gap.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct AbilityCoverageDef {
-    pub status: ImplementationStatus,
-    pub explanation: Option<&'static str>,
-}
-
-impl AbilityCoverageDef {
-    #[must_use]
-    pub const fn complete() -> Self {
-        Self {
-            status: ImplementationStatus::Complete,
-            explanation: None,
-        }
-    }
-
-    #[must_use]
-    pub const fn explained_complete(explanation: &'static str) -> Self {
-        Self {
-            status: ImplementationStatus::Complete,
-            explanation: Some(explanation),
-        }
-    }
-
-    #[must_use]
-    pub const fn partial(explanation: &'static str) -> Self {
-        Self {
-            status: ImplementationStatus::Partial,
-            explanation: Some(explanation),
-        }
-    }
-
-    #[must_use]
-    pub const fn metadata_only(explanation: &'static str) -> Self {
-        Self {
-            status: ImplementationStatus::MetadataOnly,
-            explanation: Some(explanation),
-        }
-    }
-
-    #[must_use]
-    pub const fn is_executable(self) -> bool {
-        !matches!(self.status, ImplementationStatus::MetadataOnly)
-    }
-}
-
+include!("ability_kinds/coverage.rs");
 include!("ability_kinds/conditions.rs");
 include!("ability_kinds/keywords.rs");
 include!("ability_kinds/triggered.rs");

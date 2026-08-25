@@ -40,6 +40,8 @@ impl Game {
                 }
                 AbilityCostDef::RemoveCountersFromSource { .. }
                 | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)
+                // A hand of nothing discards nothing, which pays it.
+                | AbilityCostDef::DiscardHand
                 | AbilityCostDef::TapSource
                 | AbilityCostDef::ExertSource
                 | AbilityCostDef::UntapSource
@@ -99,6 +101,9 @@ impl Game {
             // finite thing to spend: the land is not producing this mana
             // again next turn.
             | AbilityCostDef::ExertSource
+            // Discarding a hand spends something finite and needs nobody to
+            // choose anything, so it is payable where a mana ability pays.
+            | AbilityCostDef::DiscardHand
             | AbilityCostDef::SacrificeSource
             | AbilityCostDef::ReturnSourceToHand
             | AbilityCostDef::ExileSource
@@ -127,6 +132,7 @@ impl Game {
                             cost,
                             AbilityCostDef::TapSource
                                 | AbilityCostDef::ExertSource
+                                | AbilityCostDef::DiscardHand
                                 | AbilityCostDef::SacrificeSource
                                 | AbilityCostDef::ReturnSourceToHand
                                 | AbilityCostDef::ExileSource

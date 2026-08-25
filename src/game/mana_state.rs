@@ -64,6 +64,10 @@ pub(super) struct ManaAbilityActivation {
     pub(super) ability: AbilityOrigin,
     pub(super) color: ManaColor,
     pub(super) costs: AbilityCostList,
+    /// "Activate only as an instant": offered to a player holding priority
+    /// and never reached for by the payment planner, which pays for a spell
+    /// at a moment no instant could be cast.
+    pub(super) only_as_instant: bool,
     pub(super) effect: AddManaEffectDef,
     /// How many counters this activation takes, for the abilities whose
     /// removal cost is open-ended and therefore offered once per size.

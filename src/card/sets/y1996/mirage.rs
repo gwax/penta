@@ -3171,7 +3171,14 @@ pub(in crate::card::sets) static LEAD_GOLEM: CardRecord = CardRecord::new(
 );
 
 // MIR 307 — Lion's Eye Diamond
-// Audit: metadata-only — Card rules have not been implemented.
+/// The hand is the cost and the clause is the drawback: "activate only as an
+/// instant" is what stops it from paying for the spell you are holding,
+/// because that spell is still in the hand it discards. What the deck
+/// playing it wants is the hand already emptied -- a graveyard the discard
+/// filled, or a spell already on the stack.
+static LION_S_EYE_DIAMOND_COST: [AbilityCostDef; 2] =
+    [AbilityCostDef::DiscardHand, AbilityCostDef::SacrificeSource];
+
 pub(in crate::card::sets) static LION_S_EYE_DIAMOND: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("63bacc32-d6ba-420c-9b49-299c08e5fb39"),
     "Lion's Eye Diamond",
@@ -3179,8 +3186,17 @@ pub(in crate::card::sets) static LION_S_EYE_DIAMOND: CardRecord = CardRecord::ne
         "63bacc32-d6ba-420c-9b49-299c08e5fb39",
         "Margaret Organ-Kean",
     ),
-    crate::card::CardSet::Mirage,
-    crate::card::CardRules::unsupported(),
+    CardSet::Mirage,
+    // Three mana for nothing, once, at the price of everything in hand.
+    CardRules::new_artifact(mana_cost!("{0}")).with_ability(
+        AbilityDef::activated_mana(
+            "Discard your hand, Sacrifice this artifact: Add three mana of any one color. \
+             Activate only as an instant.",
+            &LION_S_EYE_DIAMOND_COST,
+            EffectDef::AddMana(AddManaEffectDef::any_color().with_amount(3)),
+        )
+        .only_as_instant(),
+    ),
 );
 
 // MIR 308 — Mana Prism

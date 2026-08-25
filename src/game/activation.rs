@@ -401,6 +401,7 @@ impl Game {
                     }
                     AbilityCostDef::TapSource
                     | AbilityCostDef::ExertSource
+                    | AbilityCostDef::DiscardHand
                     | AbilityCostDef::UntapSource
                     | AbilityCostDef::SacrificeSource
                     | AbilityCostDef::SacrificeObject(_)
@@ -697,6 +698,15 @@ impl Game {
                     }
                     AbilityCostDef::DiscardCardsAtRandom(amount) => {
                         self.discard_at_random(player, usize::from(*amount));
+                    }
+                    // Every card at once, and nobody chooses which.
+                    AbilityCostDef::DiscardHand => {
+                        let hand = self.players[player.index()]
+                            .hand
+                            .iter()
+                            .map(|card| card.id)
+                            .collect::<Vec<_>>();
+                        self.discard_cards(player, &hand);
                     }
                     AbilityCostDef::MillCards(amount) => {
                         let milled = self.take_top_of_library(player, usize::from(*amount));

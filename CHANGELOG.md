@@ -25,6 +25,16 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Discarding a hand as a cost, and a mana ability that is not for paying.**
+  "Discard your hand" takes every card and asks nothing, so unlike a counted
+  discard it needs no window to choose in; a player with nothing in hand pays
+  it by discarding nothing. Alongside it, a mana ability can print "activate
+  only as an instant": it is offered whenever its controller holds priority
+  and never reached for by the payment planner, because paying for a spell is
+  not a moment an instant could be cast. Lion's Eye Diamond is the whole
+  point of that clause -- without it the three mana would pay for the card it
+  discards. Nothing about the checkpoint changes.
+
 - **A condition on an optional payment.** "You may pay {1}{G} if this
   permanent is attached to a creature you control" asks before it offers: a
   false answer takes the other branch rather than offering a payment that
