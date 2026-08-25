@@ -989,13 +989,31 @@ pub(in crate::card::sets) static TALISMAN_OF_CREATIVITY: CardRecord = CardRecord
 );
 
 // MH1 232 — Talisman of Curiosity
-// Audit: metadata-only — Card rules have not been implemented.
+static CURIOSITY_COLORS: [ManaColor; 2] = [ManaColor::Green, ManaColor::Blue];
+
+static TALISMAN_OF_CURIOSITY_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::activated_mana(
+        "{T}: Add {C}.",
+        &TALISMAN_TAP,
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+    ),
+    AbilityDef::activated_mana(
+        "{T}: Add {G} or {U}. This artifact deals 1 damage to you.",
+        &TALISMAN_TAP,
+        EffectDef::AddMana(
+            AddManaEffectDef::choice(&CURIOSITY_COLORS).with_damage_to_controller(1),
+        ),
+    ),
+];
+
 pub(in crate::card::sets) static TALISMAN_OF_CURIOSITY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("fd52688a-39fd-430f-b950-cb56e0004396"),
     "Talisman of Curiosity",
-    crate::card::CardArt::new("fd52688a-39fd-430f-b950-cb56e0004396", "Lindsey Look"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("fd52688a-39fd-430f-b950-cb56e0004396", "Lindsey Look"),
+    CardSet::ModernHorizons1,
+    // The Simic half of the cycle: the damage is what pays for a colour, and
+    // the colorless mode is what makes it free when colour is not the point.
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&TALISMAN_OF_CURIOSITY_ABILITIES),
 );
 
 // MH1 244 — Prismatic Vista
