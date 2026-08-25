@@ -205,13 +205,43 @@ pub(in crate::card::sets) static VAMPIRE_LACERATOR: CardRecord = CardRecord::new
 );
 
 // ZEN 119 — Burst Lightning
-// Audit: metadata-only — Card rules have not been implemented.
+static BURST_LIGHTNING_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
+static BURST_LIGHTNING_SMALL: EffectDef = EffectDef::DealDamage {
+    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    amount: ValueDef::Constant(2),
+};
+
+static BURST_LIGHTNING_KICKED: EffectDef = EffectDef::DealDamage {
+    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    amount: ValueDef::Constant(4),
+};
+
 pub(in crate::card::sets) static BURST_LIGHTNING: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("2dc16614-5cf8-444d-a5ae-cac25018af68"),
     "Burst Lightning",
-    crate::card::CardArt::new("2dc16614-5cf8-444d-a5ae-cac25018af68", "Vance Kovacs"),
-    crate::card::CardSet::Zendikar,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("2dc16614-5cf8-444d-a5ae-cac25018af68", "Vance Kovacs"),
+    CardSet::Zendikar,
+    // One mana to answer what a one-drop deck leads with, and five to point
+    // the same card at anything later. Kicking it is one whole cast rather
+    // than a rider on the small one, so the size is settled as it goes on
+    // the stack.
+    CardRules::new_instant(mana_cost!("{R}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Kicker {4} (You may pay an additional {4} as you cast this spell.)\nBurst Lightning \
+             deals 2 damage to any target. If this spell was kicked, it deals 4 damage instead.",
+            &BURST_LIGHTNING_TARGET,
+            BURST_LIGHTNING_SMALL,
+        ),
+        abilities::kicker(
+            mana_cost!("{4}{R}"),
+            "Burst Lightning deals 4 damage to any target.",
+            &BURST_LIGHTNING_TARGET,
+            BURST_LIGHTNING_KICKED,
+        ),
+    ]),
 );
 
 // ZEN 125 — Goblin Bushwhacker

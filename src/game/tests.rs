@@ -334,6 +334,7 @@ mod vintage_cube_brazen_borrower;
 mod vintage_cube_breach;
 mod vintage_cube_brightglass_gearhulk;
 mod vintage_cube_broadside_bombardiers;
+mod vintage_cube_burst_lightning;
 mod vintage_cube_cankerbloom;
 mod vintage_cube_carnage_interpreter;
 mod vintage_cube_caryatid;
