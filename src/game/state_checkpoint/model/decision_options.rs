@@ -46,4 +46,7 @@ pub(in crate::game::state_checkpoint) enum DecisionZoneSnapshot {
 pub(in crate::game::state_checkpoint) enum ZonePlacementSnapshot {
     Top,
     Bottom,
+    /// A depth counted from the top, the card itself included. Additive:
+    /// no checkpoint written before Teferi could contain it.
+    FromTop(u8),
 }

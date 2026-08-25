@@ -217,9 +217,14 @@ impl Game {
                             self.players[player.index()].library.push(card);
                         }
                     }
-                    ZonePlacement::Bottom => {
-                        for card in cards {
-                            self.players[player.index()].library.insert(0, card);
+                    // A depth counts from the top, so a group put in at one
+                    // goes in top-first for the same reason: each card is
+                    // inserted below the one before it.
+                    placement => {
+                        for card in cards.into_iter().rev() {
+                            let library = &mut self.players[player.index()].library;
+                            let index = placement.library_index(library.len());
+                            library.insert(index, card);
                         }
                     }
                 }

@@ -78,20 +78,23 @@ impl Game {
                 .card_in_nonbattlefield_zone(id)
                 .map(|(_, card)| card.owner)?;
             let card = remove_card(&mut self.players[owner.index()].library, id)?;
-            match placement {
-                ZonePlacement::Top => self.players[owner.index()].library.push(card),
-                ZonePlacement::Bottom => self.players[owner.index()].library.insert(0, card),
-            }
+            let library = &mut self.players[owner.index()].library;
+            let index = placement.library_index(library.len());
+            library.insert(index, card);
             return None;
         }
         let (moved, actual_destination) =
             self.move_card_from_nonbattlefield_zone(id, from, zone, cause, arriving_controller)?;
+        // The move above put it on top, which is where a card goes when
+        // nothing says otherwise. Anywhere else is a lift and a reinsert.
         if actual_destination == ZoneKind::Library
-            && placement == ZonePlacement::Bottom
+            && placement != ZonePlacement::Top
             && let Some(card) =
                 remove_card(&mut self.players[moved.owner.index()].library, moved.id)
         {
-            self.players[moved.owner.index()].library.insert(0, card);
+            let library = &mut self.players[moved.owner.index()].library;
+            let index = placement.library_index(library.len());
+            library.insert(index, card);
         }
         (actual_destination == ZoneKind::Battlefield)
             .then_some(())

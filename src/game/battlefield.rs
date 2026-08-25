@@ -598,10 +598,9 @@ impl Game {
                 .into_card()
                 .expect("a nontoken permanent is backed by a card definition"),
         );
-        match placement {
-            ZonePlacement::Top => self.players[owner.index()].library.push(card),
-            ZonePlacement::Bottom => self.players[owner.index()].library.insert(0, card),
-        }
+        let library = &mut self.players[owner.index()].library;
+        let index = placement.library_index(library.len());
+        library.insert(index, card);
     }
 }
 

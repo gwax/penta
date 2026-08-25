@@ -687,6 +687,7 @@ pub(super) const fn zone_placement_snapshot(placement: ZonePlacement) -> ZonePla
     match placement {
         ZonePlacement::Top => ZonePlacementSnapshot::Top,
         ZonePlacement::Bottom => ZonePlacementSnapshot::Bottom,
+        ZonePlacement::FromTop(depth) => ZonePlacementSnapshot::FromTop(depth),
     }
 }
 
@@ -694,6 +695,7 @@ pub(super) const fn parse_zone_placement(placement: ZonePlacementSnapshot) -> Zo
     match placement {
         ZonePlacementSnapshot::Top => ZonePlacement::Top,
         ZonePlacementSnapshot::Bottom => ZonePlacement::Bottom,
+        ZonePlacementSnapshot::FromTop(depth) => ZonePlacement::FromTop(depth),
     }
 }
 

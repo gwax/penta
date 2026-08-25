@@ -336,11 +336,10 @@ impl Game {
                 CounteredSpellZone::Graveyard => self.put_card_into_graveyard(owner, card),
                 CounteredSpellZone::Exile => self.players[owner.index()].exile.push(card),
                 CounteredSpellZone::Hand => self.players[owner.index()].hand.push(card),
-                CounteredSpellZone::Library(ZonePlacement::Top) => {
-                    self.players[owner.index()].library.push(card);
-                }
-                CounteredSpellZone::Library(ZonePlacement::Bottom) => {
-                    self.players[owner.index()].library.insert(0, card);
+                CounteredSpellZone::Library(placement) => {
+                    let library = &mut self.players[owner.index()].library;
+                    let index = placement.library_index(library.len());
+                    library.insert(index, card);
                 }
             }
         }

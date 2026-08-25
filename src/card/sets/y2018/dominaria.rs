@@ -2,13 +2,14 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, ChoiceVisibilityDef, ChooseDef, CounterKind, EffectDef, EffectRecipientDef,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, TokenCharacteristics, TopCardSelectionDef,
-    ValueDef, ZoneKind, ZonePlacement,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CounterKind, DrawEventMatcherDef,
+    EffectDef, EffectRecipientDef, InstalledTriggerDef, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    TokenCharacteristics, TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement,
 };
-use crate::ids::ObjectBindingIndex;
+use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
 
 // DOM 1 — Karn, Scion of Urza
@@ -130,13 +131,124 @@ pub(in crate::card::sets) static KARN_SCION_OF_URZA: CardRecord = CardRecord::ne
 );
 
 // DOM 207 — Teferi, Hero of Dominaria
-// Audit: metadata-only — Card rules have not been implemented.
+static TEFERI_UNTAPS_THE_CHOSEN: EffectDef = EffectDef::Untap {
+    object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+};
+
+/// Chosen as the delayed trigger resolves rather than targeted, and nothing
+/// says whose lands they are -- the same shape Time Spiral's six use, with
+/// "up to" meaning a minimum of none.
+static TEFERI_UNTAPS_TWO_LANDS: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
+        ObjectPredicateDef::HasType(CardType::Land),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::Any,
+    )),
+    exclude: None,
+    minimum: 0,
+    maximum: 2,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &TEFERI_UNTAPS_THE_CHOSEN,
+});
+
+/// "The next end step" is whichever one comes first, which on Teferi's own
+/// turn is his: the two lands come back before the other player untaps, and
+/// that is the whole trick.
+static TEFERI_END_STEP: AbilityDef = AbilityDef::triggered(
+    "At the beginning of the next end step, untap up to two lands.",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+    },
+    TEFERI_UNTAPS_TWO_LANDS,
+);
+
+static TEFERI_DRAWS_THEN_UNTAPS: [EffectDef; 2] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&TEFERI_END_STEP)),
+];
+
+static TEFERI_TUCK_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+)];
+
+/// Third from the top, so two cards have to be drawn before it comes back --
+/// and unlike a bounce it answers a permanent that would rather be in a hand
+/// or a graveyard.
+static TEFERI_TUCKS_IT: EffectDef = EffectDef::MoveToZone {
+    counters: None,
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    from: Some(ZoneKind::Battlefield),
+    zone: ZoneKind::Library,
+    placement: ZonePlacement::FromTop(3),
+    controller: None,
+    arrival_effect: None,
+    attachment: None,
+    tapped: false,
+};
+
+static TEFERI_EMBLEM_EXILES_IT: EffectDef = EffectDef::MoveToZone {
+    counters: None,
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    from: Some(ZoneKind::Battlefield),
+    zone: ZoneKind::Exile,
+    placement: ZonePlacement::Top,
+    controller: None,
+    arrival_effect: None,
+    attachment: None,
+    tapped: false,
+};
+
+static TEFERI_EMBLEM_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+)];
+
+/// One trigger per card drawn, which is what makes the emblem and the plus
+/// the same card: every draw for the rest of the game eats a permanent.
+static TEFERI_EMBLEM_ABILITIES: [AbilityDef; 1] = [AbilityDef::triggered_with_targets(
+    "Whenever you draw a card, exile target permanent an opponent controls.",
+    TriggerEventDef::DrewCard(DrawEventMatcherDef::any(PlayerRelation::You)),
+    &TEFERI_EMBLEM_TARGET,
+    TEFERI_EMBLEM_EXILES_IT,
+)];
+
+static TEFERI_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::activated(
+        "+1: Draw a card. At the beginning of the next end step, untap up to two lands.",
+        &[AbilityCostDef::Loyalty(1)],
+        EffectDef::Sequence(&TEFERI_DRAWS_THEN_UNTAPS),
+    ),
+    AbilityDef::activated_with_targets(
+        "\u{2212}3: Put target nonland permanent into its owner's library third from the top.",
+        &[AbilityCostDef::Loyalty(-3)],
+        &TEFERI_TUCK_TARGET,
+        TEFERI_TUCKS_IT,
+    ),
+    AbilityDef::activated(
+        "\u{2212}8: You get an emblem with \"Whenever you draw a card, exile target permanent an \
+         opponent controls.\"",
+        &[AbilityCostDef::Loyalty(-8)],
+        EffectDef::create_emblem("Teferi, Hero of Dominaria emblem", &TEFERI_EMBLEM_ABILITIES),
+    ),
+];
+
 pub(in crate::card::sets) static TEFERI_HERO_OF_DOMINARIA: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5d10b752-d9cb-419d-a5c4-d4ee1acb655e"),
     "Teferi, Hero of Dominaria",
     crate::card::CardArt::new("5d10b752-d9cb-419d-a5c4-d4ee1acb655e", "Chris Rallis"),
     crate::card::CardSet::Dominaria,
-    crate::card::CardRules::unsupported(),
+    // Five mana that draws a card and leaves two lands up, so the turn he
+    // lands is not the turn he costs you: the plus pays for the counterspell
+    // held behind him.
+    CardRules::new_planeswalker(mana_cost!("{3}{W}{U}"), &["Teferi"], 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&TEFERI_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =

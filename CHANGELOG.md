@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A place inside a library.** A card moved to a library could go to the top
+  or the bottom and nowhere else, so "third from the top" had no way to be
+  said. Placement now also carries a depth counted from the top, with the card
+  itself as one; a library too short for that depth takes the card on the
+  bottom, which is where counting down runs out. The checkpoint gains the
+  matching placement tag and keeps its version.
+
 - **A library played face up.** The engine knew only the private look Bolas's
   Citadel prints, so a card played with its top revealed had nowhere to say
   that the whole table sees it. The public reveal is now its own player rule,

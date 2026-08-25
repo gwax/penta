@@ -179,14 +179,9 @@ impl Game {
             self.rng.shuffle(&mut self.players[player.index()].library);
         }
         for (owner, card) in held {
-            match placement {
-                ZonePlacement::Top => {
-                    self.players[owner.index()].library.push(card);
-                }
-                ZonePlacement::Bottom => {
-                    self.players[owner.index()].library.insert(0, card);
-                }
-            }
+            let library = &mut self.players[owner.index()].library;
+            let index = placement.library_index(library.len());
+            library.insert(index, card);
         }
     }
 }

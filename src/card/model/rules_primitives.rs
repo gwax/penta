@@ -473,12 +473,35 @@ pub enum CardEffectStatus {
     MetadataOnly,
 }
 
-/// Which end of a library a card is put on.
+/// Where in a library a card is put.
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 pub enum ZonePlacement {
     #[default]
     Top,
     Bottom,
+    /// A fixed depth counting the card itself: Teferi's "third from the top"
+    /// is `FromTop(3)`, which leaves exactly two cards above it. A library
+    /// with fewer cards than that has no such position, so the card goes to
+    /// the bottom -- which is where counting down from the top runs out.
+    ///
+    /// Only a library has an inside to be put into. Every other zone is a
+    /// set the rules read as a whole, so nothing outside the library moves
+    /// reads this.
+    FromTop(u8),
+}
+
+impl ZonePlacement {
+    /// Where a card lands in a library of `size` cards, indexed from the
+    /// bottom the way the library itself is stored.
+    #[must_use]
+    pub const fn library_index(self, size: usize) -> usize {
+        match self {
+            Self::Top => size,
+            Self::Bottom => 0,
+            // One card deep is the top, so the depth counts the card itself.
+            Self::FromTop(depth) => size.saturating_sub(depth as usize - 1),
+        }
+    }
 }
 
 /// One two-colour hybrid symbol, such as `{R/W}`. Either colour pays it.
