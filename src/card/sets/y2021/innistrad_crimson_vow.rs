@@ -5,8 +5,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AppliedEffectDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef,
     EffectDef, EffectRecipientDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerEventDef,
-    ValueDef, ZoneKind, abilities,
+    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -225,13 +225,59 @@ pub(in crate::card::sets) static ULVENWALD_ODDITY: CardRecord = CardRecord::new_
 );
 
 // VOW 310 — Bloodtithe Harvester
-// Audit: metadata-only — Card rules have not been implemented.
+/// Nothing but a token carries the Blood artifact type, so naming it is
+/// enough: the count is read as the ability resolves, and the token the
+/// Harvester's own arrival made is one of them.
+static BLOOD_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::Subtype("Blood"),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+/// Twice the count, and downward. Two Blood is -4/-4, which is what makes
+/// the second token worth keeping around rather than cashing in.
+static HARVESTER_PENALTY: ValueDef = ValueDef::Scaled(&ScaledValueDef::new(
+    ValueDef::CountMatchingObjects(&BLOOD_YOU_CONTROL),
+    -2,
+));
+
+static HARVESTER_SHRINKS_IT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+static HARVESTER_COST: [AbilityCostDef; 2] =
+    [AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource];
+
+static BLOODTITHE_HARVESTER_ABILITIES: [AbilityDef; 2] = [
+    abilities::enters_trigger(
+        "When this creature enters, create a Blood token.",
+        EffectDef::create_token(crate::card::tokens::blood()),
+    ),
+    // Sacrificing the Harvester is what pays for the removal, so the body
+    // and the answer are the same card twice rather than both at once.
+    AbilityDef::activated_with_targets(
+        "{T}, Sacrifice this creature: Target creature gets -X/-X until end of turn, where X is \
+         twice the number of Blood tokens you control. Activate only as a sorcery.",
+        &HARVESTER_COST,
+        &HARVESTER_SHRINKS_IT,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::modify_power_toughness(HARVESTER_PENALTY, HARVESTER_PENALTY),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )
+    .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+];
+
 pub(in crate::card::sets) static BLOODTITHE_HARVESTER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("01182501-2b50-4b87-835a-fea3c5e6e330"),
     "Bloodtithe Harvester",
     crate::card::CardArt::new("01182501-2b50-4b87-835a-fea3c5e6e330", "Sami Makkonen"),
     crate::card::CardSet::InnistradCrimsonVow,
-    crate::card::CardRules::unsupported(),
+    // Two mana for a 3/2 that replaces itself with a card later, and can
+    // instead be spent as removal the turn it stops attacking.
+    CardRules::new_creature(mana_cost!("{B}{R}"), &["Vampire"], 3, 2)
+        .with_abilities(&BLOODTITHE_HARVESTER_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
