@@ -2,13 +2,13 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AlternativeCastKindDef, AppliedEffectDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, CounterKind,
-    CreatureTypeSetDef, EffectDef, EffectRecipientDef, EmblemCharacteristics, ObjectPredicateDef,
-    ObjectQueryDef, ObjectSetDef, PlayerRelation, ReplacementAbilityDef, ReplacementConditionDef,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
+    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
+    CounterKind, CreatureTypeSetDef, EffectDef, EffectRecipientDef, EmblemCharacteristics,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRelation, ReplacementAbilityDef,
+    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -425,13 +425,58 @@ pub(in crate::card::sets) static PINNACLE_KILL_SHIP: CardRecord = CardRecord::ne
 );
 
 // EOE 297 — Mightform Harmonizer
-// Audit: metadata-only — Card rules have not been implemented.
+static A_LAND_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Land),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+static A_CREATURE_YOU_CONTROL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
+/// Doubling is +X/+0 where X is the target's power as the trigger resolves,
+/// so two landfalls in a turn compound: the second reads the size the first
+/// left behind, and a creature answered in between doubles nothing.
+static HARMONIZER_DOUBLES: EffectDef = EffectDef::Apply {
+    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    effect: AppliedEffectDef::modify_power_toughness(
+        ValueDef::TargetPower(TargetIndex::PRIMARY),
+        ValueDef::Constant(0),
+    ),
+    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+};
+
+static HARMONIZER_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::triggered_with_targets(
+        "Landfall — Whenever a land you control enters, double the power of target creature you \
+         control until end of turn.",
+        TriggerEventDef::zone_changed(A_LAND_YOU_CONTROL, None, Some(ZoneKind::Battlefield)),
+        &A_CREATURE_YOU_CONTROL,
+        HARMONIZER_DOUBLES,
+    ),
+    abilities::warp(
+        mana_cost!("{2}{G}"),
+        "Warp {2}{G} (You may cast this card from your hand for its warp cost. Exile this \
+         creature at the beginning of the next end step, then you may cast it from exile on a \
+         later turn.)",
+    ),
+    abilities::warped_exile(),
+];
+
 pub(in crate::card::sets) static MIGHTFORM_HARMONIZER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("29bc9be4-4fc3-440a-a851-0c7f8989c9b5"),
     "Mightform Harmonizer",
-    crate::card::CardArt::new("29bc9be4-4fc3-440a-a851-0c7f8989c9b5", "Jessica Fong"),
-    crate::card::CardSet::EdgeOfEternities,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("29bc9be4-4fc3-440a-a851-0c7f8989c9b5", "Jessica Fong"),
+    CardSet::EdgeOfEternities,
+    // Four mana for a 4/4 that makes every land drop a pump spell, or three
+    // for one turn of it now and the whole card again later.
+    CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Insect", "Druid"], 4, 4)
+        .with_abilities(&HARMONIZER_ABILITIES),
 );
 
 // EOE 362 — Icetill Explorer
