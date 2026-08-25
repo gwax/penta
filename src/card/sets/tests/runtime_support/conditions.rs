@@ -38,7 +38,10 @@ fn shared_condition_value(value: ValueDef, static_context: bool) -> bool {
         ValueDef::CountMatchingObjects(query) => {
             (!static_context || query.relative_position.is_none()) && shared_query(*query)
         }
-        ValueDef::DevotionTo(_)
+        // A per-turn tally the game keeps and clears with the turn, which a
+        // trigger's intervening-if can read before anything is resolving.
+        ValueDef::CardsDrawnThisTurn(_)
+        | ValueDef::DevotionTo(_)
         | ValueDef::LibrarySize(_)
         | ValueDef::SpellsCastThisGame(_)
         | ValueDef::BasicLandTypesControlled(_)

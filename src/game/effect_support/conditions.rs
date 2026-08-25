@@ -114,6 +114,16 @@ impl Game {
                     .sum::<usize>();
                 i32::try_from(counted.saturating_sub(usize::from(threshold))).unwrap_or(i32::MAX)
             }
+            // A per-turn tally the game keeps, read the same way whether the
+            // question comes from a resolving effect or from an
+            // intervening-if that has no resolving object yet.
+            crate::card::ValueDef::CardsDrawnThisTurn(relation) => [PlayerId::One, PlayerId::Two]
+                .into_iter()
+                .filter(|player| {
+                    self.player_relation_matches(*player, relation, controller, context)
+                })
+                .map(|player| i32::from(self.cards_drawn_this_turn[player.index()]))
+                .sum(),
             // The X its own spell was cast for, which the permanent recorded
             // as it arrived. An intervening "if X is 5 or more" asks about
             // that number, so it has to be readable here and not only where a

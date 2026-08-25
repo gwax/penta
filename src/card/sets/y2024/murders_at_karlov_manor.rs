@@ -2,11 +2,13 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, CostModificationDef,
-    EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TopCardSelectionDef,
-    TriggerEventDef, ValueDef, abilities, tokens,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef, CostModificationDef,
+    CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, PlayerSetDef,
+    SumValueDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueComparisonDef, ValueDef, ZoneKind, abilities, tokens,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 static SURVEIL_ONE: TopCardSelectionDef = abilities::surveil(1, None);
 
@@ -246,13 +248,78 @@ pub(in crate::card::sets) static UNDERGROUND_MORTUARY: CardRecord = CardRecord::
 );
 
 // MKM 396 — Proft's Eidetic Memory
-// Audit: metadata-only — Card rules have not been implemented.
+/// The card it draws on the way in is the first of the turn, so anything at
+/// all afterwards -- a cantrip, a fetchland cracked on their turn is not it,
+/// but a second draw on yours -- turns the trigger on.
+static PROFT_HAS_DRAWN_TWICE: ValueComparisonDef = ValueComparisonDef {
+    left: ValueDef::CardsDrawnThisTurn(PlayerRelation::You),
+    comparison: ComparisonDef::Greater,
+    right: ValueDef::Constant(1),
+};
+
+static PROFT_DREW_MORE_THAN_ONE: TriggerConditionDef =
+    TriggerConditionDef::ValueComparison(&PROFT_HAS_DRAWN_TWICE);
+
+/// "Minus one", which is why the card it draws itself is free rather than
+/// the first counter: the draw that turns the ability on is the one it does
+/// not pay for.
+static PROFT_COUNTERS: SumValueDef = SumValueDef::new(
+    ValueDef::CardsDrawnThisTurn(PlayerRelation::You),
+    ValueDef::Constant(-1),
+);
+
+static A_CREATURE_YOU_CONTROL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
+static PROFT_ABILITIES: [AbilityDef; 3] = [
+    abilities::enters_trigger(
+        "When this enchantment enters, draw a card.",
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    AbilityDef::static_ability(
+        "You have no maximum hand size.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::You)),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::NoMaximumHandSize),
+        },
+    ),
+    AbilityDef::triggered_if_with_targets(
+        "At the beginning of combat on your turn, if you've drawn more than one card this turn, \
+         put X +1/+1 counters on target creature you control, where X is the number of cards \
+         you've drawn this turn minus one.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::BeginningOfCombat,
+            player: PlayerRelation::You,
+        },
+        &PROFT_DREW_MORE_THAN_ONE,
+        &A_CREATURE_YOU_CONTROL,
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            kind: CounterKind::PlusOnePlusOne,
+            amount: ValueDef::Sum(&PROFT_COUNTERS),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static PROFT_S_EIDETIC_MEMORY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a3472756-0305-4567-b425-f7dbf9b3cc7f"),
     "Proft's Eidetic Memory",
-    crate::card::CardArt::new("a3472756-0305-4567-b425-f7dbf9b3cc7f", "Julie Dillon"),
-    crate::card::CardSet::MurdersAtKarlovManor,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("a3472756-0305-4567-b425-f7dbf9b3cc7f", "Julie Dillon"),
+    CardSet::MurdersAtKarlovManor,
+    // Two mana that replaces itself and then turns every spare cantrip into
+    // permanent power, as long as there is a creature to put it on.
+    CardRules::new_enchantment(mana_cost!("{1}{U}"))
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&PROFT_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
