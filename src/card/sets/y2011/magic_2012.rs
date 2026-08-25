@@ -1071,13 +1071,36 @@ pub(in crate::card::sets) static DUSKHUNTER_BAT: CardRecord = CardRecord::new(
 );
 
 // M12 98 — Grave Titan
-// Audit: metadata-only — Card rules have not been implemented.
+/// One printed ability with two ways in, the way every Titan prints it: a
+/// Titan that lands and then attacks makes four Zombies, and it makes them
+/// as two separate triggers.
+static TITAN_ENTERS_OR_ATTACKS: [TriggerEventDef; 2] = [
+    TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Source,
+        None,
+        Some(ZoneKind::Battlefield),
+    ),
+    TriggerEventDef::attacks(ObjectPredicateDef::Source),
+];
+
+static GRAVE_TITAN_ABILITIES: [AbilityDef; 2] = [
+    abilities::deathtouch(),
+    AbilityDef::triggered(
+        "Whenever this creature enters or attacks, create two 2/2 black Zombie creature tokens.",
+        TriggerEventDef::AnyOf(&TITAN_ENTERS_OR_ATTACKS),
+        EffectDef::create_creature_token(&["Zombie"], &[ManaColor::Black], 2, 2).with_amount(2),
+    ),
+];
+
 pub(in crate::card::sets) static GRAVE_TITAN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5fa6d385-6b8e-45ad-83dc-b477799c05a5"),
     "Grave Titan",
-    crate::card::CardArt::new("5c70da33-ce5d-4b8b-9c1d-9a356a7e196f", "Nils Hamm"),
-    crate::card::CardSet::Magic2012,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("5c70da33-ce5d-4b8b-9c1d-9a356a7e196f", "Nils Hamm"),
+    CardSet::Magic2012,
+    // Ten power over three bodies for six mana, and killing the Titan still
+    // leaves four of it behind.
+    CardRules::new_creature(mana_cost!("{4}{B}{B}"), &["Giant"], 6, 6)
+        .with_abilities(&GRAVE_TITAN_ABILITIES),
 );
 
 // M12 99 — Gravedigger
