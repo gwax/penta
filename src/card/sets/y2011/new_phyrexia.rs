@@ -5,10 +5,10 @@ use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, CounterKind, DiscardSelectionDef, EffectDef, EffectRecipientDef,
-    ManaColor, ManaRestrictionDef, ObjectPredicateDef, ObjectRefDef, PlayerRefDef, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    CardSupertype, CardType, CardTypeSet, CounterKind, DiscardSelectionDef, EffectDef,
+    EffectRecipientDef, ManaColor, ManaRestrictionDef, ObjectPredicateDef, ObjectRefDef,
+    PlayerRefDef, PlayerRelation, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -626,16 +626,36 @@ pub(in crate::card::sets) static PHYREXIAN_INGESTER: CardRecord = CardRecord::ne
 );
 
 // NPH 42 — Phyrexian Metamorph
-// Audit: metadata-only — Card rules have not been implemented.
+/// "Any artifact or creature", which is wider than either Clone or Copy
+/// Artifact: what it copies may be the other player's best creature or your
+/// own best artifact, and the four mana is really three and two life.
+static AN_ARTIFACT_OR_CREATURE: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::HasType(CardType::Creature),
+]);
+
 pub(in crate::card::sets) static PHYREXIAN_METAMORPH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8903546d-4f9a-4e90-8dd8-5ab068d40907"),
     "Phyrexian Metamorph",
-    crate::card::CardArt::new(
+    CardArt::new(
         "d2e27911-87cb-49a0-a34f-6afe4bddd592",
         "Jana Schirmer & Johannes Voss",
     ),
-    crate::card::CardSet::NewPhyrexia,
-    crate::card::CardRules::unsupported(),
+    CardSet::NewPhyrexia,
+    // A 0/0 that is never a 0/0: it copies something or it dies, and the
+    // artifact it adds to its own types is what a copy of a creature keeps
+    // afterwards.
+    CardRules::new_artifact_creature(mana_cost!("{3}{U/P}"), &["Phyrexian", "Shapeshifter"], 0, 0)
+        .with_ability(AbilityDef::replacement(
+            "You may have this creature enter as a copy of any artifact or creature on the \
+         battlefield, except it's an artifact in addition to its other types.",
+            ReplacementEffectDef::CopyEntering {
+                object: AN_ARTIFACT_OR_CREATURE,
+                added_types: CardTypeSet::single(CardType::Artifact),
+                retain_printed_subtypes: false,
+                retained_abilities: &[],
+            },
+        )),
 );
 
 // NPH 43 — Psychic Barrier
