@@ -33,6 +33,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         // A per-turn tally the game keeps and clears with the turn, read the
         // same way and just as live.
         | ValueDef::CardsDrawnThisTurn(_)
+        | ValueDef::LifeGainedThisTurn(_)
         | ValueDef::CountSpellsCastThisTurn(_)
         // Counters on the effect's own source: plain state on a permanent the
         // layer already has, so reading it cannot re-enter the walk.
@@ -129,6 +130,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::IfMatchingObjectCount(_)
         | ValueDef::CountersOnSource(_)
         | ValueDef::CardsDrawnThisTurn(_)
+        | ValueDef::LifeGainedThisTurn(_)
         | ValueDef::DevotionTo(_)
         | ValueDef::LibrarySize(_)
         | ValueDef::ColorsOfManaSpent

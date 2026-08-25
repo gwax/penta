@@ -94,6 +94,11 @@ pub struct ObjectQueryDef {
     pub owner: Option<PlayerSetDef>,
     /// A position relative to another object in the same ordered zone.
     pub relative_position: Option<ZoneRelativePositionDef>,
+    /// The object chosen for this target slot does not count, which is the
+    /// "other than that creature" a clause adds once it has already named
+    /// one. Only a resolving effect knows its targets, so a query read
+    /// outside one excludes nothing.
+    pub excluding_target: Option<TargetIndex>,
 }
 
 /// Permanents attached to a player in one relation and matching one object
@@ -122,6 +127,7 @@ impl ObjectQueryDef {
             controller: None,
             owner: None,
             relative_position: None,
+            excluding_target: None,
         }
     }
 
@@ -138,6 +144,7 @@ impl ObjectQueryDef {
             controller: Some(controller),
             owner: None,
             relative_position: None,
+            excluding_target: None,
         }
     }
 
@@ -154,6 +161,7 @@ impl ObjectQueryDef {
             controller: None,
             owner: Some(owner),
             relative_position: None,
+            excluding_target: None,
         }
     }
 
@@ -173,7 +181,16 @@ impl ObjectQueryDef {
             controller: None,
             owner: None,
             relative_position: None,
+            excluding_target: None,
         }
+    }
+
+    /// The same query with whatever was chosen for `target` left out, which
+    /// is what "other than that creature" asks for.
+    #[must_use]
+    pub const fn excluding_target(mut self, target: TargetIndex) -> Self {
+        self.excluding_target = Some(target);
+        self
     }
 
     #[must_use]
@@ -345,6 +362,10 @@ pub enum ValueDef {
     /// "The number of cards you've drawn this turn." Counts every draw,
     /// including the turn's own draw step, and resets when the turn does.
     CardsDrawnThisTurn(PlayerRelation),
+    /// "The amount of life you gained this turn." A running total rather
+    /// than a net change: losing it again afterwards does not take it back,
+    /// and it resets when the turn does.
+    LifeGainedThisTurn(PlayerRelation),
     /// "The number of colors of mana spent to cast this spell" (CR 702.86a,
     /// converge). Colorless is a mana type rather than a color and never
     /// counts. A copy of a spell was never cast, so nothing was spent on it

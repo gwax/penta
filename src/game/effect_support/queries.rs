@@ -286,6 +286,21 @@ impl Game {
         effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
         mut visitor: impl FnMut(Target) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
+        // "Other than that creature": read once, because every candidate is
+        // asked the same question about the same target.
+        let excluded = query
+            .excluding_target
+            .zip(effect_context)
+            .map(|(target, (object, scoped, _))| {
+                Self::chosen_targets(object, scoped.target_slot(target)).collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        let mut visitor = |candidate: Target| {
+            if excluded.contains(&candidate) {
+                return ControlFlow::Continue(());
+            }
+            visitor(candidate)
+        };
         if query.relative_position.is_none() && query.zones.contains(&ZoneKind::Battlefield) {
             for permanent in &self.battlefield {
                 if !self.query_player_constraints_match(

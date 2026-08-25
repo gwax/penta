@@ -355,6 +355,20 @@ impl Game {
                 })
                 .map(|player| i32::from(self.cards_drawn_this_turn[player.index()]))
                 .sum(),
+            // The same shape as the draw tally beside it, over the running
+            // total of life gained rather than a net change.
+            ValueDef::LifeGainedThisTurn(relation) => [PlayerId::One, PlayerId::Two]
+                .into_iter()
+                .filter(|player| {
+                    self.player_relation_matches(
+                        *player,
+                        relation,
+                        object.controller,
+                        context.trigger,
+                    )
+                })
+                .map(|player| i32::from(self.life_gained_this_turn[player.index()]))
+                .sum(),
             // What the step before this one matched -- the land cards a
             // discard took. Zero without such a step behind it.
             ValueDef::MatchedCount => i32::from(context.matched_count.unwrap_or(0)),

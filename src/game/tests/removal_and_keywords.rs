@@ -207,6 +207,7 @@ fn object_queries_can_constrain_controller_and_owner_independently() {
                 controller: Some(PlayerSetDef::One(PlayerRefDef::EffectController)),
                 owner: Some(PlayerSetDef::Related(PlayerRelation::Opponent)),
                 relative_position: None,
+                excluding_target: None,
             })),
             can_regenerate: true,
             then: None,

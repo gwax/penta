@@ -41,6 +41,7 @@ fn shared_condition_value(value: ValueDef, static_context: bool) -> bool {
         // A per-turn tally the game keeps and clears with the turn, which a
         // trigger's intervening-if can read before anything is resolving.
         ValueDef::CardsDrawnThisTurn(_)
+        | ValueDef::LifeGainedThisTurn(_)
         | ValueDef::DevotionTo(_)
         | ValueDef::LibrarySize(_)
         | ValueDef::SpellsCastThisGame(_)

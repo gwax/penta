@@ -6,16 +6,16 @@ use crate::card::{
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef,
     AttackEventMatcherDef, BasicLandType, BattlefieldEntryModificationDef, CardArt,
     CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
-    ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, DrawEventMatcherDef, EffectDef,
-    EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, EmblemCharacteristics,
-    ExiledCastPermissionDef, HalvedValueDef, InstalledTriggerDef, InstalledTriggerLifetimeDef,
-    ManaColor, ManaCost, ManaSpendEffectDef, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef, RoundingDef,
-    SimultaneousChooseDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef,
-    TargetConditionDef, TokenCopyExceptionsDef, TokenCountersDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
-    tokens,
+    CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, ComparisonDef, ControlDurationDef,
+    CounterKind, CreatureTypeSetDef, DrawEventMatcherDef, EffectDef, EffectPaymentCostDef,
+    EffectPaymentDef, EffectRecipientDef, EmblemCharacteristics, ExiledCastPermissionDef,
+    HalvedValueDef, InstalledTriggerDef, InstalledTriggerLifetimeDef, ManaColor, ManaCost,
+    ManaSpendEffectDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, RoundingDef, SetOperationDef, SimultaneousChooseDef,
+    SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef, TargetConditionDef,
+    TokenCopyExceptionsDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 use crate::{TargetIndex, mana_cost};
@@ -2147,13 +2147,168 @@ pub(in crate::card::sets) static TAMIYO_INQUISITIVE_STUDENT: CardRecord = CardRe
 );
 
 // MH3 444 — Sorin of House Markov // Sorin, Ravenous Neonate
-// Audit: metadata-only — Card rules have not been implemented.
-pub(in crate::card::sets) static SORIN_OF_HOUSE_MARKOV: CardRecord = CardRecord::new(
+/// Three life in a turn, counted as a running total: gaining it and losing
+/// it again still turns him over, because what the clause reads is the
+/// gaining rather than where the life total ended up.
+static SORIN_GAINED_THREE: ValueComparisonDef = ValueComparisonDef {
+    left: ValueDef::LifeGainedThisTurn(PlayerRelation::You),
+    comparison: ComparisonDef::GreaterOrEqual,
+    right: ValueDef::Constant(3),
+};
+
+static SORIN_HAS_FED: TriggerConditionDef =
+    TriggerConditionDef::ValueComparison(&SORIN_GAINED_THREE);
+
+/// The same exile-and-return Ajani uses: one resolution, so he is gone and
+/// back before anything else happens, and he comes back a new object with
+/// his printed loyalty.
+static SORIN_TURNS_OVER: [EffectDef; 2] = [
+    EffectDef::ExileLinkedToSource {
+        object: EffectRecipientDef::Source,
+        then: None,
+    },
+    EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
+        zone: ZoneKind::Battlefield,
+        grant: None,
+        controller: None,
+        transformed: true,
+    },
+];
+
+static SORIN_MARKOV_ABILITIES: [AbilityDef; 3] = [
+    abilities::lifelink(),
+    abilities::extort(),
+    AbilityDef::triggered_if(
+        "At the beginning of each of your postcombat main phases, if you gained 3 or more life \
+         this turn, exile Sorin, then return him to the battlefield transformed under his \
+         owner's control.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::PostcombatMain,
+            player: PlayerRelation::You,
+        },
+        &SORIN_HAS_FED,
+        EffectDef::Sequence(&SORIN_TURNS_OVER),
+    ),
+];
+
+/// "It becomes a Vampire in addition to its other types": added rather than
+/// set, and with no duration, so what it was stays and the Vampire sticks.
+static AS_A_VAMPIRE: AppliedEffectDef =
+    AppliedEffectDef::Characteristic(CharacteristicOperationDef::CreatureTypes(
+        SetOperationDef::Add(CreatureTypeSetDef::named(&["Vampire"])),
+    ));
+
+/// "A white permanent other than that creature or Sorin." The source is
+/// Sorin; the creature is the one this ability just took, which is why the
+/// query has to leave the target out rather than merely counting what you
+/// control.
+static A_WHITE_PERMANENT_BESIDES_THEM: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::Color(ManaColor::White),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    )
+    .excluding_target(TargetIndex::PRIMARY),
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
+static SORIN_LIFELINK_COUNTER: EffectDef = EffectDef::AddCounters {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    kind: CounterKind::Lifelink,
+    amount: ValueDef::Constant(1),
+};
+
+static SORIN_TAKES_IT: [EffectDef; 3] = [
+    EffectDef::GainControl {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        controller: PlayerRefDef::EffectController,
+        duration: ControlDurationDef::Indefinitely,
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AS_A_VAMPIRE,
+        duration: ResolvedEffectDurationDef::Permanent,
+    },
+    EffectDef::IfCondition {
+        condition: &A_WHITE_PERMANENT_BESIDES_THEM,
+        then: &SORIN_LIFELINK_COUNTER,
+    },
+];
+
+static SORIN_ANY_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
+static SORIN_STEAL_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+static SORIN_PLUS_TWO: [AbilityCostDef; 1] = [AbilityCostDef::Loyalty(2)];
+static SORIN_MINUS_ONE: [AbilityCostDef; 1] = [AbilityCostDef::Loyalty(-1)];
+static SORIN_MINUS_SIX: [AbilityCostDef; 1] = [AbilityCostDef::Loyalty(-6)];
+
+static SORIN_NEONATE_ABILITIES: [AbilityDef; 4] = [
+    abilities::extort(),
+    AbilityDef::activated(
+        "+2: Create a Food token.",
+        &SORIN_PLUS_TWO,
+        EffectDef::create_token(tokens::food()),
+    ),
+    // The same tally the front face reads to turn over, spent here as
+    // damage: the lifelink body he arrived as is what loads this.
+    AbilityDef::activated_with_targets(
+        "\u{2212}1: Sorin deals damage equal to the amount of life you gained this turn to any \
+         target.",
+        &SORIN_MINUS_ONE,
+        &SORIN_ANY_TARGET,
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::LifeGainedThisTurn(PlayerRelation::You),
+        },
+    ),
+    AbilityDef::activated_with_targets(
+        "\u{2212}6: Gain control of target creature. It becomes a Vampire in addition to its \
+         other types. Put a lifelink counter on it if you control a white permanent other than \
+         that creature or Sorin.",
+        &SORIN_MINUS_SIX,
+        &SORIN_STEAL_TARGET,
+        EffectDef::Sequence(&SORIN_TAKES_IT),
+    ),
+];
+
+const fn sorin_of_house_markov_rules() -> CardRules {
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Human", "Noble"], 1, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&SORIN_MARKOV_ABILITIES)
+}
+
+const fn sorin_ravenous_neonate_rules() -> CardRules {
+    // The back face has no mana cost, so its colours come from the printed
+    // indicator. They matter to his own ultimate: he is a white permanent,
+    // and the clause has to say "other than Sorin" precisely because of it.
+    CardRules::new_planeswalker_without_mana_cost(&["Sorin"])
+        .with_supertype(CardSupertype::Legendary)
+        .with_starting_loyalty(3)
+        .printed_colors(&[ManaColor::White, ManaColor::Black])
+        .with_abilities(&SORIN_NEONATE_ABILITIES)
+}
+
+pub(in crate::card::sets) static SORIN_OF_HOUSE_MARKOV: CardRecord = CardRecord::new_dfc(
     PrintingAnchor::scryfall("0347bf13-1ccb-4d4d-a5f2-68181d494b85"),
-    "Sorin of House Markov",
+    "Sorin of House Markov // Sorin, Ravenous Neonate",
     crate::card::CardArt::new("0347bf13-1ccb-4d4d-a5f2-68181d494b85", "Livia Prima"),
     crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    &[
+        ("Sorin of House Markov", sorin_of_house_markov_rules()),
+        ("Sorin, Ravenous Neonate", sorin_ravenous_neonate_rules()),
+    ],
 );
 
 // MH3 448 — Guide of Souls

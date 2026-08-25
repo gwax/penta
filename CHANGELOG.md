@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **How much life you gained, and a query that leaves its own target out.**
+  The engine could ask whether you had gained life this turn but not how
+  much, so a clause paying out the amount had nothing to read. It is now a
+  value like the cards-drawn tally beside it, readable both from a resolving
+  effect and from an intervening-if. Alongside it, an object query can
+  exclude whatever was chosen for one of its ability's target slots, which is
+  the "other than that creature" a clause adds once it has already named one;
+  outside a resolution there is no target, so such a query excludes nothing.
+
 - **A trigger that triggers again.** Nothing in the engine could say "that
   ability triggers an additional time", so the Panharmonicon shape had no
   home. A player rule now names two things -- what has to be entering the

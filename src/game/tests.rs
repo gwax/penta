@@ -535,6 +535,7 @@ mod vintage_cube_six;
 mod vintage_cube_skyclave_apparition;
 mod vintage_cube_smugglers_copter;
 mod vintage_cube_sneak_attack;
+mod vintage_cube_sorin_of_house_markov;
 mod vintage_cube_soul_guide_lantern;
 mod vintage_cube_spells;
 mod vintage_cube_springheart_nantuko;

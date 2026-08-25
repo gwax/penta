@@ -124,6 +124,16 @@ impl Game {
                 })
                 .map(|player| i32::from(self.cards_drawn_this_turn[player.index()]))
                 .sum(),
+            // The life tally beside it, read the same way and for the same
+            // reason: "if you gained 3 or more life this turn" is asked
+            // before anything is resolving.
+            crate::card::ValueDef::LifeGainedThisTurn(relation) => [PlayerId::One, PlayerId::Two]
+                .into_iter()
+                .filter(|player| {
+                    self.player_relation_matches(*player, relation, controller, context)
+                })
+                .map(|player| i32::from(self.life_gained_this_turn[player.index()]))
+                .sum(),
             // The X its own spell was cast for, which the permanent recorded
             // as it arrived. An intervening "if X is 5 or more" asks about
             // that number, so it has to be readable here and not only where a
