@@ -4,11 +4,12 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y1993::beta as catalog_leb;
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType, DividedTotal, EffectDef,
-    EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef, PlayerRelation,
-    ResolvedEffectDurationDef, SpellLifeCostDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType,
+    DividedTotal, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
+    ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef, SpellLifeCostDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -2104,13 +2105,34 @@ pub(in crate::card::sets) static ORCISH_LIBRARIAN: CardRecord = CardRecord::new(
 );
 
 // ICE 210 — Orcish Lumberjack
-// Audit: metadata-only — Card rules have not been implemented.
+/// "Sacrifice a Forest" reads the land type rather than the card name, so a
+/// dual land with the type counts and a Forest somebody enchanted still
+/// does. Which one is spent is chosen as the ability is activated.
+static LUMBERJACK_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::TapSource,
+    AbilityCostDef::SacrificePermanent {
+        object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+        controller: PlayerRelation::You,
+    },
+];
+
+static LUMBERJACK_COLORS: [ManaColor; 2] = [ManaColor::Red, ManaColor::Green];
+
 pub(in crate::card::sets) static ORCISH_LUMBERJACK: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("21ef13e3-658c-43a3-a290-4c5dde8e8b55"),
     "Orcish Lumberjack",
-    crate::card::CardArt::new("21ef13e3-658c-43a3-a290-4c5dde8e8b55", "Dan Frazier"),
-    crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("21ef13e3-658c-43a3-a290-4c5dde8e8b55", "Dan Frazier"),
+    CardSet::IceAge,
+    // One mana for a 1/1 that turns a land into three mana of either colour:
+    // the land is gone and the body is nothing, and the deck playing it only
+    // needs the turn it buys.
+    CardRules::new_creature(mana_cost!("{R}"), &["Orc"], 1, 1).with_ability(
+        AbilityDef::activated_mana(
+            "{T}, Sacrifice a Forest: Add three mana in any combination of {R} and/or {G}.",
+            &LUMBERJACK_COST,
+            EffectDef::AddMana(AddManaEffectDef::combination(&LUMBERJACK_COLORS, 3)),
+        ),
+    ),
 );
 
 // ICE 211 — Orcish Squatters
