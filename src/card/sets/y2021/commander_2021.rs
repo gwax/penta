@@ -2,11 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardSupertype, CounterKind, EffectDef,
-    EffectRecipientDef, ExilePlayDurationDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef,
-    ValueDef, ZoneKind, abilities,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, CounterKind, EffectDef, EffectRecipientDef, ExilePlayDurationDef,
+    ObjectPredicateDef, PlayerRelation, ScaledValueDef, TriggerEventDef, ValueDef, ZoneKind,
+    abilities, tokens,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 // C21 53 — Laelia, the Blade Reforged
 /// "From your library and/or your graveyard": one clause naming two zones,
@@ -64,13 +65,51 @@ pub(in crate::card::sets) static LAELIA_THE_BLADE_REFORGED: CardRecord =
     );
 
 // C21 65 — Pest Infestation
-// Audit: metadata-only — Card rules have not been implemented.
+/// "Up to X", so a board with nothing worth destroying is no reason not to
+/// cast it: the Pests come either way.
+static INFESTATION_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to_chosen_x(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Artifact),
+            ObjectPredicateDef::HasType(CardType::Enchantment),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
+/// Twice X, and X is paid twice over in the cost, so every Pest costs a
+/// mana and every artifact destroyed comes with two of them.
+static INFESTATION_PESTS: ScaledValueDef = ScaledValueDef::new(ValueDef::ChosenX, 2);
+
+static INFESTATION_EFFECT: [EffectDef; 2] = [
+    EffectDef::Destroy {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        can_regenerate: true,
+        then: None,
+    },
+    EffectDef::create_token(tokens::pest())
+        .with_count(ValueDef::Scaled(&INFESTATION_PESTS))
+        .with_art(CardArt::new(
+            "d0ddbe3e-4a66-494d-9304-7471232549bf",
+            "Ilse Gort",
+        )),
+];
+
 pub(in crate::card::sets) static PEST_INFESTATION: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4720b4f2-e6af-4223-9250-a0ed21ed5693"),
     "Pest Infestation",
     crate::card::CardArt::new("4720b4f2-e6af-4223-9250-a0ed21ed5693", "Brian Valeza"),
     crate::card::CardSet::Commander2021,
-    crate::card::CardRules::unsupported(),
+    // Two mana per artifact answered, and the two Pests that come with each
+    // are what makes paying it twice over worth doing.
+    CardRules::new_sorcery(mana_cost!("{X}{X}{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy up to X target artifacts and/or enchantments. Create twice X 1/1 black and \
+         green Pest creature tokens with \"When this token dies, you gain 1 life.\"",
+        &INFESTATION_TARGETS,
+        EffectDef::Sequence(&INFESTATION_EFFECT),
+    )),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =

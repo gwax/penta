@@ -342,7 +342,22 @@ impl AbilityTargetDef {
         }
     }
 
-    /// This slot's target count with any sentinel resolved against the X that
+    /// "Up to X target ...", where X is chosen as the ability is activated.
+    /// The lower bound is none: an X of three may still name one, and a
+    /// board with nothing to name is no obstacle to casting it.
+    #[must_use]
+    pub const fn up_to_chosen_x(predicate: AbilityTargetPredicate) -> Self {
+        Self {
+            predicate,
+            minimum: 0,
+            maximum: Self::CHOSEN_X,
+            divided_total: None,
+            another: false,
+            excludes_source: false,
+        }
+    }
+
+    /// This slot's count with any sentinel resolved against the X that
     /// was actually chosen. Enumerating past the candidate list produces no
     /// combinations, so an X larger than the board simply offers nothing --
     /// which is the same as saying the activation is not legal for that X.
