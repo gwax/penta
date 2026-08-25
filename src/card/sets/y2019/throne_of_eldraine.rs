@@ -9,11 +9,12 @@ use crate::card::{
     CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
     CardTypeSet, ColorSet, ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef,
     EffectDef, EffectRecipientDef, ExilePlayConditionDef, ExilePlayDurationDef, KeywordAbility,
-    ManaColor, ObjectPredicateDef, PlayerRefDef, PlayerRelation, ReplacementEffectDef,
-    ResolvedEffectDurationDef, SpellForm, SpellResolutionDestinationDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, tokens,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    ReplacementEffectDef, ResolvedEffectDurationDef, SpellForm, SpellResolutionDestinationDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, tokens,
 };
+use crate::ids::ObjectSetBindingIndex;
 use crate::{CardPartId, PlayOptionId, TargetIndex, mana_cost};
 
 // ELD 5 — Ardenvale Tactician
@@ -681,13 +682,63 @@ pub(in crate::card::sets) static QUESTING_BEAST: CardRecord = CardRecord::new(
 );
 
 // ELD 391 — Fabled Passage
-// Audit: metadata-only — Card rules have not been implemented.
+/// Counted after the search, so the land that just arrived is one of the
+/// four -- and the Passage itself is not, having sacrificed itself to pay.
+/// Three lands beside it is the threshold in practice.
+static FABLED_FOUR_LANDS: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::HasType(CardType::Land),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ),
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 4,
+};
+
+/// "Untap that land": the one this search found rather than any land, which
+/// is why the search binds what it took.
+static FABLED_UNTAPS_IT: EffectDef = EffectDef::Untap {
+    object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+};
+
+static FABLED_MAY_UNTAP: EffectDef = EffectDef::IfCondition {
+    condition: &FABLED_FOUR_LANDS,
+    then: &FABLED_UNTAPS_IT,
+};
+
+static FABLED_PASSAGE_FETCH: EffectDef = EffectDef::SearchZone {
+    player: EffectRecipientDef::Controller,
+    source: ZoneKind::Library,
+    object: ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Land),
+        ObjectPredicateDef::Supertype(CardSupertype::Basic),
+    ]),
+    minimum: 0,
+    maximum: ValueDef::Constant(1),
+    reveal: false,
+    destination: ZoneKind::Battlefield,
+    placement: ZonePlacement::Top,
+    shuffle: true,
+    enters_tapped: true,
+    attachment: None,
+    binding: Some(ObjectSetBindingIndex::PRIMARY),
+    then: Some(&FABLED_MAY_UNTAP),
+};
+
 pub(in crate::card::sets) static FABLED_PASSAGE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("57645743-27fa-4a75-9511-acfc32dd349a"),
     "Fabled Passage",
     crate::card::CardArt::new("57645743-27fa-4a75-9511-acfc32dd349a", "Howard Lyon"),
     crate::card::CardSet::ThroneOfEldraine,
-    crate::card::CardRules::unsupported(),
+    // Evolving Wilds that stops costing you the turn once the game is old
+    // enough: the tapped land is only tapped while you are still behind.
+    CardRules::new_land(&[]).with_ability(AbilityDef::activated(
+        "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the \
+         battlefield tapped, then shuffle. Then if you control four or more lands, untap that \
+         land.",
+        &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+        FABLED_PASSAGE_FETCH,
+    )),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

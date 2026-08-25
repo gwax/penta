@@ -315,6 +315,9 @@ fn every_builtin_land_without_mana_is_named_explicitly() {
             "Scalding Tarn",
             "Verdant Catacombs",
             "Evolving Wilds",
+            // The same fetch, with the tapped land untapping again once you
+            // are no longer the one behind on lands.
+            "Fabled Passage",
             // Counts ten counters down and trades itself for a 20/20; the
             // mana it costs to do that goes in rather than coming out.
             "Dark Depths",

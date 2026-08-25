@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A search can name what it put onto the battlefield.** Binding the cards a
+  search found already worked for every destination but the one that changes
+  their identity: a permanent that entered is a different object from the card
+  that left the library, so a follow-up naming it found nothing there. The
+  binding now records what actually arrived, which is what lets Fabled Passage
+  untap the land it just fetched rather than any land. An entry still waiting
+  on an as-enters answer has committed to nothing and is left out.
+
 - **How much life you gained, and a query that leaves its own target out.**
   The engine could ask whether you had gained life this turn but not how
   much, so a clause paying out the amount had nothing to read. It is now a

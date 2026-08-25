@@ -47,9 +47,8 @@ impl Game {
         let selected = selected.to_vec();
         // Bound where the cards were found. A move out of a hidden zone
         // gives each card a new identity, so a destination that changes
-        // them rebinds below; a library destination and a battlefield
-        // arrival do not, the first because the card never leaves and the
-        // second because what enters is settled after this.
+        // them rebinds below; a library destination does not, because the
+        // card never leaves.
         let mut follow_up = follow_up.map(|follow_up| {
             let mut follow_up = *follow_up;
             if let Some(binding) = binding {
@@ -103,15 +102,25 @@ impl Game {
                             .map_or(arrival, |attached| arrival.attached_to_player(attached))
                     }),
                 );
-                if let Some((landed, _)) = landed {
-                    moved.push(Target::Card(landed.id));
+                // The permanent that entered is a different object from the
+                // card that left the library, so a battlefield arrival is
+                // named by what committed rather than by what moved. An
+                // entry still waiting on an as-enters answer has committed
+                // to nothing yet and is left out: the follow-up would have
+                // named a card that is no longer anywhere.
+                let landed = if destination == ZoneKind::Battlefield {
+                    landed.and(self.arrived.take()).map(Target::Permanent)
+                } else {
+                    landed.map(|(landed, _)| Target::Card(landed.id))
+                };
+                if let Some(landed) = landed {
+                    moved.push(landed);
                 }
             }
             // "Exile them, then ... you may cast those cards": the cards the
             // follow-up names are the ones now sitting in the destination,
             // which are new objects.
-            if destination != ZoneKind::Battlefield
-                && let Some(binding) = binding
+            if let Some(binding) = binding
                 && let Some(follow_up) = follow_up.as_mut()
             {
                 follow_up.context.bind_object_group(binding, moved);
