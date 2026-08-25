@@ -227,13 +227,14 @@ pub(in crate::card::sets) static RAUCOUS_THEATER: CardRecord = CardRecord::new(
 );
 
 // MKM 330 — Shadowy Backstreet
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static SHADOWY_BACKSTREET: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("27eae4ce-e0b3-482b-9136-6fc17333877e"),
     "Shadowy Backstreet",
-    crate::card::CardArt::new("27eae4ce-e0b3-482b-9136-6fc17333877e", "Sergey Glushakov"),
-    crate::card::CardSet::MurdersAtKarlovManor,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("27eae4ce-e0b3-482b-9136-6fc17333877e", "Sergey Glushakov"),
+    CardSet::MurdersAtKarlovManor,
+    // The white-black half. Its deck is the one least pleased to be given a
+    // card it has to bin, which is why the look is worth reading twice.
+    surveil_land(&["Plains", "Swamp"]),
 );
 
 // MKM 333 — Underground Mortuary

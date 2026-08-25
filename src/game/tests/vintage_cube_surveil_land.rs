@@ -232,6 +232,45 @@ fn the_black_green_land_taps_for_its_own_two() {
     assert_eq!(colors.len(), 2, "and nothing else");
 }
 
+/// Shadowy Backstreet is the white-black member, and the last of the cycle:
+/// the same land again, its own two basic types, and the same surveil.
+#[test]
+fn the_backstreet_taps_for_its_own_two_and_surveils() {
+    let (mut game, land) = staged_with(cards::SHADOWY_BACKSTREET, cards::LIGHTNING_BOLT);
+    play_and_surveil(&mut game, land, true);
+    let backstreet =
+        the_land_named(&game, cards::SHADOWY_BACKSTREET).expect("it is on the battlefield");
+    let id = backstreet.card.id;
+    assert!(backstreet.tapped, "tapped on arrival");
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "and its surveil bins what it was told to",
+    );
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == id)
+    {
+        permanent.tapped = false;
+    }
+
+    let colors = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility { source, color, .. } if source == id => Some(color),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert!(colors.contains(&ManaColor::White), "Plains");
+    assert!(colors.contains(&ManaColor::Black), "Swamp");
+    assert_eq!(colors.len(), 2, "and nothing else");
+}
+
 /// The mana abilities come from the basic land types rather than a printed
 /// clause, so both colours are on offer.
 #[test]
