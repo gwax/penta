@@ -578,6 +578,7 @@ mod vintage_cube_third_path_iconoclast;
 mod vintage_cube_thoughtseize;
 mod vintage_cube_thundertrap_trainer;
 mod vintage_cube_time_spiral;
+mod vintage_cube_tinker;
 mod vintage_cube_tireless_tracker;
 mod vintage_cube_tishanas_tidebinder;
 mod vintage_cube_titania;

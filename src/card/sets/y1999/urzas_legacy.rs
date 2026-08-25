@@ -517,13 +517,49 @@ pub(in crate::card::sets) static THORNWIND_FAERIES: CardRecord = CardRecord::new
 );
 
 // ULG 45 — Tinker
-// Audit: metadata-only — Card rules have not been implemented.
+/// Any artifact at all, and the one you give up is usually the cheapest
+/// thing you own: what the cost measures is a card on the battlefield rather
+/// than what it was worth.
+static SACRIFICE_AN_ARTIFACT: SpellAdditionalCostDef = SpellAdditionalCostDef {
+    or_life: None,
+    object: ObjectPredicateDef::HasType(CardType::Artifact),
+    zone: ZoneKind::Battlefield,
+    count: 1,
+    counted: SpellAdditionalCostCountDef::Printed,
+    spend: SpendModeDef::ByZone,
+    or: None,
+};
+
 pub(in crate::card::sets) static TINKER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("7da23b15-dfb8-4267-9b33-d7a4c035c434"),
     "Tinker",
-    crate::card::CardArt::new("7da23b15-dfb8-4267-9b33-d7a4c035c434", "Mike Raabe"),
-    crate::card::CardSet::UrzasLegacy,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("7da23b15-dfb8-4267-9b33-d7a4c035c434", "Mike Raabe"),
+    CardSet::UrzasLegacy,
+    // Three mana that turns a Lotus Petal into whatever the deck's best
+    // artifact is, which is why it is restricted where it is legal at all.
+    CardRules::new_sorcery(mana_cost!("{2}{U}")).with_ability(
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, sacrifice an artifact.\nSearch your \
+             library for an artifact card, put that card onto the battlefield, then shuffle.",
+            &[],
+            SACRIFICE_AN_ARTIFACT,
+            EffectDef::SearchZone {
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: ObjectPredicateDef::HasType(CardType::Artifact),
+                minimum: 0,
+                maximum: ValueDef::Constant(1),
+                reveal: false,
+                destination: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: false,
+                attachment: None,
+                binding: None,
+                then: None,
+            },
+        ),
+    ),
 );
 
 // ULG 46 — Vigilant Drake
