@@ -331,6 +331,7 @@ mod vintage_cube_barrowgoyf;
 mod vintage_cube_bitter_triumph;
 mod vintage_cube_bloodbraid_challenger;
 mod vintage_cube_bolass_citadel;
+mod vintage_cube_boseiju;
 mod vintage_cube_bountiful_landscape;
 mod vintage_cube_brainstorm;
 mod vintage_cube_brainsurge;

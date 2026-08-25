@@ -3,13 +3,13 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityTargetDef,
-    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CostModificationDef,
-    CounterKind, CreatedTokensDef, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TokenCharacteristics,
-    TokenCopyExceptionsDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, tokens,
+    AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef,
+    CostModificationDef, CounterKind, CreatedTokensDef, EffectDef, EffectRecipientDef,
+    InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ResolvedEffectDurationDef, TokenCharacteristics, TokenCopyExceptionsDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -718,13 +718,103 @@ pub(in crate::card::sets) static FABLE_OF_THE_MIRROR_BREAKER: CardRecord = CardR
 );
 
 // NEO 412 — Boseiju, Who Endures
-// Audit: metadata-only — Card rules have not been implemented.
+/// "Nonbasic" is the whole reason the land half is in the target list: every
+/// land worth answering is one, and a basic is never worth the card.
+static AN_ARTIFACT_ENCHANTMENT_OR_NONBASIC_LAND: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::HasType(CardType::Enchantment),
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::HasType(CardType::Land),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(CardSupertype::Basic)),
+    ]),
+]);
+
+static ONE_OF_THEIRS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: AN_ARTIFACT_ENCHANTMENT_OR_NONBASIC_LAND,
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+)];
+
+/// "A land card with a basic land type", which is what makes the
+/// compensation a fixing land rather than a card: a dual with a basic type
+/// counts and a Wasteland does not.
+static A_LAND_WITH_A_BASIC_TYPE: ObjectPredicateDef =
+    ObjectPredicateDef::HasAnyBasicLandType(&BasicLandType::ALL);
+
+/// Their search, not yours: the player whose permanent was destroyed is the
+/// one who may go looking, and the land arrives untapped.
+static THEY_MAY_REPLACE_IT: EffectDef = EffectDef::May {
+    player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
+        TargetIndex::PRIMARY,
+    ))),
+    effect: &EffectDef::SearchZone {
+        player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
+            TargetIndex::PRIMARY,
+        ))),
+        source: ZoneKind::Library,
+        object: A_LAND_WITH_A_BASIC_TYPE,
+        minimum: 0,
+        maximum: ValueDef::Constant(1),
+        reveal: false,
+        destination: ZoneKind::Battlefield,
+        placement: ZonePlacement::Top,
+        shuffle: true,
+        enters_tapped: false,
+        attachment: None,
+        binding: None,
+        then: None,
+    },
+};
+
+static BOSEIJU_CHANNEL: [EffectDef; 2] = [
+    EffectDef::Destroy {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        can_regenerate: true,
+        then: None,
+    },
+    THEY_MAY_REPLACE_IT,
+];
+
+static BOSEIJU_CHANNEL_COST: AbilityCostList = AbilityCostList::two(
+    AbilityCostDef::Mana(mana_cost!("{1}{G}")),
+    AbilityCostDef::DiscardSource,
+);
+
+static BOSEIJU_MANA_COST: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
 pub(in crate::card::sets) static BOSEIJU_WHO_ENDURES: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("0055ea30-20fb-4324-a632-8fed87628f05"),
     "Boseiju, Who Endures",
-    crate::card::CardArt::new("0055ea30-20fb-4324-a632-8fed87628f05", "Esuthio"),
-    crate::card::CardSet::KamigawaNeonDynasty,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("0055ea30-20fb-4324-a632-8fed87628f05", "Esuthio"),
+    CardSet::KamigawaNeonDynasty,
+    // A Forest that answers the one artifact the deck could not otherwise
+    // beat, and costs nothing to play when it does not have to.
+    CardRules::new_land(&[])
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::activated_mana(
+                "{T}: Add {G}.",
+                &BOSEIJU_MANA_COST,
+                EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green)),
+            ),
+            AbilityDef::activated_with_cost_list_and_targets(
+                "Channel — {1}{G}, Discard this card: Destroy target artifact, enchantment, or \
+                 nonbasic land an opponent controls. That player may search their library for a \
+                 land card with a basic land type, put it onto the battlefield, then shuffle. \
+                 This ability costs {1} less to activate for each legendary creature you control.",
+                BOSEIJU_CHANNEL_COST,
+                &ONE_OF_THEIRS,
+                EffectDef::Sequence(&BOSEIJU_CHANNEL),
+            )
+            .with_source_zones(&[ZoneKind::Hand])
+            .with_activation_cost_reduction(
+                ValueDef::CountMatchingObjects(&LEGENDARY_CREATURES_YOU_CONTROL),
+                0,
+            ),
+        ]),
 );
 
 // NEO 418 — The Wandering Emperor (alternate printing)
