@@ -422,6 +422,7 @@ mod vintage_cube_kappa_cannoneer;
 mod vintage_cube_karn_scion_of_urza;
 mod vintage_cube_kellan;
 mod vintage_cube_knight_of_the_reliquary;
+mod vintage_cube_kolaghans_command;
 mod vintage_cube_laelia;
 mod vintage_cube_lands;
 mod vintage_cube_lavaspur_boots;
