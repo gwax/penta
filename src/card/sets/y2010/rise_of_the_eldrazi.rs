@@ -82,13 +82,41 @@ pub(in crate::card::sets) static ULAMOG_S_CRUSHER: CardRecord = CardRecord::new(
 );
 
 // ROE 40 — Oust
-// Audit: metadata-only — Card rules have not been implemented.
+static OUST_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+/// One card down is the whole card: the creature is gone, and its owner's
+/// next draw is the card that was already on top rather than the thing that
+/// just left. Second from the top is beneath the top one.
+static OUST_BURIES_IT: [EffectDef; 2] = [
+    EffectDef::PutIntoLibraryBeneathTop {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        depth: ValueDef::Constant(1),
+    },
+    // "Its controller", read after the creature has left: the player who
+    // controlled it is the one paid for losing it, whoever owns the card.
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::player(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
+            TargetIndex::PRIMARY,
+        ))),
+        amount: ValueDef::Constant(3),
+    },
+];
+
 pub(in crate::card::sets) static OUST: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("07313dd3-d0dc-40ca-98a3-fa4d39e5bcae"),
     "Oust",
     crate::card::CardArt::new("07313dd3-d0dc-40ca-98a3-fa4d39e5bcae", "Mike Bierek"),
     crate::card::CardSet::RiseOfTheEldrazi,
-    crate::card::CardRules::unsupported(),
+    // One white mana answers anything, and pays for it with three life and a
+    // card the other player draws again in two turns.
+    CardRules::new_sorcery(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Put target creature into its owner's library second from the top. Its controller gains \
+         3 life.",
+        &OUST_TARGET,
+        EffectDef::Sequence(&OUST_BURIES_IT),
+    )),
 );
 
 // ROE 61 — Domestication
