@@ -8,9 +8,10 @@ use super::{
     PlayerId, PlayerRefDef, PlayerSetDef, PowerToughnessOperationDef, QuantifierDef,
     ResolvedAbilityOperation, ResolvedAttackRestriction, ResolvedContinuousEffect,
     ResolvedContinuousEffectKind, ResolvedDamageRedirect, ResolvedEffectDurationDef,
-    ResolvedPlayPermission, ResolvedPlayRestriction, ResolvedPowerToughnessOperation, ScopedEffect,
-    StackObject, StackObjectKind, Target, TargetIndex, TargetSelection, TargetSlotId,
-    TemporaryAbilityGrant, TriggerConditionDef, TriggerContext, ZoneKind, abilities,
+    ResolvedPlayPermission, ResolvedPlayRestriction, ResolvedPlayerProtection,
+    ResolvedPowerToughnessOperation, ScopedEffect, StackObject, StackObjectKind, Target,
+    TargetIndex, TargetSelection, TargetSlotId, TemporaryAbilityGrant, TriggerConditionDef,
+    TriggerContext, ZoneKind, abilities,
 };
 
 #[derive(Clone, Copy)]
@@ -399,6 +400,19 @@ impl Game {
             AppliedRuleDef::CannotGainLife => {
                 if let Target::Player(affected_player) = target {
                     self.cannot_gain_life[affected_player.index()] = true;
+                }
+                true
+            }
+            AppliedRuleDef::PlayerProtectionFrom(quality) => {
+                if let Target::Player(affected_player) = target {
+                    self.resolved_player_protections
+                        .push(ResolvedPlayerProtection {
+                            definition,
+                            source,
+                            affected_player,
+                            expiration,
+                            quality,
+                        });
                 }
                 true
             }

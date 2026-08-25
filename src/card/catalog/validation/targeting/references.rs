@@ -352,6 +352,7 @@ fn validate_trigger_condition(
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::SourceCastWith(_)
         | TriggerConditionDef::SourceCastFrom(_)
+        | TriggerConditionDef::SourceWasCast
         | TriggerConditionDef::SourceCastAtInstantSpeed
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
@@ -601,6 +602,9 @@ fn validate_resolving_applied_effect(
             // A timing permission is aimed at a player the same way a
             // prohibition is: no object has a casting window of its own.
             | AppliedRuleDef::MayCastAsThoughItHadFlash(_)
+            // A player's protection is likewise a rule about the player: an
+            // object gets protection as a keyword instead.
+            | AppliedRuleDef::PlayerProtectionFrom(_)
             | AppliedRuleDef::RedirectDamageFromTo { .. },
         ) => {
             if matches!(recipient.0, EffectRecipientSetDef::Objects(_)) {

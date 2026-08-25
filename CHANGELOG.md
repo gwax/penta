@@ -25,6 +25,20 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Protection for a player.** The engine had protection for objects and
+  nothing at all for players, so "you gain protection from everything" had no
+  shape to take. A player's protection is the shorter list: no damage from a
+  matching source reaches them, no matching spell or ability may target them,
+  and no matching Aura may enchant them -- nothing about blocking or
+  destruction applies to a player. Unlike hexproof it stops the protected
+  player's own spells too, because it asks what the source is rather than who
+  controls it, which is what makes "from everything" a real cost. A trigger
+  can also ask whether its source was cast at all, rather than only which
+  zone it was cast from. The One Ring prints all of it, and pays for its
+  cards with an upkeep that charges one life for every burden counter it has
+  put on itself. Player protection is an additive checkpoint list; checkpoint
+  format 8, replay version 2, and protocol 29 are unchanged.
+
 - **Persist.** Undying's mirror, and now the same code: a creature that dies
   comes back with a counter on it, and which counter -- a +1/+1 or a -1/-1 --
   is the whole of the difference. Each is barred by the counter it puts on,

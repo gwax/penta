@@ -454,6 +454,16 @@ pub enum AppliedRuleDef {
         matcher: DamageEventMatcherDef,
         limit: DamageLimitDef,
     },
+    /// "You gain protection from everything until your next turn." A
+    /// player's protection, which is the object keyword's shorter list: no
+    /// damage from a matching source reaches them, no matching spell or
+    /// ability may target them, and no matching Aura may enchant them.
+    /// Nothing about blocking or destruction applies to a player.
+    ///
+    /// Unlike hexproof this stops the protected player's own spells too:
+    /// protection asks about the source's qualities rather than about who
+    /// controls it, which is what makes "from everything" a real cost.
+    PlayerProtectionFrom(ObjectPredicateDef),
     /// "That player can't gain life for the rest of the game." A prohibition
     /// on the player rather than a replacement of the gain: nothing is
     /// multiplied down to zero, the life simply never arrives, and nothing

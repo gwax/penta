@@ -497,6 +497,7 @@ fn validate_trigger_condition_shape(
         | TriggerConditionDef::SpellsCastLastTurn { .. }
         | TriggerConditionDef::SourceCastWith(_)
         | TriggerConditionDef::SourceCastFrom(_)
+        | TriggerConditionDef::SourceWasCast
         | TriggerConditionDef::SourceCastAtInstantSpeed
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
@@ -686,6 +687,28 @@ fn recipient_nonbattlefield_zones_support_flashback(
     }
 }
 
+/// Which player sets a static play rule may name. A resolving one may name
+/// whoever the effect points at; a static one is read live wherever a play is
+/// offered, so its recipient has to be a set that can be answered there.
+fn static_play_rule_recipient_supported(recipient: EffectRecipientDef) -> bool {
+    matches!(
+        recipient.0,
+        EffectRecipientSetDef::Players(
+            PlayerSetDef::All
+                | PlayerSetDef::Related(
+                    PlayerRelation::Any
+                        | PlayerRelation::You
+                        | PlayerRelation::NotYou
+                        | PlayerRelation::Opponent
+                        | PlayerRelation::ActivePlayer
+                        | PlayerRelation::NonactivePlayer
+                        | PlayerRelation::EnchantedPlayer
+                )
+                | PlayerSetDef::One(PlayerRefDef::EffectController | PlayerRefDef::EnchantedPlayer)
+        )
+    )
+}
+
 fn validate_applied_effect_shapes(
     recipient: EffectRecipientDef,
     effect: AppliedEffectDef,
@@ -721,26 +744,7 @@ fn validate_applied_effect_shapes(
         ) => {
             validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
             validate_object_predicate_shape(restriction.object, targets)?;
-            if static_effect
-                && !matches!(
-                    recipient.0,
-                    EffectRecipientSetDef::Players(
-                        PlayerSetDef::All
-                            | PlayerSetDef::Related(
-                                PlayerRelation::Any
-                                    | PlayerRelation::You
-                                    | PlayerRelation::NotYou
-                                    | PlayerRelation::Opponent
-                                    | PlayerRelation::ActivePlayer
-                                    | PlayerRelation::NonactivePlayer
-                                    | PlayerRelation::EnchantedPlayer
-                            )
-                            | PlayerSetDef::One(
-                                PlayerRefDef::EffectController | PlayerRefDef::EnchantedPlayer
-                            )
-                    )
-                )
-            {
+            if static_effect && !static_play_rule_recipient_supported(recipient) {
                 return Err(
                     GrantedAbilityValidationError::UnsupportedStaticPlayerRecipient { recipient },
                 );
@@ -762,6 +766,13 @@ fn validate_applied_effect_shapes(
         AppliedEffectDef::Rule(AppliedRuleDef::UntapAtMostOne(predicate)) => {
             validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
             validate_object_predicate_shape(predicate, targets)
+        }
+        // The protection names the player who has it and the quality it is
+        // from, which is an ordinary object predicate read against whatever
+        // would damage, target, or enchant them.
+        AppliedEffectDef::Rule(AppliedRuleDef::PlayerProtectionFrom(quality)) => {
+            validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
+            validate_object_predicate_shape(quality, targets)
         }
         AppliedEffectDef::Rule(AppliedRuleDef::AttackRestriction(restriction)) => {
             validate_attack_restriction_shape(recipient, restriction, targets)

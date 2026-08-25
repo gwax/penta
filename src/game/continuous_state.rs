@@ -146,6 +146,18 @@ pub(super) struct ResolvedPlayRestriction {
     pub(super) restriction: PlayRestrictionDef,
 }
 
+/// A player's protection after it has resolved. Stored the way the play
+/// prohibitions beside it are: the player it protects and how long it lasts
+/// are frozen here, so the source can leave without taking it away.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct ResolvedPlayerProtection {
+    pub(super) definition: AppliedEffectDef,
+    pub(super) source: AbilitySourceRef,
+    pub(super) affected_player: PlayerId,
+    pub(super) expiration: ContinuousEffectExpiration,
+    pub(super) quality: crate::card::ObjectPredicateDef,
+}
+
 /// A resolving attack prohibition after its protected player has been
 /// frozen. Static creature-scoped attack restrictions remain source-derived;
 /// this is for effects such as Island Sanctuary that protect a player for a

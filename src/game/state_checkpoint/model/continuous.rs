@@ -48,6 +48,18 @@ pub(in crate::game::state_checkpoint) struct ResolvedAttackRestrictionSnapshot {
     pub(in crate::game::state_checkpoint) expiration: ContinuousEffectExpirationSnapshot,
 }
 
+/// A resolved player protection, stored the way the restrictions above are:
+/// the rule is found again through its locator, so what is written down is
+/// who it protects and how long it lasts.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(in crate::game::state_checkpoint) struct ResolvedPlayerProtectionSnapshot {
+    pub(in crate::game::state_checkpoint) definition: AppliedEffectLocator,
+    pub(in crate::game::state_checkpoint) source: AbilitySourceSnapshot,
+    pub(in crate::game::state_checkpoint) affected_seat: usize,
+    pub(in crate::game::state_checkpoint) expiration: ContinuousEffectExpirationSnapshot,
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(in crate::game::state_checkpoint) enum SetOperationSnapshot {

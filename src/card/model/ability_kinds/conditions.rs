@@ -99,6 +99,11 @@ pub enum TriggerConditionDef {
     /// which zone the cast came out of, recorded as the cast happens because
     /// by the time anything reads it the card has left that zone.
     SourceCastFrom(ZoneKind),
+    /// "If you cast it": true when the permanent got here as a spell, out of
+    /// whichever zone that spell was cast from, and false when it was put
+    /// onto the battlefield by anything else. Reanimation, a Show and Tell,
+    /// and a face-down flip all leave this false.
+    SourceWasCast,
     /// How much loyalty the ability's own source has left.
     SourceLoyalty {
         comparison: ComparisonDef,

@@ -3,12 +3,13 @@ use crate::card::{AppliedEffectDef, AppliedRuleDef};
 
 use super::model::{
     ResolvedAttackRestrictionSnapshot, ResolvedPlayPermissionSnapshot,
-    ResolvedPlayRestrictionSnapshot,
+    ResolvedPlayRestrictionSnapshot, ResolvedPlayerProtectionSnapshot,
 };
 use super::{
     AbilitySourceRef, ContinuousEffectTimestamp, GameObjectId, ResolvedAttackRestriction,
-    ResolvedPlayPermission, ResolvedPlayRestriction, ability_origin_from_snapshot, event,
-    expiration_snapshot, parse_expiration, resolved_applied_effect_locator, semantics, wire,
+    ResolvedPlayPermission, ResolvedPlayRestriction, ResolvedPlayerProtection,
+    ability_origin_from_snapshot, event, expiration_snapshot, parse_expiration,
+    resolved_applied_effect_locator, semantics, wire,
 };
 
 pub(super) fn resolved_attack_restriction_snapshot(
@@ -32,6 +33,59 @@ pub(super) fn resolved_attack_restriction_snapshot(
         source: event::ability_source_snapshot(restriction.source),
         affected_seat: restriction.affected_player.index(),
         expiration: expiration_snapshot(restriction.expiration),
+    })
+}
+
+pub(super) fn resolved_player_protection_snapshot(
+    catalog: &CardCatalog,
+    protection: &ResolvedPlayerProtection,
+) -> Option<ResolvedPlayerProtectionSnapshot> {
+    let AppliedEffectDef::Rule(AppliedRuleDef::PlayerProtectionFrom(authored)) =
+        protection.definition
+    else {
+        return None;
+    };
+    if authored != protection.quality {
+        return None;
+    }
+    Some(ResolvedPlayerProtectionSnapshot {
+        definition: resolved_applied_effect_locator(
+            catalog,
+            protection.source,
+            protection.definition,
+        )?,
+        source: event::ability_source_snapshot(protection.source),
+        affected_seat: protection.affected_player.index(),
+        expiration: expiration_snapshot(protection.expiration),
+    })
+}
+
+pub(super) fn parse_resolved_player_protection(
+    catalog: &CardCatalog,
+    snapshot: &ResolvedPlayerProtectionSnapshot,
+) -> Result<ResolvedPlayerProtection, String> {
+    let source = AbilitySourceRef {
+        object: GameObjectId(snapshot.source.object),
+        ability: ability_origin_from_snapshot(snapshot.source.ability),
+    };
+    if !semantics::applied_effect_locator_matches_source(&snapshot.definition, source) {
+        return Err(
+            "checkpoint player-protection locator disagrees with its source ability".to_owned(),
+        );
+    }
+    let definition = semantics::catalog_applied_effect(catalog, &snapshot.definition)
+        .ok_or("checkpoint player-protection locator is absent from this catalog")?;
+    let AppliedEffectDef::Rule(AppliedRuleDef::PlayerProtectionFrom(quality)) = definition else {
+        return Err(
+            "checkpoint player-protection locator does not name a player protection".to_owned(),
+        );
+    };
+    Ok(ResolvedPlayerProtection {
+        definition,
+        source,
+        affected_player: wire::player_from_index(snapshot.affected_seat)?,
+        expiration: parse_expiration(snapshot.expiration)?,
+        quality,
     })
 }
 

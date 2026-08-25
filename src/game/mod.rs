@@ -171,8 +171,9 @@ use continuous_state::{
     AppliedPlayRestriction, AppliedRuleEffect, ContinuousEffectExpiration,
     ContinuousEffectTimestamp, ResolvedAbilityOperation, ResolvedAttackRestriction,
     ResolvedContinuousEffect, ResolvedContinuousEffectKind, ResolvedOngoingEffect,
-    ResolvedPlayPermission, ResolvedPlayRestriction, ResolvedPowerToughnessOperation,
-    StaticAppliedEffect, StaticEffectTraversal, TemporaryAbilityGrant,
+    ResolvedPlayPermission, ResolvedPlayRestriction, ResolvedPlayerProtection,
+    ResolvedPowerToughnessOperation, StaticAppliedEffect, StaticEffectTraversal,
+    TemporaryAbilityGrant,
 };
 use decision_state::{
     ApplicableBeginTurnReplacement, BalanceAction, BalancePhase, BalanceTask, CounteredSpellZone,
@@ -892,6 +893,10 @@ pub struct Game {
     /// Resolving restrictions on which creatures may attack a player.
     /// Creature-scoped printed restrictions remain derived from abilities.
     resolved_attack_restrictions: Vec<ResolvedAttackRestriction>,
+    /// Resolving player protections. What they stop -- damage, targeting,
+    /// and Auras -- is asked of this list wherever a player could be on the
+    /// receiving end.
+    resolved_player_protections: Vec<ResolvedPlayerProtection>,
     /// Resolving play permissions, the mirror of the prohibitions above.
     /// "You may cast spells from your graveyard this turn" is aimed at a
     /// player and lasts no longer than the turn, so nothing on the

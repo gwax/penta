@@ -161,6 +161,11 @@ pub(super) struct GameSnapshot {
     /// with no such effect in it has.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) resolved_play_permissions: Vec<ResolvedPlayPermissionSnapshot>,
+    /// Resolving player protections. Additive for the same reason: nothing
+    /// could protect a player before, so a checkpoint without them restores
+    /// a game in which nobody is protected.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) resolved_player_protections: Vec<ResolvedPlayerProtectionSnapshot>,
     pub(super) spells_cast_this_turn: [u16; 2],
     pub(super) spells_cast_last_turn: [u16; 2],
     /// Additive: older checkpoints have no predicate-filterable cast history.

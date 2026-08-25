@@ -443,6 +443,11 @@ impl Game {
                 .expiration
                 .survives_turn_start(self.active_player, turns_started)
         });
+        self.resolved_player_protections.retain(|protection| {
+            protection
+                .expiration
+                .survives_turn_start(self.active_player, turns_started)
+        });
         self.ongoing_effects.retain(|effect| {
             effect
                 .expiration
@@ -574,6 +579,8 @@ impl Game {
             .retain(|restriction| restriction.expiration.survives_untap_step(active));
         self.resolved_play_permissions
             .retain(|permission| permission.expiration.survives_untap_step(active));
+        self.resolved_player_protections
+            .retain(|protection| protection.expiration.survives_untap_step(active));
         self.ongoing_effects
             .retain(|effect| effect.expiration.survives_untap_step(active));
         for permanent in &mut self.battlefield {
@@ -623,6 +630,8 @@ impl Game {
             .retain(|restriction| restriction.expiration.survives_end_of_combat());
         self.resolved_play_permissions
             .retain(|permission| permission.expiration.survives_end_of_combat());
+        self.resolved_player_protections
+            .retain(|protection| protection.expiration.survives_end_of_combat());
         self.ongoing_effects
             .retain(|effect| effect.expiration.survives_end_of_combat());
     }
@@ -694,6 +703,8 @@ impl Game {
             .retain(|restriction| restriction.expiration.survives_cleanup());
         self.resolved_play_permissions
             .retain(|permission| permission.expiration.survives_cleanup());
+        self.resolved_player_protections
+            .retain(|protection| protection.expiration.survives_cleanup());
         self.ongoing_effects
             .retain(|effect| effect.expiration.survives_cleanup());
         self.damage_preventions

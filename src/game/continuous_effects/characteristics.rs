@@ -253,6 +253,46 @@ impl Game {
         .is_some()
     }
 
+    /// Whether a player's protection stops something this source would do
+    /// to them. The quality is read off the source the way an object's
+    /// protection reads it, so "from everything" stops the protected
+    /// player's own spells as readily as anyone else's.
+    pub(super) fn player_is_protected_from(
+        &self,
+        player: PlayerId,
+        source: GameObjectId,
+        source_is_spell: bool,
+    ) -> bool {
+        if self.resolved_player_protections.is_empty() {
+            return false;
+        }
+        let Some(characteristics) = self.protection_source_characteristics(source) else {
+            return false;
+        };
+        self.resolved_player_protections
+            .iter()
+            .filter(|protection| protection.affected_player == player)
+            .filter(|protection| self.resolved_protection_is_active(protection))
+            .any(|protection| {
+                self.trigger_object_matches_for_controller(
+                    protection.quality,
+                    &characteristics,
+                    protection.source.object,
+                    source_is_spell,
+                    Some(player),
+                )
+            })
+    }
+
+    /// A protection outlives the permanent that granted it, so what decides
+    /// whether it still applies is its own recorded duration.
+    fn resolved_protection_is_active(
+        &self,
+        protection: &crate::game::ResolvedPlayerProtection,
+    ) -> bool {
+        self.continuous_effect_expiration_is_active(protection.expiration, protection.source.object)
+    }
+
     /// Every quality at once, for the sources that are whole objects rather
     /// than a bare color set.
     pub(super) fn is_protected_from_object(

@@ -51,6 +51,11 @@ impl Game {
         let Some(rules) = self.effective_rules(aura) else {
             return false;
         };
+        // A protected player cannot be enchanted by an Aura the protection
+        // names (CR 702.16e), and one already attached falls off.
+        if self.player_is_protected_from(player, aura.card.id, false) {
+            return false;
+        }
         Self::aura_player_relation(&rules).is_some_and(|relation| {
             self.player_relation_matches(
                 player,

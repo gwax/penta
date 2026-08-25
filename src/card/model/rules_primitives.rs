@@ -208,6 +208,9 @@ impl CounterKind {
     /// energy: "you get an experience counter" adds to the player's own
     /// pile, and nothing takes them away again.
     pub const Experience: Self = Self::named("experience");
+    /// What The One Ring charges its upkeep with: one more every time it
+    /// draws, and never removed.
+    pub const Burden: Self = Self::named("burden");
 
     /// Whether this is the counter a Saga reads its chapters with.
     #[must_use]
@@ -218,7 +221,7 @@ impl CounterKind {
     /// The counter names currently authored in the catalog or interpreted by
     /// the engine. This is a serialization registry, not a storage layout:
     /// its order has no rules or checkpoint meaning.
-    pub const KNOWN: [Self; 52] = [
+    pub const KNOWN: [Self; 53] = [
         Self::PlusOnePlusOne,
         Self::Lore,
         Self::named("javelin"),
@@ -271,9 +274,10 @@ impl CounterKind {
         Self::Ice,
         Self::Story,
         Self::Experience,
+        Self::Burden,
     ];
 
-    const KNOWN_NAMES: [&'static str; 52] = [
+    const KNOWN_NAMES: [&'static str; 53] = [
         "+1/+1",
         "lore",
         "javelin",
@@ -326,6 +330,7 @@ impl CounterKind {
         "ice",
         "story",
         "experience",
+        "burden",
     ];
 
     #[must_use]

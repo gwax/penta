@@ -630,6 +630,33 @@ impl Game {
         }
     }
 
+    /// Whether what the damage landed on is protected from what dealt it,
+    /// for a permanent (CR 702.16e) or for a player, which reads the same
+    /// source against the shorter list a player's protection covers.
+    fn protection_stops_damage(
+        &self,
+        target: Option<Target>,
+        source: Option<GameObjectId>,
+        source_is_spell: bool,
+    ) -> bool {
+        let (Some(target), Some(source)) = (target, source) else {
+            return false;
+        };
+        match target {
+            Target::Permanent(id) => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == id)
+                .is_some_and(|permanent| {
+                    self.is_protected_from_object(permanent, source, source_is_spell)
+                }),
+            Target::Player(player) => {
+                self.player_is_protected_from(player, source, source_is_spell)
+            }
+            Target::Card(_) | Target::Spell(_) => false,
+        }
+    }
+
     pub(super) fn damage_target_from_kind(
         &mut self,
         source: Option<GameObjectId>,
@@ -683,18 +710,7 @@ impl Game {
         // long before this.
         if preventable
             && (self.static_damage_is_prevented(event)
-                || target.is_some_and(|target| match target {
-                    Target::Permanent(id) => self
-                        .battlefield
-                        .iter()
-                        .find(|permanent| permanent.card.id == id)
-                        .is_some_and(|permanent| {
-                            source.is_some_and(|source| {
-                                self.is_protected_from_object(permanent, source, source_is_spell)
-                            })
-                        }),
-                    Target::Player(_) | Target::Card(_) | Target::Spell(_) => false,
-                }))
+                || self.protection_stops_damage(target, source, source_is_spell))
         {
             return 0;
         }

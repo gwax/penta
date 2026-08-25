@@ -454,6 +454,22 @@ impl Game {
                             .find(|candidate| candidate.id == source)
                             .is_some_and(|candidate| candidate.cast_from_zone.is_some_and(|from| from.zone() == *zone))
                 }
+                // Any recorded cast zone means it was cast; nothing else
+                // sets one.
+                TriggerConditionDef::SourceWasCast => {
+                    object.is_some_and(|(resolving, _, _)| {
+                        resolving.id == source && resolving.cast_from_zone.is_some()
+                    }) || self
+                        .battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == source)
+                        .is_some_and(|permanent| permanent.cast_from_zone.is_some())
+                        || self
+                            .stack
+                            .iter()
+                            .find(|candidate| candidate.id == source)
+                            .is_some_and(|candidate| candidate.cast_from_zone.is_some())
+                }
                 TriggerConditionDef::SourceCastWith(kind) => {
                     self.battlefield
                         .iter()

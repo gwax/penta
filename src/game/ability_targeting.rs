@@ -119,8 +119,13 @@ impl Game {
     ) -> Vec<Target> {
         match predicate {
             AbilityTargetPredicate::AnyTarget => {
-                let mut targets =
-                    vec![Target::Player(PlayerId::One), Target::Player(PlayerId::Two)];
+                let mut targets = [PlayerId::One, PlayerId::Two]
+                    .into_iter()
+                    .filter(|player| {
+                        !self.player_is_protected_from(*player, source, source_is_spell)
+                    })
+                    .map(Target::Player)
+                    .collect::<Vec<_>>();
                 targets.extend(
                     self.battlefield
                         .iter()
@@ -155,7 +160,7 @@ impl Game {
                 .filter(|player| {
                     self.player_relation_matches_for_source(
                         *player, relation, controller, source, context,
-                    )
+                    ) && !self.player_is_protected_from(*player, source, source_is_spell)
                 })
                 .map(Target::Player)
                 .collect(),
@@ -218,7 +223,7 @@ impl Game {
             .filter(|player| {
                 self.player_relation_matches_for_source(
                     *player, relation, controller, source, context,
-                )
+                ) && !self.player_is_protected_from(*player, source, source_is_spell)
             })
             .map(Target::Player)
             .collect::<Vec<_>>();
