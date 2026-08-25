@@ -185,6 +185,7 @@ impl Game {
         let mut game = Self {
             format,
             arrived: None,
+            enumerated: EnumeratedActions::default(),
             prospective_x: super::prospective_x::ProspectiveX::default(),
             successors: std::collections::HashMap::new(),
             damage_taken_this_turn: checkpoint.damage_taken_this_turn,

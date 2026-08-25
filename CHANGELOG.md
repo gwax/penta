@@ -25,6 +25,20 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **`Game::enumerate_legal_actions`, so `apply` stops enumerating twice.**
+  `apply` validated an ordinary action with `legal_actions(player).contains`,
+  a second full enumeration of the list the caller had just chosen from --
+  and enumeration is the expensive half of a ply. A game now keeps the list
+  it hands out through `enumerate_legal_actions` and validates the next
+  `apply` against it, which measured 30-40% off a driver that enumerates and
+  then applies, the shape every search has. Nothing is asked of the caller:
+  the list stays inside the game rather than being passed back, and every
+  entry point that can mutate a game from outside drops it, so it can only
+  ever describe the position it is used on. A debug assertion re-derives the
+  list on each hit and compares, so the test suite proves that rather than a
+  comment promising it. `legal_actions` and `apply` are unchanged for
+  everyone else, and protocol 29 is unaffected.
+
 - **A search can name what it put onto the battlefield.** Binding the cards a
   search found already worked for every destination but the one that changes
   their identity: a permanent that entered is a different object from the card

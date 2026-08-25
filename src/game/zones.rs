@@ -143,6 +143,7 @@ impl Game {
         player: PlayerId,
         cards: &[CardDefinitionId],
     ) -> Result<(), ZoneError> {
+        self.forget_enumeration();
         let built = self.build_zone(player, cards)?;
         self.players[player.index()].hand = built;
         Ok(())
@@ -179,6 +180,7 @@ impl Game {
         player: PlayerId,
         definition: CardDefinitionId,
     ) -> Result<GameObjectId, ZoneError> {
+        self.forget_enumeration();
         let Some(card) = self.catalog.get(definition) else {
             return Err(ZoneError::UnknownCard(definition));
         };
@@ -242,6 +244,7 @@ impl Game {
         player: PlayerId,
         definition: CardDefinitionId,
     ) -> Result<GameObjectId, ZoneError> {
+        self.forget_enumeration();
         let built = self.build_zone(player, &[definition])?;
         let card = built
             .into_iter()
@@ -264,6 +267,7 @@ impl Game {
         player: PlayerId,
         cards: &[CardDefinitionId],
     ) -> Result<(), ZoneError> {
+        self.forget_enumeration();
         let built = self.build_zone(player, cards)?;
         self.players[player.index()].library = built;
         Ok(())

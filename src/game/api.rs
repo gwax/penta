@@ -286,6 +286,37 @@ impl Game {
         actions
     }
 
+    /// Enumerates a player's legal actions and keeps the list, so that the
+    /// [`Self::apply`] that follows validates against it instead of
+    /// enumerating a second time.
+    ///
+    /// The same list as [`Self::legal_actions`]. A caller that enumerates and
+    /// then applies -- which is every search -- wants this one: `apply`
+    /// otherwise re-derives the list it was just handed, and enumeration is
+    /// the expensive half of a ply. Nothing is promised beyond speed, and
+    /// nothing is asked of the caller: the list stays here rather than being
+    /// handed back, so it cannot be submitted against a position it no longer
+    /// describes.
+    ///
+    /// The list survives only until the next mutation, so hold it across one
+    /// `apply` at most; the borrow checker enforces exactly that.
+    pub fn enumerate_legal_actions(&mut self, player: PlayerId) -> &[Action] {
+        let actions = self.legal_actions(player);
+        &self.enumerated.0.insert((player, actions)).1
+    }
+
+    /// Drops any kept enumeration, because the position it described is about
+    /// to change or has already changed.
+    ///
+    /// Every entry point that can mutate a game from outside this module calls
+    /// this. Inside the module nothing fills the memo -- only
+    /// [`Self::enumerate_legal_actions`] does, and it needs `&mut Game` from a
+    /// caller -- so a resolution cannot leave a half-applied position's list
+    /// behind for the next `apply` to trust.
+    pub(super) fn forget_enumeration(&mut self) {
+        self.enumerated.0 = None;
+    }
+
     /// Applies one engine-enumerated action for a player.
     ///
     /// # Errors
@@ -296,12 +327,39 @@ impl Game {
         if self.result.is_some() {
             return Err(ActionError::GameAlreadyFinished);
         }
-        if !self.is_legal_action(player, &action) {
+        if !self.action_is_legal_now(player, &action) {
             return Err(ActionError::NotLegal { player, action });
         }
 
         self.apply_legal_action(player, action);
         Ok(())
+    }
+
+    /// [`Self::is_legal_action`], reading a list this game enumerated since it
+    /// last changed rather than deriving one.
+    ///
+    /// Taking the list is both how it is used and how it is cleared, so a
+    /// mutating entry point cannot leave a stale one behind for the next
+    /// caller.
+    fn action_is_legal_now(&mut self, player: PlayerId, action: &Action) -> bool {
+        let enumerated = self.enumerated.0.take();
+        // A decision observation exposes a bounded selection schema rather
+        // than every combination, so the submitted options are checked
+        // against the pending decision either way.
+        if matches!(action, Action::ChooseDecision { .. }) {
+            return self.is_legal_action(player, action);
+        }
+        match enumerated {
+            Some((seat, actions)) if seat == player => {
+                debug_assert_eq!(
+                    actions,
+                    self.legal_actions(player),
+                    "a kept enumeration outlived the position it described",
+                );
+                actions.contains(action)
+            }
+            _ => self.is_legal_action(player, action),
+        }
     }
 
     /// Applies an action chosen from an observation made immediately before
@@ -315,6 +373,7 @@ impl Game {
         observation: &PlayerObservation,
         action: Action,
     ) -> Result<(), ActionError> {
+        self.forget_enumeration();
         if self.result.is_some() {
             return Err(ActionError::GameAlreadyFinished);
         }
@@ -443,6 +502,7 @@ impl Game {
     /// does not require that player to hold priority. Hosts with no clock
     /// never call it.
     pub fn lose_on_time(&mut self, player: PlayerId) {
+        self.forget_enumeration();
         if self.result.is_some() {
             return;
         }

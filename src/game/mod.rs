@@ -84,6 +84,7 @@ mod effect_support;
 mod effect_values;
 mod endure;
 mod entry_replacements;
+mod enumerated_actions;
 mod error;
 mod event;
 mod exert;
@@ -973,7 +974,12 @@ pub struct Game {
     extra_turns: Vec<PlayerId>,
     result: Option<GameResult>,
     events: Vec<GameEvent>,
+    /// The legal-action list this game last handed out, good only until the
+    /// next mutation. See [`EnumeratedActions`].
+    enumerated: EnumeratedActions,
 }
+
+use enumerated_actions::EnumeratedActions;
 
 include!("permanent.rs");
 include!("game_stack.rs");

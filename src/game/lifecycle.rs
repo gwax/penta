@@ -1,10 +1,10 @@
 use super::{
     BTreeMap, CardCatalog, CardDefinitionId, CardInstance, CharacteristicSource, CombatDamageStage,
-    ContinuousEffectTimestamp, CounterKind, DamageSourceGroupDef, Deck, Format, Game, GameError,
-    GameEvent, GameObjectId, GameStack, ManaPool, ObjectBacking, ObjectCharacteristics,
-    ObjectInstance, ObjectKind, Permanent, PermanentLastKnownInformation, PhysicalCard,
-    PhysicalCardId, PlayerId, PlayerState, Pregame, ReplayRng, RetiredObject, StackObject, Step,
-    TriggerContext, ValueDef, VecDeque, ZoneChangeOutcome, remove_card,
+    ContinuousEffectTimestamp, CounterKind, DamageSourceGroupDef, Deck, EnumeratedActions, Format,
+    Game, GameError, GameEvent, GameObjectId, GameStack, ManaPool, ObjectBacking,
+    ObjectCharacteristics, ObjectInstance, ObjectKind, Permanent, PermanentLastKnownInformation,
+    PhysicalCard, PhysicalCardId, PlayerId, PlayerState, Pregame, ReplayRng, RetiredObject,
+    StackObject, Step, TriggerContext, ValueDef, VecDeque, ZoneChangeOutcome, remove_card,
 };
 use crate::card::PlayerRelation;
 
@@ -154,6 +154,7 @@ impl Game {
         Ok(Self {
             format,
             arrived: None,
+            enumerated: EnumeratedActions::default(),
             prospective_x: super::prospective_x::ProspectiveX::default(),
             successors: std::collections::HashMap::new(),
             seed,

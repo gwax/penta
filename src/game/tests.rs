@@ -21,6 +21,7 @@ use crate::{
     TargetPredicate, TargetSelection, TargetSlotDef, TargetSlotId, ZonePlacement,
 };
 
+mod enumerated_apply;
 mod fixtures;
 pub(super) use fixtures::*;
 
