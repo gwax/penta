@@ -120,6 +120,15 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         revealed: Vec<DetachedCardSnapshot>,
         continuation: EffectContinuationSnapshot,
     },
+    /// A look whose cards each go somewhere different. The cards are
+    /// written down because they are out of the library while the choices
+    /// are made, and the index says which destination is being asked about.
+    DistributedTopCardSelection {
+        player: usize,
+        remaining: Vec<DetachedCardSnapshot>,
+        next_destination: usize,
+        continuation: EffectContinuationSnapshot,
+    },
     /// A selection that asks once per card type. Both piles are written
     /// down: the cards have already left the library, and which of them were
     /// taken by an earlier type is part of the pending question.

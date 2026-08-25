@@ -168,6 +168,40 @@ fn validate_top_card_selection_observation(
     )
 }
 
+/// The options one destination's pick offers, checked against what the
+/// observation carries. Which destination is being asked about is part of
+/// the pending question, so it is validated the same way the group is.
+pub(super) fn validate_distributed_selection_observation(
+    game: &Game,
+    observation: &DecisionObservation,
+    progress: &super::super::DistributedSelectionProgress,
+    destinations: &'static [crate::card::SelectionDestinationDef],
+) -> Result<(), String> {
+    let destination = destinations
+        .get(progress.next_destination)
+        .copied()
+        .ok_or("distributed selection names a destination its effect does not have")?;
+    if progress.remaining.len() < 2 {
+        return Err("distributed selection asks about a card nobody chooses".into());
+    }
+    let expected = game.card_decision_options(&progress.remaining, DecisionZone::Library);
+    validate_authored_decision(
+        observation,
+        progress.player,
+        Game::distributed_selection_prompt(destination),
+        DecisionVisibility::Private,
+        if destination.zone == crate::card::ZoneKind::Hand {
+            DecisionPreference::HigherCardValue
+        } else {
+            DecisionPreference::LowerCardValue
+        },
+        1,
+        1,
+        &expected,
+        "distributed selection",
+    )
+}
+
 /// The options one card type's pick offers, checked against what the
 /// observation carries. Which type is being asked about is part of the
 /// pending question, so it is validated the same way the group is.

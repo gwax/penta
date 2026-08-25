@@ -589,6 +589,7 @@ impl Game {
                 | EffectDef::SearchZonesAndExileRest { .. }
                 | EffectDef::MillUntil { .. }
                 | EffectDef::LookAtTopAndSelect { .. }
+                | EffectDef::LookAtTopAndDistribute { .. }
                 | EffectDef::LookAtHand { .. }
                 | EffectDef::RevealHand { .. }
                 | EffectDef::SearchZone { .. }

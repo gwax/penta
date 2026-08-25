@@ -670,6 +670,28 @@ impl Game {
                     }
                 }
             }
+            EffectDef::LookAtTopAndDistribute {
+                player: recipient,
+                count,
+                destinations,
+            } => {
+                let looked = self.effect_value(count, object, context, scoped).max(0);
+                let Ok(looked) = usize::try_from(looked) else {
+                    return;
+                };
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.queue_distributed_selection_start(
+                            player,
+                            looked,
+                            destinations,
+                            object,
+                            context.clone(),
+                            scoped,
+                        );
+                    }
+                }
+            }
             EffectDef::SearchZone {
                 player: recipient,
                 source: source_zone,

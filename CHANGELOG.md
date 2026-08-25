@@ -25,6 +25,20 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A look that sends each card somewhere different.** Looking at the top of
+  a library split the group in two: what was selected, and the rest. "Put one
+  of them into your hand, put one of them on the bottom of your library, and
+  exile one of them" is three destinations, each taking exactly one card, and
+  no two-way split can say it. A look can now hand its cards out one
+  destination at a time, in printed order, with the cards held out of the
+  library while the choices are made -- so a card an earlier destination took
+  is gone before the next question is asked, and the last card has nothing
+  left to decide. A destination can also grant permission to play what lands
+  there, which is what makes exiling a card the payoff rather than the cost.
+  Expressive Iteration prints all of it. The suspended distribution is an
+  additive checkpoint continuation; checkpoint format 8, replay version 2,
+  and protocol 29 are unchanged.
+
 - **Exert as a cost, and a mana rider that asks what it paid for.** Exert
   existed only as the choice a creature makes when it attacks; it is now also
   a cost an ability can print, spending the source's next untap step rather

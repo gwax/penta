@@ -25,10 +25,10 @@ use crate::card::{
     PlayActionKind, PlayOptionDef, PlayRestriction, PlayerRefDef, PlayerRelation, PlayerSetDef,
     PowerToughnessOperationDef, QuantifierDef, ReplacementChoiceDef, ReplacementConditionDef,
     ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    SetOperationDef, SpellResolutionDestinationDef, StackTargetKindDef, TapPurposeDef,
-    TargetPredicate, TargetSlotDef, TokenCharacteristics, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
-    ZonePlacement, abilities, applicable_part_ids,
+    SelectionDestinationDef, SetOperationDef, SpellResolutionDestinationDef, StackTargetKindDef,
+    TapPurposeDef, TargetPredicate, TargetSlotDef, TokenCharacteristics, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef,
+    ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities, applicable_part_ids,
 };
 use crate::casting::{CastChoices, CastSignature, CostConfiguration, TargetSelection};
 use crate::deck::Deck;
@@ -177,9 +177,9 @@ use continuous_state::{
 };
 use decision_state::{
     ApplicableBeginTurnReplacement, BalanceAction, BalancePhase, BalanceTask, CounteredSpellZone,
-    DecisionContinuation, DeferredBeginTurnEffect, DiscardFollowUp, FORK_COPY_COLOR,
-    PendingDecision, Pregame, ResolvedEffectPayment, SacrificeDeclined, SacrificeFollowup,
-    SearchFollowUp, TypedSelectionProgress, ZoneMoveCause,
+    DecisionContinuation, DeferredBeginTurnEffect, DiscardFollowUp, DistributedSelectionProgress,
+    FORK_COPY_COLOR, PendingDecision, Pregame, ResolvedEffectPayment, SacrificeDeclined,
+    SacrificeFollowup, SearchFollowUp, TypedSelectionProgress, ZoneMoveCause,
 };
 use exile_permission::{ExilePlayCost, ExilePlayPermission};
 use mana_state::{

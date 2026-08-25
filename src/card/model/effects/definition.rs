@@ -470,6 +470,13 @@ pub enum EffectDef {
         object: EffectRecipientDef,
         depth: ValueDef,
     },
+    /// One look and several destinations, each taking one card in printed
+    /// order. [`SelectionDestinationDef`] says the rest.
+    LookAtTopAndDistribute {
+        player: EffectRecipientDef,
+        count: ValueDef,
+        destinations: &'static [SelectionDestinationDef],
+    },
     /// Ninjutsu's payoff (CR 702.49b): put the card this ability came from
     /// onto the battlefield from its owner's hand, tapped and attacking the
     /// same defender the returned creature was attacking.

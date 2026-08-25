@@ -257,6 +257,48 @@ fn parse_continuation(
                 effect: continuation.effect,
             }
         }
+        DecisionContinuationSnapshot::DistributedTopCardSelection {
+            player: owner,
+            remaining,
+            next_destination,
+            continuation,
+        } => {
+            let owner = player(*owner)?;
+            let continuation = parse_effect_continuation(continuation, game)?;
+            let EffectDef::LookAtTopAndDistribute {
+                player: recipient,
+                destinations,
+                ..
+            } = continuation.effect.effect
+            else {
+                return Err("distributed selection locator is not a distributed look".into());
+            };
+            if game
+                .effect_recipients(
+                    recipient,
+                    &continuation.object,
+                    &continuation.context,
+                    continuation.effect,
+                )
+                .as_slice()
+                != [Target::Player(owner)]
+            {
+                return Err("distributed selection player disagrees with its authored effect".into());
+            }
+            let progress = DistributedSelectionProgress {
+                player: owner,
+                remaining: parse_detached_cards(remaining, game)?,
+                next_destination: *next_destination,
+            };
+            validate_distributed_selection_observation(game, observation, &progress, destinations)?;
+            DecisionContinuation::DistributedTopCardSelection {
+                progress,
+                destinations,
+                object: continuation.object,
+                context: continuation.context,
+                effect: continuation.effect,
+            }
+        }
         DecisionContinuationSnapshot::TypedTopCardSelection {
             player: owner,
             looker: asked,

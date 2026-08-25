@@ -14,9 +14,9 @@ use super::super::{
     AbilitySourceRef, ApplicableBeginTurnReplacement, BalanceAction, BalancePhase, BalanceTask,
     CastOffer, CastOfferCost, CastSourceZone, DecisionContinuation, DecisionKind,
     DecisionObservation, DecisionOption, DecisionOrderSemantics, DecisionPreference,
-    DecisionVisibility, DecisionZone, DeferredBeginTurnEffect, PendingDecision, PendingTrigger,
-    PileSplit, SacrificeFollowup, ScopedEffect, Target, TriggerPlacementBatch,
-    TypedSelectionProgress,
+    DecisionVisibility, DecisionZone, DeferredBeginTurnEffect, DistributedSelectionProgress,
+    PendingDecision, PendingTrigger, PileSplit, SacrificeFollowup, ScopedEffect, Target,
+    TriggerPlacementBatch, TypedSelectionProgress,
 };
 use super::model::{
     AbilityLocator, AbilitySourceSnapshot, ApplicableBeginTurnReplacementSnapshot,
@@ -316,6 +316,29 @@ fn continuation_snapshot(
         } => DecisionContinuationSnapshot::TopCardSelection {
             player: player.index(),
             revealed: revealed.iter().map(detached_card_snapshot).collect(),
+            continuation: effect_continuation_snapshot(
+                game,
+                viewer,
+                object,
+                context,
+                *effect,
+                visible_rebindings,
+            )?,
+        },
+        DecisionContinuation::DistributedTopCardSelection {
+            progress,
+            object,
+            context,
+            effect,
+            ..
+        } => DecisionContinuationSnapshot::DistributedTopCardSelection {
+            player: progress.player.index(),
+            remaining: progress
+                .remaining
+                .iter()
+                .map(detached_card_snapshot)
+                .collect(),
+            next_destination: progress.next_destination,
             continuation: effect_continuation_snapshot(
                 game,
                 viewer,

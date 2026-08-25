@@ -2,7 +2,8 @@ use crate::action::{AbilityOrigin, ManaColor, Target};
 use crate::card::{
     AbilityDef, BattlefieldEntryScalarChoiceDef, CardTypeSet, ColorChoiceOperationDef, ColorSet,
     EffectDef, ManaCost, ModalSpellDef, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ReplacementEffectDef, TopCardSelectionDef, TurnKindDef, ZoneKind, ZonePlacement,
+    ReplacementEffectDef, SelectionDestinationDef, TopCardSelectionDef, TurnKindDef, ZoneKind,
+    ZonePlacement,
 };
 use crate::casting::TargetSelection;
 use crate::ids::{CardDefinitionId, GameObjectId, ObjectSetBindingIndex, PlayerId};
@@ -570,6 +571,16 @@ pub(super) enum DecisionContinuation {
         context: EffectResolutionContext,
         effect: ScopedEffect,
     },
+    /// A look whose cards each go somewhere different, suspended between
+    /// destinations. The cards are out of the library while the choices are
+    /// made, so they live here until every destination has been answered.
+    DistributedTopCardSelection {
+        progress: DistributedSelectionProgress,
+        destinations: &'static [SelectionDestinationDef],
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
+        effect: ScopedEffect,
+    },
     /// The affected object's controller chooses which currently applicable
     /// replacement effect to apply next.
     BattlefieldEntryReplacement {
@@ -701,4 +712,13 @@ pub(super) struct TypedSelectionProgress {
     pub(super) revealed: Vec<CardInstance>,
     pub(super) taken: Vec<CardInstance>,
     pub(super) next_type: usize,
+}
+
+/// How far a distributed look has got: which cards are still in hand to be
+/// assigned, and which destination is asked about next.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) struct DistributedSelectionProgress {
+    pub(super) player: PlayerId,
+    pub(super) remaining: Vec<CardInstance>,
+    pub(super) next_destination: usize,
 }

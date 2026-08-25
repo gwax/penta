@@ -4,11 +4,11 @@ use super::{
     AppliedRuleDef, BalancePhase, BalanceTask, BattlefieldExitCompletion, CardInstance, CardPartId,
     CardRuntime, CardType, CommittedTriggerEvent, CounterKind, DecisionContinuation,
     DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
-    DiscardFollowUp, EffectDef, EffectResolutionContext, Game, GameEvent, GameObjectId,
-    ObjectCharacteristics, ObjectPredicateDef, Permanent, PileChoice, PileChosen, PileSplit,
-    PilesSeparated, PlayerId, SacrificeDeclined, SacrificeFollowup, SacrificedAmountDef,
-    ScopedEffect, StackObject, Step, TopCardSelectionDef, TypedSelectionProgress, ZoneKind,
-    ZoneMoveCause,
+    DiscardFollowUp, DistributedSelectionProgress, EffectDef, EffectResolutionContext, Game,
+    GameEvent, GameObjectId, ObjectCharacteristics, ObjectPredicateDef, Permanent, PileChoice,
+    PileChosen, PileSplit, PilesSeparated, PlayerId, SacrificeDeclined, SacrificeFollowup,
+    SacrificedAmountDef, ScopedEffect, SelectionDestinationDef, StackObject, Step,
+    TopCardSelectionDef, TypedSelectionProgress, ZoneKind, ZoneMoveCause, ZonePlacement,
 };
 
 impl Game {
@@ -955,3 +955,5 @@ impl Game {
 }
 
 include!("decision_piles/top_cards_by_type.rs");
+
+include!("decision_piles/distributed_cards.rs");

@@ -74,6 +74,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::RevealHand { .. } => "RevealHand",
         EffectDef::RevealAtRandomFromHand { .. } => "RevealAtRandomFromHand",
         EffectDef::LookAtTopAndSelect { .. } => "LookAtTopAndSelect",
+        EffectDef::LookAtTopAndDistribute { .. } => "LookAtTopAndDistribute",
         EffectDef::SearchZone { .. } => "SearchZone",
         EffectDef::ChooseCards { .. } => "ChooseCards",
         EffectDef::ReplaceNextDrawThisTurn { .. } => "ReplaceNextDrawThisTurn",

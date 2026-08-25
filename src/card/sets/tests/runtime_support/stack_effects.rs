@@ -347,6 +347,11 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         EffectDef::LookAtTopAndSelect { .. } => {
             deferred_decision_allowed && shared_decision_effect(effect)
         }
+        // Every destination but the last asks a question, so the whole
+        // distribution needs a place a decision may be deferred to.
+        EffectDef::LookAtTopAndDistribute { player, .. } => {
+            deferred_decision_allowed && shared_effect_recipient(player)
+        }
         EffectDef::SearchZone {
             player,
             source,

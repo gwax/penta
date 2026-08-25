@@ -170,6 +170,7 @@ impl Game {
             | EffectDef::RevealAtRandomFromHand { .. }
             | EffectDef::RevealHand { .. }
             | EffectDef::LookAtTopAndSelect { .. }
+            | EffectDef::LookAtTopAndDistribute { .. }
             | EffectDef::SearchZone { .. }
             | EffectDef::ChooseCards { .. }
             | EffectDef::ReplaceNextDrawThisTurn { .. } => {

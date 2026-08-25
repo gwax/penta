@@ -84,3 +84,38 @@ pub struct TopCardSelectionDef {
     pub selected_order_follows_choice: bool,
     pub then: Option<&'static EffectDef>,
 }
+
+/// One place a distributed look sends a card, and what the card may do once
+/// it is there.
+///
+/// "Put one of them into your hand, put one of them on the bottom of your
+/// library, and exile one of them" is three of these. The cards stay out of
+/// their zone while the choices are made, so a card an earlier destination
+/// took is gone before the next question is asked, and a destination with no
+/// card left for it gets nothing.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct SelectionDestinationDef {
+    pub zone: ZoneKind,
+    pub placement: ZonePlacement,
+    /// "You may play the exiled card this turn." What makes exiling a card
+    /// a benefit rather than a cost, and the only reason a card would print
+    /// exile as one of the places its own look sends things.
+    pub playable_this_turn: bool,
+}
+
+impl SelectionDestinationDef {
+    #[must_use]
+    pub const fn new(zone: ZoneKind, placement: ZonePlacement) -> Self {
+        Self {
+            zone,
+            placement,
+            playable_this_turn: false,
+        }
+    }
+
+    #[must_use]
+    pub const fn playable_this_turn(mut self) -> Self {
+        self.playable_this_turn = true;
+        self
+    }
+}

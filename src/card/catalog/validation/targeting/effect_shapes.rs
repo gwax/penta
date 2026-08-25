@@ -219,6 +219,36 @@ fn validate_effect_target_shapes(
             }
             Ok(())
         }
+        EffectDef::LookAtTopAndDistribute {
+            player,
+            count,
+            destinations,
+        } => {
+            validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
+            // Each destination takes one card, so the look has to be exactly
+            // as deep as the list is long: a shorter one would leave a card
+            // nowhere, and a longer one a destination with nothing to fill
+            // it that the card never printed.
+            if destinations.is_empty()
+                || i32::try_from(destinations.len())
+                    .is_ok_and(|length| count != ValueDef::Constant(length))
+                || !destinations.iter().all(|destination| {
+                    matches!(
+                        destination.zone,
+                        ZoneKind::Hand | ZoneKind::Library | ZoneKind::Graveyard | ZoneKind::Exile
+                    ) && (!destination.playable_this_turn
+                        || destination.zone == ZoneKind::Exile)
+                })
+            {
+                return Err(
+                    GrantedAbilityValidationError::UnsupportedEffectProgramContext {
+                        context: "resolving",
+                        operation: "LookAtTopAndDistribute with unsupported destinations",
+                    },
+                );
+            }
+            validate_value_shape(count, targets)
+        }
         EffectDef::LookAtTopAndSelect {
             player,
             looker,

@@ -450,6 +450,86 @@ fn a_revealing_top_card_selection_round_trips_and_resumes() {
     )));
 }
 
+/// A distributed look is suspended with its cards out of the library, so the
+/// checkpoint carries both the cards and which destination is being asked
+/// about.
+#[test]
+fn a_distributed_top_card_selection_round_trips_and_resumes() {
+    let mut game = crate::game::tests::ready_game();
+    game.players[0].hand.clear();
+    game.players[0].library = vec![
+        crate::game::tests::card(83_003, crate::card::cards::SAVANNAH_LIONS, PlayerId::One),
+        crate::game::tests::card(83_002, crate::card::cards::MOUNTAIN, PlayerId::One),
+        crate::game::tests::card(83_001, crate::card::cards::LIGHTNING_BOLT, PlayerId::One),
+    ];
+    let iteration = crate::game::tests::card(
+        83_010,
+        crate::card::cards::EXPRESSIVE_ITERATION,
+        PlayerId::One,
+    );
+    let iteration_id = iteration.id;
+    game.players[0].hand.push(iteration);
+    game.add_unrestricted_mana(PlayerId::One, crate::card::ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, crate::card::ManaColor::Red, 1);
+    game.turn = 2;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == iteration_id))
+        .expect("two mana casts it");
+    game.apply(PlayerId::One, cast).unwrap();
+    for _ in 0..4 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority).unwrap();
+    }
+    assert_eq!(game.pending_decisions.len(), 1);
+
+    let (wire, mut rebuilt) = rebuild_current_checkpoint(&game, PlayerId::One, 83_020);
+    let state = &wire["checkpoint"]["decisionState"]["continuation"];
+    assert_eq!(state["nextDestination"], json!(0), "the hand pick is first");
+    assert_eq!(
+        state["remaining"]
+            .as_array()
+            .expect("the cards travel with it")
+            .len(),
+        3,
+        "all three are out of the library",
+    );
+    let mut wrong_destination = wire.clone();
+    wrong_destination["checkpoint"]["decisionState"]["continuation"]["nextDestination"] = json!(2);
+    let error = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &wrong_destination,
+        &true_hidden_hypothesis(&game, PlayerId::One),
+        83_021,
+    )
+    .expect_err("a distributed look cannot claim to be asking about another destination");
+    assert!(
+        error.contains("distributed selection") || error.contains("decision"),
+        "unexpected error: {error}"
+    );
+
+    // Resuming finishes the distribution: one card to hand, one underneath,
+    // and the last exiled.
+    for _ in 0..8 {
+        let Some(decision) = rebuilt.observe(PlayerId::One).decision else {
+            break;
+        };
+        let choice = decision.options[0].id;
+        rebuilt.choose_decision(PlayerId::One, decision.id, &[choice]);
+    }
+
+    assert_eq!(rebuilt.players[0].hand.len(), 1, "one card came home");
+    assert_eq!(rebuilt.players[0].exile.len(), 1, "and one was exiled");
+    assert_eq!(rebuilt.players[0].library.len(), 1);
+}
+
 #[test]
 fn a_typed_top_card_selection_round_trips_and_resumes() {
     let mut game = crate::game::tests::ready_game();

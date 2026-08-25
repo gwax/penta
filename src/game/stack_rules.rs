@@ -140,6 +140,7 @@ impl Game {
             | EffectDef::Explore { .. }
             | EffectDef::SearchZone { then: None, .. }
             | EffectDef::LookAtTopAndSelect { .. }
+            | EffectDef::LookAtTopAndDistribute { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::LookAtRandomCardInHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }

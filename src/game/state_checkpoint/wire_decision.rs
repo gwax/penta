@@ -240,6 +240,14 @@ fn detached_decision_cards(continuation: &DecisionContinuationSnapshot) -> BTree
     // A selection that asks once per card type has two detached piles: the
     // cards still on the table and the ones an earlier type already took.
     // Both are out of the library and neither is anybody's hypothesis.
+    if let DecisionContinuationSnapshot::DistributedTopCardSelection { remaining, .. } =
+        continuation
+    {
+        return remaining
+            .iter()
+            .map(|card| GameObjectId(card.object_id))
+            .collect();
+    }
     if let DecisionContinuationSnapshot::TypedTopCardSelection {
         revealed, taken, ..
     } = continuation

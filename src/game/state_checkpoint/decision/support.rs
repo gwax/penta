@@ -37,6 +37,9 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
         }
         | DecisionContinuation::TypedTopCardSelection {
             object, context, ..
+        }
+        | DecisionContinuation::DistributedTopCardSelection {
+            object, context, ..
         } => extend_stack_continuation_ids(&mut ids, object, context),
         DecisionContinuation::DrawActionWindow { card }
         | DecisionContinuation::MayCastAlternative { card, .. }

@@ -5,8 +5,8 @@ use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, CardArt,
     CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerConditionDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, SelectionDestinationDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -160,7 +160,17 @@ pub(in crate::card::sets) static UNWILLING_INGREDIENT: CardRecord = CardRecord::
 );
 
 // STX 186 — Expressive Iteration
-// Audit: metadata-only — Card rules have not been implemented.
+/// Three cards, three places, in the printed order: the hand card is chosen
+/// first, then the one that goes underneath, and the last is exiled with
+/// nothing left to decide. Exiling it is the payoff rather than the cost --
+/// it is playable for the rest of the turn, which is why the spell is two
+/// cards for two mana as long as the mana holds out.
+static ITERATION_DESTINATIONS: [SelectionDestinationDef; 3] = [
+    SelectionDestinationDef::new(ZoneKind::Hand, ZonePlacement::Top),
+    SelectionDestinationDef::new(ZoneKind::Library, ZonePlacement::Bottom),
+    SelectionDestinationDef::new(ZoneKind::Exile, ZonePlacement::Top).playable_this_turn(),
+];
+
 pub(in crate::card::sets) static EXPRESSIVE_ITERATION: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("31b770cc-09e7-4c0b-b2a4-462ab4f7200d"),
     "Expressive Iteration",
@@ -169,7 +179,18 @@ pub(in crate::card::sets) static EXPRESSIVE_ITERATION: CardRecord = CardRecord::
         "Anastasia Ovchinnikova",
     ),
     crate::card::CardSet::StrixhavenSchoolOfMages,
-    crate::card::CardRules::unsupported(),
+    // Two mana and a card for two cards, one of which has to be spent this
+    // turn: the deck playing it is the one with mana left over.
+    CardRules::new_sorcery(mana_cost!("{U}{R}")).with_ability(AbilityDef::spell(
+        "Look at the top three cards of your library. Put one of them into your hand, put one of \
+         them on the bottom of your library, and exile one of them. You may play the exiled card \
+         this turn.",
+        EffectDef::LookAtTopAndDistribute {
+            player: EffectRecipientDef::Controller,
+            count: ValueDef::Constant(3),
+            destinations: &ITERATION_DESTINATIONS,
+        },
+    )),
 );
 
 // STX 219 — Quandrix Pledgemage
