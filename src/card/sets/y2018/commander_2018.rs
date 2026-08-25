@@ -70,13 +70,70 @@ pub(in crate::card::sets) static COVETED_JEWEL: CardRecord = CardRecord::new(
 );
 
 // C18 57 — Retrofitter Foundry
-// Audit: metadata-only — Card rules have not been implemented.
+static THOPTER_FLIES: [AbilityDef; 1] = [abilities::flying()];
+
+/// The line the card is played for: with four mana up on their turn it
+/// untaps and makes a Servo, and the Servo becomes a Thopter and the Thopter
+/// a 4/4, one tap at a time.
+static FOUNDRY_MAKES_A_SERVO: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{2}")),
+    AbilityCostDef::TapSource,
+];
+
+static FOUNDRY_UPGRADES_A_SERVO: [AbilityCostDef; 3] = [
+    AbilityCostDef::Mana(mana_cost!("{1}")),
+    AbilityCostDef::TapSource,
+    AbilityCostDef::SacrificePermanent {
+        object: ObjectPredicateDef::Subtype("Servo"),
+        controller: PlayerRelation::You,
+    },
+];
+
+static FOUNDRY_UPGRADES_A_THOPTER: [AbilityCostDef; 2] = [
+    AbilityCostDef::TapSource,
+    AbilityCostDef::SacrificePermanent {
+        object: ObjectPredicateDef::Subtype("Thopter"),
+        controller: PlayerRelation::You,
+    },
+];
+
+static RETROFITTER_FOUNDRY_ABILITIES: [AbilityDef; 4] = [
+    // No tap in the cost, so the untap is what makes every other ability
+    // usable more than once a turn -- and usable on their turn.
+    AbilityDef::activated(
+        "{3}: Untap this artifact.",
+        &[AbilityCostDef::Mana(mana_cost!("{3}"))],
+        EffectDef::Untap {
+            object: EffectRecipientDef::Source,
+        },
+    ),
+    AbilityDef::activated(
+        "{2}, {T}: Create a 1/1 colorless Servo artifact creature token.",
+        &FOUNDRY_MAKES_A_SERVO,
+        EffectDef::create_artifact_creature_token(&["Servo"], &[], 1, 1),
+    ),
+    AbilityDef::activated(
+        "{1}, {T}, Sacrifice a Servo: Create a 1/1 colorless Thopter artifact creature token \
+         with flying.",
+        &FOUNDRY_UPGRADES_A_SERVO,
+        EffectDef::create_artifact_creature_token(&["Thopter"], &[], 1, 1)
+            .with_abilities(&THOPTER_FLIES),
+    ),
+    AbilityDef::activated(
+        "{T}, Sacrifice a Thopter: Create a 4/4 colorless Construct artifact creature token.",
+        &FOUNDRY_UPGRADES_A_THOPTER,
+        EffectDef::create_artifact_creature_token(&["Construct"], &[], 4, 4),
+    ),
+];
+
 pub(in crate::card::sets) static RETROFITTER_FOUNDRY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5da578b8-19e6-4068-9336-e7cd33c585f1"),
     "Retrofitter Foundry",
     crate::card::CardArt::new("5da578b8-19e6-4068-9336-e7cd33c585f1", "Dmitry Burmak"),
     crate::card::CardSet::Commander2018,
-    crate::card::CardRules::unsupported(),
+    // One mana on turn one and a mana sink for the rest of the game, which
+    // is why it is played in decks with no other artifacts at all.
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&RETROFITTER_FOUNDRY_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&COVETED_JEWEL, &RETROFITTER_FOUNDRY];

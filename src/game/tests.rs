@@ -505,6 +505,7 @@ mod vintage_cube_quantum_riddler;
 mod vintage_cube_ragavan;
 mod vintage_cube_relic;
 mod vintage_cube_remand;
+mod vintage_cube_retrofitter_foundry;
 mod vintage_cube_robber_of_the_rich;
 mod vintage_cube_saheeli;
 mod vintage_cube_screaming_nemesis;
