@@ -516,6 +516,7 @@ mod vintage_cube_profts_eidetic_memory;
 mod vintage_cube_psychic_frog;
 mod vintage_cube_quantum_riddler;
 mod vintage_cube_ragavan;
+mod vintage_cube_recurring_nightmare;
 mod vintage_cube_relic;
 mod vintage_cube_relic_of_sauron;
 mod vintage_cube_remand;

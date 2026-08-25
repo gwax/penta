@@ -4,12 +4,13 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::sets::y2011::innistrad as catalog_isd;
 use crate::card::sets::y2011::magic_2012 as catalog_m12;
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, CardArt, CardRules, CardSet, CardType, ComparisonDef,
-    EffectDef, EffectRecipientDef, MillUntilDef, ObjectPredicateDef, ObjectQueryDef,
-    PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef,
-    ValueDef, ZoneKind,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    ActivationTimingDef, CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef,
+    EffectRecipientDef, MillUntilDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
+    ZonePlacement,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 // EXO 1 — Allay
 // Audit: metadata-only — Card rules have not been implemented.
@@ -718,13 +719,56 @@ pub(in crate::card::sets) static PLAGUEBEARER: CardRecord = CardRecord::new(
 );
 
 // EXO 72 — Recurring Nightmare
-// Audit: metadata-only — Card rules have not been implemented.
+static NIGHTMARE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: Some(PlayerRelation::You),
+    },
+)];
+
+/// Both halves leave the battlefield to pay, and the enchantment's half is a
+/// return rather than a sacrifice: it comes back to hand to be cast again,
+/// which is the whole of why the card is banned wherever it is.
+static NIGHTMARE_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::SacrificePermanent {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        controller: PlayerRelation::You,
+    },
+    AbilityCostDef::ReturnSourceToHand,
+];
+
+static NIGHTMARE_REANIMATES: EffectDef = EffectDef::MoveToZone {
+    counters: None,
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    from: Some(ZoneKind::Graveyard),
+    zone: ZoneKind::Battlefield,
+    placement: ZonePlacement::Top,
+    arrival_effect: None,
+    attachment: None,
+    controller: None,
+    tapped: false,
+};
+
 pub(in crate::card::sets) static RECURRING_NIGHTMARE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c8173030-1c33-417c-b8e9-79231b6a85a7"),
     "Recurring Nightmare",
     crate::card::CardArt::new("c8173030-1c33-417c-b8e9-79231b6a85a7", "Jeff Laubenstein"),
     crate::card::CardSet::Exodus,
-    crate::card::CardRules::unsupported(),
+    // The target is chosen as the ability is activated and the costs are
+    // paid afterwards, so the creature sacrificed to pay is not the one
+    // coming back: what it buys is the creature that died a turn earlier.
+    CardRules::new_enchantment(mana_cost!("{2}{B}")).with_ability(
+        AbilityDef::activated_with_targets(
+            "Sacrifice a creature, Return this enchantment to its owner's hand: Return target \
+             creature card from your graveyard to the battlefield. Activate only as a sorcery.",
+            &NIGHTMARE_COST,
+            &NIGHTMARE_TARGET,
+            NIGHTMARE_REANIMATES,
+        )
+        .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+    ),
 );
 
 // EXO 73 — Scare Tactics
