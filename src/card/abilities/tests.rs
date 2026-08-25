@@ -12,7 +12,7 @@ mod tests {
         AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityDef, AbilityPredicateDef,
         AbilityTargetDef, ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef,
         AlternativeCastManaCostDef, BasicLandType, CardRules, CardType, ConditionDef,
-        DeclarativeAbilityDef, EffectDef, EffectPaymentCostDef, EffectRecipientDef, KeywordAbility,
+        DeclarativeAbilityDef, AttachmentDef, EffectDef, EffectPaymentCostDef, EffectRecipientDef, KeywordAbility,
         ManaColor, ManaCost, ObjectPredicateDef, PlayerRelation, PlayerSetDef,
         ReplacementEffectDef, TriggerEventDef, ZoneKind,
     };
@@ -137,9 +137,9 @@ mod tests {
         assert_eq!(spell.targets(), super::ENCHANT_CREATURE_TARGET);
         assert_eq!(
             aura.declarative_effect(),
-            Some(EffectDef::Attach {
+            Some(EffectDef::Attachment(AttachmentDef::Attach{
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            })
+            }))
         );
 
         let blink = exile_until_next_end_step(EffectRecipientDef::Target(TargetIndex::PRIMARY));
@@ -420,9 +420,9 @@ mod tests {
         assert_eq!(definition.timing, ActivationTimingDef::SorcerySpeed);
         assert_eq!(
             ability.declarative_effect(),
-            Some(EffectDef::Attach {
+            Some(EffectDef::Attachment(AttachmentDef::Attach{
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            }),
+            })),
         );
     }
 }

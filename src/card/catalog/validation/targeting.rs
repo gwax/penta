@@ -3,7 +3,7 @@ use crate::card::catalog::{EffectSubjectKind, GrantedAbilityValidationError};
 use crate::card::{
     AbilityOperationDef, AbilityProcedureDef, AbilityProgramDef, AbilityTargetDef,
     AbilityTargetPredicate, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef,
-    ArrivalAttachmentDef, AttackDefenderScopeDef, AttackRestrictionDef,
+    ArrivalAttachmentDef, AttachmentDef, AttackDefenderScopeDef, AttackRestrictionDef,
     BattlefieldEntryChoiceDestinationDef, BlockRestrictionDef, BlockRestrictionMatchDef,
     CharacteristicOperationDef, ConditionDef, CostModificationDef, DamageEventMatcherDef,
     DamagePreventionCapacityDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,

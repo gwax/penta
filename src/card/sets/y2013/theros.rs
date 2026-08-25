@@ -3,8 +3,8 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, ValueDef, ZoneKind, abilities,
+    AppliedEffectDef, AttachmentDef, BasicLandType, CardArt, CardRules, CardSet, CardType,
+    EffectDef, EffectRecipientDef, ObjectPredicateDef, ValueDef, ZoneKind, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -38,9 +38,9 @@ pub(in crate::card::sets) static NYLEAS_PRESENCE: CardRecord = CardRecord::new_w
                         owner: None,
                     },
                 )],
-                EffectDef::Attach {
+                EffectDef::Attachment(AttachmentDef::Attach {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
+                }),
             ),
             abilities::enters_trigger(
                 "When Nylea's Presence enters, draw a card.",

@@ -7,11 +7,11 @@ use crate::card::sets::y2012::magic_2013 as catalog_m13;
 use crate::card::sets::y2019::modern_horizons as catalog_mh1;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardType, ComparisonDef,
-    CostModificationDef, CounterKind, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, PayOrDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ResolvedEffectDurationDef, StackTargetKindDef, TriggerConditionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AppliedEffectDef, AttachmentDef, BasicLandType, CardArt, CardRules, CardSet, CardType,
+    ComparisonDef, CostModificationDef, CounterKind, EffectDef, EffectPaymentCostDef,
+    EffectPaymentDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PayOrDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, StackTargetKindDef,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -1117,10 +1117,10 @@ pub(in crate::card::sets) static DRAGON_BREATH: CardRecord = CardRecord::new_wit
                 ),
                 EffectDef::May {
                     player: EffectRecipientDef::Controller,
-                    effect: &EffectDef::ReturnAttached {
+                    effect: &EffectDef::Attachment(AttachmentDef::ReturnAttached{
                         object: EffectRecipientDef::Source,
                         attach_to: EffectRecipientDef::TriggeringObject,
-                    },
+                    }),
                 },
             )
             .with_source_zones(&[ZoneKind::Graveyard]),

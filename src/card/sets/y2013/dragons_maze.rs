@@ -5,15 +5,16 @@ use crate::ManaCost;
 use crate::card::sets::y2012::return_to_ravnica;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, AppliedRuleDef, CardArt, CardBehavior, CardComposition, CardEffectStatus,
-    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet,
-    ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef, ControlDurationDef, CounterKind,
-    CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef, DamageRecipientMatcherDef,
-    DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef, LikelihoodDef, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PayOrDef, PlayOptionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, SpellForm, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    AppliedEffectDef, AppliedRuleDef, AttachmentDef, CardArt, CardBehavior, CardComposition,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
+    CardTypeSet, ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef, ControlDurationDef,
+    CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef,
+    DamageRecipientMatcherDef, DiscardSelectionDef, EffectDef, EffectPaymentDef,
+    EffectRecipientDef, LikelihoodDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayOptionDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SacrificedAmountDef, SpellForm,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::ids::{CardPartId, ObjectBindingIndex, PlayOptionId, TargetIndex};
 use crate::mana_cost;
@@ -451,9 +452,9 @@ pub(in crate::card::sets) static RUNNERS_BANE: CardRecord = CardRecord::new_with
                         ObjectPredicateDef::Not(&ObjectPredicateDef::PowerAtLeast(4)),
                     ]),
                 )],
-                EffectDef::Attach {
+                EffectDef::Attachment(AttachmentDef::Attach{
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
+                }),
             )
             .with_coverage(AbilityCoverageDef::partial(
                 "Power-based target and attachment legality ignores continuous static power modifiers.",
@@ -2290,9 +2291,9 @@ pub(in crate::card::sets) static UNFLINCHING_COURAGE: CardRecord = CardRecord::n
                 controller: None,
                 owner: None,
             },
-        )], EffectDef::Attach {
+        )], EffectDef::Attachment(AttachmentDef::Attach{
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            }),
+            })),
         AbilityDef::static_ability(
             "Enchanted creature gets +2/+2 and has trample and lifelink. (Damage dealt by the creature also causes its controller to gain that much life.)",
             EffectDef::Sequence(&[

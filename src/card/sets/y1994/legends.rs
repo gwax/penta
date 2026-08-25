@@ -2,17 +2,18 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
     AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef,
-    AppliedRuleDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef, CardArt,
-    CardBehavior, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef,
-    ChooseDef, ColorChoiceOperationDef, ColorSet, ComparisonDef, ControlDurationDef,
-    CostModificationDef, CounterKind, DamageEventMatcherDef, DamageKindDef, DamageLimitDef,
-    DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef,
-    DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef,
-    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, ScaledValueDef, SumValueDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AppliedRuleDef, AttachmentDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef,
+    CardArt, CardBehavior, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
+    ChoiceVisibilityDef, ChooseDef, ColorChoiceOperationDef, ColorSet, ComparisonDef,
+    ControlDurationDef, CostModificationDef, CounterKind, DamageEventMatcherDef, DamageKindDef,
+    DamageLimitDef, DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceGroupDef,
+    DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef,
+    EffectRecipientDef, InstalledTriggerDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, SumValueDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -263,9 +264,9 @@ pub(in crate::card::sets) static DIVINE_TRANSFORMATION: CardRecord = CardRecord:
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::HasType(CardType::Creature),
                 )],
-                EffectDef::Attach {
+                EffectDef::Attachment(AttachmentDef::Attach {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
+                }),
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +3/+3.",
@@ -748,9 +749,9 @@ pub(in crate::card::sets) static SEEKER: CardRecord = CardRecord::new_with_legac
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::HasType(CardType::Creature),
                 )],
-                EffectDef::Attach {
+                EffectDef::Attachment(AttachmentDef::Attach{
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
+                }),
             ),
             AbilityDef::static_ability(
                 "Enchanted creature can't be blocked except by artifact creatures and/or white creatures.",
@@ -2928,9 +2929,9 @@ pub(in crate::card::sets) static ETERNAL_WARRIOR: CardRecord = CardRecord::new_w
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::HasType(CardType::Creature),
                 )],
-                EffectDef::Attach {
+                EffectDef::Attachment(AttachmentDef::Attach {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
+                }),
             ),
             AbilityDef::static_ability(
                 "Enchanted creature has vigilance.",
@@ -2997,9 +2998,9 @@ pub(in crate::card::sets) static GIANT_STRENGTH: CardRecord = CardRecord::new_wi
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::HasType(CardType::Creature),
                 )],
-                EffectDef::Attach {
+                EffectDef::Attachment(AttachmentDef::Attach {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
+                }),
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +2/+2.",
@@ -3119,9 +3120,9 @@ pub(in crate::card::sets) static IMMOLATION: CardRecord = CardRecord::new_with_l
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::HasType(CardType::Creature),
                 )],
-                EffectDef::Attach {
+                EffectDef::Attachment(AttachmentDef::Attach {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
+                }),
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +2/-2.",

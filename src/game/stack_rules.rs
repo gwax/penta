@@ -1,5 +1,5 @@
 use super::{
-    AppliedEffectDef, AppliedRuleDef, CharacteristicContext, CounteredSpellZone,
+    AppliedEffectDef, AppliedRuleDef, AttachmentDef, CharacteristicContext, CounteredSpellZone,
     DeclarativeAbilityDef, EffectDef, EffectRecipientDef, Game, GameObjectId, StackObject,
     StackObjectKind, Target, ZoneKind, applicable_part_ids,
 };
@@ -116,13 +116,15 @@ impl Game {
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::Untap { .. }
             | EffectDef::Saddle { .. }
-            | EffectDef::Attach { .. }
-            | EffectDef::AttachToSource { .. }
-            | EffectDef::ReturnAttached { .. }
-            | EffectDef::Reconfigure { .. }
-            | EffectDef::Unattach { .. }
+            | EffectDef::Attachment(
+                AttachmentDef::Attach { .. }
+                | AttachmentDef::AttachToSource { .. }
+                | AttachmentDef::ReturnAttached { .. }
+                | AttachmentDef::Reconfigure { .. }
+                | AttachmentDef::Unattach { .. }
+                | AttachmentDef::PairWithSource { .. },
+            )
             | EffectDef::PhaseOut { .. }
-            | EffectDef::PairWithSource { .. }
             | EffectDef::Destroy { then: None, .. }
             | EffectDef::Sacrifice { .. }
             | EffectDef::SacrificeOfChoice { .. }

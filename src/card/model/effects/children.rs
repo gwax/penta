@@ -1,6 +1,6 @@
 //! The recursive edges in the declarative effect tree.
 
-use super::EffectDef;
+use super::{AttachmentDef, EffectDef};
 
 /// Kept as one exhaustive match so adding a recursive effect variant cannot
 /// silently classify it as a leaf and make validators or semantic locators
@@ -69,13 +69,15 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::GainClassLevel { .. }
         | EffectDef::AddPlayerCounters { .. }
         | EffectDef::Apply { .. }
-        | EffectDef::Attach { .. }
-        | EffectDef::AttachToSource { .. }
+        | EffectDef::Attachment(
+            AttachmentDef::Attach { .. }
+            | AttachmentDef::AttachToSource { .. }
+            | AttachmentDef::ReturnAttached { .. }
+            | AttachmentDef::PairWithSource { .. }
+            | AttachmentDef::Reconfigure { .. }
+            | AttachmentDef::Unattach { .. },
+        )
         | EffectDef::PhaseOut { .. }
-        | EffectDef::ReturnAttached { .. }
-        | EffectDef::PairWithSource { .. }
-        | EffectDef::Reconfigure { .. }
-        | EffectDef::Unattach { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::CannotAttackIf(_)

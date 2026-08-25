@@ -280,13 +280,15 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::RemoveAllCounters { .. }
         | EffectDef::Untap { .. }
         | EffectDef::Saddle { .. }
-        | EffectDef::Attach { .. }
-        | EffectDef::AttachToSource { .. }
+        | EffectDef::Attachment(
+            AttachmentDef::Attach { .. }
+            | AttachmentDef::AttachToSource { .. }
+            | AttachmentDef::ReturnAttached { .. }
+            | AttachmentDef::Reconfigure { .. }
+            | AttachmentDef::Unattach { .. }
+            | AttachmentDef::PairWithSource { .. },
+        )
         | EffectDef::PhaseOut { .. }
-        | EffectDef::ReturnAttached { .. }
-        | EffectDef::Reconfigure { .. }
-        | EffectDef::Unattach { .. }
-        | EffectDef::PairWithSource { .. }
         | EffectDef::CreateToken { .. }
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::ExileAndReturnTransformed { .. }

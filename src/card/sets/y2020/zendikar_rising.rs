@@ -3,10 +3,10 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef, AlternativeCastKindDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef, ControlDurationDef,
-    CounterKind, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, TokenStatsDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
+    AttachmentDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
+    ControlDurationDef, CounterKind, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, TokenStatsDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex, mana_cost};
 
@@ -124,9 +124,9 @@ static THAT_ARTIFACT_IS_AN_EQUIPMENT: TriggerConditionDef = TriggerConditionDef:
     object: ObjectPredicateDef::Subtype("Equipment"),
 };
 
-static SKYDIVER_EQUIPS_ITSELF: EffectDef = EffectDef::AttachToSource {
+static SKYDIVER_EQUIPS_ITSELF: EffectDef = EffectDef::Attachment(AttachmentDef::AttachToSource {
     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-};
+});
 
 static SKYDIVER_STEALS: [EffectDef; 2] = [
     EffectDef::GainControl {

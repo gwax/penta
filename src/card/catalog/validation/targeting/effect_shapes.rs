@@ -323,43 +323,28 @@ fn validate_effect_target_shapes(
                 None => Ok(()),
             }
         }
-        EffectDef::DiscardCards { object }
-        | EffectDef::Explore { object }
-        | EffectDef::Regenerate { object }
-        | EffectDef::ExileAndReturnTransformed { object }
-        | EffectDef::Tap { object }
-        | EffectDef::RemoveFromCombat { object }
-        | EffectDef::Untap { object }
-        | EffectDef::Saddle { object }
-        | EffectDef::AttachToSource { object }
-        | EffectDef::PhaseOut { object }
-        | EffectDef::ReturnAttached { object, .. }
-        | EffectDef::Reconfigure { object }
-        | EffectDef::Unattach { object }
-        | EffectDef::PairWithSource { object }
-        | EffectDef::Destroy {
-            object, then: None, ..
-        }
-        | EffectDef::Detain { object }
-        | EffectDef::DoubleCounters { object, .. }
-        | EffectDef::RemoveAllCounters { object, .. }
-        | EffectDef::SkipNextUntapSteps { object, .. }
-        | EffectDef::Sacrifice { object }
-        | EffectDef::ChangeTextBasicLandType { object }
-        | EffectDef::ChooseColor { object, .. }
-        | EffectDef::BecomeCopyOf { object, .. }
-        | EffectDef::ExileLinkedToSource { object }
-        | EffectDef::ExileUntilNextEndStep { object, .. }
-        | EffectDef::ExileGrantingOwnerPlay { object, .. }
-        | EffectDef::ExileGrantingControllerPlayThisTurn { object }
-        | EffectDef::GainControl { object, .. }
-        | EffectDef::Transform { object }
-        | EffectDef::PutIntoLibraryBeneathTop { object, .. }
-        | EffectDef::Counter { object, .. }
-        | EffectDef::ReturnSpellToHand { object }
-        | EffectDef::PutSpellIntoOwnersLibrary { object }
-        | EffectDef::CreateTokenCopyOf { object, .. }
-        | EffectDef::Endure { object, .. } => {
+        EffectDef::DiscardCards { object } | EffectDef::Explore { object } |
+EffectDef::Regenerate { object } | EffectDef::ExileAndReturnTransformed {
+object } | EffectDef::Tap { object } | EffectDef::RemoveFromCombat { object }
+| EffectDef::Untap { object } | EffectDef::Saddle { object } |
+EffectDef::Attachment(AttachmentDef::AttachToSource { object } |
+AttachmentDef::ReturnAttached { object, .. } | AttachmentDef::Reconfigure {
+object } | AttachmentDef::Unattach { object } |
+AttachmentDef::PairWithSource { object }) | EffectDef::PhaseOut { object } |
+EffectDef::Destroy { object, then: None, .. } | EffectDef::Detain { object } |
+EffectDef::DoubleCounters { object, .. } | EffectDef::RemoveAllCounters {
+object, .. } | EffectDef::SkipNextUntapSteps { object, .. } |
+EffectDef::Sacrifice { object } | EffectDef::ChangeTextBasicLandType { object
+} | EffectDef::ChooseColor { object, .. } | EffectDef::BecomeCopyOf { object,
+.. } | EffectDef::ExileLinkedToSource { object } |
+EffectDef::ExileUntilNextEndStep { object, .. } |
+EffectDef::ExileGrantingOwnerPlay { object, .. } |
+EffectDef::ExileGrantingControllerPlayThisTurn { object } |
+EffectDef::GainControl { object, .. } | EffectDef::Transform { object } |
+EffectDef::PutIntoLibraryBeneathTop { object, .. } | EffectDef::Counter {
+object, .. } | EffectDef::ReturnSpellToHand { object } |
+EffectDef::PutSpellIntoOwnersLibrary { object } |
+EffectDef::CreateTokenCopyOf { object, .. } | EffectDef::Endure { object, .. } => {
             validate_recipient_shape(object, targets, RecipientExpectation::Object)
         }
         EffectDef::MoveToZone {
@@ -384,7 +369,7 @@ fn validate_effect_target_shapes(
             validate_recipient_shape(object, targets, RecipientExpectation::Object)?;
             validate_effect_target_shapes(*follow_up.effect, targets, triggering_object_zone)
         }
-        EffectDef::Attach { object }
+        EffectDef::Attachment(AttachmentDef::Attach{ object })
         | EffectDef::MayCastTargetWithoutPaying { object, .. } => {
             validate_recipient_shape(object, targets, RecipientExpectation::Any)
         }

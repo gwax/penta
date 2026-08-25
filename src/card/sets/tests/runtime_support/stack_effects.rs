@@ -469,40 +469,27 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         // The destination is always a library and the depth is an ordinary
         // value the shared walk already resolves, so only the recipient is
         // an open question.
-        EffectDef::PutIntoLibraryBeneathTop { object, .. }
-        | EffectDef::CreateTokenCopyOf { object, .. }
-        | EffectDef::Endure { object, .. }
-        | EffectDef::Regenerate { object }
-        | EffectDef::Tap { object }
-        | EffectDef::RemoveFromCombat { object }
-        | EffectDef::SkipNextUntapSteps { object, .. }
-        | EffectDef::DoubleCounters { object, .. }
-        | EffectDef::RemoveAllCounters { object, .. }
-        | EffectDef::Untap { object }
-        | EffectDef::Saddle { object }
-        | EffectDef::Sacrifice { object }
-        | EffectDef::DiscardCards { object }
-        | EffectDef::ExileLinkedToSource { object }
-        | EffectDef::ExileUntilNextEndStep { object, .. }
-        | EffectDef::ExileGrantingOwnerPlay { object, .. }
-        | EffectDef::ExileGrantingControllerPlayThisTurn { object }
-        | EffectDef::Detain { object }
-        | EffectDef::GainControl { object, .. }
-        | EffectDef::AddCounters { object, .. }
-        | EffectDef::RemoveCounters { object, .. }
-        | EffectDef::Attach { object }
-        | EffectDef::AttachToSource { object }
-        | EffectDef::PhaseOut { object }
-        | EffectDef::ReturnAttached { object, .. }
-        | EffectDef::Reconfigure { object }
-        | EffectDef::Unattach { object }
-        | EffectDef::PairWithSource { object }
-        | EffectDef::ChangeTextBasicLandType { object }
-        // The colour is named at resolution, so the declaration only has to
-        // say who receives it and for how long.
-        | EffectDef::ChooseColor { object, .. }
-        | EffectDef::BecomeCopyOf { object, .. }
-        | EffectDef::ReturnSpellToHand { object } => shared_effect_recipient(object),
+        EffectDef::PutIntoLibraryBeneathTop { object, .. } |
+EffectDef::CreateTokenCopyOf { object, .. } | EffectDef::Endure { object, .. }
+| EffectDef::Regenerate { object } | EffectDef::Tap { object } |
+EffectDef::RemoveFromCombat { object } | EffectDef::SkipNextUntapSteps {
+object, .. } | EffectDef::DoubleCounters { object, .. } |
+EffectDef::RemoveAllCounters { object, .. } | EffectDef::Untap { object } |
+EffectDef::Saddle { object } | EffectDef::Sacrifice { object } |
+EffectDef::DiscardCards { object } | EffectDef::ExileLinkedToSource { object }
+| EffectDef::ExileUntilNextEndStep { object, .. } |
+EffectDef::ExileGrantingOwnerPlay { object, .. } |
+EffectDef::ExileGrantingControllerPlayThisTurn { object } |
+EffectDef::Detain { object } | EffectDef::GainControl { object, .. } |
+EffectDef::AddCounters { object, .. } | EffectDef::RemoveCounters { object, ..
+} |
+EffectDef::Attachment(AttachmentDef::Attach { object } |
+AttachmentDef::AttachToSource { object } | AttachmentDef::ReturnAttached {
+object, .. } | AttachmentDef::Reconfigure { object } |
+AttachmentDef::Unattach { object } | AttachmentDef::PairWithSource { object })
+| EffectDef::PhaseOut { object } | EffectDef::ChangeTextBasicLandType { object
+} | EffectDef::ChooseColor { object, .. } | EffectDef::BecomeCopyOf { object,
+.. } | EffectDef::ReturnSpellToHand { object } => shared_effect_recipient(object),
         // Each waits on a deferred decision, the same as any other: the
         // owner's answer, the offer to cast what was pointed at, and the
         // "top of library or graveyard" a nonland explore ends in.

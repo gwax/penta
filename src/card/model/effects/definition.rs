@@ -34,48 +34,16 @@ pub enum EffectDef {
         effect: AppliedEffectDef,
         duration: ResolvedEffectDurationDef,
     },
-    /// An Aura spell attaching itself to what it enchants. The permanent the
-    /// spell becomes is what attaches, so this is only meaningful on the spell
-    /// clause of an Aura.
-    Attach {
-        object: EffectRecipientDef,
-    },
-    /// The mirror of [`Self::Attach`]: the named permanent moves onto this
-    /// ability's own source, which is what "attach it to this creature" says.
-    AttachToSource {
-        object: EffectRecipientDef,
-    },
+    /// What this clause attaches, detaches, or pairs. The six spellings
+    /// live together in [`AttachmentDef`] because every consumer takes them
+    /// together: the attachment rules walk all of them, and every clause
+    /// that is not about attachment passes over the whole family.
+    Attachment(AttachmentDef),
     /// Phase the recipient out. It is treated as though it does not exist
     /// until it phases in, which happens before its controller untaps during
     /// their next untap step (CR 702.25). Phasing is not a zone change:
     /// nothing enters or leaves, and the permanent keeps everything it had.
     PhaseOut {
-        object: EffectRecipientDef,
-    },
-    /// Put an Aura onto the battlefield from another zone, already attached
-    /// to a host. One effect rather than a move followed by an attach: the
-    /// card that arrives is a new object, so nothing an ordinary attach
-    /// could name still points at it.
-    ReturnAttached {
-        object: EffectRecipientDef,
-        attach_to: EffectRecipientDef,
-    },
-    /// Soulbond's pairing. The chosen creature and the ability's source
-    /// record each other; the pair is symmetric and survives until one of
-    /// them stops being a creature its controller controls.
-    PairWithSource {
-        object: EffectRecipientDef,
-    },
-    /// Reconfigure's paired attach/unattach procedure. A selected creature
-    /// becomes the new host; selecting none ends this attachment incarnation.
-    Reconfigure {
-        object: EffectRecipientDef,
-    },
-    /// Detach the named Equipment or Fortification without moving it. This is
-    /// a rules action rather than a zone change: Elbrus does it immediately
-    /// before transforming, while the host and both objects remain otherwise
-    /// unchanged.
-    Unattach {
         object: EffectRecipientDef,
     },
     /// Replaces the source permanent's copiable values with the target's.

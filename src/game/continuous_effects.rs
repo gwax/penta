@@ -7,14 +7,14 @@ use std::cell::Cell;
 use super::{AbilityId, AbilityOrigin, ObjectCharacteristics};
 use super::{
     AbilityOperationDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
-    AppliedRuleEffect, CardDefinitionId, CardPartId, CardRules, CardSet, CardType, CardTypeSet,
-    CharacteristicContext, CharacteristicOperationDef, ColorSet, ContinuousEffectExpiration,
-    ControlFlow, DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EffectRecipientSetDef, Game,
-    GameObjectId, GrantId, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectRefDef,
-    ObjectSetDef, Permanent, PlayerId, PlayerRelation, ResolvedContinuousEffect,
-    ResolvedContinuousEffectKind, RetiredObject, SetOperationDef, StackAbilityResolver,
-    StackObject, StaticAppliedEffect, StaticEffectTraversal, Target, TargetIndex,
-    TriggerConditionDef, TriggerContext, TriggerEventObject, ZoneKind,
+    AppliedRuleEffect, AttachmentDef, CardDefinitionId, CardPartId, CardRules, CardSet, CardType,
+    CardTypeSet, CharacteristicContext, CharacteristicOperationDef, ColorSet,
+    ContinuousEffectExpiration, ControlFlow, DeclarativeAbilityDef, EffectDef, EffectRecipientDef,
+    EffectRecipientSetDef, Game, GameObjectId, GrantId, KeywordAbility, ManaColor,
+    ObjectPredicateDef, ObjectRefDef, ObjectSetDef, Permanent, PlayerId, PlayerRelation,
+    ResolvedContinuousEffect, ResolvedContinuousEffectKind, RetiredObject, SetOperationDef,
+    StackAbilityResolver, StackObject, StaticAppliedEffect, StaticEffectTraversal, Target,
+    TargetIndex, TriggerConditionDef, TriggerContext, TriggerEventObject, ZoneKind,
 };
 
 thread_local! {
@@ -526,7 +526,7 @@ impl Game {
     /// nested in one keeps the clause's target scope.
     pub(super) fn immediate_attachment_target(effect: EffectDef) -> Option<TargetIndex> {
         match effect {
-            EffectDef::Attach { object } => object.legal_target(),
+            EffectDef::Attachment(AttachmentDef::Attach { object }) => object.legal_target(),
             EffectDef::Sequence(effects) => effects
                 .iter()
                 .find_map(|effect| Self::immediate_attachment_target(*effect)),
@@ -598,7 +598,9 @@ impl Game {
                 | EffectDef::CreateEmblem { .. }
                 | EffectDef::CreateOngoingEffect(_)
                 | EffectDef::Transform { .. }
-                | EffectDef::Unattach { .. }
+                | EffectDef::Attachment(
+                    AttachmentDef::Unattach { .. } | AttachmentDef::Attach { .. }
+                )
                 | EffectDef::Counter { .. }
                 | EffectDef::ReturnSpellToHand { .. }
                 | EffectDef::CopyResolvingSpell { .. }
@@ -633,14 +635,10 @@ impl Game {
                 | EffectDef::CannotAttackUnless(_)
                 | EffectDef::PutIntoLibraryBeneathTop { .. }
                 | EffectDef::MoveToZone { .. }
-                | EffectDef::Attach { .. }
                 | EffectDef::PhaseOut { .. }
                 | EffectDef::CreateToken { .. }
-                // Both put something else onto a permanent rather than
-                // attaching the resolving object, which is the only kind of
-                // attachment an Aura's own spell procedure performs.
                 | EffectDef::CreateAttachedToken { .. }
-                    | EffectDef::CreateTokenCopyOf { .. }
+                | EffectDef::CreateTokenCopyOf { .. }
                 | EffectDef::StaticApply { .. }
                 | EffectDef::Apply { .. }
                 | EffectDef::Special(_)

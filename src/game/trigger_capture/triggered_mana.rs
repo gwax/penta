@@ -23,125 +23,66 @@ impl Game {
             EffectDef::AddMana(effect) => {
                 self.resolve_triggered_add_mana_effect(source, controller, effect, context);
             }
-            EffectDef::None
-            | EffectDef::Randomized { .. }
-            | EffectDef::Choose(_)
-            | EffectDef::SimultaneousChoose(_)
-            | EffectDef::ChooseCardName { .. }
-            | EffectDef::BindMatching { .. }
-            | EffectDef::SelectAtRandomFromZone { .. }
-            | EffectDef::ForEachInBinding { .. }
-            | EffectDef::PayOr(_)
-            | EffectDef::SplitIntoPiles(_)
-            | EffectDef::PreventDamage { .. }
-            | EffectDef::DealDamage { .. }
-            | EffectDef::DealDamageFrom { .. }
-            | EffectDef::DealDamageAndApply { .. }
-            | EffectDef::DrainLife { .. }
-            | EffectDef::GainLife { .. }
-            | EffectDef::AddPlayerCounters { .. }
-            | EffectDef::DrawCards { .. }
-            | EffectDef::Discard { .. }
-            | EffectDef::DiscardCards { .. }
-            | EffectDef::ShuffleLibrary { .. }
-            | EffectDef::BuryGraveyard { .. }
-            | EffectDef::EmptyManaPool { .. }
-            | EffectDef::LoseLife { .. }
-            | EffectDef::LoseTheGame { .. }
-        | EffectDef::WinTheGame { .. }
-            | EffectDef::AddManaEqualTo { .. }
-            | EffectDef::Regenerate { .. }
-            | EffectDef::Tap { .. }
-            | EffectDef::RemoveFromCombat { .. }
-            | EffectDef::SkipNextUntapSteps { .. }
-            | EffectDef::DoubleCounters { .. }
-            | EffectDef::RemoveAllCounters { .. }
-            | EffectDef::Untap { .. }
-            | EffectDef::Saddle { .. }
-            | EffectDef::Destroy { .. }
-            | EffectDef::Sacrifice { .. }
-            | EffectDef::SacrificeOfChoice { .. }
-            | EffectDef::ExileTopOfLibraryToPlay { .. }
-            | EffectDef::ExileTopAndMayCast { .. }
-            | EffectDef::MayCastTargetWithoutPaying { .. }
-            | EffectDef::Mill { .. }
-            | EffectDef::SearchZonesAndExileRest { .. }
-            | EffectDef::MillUntil { .. }
-            | EffectDef::ExileFromTopUntil { .. }
-        | EffectDef::ManifestDread { .. }
-        | EffectDef::Cascade
-        | EffectDef::Proliferate
-        | EffectDef::Explore { .. }
-            | EffectDef::LookAtTopAndSelect { .. }
-            | EffectDef::LookAtTopAndDistribute { .. }
-            | EffectDef::LookAtHand { .. }
-            | EffectDef::LookAtRandomCardInHand { .. }
-            | EffectDef::RevealAtRandomFromHand { .. }
-            | EffectDef::RevealHand { .. }
-            | EffectDef::SearchZone { .. }
-            | EffectDef::ChooseCards { .. }
-            | EffectDef::ReplaceNextDrawThisTurn { .. }
-            | EffectDef::IfFormat { .. }
-            | EffectDef::Counter { .. }
-            | EffectDef::ReturnSpellToHand { .. }
-            | EffectDef::PutSpellIntoOwnersLibrary { .. }
-            | EffectDef::CopyResolvingSpell { .. }
-            | EffectDef::AddCounters { .. }
-            | EffectDef::RemoveCounters { .. }
-            | EffectDef::ChangeTextBasicLandType { .. }
-            | EffectDef::ChooseColor { .. }
-            | EffectDef::BecomeCopyOf { .. }
-            | EffectDef::May { .. }
-            | EffectDef::CannotBeForcedToSacrifice
-            | EffectDef::CannotBeForcedToDiscard
-            | EffectDef::GainClassLevel { .. }
-            | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
-            | EffectDef::CreateEmblem { .. }
-            | EffectDef::CreateOngoingEffect(_)
-            | EffectDef::PutOntoBattlefieldThen { .. }
-            | EffectDef::ReturnWithHasteAndFinality { .. }
-            | EffectDef::Transform { .. }
-            | EffectDef::ScheduleTurnPhases(_)
-            | EffectDef::TakeExtraTurn { .. }
-            | EffectDef::PutSourceOntoBattlefieldAttacking
-            | EffectDef::BecomeMonarch { .. }
-            | EffectDef::VoteForPermanentToExile { .. }
-            | EffectDef::DamageCannotBePreventedThisTurn
-            | EffectDef::GrantFlashToNextSorcery
-            | EffectDef::ExileLinkedToSource { .. }
-            | EffectDef::ExileUntilNextEndStep { .. }
-            | EffectDef::MayPlayWithoutPaying { .. }
-            | EffectDef::ExileGrantingOwnerPlay { .. }
-            | EffectDef::ExileGrantingControllerPlayThisTurn { .. }
-            | EffectDef::ReturnLinkedExiles { .. }
-            | EffectDef::Detain { .. }
-            | EffectDef::GainControl { .. }
-            | EffectDef::ExchangeControl { .. }
-            | EffectDef::IfCondition { .. }
-            | EffectDef::InstallTrigger(_)
-            | EffectDef::ReduceGenericCostBy(_)
-            | EffectDef::ModifyCost(_)
-            | EffectDef::LandwalkCanBeBlocked(_)
-            | EffectDef::CannotAttackUnless(_)
-            | EffectDef::CannotAttackIf(_)
-            | EffectDef::PutIntoLibraryBeneathTop { .. }
-            | EffectDef::MoveToZone { .. }
-            | EffectDef::Attach { .. }
-            | EffectDef::AttachToSource { .. }
-            | EffectDef::PhaseOut { .. }
-            | EffectDef::ReturnAttached { .. }
-            | EffectDef::Reconfigure { .. }
-            | EffectDef::Unattach { .. }
-            | EffectDef::PairWithSource { .. }
-            | EffectDef::CreateToken { .. }
-            | EffectDef::CreateAttachedToken { .. }
-            | EffectDef::ExileAndReturnTransformed { .. }
-            | EffectDef::CreateTokenCopyOf { .. }
-            | EffectDef::Endure { .. }
-            | EffectDef::CreateMyriadTokens
-            | EffectDef::StaticApply { .. }
-            | EffectDef::Apply { .. }
-            | EffectDef::Special(_) => {
+            EffectDef::None | EffectDef::Randomized { .. } | EffectDef::Choose(_) |
+EffectDef::SimultaneousChoose(_) | EffectDef::ChooseCardName { .. } |
+EffectDef::BindMatching { .. } | EffectDef::SelectAtRandomFromZone { .. } |
+EffectDef::ForEachInBinding { .. } | EffectDef::PayOr(_) |
+EffectDef::SplitIntoPiles(_) | EffectDef::PreventDamage { .. } |
+EffectDef::DealDamage { .. } | EffectDef::DealDamageFrom { .. } |
+EffectDef::DealDamageAndApply { .. } | EffectDef::DrainLife { .. } |
+EffectDef::GainLife { .. } | EffectDef::AddPlayerCounters { .. } |
+EffectDef::DrawCards { .. } | EffectDef::Discard { .. } |
+EffectDef::DiscardCards { .. } | EffectDef::ShuffleLibrary { .. } |
+EffectDef::BuryGraveyard { .. } | EffectDef::EmptyManaPool { .. } |
+EffectDef::LoseLife { .. } | EffectDef::LoseTheGame { .. } |
+EffectDef::WinTheGame { .. } | EffectDef::AddManaEqualTo { .. } |
+EffectDef::Regenerate { .. } | EffectDef::Tap { .. } |
+EffectDef::RemoveFromCombat { .. } | EffectDef::SkipNextUntapSteps { .. } |
+EffectDef::DoubleCounters { .. } | EffectDef::RemoveAllCounters { .. } |
+EffectDef::Untap { .. } | EffectDef::Saddle { .. } | EffectDef::Destroy { .. }
+| EffectDef::Sacrifice { .. } | EffectDef::SacrificeOfChoice { .. } |
+EffectDef::ExileTopOfLibraryToPlay { .. } | EffectDef::ExileTopAndMayCast { ..
+} | EffectDef::MayCastTargetWithoutPaying { .. } | EffectDef::Mill { .. } |
+EffectDef::SearchZonesAndExileRest { .. } | EffectDef::MillUntil { .. } |
+EffectDef::ExileFromTopUntil { .. } | EffectDef::ManifestDread { .. } |
+EffectDef::Cascade | EffectDef::Proliferate | EffectDef::Explore { .. } |
+EffectDef::LookAtTopAndSelect { .. } | EffectDef::LookAtTopAndDistribute { ..
+} | EffectDef::LookAtHand { .. } | EffectDef::LookAtRandomCardInHand { .. } |
+EffectDef::RevealAtRandomFromHand { .. } | EffectDef::RevealHand { .. } |
+EffectDef::SearchZone { .. } | EffectDef::ChooseCards { .. } |
+EffectDef::ReplaceNextDrawThisTurn { .. } | EffectDef::IfFormat { .. } |
+EffectDef::Counter { .. } | EffectDef::ReturnSpellToHand { .. } |
+EffectDef::PutSpellIntoOwnersLibrary { .. } | EffectDef::CopyResolvingSpell {
+.. } | EffectDef::AddCounters { .. } | EffectDef::RemoveCounters { .. } |
+EffectDef::ChangeTextBasicLandType { .. } | EffectDef::ChooseColor { .. } |
+EffectDef::BecomeCopyOf { .. } | EffectDef::May { .. } |
+EffectDef::CannotBeForcedToSacrifice | EffectDef::CannotBeForcedToDiscard |
+EffectDef::GainClassLevel { .. } |
+EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. } |
+EffectDef::CreateEmblem { .. } | EffectDef::CreateOngoingEffect(_) |
+EffectDef::PutOntoBattlefieldThen { .. } |
+EffectDef::ReturnWithHasteAndFinality { .. } | EffectDef::Transform { .. } |
+EffectDef::ScheduleTurnPhases(_) | EffectDef::TakeExtraTurn { .. } |
+EffectDef::PutSourceOntoBattlefieldAttacking | EffectDef::BecomeMonarch { .. }
+| EffectDef::VoteForPermanentToExile { .. } |
+EffectDef::DamageCannotBePreventedThisTurn |
+EffectDef::GrantFlashToNextSorcery | EffectDef::ExileLinkedToSource { .. } |
+EffectDef::ExileUntilNextEndStep { .. } | EffectDef::MayPlayWithoutPaying { ..
+} | EffectDef::ExileGrantingOwnerPlay { .. } |
+EffectDef::ExileGrantingControllerPlayThisTurn { .. } |
+EffectDef::ReturnLinkedExiles { .. } | EffectDef::Detain { .. } |
+EffectDef::GainControl { .. } | EffectDef::ExchangeControl { .. } |
+EffectDef::IfCondition { .. } | EffectDef::InstallTrigger(_) |
+EffectDef::ReduceGenericCostBy(_) | EffectDef::ModifyCost(_) |
+EffectDef::LandwalkCanBeBlocked(_) | EffectDef::CannotAttackUnless(_) |
+EffectDef::CannotAttackIf(_) | EffectDef::PutIntoLibraryBeneathTop { .. } |
+EffectDef::MoveToZone { .. } |
+EffectDef::Attachment(_) | EffectDef::PhaseOut { .. } |
+EffectDef::CreateToken { .. } | EffectDef::CreateAttachedToken { .. } |
+EffectDef::ExileAndReturnTransformed { .. } | EffectDef::CreateTokenCopyOf {
+.. } | EffectDef::Endure { .. } | EffectDef::CreateMyriadTokens |
+EffectDef::StaticApply { .. } | EffectDef::Apply { .. } |
+EffectDef::Special(_) => {
                 // Choice-bearing and non-mana primitives need a dedicated
                 // immediate procedure before a supported card can use them.
             }

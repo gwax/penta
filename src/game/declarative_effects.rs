@@ -9,6 +9,7 @@ use super::{
 use crate::card::{ArrivalAttachmentDef, InstalledTriggerLifetimeDef};
 use move_to_zone::MoveToZoneClause;
 
+mod attachment;
 mod damage;
 mod hand_and_library;
 mod linked_exiles;
@@ -842,103 +843,8 @@ impl Game {
                 &context,
                 scoped,
             ),
-            // An Aura attaches as its spell becomes a permanent, so its own
-            // clause has nothing left to do. Equip resolves this instead.
-            // An Aura spell attaches itself to what it names; "attach it to
-            // this creature" runs the other way, and the source is the host.
-            EffectDef::Attach { object: recipient }
-            | EffectDef::AttachToSource { object: recipient } => {
-                let onto_source = matches!(scoped.effect, EffectDef::AttachToSource { .. });
-                let Some(source) = object.source else {
-                    return;
-                };
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    let attached = match (onto_source, target) {
-                        (true, Target::Permanent(id)) => self.try_attach(id, source),
-                        (false, Target::Permanent(id)) => self.try_attach(source, id),
-                        (false, Target::Player(player)) => {
-                            self.try_attach_to_player(source, player)
-                        }
-                        (true, Target::Player(_) | Target::Card(_) | Target::Spell(_))
-                        | (false, Target::Card(_) | Target::Spell(_)) => false,
-                    };
-                    if attached && !onto_source {
-                        break;
-                    }
-                }
-            }
-            EffectDef::ReturnAttached {
-                object: recipient,
-                attach_to,
-            } => {
-                let host = self
-                    .effect_recipients(attach_to, object, &context, scoped)
-                    .into_iter()
-                    .find_map(|target| match target {
-                        Target::Permanent(id) => Some(id),
-                        _ => None,
-                    });
-                // An Aura with nothing to enchant never enters (CR 303.4f),
-                // so a missing host leaves the card where it is.
-                let Some(host) = host else {
-                    return;
-                };
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    let arrived = self.move_target_to_zone(
-                        target,
-                        ZoneKind::Battlefield,
-                        ZoneMoveCause::Effect {
-                            controller: object.controller,
-                        },
-                        Some(BattlefieldArrival::under(object.controller)),
-                        crate::card::ZonePlacement::Top,
-                    );
-                    // The card that arrives is a new object, which is the
-                    // whole reason this is one effect: an attach written
-                    // afterwards would still be naming the old one.
-                    if let Some(arrived) = arrived {
-                        self.try_attach(arrived, host);
-                    }
-                }
-            }
-            EffectDef::PairWithSource { object: recipient } => {
-                let Some(source) = object.source else {
-                    return;
-                };
-                let partner = self
-                    .effect_recipients(recipient, object, &context, scoped)
-                    .into_iter()
-                    .find_map(|target| match target {
-                        Target::Permanent(id) => Some(id),
-                        _ => None,
-                    });
-                if let Some(partner) = partner {
-                    self.pair_creatures(source, partner);
-                }
-            }
-            EffectDef::Reconfigure { object: recipient } => {
-                let Some(source) = object.source else {
-                    return;
-                };
-                let host = self
-                    .effect_recipients(recipient, object, &context, scoped)
-                    .into_iter()
-                    .find_map(|target| match target {
-                        Target::Permanent(id) => Some(id),
-                        _ => None,
-                    });
-                if let Some(host) = host {
-                    self.try_attach(source, host);
-                } else {
-                    self.unattach(source);
-                }
-            }
-            EffectDef::Unattach { object: recipient } => {
-                for target in self.effect_recipients(recipient, object, &context, scoped) {
-                    if let Target::Permanent(attachment) = target {
-                        self.unattach(attachment);
-                    }
-                }
+            EffectDef::Attachment(attachment) => {
+                self.resolve_attachment_effect(attachment, object, &context, scoped);
             }
             EffectDef::None
             | EffectDef::CreateMyriadTokens

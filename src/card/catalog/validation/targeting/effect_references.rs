@@ -196,50 +196,33 @@ fn validate_effect_references(
                 None => Ok(()),
             }
         }
-        EffectDef::MayCastTargetWithoutPaying { object, .. }
-        | EffectDef::Explore { object }
-        | EffectDef::LoseTheGame { player: object }
-        | EffectDef::WinTheGame { player: object }
-        | EffectDef::ShuffleLibrary { player: object }
-        | EffectDef::BuryGraveyard { player: object }
-        | EffectDef::EmptyManaPool { player: object }
-        | EffectDef::Regenerate { object }
-        | EffectDef::ExileAndReturnTransformed { object }
-        | EffectDef::Tap { object }
-        | EffectDef::RemoveFromCombat { object }
-        | EffectDef::SkipNextUntapSteps { object, .. }
-        | EffectDef::DoubleCounters { object, .. }
-        | EffectDef::RemoveAllCounters { object, .. }
-        | EffectDef::Untap { object }
-        | EffectDef::Saddle { object }
-        | EffectDef::Attach { object }
-        | EffectDef::AttachToSource { object }
-        | EffectDef::PhaseOut { object }
-        | EffectDef::ReturnAttached { object, .. }
-        | EffectDef::Reconfigure { object }
-        | EffectDef::Unattach { object }
-        | EffectDef::PairWithSource { object }
-        | EffectDef::Destroy {
-            object, then: None, ..
-        }
-        | EffectDef::Sacrifice { object }
-        | EffectDef::DiscardCards { object }
-        | EffectDef::ChangeTextBasicLandType { object }
-        | EffectDef::ChooseColor { object, .. }
-        | EffectDef::BecomeCopyOf { object, .. }
-        | EffectDef::ExileLinkedToSource { object }
-        | EffectDef::ExileUntilNextEndStep { object, .. }
-        | EffectDef::ExileGrantingOwnerPlay { object, .. }
-        | EffectDef::ExileGrantingControllerPlayThisTurn { object }
-        | EffectDef::Detain { object }
-        | EffectDef::GainControl { object, .. }
-        | EffectDef::Transform { object }
-        | EffectDef::PutIntoLibraryBeneathTop { object, .. }
-        | EffectDef::Counter { object, .. }
-        | EffectDef::ReturnSpellToHand { object }
-        | EffectDef::PutSpellIntoOwnersLibrary { object }
-        | EffectDef::CreateTokenCopyOf { object, .. }
-        | EffectDef::Endure { object, .. } => {
+        EffectDef::MayCastTargetWithoutPaying { object, .. } | EffectDef::Explore {
+object } | EffectDef::LoseTheGame { player: object } | EffectDef::WinTheGame {
+player: object } | EffectDef::ShuffleLibrary { player: object } |
+EffectDef::BuryGraveyard { player: object } | EffectDef::EmptyManaPool {
+player: object } | EffectDef::Regenerate { object } |
+EffectDef::ExileAndReturnTransformed { object } | EffectDef::Tap { object } |
+EffectDef::RemoveFromCombat { object } | EffectDef::SkipNextUntapSteps {
+object, .. } | EffectDef::DoubleCounters { object, .. } |
+EffectDef::RemoveAllCounters { object, .. } | EffectDef::Untap { object } |
+EffectDef::Saddle { object } |
+EffectDef::Attachment(AttachmentDef::Attach { object } |
+AttachmentDef::AttachToSource { object } | AttachmentDef::ReturnAttached {
+object, .. } | AttachmentDef::Reconfigure { object } |
+AttachmentDef::Unattach { object } | AttachmentDef::PairWithSource { object })
+| EffectDef::PhaseOut { object } | EffectDef::Destroy { object, then: None, ..
+} | EffectDef::Sacrifice { object } | EffectDef::DiscardCards { object } |
+EffectDef::ChangeTextBasicLandType { object } | EffectDef::ChooseColor {
+object, .. } | EffectDef::BecomeCopyOf { object, .. } |
+EffectDef::ExileLinkedToSource { object } | EffectDef::ExileUntilNextEndStep {
+object, .. } | EffectDef::ExileGrantingOwnerPlay { object, .. } |
+EffectDef::ExileGrantingControllerPlayThisTurn { object } |
+EffectDef::Detain { object } | EffectDef::GainControl { object, .. } |
+EffectDef::Transform { object } | EffectDef::PutIntoLibraryBeneathTop {
+object, .. } | EffectDef::Counter { object, .. } |
+EffectDef::ReturnSpellToHand { object } |
+EffectDef::PutSpellIntoOwnersLibrary { object } |
+EffectDef::CreateTokenCopyOf { object, .. } | EffectDef::Endure { object, .. } => {
             validate_recipient_target_references(object, target_count, scope)
         }
         EffectDef::MoveToZone {

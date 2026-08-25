@@ -1,8 +1,8 @@
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityOperationDef, AbilityProcedureDef, AppliedEffectDef,
-    AppliedRuleDef, AttackDefenderScopeDef, AttackRestrictionDef, BlockRestrictionDef,
-    BlockRestrictionMatchDef, CardType, CharacteristicOperationDef, CostModificationDef,
-    DamageEventMatcherDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
+    AppliedRuleDef, AttachmentDef, AttackDefenderScopeDef, AttackRestrictionDef,
+    BlockRestrictionDef, BlockRestrictionMatchDef, CardType, CharacteristicOperationDef,
+    CostModificationDef, DamageEventMatcherDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
     DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EffectRecipientSetDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
     PlayerSetDef, PowerToughnessOperationDef, ReplacementEffectDef, ReplacementEventDef,

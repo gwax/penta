@@ -1,8 +1,8 @@
 use super::{
     AbilityCostDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    BasicLandType, CardBehavior, CardDefinitionId, CardType, CardTypeSet, CastChoices,
-    DeclarativeAbilityDef, EffectDef, EffectRecipientDef, HandcraftedPolicy, ObjectPredicateDef,
-    PlayerRelation, SpellForm, ValueDef, ZoneKind,
+    AttachmentDef, BasicLandType, CardBehavior, CardDefinitionId, CardType, CardTypeSet,
+    CastChoices, DeclarativeAbilityDef, EffectDef, EffectRecipientDef, HandcraftedPolicy,
+    ObjectPredicateDef, PlayerRelation, SpellForm, ValueDef, ZoneKind,
 };
 use crate::PlayerSetDef;
 
@@ -344,7 +344,9 @@ impl HandcraftedPolicy {
                 Self::collect_spell_effect_profile(*choice.then, x, targets, profile);
             }
             EffectDef::ChooseCardName { then, .. }
-            | EffectDef::SearchZone { then: Some(then), .. }
+            | EffectDef::SearchZone {
+                then: Some(then), ..
+            }
             | EffectDef::BindMatching { then, .. }
             | EffectDef::SelectAtRandomFromZone { then, .. } => {
                 Self::collect_spell_effect_profile(*then, x, targets, profile);
@@ -439,8 +441,6 @@ impl HandcraftedPolicy {
             // Nothing outranks winning, so it needs no profile of its own.
             EffectDef::LoseTheGame { .. }
             | EffectDef::WinTheGame { .. }
-            // A copy of the spell being cast is the same spell again, so the
-            // profile is already the right one.
             | EffectDef::CopyResolvingSpell { .. }
             | EffectDef::None
             | EffectDef::AddMana(_)
@@ -462,10 +462,10 @@ impl HandcraftedPolicy {
             | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }
             | EffectDef::ExileFromTopUntil { .. }
-        | EffectDef::ManifestDread { .. }
-        | EffectDef::Cascade
-        | EffectDef::Proliferate
-        | EffectDef::Explore { .. }
+            | EffectDef::ManifestDread { .. }
+            | EffectDef::Cascade
+            | EffectDef::Proliferate
+            | EffectDef::Explore { .. }
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtTopAndDistribute { .. }
             | EffectDef::LookAtHand { .. }
@@ -515,13 +515,15 @@ impl HandcraftedPolicy {
             | EffectDef::CannotAttackIf(_)
             | EffectDef::PutIntoLibraryBeneathTop { .. }
             | EffectDef::MoveToZone { .. }
-            | EffectDef::Attach { .. }
-            | EffectDef::AttachToSource { .. }
+            | EffectDef::Attachment(
+                AttachmentDef::Attach { .. }
+                | AttachmentDef::AttachToSource { .. }
+                | AttachmentDef::ReturnAttached { .. }
+                | AttachmentDef::Reconfigure { .. }
+                | AttachmentDef::Unattach { .. }
+                | AttachmentDef::PairWithSource { .. },
+            )
             | EffectDef::PhaseOut { .. }
-            | EffectDef::ReturnAttached { .. }
-            | EffectDef::Reconfigure { .. }
-            | EffectDef::Unattach { .. }
-            | EffectDef::PairWithSource { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::CreateAttachedToken { .. }
             | EffectDef::ExileAndReturnTransformed { .. }

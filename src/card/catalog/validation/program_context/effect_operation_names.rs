@@ -44,13 +44,12 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::ExileAndReturnTransformed { .. } => "ExileAndReturnTransformed",
         EffectDef::Endure { .. } => "Endure",
         EffectDef::CreateMyriadTokens => "CreateMyriadTokens",
-        EffectDef::Attach { .. }
-        | EffectDef::AttachToSource { .. }
-        | EffectDef::PhaseOut { .. }
-        | EffectDef::ReturnAttached { .. } => "Attach",
-        EffectDef::Reconfigure { .. } => "Reconfigure",
-        EffectDef::Unattach { .. } => "Unattach",
-        EffectDef::PairWithSource { .. } => "PairWithSource",
+        EffectDef::Attachment(AttachmentDef::Attach { .. } |
+AttachmentDef::AttachToSource { .. } | AttachmentDef::ReturnAttached { .. }) |
+EffectDef::PhaseOut { .. } => "Attach",
+        EffectDef::Attachment(AttachmentDef::Reconfigure{ .. }) => "Reconfigure",
+        EffectDef::Attachment(AttachmentDef::Unattach{ .. }) => "Unattach",
+        EffectDef::Attachment(AttachmentDef::PairWithSource{ .. }) => "PairWithSource",
         EffectDef::Destroy { .. } => "Destroy",
         EffectDef::Detain { .. } => "Detain",
         EffectDef::Regenerate { .. } => "Regenerate",
