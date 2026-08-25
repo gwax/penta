@@ -1,0 +1,233 @@
+//! Astrologian's Planisphere: a two-mana Equipment that brings its own body
+//! and grows it on the turns a blue deck was having anyway.
+
+use super::*;
+
+/// The Planisphere on the battlefield with its Hero, plus `hand` in hand and
+/// five mana up.
+fn staged(hand: &[CardDefinitionId]) -> (Game, GameObjectId) {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].library.clear();
+    for index in 0..8 {
+        game.players[0]
+            .library
+            .push(card(97_000 + index, cards::ISLAND, PlayerId::One));
+    }
+    let planisphere = game
+        .put_onto_battlefield(PlayerId::One, cards::ASTROLOGIAN_S_PLANISPHERE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    settle(&mut game);
+    for definition in hand {
+        let card = game
+            .build_zone(PlayerId::One, &[*definition])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        game.players[0].hand.push(card);
+    }
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    for color in [ManaColor::Blue, ManaColor::Red, ManaColor::Green] {
+        game.add_unrestricted_mana(PlayerId::One, color, 3);
+    }
+    (game, planisphere)
+}
+
+fn settle(game: &mut Game) {
+    for _ in 0..24 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .map(|option| option.id)
+                .take(decision.minimum.max(1))
+                .collect();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+}
+
+/// The Hero the Job select clause made.
+fn hero(game: &Game) -> &Permanent {
+    game.battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Token)
+        .expect("the Hero is on the battlefield")
+}
+
+fn counters_on_hero(game: &Game) -> u16 {
+    hero(game).counters(CounterKind::PlusOnePlusOne)
+}
+
+fn cast(game: &mut Game, card: GameObjectId) {
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card: id, .. } if *id == card))
+        .expect("there is mana for it");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    settle(game);
+}
+
+/// Job select: a 1/1 Hero arrives and the Equipment goes straight onto it.
+#[test]
+fn it_arrives_wearing_its_own_hero() {
+    let (game, planisphere) = staged(&[]);
+
+    let hero = hero(&game);
+    assert_eq!(game.power(hero), Some(1));
+    assert_eq!(game.toughness(hero), Some(1));
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == planisphere)
+            .expect("the Equipment is there")
+            .attached_to,
+        Some(hero.card.id),
+        "attached as it entered",
+    );
+}
+
+/// "A Wizard in addition to its other types": the Hero keeps being a Hero.
+#[test]
+fn the_hero_becomes_a_wizard_as_well() {
+    let (game, _planisphere) = staged(&[]);
+    let subtypes = game.effective_subtypes(hero(&game));
+
+    assert!(subtypes.contains(&"Hero"), "still a Hero");
+    assert!(subtypes.contains(&"Wizard"), "and a Wizard now");
+}
+
+/// A noncreature spell puts a counter on the creature wearing it.
+#[test]
+fn a_noncreature_spell_grows_it() {
+    let (mut game, _planisphere) = staged(&[cards::LIGHTNING_BOLT]);
+    let bolt = game.players[0].hand[0].id;
+    assert_eq!(counters_on_hero(&game), 0);
+
+    cast(&mut game, bolt);
+
+    assert_eq!(counters_on_hero(&game), 1, "one spell, one counter");
+    assert_eq!(game.power(hero(&game)), Some(2), "a 2/2 now");
+}
+
+/// A creature spell is not a noncreature spell.
+#[test]
+fn a_creature_spell_does_not() {
+    let (mut game, _planisphere) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = game.players[0].hand[0].id;
+
+    cast(&mut game, bears);
+
+    assert_eq!(counters_on_hero(&game), 0, "the clause says noncreature");
+}
+
+/// The third card of the turn, and only the third.
+#[test]
+fn the_third_draw_grows_it_once() {
+    let (mut game, _planisphere) = staged(&[]);
+
+    game.draw_card(PlayerId::One);
+    game.draw_card(PlayerId::One);
+    settle(&mut game);
+    assert_eq!(counters_on_hero(&game), 0, "two is not three");
+
+    game.draw_card(PlayerId::One);
+    settle(&mut game);
+    assert_eq!(counters_on_hero(&game), 1, "the third one does it");
+
+    game.draw_card(PlayerId::One);
+    settle(&mut game);
+    assert_eq!(counters_on_hero(&game), 1, "and the fourth does not");
+}
+
+/// The two halves are one ability and count separately: a spell and a third
+/// draw in the same turn are two counters.
+#[test]
+fn both_halves_fire_in_one_turn() {
+    let (mut game, _planisphere) = staged(&[cards::LIGHTNING_BOLT]);
+    let bolt = game.players[0].hand[0].id;
+
+    cast(&mut game, bolt);
+    for _ in 0..3 {
+        game.draw_card(PlayerId::One);
+    }
+    settle(&mut game);
+
+    assert_eq!(counters_on_hero(&game), 2, "one each");
+}
+
+/// Equip moves the whole clause: the new wearer grows and the Hero stops.
+#[test]
+fn equipping_someone_else_moves_the_ability() {
+    let (mut game, planisphere) = staged(&[cards::LIGHTNING_BOLT]);
+    let bolt = game.players[0].hand[0].id;
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let equip =
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    *source == planisphere
+                        && targets.iter().any(|selection| {
+                            selection.targets().iter().any(
+                                |target| matches!(target, Target::Permanent(id) if *id == bears),
+                            )
+                        })
+                }
+                _ => false,
+            })
+            .expect("two mana equips it to the Bear");
+    game.apply(PlayerId::One, equip).expect("it activates");
+    settle(&mut game);
+
+    cast(&mut game, bolt);
+
+    let bear = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("the Bear is there");
+    assert_eq!(bear.counters(CounterKind::PlusOnePlusOne), 1, "it grew");
+    assert!(
+        game.effective_subtypes(bear).contains(&"Wizard"),
+        "and it is a Wizard while it wears it",
+    );
+    assert_eq!(counters_on_hero(&game), 0, "the Hero kept nothing");
+}

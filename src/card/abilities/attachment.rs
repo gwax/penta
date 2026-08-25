@@ -320,6 +320,25 @@ pub const fn for_mirrodin() -> AbilityDef {
     )
 }
 
+/// The Hero every Job select Equipment brings with it: a 1/1 with no colour
+/// and no creature type beyond Hero, which the Equipment then names.
+const HERO: crate::TokenCharacteristics = crate::TokenCharacteristics::creature(&["Hero"], &[], 1, 1);
+
+/// Job select -- living weapon again, with the Hero the Final Fantasy
+/// Equipment share. The 1/1 body is the difference that matters: unlike a
+/// Germ it survives losing its Equipment, so what the Equipment says about
+/// creature types has something left to say it about.
+#[must_use]
+pub const fn job_select() -> AbilityDef {
+    enters_trigger(
+        "Job select (When this Equipment enters, create a 1/1 colorless Hero creature token, then attach this to it.)",
+        EffectDef::CreateAttachedToken {
+            token: HERO,
+            host: None,
+        },
+    )
+}
+
 /// Reconfigure's paired sorcery-speed attachment procedures.
 #[must_use]
 pub const fn reconfigure(mana_cost: ManaCost, text: &'static str) -> AbilityDef {

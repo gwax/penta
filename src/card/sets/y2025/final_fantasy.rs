@@ -5,10 +5,11 @@ use crate::TargetIndex;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, ActivationTimingDef, AddManaEffectDef,
     AdditionalTriggerDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, CounterKind, DamageEventMatcherDef, DamageKindDef,
-    DamageRecipientMatcherDef, DamageSourceMatcherDef, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, ObjectRefDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation,
-    PlayerSetDef, ResolvedEffectDurationDef, TopOfLibraryCostDef, TriggerConditionDef,
+    CardSupertype, CardType, CharacteristicOperationDef, CounterKind, CreatureTypeSetDef,
+    DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
+    DrawEventMatcherDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectRefDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, PlayerSetDef,
+    ResolvedEffectDurationDef, SetOperationDef, TopOfLibraryCostDef, TriggerConditionDef,
     TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::mana_cost;
@@ -369,13 +370,66 @@ pub(in crate::card::sets) static TRAVELING_CHOCOBO: CardRecord = CardRecord::new
 );
 
 // FIN 581 — Astrologian's Planisphere
-// Audit: metadata-only — Card rules have not been implemented.
+/// Two events, one clause, one counter each: a noncreature spell, and the
+/// third card of the turn however it was drawn. The Hero's own draw step
+/// counts toward the third, which is why the card wants a turn with two
+/// cantrips in it rather than a big draw spell.
+static PLANISPHERE_TRIGGERS: [TriggerEventDef; 2] = [
+    TriggerEventDef::SpellCast(ObjectPredicateDef::All(&[
+        ObjectPredicateDef::NoncreatureSpell,
+        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+    ])),
+    TriggerEventDef::DrewCard(DrawEventMatcherDef::nth_each_turn(PlayerRelation::You, 3)),
+];
+
+/// Granted to the equipped creature, so "this creature" is the creature
+/// rather than the Equipment: the counter goes where the ability lives.
+static PLANISPHERE_GRANTED: AbilityDef = AbilityDef::triggered(
+    "Whenever you cast a noncreature spell and whenever you draw your third card each turn, put \
+     a +1/+1 counter on this creature.",
+    TriggerEventDef::AnyOf(&PLANISPHERE_TRIGGERS),
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(1),
+    },
+);
+
+static PLANISPHERE_GRANT: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::Characteristic(CharacteristicOperationDef::CreatureTypes(
+        SetOperationDef::Add(CreatureTypeSetDef::named(&["Wizard"])),
+    )),
+    AppliedEffectDef::add_ability(&PLANISPHERE_GRANTED),
+];
+
+static PLANISPHERE_EQUIP: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{2}"))];
+
+static ASTROLOGIAN_S_PLANISPHERE_ABILITIES: [AbilityDef; 3] = [
+    abilities::job_select(),
+    AbilityDef::static_ability(
+        "Equipped creature is a Wizard in addition to its other types and has \"Whenever you \
+         cast a noncreature spell and whenever you draw your third card each turn, put a +1/+1 \
+         counter on this creature.\"",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::AttachedPermanent,
+            effect: AppliedEffectDef::Composite(&PLANISPHERE_GRANT),
+        },
+    ),
+    // The flavour name in front of the cost is the whole of what "Diana —"
+    // adds: it is an ordinary equip ability underneath.
+    abilities::equip(&PLANISPHERE_EQUIP, "Diana — Equip {2}"),
+];
+
 pub(in crate::card::sets) static ASTROLOGIAN_S_PLANISPHERE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a0f6e2d7-58b5-4a7d-8c42-e25185cd173f"),
     "Astrologian's Planisphere",
     crate::card::CardArt::new("a0f6e2d7-58b5-4a7d-8c42-e25185cd173f", "Josephine Chang"),
     crate::card::CardSet::FinalFantasy,
-    crate::card::CardRules::unsupported(),
+    // Two mana for a 1/1 that grows on the turns a blue deck was having
+    // anyway, and an Equipment left over when it dies.
+    CardRules::new_artifact(mana_cost!("{1}{U}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&ASTROLOGIAN_S_PLANISPHERE_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
