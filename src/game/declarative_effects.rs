@@ -75,6 +75,25 @@ impl Game {
                 );
             }
             EffectDef::PayOr(definition) => {
+                // "You may pay {1}{G} if this permanent is attached to a
+                // creature you control": asked before the offer, so a false
+                // answer takes the other branch rather than offering a
+                // payment that would buy nothing.
+                if definition.condition.is_some_and(|condition| {
+                    !self.trigger_condition_holds(
+                        condition,
+                        object.source.unwrap_or(object.id),
+                        object.controller,
+                        context.trigger,
+                        object.ability.as_ref().map(|ability| ability.origin),
+                        Some((object, scoped, &context)),
+                    )
+                }) {
+                    if let Some(otherwise) = definition.otherwise {
+                        self.resolve_effect_def(scoped.with_effect(*otherwise), object, context);
+                    }
+                    return;
+                }
                 let payers =
                     self.effect_players(definition.payment.payer, object, &context, scoped);
                 let [player] = payers.as_slice() else {

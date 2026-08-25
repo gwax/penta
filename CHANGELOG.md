@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A condition on an optional payment.** "You may pay {1}{G} if this
+  permanent is attached to a creature you control" asks before it offers: a
+  false answer takes the other branch rather than offering a payment that
+  would buy nothing. An optional payment can now carry that question.
+  Springheart Nantuko prints it over bestow and a landfall trigger -- every
+  land copies whatever it is wearing, and declining, being unable to pay, and
+  not being an Aura at all are the same answer, each leaving a 1/1 Insect.
+  Nothing about the checkpoint changes.
+
 - **The kindred card type.** A card type that does nothing by itself
   (CR 205.2a): what it is for is letting a noncreature card carry creature
   subtypes, so a Kindred Instant -- Goblin is a Goblin card in every zone and

@@ -1157,6 +1157,7 @@ pub(in crate::card::sets) static FETTERGEIST: CardRecord = CardRecord::new_with_
                 if_paid: None,
                 otherwise: Some(&FETTERGEIST_SACRIFICE),
                 visibility: ChoiceVisibilityDef::Public,
+                condition: None,
             }),
         ),
     ]),

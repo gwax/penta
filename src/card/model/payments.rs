@@ -6,7 +6,7 @@
 
 use super::{
     ChoiceVisibilityDef, EffectDef, EffectRecipientDef, ManaColor, ManaCost, ObjectPredicateDef,
-    PlayerRefDef, PlayerSetDef, ValueDef, ZoneKind,
+    PlayerRefDef, PlayerSetDef, TriggerConditionDef, ValueDef, ZoneKind,
 };
 
 /// The supported cost of an optional effect payment.
@@ -141,6 +141,11 @@ pub struct PayOrDef {
     pub if_paid: Option<&'static EffectDef>,
     pub otherwise: Option<&'static EffectDef>,
     pub visibility: ChoiceVisibilityDef,
+    /// A printed "if ..." on the offer itself: "you may pay {1}{G} if this
+    /// permanent is attached to a creature you control" asks before it
+    /// offers, and a false answer takes the other branch without anybody
+    /// being asked to pay for something that would do nothing.
+    pub condition: Option<&'static TriggerConditionDef>,
 }
 
 impl PayOrDef {
@@ -152,6 +157,7 @@ impl PayOrDef {
             if_paid: Some(if_paid),
             otherwise: None,
             visibility: ChoiceVisibilityDef::Private,
+            condition: None,
         }
     }
 
@@ -169,7 +175,16 @@ impl PayOrDef {
             if_paid: Some(if_paid),
             otherwise: Some(otherwise),
             visibility: ChoiceVisibilityDef::Private,
+            condition: None,
         }
+    }
+
+    /// "You may pay ... if <condition>": the offer is made only when the
+    /// condition holds, and the other branch runs when it does not.
+    #[must_use]
+    pub const fn only_if(mut self, condition: &'static TriggerConditionDef) -> Self {
+        self.condition = Some(condition);
+        self
     }
 
     /// Continue unless the payer pays. Nothing happens when they do, which is
@@ -182,6 +197,7 @@ impl PayOrDef {
             if_paid: None,
             otherwise: Some(otherwise),
             visibility: ChoiceVisibilityDef::Private,
+            condition: None,
         }
     }
 
@@ -197,6 +213,7 @@ impl PayOrDef {
             if_paid: None,
             otherwise: Some(otherwise),
             visibility: ChoiceVisibilityDef::Private,
+            condition: None,
         }
     }
 }

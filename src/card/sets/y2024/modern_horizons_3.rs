@@ -1017,13 +1017,93 @@ pub(in crate::card::sets) static SOWING_MYCOSPAWN: CardRecord = CardRecord::new_
 );
 
 // MH3 171 — Springheart Nantuko
-// Audit: metadata-only — Card rules have not been implemented.
+static A_LAND_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Land),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+/// "If this permanent is attached to a creature you control": read before
+/// the offer, because a Nantuko that is a creature rather than an Aura has
+/// nothing to copy and should not be asked to pay for one.
+static NANTUKO_IS_WEARING_A_CREATURE: TriggerConditionDef =
+    TriggerConditionDef::AttachedPermanentMatches {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+        ]),
+    };
+
+/// The whole point of bestowing it: every land is another copy of whatever
+/// it is wearing.
+static NANTUKO_COPIES_ITS_HOST: EffectDef = EffectDef::CreateTokenCopyOf {
+    object: EffectRecipientDef::AttachedPermanent,
+    exceptions: TokenCopyExceptionsDef::NONE,
+    created: None,
+};
+
+/// "If you didn't create a token this way": declining, being unable to pay,
+/// and not being attached at all are the same answer, and each leaves an
+/// Insect behind.
+static NANTUKO_MAKES_AN_INSECT: EffectDef =
+    EffectDef::create_creature_token(&["Insect"], &[ManaColor::Green], 1, 1);
+
+static NANTUKO_LANDFALL: EffectDef = EffectDef::PayOr(
+    PayOrDef::optional_or(
+        EffectPaymentDef::mana(
+            PlayerSetDef::One(PlayerRefDef::EffectController),
+            mana_cost!("{1}{G}"),
+        ),
+        &NANTUKO_COPIES_ITS_HOST,
+        &NANTUKO_MAKES_AN_INSECT,
+    )
+    .only_if(&NANTUKO_IS_WEARING_A_CREATURE),
+);
+
+static NANTUKO_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::alternative_cast_with_targets(
+        mana_cost!("{1}{G}"),
+        AlternativeCastKindDef::Bestow,
+        Some(
+            "Bestow {1}{G} (If you cast this card for its bestow cost, it's an Aura spell with \
+             enchant creature. It becomes a creature again if it's not attached to a creature.)",
+        ),
+        &abilities::ENCHANT_CREATURE_TARGET,
+        EffectDef::Attachment(AttachmentDef::Attach {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        }),
+    ),
+    // Only while it is an Aura (CR 702.103d): as a creature it enchants
+    // nothing and the clause names nothing.
+    AbilityDef::static_ability(
+        "Enchanted creature gets +1/+1.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::AttachedPermanent,
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(1),
+                ValueDef::Constant(1),
+            ),
+        },
+    ),
+    AbilityDef::triggered(
+        "Landfall — Whenever a land you control enters, you may pay {1}{G} if this permanent is \
+         attached to a creature you control. If you do, create a token that's a copy of that \
+         creature. If you didn't create a token this way, create a 1/1 green Insect creature \
+         token.",
+        TriggerEventDef::zone_changed(A_LAND_YOU_CONTROL, None, Some(ZoneKind::Battlefield)),
+        NANTUKO_LANDFALL,
+    ),
+];
+
 pub(in crate::card::sets) static SPRINGHEART_NANTUKO: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("54a3ea87-005e-4985-b2a5-21711d0b71c0"),
     "Springheart Nantuko",
-    crate::card::CardArt::new("54a3ea87-005e-4985-b2a5-21711d0b71c0", "Valera Lutfullina"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("54a3ea87-005e-4985-b2a5-21711d0b71c0", "Valera Lutfullina"),
+    CardSet::ModernHorizons3,
+    // Two mana for a 1/1, or four to bestow it onto something worth copying
+    // -- and then every land is another one of that.
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Insect", "Monk"], 1, 1)
+        .with_type(CardType::Enchantment)
+        .with_abilities(&NANTUKO_ABILITIES),
 );
 
 // MH3 172 — Temperamental Oozewagg

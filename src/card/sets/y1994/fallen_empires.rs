@@ -491,6 +491,7 @@ pub(in crate::card::sets) static DEEP_SPAWN: CardRecord = CardRecord::new_with_l
                 if_paid: None,
                 otherwise: Some(&DEEP_SPAWN_SACRIFICE),
                 visibility: ChoiceVisibilityDef::Public,
+                condition: None,
             }),
         ),
         AbilityDef::activated(

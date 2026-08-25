@@ -668,6 +668,7 @@ static FLASH_UNLESS_PAID: EffectDef = EffectDef::PayOr(PayOrDef {
     if_paid: None,
     otherwise: Some(&FLASH_SACRIFICE),
     visibility: ChoiceVisibilityDef::Public,
+    condition: None,
 });
 
 static FLASH_PUTS_IT_IN: EffectDef = EffectDef::PutOntoBattlefieldThen {

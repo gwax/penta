@@ -1375,6 +1375,7 @@ pub(in crate::card::sets) static MISHRA_S_WAR_MACHINE: CardRecord = CardRecord::
                 if_paid: None,
                 otherwise: Some(&MISHRAS_WAR_MACHINE_UNPAID_SEQUENCE),
                 visibility: ChoiceVisibilityDef::Public,
+                condition: None,
             }),
         ),
     ]),

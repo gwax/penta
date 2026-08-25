@@ -982,6 +982,7 @@ static CYCLONE_UPKEEP: [EffectDef; 2] = [
         if_paid: Some(&CYCLONE_SWEEP_SEQUENCE),
         otherwise: Some(&CYCLONE_SACRIFICE),
         visibility: ChoiceVisibilityDef::Public,
+        condition: None,
     }),
 ];
 

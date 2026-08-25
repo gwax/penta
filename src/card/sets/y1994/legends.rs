@@ -3287,6 +3287,7 @@ static PRIMORDIAL_OOZE_UPKEEP: [EffectDef; 2] = [
         if_paid: None,
         otherwise: Some(&PRIMORDIAL_OOZE_TOLL_SEQUENCE),
         visibility: ChoiceVisibilityDef::Private,
+        condition: None,
     }),
 ];
 

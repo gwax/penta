@@ -237,6 +237,7 @@ fn uses_declarative_ability_constructs() {
             }),
             otherwise: None,
             visibility: ChoiceVisibilityDef::Private,
+            condition: None,
         })) if payment.payer == PlayerSetDef::Related(PlayerRelation::You)
             && payment.cost == crate::card::EffectPaymentCostDef::Mana(ManaCost::new(4, 0))
     ));

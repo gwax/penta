@@ -872,6 +872,7 @@ const fn pay_or_counter(
         if_paid: None,
         otherwise: Some(otherwise),
         visibility: ChoiceVisibilityDef::Public,
+        condition: None,
     })
 }
 
