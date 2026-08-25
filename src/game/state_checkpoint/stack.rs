@@ -10,8 +10,8 @@ use super::semantics::{
     catalog_scoped_effect, scoped_effect_snapshot,
 };
 use super::{
-    AbilityId, AbilityOrigin, AdditionalCostId, AlternativeCostId, AppliedStackEffect,
-    BasicLandType, BasicLandTypeChange, CardPartId, CastChoices, CastSignature,
+    AbilityId, AbilityOrigin, AbilitySourceRef, AdditionalCostId, AlternativeCostId,
+    AppliedStackEffect, BasicLandType, BasicLandTypeChange, CardPartId, CastChoices, CastSignature,
     CharacteristicSource, CostConfiguration, DeclarativeAbilityDef, EffectResolutionContext, Game,
     GameObjectId, GameStack, GrantId, ManaSource, ModeId, ObjectBacking, ObjectCharacteristics,
     ObjectInstance, ObjectKind, PlayOptionId, PlayerId, RetiredObject, SpellForm,
@@ -207,6 +207,7 @@ pub(super) fn applied_stack_effect_snapshots(
                     ability: ability_origin_snapshot(source.ability),
                 }),
                 effect: applied_effect_locator(&game.catalog, applied.effect)?,
+                granting: applied.granting.map(super::event::ability_source_snapshot),
             })
         })
         .collect::<Vec<_>>();
@@ -223,6 +224,10 @@ fn parse_applied_stack_effects(
         .map(|snapshot| {
             Ok(AppliedStackEffect {
                 source: snapshot.source.map(|source| ManaSource {
+                    object: GameObjectId(source.object),
+                    ability: ability_origin_from_snapshot(source.ability),
+                }),
+                granting: snapshot.granting.map(|source| AbilitySourceRef {
                     object: GameObjectId(source.object),
                     ability: ability_origin_from_snapshot(source.ability),
                 }),

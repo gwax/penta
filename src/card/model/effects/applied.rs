@@ -631,6 +631,12 @@ pub struct GraveyardPlayPermissionDef {
     pub per_turn: Option<u8>,
     /// Whether it opens only on its controller's own turns.
     pub your_turns_only: bool,
+    /// "If you do, it gains ...": what the permanent played this way carries
+    /// afterwards. It belongs to the permission because the permission is
+    /// the only thing that knows a play was made under it -- and it outlives
+    /// the permission's own source, which is why it rides on the permanent
+    /// rather than being read back off the card that allowed it.
+    pub grants: Option<&'static AppliedEffectDef>,
 }
 
 impl GraveyardPlayPermissionDef {
@@ -640,6 +646,7 @@ impl GraveyardPlayPermissionDef {
             restriction,
             per_turn: None,
             your_turns_only: false,
+            grants: None,
         }
     }
 
@@ -650,7 +657,15 @@ impl GraveyardPlayPermissionDef {
             restriction,
             per_turn: Some(1),
             your_turns_only: true,
+            grants: None,
         }
+    }
+
+    /// The same permission, with what it played gaining `effect`.
+    #[must_use]
+    pub const fn granting(mut self, effect: &'static AppliedEffectDef) -> Self {
+        self.grants = Some(effect);
+        self
     }
 }
 

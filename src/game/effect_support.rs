@@ -241,6 +241,60 @@ impl Game {
         }
     }
 
+    /// Gives an entering permanent an ability it gained from the way it was
+    /// played: "if you do, it gains ...". The grant is written onto the
+    /// permanent rather than left with whatever allowed the play, because
+    /// the printed clause outlives its source -- a Serra Paragon that dies
+    /// does not take the exile clause back off what it returned.
+    ///
+    /// The permanent is its own source here for the same reason a granted
+    /// keyword is: nothing is left to point at, and nothing about the grant
+    /// depends on what allowed it.
+    pub(super) fn grant_resolved_ability_to_entering_permanent(
+        &mut self,
+        permanent: &mut Permanent,
+        source: AbilitySourceRef,
+        effect: AppliedEffectDef,
+    ) {
+        let AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Add(ability),
+        )) = effect
+        else {
+            return;
+        };
+        let timestamp = self.allocate_continuous_effect_timestamp();
+        let used = permanent
+            .resolved_continuous_effects
+            .iter()
+            .filter_map(|resolved| match resolved.kind {
+                ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Add {
+                    grant,
+                    ..
+                }) => Some(grant.index()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        let Some(grant) = (0..=u8::MAX as usize)
+            .find(|index| !used.contains(index))
+            .and_then(GrantId::from_index)
+        else {
+            return;
+        };
+        permanent
+            .resolved_continuous_effects
+            .push(ResolvedContinuousEffect {
+                definition: effect,
+                source,
+                timestamp,
+                component_order: 0,
+                expiration: ContinuousEffectExpiration::Never,
+                kind: ResolvedContinuousEffectKind::Abilities(ResolvedAbilityOperation::Add {
+                    ability: *ability,
+                    grant,
+                }),
+            });
+    }
+
     pub(super) fn continuous_effect_expiration(
         duration: ResolvedEffectDurationDef,
         controller: PlayerId,

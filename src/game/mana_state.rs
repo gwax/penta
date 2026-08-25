@@ -7,6 +7,12 @@ use super::{ManaPool, ManaSource};
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct AppliedStackEffect {
     pub(super) source: Option<ManaSource>,
+    /// The ability that handed this to the spell, for the riders that are
+    /// not mana: a permission that grants what it allowed has to say which
+    /// clause the grant came from, because that is how the effect is
+    /// addressed again afterwards. `None` for a mana rider, whose source is
+    /// the mana beside it.
+    pub(super) granting: Option<super::AbilitySourceRef>,
     pub(super) effect: AppliedEffectDef,
 }
 

@@ -23,9 +23,9 @@ use super::model_prevention::DamagePreventionLocator;
 use super::{AbilityOrigin, AbilitySourceRef, Mana, ScopedEffect};
 use crate::card::{
     AbilityDef, AbilityOperationDef, AbilityProgramDef, AbilityTargetDef, AddManaEffectDef,
-    AppliedEffectDef, CharacteristicOperationDef, DamagePreventionDef, DamageSourceMatcherDef,
-    DeclarativeAbilityDef, EffectDef, ManaSpendEffectDef, ObjectPredicateDef, ReplacementEffectDef,
-    SpellAbilityDef,
+    AppliedEffectDef, AppliedRuleDef, CharacteristicOperationDef, DamagePreventionDef,
+    DamageSourceMatcherDef, DeclarativeAbilityDef, EffectDef, ManaSpendEffectDef,
+    ObjectPredicateDef, ReplacementEffectDef, SpellAbilityDef,
 };
 use crate::{CardCatalog, CardPartId};
 
@@ -480,7 +480,13 @@ fn collect_applied_effects_from_effect(effect: EffectDef, found: &mut Vec<Applie
     // a rider: a damage clause with one attached leaves a resolved effect on
     // the battlefield that has to be locatable again.
     match effect {
+        // A static clause is not itself resolved, but what it hands out can
+        // be: a permission that grants an ability to what it allowed leaves
+        // that grant on a permanent, which has to be locatable afterwards.
         EffectDef::Apply {
+            effect: applied, ..
+        }
+        | EffectDef::StaticApply {
             effect: applied, ..
         }
         | EffectDef::DealDamageAndApply { applied, .. } => collect_applied_effect(applied, found),
@@ -493,10 +499,22 @@ fn collect_applied_effects_from_effect(effect: EffectDef, found: &mut Vec<Applie
 
 fn collect_applied_effect(effect: AppliedEffectDef, found: &mut Vec<AppliedEffectDef>) {
     found.push(effect);
-    if let AppliedEffectDef::Composite(children) = effect {
-        for child in children {
-            collect_applied_effect(*child, found);
+    match effect {
+        AppliedEffectDef::Composite(children) => {
+            for child in children {
+                collect_applied_effect(*child, found);
+            }
         }
+        // "If you do, it gains ...": what a graveyard permission hands to
+        // the permanent it allowed is a rider like any other, and the
+        // permanent keeps it long after the play, so it has to be findable
+        // again from the clause that printed it.
+        AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(permission)) => {
+            if let Some(granted) = permission.grants {
+                collect_applied_effect(*granted, found);
+            }
+        }
+        AppliedEffectDef::Rule(_) | AppliedEffectDef::Characteristic(_) => {}
     }
 }
 

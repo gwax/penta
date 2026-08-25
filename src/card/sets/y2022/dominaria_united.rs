@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, DrawEventMatcherDef, EffectDef, EffectRecipientDef,
-    InstalledTriggerDef, ObjectPredicateDef, PlayerRelation, StackTargetKindDef, TriggerEventDef,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, DrawEventMatcherDef, EffectDef,
+    EffectRecipientDef, GraveyardPlayPermissionDef, InstalledTriggerDef, ObjectPredicateDef,
+    PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, StackTargetKindDef, TriggerEventDef,
     ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
@@ -340,13 +341,80 @@ pub(in crate::card::sets) static ERTAI_RESURRECTED: CardRecord = CardRecord::new
 // DMU 387 — Leyline Binding (alternate printing)
 
 // DMU 388 — Serra Paragon
-// Audit: metadata-only — Card rules have not been implemented.
+/// What the permanent gains, and what makes the Paragon a value engine
+/// rather than a recursion loop: the card leaves for good, and the two life
+/// are the consolation.
+static PARAGON_EXILE_CLAUSE: AbilityDef = abilities::dies_trigger(
+    "When this permanent is put into a graveyard from the battlefield, exile it and you gain 2 \
+     life.",
+    EffectDef::Sequence(&PARAGON_EXILE_AND_GAIN),
+);
+
+static PARAGON_EXILE_AND_GAIN: [EffectDef; 2] = [
+    EffectDef::MoveToZone {
+        counters: None,
+        object: EffectRecipientDef::Source,
+        from: Some(ZoneKind::Graveyard),
+        zone: ZoneKind::Exile,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        attachment: None,
+        controller: None,
+        tapped: false,
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+];
+
+static PARAGON_GRANT: AppliedEffectDef = AppliedEffectDef::add_ability(&PARAGON_EXILE_CLAUSE);
+
+/// "A land ... or a permanent spell with mana value 3 or less": one
+/// permission rather than two, because the once-each-turn bound is on the
+/// pair. Any play action, since which one it is follows from the card --
+/// nothing but a land is ever played as a land, and nothing but a spell is
+/// ever cast.
+static PARAGON_PERMISSION: PlayRestrictionDef = PlayRestrictionDef::new(
+    PlayActionMatcherDef::Any,
+    ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::HasType(CardType::Land),
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::Not(&ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Instant),
+                ObjectPredicateDef::HasType(CardType::Sorcery),
+            ])),
+            ObjectPredicateDef::ManaValueAtMost(3),
+        ]),
+    ]),
+);
+
+static SERRA_PARAGON_ABILITIES: [AbilityDef; 2] = [
+    abilities::flying(),
+    AbilityDef::static_ability(
+        "Once during each of your turns, you may play a land from your graveyard or cast a \
+         permanent spell with mana value 3 or less from your graveyard. If you do, it gains \
+         \"When this permanent is put into a graveyard from the battlefield, exile it and you \
+         gain 2 life.\"",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Controller,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(
+                GraveyardPlayPermissionDef::once_each_of_your_turns(PARAGON_PERMISSION)
+                    .granting(&PARAGON_GRANT),
+            )),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static SERRA_PARAGON: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("69284b53-f712-418c-94a0-4e5638117256"),
     "Serra Paragon",
     crate::card::CardArt::new("69284b53-f712-418c-94a0-4e5638117256", "Heonhwa"),
     crate::card::CardSet::DominariaUnited,
-    crate::card::CardRules::unsupported(),
+    // Four mana for a 3/4 flier that buys back a land or a cheap permanent
+    // every turn it lives, and pays two life for each one on its way out.
+    CardRules::new_creature(mana_cost!("{2}{W}{W}"), &["Angel"], 3, 4)
+        .with_abilities(&SERRA_PARAGON_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

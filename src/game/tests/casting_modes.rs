@@ -470,6 +470,7 @@ fn a_composite_mana_spend_effect_can_make_a_spell_uncounterable() {
     let mut object = spell(20_002, cards::SAVANNAH_LIONS, PlayerId::One, 0);
     object.applied_effects.push(AppliedStackEffect {
         source: None,
+        granting: None,
         effect: AppliedEffectDef::Composite(&COMPONENTS),
     });
     let game = ready_game();

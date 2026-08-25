@@ -1,13 +1,13 @@
 use super::{
-    AbilityCostDef, AbilityOrigin, AlternativeCastKindDef, BTreeMap, BattlefieldExitCompletion,
-    CREATURE_TYPES, CardBehavior, CardDefinition, CardInstance, CardType, CardTypeSet, CastChoices,
-    CastOfferCost, CastSignature, CastSourceZone, CharacteristicContext, CommittedTriggerEvent,
-    CostConfiguration, DecisionContinuation, DecisionOption, DecisionPreference,
-    DecisionVisibility, DecisionZone, DeclarativeAbilityDef, EntryCompletion, Game, GameEvent,
-    GameObjectId, Mana, ManaAbilityActivation, ManaActivationChoices, ManaColor, ManaCost,
-    ManaPaymentPurpose, PendingBattlefieldEntry, Permanent, PlayActionKind, PlayOptionDef,
-    PlayOptionId, PlayerId, StackObject, StackObjectKind, Target, ZoneKind, ZoneMoveCause,
-    ZonePlacement, remove_card,
+    AbilityCostDef, AbilityOrigin, AbilitySourceRef, AlternativeCastKindDef, AppliedEffectDef,
+    AppliedStackEffect, BTreeMap, BattlefieldExitCompletion, CREATURE_TYPES, CardBehavior,
+    CardDefinition, CardInstance, CardType, CardTypeSet, CastChoices, CastOfferCost, CastSignature,
+    CastSourceZone, CharacteristicContext, CommittedTriggerEvent, CostConfiguration,
+    DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
+    DeclarativeAbilityDef, EntryCompletion, Game, GameEvent, GameObjectId, Mana,
+    ManaAbilityActivation, ManaActivationChoices, ManaColor, ManaCost, ManaPaymentPurpose,
+    PendingBattlefieldEntry, Permanent, PlayActionKind, PlayOptionDef, PlayOptionId, PlayerId,
+    StackObject, StackObjectKind, Target, ZoneKind, ZoneMoveCause, ZonePlacement, remove_card,
 };
 mod signature_validation;
 include!("casting/life_costs.rs");
@@ -92,13 +92,21 @@ impl Game {
             .lands_played_this_turn
             .saturating_add(1);
         self.consecutive_passes = 0;
-        let permanent = Permanent::entering(
+        let mut permanent = Permanent::entering(
             card,
             presented,
             player,
             self.turns_started[player.index()],
             self.turn,
         );
+        // A land played out of a graveyard is played under somebody's
+        // permission, which may allow only so many and may hand the land
+        // something as it arrives. A land played from hand is nobody's
+        // business but the land-drop count above.
+        if from == ZoneKind::Graveyard {
+            let option = option.clone();
+            self.spend_graveyard_land_permission(&mut permanent, player, &option);
+        }
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from,
@@ -407,12 +415,13 @@ impl Game {
             sacrifices,
         );
         let alternative_kind = self.cast_alternative_kind(player, card_id, &signature, offer);
-        // A cast from a graveyard that is not one of the card's own printed
-        // ways of being cast is happening under somebody's permission, and a
-        // permission that allows only so many spends one here.
-        if source_zone == CastSourceZone::Graveyard && alternative_kind.is_none() {
-            self.record_graveyard_permission_use_for_cast(player, card_id, &signature);
-        }
+        let granted_by_permission = self.spend_graveyard_cast_permission(
+            player,
+            card_id,
+            &signature,
+            source_zone,
+            alternative_kind,
+        );
         self.take_answered_cast_offer(card_id);
         // Both exile the card rather than burying it wherever it would otherwise have gone.
         let cast_via_flashback = matches!(
@@ -441,6 +450,10 @@ impl Game {
             face_down,
         );
         stack_object.phyrexian_symbols_paid_with_life = phyrexian_symbols_paid_with_life;
+        // "If you do, it gains ...": the permission that allowed this cast
+        // hands the spell what the permanent it becomes will carry, which
+        // rides beside the keyword riders a mana payment can leave.
+        Self::attach_permission_grant(&mut stack_object, granted_by_permission);
         let stack_id = stack_object.id;
         let definition = stack_object
             .card
@@ -812,31 +825,81 @@ impl Game {
         Some((stack_object, targets))
     }
 
+    /// The same bookkeeping for a land, which has no signature to resolve
+    /// and whose permanent is still in hand rather than on the battlefield.
+    fn spend_graveyard_land_permission(
+        &mut self,
+        permanent: &mut Permanent,
+        player: PlayerId,
+        option: &PlayOptionDef,
+    ) {
+        let Some(card) = permanent.card.clone().into_card() else {
+            return;
+        };
+        if let Some((source, effect)) = self.graveyard_play_grant(&card, player, option) {
+            self.grant_resolved_ability_to_entering_permanent(permanent, source, *effect);
+        }
+        self.record_graveyard_permission_use(&card, player, option);
+    }
+
     /// The graveyard-permission bookkeeping for a cast, resolved from the
     /// card and the play option the signature names.
+    /// Hands a spell what the permission that allowed it grants, for the
+    /// permanent it will become to carry.
+    fn attach_permission_grant(
+        stack_object: &mut StackObject,
+        granted: Option<(AbilitySourceRef, &'static AppliedEffectDef)>,
+    ) {
+        let Some((granting, effect)) = granted else {
+            return;
+        };
+        stack_object.applied_effects.push(AppliedStackEffect {
+            source: None,
+            granting: Some(granting),
+            effect: *effect,
+        });
+    }
+
+    /// A cast from a graveyard that is not one of the card's own printed ways
+    /// of being cast is happening under somebody's permission, and a
+    /// permission that allows only so many spends one here.
+    fn spend_graveyard_cast_permission(
+        &mut self,
+        player: PlayerId,
+        card_id: GameObjectId,
+        signature: &CastSignature,
+        source_zone: CastSourceZone,
+        alternative_kind: Option<AlternativeCastKindDef>,
+    ) -> Option<(AbilitySourceRef, &'static AppliedEffectDef)> {
+        if source_zone != CastSourceZone::Graveyard || alternative_kind.is_some() {
+            return None;
+        }
+        self.record_graveyard_permission_use_for_cast(player, card_id, signature)
+    }
+
     fn record_graveyard_permission_use_for_cast(
         &mut self,
         player: PlayerId,
         card_id: GameObjectId,
         signature: &CastSignature,
-    ) {
-        let Some(card) = self.players[player.index()]
+    ) -> Option<(AbilitySourceRef, &'static AppliedEffectDef)> {
+        let card = self.players[player.index()]
             .graveyard
             .iter()
             .find(|candidate| candidate.id == card_id)
-            .cloned()
-        else {
-            return;
-        };
-        let Some(option) = self
+            .cloned()?;
+        let option = self
             .catalog
             .get(card.definition)
             .and_then(|definition| definition.play_option(signature.play_option()))
-            .cloned()
-        else {
-            return;
-        };
+            .cloned()?;
+        // "If you do, it gains ...": read here, where the card is still in
+        // the graveyard and the permission that names it can still be found.
+        // The spell it becomes does not exist yet, so the caller carries it
+        // the few lines to the stack object.
+        let granted = self.graveyard_play_grant(&card, player, &option);
         self.record_graveyard_permission_use(&card, player, &option);
+        granted
     }
 
     const fn additional_cost_destination(spend: SpendModeDef, from: ZoneKind) -> ZoneKind {

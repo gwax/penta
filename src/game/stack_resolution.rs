@@ -134,6 +134,22 @@ impl Game {
                     .iter()
                     .filter_map(|applied| Self::granted_keyword(applied.effect)),
             );
+            // A whole ability rather than a keyword: what a graveyard
+            // permission handed the spell it allowed ("if you do, it gains
+            // ...") belongs to the permanent, and unlike the riders above it
+            // has no expiration.
+            for (granting, granted) in object
+                .applied_effects
+                .iter()
+                .filter_map(|applied| Some((applied.granting?, applied.effect)))
+                .collect::<Vec<_>>()
+            {
+                self.grant_resolved_ability_to_entering_permanent(
+                    &mut permanent,
+                    granting,
+                    granted,
+                );
+            }
             permanent.cast_at_instant_speed = object.cast_at_instant_speed;
             permanent.cast_from_zone = object.cast_from_zone;
             permanent.text_changes = object.text_changes;

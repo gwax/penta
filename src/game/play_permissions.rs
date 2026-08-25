@@ -9,8 +9,9 @@
 use std::ops::ControlFlow;
 
 use super::{
-    AppliedEffectDef, AppliedRuleDef, CardInstance, CharacteristicContext, DeclarativeAbilityDef,
-    Game, GameObjectId, Permanent, PlayActionKind, PlayOptionDef, PlayerId,
+    AbilityId, AbilitySourceRef, AppliedEffectDef, AppliedRuleDef, CardInstance,
+    CharacteristicContext, DeclarativeAbilityDef, Game, GameObjectId, Permanent, PlayActionKind,
+    PlayOptionDef, PlayerId,
 };
 use crate::card::{
     AbilityDef, GraveyardPlayPermissionDef, ObjectPredicateDef, PlayRestrictionDef,
@@ -119,7 +120,7 @@ impl Game {
         };
         self.visit_play_permissions(player, |source, permission| {
             if let PlayPermission::AsThoughItHadFlash(wanted) = permission
-                && self.trigger_object_matches(wanted, &object, source, true)
+                && self.trigger_object_matches(wanted, &object, source.object, true)
             {
                 ControlFlow::Break(())
             } else {
@@ -211,7 +212,7 @@ impl Game {
                 ability,
             } = permission
                 && ability.is_executable()
-                && self.trigger_object_matches(predicate, &object, source, false)
+                && self.trigger_object_matches(predicate, &object, source.object, false)
             {
                 found = Some(ability);
                 return ControlFlow::Break(());
@@ -234,19 +235,65 @@ impl Game {
             let PlayPermission::Graveyard(graveyard) = permission else {
                 return ControlFlow::Continue(());
             };
-            if !self.permission_names_play(card, player, option, graveyard.restriction, source) {
+            if !self.permission_names_play(
+                card,
+                player,
+                option,
+                graveyard.restriction,
+                source.object,
+            ) {
                 return ControlFlow::Continue(());
             }
             if graveyard.per_turn.is_none() {
                 limited = None;
                 return ControlFlow::Break(());
             }
-            if limited.is_none() && permission.is_open_now(self, player, source) {
-                limited = Some(source);
+            if limited.is_none() && permission.is_open_now(self, player, source.object) {
+                limited = Some(source.object);
             }
             ControlFlow::Continue(())
         });
         limited
+    }
+
+    /// What the permission authorizing this play grants to what it played,
+    /// if anything. Read with the same walk that spends a limited
+    /// permission's use, so the grant and the bookkeeping agree about which
+    /// permission is doing the allowing.
+    pub(super) fn graveyard_play_grant(
+        &self,
+        card: &CardInstance,
+        player: PlayerId,
+        option: &PlayOptionDef,
+    ) -> Option<(AbilitySourceRef, &'static AppliedEffectDef)> {
+        let mut granted = None;
+        let _ = self.visit_play_permissions(player, |source, permission| {
+            let PlayPermission::Graveyard(graveyard) = permission else {
+                return ControlFlow::Continue(());
+            };
+            if !self.permission_names_play(
+                card,
+                player,
+                option,
+                graveyard.restriction,
+                source.object,
+            ) || !permission.is_open_now(self, player, source.object)
+            {
+                return ControlFlow::Continue(());
+            }
+            // A permission that grants nothing is the ordinary one, and it
+            // covers the play whether or not another would have granted
+            // something: nothing makes a player choose between them.
+            let Some(effect) = graveyard.grants else {
+                granted = None;
+                return ControlFlow::Break(());
+            };
+            if granted.is_none() {
+                granted = Some((source, effect));
+            }
+            ControlFlow::Continue(())
+        });
+        granted
     }
 
     /// Whether a restriction names this card and this way of playing it.
@@ -305,12 +352,12 @@ impl Game {
             let Some(restriction) = permission.restriction() else {
                 return ControlFlow::Continue(());
             };
-            if permission.is_open_now(self, player, source)
+            if permission.is_open_now(self, player, source.object)
                 && restriction.action.matches(option.action)
                 && self.trigger_object_matches(
                     restriction.object,
                     &object,
-                    source,
+                    source.object,
                     option.action == PlayActionKind::CastSpell,
                 )
                 && let Some(value) = wanted(permission)
@@ -326,7 +373,7 @@ impl Game {
     fn visit_play_permissions(
         &self,
         affected_player: PlayerId,
-        mut visitor: impl FnMut(GameObjectId, PlayPermission) -> ControlFlow<()>,
+        mut visitor: impl FnMut(AbilitySourceRef, PlayPermission) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         // A permission that resolved rather than one printed on a permanent:
         // "you may cast spells from your graveyard this turn" is aimed at a
@@ -346,7 +393,7 @@ impl Game {
                 AppliedEffectDef::Rule(resolved.rule),
                 &mut |permission| {
                     if found.is_continue() {
-                        found = visitor(resolved.source.object, permission);
+                        found = visitor(resolved.source, permission);
                     }
                 },
             );
@@ -382,12 +429,15 @@ impl Game {
         source: &Permanent,
         required_source_zone: Option<ZoneKind>,
         affected_player: PlayerId,
-        visitor: &mut impl FnMut(GameObjectId, PlayPermission) -> ControlFlow<()>,
+        visitor: &mut impl FnMut(AbilitySourceRef, PlayPermission) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         let Some(rules) = self.effective_rules(source) else {
             return ControlFlow::Continue(());
         };
-        for ability in rules.ability_clauses() {
+        // The clause index is the ability's printed id, which is what a
+        // grant made under this permission has to record: the effect it
+        // hands out is addressed from the ability that printed it.
+        for (index, ability) in rules.ability_clauses().iter().enumerate() {
             let DeclarativeAbilityDef::Static(definition) = ability.definition else {
                 continue;
             };
@@ -423,10 +473,20 @@ impl Game {
             if !self.static_player_recipient_matches(recipient, source, affected_player) {
                 continue;
             }
+            let Ok(index) = u8::try_from(index) else {
+                continue;
+            };
+            let origin = AbilitySourceRef {
+                object: source.card.id,
+                ability: Self::authored_ability_origin(
+                    Self::effective_rules_source(source),
+                    AbilityId(index),
+                ),
+            };
             let mut found = ControlFlow::Continue(());
             Self::visit_play_permission_components(effect, &mut |permission| {
                 if found.is_continue() {
-                    found = visitor(source.card.id, permission);
+                    found = visitor(origin, permission);
                 }
             });
             found?;

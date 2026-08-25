@@ -25,6 +25,18 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A permission that marks what it allowed.** "Once during each of your
+  turns, you may play a land from your graveyard ... if you do, it gains ..."
+  needed two things the graveyard permissions did not have. A land played out
+  of a graveyard now spends a limited permission's use the way a cast already
+  did -- before this, Serra Paragon's one play a turn counted casts and let
+  lands through for free. And a permission can carry an ability for whatever
+  it allowed: the grant is written onto the permanent as it arrives, so it
+  outlives the source that allowed the play. A spell carries it from the cast
+  to the permanent beside the keyword riders a mana payment leaves. The
+  checkpoint locates the granted clause from the ability that printed it and
+  keeps its version.
+
 - **`Game::enumerate_legal_actions`, so `apply` stops enumerating twice.**
   `apply` validated an ordinary action with `legal_actions(player).contains`,
   a second full enumeration of the list the caller had just chosen from --

@@ -787,6 +787,7 @@ impl Game {
                 if let Some(effect) = effect {
                     object.applied_effects.push(AppliedStackEffect {
                         source: mana.source,
+                        granting: None,
                         effect,
                     });
                 }

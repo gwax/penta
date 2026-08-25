@@ -6,9 +6,10 @@
 use serde::{Deserialize, Serialize};
 
 use super::{
-    AbilityLocator, AbilityOriginSnapshot, AppliedEffectLocator, BasicLandTypeSnapshot,
-    DecisionCardOriginSnapshot, EffectResolutionContextSnapshot, FaceDownCharacteristicsSnapshot,
-    ManaSourceSnapshot, ObjectCharacteristicsSnapshot, ObjectKindSnapshot, TargetSelectionSnapshot,
+    AbilityLocator, AbilityOriginSnapshot, AbilitySourceSnapshot, AppliedEffectLocator,
+    BasicLandTypeSnapshot, DecisionCardOriginSnapshot, EffectResolutionContextSnapshot,
+    FaceDownCharacteristicsSnapshot, ManaSourceSnapshot, ObjectCharacteristicsSnapshot,
+    ObjectKindSnapshot, TargetSelectionSnapshot,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -131,6 +132,10 @@ pub(in crate::game::state_checkpoint) struct DetachedStackSnapshot {
 pub(in crate::game::state_checkpoint) struct AppliedStackEffectSnapshot {
     pub(in crate::game::state_checkpoint) source: Option<ManaSourceSnapshot>,
     pub(in crate::game::state_checkpoint) effect: AppliedEffectLocator,
+    /// The ability that granted a non-mana rider. Additive: a payload
+    /// written before permissions could grant anything carries none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(in crate::game::state_checkpoint) granting: Option<AbilitySourceSnapshot>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
