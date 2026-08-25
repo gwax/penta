@@ -19,6 +19,11 @@ pub enum OptionalAdditionalCostKindDef {
     /// from a cast trigger the card prints beside this, which reads how many
     /// times the cost was paid.
     Replicate,
+    /// Multikicker (CR 702.33b): a kicker cost that may be paid any number
+    /// of times as the spell is cast. Like replicate it is repeatable and
+    /// changes nothing by itself; what it buys is read back off the count by
+    /// whatever the card prints about having been kicked.
+    Multikicker,
 }
 
 impl OptionalAdditionalCostKindDef {
@@ -27,6 +32,7 @@ impl OptionalAdditionalCostKindDef {
         match self {
             Self::Buyback => "Buyback",
             Self::Replicate => "Replicate",
+            Self::Multikicker => "Multikicker",
         }
     }
 
@@ -34,7 +40,7 @@ impl OptionalAdditionalCostKindDef {
     /// does: every other optional additional cost is paid once or not at all.
     #[must_use]
     pub const fn repeatable(self) -> bool {
-        matches!(self, Self::Replicate)
+        matches!(self, Self::Replicate | Self::Multikicker)
     }
 }
 
@@ -61,6 +67,11 @@ impl OptionalAdditionalCostAbilityDef {
                  replicate cost. You may choose new targets for the copies.)"
             ),
             (OptionalAdditionalCostKindDef::Replicate, None) => "Replicate".into(),
+            (OptionalAdditionalCostKindDef::Multikicker, Some(cost)) => format!(
+                "Multikicker {cost} (You may pay an additional {cost} any number of times as you \
+                 cast this spell.)"
+            ),
+            (OptionalAdditionalCostKindDef::Multikicker, None) => "Multikicker".into(),
         }
     }
 

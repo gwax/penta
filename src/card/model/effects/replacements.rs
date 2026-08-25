@@ -120,6 +120,14 @@ pub enum BattlefieldEntryModificationDef {
     AddCastXCounters {
         kind: CounterKind,
     },
+    /// As many counters as the number of times a repeatable optional
+    /// additional cost was paid for its spell. "This artifact enters with a
+    /// charge counter on it for each time it was kicked" cannot name a
+    /// number either, and what the entering permanent was paid for is
+    /// recorded as it resolves.
+    AddKickCounters {
+        kind: CounterKind,
+    },
 }
 
 /// The catalog-derived vocabulary presented by a scalar entry choice.

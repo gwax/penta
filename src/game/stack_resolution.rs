@@ -112,6 +112,10 @@ impl Game {
                 .signature
                 .as_ref()
                 .map_or(0, crate::casting::CastSignature::x);
+            // "For each time it was kicked": read while the resolving spell
+            // is still findable, because the permanent's own entry
+            // replacement asks after it is gone.
+            permanent.cast_kicks = self.repeatable_additional_cost_payments(object.id);
             permanent.cast_alternative = object.signature.as_ref().and_then(|signature| {
                 let card = self.catalog.get(definition)?;
                 let option = card.play_option(signature.play_option())?;

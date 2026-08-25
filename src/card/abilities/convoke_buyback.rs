@@ -67,6 +67,22 @@ pub const fn replicate(mana_cost: ManaCost) -> AbilityDef {
     )
 }
 
+/// Multikicker: an additional cost the caster may pay any number of times,
+/// with nothing else attached. What it buys is printed separately, as a
+/// clause that reads how many times it was paid.
+#[must_use]
+pub const fn multikicker(mana_cost: ManaCost) -> AbilityDef {
+    AbilityDef::optional_additional_cost(
+        OptionalAdditionalCostKindDef::Multikicker.label(),
+        OptionalAdditionalCostAbilityDef {
+            kind: OptionalAdditionalCostKindDef::Multikicker,
+            mana_cost: Some(mana_cost),
+            additional_cost: None,
+            resolution_destination: SpellResolutionDestinationDef::Graveyard,
+        },
+    )
+}
+
 /// Buyback paid with a selected nonmana object, such as sacrificing a land.
 #[must_use]
 pub const fn buyback_with_additional_cost(

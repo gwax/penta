@@ -70,6 +70,8 @@ pub(super) struct ExilePlayPermissionSnapshot {
 mod balance;
 mod continuation;
 mod continuous;
+mod decision_options;
+pub(super) use decision_options::*;
 mod emptiness;
 mod objects;
 mod stack;
@@ -446,6 +448,10 @@ pub(super) struct PermanentSnapshot {
     /// The X the spell that made this permanent was cast for.
     #[serde(default, skip_serializing_if = "emptiness::is_zero_u16")]
     pub(super) cast_x: u16,
+    /// How many times a repeatable optional additional cost was paid for
+    /// that spell. Additive, and absent for everything nobody kicked.
+    #[serde(default, skip_serializing_if = "emptiness::is_zero_u16")]
+    pub(super) cast_kicks: u16,
     /// The alternative this permanent's spell was cast with, by its stable
     /// name. Stored as a string so the wire form does not depend on the
     /// order of a catalog enum.
@@ -898,46 +904,6 @@ pub(super) struct PileSplitSnapshot {
     pub(super) subject: usize,
     pub(super) first: Vec<DecisionOptionSnapshot>,
     pub(super) second: Vec<DecisionOptionSnapshot>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct DecisionOptionSnapshot {
-    pub(super) id: u32,
-    pub(super) label: String,
-    pub(super) card: Option<DecisionCardSnapshot>,
-    pub(super) members: Vec<DecisionCardSnapshot>,
-    pub(super) ability_text: Option<String>,
-    pub(super) zone: DecisionZoneSnapshot,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) struct DecisionCardSnapshot {
-    pub(super) object_id: u32,
-    pub(super) characteristics: ObjectCharacteristicsSnapshot,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) enum DecisionZoneSnapshot {
-    Hand,
-    Graveyard,
-    Battlefield,
-    Stack,
-    Library,
-    Exile,
-    OutsideGame,
-    Command,
-    DrawnThisStep,
-    None,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(super) enum ZonePlacementSnapshot {
-    Top,
-    Bottom,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

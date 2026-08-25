@@ -521,6 +521,10 @@ impl Game {
                 let amount = entry.permanent.cast_x;
                 entry.permanent.add_counters(kind, amount);
             }
+            BattlefieldEntryModificationDef::AddKickCounters { kind } => {
+                let amount = entry.permanent.cast_kicks;
+                entry.permanent.add_counters(kind, amount);
+            }
         }
     }
 

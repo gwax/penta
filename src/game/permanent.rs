@@ -33,6 +33,11 @@ struct Permanent {
     /// nothing chose one. Its own enters trigger is a separate object and so
     /// cannot read the spell's X any other way.
     cast_x: u16,
+    /// How many times a repeatable optional additional cost was paid for the
+    /// spell that put this permanent here, zero when none was. Read the same
+    /// way and for the same reason as the X above: "for each time it was
+    /// kicked" is asked after the spell is gone.
+    pub(super) cast_kicks: u16,
     /// How this permanent's spell was cast, when it was cast at all. Evoke's
     /// sacrifice and every other clause that asks "if it was cast this way"
     /// reads it here, because the spell object is gone by the time the
@@ -275,6 +280,7 @@ impl Permanent {
             entered_turn,
             damage: 0,
             cast_x: 0,
+            cast_kicks: 0,
             cast_alternative: None,
             cast_from_zone: None,
             cast_at_instant_speed: false,

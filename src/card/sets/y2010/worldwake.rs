@@ -3,11 +3,11 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, AppliedRuleDef, CardArt, CardChoiceSourceDef, CardRules, CardSet,
-    CardSupertype, CardType, CardTypeSet, ColorSet, CreatureTypeSetDef, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TopCardSelectionDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt,
+    CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ColorSet,
+    CounterKind, CreatureTypeSetDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, TopCardSelectionDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -208,13 +208,41 @@ pub(in crate::card::sets) static JACE_THE_MIND_SCULPTOR: CardRecord =
     );
 
 // WWK 123 — Everflowing Chalice
-// Audit: metadata-only — Card rules have not been implemented.
+/// The counters are the whole card: a Chalice cast for nothing is a nothing
+/// that taps for nothing, and every {2} on the way in is a mana every turn
+/// afterwards.
+static CHALICE_ENTERS_KICKED: AbilityDef = AbilityDef::as_enters(
+    "This artifact enters with a charge counter on it for each time it was kicked.",
+    ReplacementEffectDef::ModifyBattlefieldEntry(
+        BattlefieldEntryModificationDef::AddKickCounters {
+            kind: CounterKind::named("charge"),
+        },
+    ),
+);
+
+static CHALICE_TAPS_FOR_ITS_COUNTERS: AbilityDef = AbilityDef::activated_mana(
+    "{T}: Add {C} for each charge counter on this artifact.",
+    &[AbilityCostDef::TapSource],
+    EffectDef::AddMana(
+        AddManaEffectDef::one(ManaColor::Colorless)
+            .with_variable_amount(ValueDef::CountersOnSource(CounterKind::named("charge"))),
+    ),
+);
+
+static EVERFLOWING_CHALICE_ABILITIES: [AbilityDef; 3] = [
+    abilities::multikicker(mana_cost!("{2}")),
+    CHALICE_ENTERS_KICKED,
+    CHALICE_TAPS_FOR_ITS_COUNTERS,
+];
+
 pub(in crate::card::sets) static EVERFLOWING_CHALICE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1fdcc0c3-4029-4fc3-a486-5d7f45c910bd"),
     "Everflowing Chalice",
     crate::card::CardArt::new("1fdcc0c3-4029-4fc3-a486-5d7f45c910bd", "Steve Argyle"),
     crate::card::CardSet::Worldwake,
-    crate::card::CardRules::unsupported(),
+    // A mana rock whose size is chosen as it is cast, which is why it is
+    // played on turn two and on turn ten.
+    CardRules::new_artifact(mana_cost!("{0}")).with_abilities(&EVERFLOWING_CHALICE_ABILITIES),
 );
 
 // WWK 133 — Celestial Colonnade

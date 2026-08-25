@@ -25,6 +25,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Multikicker.** Replicate was already an additional cost a caster could
+  pay any number of times, so multikicker is the same shape with nothing
+  attached to it: what the payments buy is printed separately as a clause
+  that reads how many times they were made. A permanent now also remembers
+  that count the way it already remembered the X it was cast for, which is
+  what "enters with a charge counter on it for each time it was kicked" asks
+  after the spell is gone. Everflowing Chalice prints all of it -- a rock
+  whose size is chosen as it is cast, and which taps for exactly what was
+  paid into it. The kick count is an additive checkpoint member; checkpoint
+  format 8, replay version 2, and protocol 29 are unchanged.
+
 - **Level up, and counting counters against a bound.** A level band is a
   continuous effect that applies while the permanent's level is inside it
   (CR 711.4a), so what was missing was a way to say where a band starts and

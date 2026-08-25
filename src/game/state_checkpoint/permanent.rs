@@ -85,6 +85,7 @@ pub(super) fn permanent_snapshot(
         control_requires_source_attached: permanent.control_requires_source_attached,
         chosen_player: permanent.chosen_player.map(PlayerId::index),
         cast_x: permanent.cast_x,
+        cast_kicks: permanent.cast_kicks,
         cast_from_zone: permanent.cast_from_zone.map(|zone| zone.label().to_owned()),
         cast_alternative: permanent
             .cast_alternative
