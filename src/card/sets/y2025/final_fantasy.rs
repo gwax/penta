@@ -4,11 +4,12 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::TargetIndex;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, ActivationTimingDef, AddManaEffectDef,
-    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CounterKind, DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef,
-    DamageSourceMatcherDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectRefDef, PlayerRelation, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    AdditionalTriggerDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, CounterKind, DamageEventMatcherDef, DamageKindDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectRefDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation,
+    PlayerSetDef, ResolvedEffectDurationDef, TopOfLibraryCostDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::mana_cost;
 
@@ -287,13 +288,84 @@ pub(in crate::card::sets) static STARTING_TOWN: CardRecord = CardRecord::new(
 );
 
 // FIN 551c — Traveling Chocobo
-// Audit: metadata-only — Card rules have not been implemented.
+/// Two permissions rather than one: the printed sentence names two kinds of
+/// play, and the restriction each carries is a single action and a single
+/// predicate. Lands cost nothing beyond the land drop; a Bird pays its own
+/// mana cost, since nothing here says otherwise.
+static CHOCOBO_PLAYS_LANDS: PlayRestrictionDef = PlayRestrictionDef::new(
+    PlayActionMatcherDef::PlayLand,
+    ObjectPredicateDef::HasType(CardType::Land),
+);
+
+static CHOCOBO_CASTS_BIRDS: PlayRestrictionDef = PlayRestrictionDef::new(
+    PlayActionMatcherDef::CastSpell,
+    ObjectPredicateDef::Subtype("Bird"),
+);
+
+static CHOCOBO_TOP_OF_LIBRARY: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromTopOfLibrary {
+        restriction: CHOCOBO_PLAYS_LANDS,
+        cost: TopOfLibraryCostDef::Printed,
+    }),
+    AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromTopOfLibrary {
+        restriction: CHOCOBO_CASTS_BIRDS,
+        cost: TopOfLibraryCostDef::Printed,
+    }),
+];
+
+/// A land or a Bird, and yours either way.
+static CHOCOBO_ARRIVAL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::AnyOf(&[
+        ObjectPredicateDef::HasType(CardType::Land),
+        ObjectPredicateDef::Subtype("Bird"),
+    ]),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+static CHOCOBO_DOUBLES_TRIGGERS: AdditionalTriggerDef = AdditionalTriggerDef {
+    entering: CHOCOBO_ARRIVAL,
+    permanent: ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+};
+
+static TRAVELING_CHOCOBO_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::static_ability(
+        "You may look at the top card of your library any time.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::You)),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::MayLookAtTopOfLibrary),
+        },
+    ),
+    AbilityDef::static_ability(
+        "You may play lands and cast Bird spells from the top of your library.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::You)),
+            effect: AppliedEffectDef::Composite(&CHOCOBO_TOP_OF_LIBRARY),
+        },
+    ),
+    // The Chocobo itself is a Bird, so a second one doubles the first one's
+    // arrival trigger -- and two of them double everything twice.
+    AbilityDef::static_ability(
+        "If a land or Bird you control entering the battlefield causes a triggered ability of a \
+         permanent you control to trigger, that ability triggers an additional time.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::You)),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::TriggersAnAdditionalTime(
+                &CHOCOBO_DOUBLES_TRIGGERS,
+            )),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static TRAVELING_CHOCOBO: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("156cfd45-1556-4804-becf-039cfff7de3d"),
     "Traveling Chocobo",
     crate::card::CardArt::new("156cfd45-1556-4804-becf-039cfff7de3d", "Toni Infante"),
     crate::card::CardSet::FinalFantasy,
-    crate::card::CardRules::unsupported(),
+    // Three mana for a body, a land engine, and a Panharmonicon that only
+    // reads lands and its own kind -- which in a deck built for it is most
+    // of what enters.
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Bird"], 3, 2)
+        .with_abilities(&TRAVELING_CHOCOBO_ABILITIES),
 );
 
 // FIN 581 — Astrologian's Planisphere

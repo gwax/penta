@@ -434,6 +434,12 @@ impl Game {
                 // event-local context changes for this match.
                 capture.context.trigger = event.context();
                 let condition_holds = self.trigger_capture_condition_holds(&capture);
+                // "That ability triggers an additional time" is not a second
+                // ability but the same one again, so the extra instances are
+                // exact copies of this match and are ordered beside it.
+                for _ in 0..self.additional_trigger_copies(event, &capture) {
+                    matched.push((listener.uses_stack, capture.clone(), condition_holds));
+                }
                 matched.push((listener.uses_stack, capture, condition_holds));
             }
         }
@@ -457,6 +463,61 @@ impl Game {
                 resolve_mana(self, capture);
             }
         }
+    }
+
+    /// How many extra times this match triggers, under every
+    /// "triggers an additional time" rule its controller has.
+    ///
+    /// Only an arrival on the battlefield is doubled; every printed clause
+    /// of this shape names one. Each rule counts once, so two of them are
+    /// two extra triggers rather than four.
+    fn additional_trigger_copies(
+        &self,
+        event: &CommittedTriggerEvent,
+        capture: &TriggerCapture,
+    ) -> u8 {
+        let CommittedTriggerEvent::ZoneChanged {
+            object,
+            to: ZoneKind::Battlefield,
+            ..
+        } = event
+        else {
+            return 0;
+        };
+        // A trigger whose source has left the battlefield -- or never was a
+        // permanent -- is nobody's "triggered ability of a permanent you
+        // control", however the event reads.
+        let Some(source) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == capture.source.object)
+        else {
+            return 0;
+        };
+        let source_object = self.trigger_event_object(source);
+        let controller = capture.controller;
+        let mut copies = 0_u8;
+        self.visit_player_static_rules(controller, |rule| {
+            let crate::card::AppliedRuleDef::TriggersAnAdditionalTime(doubling) = rule else {
+                return;
+            };
+            if self.trigger_object_matches_for_controller(
+                doubling.entering,
+                object,
+                capture.source.object,
+                false,
+                Some(controller),
+            ) && self.trigger_object_matches_for_controller(
+                doubling.permanent,
+                &source_object,
+                capture.source.object,
+                false,
+                Some(controller),
+            ) {
+                copies = copies.saturating_add(1);
+            }
+        });
+        copies
     }
 
     pub(super) fn capture_custom_source_triggers(

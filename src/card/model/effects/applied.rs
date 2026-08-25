@@ -333,6 +333,16 @@ pub enum AppliedRuleDef {
     /// card to nobody but its controller, and Courser of Kruphix shows it to
     /// the table.
     PlaysWithTopOfLibraryRevealed,
+    /// "If a land or Bird you control entering the battlefield causes a
+    /// triggered ability of a permanent you control to trigger, that ability
+    /// triggers an additional time." A player rule: nothing about the
+    /// doubled permanent is changed, and what decides the doubling is who
+    /// controls both it and the arriving object.
+    ///
+    /// Only an entry to the battlefield is watched. Every printed card of
+    /// this shape says "entering the battlefield", and reading a wider set
+    /// of events would double abilities their text does not reach.
+    TriggersAnAdditionalTime(&'static AdditionalTriggerDef),
     /// "You may play an additional land on each of your turns." A player
     /// rule found the way the hand-size one is found, and counted rather
     /// than merely present: two of them are two extra lands, which is what
@@ -592,6 +602,19 @@ pub enum TopOfLibraryCostDef {
     /// The mana cost goes away and the life takes its place, so a spell
     /// nobody has the life for is not castable this way at all.
     LifeEqualToManaValue,
+}
+
+/// One "that ability triggers an additional time" clause: which arrival
+/// does the causing, and whose triggered ability is doubled.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct AdditionalTriggerDef {
+    /// What has to be entering the battlefield. Read from the affected
+    /// player's perspective, so "you control" means they do.
+    pub entering: ObjectPredicateDef,
+    /// The permanent whose triggered ability is doubled, read from the same
+    /// perspective. A trigger whose source is not a permanent on the
+    /// battlefield matches nothing here.
+    pub permanent: ObjectPredicateDef,
 }
 
 /// A permission to play cards out of a graveyard, and what bounds it.

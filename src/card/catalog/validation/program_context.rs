@@ -282,6 +282,12 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
         AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(permission)) => {
             static_object_predicate_supported(permission.restriction.object)
         }
+        // Both predicates are read against an object the trigger walk
+        // already has in hand: what arrived, and what carries the ability.
+        AppliedEffectDef::Rule(AppliedRuleDef::TriggersAnAdditionalTime(doubling)) => {
+            static_object_predicate_supported(doubling.entering)
+                && static_object_predicate_supported(doubling.permanent)
+        }
         // Read where a graveyard cast is enumerated, by the same walk that
         // answers the permissions above.
         AppliedEffectDef::Rule(AppliedRuleDef::GrantsAlternativeCastFromGraveyard {
@@ -433,6 +439,9 @@ fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRule
         | AppliedRuleDef::Ascend
         | AppliedRuleDef::MayLookAtTopOfLibrary
         | AppliedRuleDef::PlaysWithTopOfLibraryRevealed
+        // A doubled trigger belongs to a player as well: what it reads is
+        // who controls the permanent and who controls what arrived.
+        | AppliedRuleDef::TriggersAnAdditionalTime(_)
         | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
         | AppliedRuleDef::MayPlayAdditionalLands(_)
         | AppliedRuleDef::NoMaximumHandSize

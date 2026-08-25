@@ -741,6 +741,12 @@ fn validate_applied_effect_shapes(
             validate_object_predicate_shape(permission.restriction.object, targets)?;
             Ok(())
         }
+        AppliedEffectDef::Rule(AppliedRuleDef::TriggersAnAdditionalTime(doubling)) => {
+            validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
+            validate_object_predicate_shape(doubling.entering, targets)?;
+            validate_object_predicate_shape(doubling.permanent, targets)?;
+            Ok(())
+        }
         AppliedEffectDef::Rule(
             AppliedRuleDef::CannotPlay(restriction)
             | AppliedRuleDef::MayPlayFromTopOfLibrary { restriction, .. },

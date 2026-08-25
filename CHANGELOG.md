@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A trigger that triggers again.** Nothing in the engine could say "that
+  ability triggers an additional time", so the Panharmonicon shape had no
+  home. A player rule now names two things -- what has to be entering the
+  battlefield, and whose triggered ability is doubled -- and the trigger walk
+  copies each match that many extra times. Each such rule adds one instance,
+  so two of them are three triggers rather than four, and only an arrival on
+  the battlefield is watched, which is what every printed card of the shape
+  says.
+
 - **A place inside a library.** A card moved to a library could go to the top
   or the bottom and nowhere else, so "third from the top" had no way to be
   said. Placement now also carries a depth counted from the top, with the card
