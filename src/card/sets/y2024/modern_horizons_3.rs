@@ -8,7 +8,7 @@ use crate::card::{
     CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
     ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, DrawEventMatcherDef, EffectDef,
     EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, EmblemCharacteristics,
-    HalvedValueDef, InstalledTriggerDef, InstalledTriggerLifetimeDef, ManaColor,
+    HalvedValueDef, InstalledTriggerDef, InstalledTriggerLifetimeDef, ManaColor, ManaCost,
     ManaSpendEffectDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
     ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
     ResolvedEffectDurationDef, RoundingDef, SimultaneousChooseDef, SpellAdditionalCostCountDef,
@@ -21,6 +21,41 @@ use crate::{TargetIndex, mana_cost};
 
 static LANDSCAPE_FETCH_COST: [AbilityCostDef; 2] =
     [AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource];
+
+/// The Landscape cycle: a land that taps for nothing useful, sacrifices
+/// itself for one of three tapped basics, and is a cycling card when the
+/// board does not need a land at all. Each member differs only in which
+/// three basics it names and what its cycling costs.
+const fn landscape_abilities(
+    fetch_text: &'static str,
+    basics: ObjectPredicateDef,
+    cycling_text: &'static str,
+    cycling_cost: ManaCost,
+) -> [AbilityDef; 3] {
+    [
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated(
+            fetch_text,
+            &LANDSCAPE_FETCH_COST,
+            EffectDef::SearchZone {
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: basics,
+                minimum: 0,
+                maximum: ValueDef::Constant(1),
+                reveal: false,
+                destination: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: true,
+                attachment: None,
+                binding: None,
+                then: None,
+            },
+        ),
+        abilities::cycling(cycling_text, cycling_cost),
+    ]
+}
 
 // MH3 18 — Aerie Auxiliary
 // Audit: metadata-only — Card rules have not been implemented.
@@ -1335,33 +1370,13 @@ static A_BASIC_TRIOME_LAND: ObjectPredicateDef = ObjectPredicateDef::All(&[
     ]),
 ]);
 
-static BOUNTIFUL_LANDSCAPE_ABILITIES: [AbilityDef; 3] = [
-    abilities::tap_for(ManaColor::Colorless),
-    AbilityDef::activated(
-        "{T}, Sacrifice this land: Search your library for a basic Forest, Island, or Mountain \
-         card, put it onto the battlefield tapped, then shuffle.",
-        &LANDSCAPE_FETCH_COST,
-        EffectDef::SearchZone {
-            player: EffectRecipientDef::Controller,
-            source: ZoneKind::Library,
-            object: A_BASIC_TRIOME_LAND,
-            minimum: 0,
-            maximum: ValueDef::Constant(1),
-            reveal: false,
-            destination: ZoneKind::Battlefield,
-            placement: ZonePlacement::Top,
-            shuffle: true,
-            enters_tapped: true,
-            attachment: None,
-            binding: None,
-            then: None,
-        },
-    ),
-    abilities::cycling(
-        "Cycling {G}{U}{R} ({G}{U}{R}, Discard this card: Draw a card.)",
-        mana_cost!("{G}{U}{R}"),
-    ),
-];
+static BOUNTIFUL_LANDSCAPE_ABILITIES: [AbilityDef; 3] = landscape_abilities(
+    "{T}, Sacrifice this land: Search your library for a basic Forest, Island, or Mountain card, \
+     put it onto the battlefield tapped, then shuffle.",
+    A_BASIC_TRIOME_LAND,
+    "Cycling {G}{U}{R} ({G}{U}{R}, Discard this card: Draw a card.)",
+    mana_cost!("{G}{U}{R}"),
+);
 
 pub(in crate::card::sets) static BOUNTIFUL_LANDSCAPE: CardRecord = CardRecord::new_with_legacy_id(
     2265,
@@ -1569,13 +1584,32 @@ pub(in crate::card::sets) static TRANQUIL_LANDSCAPE: CardRecord = CardRecord::ne
 );
 
 // MH3 232 — Twisted Landscape
-// Audit: metadata-only — Card rules have not been implemented.
+/// The Jund member: the same land with the other three basics on it.
+static A_BASIC_JUND_LAND: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Supertype(CardSupertype::Basic),
+    ObjectPredicateDef::HasAnyBasicLandType(&[
+        BasicLandType::Swamp,
+        BasicLandType::Mountain,
+        BasicLandType::Forest,
+    ]),
+]);
+
+static TWISTED_LANDSCAPE_ABILITIES: [AbilityDef; 3] = landscape_abilities(
+    "{T}, Sacrifice this land: Search your library for a basic Swamp, Mountain, or Forest card, \
+     put it onto the battlefield tapped, then shuffle.",
+    A_BASIC_JUND_LAND,
+    "Cycling {B}{R}{G} ({B}{R}{G}, Discard this card: Draw a card.)",
+    mana_cost!("{B}{R}{G}"),
+);
+
 pub(in crate::card::sets) static TWISTED_LANDSCAPE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("0d647d67-f963-43b4-ade8-6c90e91f65ac"),
     "Twisted Landscape",
-    crate::card::CardArt::new("d0e3e7b3-7ba9-47a2-b46c-a40bffb445e2", "Piotr Dura"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("d0e3e7b3-7ba9-47a2-b46c-a40bffb445e2", "Piotr Dura"),
+    CardSet::ModernHorizons3,
+    // The land drop it finds is the point; cycling is what it does on the
+    // turns the deck already has enough of them.
+    CardRules::new_land(&[]).with_abilities(&TWISTED_LANDSCAPE_ABILITIES),
 );
 
 // MH3 237 — Ajani, Nacatl Pariah // Ajani, Nacatl Avenger
