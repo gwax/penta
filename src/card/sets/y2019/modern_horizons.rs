@@ -874,13 +874,31 @@ pub(in crate::card::sets) static TALISMAN_OF_CONVICTION: CardRecord = CardRecord
 );
 
 // MH1 231 — Talisman of Creativity
-// Audit: metadata-only — Card rules have not been implemented.
+static CREATIVITY_COLORS: [ManaColor; 2] = [ManaColor::Blue, ManaColor::Red];
+
+static TALISMAN_OF_CREATIVITY_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::activated_mana(
+        "{T}: Add {C}.",
+        &TALISMAN_TAP,
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+    ),
+    AbilityDef::activated_mana(
+        "{T}: Add {U} or {R}. This artifact deals 1 damage to you.",
+        &TALISMAN_TAP,
+        EffectDef::AddMana(
+            AddManaEffectDef::choice(&CREATIVITY_COLORS).with_damage_to_controller(1),
+        ),
+    ),
+];
+
 pub(in crate::card::sets) static TALISMAN_OF_CREATIVITY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4d9dbadd-c1b6-44fe-92ac-6f69d7178342"),
     "Talisman of Creativity",
-    crate::card::CardArt::new("4d9dbadd-c1b6-44fe-92ac-6f69d7178342", "Lindsey Look"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("4d9dbadd-c1b6-44fe-92ac-6f69d7178342", "Lindsey Look"),
+    CardSet::ModernHorizons1,
+    // Two mana that fixes for a life a turn, or for nothing at all when
+    // colorless is what the next spell wants.
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&TALISMAN_OF_CREATIVITY_ABILITIES),
 );
 
 // MH1 232 — Talisman of Curiosity

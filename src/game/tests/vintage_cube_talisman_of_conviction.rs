@@ -3,11 +3,16 @@
 use super::*;
 
 fn staged() -> (Game, GameObjectId) {
+    staged_with(cards::TALISMAN_OF_CONVICTION)
+}
+
+/// The same, for any Talisman in the cycle: they differ only in their pair.
+fn staged_with(talisman: CardDefinitionId) -> (Game, GameObjectId) {
     let mut game = ready_game();
     game.battlefield.clear();
     game.players[0].hand.clear();
     let talisman = game
-        .put_onto_battlefield(PlayerId::One, cards::TALISMAN_OF_CONVICTION)
+        .put_onto_battlefield(PlayerId::One, talisman)
         .expect("cataloged");
     drain_pending(&mut game);
     game.players[0].life = 20;
@@ -81,4 +86,25 @@ fn the_tap_pays_for_only_one_of_them() {
 
     assert!(mana_action(&game, talisman, ManaColor::Red).is_none());
     assert!(mana_action(&game, talisman, ManaColor::Colorless).is_none());
+}
+
+/// The blue-red half of the cycle, which is the same card with its own two
+/// colours.
+#[test]
+fn the_blue_red_talisman_makes_its_own_two() {
+    let (mut game, talisman) = staged_with(cards::TALISMAN_OF_CREATIVITY);
+
+    for color in [ManaColor::White, ManaColor::Black, ManaColor::Green] {
+        assert!(
+            mana_action(&game, talisman, color).is_none(),
+            "{color:?} is not one of its colours",
+        );
+    }
+
+    let blue = mana_action(&game, talisman, ManaColor::Blue).expect("it makes {U}");
+    game.apply(PlayerId::One, blue).expect("it activates");
+    game.check_state_based_actions();
+
+    assert_eq!(game.players[0].mana.len(), 1);
+    assert_eq!(game.players[0].life, 19, "one damage from the artifact");
 }
