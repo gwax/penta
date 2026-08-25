@@ -758,6 +758,7 @@ fn validate_applied_effect_shapes(
         AppliedEffectDef::Rule(
             AppliedRuleDef::Ascend
             | AppliedRuleDef::MayLookAtTopOfLibrary
+            | AppliedRuleDef::PlaysWithTopOfLibraryRevealed
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::MayPlayAdditionalLands(_)
             | AppliedRuleDef::NoMaximumHandSize

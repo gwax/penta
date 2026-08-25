@@ -38,6 +38,7 @@ fn observation_with_printed_and_token_permanents() -> PlayerObservation {
         last_seen_hand: None,
         library_sizes: [0, 0],
         revealed_library_top: None,
+        opponent_revealed_library_top: None,
         graveyards: [Vec::new(), Vec::new()],
         exiles: [Vec::new(), Vec::new()],
         face_down_exile_sizes: [0, 0],

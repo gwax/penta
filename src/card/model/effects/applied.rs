@@ -326,6 +326,13 @@ pub enum AppliedRuleDef {
     /// letting you cast, and a permission to play is not by itself a
     /// permission to look at what you are not playing.
     MayLookAtTopOfLibrary,
+    /// "Play with the top card of your library revealed." The strictly
+    /// louder half of [`Self::MayLookAtTopOfLibrary`]: the affected player's
+    /// top card is public, so their opponent sees it as well. Both are
+    /// needed because the printed cards differ -- Bolas's Citadel shows the
+    /// card to nobody but its controller, and Courser of Kruphix shows it to
+    /// the table.
+    PlaysWithTopOfLibraryRevealed,
     /// "You may play an additional land on each of your turns." A player
     /// rule found the way the hand-size one is found, and counted rather
     /// than merely present: two of them are two extra lands, which is what

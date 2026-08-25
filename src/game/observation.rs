@@ -305,6 +305,12 @@ pub struct PlayerObservation {
     /// look at it. `None` in the ordinary game, where a library is face
     /// down to everyone including its owner.
     pub revealed_library_top: Option<(GameObjectId, CardDefinitionId)>,
+    /// The top card of the *opponent's* library, when they are playing with
+    /// it revealed. Separate from the field above because the two answer
+    /// different questions: that one is a private look, and a card played
+    /// with revealed is public, so it is shown to the player who does not
+    /// own it.
+    pub opponent_revealed_library_top: Option<(GameObjectId, CardDefinitionId)>,
     pub graveyards: [Vec<(GameObjectId, CardDefinitionId)>; 2],
     /// Each player's exile as this viewer sees it. A card lying face down
     /// is absent rather than shown, unless the viewer is its owner.

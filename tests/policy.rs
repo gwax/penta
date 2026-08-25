@@ -58,6 +58,7 @@ fn policy_observation(
         last_seen_hand: None,
         library_sizes: [50, 50],
         revealed_library_top: None,
+        opponent_revealed_library_top: None,
         graveyards: [Vec::new(), Vec::new()],
         exiles: [Vec::new(), Vec::new()],
         face_down_exile_sizes: [0, 0],

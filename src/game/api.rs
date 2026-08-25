@@ -677,6 +677,31 @@ impl Game {
         .is_break()
     }
 
+    /// The top card of `owner`'s library as `viewer` is entitled to see it.
+    /// Two different permissions land here: a private look, which shows the
+    /// card to its owner alone, and a library being played with its top
+    /// revealed, which shows it to everyone.
+    fn observed_library_top(
+        &self,
+        viewer: PlayerId,
+        owner: PlayerId,
+    ) -> Option<(GameObjectId, crate::ids::CardDefinitionId)> {
+        let revealed = self.player_rule_applies(
+            owner,
+            crate::card::AppliedRuleDef::PlaysWithTopOfLibraryRevealed,
+        );
+        let looked_at = viewer == owner
+            && self.player_rule_applies(viewer, crate::card::AppliedRuleDef::MayLookAtTopOfLibrary);
+        (revealed || looked_at)
+            .then(|| {
+                self.players[owner.index()]
+                    .library
+                    .last()
+                    .map(|card| (card.id, card.definition))
+            })
+            .flatten()
+    }
+
     pub fn observe(&self, viewer: PlayerId) -> PlayerObservation {
         let player = &self.players[viewer.index()];
         let opponent = &self.players[viewer.opponent().index()];
@@ -717,10 +742,8 @@ impl Game {
             opponent_hand_size: opponent.hand.len(),
             last_seen_hand: self.last_seen_hands[viewer.index()].clone(),
             library_sizes: [self.players[0].library.len(), self.players[1].library.len()],
-            revealed_library_top: self
-                .player_rule_applies(viewer, crate::card::AppliedRuleDef::MayLookAtTopOfLibrary)
-                .then(|| player.library.last().map(|card| (card.id, card.definition)))
-                .flatten(),
+            revealed_library_top: self.observed_library_top(viewer, viewer),
+            opponent_revealed_library_top: self.observed_library_top(viewer, viewer.opponent()),
             graveyards: [
                 public_cards(&self.players[0].graveyard),
                 public_cards(&self.players[1].graveyard),

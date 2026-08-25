@@ -294,6 +294,9 @@ pub fn observation_json_for_format(
         "revealedLibraryTop": observation
             .revealed_library_top
             .map(|card| card_list_json(catalog, &[card])),
+        "opponentRevealedLibraryTop": observation
+            .opponent_revealed_library_top
+            .map(|card| card_list_json(catalog, &[card])),
         "graveyards": [
             card_list_json(catalog, &observation.graveyards[0]),
             card_list_json(catalog, &observation.graveyards[1]),

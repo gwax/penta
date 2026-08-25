@@ -315,6 +315,10 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
         AppliedEffectDef::Rule(
             AppliedRuleDef::Ascend
             | AppliedRuleDef::MayLookAtTopOfLibrary
+            // Read by whoever is being shown the game rather than by any
+            // step of it: a public top card changes what an observation
+            // says and nothing else.
+            | AppliedRuleDef::PlaysWithTopOfLibraryRevealed
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::MayPlayAdditionalLands(_)
             | AppliedRuleDef::NoMaximumHandSize
@@ -428,6 +432,7 @@ fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRule
         // Ascend belongs to a player, so nothing about an object reads it.
         | AppliedRuleDef::Ascend
         | AppliedRuleDef::MayLookAtTopOfLibrary
+        | AppliedRuleDef::PlaysWithTopOfLibraryRevealed
         | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
         | AppliedRuleDef::MayPlayAdditionalLands(_)
         | AppliedRuleDef::NoMaximumHandSize

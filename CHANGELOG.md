@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A library played face up.** The engine knew only the private look Bolas's
+  Citadel prints, so a card played with its top revealed had nowhere to say
+  that the whole table sees it. The public reveal is now its own player rule,
+  and an observation reports the opponent's top card in a new
+  `opponentRevealedLibraryTop` member when they are playing with it revealed.
+  `revealedLibraryTop` keeps its meaning -- whichever library belongs to the
+  viewer -- so an existing consumer reads the same field for the same card.
+  Nothing about the checkpoint changes and the protocol epoch stays at 29.
+
 - **What an exiled card may be cast for.** Exiling from the top of a library
   until a card matches always granted the one permission Amped Raptor prints:
   cast it by paying energy. The clause now says which permission it buys, so

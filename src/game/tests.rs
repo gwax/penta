@@ -354,6 +354,7 @@ mod vintage_cube_colonnade;
 mod vintage_cube_concealing_curtains;
 mod vintage_cube_consider;
 mod vintage_cube_consult_star_charts;
+mod vintage_cube_courser_of_kruphix;
 mod vintage_cube_coveted_jewel;
 mod vintage_cube_creatures;
 mod vintage_cube_crucible;
