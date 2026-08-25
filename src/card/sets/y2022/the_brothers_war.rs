@@ -163,13 +163,29 @@ pub(in crate::card::sets) static HAYWIRE_MITE: CardRecord = CardRecord::new(
 );
 
 // BRO 223 — Third Path Iconoclast
-// Audit: metadata-only — Card rules have not been implemented.
+/// A noncreature spell of your own. What it does is no part of the trigger:
+/// the Soldier arrives whether the spell resolves, is countered, or is
+/// answered on the stack.
+static A_NONCREATURE_SPELL_YOU_CAST: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+]);
+
 pub(in crate::card::sets) static THIRD_PATH_ICONOCLAST: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("f1a21287-e244-4960-84fb-c4f6e5c346d9"),
     "Third Path Iconoclast",
-    crate::card::CardArt::new("f1a21287-e244-4960-84fb-c4f6e5c346d9", "Manuel Castañón"),
-    crate::card::CardSet::TheBrothersWar,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("f1a21287-e244-4960-84fb-c4f6e5c346d9", "Manuel Castañón"),
+    CardSet::TheBrothersWar,
+    // Two mana for a body that turns every cantrip into an artifact
+    // creature, which is what the deck around it is counting.
+    CardRules::new_creature(mana_cost!("{U}{R}"), &["Human", "Monk"], 2, 1).with_ability(
+        AbilityDef::triggered(
+            "Whenever you cast a noncreature spell, create a 1/1 colorless Soldier artifact \
+             creature token.",
+            TriggerEventDef::SpellCast(A_NONCREATURE_SPELL_YOU_CAST),
+            EffectDef::create_artifact_creature_token(&["Soldier"], &[], 1, 1),
+        ),
+    ),
 );
 
 // BRO 238 — The Mightstone and Weakstone
