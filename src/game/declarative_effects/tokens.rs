@@ -266,10 +266,12 @@ impl Game {
     #[allow(clippy::too_many_arguments)]
     /// "Put it onto the battlefield, then ...": the move, the binding, and
     /// the clause that names what arrived.
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn put_onto_battlefield_then(
         &mut self,
         recipient: crate::card::EffectRecipientDef,
         binding: crate::ObjectSetBindingIndex,
+        grant: Option<crate::card::KeywordAbility>,
         then: &'static EffectDef,
         object: &StackObject,
         context: EffectResolutionContext,
@@ -285,6 +287,16 @@ impl Game {
                 Some(super::super::BattlefieldArrival::under(controller)),
                 crate::card::ZonePlacement::Top,
             ) {
+                // "That creature gains haste": part of the arrival, so the
+                // permanent has it before anything else looks at it.
+                if let Some(keyword) = grant
+                    && let Some(permanent) = self
+                        .battlefield
+                        .iter_mut()
+                        .find(|permanent| permanent.card.id == arrived)
+                {
+                    permanent.temporary_keywords.push(keyword);
+                }
                 arrivals.push(Target::Permanent(arrived));
             }
         }

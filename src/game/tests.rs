@@ -527,6 +527,7 @@ mod vintage_cube_show_and_tell;
 mod vintage_cube_six;
 mod vintage_cube_skyclave_apparition;
 mod vintage_cube_smugglers_copter;
+mod vintage_cube_sneak_attack;
 mod vintage_cube_spells;
 mod vintage_cube_springheart_nantuko;
 mod vintage_cube_staff_of_the_storyteller;

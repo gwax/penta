@@ -949,6 +949,10 @@ pub enum EffectDef {
     PutOntoBattlefieldThen {
         object: EffectRecipientDef,
         binding: ObjectSetBindingIndex,
+        /// "That creature gains haste." Part of the arrival rather than an
+        /// effect applied to what arrived: the permanent is a new object,
+        /// and this is the same grant a returning permanent carries.
+        grant: Option<KeywordAbility>,
         then: &'static EffectDef,
     },
     /// The same move with the riders Ajani's reanimation prints: a finality

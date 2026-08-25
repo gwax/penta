@@ -285,6 +285,7 @@ EffectDef::CreateTokenCopyOf { object, .. } | EffectDef::Endure { object, .. } =
             Ok(())
         }
         EffectDef::PutOntoBattlefieldThen {
+            grant: _,
             object,
             binding,
             then,

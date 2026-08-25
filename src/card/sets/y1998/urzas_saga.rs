@@ -12,13 +12,14 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     AppliedRuleDef, CardArt, CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType,
     ChoiceVisibilityDef, ChooseDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
-    GraveyardPlayPermissionDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectSetDef, OngoingEffectDef, PlayActionMatcherDef, PlayRestrictionDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, SpellResolutionDestinationDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    GraveyardPlayPermissionDef, InstalledTriggerDef, KeywordAbility, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    OngoingEffectDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    SpellResolutionDestinationDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
-use crate::ids::ObjectSetBindingIndex;
+use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 use crate::{TargetIndex, mana_cost};
 
 // USG 1 — Absolute Grace
@@ -2342,13 +2343,72 @@ pub(in crate::card::sets) static SHOWER_OF_SPARKS: CardRecord = CardRecord::new(
 );
 
 // USG 218 — Sneak Attack
-// Audit: metadata-only — Card rules have not been implemented.
+/// Where the creature that arrived is saved. What enters is a new object, so
+/// the delayed sacrifice cannot name the card that was in hand.
+const SNEAK_ARRIVAL: ObjectSetBindingIndex = ObjectSetBindingIndex::PRIMARY;
+
+/// "At the beginning of the next end step", whoever's turn it is: a creature
+/// cheated in on their turn is sacrificed at the end of that turn rather
+/// than surviving to yours.
+static SNEAK_SACRIFICES_IT: AbilityDef = AbilityDef::triggered(
+    "Sacrifice the creature at the beginning of the next end step.",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::End,
+        player: PlayerRelation::Any,
+    },
+    EffectDef::Sacrifice {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(SNEAK_ARRIVAL)),
+    },
+);
+
+/// Installed as the creature arrives, so it names that permanent rather than
+/// whatever is on the battlefield when the end step comes.
+static SNEAK_SACRIFICE_LATER: EffectDef =
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&SNEAK_SACRIFICES_IT));
+
+/// Haste rides along with the arrival rather than being applied to what
+/// arrived: the permanent is a new object, and this is the same grant a
+/// returning creature carries.
+static SNEAK_PUTS_IT_IN: EffectDef = EffectDef::PutOntoBattlefieldThen {
+    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    binding: SNEAK_ARRIVAL,
+    grant: Some(KeywordAbility::Haste),
+    then: &SNEAK_SACRIFICE_LATER,
+};
+
+static A_CREATURE_CARD_IN_YOUR_HAND: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Hand],
+    PlayerRelation::You,
+);
+
+/// "You may": a minimum of none, so activating it with nothing worth
+/// cheating in is legal and does nothing.
+static SNEAK_CHOOSES: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::Query(A_CREATURE_CARD_IN_YOUR_HAND),
+    exclude: None,
+    minimum: 0,
+    maximum: 1,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &SNEAK_PUTS_IT_IN,
+});
+
 pub(in crate::card::sets) static SNEAK_ATTACK: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d07dc95d-82a8-4a58-8ea2-d4513bd7316d"),
     "Sneak Attack",
-    crate::card::CardArt::new("d07dc95d-82a8-4a58-8ea2-d4513bd7316d", "Jerry Tiritilli"),
-    crate::card::CardSet::UrzasSaga,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("d07dc95d-82a8-4a58-8ea2-d4513bd7316d", "Jerry Tiritilli"),
+    CardSet::UrzasSaga,
+    // One red mana per creature, as often as you like: what the deck is
+    // paying four mana for is permission to stop casting things.
+    CardRules::new_enchantment(mana_cost!("{3}{R}")).with_ability(AbilityDef::activated(
+        "{R}: You may put a creature card from your hand onto the battlefield. That creature \
+         gains haste. Sacrifice the creature at the beginning of the next end step.",
+        &[AbilityCostDef::Mana(mana_cost!("{R}"))],
+        SNEAK_CHOOSES,
+    )),
 );
 
 // USG 219 — Steam Blast

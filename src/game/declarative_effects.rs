@@ -395,9 +395,12 @@ impl Game {
             EffectDef::PutOntoBattlefieldThen {
                 object: recipient,
                 binding,
+                grant,
                 then,
             } => {
-                self.put_onto_battlefield_then(recipient, binding, then, object, context, scoped);
+                self.put_onto_battlefield_then(
+                    recipient, binding, grant, then, object, context, scoped,
+                );
             }
             EffectDef::ReturnWithHasteAndFinality {
                 object: recipient,
