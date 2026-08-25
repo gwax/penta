@@ -217,13 +217,15 @@ pub(in crate::card::sets) static UNDERCITY_SEWERS: CardRecord = CardRecord::new(
 );
 
 // MKM 329 — Raucous Theater
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static RAUCOUS_THEATER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("2faf0337-c7a3-45a0-bb14-c431526da2cd"),
     "Raucous Theater",
-    crate::card::CardArt::new("2faf0337-c7a3-45a0-bb14-c431526da2cd", "Sergey Glushakov"),
-    crate::card::CardSet::MurdersAtKarlovManor,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("2faf0337-c7a3-45a0-bb14-c431526da2cd", "Sergey Glushakov"),
+    CardSet::MurdersAtKarlovManor,
+    // The black-red half, which wants the graveyard for what it can cast out
+    // of it rather than for a count: the look is a discard the deck was glad
+    // to make.
+    surveil_land(&["Swamp", "Mountain"]),
 );
 
 // MKM 330 — Shadowy Backstreet

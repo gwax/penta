@@ -90,6 +90,48 @@ fn the_land_named(game: &Game, definition: CardDefinitionId) -> Option<&Permanen
         .find(|permanent| permanent.card.definition == definition)
 }
 
+/// Every colour of mana this permanent will make.
+fn colors_of(game: &Game, id: GameObjectId) -> Vec<ManaColor> {
+    game.legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility { source, color, .. } if source == id => Some(color),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The check every member of the cycle gets: play it, watch it arrive
+/// tapped, bin what the surveil turned up, and confirm the two colours its
+/// basic types make. The cycle is one card printed six ways, so what is
+/// worth asserting per member is which two.
+fn cycle_member_makes(land: CardDefinitionId, first: ManaColor, second: ManaColor) {
+    let (mut game, card) = staged_with(land, cards::LIGHTNING_BOLT);
+    play_and_surveil(&mut game, card, true);
+    let permanent = the_land_named(&game, land).expect("it is on the battlefield");
+    let id = permanent.card.id;
+    assert!(permanent.tapped, "tapped on arrival");
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "and its surveil bins what it was told to",
+    );
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == id)
+    {
+        permanent.tapped = false;
+    }
+
+    let colors = colors_of(&game, id);
+    assert!(colors.contains(&first));
+    assert!(colors.contains(&second));
+    assert_eq!(colors.len(), 2, "and nothing else");
+}
+
 /// It arrives tapped, whatever you do with the surveil.
 #[test]
 fn it_enters_tapped() {
@@ -129,148 +171,6 @@ fn surveil_may_leave_the_card_on_top() {
     );
 }
 
-/// Every land in the cycle is the same card with different types, so one
-/// more of them needs only its colours checked.
-#[test]
-fn another_land_in_the_cycle_taps_for_its_own_two() {
-    let (mut game, land) = staged_with(cards::LUSH_PORTICO, cards::LIGHTNING_BOLT);
-    play_and_surveil(&mut game, land, false);
-    let id = the_land_named(&game, cards::LUSH_PORTICO)
-        .expect("it is on the battlefield")
-        .card
-        .id;
-    if let Some(permanent) = game
-        .battlefield
-        .iter_mut()
-        .find(|permanent| permanent.card.id == id)
-    {
-        permanent.tapped = false;
-    }
-
-    let colors = game
-        .legal_actions(PlayerId::One)
-        .into_iter()
-        .filter_map(|action| match action {
-            Action::ActivateManaAbility { source, color, .. } if source == id => Some(color),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-
-    assert!(colors.contains(&ManaColor::Green), "Forest");
-    assert!(colors.contains(&ManaColor::White), "Plains");
-    assert_eq!(colors.len(), 2, "and nothing else");
-}
-
-/// And the red-green one, which completes the half of the cycle the cube
-/// wants.
-#[test]
-fn the_red_green_land_taps_for_its_own_two() {
-    let (mut game, land) = staged_with(cards::COMMERCIAL_DISTRICT, cards::LIGHTNING_BOLT);
-    play_and_surveil(&mut game, land, false);
-    let id = the_land_named(&game, cards::COMMERCIAL_DISTRICT)
-        .expect("it is on the battlefield")
-        .card
-        .id;
-    if let Some(permanent) = game
-        .battlefield
-        .iter_mut()
-        .find(|permanent| permanent.card.id == id)
-    {
-        permanent.tapped = false;
-    }
-
-    let colors = game
-        .legal_actions(PlayerId::One)
-        .into_iter()
-        .filter_map(|action| match action {
-            Action::ActivateManaAbility { source, color, .. } if source == id => Some(color),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-
-    assert!(colors.contains(&ManaColor::Red), "Mountain");
-    assert!(colors.contains(&ManaColor::Green), "Forest");
-    assert_eq!(colors.len(), 2, "and nothing else");
-}
-
-/// And the black-green one, which is the half of the cycle the graveyard
-/// decks are actually playing.
-#[test]
-fn the_black_green_land_taps_for_its_own_two() {
-    let (mut game, land) = staged_with(cards::UNDERGROUND_MORTUARY, cards::LIGHTNING_BOLT);
-    play_and_surveil(&mut game, land, true);
-    let id = the_land_named(&game, cards::UNDERGROUND_MORTUARY)
-        .expect("it is on the battlefield")
-        .card
-        .id;
-    assert!(
-        game.players[0]
-            .graveyard
-            .iter()
-            .any(|card| card.definition == cards::LIGHTNING_BOLT),
-        "its surveil bins what it was told to",
-    );
-    if let Some(permanent) = game
-        .battlefield
-        .iter_mut()
-        .find(|permanent| permanent.card.id == id)
-    {
-        permanent.tapped = false;
-    }
-
-    let colors = game
-        .legal_actions(PlayerId::One)
-        .into_iter()
-        .filter_map(|action| match action {
-            Action::ActivateManaAbility { source, color, .. } if source == id => Some(color),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-
-    assert!(colors.contains(&ManaColor::Black), "Swamp");
-    assert!(colors.contains(&ManaColor::Green), "Forest");
-    assert_eq!(colors.len(), 2, "and nothing else");
-}
-
-/// Shadowy Backstreet is the white-black member, and the last of the cycle:
-/// the same land again, its own two basic types, and the same surveil.
-#[test]
-fn the_backstreet_taps_for_its_own_two_and_surveils() {
-    let (mut game, land) = staged_with(cards::SHADOWY_BACKSTREET, cards::LIGHTNING_BOLT);
-    play_and_surveil(&mut game, land, true);
-    let backstreet =
-        the_land_named(&game, cards::SHADOWY_BACKSTREET).expect("it is on the battlefield");
-    let id = backstreet.card.id;
-    assert!(backstreet.tapped, "tapped on arrival");
-    assert!(
-        game.players[0]
-            .graveyard
-            .iter()
-            .any(|card| card.definition == cards::LIGHTNING_BOLT),
-        "and its surveil bins what it was told to",
-    );
-    if let Some(permanent) = game
-        .battlefield
-        .iter_mut()
-        .find(|permanent| permanent.card.id == id)
-    {
-        permanent.tapped = false;
-    }
-
-    let colors = game
-        .legal_actions(PlayerId::One)
-        .into_iter()
-        .filter_map(|action| match action {
-            Action::ActivateManaAbility { source, color, .. } if source == id => Some(color),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-
-    assert!(colors.contains(&ManaColor::White), "Plains");
-    assert!(colors.contains(&ManaColor::Black), "Swamp");
-    assert_eq!(colors.len(), 2, "and nothing else");
-}
-
 /// The mana abilities come from the basic land types rather than a printed
 /// clause, so both colours are on offer.
 #[test]
@@ -286,54 +186,13 @@ fn it_taps_for_either_colour() {
         permanent.tapped = false;
     }
 
-    let colors = game
-        .legal_actions(PlayerId::One)
-        .into_iter()
-        .filter_map(|action| match action {
-            Action::ActivateManaAbility { source, color, .. } if source == id => Some(color),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-
+    let colors = colors_of(&game, id);
     assert!(colors.contains(&ManaColor::Blue), "Island");
     assert!(colors.contains(&ManaColor::Red), "Mountain");
 }
 
-/// And the white-blue one, which completes the half of the cycle the cube
-/// wants. The cycle is one card with three pairs of colours, so what is left
-/// to check on each is only which two.
-#[test]
-fn the_white_blue_land_taps_for_its_own_two() {
-    let (mut game, land) = staged_with(cards::METICULOUS_ARCHIVE, cards::LIGHTNING_BOLT);
-    play_and_surveil(&mut game, land, false);
-    let id = the_land_named(&game, cards::METICULOUS_ARCHIVE)
-        .expect("it is on the battlefield")
-        .card
-        .id;
-    if let Some(permanent) = game
-        .battlefield
-        .iter_mut()
-        .find(|permanent| permanent.card.id == id)
-    {
-        permanent.tapped = false;
-    }
-
-    let colors = game
-        .legal_actions(PlayerId::One)
-        .into_iter()
-        .filter_map(|action| match action {
-            Action::ActivateManaAbility { source, color, .. } if source == id => Some(color),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-
-    assert!(colors.contains(&ManaColor::White), "Plains");
-    assert!(colors.contains(&ManaColor::Blue), "Island");
-    assert_eq!(colors.len(), 2, "and nothing else");
-}
-
-/// Undercity Sewers is the blue-black member: the same land, its own two
-/// basic types.
+/// The basic types are on the land itself rather than granted, which is
+/// what makes the mana abilities appear at all.
 #[test]
 fn the_sewers_bring_their_own_two_basic_types() {
     let (mut game, land) = staged_with(cards::UNDERCITY_SEWERS, cards::MOUNTAIN);
@@ -351,57 +210,52 @@ fn the_sewers_bring_their_own_two_basic_types() {
     assert!(sewers.tapped, "and it still arrives tapped");
 }
 
-/// Hedge Maze is the green-blue member, and the last of the cycle the cube
-/// wants. The surveil is the same surveil; what is left to check is which
-/// two colours it makes.
+/// The rest of the cycle, one line each: the same land with a different
+/// pair of basic types on it.
 #[test]
-fn the_hedge_maze_taps_for_its_own_two() {
-    let (mut game, land) = staged_with(cards::HEDGE_MAZE, cards::LIGHTNING_BOLT);
-    play_and_surveil(&mut game, land, false);
-    let id = the_land_named(&game, cards::HEDGE_MAZE)
-        .expect("it is on the battlefield")
-        .card
-        .id;
-    if let Some(permanent) = game
-        .battlefield
-        .iter_mut()
-        .find(|permanent| permanent.card.id == id)
-    {
-        permanent.tapped = false;
-    }
-
-    let colors = game
-        .legal_actions(PlayerId::One)
-        .into_iter()
-        .filter_map(|action| match action {
-            Action::ActivateManaAbility { source, color, .. } if source == id => Some(color),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-
-    assert!(colors.contains(&ManaColor::Green), "Forest");
-    assert!(colors.contains(&ManaColor::Blue), "Island");
-    assert_eq!(colors.len(), 2, "and nothing else");
+fn the_white_blue_land_taps_for_its_own_two() {
+    cycle_member_makes(cards::METICULOUS_ARCHIVE, ManaColor::White, ManaColor::Blue);
 }
 
-/// It surveils like the rest of them, which is the half worth checking once
-/// per member rather than trusting the shared helper alone.
 #[test]
-fn the_hedge_maze_surveils_on_the_way_in() {
-    let (mut game, land) = staged_with(cards::HEDGE_MAZE, cards::LIGHTNING_BOLT);
-    play_and_surveil(&mut game, land, true);
-
-    assert!(
-        the_land_named(&game, cards::HEDGE_MAZE).is_some_and(|permanent| permanent.tapped),
-        "tapped on arrival",
+fn the_white_black_land_taps_for_its_own_two() {
+    cycle_member_makes(
+        cards::SHADOWY_BACKSTREET,
+        ManaColor::White,
+        ManaColor::Black,
     );
-    assert!(game.players[0].library.is_empty());
-    assert_eq!(
-        game.players[0]
-            .graveyard
-            .iter()
-            .filter(|card| card.definition == cards::LIGHTNING_BOLT)
-            .count(),
-        1,
+}
+
+#[test]
+fn the_blue_black_land_taps_for_its_own_two() {
+    cycle_member_makes(cards::UNDERCITY_SEWERS, ManaColor::Blue, ManaColor::Black);
+}
+
+#[test]
+fn the_black_red_land_taps_for_its_own_two() {
+    cycle_member_makes(cards::RAUCOUS_THEATER, ManaColor::Black, ManaColor::Red);
+}
+
+#[test]
+fn the_red_green_land_taps_for_its_own_two() {
+    cycle_member_makes(cards::COMMERCIAL_DISTRICT, ManaColor::Red, ManaColor::Green);
+}
+
+#[test]
+fn the_green_white_land_taps_for_its_own_two() {
+    cycle_member_makes(cards::LUSH_PORTICO, ManaColor::Green, ManaColor::White);
+}
+
+#[test]
+fn the_green_blue_land_taps_for_its_own_two() {
+    cycle_member_makes(cards::HEDGE_MAZE, ManaColor::Green, ManaColor::Blue);
+}
+
+#[test]
+fn the_black_green_land_taps_for_its_own_two() {
+    cycle_member_makes(
+        cards::UNDERGROUND_MORTUARY,
+        ManaColor::Black,
+        ManaColor::Green,
     );
 }
