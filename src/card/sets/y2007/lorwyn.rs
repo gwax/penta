@@ -203,14 +203,33 @@ pub(in crate::card::sets) static THOUGHTSEIZE: CardRecord = CardRecord::new_with
 );
 
 // LRW 194 — Tarfire
-// Audit: metadata-only — Card rules have not been implemented.
+/// A Shock that is also a Goblin card. Kindred is what carries the subtype
+/// onto a noncreature card (CR 205.2a) and does nothing else: the spell is
+/// still an instant, and it is a Goblin in every zone -- in the library
+/// where a Ringleader looks for one, and in the graveyard afterwards.
 pub(in crate::card::sets) static TARFIRE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d13a898e-6a97-4fd9-980e-3bfd8d755386"),
     "Tarfire",
-    crate::card::CardArt::new("d13a898e-6a97-4fd9-980e-3bfd8d755386", "Omar Rayyan"),
-    crate::card::CardSet::Lorwyn,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("d13a898e-6a97-4fd9-980e-3bfd8d755386", "Omar Rayyan"),
+    CardSet::Lorwyn,
+    // Two damage for one mana is a fine rate and not why it is played: the
+    // Goblin deck plays it because Ringleader draws it and Matron finds it.
+    CardRules::new_instant(mana_cost!("{R}"))
+        .with_type(CardType::Kindred)
+        .with_subtypes(&["Goblin"])
+        .with_ability(AbilityDef::spell_with_targets(
+            "This spell deals 2 damage to any target.",
+            &TARFIRE_TARGET,
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(2),
+            },
+        )),
 );
+
+static TARFIRE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
 
 // LRW 196 — Wild Ricochet
 // Audit: metadata-only — Card rules have not been implemented.

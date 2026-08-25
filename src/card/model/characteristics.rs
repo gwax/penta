@@ -194,18 +194,24 @@ pub enum CardType {
     Creature,
     Enchantment,
     Instant,
+    /// CR 205.2a. A card type that does nothing by itself: what it is for is
+    /// letting a noncreature card carry creature subtypes, so a Kindred
+    /// Instant -- Goblin is a Goblin card wherever it is, and everything
+    /// that counts Goblins counts it.
+    Kindred,
     Land,
     Planeswalker,
     Sorcery,
 }
 
 impl CardType {
-    pub const COUNT: usize = 7;
+    pub const COUNT: usize = 8;
     pub const ALL: [Self; Self::COUNT] = [
         Self::Artifact,
         Self::Creature,
         Self::Enchantment,
         Self::Instant,
+        Self::Kindred,
         Self::Land,
         Self::Planeswalker,
         Self::Sorcery,
@@ -214,6 +220,9 @@ impl CardType {
     /// Conventional type-line order for the combinations the catalog can
     /// currently express. This is deliberately independent of bit indexes.
     pub const DISPLAY_ORDER: [Self; Self::COUNT] = [
+        // Kindred leads the line it appears on, which is where the type
+        // line prints it: "Kindred Instant -- Goblin".
+        Self::Kindred,
         Self::Artifact,
         Self::Enchantment,
         Self::Land,
@@ -233,6 +242,7 @@ impl CardType {
             Self::Land => 4,
             Self::Planeswalker => 5,
             Self::Sorcery => 6,
+            Self::Kindred => 7,
         }
     }
 
@@ -246,6 +256,7 @@ impl CardType {
             Self::Land => "Land",
             Self::Planeswalker => "Planeswalker",
             Self::Sorcery => "Sorcery",
+            Self::Kindred => "Kindred",
         }
     }
 }

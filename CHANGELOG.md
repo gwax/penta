@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **The kindred card type.** A card type that does nothing by itself
+  (CR 205.2a): what it is for is letting a noncreature card carry creature
+  subtypes, so a Kindred Instant -- Goblin is a Goblin card in every zone and
+  everything that counts Goblins counts it. Tarfire prints it, and a Goblin
+  Ringleader four cards deep draws it exactly as it draws a Goblin creature.
+  Nothing about the checkpoint changes; the type joins the set every card
+  already carries.
+
 - **Copying a creature that is already gone, and adding a type to the copy.**
   "When this dies, create a token that's a copy of it" names something that
   is no longer on the battlefield, so copying now falls back to what the
