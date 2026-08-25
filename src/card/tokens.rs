@@ -80,6 +80,28 @@ pub const fn food() -> TokenCharacteristics {
     TokenCharacteristics::artifact(&["Food"], &[]).with_abilities(&FOOD_ABILITIES)
 }
 
+static PEST_ABILITIES: [AbilityDef; 1] = [crate::card::abilities::dies_trigger(
+    "When this token dies, you gain 1 life.",
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+)];
+
+/// The Pest every Witherbloom card makes: a 1/1 in both its colours that
+/// pays a life back when it dies. Unlike Food or Blood it is not a
+/// rules-defined token, but every card printing it prints the same one.
+#[must_use]
+pub const fn pest() -> TokenCharacteristics {
+    TokenCharacteristics::creature(
+        &["Pest"],
+        &[crate::card::ManaColor::Black, crate::card::ManaColor::Green],
+        1,
+        1,
+    )
+    .with_abilities(&PEST_ABILITIES)
+}
+
 static CLUE_ABILITIES: [AbilityDef; 1] = [AbilityDef::activated(
     "{2}, Sacrifice this token: Draw a card.",
     &[

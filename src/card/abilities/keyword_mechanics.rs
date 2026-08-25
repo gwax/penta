@@ -265,6 +265,27 @@ pub const fn ward(amount: u16, text: &'static str) -> AbilityDef {
     )
 }
 
+/// "Ward--Pay N life", the same keyword with a life cost. Ward's cost is any
+/// cost the card cares to print (CR 702.21a), so the shape above is the mana
+/// case rather than the whole of it.
+#[must_use]
+pub const fn ward_life(amount: u16, text: &'static str) -> AbilityDef {
+    AbilityDef::triggered(
+        text,
+        TriggerEventDef::BecomesTargetOfSpellOrAbility(AN_OPPONENTS_SPELL_OR_ABILITY),
+        EffectDef::PayOr(PayOrDef {
+            payment: EffectPaymentDef::life(
+                PlayerSetDef::One(PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject)),
+                amount,
+            ),
+            if_paid: None,
+            otherwise: Some(&COUNTER_TRIGGERING_SPELL),
+            visibility: ChoiceVisibilityDef::Public,
+            condition: None,
+        }),
+    )
+}
+
 /// Cascade (CR 702.85). A triggered ability that fires on the cast, like
 /// storm, and whose whole procedure is one effect: the bound it digs to is
 /// the cascading spell's own mana value, so nothing about it is written down

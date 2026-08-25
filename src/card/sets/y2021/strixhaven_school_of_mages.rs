@@ -6,7 +6,7 @@ use crate::card::{
     CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
     PlayerRefDef, PlayerRelation, PlayerSetDef, SelectionDestinationDef, TriggerConditionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -271,13 +271,35 @@ pub(in crate::card::sets) static WITHERBLOOM_CAMPUS: CardRecord = CardRecord::ne
 );
 
 // STX 306 — Sedgemoor Witch
-// Audit: metadata-only — Card rules have not been implemented.
+static SEDGEMOOR_WITCH_ABILITIES: [AbilityDef; 3] = [
+    abilities::menace(),
+    // Ward's cost is whatever the card prints, and hers is life -- which a
+    // deck that already pays life for its lands is well placed to charge.
+    abilities::ward_life(
+        3,
+        "Ward—Pay 3 life. (Whenever this creature becomes the target of a spell or ability an \
+         opponent controls, counter it unless that player pays 3 life.)",
+    ),
+    AbilityDef::triggered(
+        "Magecraft — Whenever you cast or copy an instant or sorcery spell, create a 1/1 black \
+         and green Pest creature token with \"When this token dies, you gain 1 life.\"",
+        MAGECRAFT,
+        EffectDef::create_token(tokens::pest()).with_art(CardArt::new(
+            "d0ddbe3e-4a66-494d-9304-7471232549bf",
+            "Ilse Gort",
+        )),
+    ),
+];
+
 pub(in crate::card::sets) static SEDGEMOOR_WITCH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("075bfaa8-3d54-4934-aaf6-72be43a87324"),
     "Sedgemoor Witch",
     crate::card::CardArt::new("075bfaa8-3d54-4934-aaf6-72be43a87324", "Igor Kieryluk"),
     crate::card::CardSet::StrixhavenSchoolOfMages,
-    crate::card::CardRules::unsupported(),
+    // Three mana for a body that is hard to block and harder to answer, and
+    // that turns every cantrip into another creature.
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Human", "Warlock"], 3, 2)
+        .with_abilities(&SEDGEMOOR_WITCH_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
