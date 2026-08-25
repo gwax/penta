@@ -260,8 +260,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::DealDamageAndApply { recipient, .. }
         | EffectDef::DrainLife { recipient, .. }
         | EffectDef::GainLife { recipient, .. }
-        | EffectDef::AddPoisonCounters { recipient, .. }
-        | EffectDef::AddEnergyCounters { recipient, .. }
+        | EffectDef::AddPlayerCounters { recipient, .. }
         | EffectDef::DrawCards { recipient, .. }
         | EffectDef::ShuffleLibrary { player: recipient }
         | EffectDef::BuryGraveyard { player: recipient }
@@ -484,6 +483,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::Sacrifice { object }
         | EffectDef::DiscardCards { object }
         | EffectDef::ExileLinkedToSource { object }
+        | EffectDef::ExileUntilNextEndStep { object, .. }
         | EffectDef::ExileGrantingOwnerPlay { object, .. }
         | EffectDef::ExileGrantingControllerPlayThisTurn { object }
         | EffectDef::Detain { object }

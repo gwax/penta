@@ -319,6 +319,10 @@ impl HandcraftedPolicy {
             EffectDef::SplitIntoPiles(partition) => Self::effect_is_a_wash(*partition.then),
             EffectDef::ExileLinkedToSource {
                 object: EffectRecipientDef::Source,
+            }
+            | EffectDef::ExileUntilNextEndStep {
+                object: EffectRecipientDef::Source,
+                ..
             } => true,
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
@@ -437,7 +441,7 @@ impl HandcraftedPolicy {
                     | crate::card::EffectPaymentCostDef::Discard(_)
                     | crate::card::EffectPaymentCostDef::DiscardMatching(_)
                     | crate::card::EffectPaymentCostDef::ChosenGenericMana
-                    | crate::card::EffectPaymentCostDef::ReturnPermanentMatching(_)
+                    | crate::card::EffectPaymentCostDef::MovePermanentMatching { .. }
                     | crate::card::EffectPaymentCostDef::SacrificePermanentMatching(_)
                     | crate::card::EffectPaymentCostDef::ObjectManaCostReducedBy { .. }
                     | crate::card::EffectPaymentCostDef::ColoredMana { .. } => None,

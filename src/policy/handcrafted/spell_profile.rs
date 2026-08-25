@@ -449,8 +449,7 @@ impl HandcraftedPolicy {
             | EffectDef::BuryGraveyard { .. }
             | EffectDef::EmptyManaPool { .. }
             | EffectDef::GainLife { .. }
-            | EffectDef::AddPoisonCounters { .. }
-            | EffectDef::AddEnergyCounters { .. }
+            | EffectDef::AddPlayerCounters { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::Regenerate { .. }
             | EffectDef::Sacrifice { .. }
@@ -499,6 +498,7 @@ impl HandcraftedPolicy {
             | EffectDef::DamageCannotBePreventedThisTurn
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
+            | EffectDef::ExileUntilNextEndStep { .. }
             | EffectDef::MayPlayWithoutPaying { .. }
             | EffectDef::ExileGrantingOwnerPlay { .. }
             | EffectDef::ExileGrantingControllerPlayThisTurn { .. }

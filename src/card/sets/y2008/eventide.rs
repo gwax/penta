@@ -3,9 +3,8 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet,
-    CreatureTypeSetDef, EffectDef, EffectRecipientDef, InstalledTriggerDef, ObjectPredicateDef,
-    PlayerRelation, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, abilities,
+    CreatureTypeSetDef, EffectDef, EffectRecipientDef, ObjectPredicateDef,
+    ResolvedEffectDurationDef, TriggerConditionDef, ValueDef, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -17,34 +16,6 @@ use crate::mana_cost;
 static ANOTHER_PERMANENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
 )];
-
-/// The delayed half, installed by the arrival rather than printed as its own
-/// clause: it fires once, at the next end step, whoever's turn that is, and
-/// it fires whether or not the Wisp is still around to see it.
-static FLICKERWISP_RETURN: AbilityDef = AbilityDef::triggered(
-    "Return that card to the battlefield under its owner's control at the beginning of the next \
-     end step.",
-    TriggerEventDef::StepBegins {
-        step: TurnStepDef::End,
-        player: PlayerRelation::Any,
-    },
-    EffectDef::ReturnLinkedExiles {
-        object: ObjectPredicateDef::Any,
-        zone: ZoneKind::Battlefield,
-        grant: None,
-        counters: None,
-        arrival_effect: None,
-        transformed: false,
-        controller: None,
-    },
-);
-
-static FLICKERWISP_EXILE: [EffectDef; 2] = [
-    EffectDef::ExileLinkedToSource {
-        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-    },
-    EffectDef::InstallTrigger(InstalledTriggerDef::once(&FLICKERWISP_RETURN)),
-];
 
 pub(in crate::card::sets) static FLICKERWISP: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5bb3cb5c-8d66-4f5e-a9a9-917e6045f024"),
@@ -60,7 +31,7 @@ pub(in crate::card::sets) static FLICKERWISP: CardRecord = CardRecord::new(
             "When this creature enters, exile another target permanent. Return that card to the \
              battlefield under its owner's control at the beginning of the next end step.",
             &ANOTHER_PERMANENT,
-            EffectDef::Sequence(&FLICKERWISP_EXILE),
+            abilities::exile_until_next_end_step(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
         ),
     ]),
 );

@@ -21,16 +21,12 @@ pub enum EffectDef {
     GainClassLevel {
         level: u8,
     },
-    /// Poison counters given to a player; ten cause a state-based loss.
-    AddPoisonCounters {
+    /// Add counters to a player. Poison's state-based loss and energy's
+    /// payment semantics are consumers of the counter kind rather than
+    /// separate effect operations.
+    AddPlayerCounters {
         recipient: EffectRecipientDef,
-        amount: ValueDef,
-    },
-    /// "You get {E}{E}." Energy is a resource rather than a clock: nothing
-    /// checks how much of it a player has, it persists between turns, and it
-    /// leaves only by being spent.
-    AddEnergyCounters {
-        recipient: EffectRecipientDef,
+        kind: CounterKind,
         amount: ValueDef,
     },
     Apply {
@@ -386,6 +382,14 @@ pub enum EffectDef {
     /// bring it back. This is the Oblivion Ring shape.
     ExileLinkedToSource {
         object: EffectRecipientDef,
+    },
+    /// Exile the recipient, link the new card to this effect's source, and
+    /// install the one-shot delayed trigger that returns it at the next end
+    /// step. The return ability is carried inside the abstraction so callers
+    /// name only the object being blinked.
+    ExileUntilNextEndStep {
+        object: EffectRecipientDef,
+        return_ability: &'static AbilityDef,
     },
     /// Exiles, and leaves the card's own owner able to play it from there
     /// for as long as it stays exiled -- for a surcharge, which is what

@@ -67,8 +67,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::AddMana(_)
         | EffectDef::AddManaEqualTo { .. }
         | EffectDef::GainClassLevel { .. }
-        | EffectDef::AddPoisonCounters { .. }
-        | EffectDef::AddEnergyCounters { .. }
+        | EffectDef::AddPlayerCounters { .. }
         | EffectDef::Apply { .. }
         | EffectDef::Attach { .. }
         | EffectDef::AttachToSource { .. }
@@ -107,6 +106,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::DrawCards { .. }
         | EffectDef::EmptyManaPool { .. }
         | EffectDef::ExileLinkedToSource { .. }
+        | EffectDef::ExileUntilNextEndStep { .. }
         | EffectDef::MayPlayWithoutPaying { .. }
         | EffectDef::ExileGrantingOwnerPlay { .. }
         | EffectDef::ExileGrantingControllerPlayThisTurn { .. }

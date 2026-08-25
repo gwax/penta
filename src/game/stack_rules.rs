@@ -98,8 +98,7 @@ impl Game {
             | EffectDef::DealDamageAndApply { .. }
             | EffectDef::DrainLife { .. }
             | EffectDef::GainLife { .. }
-            | EffectDef::AddPoisonCounters { .. }
-            | EffectDef::AddEnergyCounters { .. }
+            | EffectDef::AddPlayerCounters { .. }
             | EffectDef::DrawCards { .. }
             | EffectDef::Discard { .. }
             | EffectDef::DiscardCards { .. }
@@ -174,6 +173,7 @@ impl Game {
             | EffectDef::DamageCannotBePreventedThisTurn
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
+            | EffectDef::ExileUntilNextEndStep { .. }
             | EffectDef::MayPlayWithoutPaying { .. }
             | EffectDef::ExileGrantingOwnerPlay { .. }
             | EffectDef::ExileGrantingControllerPlayThisTurn { .. }
