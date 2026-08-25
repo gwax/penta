@@ -179,7 +179,7 @@ use decision_state::{
     ApplicableBeginTurnReplacement, BalanceAction, BalancePhase, BalanceTask, CounteredSpellZone,
     DecisionContinuation, DeferredBeginTurnEffect, DiscardFollowUp, FORK_COPY_COLOR,
     PendingDecision, Pregame, ResolvedEffectPayment, SacrificeDeclined, SacrificeFollowup,
-    SearchFollowUp, ZoneMoveCause,
+    SearchFollowUp, TypedSelectionProgress, ZoneMoveCause,
 };
 use exile_permission::{ExilePlayCost, ExilePlayPermission};
 use mana_state::{

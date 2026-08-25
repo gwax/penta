@@ -2,8 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    ObjectPredicateDef,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardSupertype,
+    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, TopCardSelectionDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::mana_cost;
 
@@ -105,13 +106,64 @@ pub(in crate::card::sets) static CONTAGIOUS_VORRAC: CardRecord = CardRecord::new
 );
 
 // ONE 196 — Atraxa, Grand Unifier
-// Audit: metadata-only — Card rules have not been implemented.
+/// Ten cards face up, and one pick per card type from among them: an
+/// artifact, a creature, an enchantment, an instant, a land, a planeswalker,
+/// and a sorcery, each optional and each from what is left, so an artifact
+/// creature taken as the artifact is no longer there to be the creature.
+/// The printed reminder counts battle as an eighth type; nothing in this
+/// engine is one, so the seven it has are the whole list. The rest go back
+/// underneath in a random order, which is why the look is worth so much
+/// less to the player who did it than the cards it kept.
+static ATRAXA_DIGS_TEN: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(10),
+    object: None,
+    minimum: 0,
+    maximum: 0,
+    select_all_matching: false,
+    select_one_of_each_type: true,
+    reveal_inspected: true,
+    reveal_selected: false,
+    counted: None,
+    selected_zone: ZoneKind::Hand,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Bottom,
+    rest_random_order: true,
+    rest_counters: None,
+    selected_order_follows_choice: false,
+    then: None,
+    selected_hidden: false,
+    selected_linked_to_source: false,
+    selected_face_down: None,
+};
+
+static ATRAXA_ABILITIES: [AbilityDef; 5] = [
+    abilities::flying(),
+    abilities::vigilance(),
+    abilities::deathtouch(),
+    abilities::lifelink(),
+    abilities::enters_trigger(
+        "When this creature enters, reveal the top ten cards of your library. For each card \
+         type, you may put a card of that type from among the revealed cards into your hand. Put \
+         the rest on the bottom of your library in a random order.",
+        EffectDef::LookAtTopAndSelect {
+            player: EffectRecipientDef::Controller,
+            looker: EffectRecipientDef::Controller,
+            selection: &ATRAXA_DIGS_TEN,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static ATRAXA_GRAND_UNIFIER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4a1f905f-1d55-4d02-9d24-e58070793d3f"),
     "Atraxa, Grand Unifier",
     crate::card::CardArt::new("4a1f905f-1d55-4d02-9d24-e58070793d3f", "Marta Nael"),
     crate::card::CardSet::PhyrexiaAllWillBeOne,
-    crate::card::CardRules::unsupported(),
+    // Seven mana across four colours for a 7/7 that blocks everything, gains
+    // the life back, and refills the hand on the way in.
+    CardRules::new_creature(mana_cost!("{3}{G}{W}{U}{B}"), &["Phyrexian", "Angel"], 7, 7)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&ATRAXA_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

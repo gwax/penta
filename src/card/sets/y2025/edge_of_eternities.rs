@@ -206,6 +206,8 @@ const fn consult_selection(cards: u8) -> TopCardSelectionDef {
         minimum: cards,
         maximum: cards,
         select_all_matching: false,
+        select_one_of_each_type: false,
+        reveal_inspected: false,
         reveal_selected: false,
         counted: None,
         selected_zone: ZoneKind::Hand,

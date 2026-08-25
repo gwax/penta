@@ -19,6 +19,8 @@ static STOCK_UP_SELECTION: TopCardSelectionDef = TopCardSelectionDef {
     minimum: 2,
     maximum: 2,
     select_all_matching: false,
+    select_one_of_each_type: false,
+    reveal_inspected: false,
     reveal_selected: false,
     counted: None,
     selected_zone: ZoneKind::Hand,

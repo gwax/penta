@@ -16,6 +16,8 @@ pub const fn surveil(count: u8, then: Option<&'static EffectDef>) -> TopCardSele
         minimum: 0,
         maximum: count,
         select_all_matching: false,
+        select_one_of_each_type: false,
+        reveal_inspected: false,
         reveal_selected: false,
         counted: None,
         selected_zone: ZoneKind::Graveyard,

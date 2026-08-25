@@ -416,6 +416,7 @@ fn checkpoint_wire(game: &Game) -> (PlayerId, Value) {
 }
 
 include!("tests/decisions_and_triggers.rs");
+include!("tests/searches_and_installed_triggers.rs");
 
 include!("tests/attached_search.rs");
 

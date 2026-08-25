@@ -19,6 +19,8 @@ static MANIFEST_DREAD: crate::card::TopCardSelectionDef = crate::card::TopCardSe
     minimum: 1,
     maximum: 1,
     select_all_matching: false,
+    select_one_of_each_type: false,
+    reveal_inspected: false,
     reveal_selected: false,
     counted: None,
     selected_zone: ZoneKind::Battlefield,

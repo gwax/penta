@@ -2,12 +2,13 @@ use std::ops::ControlFlow;
 
 use super::{
     AppliedRuleDef, BalancePhase, BalanceTask, BattlefieldExitCompletion, CardInstance, CardPartId,
-    CardRuntime, CommittedTriggerEvent, CounterKind, DecisionContinuation, DecisionOption,
-    DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef, DiscardFollowUp,
-    EffectDef, EffectResolutionContext, Game, GameEvent, GameObjectId, ObjectCharacteristics,
-    ObjectPredicateDef, Permanent, PileChoice, PileChosen, PileSplit, PilesSeparated, PlayerId,
-    SacrificeDeclined, SacrificeFollowup, SacrificedAmountDef, ScopedEffect, StackObject, Step,
-    TopCardSelectionDef, ZoneKind, ZoneMoveCause,
+    CardRuntime, CardType, CommittedTriggerEvent, CounterKind, DecisionContinuation,
+    DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone, DeclarativeAbilityDef,
+    DiscardFollowUp, EffectDef, EffectResolutionContext, Game, GameEvent, GameObjectId,
+    ObjectCharacteristics, ObjectPredicateDef, Permanent, PileChoice, PileChosen, PileSplit,
+    PilesSeparated, PlayerId, SacrificeDeclined, SacrificeFollowup, SacrificedAmountDef,
+    ScopedEffect, StackObject, Step, TopCardSelectionDef, TypedSelectionProgress, ZoneKind,
+    ZoneMoveCause,
 };
 
 impl Game {
@@ -53,6 +54,36 @@ impl Game {
             })
             .cloned()
             .collect::<Vec<_>>();
+        // "Reveal the top ten cards of your library": the look above is
+        // private, so what makes this a reveal is that both players see the
+        // cards, here and in the decision that follows.
+        if selection.reveal_inspected {
+            self.events
+                .extend(revealed.iter().map(|card| GameEvent::CardRevealed {
+                    player,
+                    card: card.id,
+                    definition: card.definition,
+                }));
+        }
+        // "For each card type, you may put a card of that type from among
+        // them into your hand": one optional pick per type rather than one
+        // bounded pick, so it asks its own run of decisions.
+        if selection.select_one_of_each_type {
+            self.queue_typed_selection(
+                TypedSelectionProgress {
+                    player,
+                    looker,
+                    revealed,
+                    taken: Vec::new(),
+                    next_type: 0,
+                },
+                selection,
+                object,
+                context,
+                scoped,
+            );
+            return;
+        }
         // "Put all Goblin cards revealed this way into your hand" asks
         // nothing, so there is no decision to queue: the predicate has
         // already partitioned the cards and both halves go where they go.
@@ -922,3 +953,5 @@ impl Game {
         self.resolve_effect_def(followup.effect, &followup.object, context);
     }
 }
+
+include!("decision_piles/top_cards_by_type.rs");

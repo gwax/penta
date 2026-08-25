@@ -257,6 +257,68 @@ fn parse_continuation(
                 effect: continuation.effect,
             }
         }
+        DecisionContinuationSnapshot::TypedTopCardSelection {
+            player: owner,
+            looker: asked,
+            revealed,
+            taken,
+            next_type,
+            continuation,
+        } => {
+            let owner = player(*owner)?;
+            let asked = player(*asked)?;
+            let continuation = parse_effect_continuation(continuation, game)?;
+            let EffectDef::LookAtTopAndSelect {
+                player: recipient,
+                looker,
+                selection,
+            } = continuation.effect.effect
+            else {
+                return Err("typed selection locator is not a top-card selection".into());
+            };
+            if !selection.select_one_of_each_type {
+                return Err("typed selection locator does not select by card type".into());
+            }
+            let resolve = |recipient| {
+                game.effect_recipients(
+                    recipient,
+                    &continuation.object,
+                    &continuation.context,
+                    continuation.effect,
+                )
+            };
+            if resolve(recipient).as_slice() != [Target::Player(owner)] {
+                return Err("typed selection player disagrees with its authored effect".into());
+            }
+            if resolve(looker).as_slice() != [Target::Player(asked)] {
+                return Err("typed selection looker disagrees with its authored effect".into());
+            }
+            let progress = TypedSelectionProgress {
+                player: owner,
+                looker: asked,
+                revealed: parse_detached_cards(revealed, game)?,
+                taken: parse_detached_cards(taken, game)?,
+                next_type: *next_type,
+            };
+            let source = continuation
+                .object
+                .source
+                .unwrap_or(continuation.object.id);
+            validate_typed_selection_observation(
+                game,
+                observation,
+                &progress,
+                selection,
+                source,
+            )?;
+            DecisionContinuation::TypedTopCardSelection {
+                progress,
+                selection,
+                object: continuation.object,
+                context: continuation.context,
+                effect: continuation.effect,
+            }
+        }
         DecisionContinuationSnapshot::ChainLightning {
             player: owner,
             spell,

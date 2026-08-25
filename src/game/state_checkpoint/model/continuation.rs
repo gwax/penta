@@ -120,6 +120,17 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         revealed: Vec<DetachedCardSnapshot>,
         continuation: EffectContinuationSnapshot,
     },
+    /// A selection that asks once per card type. Both piles are written
+    /// down: the cards have already left the library, and which of them were
+    /// taken by an earlier type is part of the pending question.
+    TypedTopCardSelection {
+        player: usize,
+        looker: usize,
+        revealed: Vec<DetachedCardSnapshot>,
+        taken: Vec<DetachedCardSnapshot>,
+        next_type: usize,
+        continuation: EffectContinuationSnapshot,
+    },
     ChainLightning {
         player: usize,
         spell: DetachedStackSnapshot,

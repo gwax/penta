@@ -28,6 +28,18 @@ pub struct TopCardSelectionDef {
     /// cards the card does not let them decline. The bounds above are ignored
     /// when this is set.
     pub select_all_matching: bool,
+    /// "For each card type, you may put a card of that type from among the
+    /// revealed cards into your hand." One optional pick per card type, each
+    /// from the cards that are left, which is a different question from the
+    /// bounded pick above: the bounds could say "up to seven" but nothing
+    /// about them could stop all seven from being creatures. The bounds are
+    /// ignored when this is set, the same way they are for
+    /// [`Self::select_all_matching`].
+    pub select_one_of_each_type: bool,
+    /// "Reveal the top ten cards of your library." The look above is private;
+    /// this makes the whole inspected group public, so both players see what
+    /// was there and what was taken out of it.
+    pub reveal_inspected: bool,
     /// Reveal selected cards before moving them, for effects that instruct
     /// the player to reveal what they took.
     pub reveal_selected: bool,

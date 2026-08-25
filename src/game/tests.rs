@@ -322,6 +322,7 @@ mod vintage_cube_animate_dead;
 mod vintage_cube_archon_of_cruelty;
 mod vintage_cube_arrival;
 mod vintage_cube_artifacts;
+mod vintage_cube_atraxa_grand_unifier;
 mod vintage_cube_baleful_strix;
 mod vintage_cube_baloth_prime;
 mod vintage_cube_barrowgoyf;

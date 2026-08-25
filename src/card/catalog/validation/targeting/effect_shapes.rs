@@ -227,6 +227,10 @@ fn validate_effect_target_shapes(
             validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
             validate_recipient_shape(looker, targets, RecipientExpectation::Player)?;
             if selection.minimum > selection.maximum
+                // Two ways of asking, and a selection is one or the other:
+                // every match taken without a question, or one pick per card
+                // type. Both at once has no reading.
+                || (selection.select_all_matching && selection.select_one_of_each_type)
                 // What was taken may also arrive on the battlefield. What was
                 // left behind may not: a card nobody chose has no reason to
                 // be put anywhere but back into a zone.
@@ -772,6 +776,8 @@ mod recipient_shape_tests {
             minimum: 2,
             maximum: 1,
             select_all_matching: false,
+            select_one_of_each_type: false,
+            reveal_inspected: false,
             reveal_selected: false,
             counted: None,
             selected_zone: ZoneKind::Hand,
@@ -791,6 +797,8 @@ mod recipient_shape_tests {
             minimum: 0,
             maximum: 1,
             select_all_matching: false,
+            select_one_of_each_type: false,
+            reveal_inspected: false,
             reveal_selected: false,
             counted: None,
             selected_zone: ZoneKind::Hand,

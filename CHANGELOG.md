@@ -25,6 +25,21 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **One pick per card type.** A look at the top of a library asked one
+  bounded question: take up to N of what you see. "For each card type, you
+  may put a card of that type from among them into your hand" is a different
+  question, and no bound can express it -- "up to seven" cannot stop all
+  seven from being creatures. So a selection can now ask once per card type
+  instead, each pick optional and each from the cards that are left, which is
+  what makes an artifact creature taken as the artifact no longer there to be
+  the creature. A look can also reveal the whole group it inspected rather
+  than only what it took. Atraxa, Grand Unifier prints both: ten cards face
+  up, one of each type kept, and the rest shuffled back underneath. The
+  engine has no battle card type and no cataloged card is one, so the seven
+  it has are the whole list. The per-type decision is an additive checkpoint
+  continuation; checkpoint format 8, replay version 2, and protocol 29 are
+  unchanged.
+
 - **Protection for a player.** The engine had protection for objects and
   nothing at all for players, so "you gain protection from everything" had no
   shape to take. A player's protection is the shorter list: no damage from a

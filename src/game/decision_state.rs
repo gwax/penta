@@ -559,6 +559,17 @@ pub(super) enum DecisionContinuation {
         context: EffectResolutionContext,
         effect: ScopedEffect,
     },
+    /// A private top-of-library selection that asks once per card type
+    /// rather than once for a bounded group. The cards have already left the
+    /// library, so both piles and the deferred follow-up live here, the same
+    /// way they do for the ordinary selection above.
+    TypedTopCardSelection {
+        progress: TypedSelectionProgress,
+        selection: &'static TopCardSelectionDef,
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
+        effect: ScopedEffect,
+    },
     /// The affected object's controller chooses which currently applicable
     /// replacement effect to apply next.
     BattlefieldEntryReplacement {
@@ -675,4 +686,19 @@ pub(super) struct SearchFollowUp {
     pub(super) object: StackObject,
     pub(super) context: EffectResolutionContext,
     pub(super) effect: ScopedEffect,
+}
+
+/// How far a per-card-type selection has got: which cards are still on the
+/// table, which have been taken, and which type is asked about next. The
+/// piles travel together because the cards have already left the library and
+/// nothing else is holding them.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) struct TypedSelectionProgress {
+    pub(super) player: PlayerId,
+    /// Who is asked, which is the library's owner unless something else is
+    /// doing the looking.
+    pub(super) looker: PlayerId,
+    pub(super) revealed: Vec<CardInstance>,
+    pub(super) taken: Vec<CardInstance>,
+    pub(super) next_type: usize,
 }

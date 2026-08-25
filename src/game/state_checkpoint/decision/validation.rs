@@ -168,6 +168,55 @@ fn validate_top_card_selection_observation(
     )
 }
 
+/// The options one card type's pick offers, checked against what the
+/// observation carries. Which type is being asked about is part of the
+/// pending question, so it is validated the same way the group is.
+pub(super) fn validate_typed_selection_observation(
+    game: &Game,
+    observation: &DecisionObservation,
+    progress: &super::super::TypedSelectionProgress,
+    selection: &'static crate::card::TopCardSelectionDef,
+    source: super::super::GameObjectId,
+) -> Result<(), String> {
+    let card_type = crate::card::CardType::ALL
+        .get(progress.next_type)
+        .copied()
+        .ok_or("typed selection names a card type this engine does not have")?;
+    let eligible = game.typed_selection_candidates(&progress.revealed, card_type, source);
+    if eligible.is_empty() {
+        return Err("typed selection asks about a card type nothing revealed has".into());
+    }
+    let mut expected = game.card_decision_options(&eligible, DecisionZone::Library);
+    let inspected = progress
+        .revealed
+        .iter()
+        .map(|card| {
+            (
+                card.id,
+                ObjectCharacteristics::card(card.definition, CardPartId::PRIMARY),
+            )
+        })
+        .collect::<Vec<_>>();
+    for option in &mut expected {
+        option.members.clone_from(&inspected);
+    }
+    validate_authored_decision(
+        observation,
+        progress.looker,
+        &Game::typed_selection_prompt(card_type),
+        if selection.reveal_inspected {
+            DecisionVisibility::Public
+        } else {
+            DecisionVisibility::Private
+        },
+        DecisionPreference::HigherCardValue,
+        0,
+        1,
+        &expected,
+        "typed selection",
+    )
+}
+
 #[allow(clippy::too_many_arguments)]
 fn validate_authored_decision(
     observation: &DecisionObservation,

@@ -257,6 +257,37 @@ impl Game {
                     );
                 }
             }
+            DecisionContinuation::TypedTopCardSelection {
+                mut progress,
+                selection,
+                object,
+                context,
+                effect,
+            } => {
+                // At most one card, and declining is an ordinary answer: the
+                // clause says "you may" for every type it asks about.
+                let taken = options
+                    .iter()
+                    .filter_map(|chosen| {
+                        pending
+                            .observation
+                            .options
+                            .iter()
+                            .find(|option| option.id == *chosen)
+                    })
+                    .filter_map(|option| option.card.map(|(card, _)| card))
+                    .collect::<Vec<_>>();
+                let (mut chosen, rest): (Vec<_>, Vec<_>) = progress
+                    .revealed
+                    .into_iter()
+                    .partition(|card| taken.contains(&card.id));
+                progress.taken.append(&mut chosen);
+                progress.revealed = rest;
+                // The type just answered is done whether or not it took
+                // anything, so the next question is about the next one.
+                progress.next_type += 1;
+                self.queue_typed_selection(progress, selection, &object, context, effect);
+            }
             continuation @ (DecisionContinuation::BattlefieldEntryReplacement { .. }
             | DecisionContinuation::BattlefieldEntryExile { .. }
             | DecisionContinuation::BattlefieldEntryOptional { .. }
