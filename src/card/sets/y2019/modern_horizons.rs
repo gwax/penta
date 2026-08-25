@@ -1019,13 +1019,27 @@ pub(in crate::card::sets) static TALISMAN_OF_CURIOSITY: CardRecord = CardRecord:
 );
 
 // MH1 244 — Prismatic Vista
-// Audit: metadata-only — Card rules have not been implemented.
+/// "A basic land card", which is the supertype rather than the land types:
+/// a dual with two basic types printed on it is not a basic land, and the
+/// Vista cannot find one.
+static ANY_BASIC_LAND: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Land),
+    ObjectPredicateDef::Supertype(CardSupertype::Basic),
+]);
+
 pub(in crate::card::sets) static PRISMATIC_VISTA: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("e37da81e-be12-45a2-9128-376f1ad7b3e8"),
     "Prismatic Vista",
-    crate::card::CardArt::new("e37da81e-be12-45a2-9128-376f1ad7b3e8", "Sam Burley"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("e37da81e-be12-45a2-9128-376f1ad7b3e8", "Sam Burley"),
+    CardSet::ModernHorizons1,
+    // A fetchland for every basic at once, which costs it the fetchland's
+    // other half: nothing it finds is a dual, so it fixes colour without
+    // paying anybody's land types.
+    CardRules::new_land(&[]).with_ability(abilities::fetch_land_ability(
+        "{T}, Pay 1 life, Sacrifice this land: Search your library for a basic land card, put it \
+         onto the battlefield, then shuffle.",
+        ANY_BASIC_LAND,
+    )),
 );
 
 // MH1 247 — Sunbaked Canyon

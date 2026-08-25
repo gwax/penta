@@ -22,28 +22,9 @@ use crate::card::{
 use crate::{TargetIndex, TurnStepDef, mana_cost};
 
 const fn fetch_land(text: &'static str, land_types: &'static [BasicLandType]) -> CardRules {
-    CardRules::new_land(&[]).with_ability(AbilityDef::activated(
+    CardRules::new_land(&[]).with_ability(abilities::fetch_land_ability(
         text,
-        &[
-            AbilityCostDef::TapSource,
-            AbilityCostDef::PayLife(1),
-            AbilityCostDef::SacrificeSource,
-        ],
-        EffectDef::SearchZone {
-            player: EffectRecipientDef::Controller,
-            source: ZoneKind::Library,
-            object: ObjectPredicateDef::HasAnyBasicLandType(land_types),
-            minimum: 0,
-            maximum: ValueDef::Constant(1),
-            reveal: false,
-            destination: ZoneKind::Battlefield,
-            placement: ZonePlacement::Top,
-            shuffle: true,
-            enters_tapped: false,
-            attachment: None,
-            binding: None,
-            then: None,
-        },
+        ObjectPredicateDef::HasAnyBasicLandType(land_types),
     ))
 }
 

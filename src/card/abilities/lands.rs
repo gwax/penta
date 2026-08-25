@@ -21,6 +21,43 @@ pub const fn pain_land(
     ]
 }
 
+/// The one ability every fetchland prints: tap, a life, and itself, for a
+/// land out of the library. What differs between them is only which card
+/// they may find, so that is the parameter.
+///
+/// The two cycles name a pair of basic land types, which a nonbasic dual
+/// answers as well; Prismatic Vista names a basic land card, which one does
+/// not. Both are ordinary object predicates, so neither needs its own
+/// clause.
+#[must_use]
+pub const fn fetch_land_ability(text: &'static str, object: ObjectPredicateDef) -> AbilityDef {
+    AbilityDef::activated(
+        text,
+        &FETCH_LAND_COST,
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object,
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: false,
+            destination: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+            attachment: None,
+            binding: None,
+            then: None,
+        },
+    )
+}
+
+static FETCH_LAND_COST: [AbilityCostDef; 3] = [
+    AbilityCostDef::TapSource,
+    AbilityCostDef::PayLife(1),
+    AbilityCostDef::SacrificeSource,
+];
+
 /// The two abilities shared by the horizon-land cycle: two colours for a
 /// life apiece, and, once the game has gone long enough that the land is
 /// dead weight, a way to cash itself in for a card. What it never does is

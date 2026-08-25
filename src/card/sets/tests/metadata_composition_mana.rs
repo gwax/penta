@@ -315,6 +315,9 @@ fn every_builtin_land_without_mana_is_named_explicitly() {
             "Scalding Tarn",
             "Verdant Catacombs",
             "Evolving Wilds",
+            // The same clause as the two cycles above, over every basic at
+            // once rather than a pair of land types.
+            "Prismatic Vista",
             // The same fetch, with the tapped land untapping again once you
             // are no longer the one behind on lands.
             "Fabled Passage",
