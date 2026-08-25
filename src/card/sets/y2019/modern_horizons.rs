@@ -1041,13 +1041,19 @@ pub(in crate::card::sets) static SUNBAKED_CANYON: CardRecord = CardRecord::new_w
 );
 
 // MH1 249 — Waterlogged Grove
-// Audit: metadata-only — Card rules have not been implemented.
+static WATERLOGGED_GROVE_COLORS: [ManaColor; 2] = [ManaColor::Green, ManaColor::Blue];
+
+static WATERLOGGED_GROVE_ABILITIES: [AbilityDef; 2] = abilities::horizon_land(
+    "{T}, Pay 1 life: Add {G} or {U}.",
+    &WATERLOGGED_GROVE_COLORS,
+);
+
 pub(in crate::card::sets) static WATERLOGGED_GROVE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("0ab6bfbd-d2e1-4c4c-9f91-6f69c5b8e3bb"),
     "Waterlogged Grove",
     crate::card::CardArt::new("0ab6bfbd-d2e1-4c4c-9f91-6f69c5b8e3bb", "John Avon"),
     crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_land(&[]).with_abilities(&WATERLOGGED_GROVE_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
