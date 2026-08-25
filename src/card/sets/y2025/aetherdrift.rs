@@ -215,13 +215,40 @@ pub(in crate::card::sets) static RIVERPYRE_VERGE: CardRecord = CardRecord::new(
 );
 
 // DFT 264 — Sunbillow Verge
-// Audit: metadata-only — Card rules have not been implemented.
+/// The verge condition in this cycle's Boros colours. Either type answers
+/// it, so a Plateau is both halves at once.
+static A_MOUNTAIN_OR_A_PLAINS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain, BasicLandType::Plains]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static SUNBILLOW_HAS_ITS_LAND: TriggerConditionDef = TriggerConditionDef::ObjectCount {
+    query: A_MOUNTAIN_OR_A_PLAINS_YOU_CONTROL,
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 1,
+};
+
 pub(in crate::card::sets) static SUNBILLOW_VERGE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("94ed132f-b818-4dbf-9b4a-e5acb067e0a4"),
     "Sunbillow Verge",
-    crate::card::CardArt::new("94ed132f-b818-4dbf-9b4a-e5acb067e0a4", "Pete Venters"),
-    crate::card::CardSet::Aetherdrift,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("94ed132f-b818-4dbf-9b4a-e5acb067e0a4", "Pete Venters"),
+    CardSet::Aetherdrift,
+    // Untapped and free either way: the white is unconditional, and the red
+    // is what the rest of the mana base is for.
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {W}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::White)),
+        ),
+        AbilityDef::activated_mana_if(
+            "{T}: Add {R}. Activate only if you control a Mountain or a Plains.",
+            &[AbilityCostDef::TapSource],
+            &SUNBILLOW_HAS_ITS_LAND,
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red)),
+        ),
+    ]),
 );
 
 // DFT 268 — Wastewood Verge

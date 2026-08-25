@@ -245,3 +245,31 @@ fn a_swamp_switches_the_bleachbone_verge_on_too() {
     expected.sort_unstable();
     assert_eq!(offered, expected);
 }
+
+/// Sunbillow Verge is the Boros member: white unconditionally, red once a
+/// Mountain or a Plains is out.
+#[test]
+fn the_sunbillow_verge_offers_its_own_two_colours() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let verge = game
+        .put_onto_battlefield(PlayerId::One, cards::SUNBILLOW_VERGE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(offered_colors(&game, verge), vec![ManaColor::White]);
+
+    // An Island is neither of its types.
+    game.put_onto_battlefield(PlayerId::One, cards::ISLAND)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(offered_colors(&game, verge), vec![ManaColor::White]);
+
+    game.put_onto_battlefield(PlayerId::One, cards::MOUNTAIN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let mut offered = offered_colors(&game, verge);
+    offered.sort_unstable();
+    let mut expected = vec![ManaColor::White, ManaColor::Red];
+    expected.sort_unstable();
+    assert_eq!(offered, expected, "a Mountain switches the red half on");
+}
