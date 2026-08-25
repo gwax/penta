@@ -249,6 +249,7 @@ pub(in crate::card::sets) static PARALLAX_WAVE: CardRecord = CardRecord::new_wit
             )],
             EffectDef::ExileLinkedToSource {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+face_down: false,
 then: None,
 },
         ),

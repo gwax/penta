@@ -320,6 +320,7 @@ impl HandcraftedPolicy {
             EffectDef::ExileLinkedToSource {
                 object: EffectRecipientDef::Source,
                 then,
+                ..
             } => then.is_none_or(|then| matches!(*then, EffectDef::InstallTrigger(_))),
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,

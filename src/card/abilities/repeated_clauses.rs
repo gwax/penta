@@ -54,6 +54,7 @@ static INSTALL_RETURN_EXILE_AT_NEXT_END_STEP_UNDER_YOUR_CONTROL: EffectDef =
 pub const fn exile_until_next_end_step(object: EffectRecipientDef) -> EffectDef {
     EffectDef::ExileLinkedToSource {
         object,
+        face_down: false,
         then: Some(&INSTALL_RETURN_EXILE_AT_NEXT_END_STEP),
     }
 }
@@ -66,6 +67,7 @@ pub const fn exile_until_next_end_step_under_your_control(
 ) -> EffectDef {
     EffectDef::ExileLinkedToSource {
         object,
+        face_down: false,
         then: Some(&INSTALL_RETURN_EXILE_AT_NEXT_END_STEP_UNDER_YOUR_CONTROL),
     }
 }
@@ -87,6 +89,7 @@ static RETURN_LINKED_EXILES_TRANSFORMED: EffectDef = EffectDef::ReturnLinkedExil
 pub const fn exile_and_return_transformed(object: EffectRecipientDef) -> EffectDef {
     EffectDef::ExileLinkedToSource {
         object,
+        face_down: false,
         then: Some(&RETURN_LINKED_EXILES_TRANSFORMED),
     }
 }

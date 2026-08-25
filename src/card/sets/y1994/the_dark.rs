@@ -2631,6 +2631,7 @@ pub(in crate::card::sets) static SAFE_HAVEN: CardRecord = CardRecord::new_with_l
             )],
             EffectDef::ExileLinkedToSource {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+face_down: false,
 then: None,
 },
         ),

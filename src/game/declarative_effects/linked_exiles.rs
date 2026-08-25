@@ -10,6 +10,19 @@ use crate::card::{EffectDef, EffectRecipientDef};
 use crate::game::GameObjectId;
 
 impl Game {
+    /// Turns a linked exile face down. That is a fact about the exile rather
+    /// than about who may play the card: what it buys the owner is a look at
+    /// their own pile, and everybody else a count of it.
+    fn hide_linked_exile(&mut self, exiled: GameObjectId, face_down: bool) {
+        if !face_down {
+            return;
+        }
+        if let Some((_, instance)) = self.card_in_nonbattlefield_zone(exiled) {
+            let owner = instance.owner;
+            self.permit_look_while_exiled(exiled, owner);
+        }
+    }
+
     pub(super) fn resolve_linked_exile_effect(
         &mut self,
         scoped: ScopedEffect,
@@ -19,11 +32,13 @@ impl Game {
         match scoped.effect {
             EffectDef::ExileLinkedToSource {
                 object: recipient,
+                face_down,
                 then,
             } => {
                 let source = object.source.unwrap_or(object.id);
                 for exiled in self.exile_effect_objects(recipient, object, context, scoped) {
                     self.linked_exiles.push((source, exiled));
+                    self.hide_linked_exile(exiled, face_down);
                 }
                 if let Some(then) = then {
                     self.resolve_effect_def(scoped.with_effect(*then), object, context.clone());

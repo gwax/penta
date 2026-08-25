@@ -113,6 +113,7 @@ pub(in crate::card::sets) static ANGEL_OF_SERENITY: CardRecord = CardRecord::new
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::ExileLinkedToSource {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+face_down: false,
 then: None,
 },
             }),
@@ -3600,6 +3601,7 @@ pub(in crate::card::sets) static DETENTION_SPHERE: CardRecord = CardRecord::new_
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::ExileLinkedToSource {
                 object: EffectRecipientDef::ObjectsSharingNameWithTarget(TargetIndex::PRIMARY),
+face_down: false,
 then: None,
 },
             }),

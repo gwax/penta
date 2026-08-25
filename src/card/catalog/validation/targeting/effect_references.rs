@@ -196,7 +196,7 @@ fn validate_effect_references(
                 None => Ok(()),
             }
         }
-        EffectDef::ExileLinkedToSource { object, then } => {
+        EffectDef::ExileLinkedToSource { object, then, .. } => {
             validate_recipient_target_references(object, target_count, scope)?;
             match then {
                 Some(then) => validate_effect_references(*then, target_count, scope),

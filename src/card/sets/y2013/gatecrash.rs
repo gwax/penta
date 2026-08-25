@@ -3929,6 +3929,7 @@ pub(in crate::card::sets) static OBZEDAT_GHOST_COUNCIL: CardRecord = CardRecord:
                 effect: &EffectDef::Sequence(&[
                 EffectDef::ExileLinkedToSource {
                     object: EffectRecipientDef::Source,
+face_down: false,
 then: None,
 },
                 // Queued before the exile takes effect would be the same:

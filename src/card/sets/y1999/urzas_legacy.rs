@@ -10,10 +10,11 @@ use crate::card::{
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryChoiceDestinationDef,
     BattlefieldEntryScalarChoiceDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef,
     ChooseDef, ColorChoiceOperationDef, CostModificationDef, DiscardSelectionDef, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectSetDef, PlayerRefDef, PlayerRelation, ReplacementChoiceDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, ReplacementChoiceDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, SpellAdditionalCostCountDef,
+    SpellAdditionalCostDef, SpendModeDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -1552,13 +1553,81 @@ pub(in crate::card::sets) static JHOIRA_S_TOOLBOX: CardRecord = CardRecord::new(
 );
 
 // ULG 129 — Memory Jar
-// Audit: metadata-only — Card rules have not been implemented.
+/// Everything in both hands, wherever it came from. The exile is linked to
+/// the Jar so the end step can name exactly these cards rather than
+/// everything that happens to be in exile by then.
+static EVERY_CARD_IN_HAND: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::Any,
+    &[ZoneKind::Hand],
+    PlayerRelation::Any,
+);
+
+/// `Discard` saturates at the recipient's hand size, so the largest amount
+/// is how "their hand" is said.
+static WHOLE_HAND: ValueDef = ValueDef::Constant(i32::MAX);
+
+static JAR_GIVES_THEM_BACK: [EffectDef; 2] = [
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::EachPlayer,
+        amount: WHOLE_HAND,
+        selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
+    },
+    EffectDef::ReturnLinkedExiles {
+        object: ObjectPredicateDef::Any,
+        counters: None,
+        arrival_effect: None,
+        zone: ZoneKind::Hand,
+        grant: None,
+        controller: None,
+        transformed: false,
+    },
+];
+
+static MEMORY_JAR_EFFECT: [EffectDef; 3] = [
+    // Face down: the point of the clause is that nobody learns what the
+    // other player put away, only how much of it there was.
+    EffectDef::ExileLinkedToSource {
+        object: EVERY_CARD_IN_HAND,
+        face_down: true,
+        then: None,
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::EachPlayer,
+        amount: ValueDef::Constant(7),
+    },
+    // The discard comes first and the return second, which is what makes
+    // the seven new cards a loan rather than a hand: whatever is left of
+    // them at the end step is thrown away.
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+        "At the beginning of the next end step, each player discards their hand and returns to \
+         their hand each card they exiled this way.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::Any,
+        },
+        EffectDef::Sequence(&JAR_GIVES_THEM_BACK),
+    ))),
+];
+
+static MEMORY_JAR_COST: [AbilityCostDef; 2] =
+    [AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource];
+
 pub(in crate::card::sets) static MEMORY_JAR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a15d33d6-7213-4482-a1be-ac0a73644af6"),
     "Memory Jar",
-    crate::card::CardArt::new("a15d33d6-7213-4482-a1be-ac0a73644af6", "Donato Giancola"),
-    crate::card::CardSet::UrzasLegacy,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("a15d33d6-7213-4482-a1be-ac0a73644af6", "Donato Giancola"),
+    CardSet::UrzasLegacy,
+    // Seven cards for everyone, and everyone gets their old hand back at the
+    // end of the turn -- which is a windfall only for the player who built a
+    // deck that can spend seven cards in one turn.
+    CardRules::new_artifact(mana_cost!("{5}")).with_ability(AbilityDef::activated(
+        "{T}, Sacrifice this artifact: Each player exiles all cards from their hand face down \
+         and draws seven cards. At the beginning of the next end step, each player discards \
+         their hand and returns to their hand each card they exiled this way.",
+        &MEMORY_JAR_COST,
+        EffectDef::Sequence(&MEMORY_JAR_EFFECT),
+    )),
 );
 
 // ULG 130 — Quicksilver Amulet (reprint)

@@ -18,6 +18,7 @@ use crate::mana_cost;
 /// is the graveyard object rather than the one that was in hand.
 static EXILE_THE_DISCARDED_CARD: EffectDef = EffectDef::ExileLinkedToSource {
     object: EffectRecipientDef::TriggeringObject,
+    face_down: false,
     then: None,
 };
 

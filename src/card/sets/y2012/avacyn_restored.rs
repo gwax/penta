@@ -25,6 +25,7 @@ use crate::{TargetIndex, mana_cost};
 static BLINK_UNDER_YOUR_CONTROL: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        face_down: false,
         then: None,
     },
     EffectDef::ReturnLinkedExiles {
@@ -737,6 +738,7 @@ pub(in crate::card::sets) static RESTORATION_ANGEL: CardRecord = CardRecord::new
                 effect: &EffectDef::Sequence(&[
                     EffectDef::ExileLinkedToSource {
                         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+face_down: false,
 then: None,
 },
                     EffectDef::ReturnLinkedExiles {

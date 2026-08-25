@@ -146,6 +146,7 @@ mod tests {
         let EffectDef::ExileLinkedToSource {
             object,
             then: Some(return_trigger),
+            ..
         } = blink
         else {
             panic!("the blink helper should own the complete exile-and-return clause")
@@ -181,6 +182,7 @@ mod tests {
         let EffectDef::ExileLinkedToSource {
             object: EffectRecipientDef::Source,
             then: Some(return_trigger),
+            ..
         } = controlled
         else {
             panic!("Venser's blink helper should use the same complete abstraction")
@@ -202,6 +204,7 @@ mod tests {
         let EffectDef::ExileLinkedToSource {
             object: EffectRecipientDef::Source,
             then: Some(return_effect),
+            ..
         } = transformed
         else {
             panic!("the transform helper should be a linked exile with a continuation")

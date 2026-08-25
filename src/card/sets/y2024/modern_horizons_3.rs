@@ -216,6 +216,7 @@ static ANOTHER_NONLAND_PERMANENT: [AbilityTargetDef; 1] = [AbilityTargetDef::up_
 static PHELIA_EXILE: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        face_down: false,
         then: None,
     },
     EffectDef::InstallTrigger(InstalledTriggerDef::once(&PHELIA_END_STEP)),
@@ -275,6 +276,7 @@ static PRISON_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
 static PRISON_ENTERS: [EffectDef; 3] = [
     EffectDef::ExileLinkedToSource {
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        face_down: false,
         then: None,
     },
     EffectDef::InstallTrigger(InstalledTriggerDef::once(&PRISON_RETURNS_IT)),
@@ -472,6 +474,7 @@ static EMPEROR_OF_BONES_ABILITIES: [AbilityDef; 3] = [
         &EMPEROR_TARGET,
         EffectDef::ExileLinkedToSource {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            face_down: false,
             then: None,
         },
     ),
@@ -1640,6 +1643,7 @@ static ANOTHER_CAT_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
 static AJANI_TURNS_OVER: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
         object: EffectRecipientDef::Source,
+        face_down: false,
         then: None,
     },
     EffectDef::ReturnLinkedExiles {
@@ -1971,6 +1975,7 @@ pub(in crate::card::sets) static NADU_WINGED_WISDOM: CardRecord = CardRecord::ne
 static TAMIYO_TURNS_OVER: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
         object: EffectRecipientDef::Source,
+        face_down: false,
         then: None,
     },
     EffectDef::ReturnLinkedExiles {
@@ -2165,6 +2170,7 @@ static SORIN_HAS_FED: TriggerConditionDef =
 static SORIN_TURNS_OVER: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
         object: EffectRecipientDef::Source,
+        face_down: false,
         then: None,
     },
     EffectDef::ReturnLinkedExiles {

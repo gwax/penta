@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A linked exile can be face down.** Exiling with a link back to the source
+  always showed the cards to the table, which is wrong for the clause that
+  wants both hands put away without either player learning what the other
+  hid. The link now carries whether the pile lies face down, and a face-down
+  card is a count to everyone but its owner -- the same shape foretell
+  already used.
+
 - **A permission that marks what it allowed.** "Once during each of your
   turns, you may play a land from your graveyard ... if you do, it gains ..."
   needed two things the graveyard permissions did not have. A land played out

@@ -358,6 +358,10 @@ pub enum EffectDef {
     /// the new exiled object rather than the one that left its prior zone.
     ExileLinkedToSource {
         object: EffectRecipientDef,
+        /// Whether the cards lie face down there. Everyone can count a
+        /// face-down exile; only its owner knows what is in it, which is
+        /// what keeps Memory Jar from showing both hands to the table.
+        face_down: bool,
         then: Option<&'static EffectDef>,
     },
     /// Exiles, and leaves the card's own owner able to play it from there

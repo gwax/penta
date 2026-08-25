@@ -323,7 +323,7 @@ fn validate_effect_target_shapes(
                 None => Ok(()),
             }
         }
-        EffectDef::ExileLinkedToSource { object, then } => {
+        EffectDef::ExileLinkedToSource { object, then, .. } => {
             validate_recipient_shape(object, targets, RecipientExpectation::Object)?;
             match then {
                 Some(then) => {
