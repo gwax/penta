@@ -3,9 +3,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
-    EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef,
-    PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef, ValueDef, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef, CardArt,
+    CardRules, CardSet, CardType, DiscardSelectionDef, EffectDef, EffectRecipientDef,
+    InstalledTriggerDef, ManaColor, ObjectPredicateDef, PlayerRefDef, PlayerRelation,
+    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -55,13 +56,52 @@ pub(in crate::card::sets) static FORTH_EORLINGAS: CardRecord = CardRecord::new(
 );
 
 // LTC 159 — Relic of Sauron
-// Audit: metadata-only — Card rules have not been implemented.
+/// "In any combination", which is what separates it from a rock that makes
+/// two of one colour: one activation can pay two different pips.
+static GRIXIS: [ManaColor; 3] = [ManaColor::Blue, ManaColor::Black, ManaColor::Red];
+
+static RELIC_LOOT_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{3}")),
+    AbilityCostDef::TapSource,
+];
+
+/// Two cards for one, which is the half the deck is really paying four mana
+/// for -- and the tap is shared, so a Relic that made mana this turn cannot
+/// also draw.
+static RELIC_LOOTS: [EffectDef; 2] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+        selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
+    },
+];
+
+static RELIC_OF_SAURON_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::activated_mana(
+        "{T}: Add two mana in any combination of {U}, {B}, and/or {R}.",
+        &[AbilityCostDef::TapSource],
+        EffectDef::AddMana(AddManaEffectDef::combination(&GRIXIS, 2)),
+    ),
+    AbilityDef::activated(
+        "{3}, {T}: Draw two cards, then discard a card.",
+        &RELIC_LOOT_COST,
+        EffectDef::Sequence(&RELIC_LOOTS),
+    ),
+];
+
 pub(in crate::card::sets) static RELIC_OF_SAURON: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("15c5d6cd-8af6-4852-8043-e6b1ef771ce6"),
     "Relic of Sauron",
-    crate::card::CardArt::new("15c5d6cd-8af6-4852-8043-e6b1ef771ce6", "Anton Solovianchyk"),
-    crate::card::CardSet::LordOfTheRingsCommander,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("15c5d6cd-8af6-4852-8043-e6b1ef771ce6", "Anton Solovianchyk"),
+    CardSet::LordOfTheRingsCommander,
+    // Four mana for a rock that ramps into three colours and turns into a
+    // card advantage engine once the mana is no longer the problem.
+    CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&RELIC_OF_SAURON_ABILITIES),
 );
 
 // LTC 493 — Legolas's Quick Reflexes
