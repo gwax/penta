@@ -478,6 +478,7 @@ mod vintage_cube_otawara;
 mod vintage_cube_otharri;
 mod vintage_cube_ouroboroid;
 mod vintage_cube_overlord;
+mod vintage_cube_overlord_of_the_mistmoors;
 mod vintage_cube_paradoxical_outcome;
 mod vintage_cube_path;
 mod vintage_cube_phantasmal_image;

@@ -878,13 +878,75 @@ pub(in crate::card::sets) static SCREAMING_NEMESIS: CardRecord = CardRecord::new
 );
 
 // DSK 387 — Overlord of the Mistmoors
-// Audit: metadata-only — Card rules have not been implemented.
+static MISTMOORS_INSECT_FLYING: [AbilityDef; 1] = [abilities::flying()];
+
+/// Two at a time, which is one instruction rather than two: what watches
+/// for tokens being created sees one batch of two.
+static MISTMOORS_MAKES_INSECTS: EffectDef =
+    EffectDef::create_creature_token(&["Insect"], &[ManaColor::White], 2, 1)
+        .with_abilities(&MISTMOORS_INSECT_FLYING)
+        .with_amount(2);
+
+static MISTMOORS_EVENTS: [TriggerEventDef; 2] = [
+    TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Source,
+        None,
+        Some(ZoneKind::Battlefield),
+    ),
+    TriggerEventDef::attacks(ObjectPredicateDef::Source),
+];
+
+static MISTMOORS_ABILITIES: [AbilityDef; 4] = [
+    AbilityDef::alternative_cast(
+        mana_cost!("{2}{W}{W}"),
+        AlternativeCastKindDef::Impending,
+        Some(
+            "Impending 4—{2}{W}{W} (If you cast this spell for its impending cost, it enters \
+             with four time counters and isn't a creature until the last is removed. At the \
+             beginning of your end step, remove a time counter from it.)",
+        ),
+        EffectDef::None,
+    ),
+    AbilityDef::as_enters_if(
+        "If you cast this spell for its impending cost, it enters with four time counters.",
+        ReplacementConditionDef::SourceCastWith(AlternativeCastKindDef::Impending),
+        ReplacementEffectDef::ModifyBattlefieldEntry(
+            BattlefieldEntryModificationDef::AddCounters {
+                kind: CounterKind::named("time"),
+                amount: 4,
+            },
+        ),
+    ),
+    AbilityDef::triggered(
+        "At the beginning of your end step, remove a time counter from this permanent.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::You,
+        },
+        EffectDef::RemoveCounters {
+            object: EffectRecipientDef::Source,
+            kind: CounterKind::named("time"),
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    AbilityDef::triggered(
+        "Whenever this permanent enters or attacks, create two 2/1 white Insect creature tokens \
+         with flying.",
+        TriggerEventDef::AnyOf(&MISTMOORS_EVENTS),
+        MISTMOORS_MAKES_INSECTS,
+    ),
+];
+
 pub(in crate::card::sets) static OVERLORD_OF_THE_MISTMOORS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1951ed76-16a1-4639-b824-08dfc3d6d098"),
     "Overlord of the Mistmoors",
-    crate::card::CardArt::new("1951ed76-16a1-4639-b824-08dfc3d6d098", "Takeuchi Moto"),
-    crate::card::CardSet::DuskmournHouseOfHorror,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("1951ed76-16a1-4639-b824-08dfc3d6d098", "Takeuchi Moto"),
+    CardSet::DuskmournHouseOfHorror,
+    // Four mana for four power of fliers now and a 6/6 four turns later,
+    // which is the whole appeal: the enchantment does the work while the
+    // body waits.
+    CardRules::new_enchantment_creature(mana_cost!("{5}{W}{W}"), &["Avatar", "Horror"], 6, 6)
+        .with_abilities(&MISTMOORS_ABILITIES),
 );
 
 // DSK 409 — Kaito, Bane of Nightmares (alternate printing)

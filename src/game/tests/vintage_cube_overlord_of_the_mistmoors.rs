@@ -1,0 +1,167 @@
+//! Overlord of the Mistmoors: a seven-mana 6/6 that most decks would rather
+//! cast for four and wait four turns for the body.
+
+use super::*;
+
+/// Player One holding an Overlord with enough mana for either price.
+fn staged() -> (Game, GameObjectId) {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    let overlord = game
+        .build_zone(PlayerId::One, &[cards::OVERLORD_OF_THE_MISTMOORS])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let id = overlord.id;
+    game.players[0].hand.push(overlord);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 7);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    (game, id)
+}
+
+fn settle(game: &mut Game) {
+    for _ in 0..24 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .take(decision.minimum.max(1))
+                .map(|option| option.id)
+                .collect();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the decision accepts what it offered");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            return;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            return;
+        }
+    }
+}
+
+/// Casts it, taking the cheaper price when `impending` is set.
+fn cast(game: &mut Game, overlord: GameObjectId, impending: bool) {
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == overlord && choices.costs().alternative().is_some() == impending)
+        })
+        .unwrap_or_else(|| panic!("it is castable (impending: {impending})"));
+    game.apply(PlayerId::One, action).expect("it is castable");
+    settle(game);
+}
+
+fn on_battlefield(game: &Game) -> Option<&Permanent> {
+    game.battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::OVERLORD_OF_THE_MISTMOORS)
+}
+
+fn is_a_creature(game: &Game) -> bool {
+    on_battlefield(game).is_some_and(|permanent| {
+        game.permanent_types(permanent)
+            .is_some_and(|types| types.contains(CardType::Creature))
+    })
+}
+
+fn time_counters(game: &Game) -> u16 {
+    on_battlefield(game).map_or(0, |permanent| {
+        permanent.counters(CounterKind::named("time"))
+    })
+}
+
+fn insects(game: &Game) -> Vec<&Permanent> {
+    game.battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition == ObjectKind::Token)
+        .collect()
+}
+
+/// Runs Player One's end step.
+fn end_step(game: &mut Game) {
+    game.active_player = PlayerId::One;
+    game.step = Step::PostcombatMain;
+    game.advance_step();
+    settle(game);
+}
+
+/// Either price makes the Insects: the trigger watches the permanent, not
+/// the creature.
+#[test]
+fn it_makes_two_fliers_as_it_enters() {
+    let (mut game, overlord) = staged();
+
+    cast(&mut game, overlord, true);
+
+    let made = insects(&game);
+    assert_eq!(made.len(), 2, "two Insects");
+    assert_eq!(game.power(made[0]), Some(2));
+    assert_eq!(game.toughness(made[0]), Some(1));
+    assert!(game.has_flying(made[0]), "with flying");
+}
+
+/// The impending price gets four counters and no body.
+#[test]
+fn impending_enters_with_counters_and_no_body() {
+    let (mut game, overlord) = staged();
+
+    cast(&mut game, overlord, true);
+
+    assert_eq!(time_counters(&game), 4);
+    assert!(
+        !is_a_creature(&game),
+        "the enchantment is here; the creature is not",
+    );
+}
+
+/// The printed price gets the 6/6 at once.
+#[test]
+fn hard_cast_it_is_a_creature_at_once() {
+    let (mut game, overlord) = staged();
+
+    cast(&mut game, overlord, false);
+
+    assert!(is_a_creature(&game), "seven mana buys the body");
+    assert_eq!(time_counters(&game), 0);
+    let body = on_battlefield(&game).expect("it is here");
+    assert_eq!(game.power(body), Some(6));
+}
+
+/// A counter comes off at each of your end steps, and the body arrives when
+/// the last one goes.
+#[test]
+fn the_counters_come_off_one_end_step_at_a_time() {
+    let (mut game, overlord) = staged();
+    cast(&mut game, overlord, true);
+
+    for remaining in [3, 2, 1] {
+        end_step(&mut game);
+        assert_eq!(time_counters(&game), remaining);
+        assert!(!is_a_creature(&game), "still no body at {remaining}");
+    }
+
+    end_step(&mut game);
+
+    assert_eq!(time_counters(&game), 0);
+    assert!(is_a_creature(&game), "the last counter buys the body");
+}
