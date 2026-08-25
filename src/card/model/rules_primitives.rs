@@ -204,6 +204,9 @@ impl CounterKind {
     pub const Ice: Self = Self::named("ice");
     /// What Staff of the Storyteller counts its draws with.
     pub const Story: Self = Self::named("story");
+    /// What a leveler counts its level with (CR 711.2b): the count is the
+    /// permanent's level, and the bands printed on it are read off that.
+    pub const Level: Self = Self::named("level");
     /// A counter a player keeps rather than a permanent, like poison and
     /// energy: "you get an experience counter" adds to the player's own
     /// pile, and nothing takes them away again.
@@ -248,7 +251,7 @@ impl CounterKind {
         Self::named("fade"),
         Self::named("depletion"),
         Self::named("wish"),
-        Self::named("level"),
+        Self::Level,
         Self::Finality,
         Self::Deathtouch,
         Self::DoubleStrike,
@@ -426,39 +429,7 @@ impl CounterKind {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum CardSupertype {
-    Basic,
-    Legendary,
-    Snow,
-    World,
-}
-
-impl CardSupertype {
-    pub const COUNT: usize = 4;
-
-    pub const ALL: [Self; Self::COUNT] = [Self::Basic, Self::Legendary, Self::Snow, Self::World];
-
-    #[must_use]
-    pub const fn index(self) -> usize {
-        match self {
-            Self::Basic => 0,
-            Self::Legendary => 1,
-            Self::Snow => 2,
-            Self::World => 3,
-        }
-    }
-
-    #[must_use]
-    pub const fn name(self) -> &'static str {
-        match self {
-            Self::Basic => "Basic",
-            Self::Legendary => "Legendary",
-            Self::Snow => "Snow",
-            Self::World => "World",
-        }
-    }
-}
+include!("rules_primitives/supertypes.rs");
 
 /// How completely the engine implements a card or independently modeled part.
 ///

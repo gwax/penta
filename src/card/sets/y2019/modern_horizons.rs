@@ -4,8 +4,8 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, ColorChoiceOperationDef, CounterKind, DiscardFollowUpDef,
-    DiscardSelectionDef, EffectDef, EffectRecipientDef, EmblemCharacteristics,
+    CardSet, CardSupertype, CardType, ColorChoiceOperationDef, ComparisonDef, CounterKind,
+    DiscardFollowUpDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, EmblemCharacteristics,
     ExilePlayDurationDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
     ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
     SpellAdditionalCostDef, SpellResolutionDestinationDef, SpendModeDef, TokenCharacteristics,
@@ -618,13 +618,100 @@ pub(in crate::card::sets) static FORCE_OF_VIGOR: CardRecord = CardRecord::new_wi
 );
 
 // MH1 168 — Hexdrinker
-// Audit: metadata-only — Card rules have not been implemented.
+/// A level band is a continuous effect that applies while the permanent's
+/// level is inside it (CR 711.4a), so each band is a static ability whose
+/// subject is its own source and whose condition is the count of level
+/// counters on it. The bands do not overlap: the first ends where the second
+/// begins, which is why the lower one names a top as well as a bottom.
+static HEXDRINKER_AT_LEAST_THREE: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Source,
+    ObjectPredicateDef::CounterCount {
+        kind: CounterKind::Level,
+        comparison: ComparisonDef::GreaterOrEqual,
+        amount: 3,
+    },
+    ObjectPredicateDef::CounterCount {
+        kind: CounterKind::Level,
+        comparison: ComparisonDef::Less,
+        amount: 8,
+    },
+]);
+
+static HEXDRINKER_AT_LEAST_EIGHT: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Source,
+    ObjectPredicateDef::CounterCount {
+        kind: CounterKind::Level,
+        comparison: ComparisonDef::GreaterOrEqual,
+        amount: 8,
+    },
+]);
+
+static PROTECTION_FROM_INSTANTS: AbilityDef = AbilityDef::keyword(
+    "Protection from instants",
+    crate::card::KeywordAbility::ProtectionFrom(&ObjectPredicateDef::HasType(CardType::Instant)),
+);
+
+/// The reward for eight activations: nothing may block it, target it, damage
+/// it, or enchant it.
+static PROTECTION_FROM_EVERYTHING: AbilityDef = AbilityDef::keyword(
+    "Protection from everything",
+    crate::card::KeywordAbility::ProtectionFrom(&ObjectPredicateDef::Any),
+);
+
+static HEXDRINKER_LEVEL_THREE: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(4), ValueDef::Constant(4)),
+    AppliedEffectDef::add_ability(&PROTECTION_FROM_INSTANTS),
+];
+
+static HEXDRINKER_LEVEL_EIGHT: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(6), ValueDef::Constant(6)),
+    AppliedEffectDef::add_ability(&PROTECTION_FROM_EVERYTHING),
+];
+
+static HEXDRINKER_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::activated(
+        "Level up {1} ({1}: Put a level counter on this. Level up only as a sorcery.)",
+        &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::Source,
+            kind: CounterKind::Level,
+            amount: ValueDef::Constant(1),
+        },
+    )
+    .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+    AbilityDef::static_ability(
+        "LEVEL 3-7: 4/4, protection from instants",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                HEXDRINKER_AT_LEAST_THREE,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::Composite(&HEXDRINKER_LEVEL_THREE),
+        },
+    ),
+    AbilityDef::static_ability(
+        "LEVEL 8+: 6/6, protection from everything",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                HEXDRINKER_AT_LEAST_EIGHT,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::Composite(&HEXDRINKER_LEVEL_EIGHT),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static HEXDRINKER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("89f5cc05-5d9d-4709-b3c5-a6249c294acc"),
     "Hexdrinker",
     crate::card::CardArt::new("89f5cc05-5d9d-4709-b3c5-a6249c294acc", "Forrest Imel"),
     crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    // One mana for a 2/1, and every spare mana afterwards buys a step toward
+    // a creature nothing in the deck can answer.
+    CardRules::new_creature(mana_cost!("{G}"), &["Snake"], 2, 1)
+        .with_abilities(&HEXDRINKER_ABILITIES),
 );
 
 // MH1 169 — Krosan Tusker

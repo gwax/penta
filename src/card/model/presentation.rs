@@ -124,6 +124,7 @@ fn predicate_negates(predicate: ObjectPredicateDef, expected: ObjectPredicateDef
         | ObjectPredicateDef::HasKeyword(_)
         | ObjectPredicateDef::HasAbility(_)
         | ObjectPredicateDef::HasCounter(_)
+        | ObjectPredicateDef::CounterCount { .. }
         | ObjectPredicateDef::HasNonManaActivatedAbility
         | ObjectPredicateDef::AnyOf(_)
         | ObjectPredicateDef::Special(_) => false,

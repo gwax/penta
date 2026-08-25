@@ -2,8 +2,8 @@ use crate::ids::TargetIndex;
 
 use super::{
     AbilityPredicateDef, BasicLandType, BattlefieldEntryChoiceDestinationDef, CardSet,
-    CardSupertype, CardType, CounterKind, KeywordAbility, ManaColor, PlayerRelation, ValueDef,
-    ZoneKind,
+    CardSupertype, CardType, ComparisonDef, CounterKind, KeywordAbility, ManaColor, PlayerRelation,
+    ValueDef, ZoneKind,
 };
 
 /// A composable predicate over a card or game object.
@@ -84,6 +84,15 @@ pub enum ObjectPredicateDef {
     /// control with a +1/+1 counter on it". Read live, so a creature that
     /// loses its last counter stops matching.
     HasCounter(CounterKind),
+    /// How many counters of one kind it carries, against a printed number.
+    /// The counting form of [`Self::HasCounter`], for the clauses that name
+    /// a bound rather than asking whether there is one at all -- a level
+    /// band is two of them, an open bottom and an open top.
+    CounterCount {
+        kind: CounterKind,
+        comparison: ComparisonDef,
+        amount: u8,
+    },
     /// Controlled by a player in this relation to the ability's controller,
     /// for "a creature you control" and "whenever you cast".
     ControlledBy(PlayerRelation),

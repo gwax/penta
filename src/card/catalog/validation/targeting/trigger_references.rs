@@ -91,6 +91,7 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::ToughnessExactly(_)
         | ObjectPredicateDef::TotalPowerAndToughnessAtMost(_)
         | ObjectPredicateDef::HasCounter(_)
+            | ObjectPredicateDef::CounterCount { .. }
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::OwnedBy(_)
         | ObjectPredicateDef::Supertype(_)
@@ -157,6 +158,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::PowerLessThan(_)
         | ObjectPredicateDef::ToughnessGreaterThanItsPower
         | ObjectPredicateDef::HasCounter(_)
+            | ObjectPredicateDef::CounterCount { .. }
         | ObjectPredicateDef::ControlledBy(_)
         | ObjectPredicateDef::OwnedBy(_)
         | ObjectPredicateDef::Supertype(_)

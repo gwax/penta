@@ -412,6 +412,7 @@ mod vintage_cube_hand_attack;
 mod vintage_cube_harvester_of_misery;
 mod vintage_cube_haywire_mite;
 mod vintage_cube_headliner_scarlett;
+mod vintage_cube_hexdrinker;
 mod vintage_cube_horizon_land;
 mod vintage_cube_infect;
 mod vintage_cube_inti;

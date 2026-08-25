@@ -517,6 +517,17 @@ impl Game {
             ObjectPredicateDef::HasCounter(kind) => {
                 self.current_or_last_known_counters(object.id, kind) > 0
             }
+            // The same reading with a bound on it, which is what a level
+            // band asks: at least this many, or fewer than that many.
+            ObjectPredicateDef::CounterCount {
+                kind,
+                comparison,
+                amount,
+            } => crate::game::effect_support::compare(
+                &self.current_or_last_known_counters(object.id, kind),
+                comparison,
+                &u16::from(amount),
+            ),
             ObjectPredicateDef::OwnedBy(relation) => {
                 self.object_owner_matches(object.id, relation, controller, source)
             }

@@ -154,6 +154,7 @@ impl Game {
             | ObjectPredicateDef::PowerLessThan(_)
             | ObjectPredicateDef::ToughnessGreaterThanItsPower
             | ObjectPredicateDef::HasCounter(_)
+            | ObjectPredicateDef::CounterCount { .. }
             | ObjectPredicateDef::ControlledBy(_)
             | ObjectPredicateDef::OwnedBy(_)
             | ObjectPredicateDef::DebutSet(_)

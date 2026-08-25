@@ -25,6 +25,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Level up, and counting counters against a bound.** A level band is a
+  continuous effect that applies while the permanent's level is inside it
+  (CR 711.4a), so what was missing was a way to say where a band starts and
+  stops: the engine could ask whether a permanent had a counter of some kind,
+  never how many. A predicate can now compare that count against a printed
+  number, which makes a band an ordinary static ability whose subject is its
+  own source. Hexdrinker prints two of them -- a 4/4 with protection from
+  instants at three counters, a 6/6 with protection from everything at eight
+  -- over a level-up ability that is an ordinary sorcery-speed activation.
+  Nothing about the checkpoint changes: level counters were already counters.
+
 - **X/X tokens, and reading one object's mana value.** A token's size was a
   printed pair of numbers, so "an X/X blue Illusion creature token, where X
   is the mana value of the exiled card" had nowhere to put the X. An authored
