@@ -286,6 +286,46 @@ pub const fn ward_life(amount: u16, text: &'static str) -> AbilityDef {
     )
 }
 
+/// The creature a backup trigger points at. Any creature, its own included:
+/// backing yourself up is a legal and sometimes correct choice, and it is
+/// the case the second half of the keyword has to ask about.
+static BACKUP_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
+/// "If that's another creature": counters put on the backer itself lend it
+/// nothing, because what would be lent is already printed on it.
+static BACKUP_TARGET_IS_ANOTHER: TriggerConditionDef = TriggerConditionDef::TargetMatches {
+    slot: TargetIndex::PRIMARY,
+    object: ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+};
+
+/// Backup N (CR 702.165). The enters trigger it abbreviates; the abilities
+/// listed after the word are printed on the creature as well, so a card with
+/// backup writes them out beside this.
+#[must_use]
+pub const fn backup(text: &'static str, steps: &'static [EffectDef]) -> AbilityDef {
+    enters_trigger_with_targets(text, &BACKUP_TARGET, EffectDef::Sequence(steps))
+}
+
+/// The two steps every backup takes: the counters, and the loan when the
+/// counters went somewhere else. What is lent belongs to the card, which is
+/// why it is passed in rather than built here.
+#[must_use]
+pub const fn backup_steps(count: i32, lends: &'static EffectDef) -> [EffectDef; 2] {
+    [
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            kind: CounterKind::PlusOnePlusOne,
+            amount: ValueDef::Constant(count),
+        },
+        EffectDef::IfCondition {
+            condition: &BACKUP_TARGET_IS_ANOTHER,
+            then: lends,
+        },
+    ]
+}
+
 /// Cascade (CR 702.85). A triggered ability that fires on the cast, like
 /// storm, and whose whole procedure is one effect: the bound it digs to is
 /// the cascading spell's own mana value, so nothing about it is written down
