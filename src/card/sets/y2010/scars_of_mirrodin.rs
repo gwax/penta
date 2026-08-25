@@ -3,13 +3,15 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    ComparisonDef, CountConditionDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
-    KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AddManaEffectDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype,
+    CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CountConditionDef,
+    DiscardSelectionDef, EffectDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
+    PlayerRelation, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
+use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
 
 /// The fastland cycle: untapped while the board is still small, an expensive
@@ -2250,13 +2252,85 @@ pub(in crate::card::sets) static MOX_OPAL: CardRecord = CardRecord::new(
 );
 
 // SOM 180 — Myr Battlesphere
-// Audit: metadata-only — Card rules have not been implemented.
+// Audit: partial — Damage from the attack trigger reaches the defending player rather than a planeswalker the Battlesphere is attacking.
+/// Untapped Myr under your control. The Battlesphere is a Myr itself, but
+/// an attacking one is tapped, so it is not among its own candidates unless
+/// something untapped it.
+static UNTAPPED_MYR_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Subtype("Myr"),
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
+    ]),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+/// What the tapping buys, in the order the card prints it: the Myr go down,
+/// the Battlesphere grows, and the damage is the same count.
+static BATTLESPHERE_PAYOFF: [EffectDef; 3] = [
+    EffectDef::Tap {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::BoundObjectCount(ObjectSetBindingIndex::PRIMARY),
+            ValueDef::Constant(0),
+        ),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    // The player an attack was declared against, which the trigger carries.
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::EventPlayer,
+        amount: ValueDef::BoundObjectCount(ObjectSetBindingIndex::PRIMARY),
+    },
+];
+
+static BATTLESPHERE_PAYOFF_SEQUENCE: EffectDef = EffectDef::Sequence(&BATTLESPHERE_PAYOFF);
+
+/// "You may tap X untapped Myr you control": X is however many the player
+/// picks, none included, so the choice is what settles the size.
+static BATTLESPHERE_TAPS_MYR: EffectDef = EffectDef::Choose(ChooseDef {
+    binding: ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::Query(UNTAPPED_MYR_YOU_CONTROL),
+    exclude: None,
+    minimum: 0,
+    maximum: usize::MAX,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &BATTLESPHERE_PAYOFF_SEQUENCE,
+});
+
+static BATTLESPHERE_ABILITIES: [AbilityDef; 2] = [
+    abilities::enters_trigger(
+        "When this creature enters, create four 1/1 colorless Myr artifact creature tokens.",
+        EffectDef::create_artifact_creature_token(&["Myr"], &[], 1, 1).with_amount(4),
+    ),
+    AbilityDef::triggered(
+        "Whenever this creature attacks, you may tap X untapped Myr you control. If you do, this \
+         creature gets +X/+0 until end of turn and deals X damage to the player or planeswalker \
+         it's attacking.",
+        TriggerEventDef::attacks(ObjectPredicateDef::Source),
+        BATTLESPHERE_TAPS_MYR,
+    )
+    .with_coverage(AbilityCoverageDef::partial(
+        "An attack trigger carries the defending player rather than the permanent the attack was \
+         declared against, so the damage reaches a planeswalker's controller instead of the \
+         planeswalker. Everything else about the clause -- how many Myr are tapped, the size it \
+         buys, and the damage that follows -- is the same either way.",
+    )),
+];
+
 pub(in crate::card::sets) static MYR_BATTLESPHERE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b0ae94ed-7314-470b-baba-f2f58bbc894a"),
     "Myr Battlesphere",
-    crate::card::CardArt::new("b0ae94ed-7314-470b-baba-f2f58bbc894a", "Franz Vohwinkel"),
-    crate::card::CardSet::ScarsOfMirrodin,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("b0ae94ed-7314-470b-baba-f2f58bbc894a", "Franz Vohwinkel"),
+    CardSet::ScarsOfMirrodin,
+    // Seven mana for eleven power across five bodies, and an attack that
+    // cashes the little ones in for damage that no blocker can stop.
+    CardRules::new_artifact_creature(mana_cost!("{7}"), &["Myr", "Construct"], 4, 7)
+        .with_abilities(&BATTLESPHERE_ABILITIES),
 );
 
 // SOM 181 — Myr Galvanizer
