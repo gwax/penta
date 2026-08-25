@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **What an exiled card may be cast for.** Exiling from the top of a library
+  until a card matches always granted the one permission Amped Raptor prints:
+  cast it by paying energy. The clause now says which permission it buys, so
+  the same dig can hand out a free cast instead -- and the permission belongs
+  to the effect's controller either way, which is what lets Etali, Primal
+  Conqueror cast what somebody else's library turned up. Its back face turns
+  combat damage into that many poison counters. Nothing about the checkpoint
+  changes.
+
 - **Discarding a hand as a cost, and a mana ability that is not for paying.**
   "Discard your hand" takes every card and asks nothing, so unlike a counted
   discard it needs no window to choose in; a player with nothing in hand pays

@@ -2,8 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, CardArt, CardRules, CardSet, CardType, CounterKind,
-    DrawEventMatcherDef, EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, ActivationTimingDef, CardArt, CardRules,
+    CardSet, CardSupertype, CardType, CounterKind, DrawEventMatcherDef, EffectDef,
+    EffectRecipientDef, ExiledCastPermissionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
     ObjectSetDef, PlayerRelation, PlayerSetDef, TokenCountersDef, TriggerEventDef, ValueDef,
     ZoneKind, ZonePlacement, abilities, tokens,
 };
@@ -151,13 +152,93 @@ pub(in crate::card::sets) static WRENN_S_RESOLVE: CardRecord = CardRecord::new(
 );
 
 // MOM 298 — Etali, Primal Conqueror // Etali, Primal Sickness
-// Audit: metadata-only — Card rules have not been implemented.
-pub(in crate::card::sets) static ETALI_PRIMAL_CONQUEROR: CardRecord = CardRecord::new(
+static A_NONLAND_CARD: ObjectPredicateDef =
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land));
+
+/// Both libraries, and the permission is always Etali's controller's: what
+/// their library turned up is yours to cast.
+///
+/// The printed clause states no duration, so what it buys is read the way
+/// the engine reads every other such permission -- the card stays castable
+/// for the turn rather than only during this resolution.
+static ETALI_TAKES_FROM_EVERYONE: EffectDef = EffectDef::ExileFromTopUntil {
+    player: EffectRecipientDef::EachPlayer,
+    object: A_NONLAND_CARD,
+    permission: ExiledCastPermissionDef::FreeThisTurn,
+};
+
+static ETALI_TRANSFORM_COST: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{9}{G/P}"))];
+
+static ETALI_FRONT_ABILITIES: [AbilityDef; 3] = [
+    abilities::trample(),
+    abilities::enters_trigger(
+        "When this creature enters, each player exiles cards from the top of their library until \
+         they exile a nonland card. You may cast any number of spells from among the nonland \
+         cards exiled this way without paying their mana costs.",
+        ETALI_TAKES_FROM_EVERYONE,
+    ),
+    AbilityDef::activated(
+        "{9}{G/P}: Transform this creature. Activate only as a sorcery.",
+        &ETALI_TRANSFORM_COST,
+        EffectDef::Transform {
+            object: EffectRecipientDef::Source,
+        },
+    )
+    .with_activation_timing(ActivationTimingDef::SorcerySpeed)
+    .with_coverage(AbilityCoverageDef::partial(
+        "A Phyrexian symbol in an activation cost is payable only with mana here; paying two \
+         life instead is offered where a spell is cast rather than where an ability is \
+         activated. Everything else about the clause -- the nine generic, the sorcery window, \
+         and the face it turns over to -- is the same either way.",
+    )),
+];
+
+/// "They get that many poison counters": the amount is the damage that was
+/// dealt rather than the creature's power, which is what makes a blocked
+/// trampler give exactly what got through.
+static ETALI_POISONS_THEM: EffectDef = EffectDef::AddPlayerCounters {
+    recipient: EffectRecipientDef::EventPlayer,
+    kind: CounterKind::Poison,
+    amount: ValueDef::TriggerEventAmount,
+};
+
+static ETALI_BACK_ABILITIES: [AbilityDef; 3] = [
+    abilities::trample(),
+    abilities::indestructible(),
+    AbilityDef::triggered(
+        "Whenever this creature deals combat damage to a player, they get that many poison \
+         counters.",
+        TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
+        ETALI_POISONS_THEM,
+    ),
+];
+
+const fn etali_front_rules() -> CardRules {
+    CardRules::new_creature(mana_cost!("{5}{R}{R}"), &["Elder", "Dinosaur"], 7, 7)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&ETALI_FRONT_ABILITIES)
+}
+
+const fn etali_back_rules() -> CardRules {
+    CardRules::new_creature_without_mana_cost(&["Phyrexian", "Elder", "Dinosaur"], 11, 11)
+        .with_supertype(CardSupertype::Legendary)
+        .printed_colors(&[ManaColor::Green])
+        .with_abilities(&ETALI_BACK_ABILITIES)
+}
+
+static ETALI_FACES: [(&str, CardRules); 2] = [
+    ("Etali, Primal Conqueror", etali_front_rules()),
+    ("Etali, Primal Sickness", etali_back_rules()),
+];
+
+pub(in crate::card::sets) static ETALI_PRIMAL_CONQUEROR: CardRecord = CardRecord::new_dfc(
     PrintingAnchor::scryfall("3e97c609-3932-4428-96d4-1c97e61f0abb"),
-    "Etali, Primal Conqueror",
-    crate::card::CardArt::new("3e97c609-3932-4428-96d4-1c97e61f0abb", "Yeong-Hao Han"),
-    crate::card::CardSet::MarchOfTheMachine,
-    crate::card::CardRules::unsupported(),
+    "Etali, Primal Conqueror // Etali, Primal Sickness",
+    CardArt::new("3e97c609-3932-4428-96d4-1c97e61f0abb", "Yeong-Hao Han"),
+    CardSet::MarchOfTheMachine,
+    // Seven mana that casts the two best cards on the table, and a back face
+    // nobody in the cube ever pays for.
+    &ETALI_FACES,
 );
 
 // MOM 328 — Zephyr Winder

@@ -8,13 +8,13 @@ use crate::card::{
     CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
     ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, DrawEventMatcherDef, EffectDef,
     EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, EmblemCharacteristics,
-    HalvedValueDef, InstalledTriggerDef, InstalledTriggerLifetimeDef, ManaColor, ManaCost,
-    ManaSpendEffectDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, RoundingDef, SimultaneousChooseDef, SpellAdditionalCostCountDef,
-    SpellAdditionalCostDef, SpendModeDef, TargetConditionDef, TokenCopyExceptionsDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, tokens,
+    ExiledCastPermissionDef, HalvedValueDef, InstalledTriggerDef, InstalledTriggerLifetimeDef,
+    ManaColor, ManaCost, ManaSpendEffectDef, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef, RoundingDef,
+    SimultaneousChooseDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef,
+    TargetConditionDef, TokenCopyExceptionsDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 use crate::{TargetIndex, mana_cost};
@@ -588,6 +588,7 @@ static A_NONLAND_CARD: ObjectPredicateDef =
 static RAPTOR_DIGS: EffectDef = EffectDef::ExileFromTopUntil {
     player: EffectRecipientDef::Controller,
     object: A_NONLAND_CARD,
+    permission: ExiledCastPermissionDef::EnergyEqualToManaValue,
 };
 
 /// "Then if you cast it from your hand" is part of the effect rather than an

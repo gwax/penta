@@ -386,3 +386,15 @@ impl TokenCopyExceptionsDef {
         }
     }
 }
+
+/// What a card exiled off the top of a library may be cast for.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ExiledCastPermissionDef {
+    /// "You may cast that card by paying an amount of {E} equal to its mana
+    /// value rather than paying its mana cost." Nothing states a duration,
+    /// so it lasts as long as the card sits in exile.
+    EnergyEqualToManaValue,
+    /// "You may cast any number of spells from among the nonland cards
+    /// exiled this way without paying their mana costs."
+    FreeThisTurn,
+}

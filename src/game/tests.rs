@@ -382,6 +382,7 @@ mod vintage_cube_endurance;
 mod vintage_cube_enduring_innocence;
 mod vintage_cube_ephemerate;
 mod vintage_cube_ertai_resurrected;
+mod vintage_cube_etali;
 mod vintage_cube_eternal_witness;
 mod vintage_cube_everflowing_chalice;
 mod vintage_cube_exhume;

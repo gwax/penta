@@ -533,6 +533,10 @@ pub enum EffectDef {
     ExileFromTopUntil {
         player: EffectRecipientDef,
         object: ObjectPredicateDef,
+        /// What the card that matched may be cast for afterwards, and by
+        /// whom: the permission always belongs to the effect's controller,
+        /// which is what lets Etali cast out of somebody else's library.
+        permission: ExiledCastPermissionDef,
     },
     /// Manifest dread (CR 701.34, 702.169). Look at the top two cards of
     /// your library, put one onto the battlefield face down as a 2/2

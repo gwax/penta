@@ -47,6 +47,7 @@ impl Game {
         predicate: ObjectPredicateDef,
         source: GameObjectId,
         caster: PlayerId,
+        permission: crate::card::ExiledCastPermissionDef,
     ) {
         let mut passed = Vec::new();
         let mut matched = None;
@@ -74,7 +75,16 @@ impl Game {
         self.players[player.index()].exile.push(card.clone());
         moved.push(card);
         self.capture_cards_exiled(&moved, ZoneKind::Library);
-        self.permit_energy_cast(exiled, caster);
+        // The permission is the effect's controller's either way, which is
+        // what lets one player cast what another player's library turned up.
+        match permission {
+            crate::card::ExiledCastPermissionDef::EnergyEqualToManaValue => {
+                self.permit_energy_cast(exiled, caster);
+            }
+            crate::card::ExiledCastPermissionDef::FreeThisTurn => {
+                self.permit_free_play_this_turn(exiled, caster);
+            }
+        }
     }
 
     /// Cascade (CR 702.85), whole. The bound is the cascading spell's own
@@ -417,11 +427,18 @@ impl Game {
             EffectDef::ExileFromTopUntil {
                 player: recipient,
                 object: predicate,
+                permission,
             } => {
                 let source = object.source.unwrap_or(object.id);
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Player(player) = target {
-                        self.exile_from_top_until(player, predicate, source, object.controller);
+                        self.exile_from_top_until(
+                            player,
+                            predicate,
+                            source,
+                            object.controller,
+                            permission,
+                        );
                     }
                 }
             }
