@@ -6,7 +6,7 @@
 use super::model::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef,
-    AppliedRuleDef, AttachmentDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef,
+    AppliedRuleDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef,
     CardChoiceSourceDef, CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef, ColorSet,
     ComparisonDef, ConditionDef, CounterKind, DamageEventMatcherDef, DamagePreventionDef,
     DamageRecipientMatcherDef, DiscardFollowUpDef, DiscardSelectionDef, EffectDef,
@@ -97,11 +97,6 @@ pub const fn dies_trigger_matching_with_targets(
         effect,
     )
 }
-
-/// The target an "Enchant land" Aura spell chooses.
-pub static ENCHANT_LAND_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
-    ObjectPredicateDef::HasType(CardType::Land),
-)];
 
 /// "Attacks each combat if able." Cards state this in their own words rather
 /// than as a printed keyword, so the text is supplied by the caller.

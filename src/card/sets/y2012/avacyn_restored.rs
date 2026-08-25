@@ -5,10 +5,10 @@ use crate::card::sets::y1993::alpha;
 use crate::card::sets::y2003::mirrodin as catalog_mrd;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, AttachmentDef, BasicLandType, CardArt,
-    CardBehavior, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef,
-    ColorChoiceOperationDef, ColorSet, ComparisonDef, ControlDurationDef, CostModificationDef,
-    CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef, DamagePreventionDef,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
+    CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ColorChoiceOperationDef,
+    ColorSet, ComparisonDef, ControlDurationDef, CostModificationDef, CounterKind,
+    CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef, DamagePreventionDef,
     DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal,
     EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef,
     ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef,
@@ -25,6 +25,7 @@ use crate::{TargetIndex, mana_cost};
 static BLINK_UNDER_YOUR_CONTROL: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        then: None,
     },
     EffectDef::ReturnLinkedExiles {
         object: ObjectPredicateDef::Any,
@@ -305,9 +306,9 @@ pub(in crate::card::sets) static COMMANDERS_AUTHORITY: CardRecord = CardRecord::
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::HasType(CardType::Creature),
                 )],
-                EffectDef::Attachment(AttachmentDef::Attach{
+                EffectDef::Attach {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                }),
+                },
             ),
             AbilityDef::static_ability(
                 "Enchanted creature has \"At the beginning of your upkeep, create a 1/1 white Human creature token.\"",
@@ -362,7 +363,7 @@ pub(in crate::card::sets) static DEFANG: CardRecord = CardRecord::new_with_legac
     CardRules::new_enchantment(mana_cost!("{1}{W}"))
         .with_subtypes(&["Aura"])
         .with_abilities(&[
-            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            abilities::enchant_creature(),
             AbilityDef::static_ability(
                 "Prevent all damage that would be dealt by enchanted creature.",
                 EffectDef::StaticApply {
@@ -736,7 +737,8 @@ pub(in crate::card::sets) static RESTORATION_ANGEL: CardRecord = CardRecord::new
                 effect: &EffectDef::Sequence(&[
                     EffectDef::ExileLinkedToSource {
                         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    },
+then: None,
+},
                     EffectDef::ReturnLinkedExiles {
                         object: ObjectPredicateDef::Any,
                         counters: None,
@@ -2819,9 +2821,9 @@ pub(in crate::card::sets) static GUISE_OF_FIRE: CardRecord = CardRecord::new_wit
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::HasType(CardType::Creature),
                 )],
-                EffectDef::Attachment(AttachmentDef::Attach {
+                EffectDef::Attach {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                }),
+                },
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +1/-1 and attacks each combat if able.",
@@ -3034,9 +3036,9 @@ pub(in crate::card::sets) static LIGHTNING_PROWESS: CardRecord = CardRecord::new
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::HasType(CardType::Creature),
                 )],
-                EffectDef::Attachment(AttachmentDef::Attach{
+                EffectDef::Attach {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                }),
+                },
             ),
             AbilityDef::static_ability(
                 "Enchanted creature has haste and \"{T}: This creature deals 1 damage to any target.\"",
@@ -3096,7 +3098,7 @@ pub(in crate::card::sets) static MALICIOUS_INTENT: CardRecord = CardRecord::new_
     CardRules::new_enchantment(mana_cost!("{1}{R}"))
         .with_subtypes(&["Aura"])
         .with_abilities(&[
-            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            abilities::enchant_creature(),
             AbilityDef::static_ability(
                 "Enchanted creature has \"{T}: Target creature can't block this turn.\"",
                 EffectDef::StaticApply {
@@ -3502,9 +3504,9 @@ pub(in crate::card::sets) static ABUNDANT_GROWTH: CardRecord = CardRecord::new_w
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::HasType(CardType::Land),
                 )],
-                EffectDef::Attachment(AttachmentDef::Attach {
+                EffectDef::Attach {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                }),
+                },
             ),
             abilities::enters_trigger(
                 "When this Aura enters, draw a card.",
@@ -3856,9 +3858,9 @@ pub(in crate::card::sets) static GROUNDED: CardRecord = CardRecord::new_with_leg
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::HasType(CardType::Creature),
                 )],
-                EffectDef::Attachment(AttachmentDef::Attach {
+                EffectDef::Attach {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                }),
+                },
             ),
             AbilityDef::static_ability(
                 "Enchanted creature loses flying.",

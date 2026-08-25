@@ -34,11 +34,25 @@ pub enum EffectDef {
         effect: AppliedEffectDef,
         duration: ResolvedEffectDurationDef,
     },
-    /// What this clause attaches, detaches, or pairs. The six spellings
-    /// live together in [`AttachmentDef`] because every consumer takes them
-    /// together: the attachment rules walk all of them, and every clause
-    /// that is not about attachment passes over the whole family.
-    Attachment(AttachmentDef),
+    /// An Aura spell attaching itself to what it enchants. The permanent the
+    /// spell becomes is what attaches, so this is only meaningful on the spell
+    /// clause of an Aura.
+    Attach { object: EffectRecipientDef },
+    /// The mirror of [`Self::Attach`]: the named permanent moves onto this
+    /// ability's own source, which is what "attach it to this creature" says.
+    AttachToSource { object: EffectRecipientDef },
+    /// Soulbond's pairing. The chosen creature and the ability's source
+    /// record each other; the pair is symmetric and survives until one of
+    /// them stops being a creature its controller controls.
+    PairWithSource { object: EffectRecipientDef },
+    /// Reconfigure's paired attach/unattach procedure. A selected creature
+    /// becomes the new host; selecting none ends this attachment incarnation.
+    Reconfigure { object: EffectRecipientDef },
+    /// Detach the named Equipment or Fortification without moving it. This is
+    /// a rules action rather than a zone change: Elbrus does it immediately
+    /// before transforming, while the host and both objects remain otherwise
+    /// unchanged.
+    Unattach { object: EffectRecipientDef },
     /// Phase the recipient out. It is treated as though it does not exist
     /// until it phases in, which happens before its controller untaps during
     /// their next untap step (CR 702.25). Phasing is not a zone change:
@@ -134,9 +148,6 @@ pub enum EffectDef {
     /// whoever is resolving, and nothing is countered -- a spell that cannot
     /// be countered goes there all the same.
     PutSpellIntoOwnersLibrary {
-        object: EffectRecipientDef,
-    },
-    ReturnSpellToHand {
         object: EffectRecipientDef,
     },
     /// Counter a spell and put its card into `zone`: a graveyard ordinarily,
@@ -248,11 +259,6 @@ pub enum EffectDef {
         /// What to do with the copy this made, for a clause naming exactly it.
         created: Option<CreatedTokensDef>,
     },
-    /// Exiles a permanent and returns it transformed under the resolving
-    /// controller, as a new object: no counters, and no history to attack on.
-    ExileAndReturnTransformed {
-        object: EffectRecipientDef,
-    },
     CreateMyriadTokens, // Exact no-op in two-player games: there is no other opponent.
     /// Endure N (CR 702.183a): put N +1/+1 counters on the object, or create
     /// an N/N white Spirit creature token. Its controller chooses, as the
@@ -347,17 +353,12 @@ pub enum EffectDef {
         player: EffectRecipientDef,
     },
     /// Exiles, remembering which object sent it there so a later clause can
-    /// bring it back. This is the Oblivion Ring shape.
+    /// bring it back. This is the Oblivion Ring shape. A continuation can
+    /// immediately consume that link for blink effects while still naming
+    /// the new exiled object rather than the one that left its prior zone.
     ExileLinkedToSource {
         object: EffectRecipientDef,
-    },
-    /// Exile the recipient, link the new card to this effect's source, and
-    /// install the one-shot delayed trigger that returns it at the next end
-    /// step. The return ability is carried inside the abstraction so callers
-    /// name only the object being blinked.
-    ExileUntilNextEndStep {
-        object: EffectRecipientDef,
-        return_ability: &'static AbilityDef,
+        then: Option<&'static EffectDef>,
     },
     /// Exiles, and leaves the card's own owner able to play it from there
     /// for as long as it stays exiled -- for a surcharge, which is what
@@ -953,17 +954,8 @@ pub enum EffectDef {
     PutOntoBattlefieldThen {
         object: EffectRecipientDef,
         binding: ObjectSetBindingIndex,
-        /// "That creature gains haste." Part of the arrival rather than an
-        /// effect applied to what arrived: the permanent is a new object,
-        /// and this is the same grant a returning permanent carries.
-        grant: Option<KeywordAbility>,
-        then: &'static EffectDef,
-    },
-    /// The same move with the riders Ajani's reanimation prints: a finality
-    /// counter and haste on what arrived, and a delayed sacrifice in `then`.
-    ReturnWithHasteAndFinality {
-        object: EffectRecipientDef,
-        binding: ObjectSetBindingIndex,
+        counters: Option<TokenCountersDef>,
+        arrival_effect: Option<&'static AppliedEffectDef>,
         then: &'static EffectDef,
     },
     /// Turns a double-faced permanent over to its other face.

@@ -3,10 +3,10 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef, AlternativeCastKindDef,
-    AttachmentDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
-    ControlDurationDef, CounterKind, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, TokenStatsDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef, ControlDurationDef,
+    CounterKind, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, TokenStatsDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex, mana_cost};
 
@@ -77,6 +77,7 @@ static SKYCLAVE_APPARITION_ABILITIES: [AbilityDef; 2] = [
         &A_CHEAP_NONLAND_NONTOKEN,
         EffectDef::ExileLinkedToSource {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            then: None,
         },
     ),
     // Leaves, not dies: the card stays in exile whatever happened to the
@@ -124,9 +125,9 @@ static THAT_ARTIFACT_IS_AN_EQUIPMENT: TriggerConditionDef = TriggerConditionDef:
     object: ObjectPredicateDef::Subtype("Equipment"),
 };
 
-static SKYDIVER_EQUIPS_ITSELF: EffectDef = EffectDef::Attachment(AttachmentDef::AttachToSource {
+static SKYDIVER_EQUIPS_ITSELF: EffectDef = EffectDef::AttachToSource {
     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-});
+};
 
 static SKYDIVER_STEALS: [EffectDef; 2] = [
     EffectDef::GainControl {

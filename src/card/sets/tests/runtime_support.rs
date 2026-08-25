@@ -13,8 +13,8 @@ pub(super) use stack_effects::shared_stack_effect;
 
 use crate::Game;
 use crate::card::{
-    ActivatedAbilityDef, AppliedRuleDef, AttachmentDef, BlockRestrictionMatchDef,
-    CostModificationDef, ReplacementConditionDef,
+    ActivatedAbilityDef, AppliedRuleDef, BlockRestrictionMatchDef, CostModificationDef,
+    ReplacementConditionDef,
 };
 
 use super::*;
@@ -645,18 +645,14 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::RemoveAllCounters { .. }
                     | EffectDef::Untap { .. }
                     | EffectDef::Saddle { .. }
-                    | EffectDef::Attachment(
-                        AttachmentDef::Attach { .. }
-                        | AttachmentDef::AttachToSource { .. }
-                        | AttachmentDef::ReturnAttached { .. }
-                        | AttachmentDef::Reconfigure { .. }
-                        | AttachmentDef::Unattach { .. }
-                        | AttachmentDef::PairWithSource { .. },
-                    )
+                    | EffectDef::Attach { .. }
+                    | EffectDef::AttachToSource { .. }
+                    | EffectDef::Reconfigure { .. }
+                    | EffectDef::Unattach { .. }
+                    | EffectDef::PairWithSource { .. }
                     | EffectDef::PhaseOut { .. }
                     | EffectDef::CreateToken { .. }
                     | EffectDef::CreateAttachedToken { .. }
-                    | EffectDef::ExileAndReturnTransformed { .. }
                     | EffectDef::CreateTokenCopyOf { .. }
                     | EffectDef::Endure { .. }
                     | EffectDef::CreateMyriadTokens
@@ -672,7 +668,6 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ExileFromTopUntil { .. }
                     | EffectDef::ManifestDread { .. }
                     | EffectDef::PutOntoBattlefieldThen { .. }
-                    | EffectDef::ReturnWithHasteAndFinality { .. }
                     | EffectDef::Cascade
                     | EffectDef::Proliferate
                     | EffectDef::Explore { .. }
@@ -687,7 +682,6 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ReplaceNextDrawThisTurn { .. }
                     | EffectDef::IfFormat { .. }
                     | EffectDef::Counter { .. }
-                    | EffectDef::ReturnSpellToHand { .. }
                     | EffectDef::PutSpellIntoOwnersLibrary { .. }
                     | EffectDef::CopyResolvingSpell { .. }
                     | EffectDef::AddCounters { .. }
@@ -710,7 +704,6 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::DamageCannotBePreventedThisTurn
                     | EffectDef::GrantFlashToNextSorcery
                     | EffectDef::ExileLinkedToSource { .. }
-                    | EffectDef::ExileUntilNextEndStep { .. }
                     | EffectDef::MayPlayWithoutPaying { .. }
                     | EffectDef::ExileGrantingOwnerPlay { .. }
                     | EffectDef::ExileGrantingControllerPlayThisTurn { .. }

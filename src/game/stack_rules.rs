@@ -1,5 +1,5 @@
 use super::{
-    AppliedEffectDef, AppliedRuleDef, AttachmentDef, CharacteristicContext, CounteredSpellZone,
+    AppliedEffectDef, AppliedRuleDef, CharacteristicContext, CounteredSpellZone,
     DeclarativeAbilityDef, EffectDef, EffectRecipientDef, Game, GameObjectId, StackObject,
     StackObjectKind, Target, ZoneKind, applicable_part_ids,
 };
@@ -116,14 +116,11 @@ impl Game {
             | EffectDef::RemoveAllCounters { .. }
             | EffectDef::Untap { .. }
             | EffectDef::Saddle { .. }
-            | EffectDef::Attachment(
-                AttachmentDef::Attach { .. }
-                | AttachmentDef::AttachToSource { .. }
-                | AttachmentDef::ReturnAttached { .. }
-                | AttachmentDef::Reconfigure { .. }
-                | AttachmentDef::Unattach { .. }
-                | AttachmentDef::PairWithSource { .. },
-            )
+            | EffectDef::Attach { .. }
+            | EffectDef::AttachToSource { .. }
+            | EffectDef::Reconfigure { .. }
+            | EffectDef::Unattach { .. }
+            | EffectDef::PairWithSource { .. }
             | EffectDef::PhaseOut { .. }
             | EffectDef::Destroy { then: None, .. }
             | EffectDef::Sacrifice { .. }
@@ -149,7 +146,6 @@ impl Game {
             | EffectDef::ChooseCards { .. }
             | EffectDef::ReplaceNextDrawThisTurn { .. }
             | EffectDef::Counter { .. }
-            | EffectDef::ReturnSpellToHand { .. }
             | EffectDef::PutSpellIntoOwnersLibrary { .. }
             | EffectDef::CopyResolvingSpell { .. }
             | EffectDef::AddCounters { .. }
@@ -165,7 +161,6 @@ impl Game {
             | EffectDef::CreateEmblem { .. }
             | EffectDef::CreateOngoingEffect(_)
             | EffectDef::PutOntoBattlefieldThen { .. }
-            | EffectDef::ReturnWithHasteAndFinality { .. }
             | EffectDef::Transform { .. }
             | EffectDef::ScheduleTurnPhases(_)
             | EffectDef::TakeExtraTurn { .. }
@@ -175,7 +170,6 @@ impl Game {
             | EffectDef::DamageCannotBePreventedThisTurn
             | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
-            | EffectDef::ExileUntilNextEndStep { .. }
             | EffectDef::MayPlayWithoutPaying { .. }
             | EffectDef::ExileGrantingOwnerPlay { .. }
             | EffectDef::ExileGrantingControllerPlayThisTurn { .. }
@@ -194,7 +188,6 @@ impl Game {
             | EffectDef::MoveToZone { .. }
             | EffectDef::CreateToken { .. }
             | EffectDef::CreateAttachedToken { .. }
-            | EffectDef::ExileAndReturnTransformed { .. }
             | EffectDef::CreateTokenCopyOf { .. }
             | EffectDef::Endure { .. }
             | EffectDef::CreateMyriadTokens

@@ -23,6 +23,21 @@ pub static ENCHANT_ENCHANTMENT_TARGET: [AbilityTargetDef; 1] =
         ObjectPredicateDef::HasType(CardType::Enchantment),
     )];
 
+/// The target an "Enchant land" Aura spell chooses.
+pub static ENCHANT_LAND_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Land),
+)];
+
+/// The target an "Enchant creature you control" Aura spell chooses.
+pub static ENCHANT_YOUR_CREATURE_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Creature),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
 /// An Aura's own spell clause: it targets what it will enchant, and attaching
 /// is what the spell does when it resolves. Every Aura prints one, so it
 /// belongs here rather than once per set module.
@@ -31,9 +46,9 @@ pub const fn aura_spell(text: &'static str, targets: &'static [AbilityTargetDef]
     AbilityDef::spell_with_targets(
         text,
         targets,
-        EffectDef::Attachment(AttachmentDef::Attach{
+        EffectDef::Attach {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-        }),
+        },
     )
 }
 
@@ -43,10 +58,43 @@ pub const fn enchant_creature() -> AbilityDef {
     aura_spell("Enchant creature", &ENCHANT_CREATURE_TARGET)
 }
 
+/// The common Aura spell clause: "Enchant artifact."
+#[must_use]
+pub const fn enchant_artifact() -> AbilityDef {
+    aura_spell("Enchant artifact", &ENCHANT_ARTIFACT_TARGET)
+}
+
+/// The common Aura spell clause: "Enchant enchantment."
+#[must_use]
+pub const fn enchant_enchantment() -> AbilityDef {
+    aura_spell("Enchant enchantment", &ENCHANT_ENCHANTMENT_TARGET)
+}
+
+/// The common Aura spell clause: "Enchant land."
+#[must_use]
+pub const fn enchant_land() -> AbilityDef {
+    aura_spell("Enchant land", &ENCHANT_LAND_TARGET)
+}
+
+/// The recurring narrower Aura spell clause: "Enchant creature you control."
+#[must_use]
+pub const fn enchant_creature_you_control() -> AbilityDef {
+    aura_spell(
+        "Enchant creature you control",
+        &ENCHANT_YOUR_CREATURE_TARGET,
+    )
+}
+
 /// The target an "Enchant player" Aura spell chooses.
 pub static ENCHANT_PLAYER_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::Player(PlayerRelation::Any),
 )];
+
+/// The common Curse and player-Aura spell clause: "Enchant player."
+#[must_use]
+pub const fn enchant_player() -> AbilityDef {
+    aura_spell("Enchant player", &ENCHANT_PLAYER_TARGET)
+}
 
 /// An Aura's "at the beginning of the upkeep of enchanted <thing>'s
 /// controller" trigger. The host's controller is the one whose upkeep this
@@ -122,9 +170,9 @@ pub const fn equip(costs: &'static [AbilityCostDef], text: &'static str) -> Abil
         text,
         AbilityCostList::borrowed(costs),
         &EQUIP_TARGET,
-        EffectDef::Attachment(AttachmentDef::Attach{
+        EffectDef::Attach {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-        }),
+        },
     )
     .with_activation_timing(ActivationTimingDef::SorcerySpeed)
 }
@@ -141,9 +189,9 @@ static SOULBOND_PARTNER: ObjectSetDef = ObjectSetDef::Query(ObjectQueryDef::cont
     PlayerSetDef::Related(PlayerRelation::You),
 ));
 
-static SOULBOND_PAIR: EffectDef = EffectDef::Attachment(AttachmentDef::PairWithSource{
+static SOULBOND_PAIR: EffectDef = EffectDef::PairWithSource {
     object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
-});
+};
 
 /// The optional pairing choice both halves of soulbond offer. Zero is a legal
 /// number to choose, which is how "you may" is expressed.
@@ -213,9 +261,9 @@ pub const fn fortify(mana_cost: ManaCost, text: &'static str) -> AbilityDef {
         text,
         AbilityCostList::one(AbilityCostDef::Mana(mana_cost)),
         &FORTIFY_TARGET,
-        EffectDef::Attachment(AttachmentDef::Attach{
+        EffectDef::Attach {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-        }),
+        },
     )
     .with_activation_timing(ActivationTimingDef::SorcerySpeed)
 }
@@ -279,9 +327,9 @@ pub const fn reconfigure(mana_cost: ManaCost, text: &'static str) -> AbilityDef 
         text,
         AbilityCostList::one(AbilityCostDef::Mana(mana_cost)),
         &RECONFIGURE_TARGET,
-        EffectDef::Attachment(AttachmentDef::Reconfigure{
+        EffectDef::Reconfigure {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-        }),
+        },
     )
     .with_activation_timing(ActivationTimingDef::SorcerySpeed)
 }

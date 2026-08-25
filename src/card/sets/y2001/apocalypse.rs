@@ -5,14 +5,13 @@ use crate::card::sets::y2011::mirrodin_besieged as catalog_mbs;
 use crate::card::sets::y2013::magic_2014 as catalog_m14;
 use crate::card::sets::y2016::eternal_masters as catalog_ema;
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardArt,
-    CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardType,
-    DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectRecipientDef,
-    ManaColor, ObjectPredicateDef, PlayOptionDef, PlayerRelation, ResolvedEffectDurationDef,
-    ScaledValueDef, SpellForm, TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardArt, CardRules,
+    CardSet, CardType, DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
+    ScaledValueDef, TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
-use crate::{CardPartId, PlayOptionId, TargetIndex, mana_cost};
+use crate::{TargetIndex, mana_cost};
 
 // APC 1 — Angelfire Crusader
 // Audit: metadata-only — Card rules have not been implemented.
@@ -1380,17 +1379,6 @@ static FIRE_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
     excludes_source: false,
 }];
 
-const fn fire_rules() -> CardRules {
-    CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(AbilityDef::spell_with_targets(
-        "Fire deals 2 damage divided as you choose among one or two targets.",
-        &FIRE_TARGETS,
-        EffectDef::DealDamage {
-            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            amount: ValueDef::DividedAmongTargets,
-        },
-    ))
-}
-
 static ICE_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
     ObjectPredicateDef::Any,
 )];
@@ -1405,47 +1393,7 @@ static ICE_EFFECTS: [EffectDef; 2] = [
     },
 ];
 
-const fn ice_rules() -> CardRules {
-    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
-        "Tap target permanent.\nDraw a card.",
-        &ICE_TARGETS,
-        EffectDef::Sequence(&ICE_EFFECTS),
-    ))
-}
-
-fn fire_ice_composition() -> CardComposition {
-    let fire = fire_rules();
-    let ice = ice_rules();
-    CardComposition {
-        parts: vec![
-            CardPart::new(CardPartId::PRIMARY, "Fire", fire),
-            CardPart::new(CardPartId(1), "Ice", ice),
-        ],
-        structure: CardStructure::Split {
-            parts: vec![CardPartId::PRIMARY, CardPartId(1)],
-            fused: None,
-        },
-        play_options: vec![
-            PlayOptionDef::cast(
-                PlayOptionId::DEFAULT,
-                "Fire",
-                SpellForm::Part(CardPartId::PRIMARY),
-                fire.mana_cost().expect("Fire has a printed mana cost"),
-                CardEffectStatus::Implemented,
-            ),
-            PlayOptionDef::cast(
-                PlayOptionId(1),
-                "Ice",
-                SpellForm::Part(CardPartId(1)),
-                ice.mana_cost().expect("Ice has a printed mana cost"),
-                CardEffectStatus::Implemented,
-            ),
-        ],
-    }
-    .with_derived_spell_targets()
-}
-
-pub(in crate::card::sets) static FIRE_ICE: CardRecord = CardRecord::new_with_legacy_id(
+pub(in crate::card::sets) static FIRE_ICE: CardRecord = CardRecord::new_split_with_legacy_id(
     306,
     "Fire // Ice",
     CardArt::new(
@@ -1453,9 +1401,32 @@ pub(in crate::card::sets) static FIRE_ICE: CardRecord = CardRecord::new_with_leg
         "David Martin & Franz Vohwinkel",
     ),
     CardSet::Apocalypse,
-    fire_rules(),
-)
-.with_composition(fire_ice_composition);
+    &[
+        (
+            "Fire",
+            CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(
+                AbilityDef::spell_with_targets(
+                    "Fire deals 2 damage divided as you choose among one or two targets.",
+                    &FIRE_TARGETS,
+                    EffectDef::DealDamage {
+                        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                        amount: ValueDef::DividedAmongTargets,
+                    },
+                ),
+            ),
+        ),
+        (
+            "Ice",
+            CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(
+                AbilityDef::spell_with_targets(
+                    "Tap target permanent.\nDraw a card.",
+                    &ICE_TARGETS,
+                    EffectDef::Sequence(&ICE_EFFECTS),
+                ),
+            ),
+        ),
+    ],
+);
 
 // APC 129 — Illusion // Reality
 // Audit: metadata-only — Card rules have not been implemented.
@@ -1478,21 +1449,6 @@ static LIFE_ANIMATION: [AppliedEffectDef; 2] = [
     AppliedEffectDef::add_card_types(crate::card::CardTypeSet::single(CardType::Creature)),
     AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
 ];
-
-const fn life_rules() -> CardRules {
-    CardRules::new_sorcery(mana_cost!("{G}")).with_ability(AbilityDef::spell(
-        "All lands you control become 1/1 creatures until end of turn. They're still lands.",
-        EffectDef::Apply {
-            recipient: EffectRecipientDef::matching_objects(
-                ObjectPredicateDef::HasType(CardType::Land),
-                &[ZoneKind::Battlefield],
-                PlayerRelation::You,
-            ),
-            effect: AppliedEffectDef::Composite(&LIFE_ANIMATION),
-            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-        },
-    ))
-}
 
 static DEATH_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::Object {
@@ -1522,47 +1478,7 @@ static DEATH_EFFECTS: [EffectDef; 2] = [
     },
 ];
 
-const fn death_rules() -> CardRules {
-    CardRules::new_sorcery(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell_with_targets(
-        "Return target creature card from your graveyard to the battlefield. You lose life equal to its mana value.",
-        &DEATH_TARGETS,
-        EffectDef::Sequence(&DEATH_EFFECTS),
-    ))
-}
-
-fn life_death_composition() -> CardComposition {
-    let life = life_rules();
-    let death = death_rules();
-    CardComposition {
-        parts: vec![
-            CardPart::new(CardPartId::PRIMARY, "Life", life),
-            CardPart::new(CardPartId(1), "Death", death),
-        ],
-        structure: CardStructure::Split {
-            parts: vec![CardPartId::PRIMARY, CardPartId(1)],
-            fused: None,
-        },
-        play_options: vec![
-            PlayOptionDef::cast(
-                PlayOptionId::DEFAULT,
-                "Life",
-                SpellForm::Part(CardPartId::PRIMARY),
-                life.mana_cost().expect("Life has a printed mana cost"),
-                CardEffectStatus::Implemented,
-            ),
-            PlayOptionDef::cast(
-                PlayOptionId(1),
-                "Death",
-                SpellForm::Part(CardPartId(1)),
-                death.mana_cost().expect("Death has a printed mana cost"),
-                CardEffectStatus::Implemented,
-            ),
-        ],
-    }
-    .with_derived_spell_targets()
-}
-
-pub(in crate::card::sets) static LIFE_DEATH: CardRecord = CardRecord::new_with_legacy_id(
+pub(in crate::card::sets) static LIFE_DEATH: CardRecord = CardRecord::new_split_with_legacy_id(
     2123,
     "Life // Death",
     CardArt::new(
@@ -1570,9 +1486,34 @@ pub(in crate::card::sets) static LIFE_DEATH: CardRecord = CardRecord::new_with_l
         "Anthony S. Waters & Edward P. Beard, Jr.",
     ),
     CardSet::Apocalypse,
-    life_rules(),
-)
-.with_composition(life_death_composition);
+    &[
+        (
+            "Life",
+            CardRules::new_sorcery(mana_cost!("{G}")).with_ability(AbilityDef::spell(
+                "All lands you control become 1/1 creatures until end of turn. They're still lands.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                    effect: AppliedEffectDef::Composite(&LIFE_ANIMATION),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            )),
+        ),
+        (
+            "Death",
+            CardRules::new_sorcery(mana_cost!("{1}{B}")).with_ability(
+                AbilityDef::spell_with_targets(
+                    "Return target creature card from your graveyard to the battlefield. You lose life equal to its mana value.",
+                    &DEATH_TARGETS,
+                    EffectDef::Sequence(&DEATH_EFFECTS),
+                ),
+            ),
+        ),
+    ],
+);
 
 // APC 131 — Night // Day
 // Audit: metadata-only — Card rules have not been implemented.

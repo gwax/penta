@@ -1,6 +1,6 @@
 //! The recursive edges in the declarative effect tree.
 
-use super::{AttachmentDef, EffectDef};
+use super::EffectDef;
 
 /// Kept as one exhaustive match so adding a recursive effect variant cannot
 /// silently classify it as a leaf and make validators or semantic locators
@@ -31,7 +31,9 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::ChooseCardName { then: effect, .. }
         | EffectDef::RevealAtRandomFromHand { then: effect, .. }
         | EffectDef::PutOntoBattlefieldThen { then: effect, .. }
-        | EffectDef::ReturnWithHasteAndFinality { then: effect, .. } => vec![*effect],
+        | EffectDef::ExileLinkedToSource {
+            then: Some(effect), ..
+        } => vec![*effect],
         EffectDef::Destroy {
             then: Some(follow_up),
             ..
@@ -69,14 +71,11 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::GainClassLevel { .. }
         | EffectDef::AddPlayerCounters { .. }
         | EffectDef::Apply { .. }
-        | EffectDef::Attachment(
-            AttachmentDef::Attach { .. }
-            | AttachmentDef::AttachToSource { .. }
-            | AttachmentDef::ReturnAttached { .. }
-            | AttachmentDef::PairWithSource { .. }
-            | AttachmentDef::Reconfigure { .. }
-            | AttachmentDef::Unattach { .. },
-        )
+        | EffectDef::Attach { .. }
+        | EffectDef::AttachToSource { .. }
+        | EffectDef::PairWithSource { .. }
+        | EffectDef::Reconfigure { .. }
+        | EffectDef::Unattach { .. }
         | EffectDef::PhaseOut { .. }
         | EffectDef::BecomeCopyOf { .. }
         | EffectDef::CannotAttackUnless(_)
@@ -88,13 +87,11 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
         | EffectDef::ChooseCards { .. }
         | EffectDef::PutSpellIntoOwnersLibrary { .. }
-        | EffectDef::ReturnSpellToHand { .. }
         | EffectDef::Counter { .. }
         | EffectDef::CopyResolvingSpell { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::CreateOngoingEffect(_)
         | EffectDef::CreateAttachedToken { .. }
-        | EffectDef::ExileAndReturnTransformed { .. }
         | EffectDef::CreateTokenCopyOf { .. }
         | EffectDef::Endure { .. }
         | EffectDef::CreateMyriadTokens
@@ -107,8 +104,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::DrainLife { .. }
         | EffectDef::DrawCards { .. }
         | EffectDef::EmptyManaPool { .. }
-        | EffectDef::ExileLinkedToSource { .. }
-        | EffectDef::ExileUntilNextEndStep { .. }
+        | EffectDef::ExileLinkedToSource { then: None, .. }
         | EffectDef::MayPlayWithoutPaying { .. }
         | EffectDef::ExileGrantingOwnerPlay { .. }
         | EffectDef::ExileGrantingControllerPlayThisTurn { .. }
