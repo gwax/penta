@@ -418,6 +418,7 @@ mod vintage_cube_headliner_scarlett;
 mod vintage_cube_hexdrinker;
 mod vintage_cube_horizon_land;
 mod vintage_cube_infect;
+mod vintage_cube_inquisition_of_kozilek;
 mod vintage_cube_inti;
 mod vintage_cube_invigorate;
 mod vintage_cube_ivora;
