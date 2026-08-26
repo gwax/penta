@@ -2079,13 +2079,79 @@ pub(in crate::card::sets) static ARENA_OF_GLORY: CardRecord = CardRecord::new(
 );
 
 // MH3 377 — Nadu, Winged Wisdom
-// Audit: metadata-only — Card rules have not been implemented.
+/// One card off the top, sorted by whether it is a land: the land goes to
+/// the battlefield and anything else goes to the hand, so nothing is left
+/// for the player to decide.
+static NADU_REVEAL: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(1),
+    object: Some(ObjectPredicateDef::HasType(CardType::Land)),
+    minimum: 0,
+    maximum: 1,
+    select_all_matching: true,
+    select_one_of_each_type: false,
+    reveal_inspected: true,
+    reveal_selected: true,
+    counted: None,
+    selected_zone: ZoneKind::Battlefield,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Hand,
+    rest_placement: ZonePlacement::Top,
+    rest_random_order: false,
+    rest_counters: None,
+    selected_order_follows_choice: false,
+    then: None,
+    selected_hidden: false,
+    selected_linked_to_source: false,
+    selected_face_down: None,
+};
+
+/// The granted ability, carried by each creature rather than by Nadu: the
+/// cap is on one creature's copy of it, so every creature you control has
+/// two of these a turn.
+static NADU_GRANTED: AbilityDef = AbilityDef::triggered(
+    "Whenever this creature becomes the target of a spell or ability, reveal the top card of \
+     your library. If it's a land card, put it onto the battlefield. Otherwise, put it into your \
+     hand. This ability triggers only twice each turn.",
+    TriggerEventDef::BecomesTargetOfSpellOrAbility(ObjectPredicateDef::Any),
+    EffectDef::LookAtTopAndSelect {
+        player: EffectRecipientDef::Controller,
+        looker: EffectRecipientDef::Controller,
+        selection: &NADU_REVEAL,
+    },
+)
+.triggering_at_most(2);
+
+static CREATURES_YOU_CONTROL_NADU: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static NADU_ABILITIES: [AbilityDef; 2] = [
+    abilities::flying(),
+    AbilityDef::static_ability(
+        "Creatures you control have \"Whenever this creature becomes the target of a spell or \
+         ability, reveal the top card of your library. If it's a land card, put it onto the \
+         battlefield. Otherwise, put it into your hand. This ability triggers only twice each \
+         turn.\"",
+        EffectDef::StaticApply {
+            recipient: CREATURES_YOU_CONTROL_NADU,
+            effect: AppliedEffectDef::add_ability(&NADU_GRANTED),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static NADU_WINGED_WISDOM: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8281df8a-2fde-454a-813c-d9f86bb35d36"),
     "Nadu, Winged Wisdom",
-    crate::card::CardArt::new("8281df8a-2fde-454a-813c-d9f86bb35d36", "Gossip Goblin"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("8281df8a-2fde-454a-813c-d9f86bb35d36", "Gossip Goblin"),
+    CardSet::ModernHorizons3,
+    // Three mana for a 3/4 flier that turns every targeting spell you own
+    // into a card, twice per creature per turn -- and Nadu is a creature you
+    // control, so pointing something at him counts too.
+    CardRules::new_creature(mana_cost!("{1}{G}{U}"), &["Bird", "Wizard"], 3, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&NADU_ABILITIES),
 );
 
 // MH3 443 — Tamiyo, Inquisitive Student // Tamiyo, Seasoned Scholar
