@@ -3,15 +3,15 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CounterKind, DamageEventMatcherDef,
-    DamageKindDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardFollowUpDef,
-    DiscardSelectionDef, DividedTotal, EffectDef, EffectRecipientDef, ExilePlayDurationDef,
-    GraveyardTypeConditionDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementEffectDef, ReplacementEventDef, SacrificedAmountDef, SpellAdditionalCostDef,
-    SpendModeDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, tokens,
+    AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardArt, CardRules,
+    CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CounterKind,
+    DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
+    DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectRecipientDef,
+    ExilePlayDurationDef, GraveyardTypeConditionDef, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, SacrificedAmountDef,
+    SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, tokens,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{ObjectSetBindingIndex, TargetIndex, mana_cost};
@@ -976,13 +976,31 @@ pub(in crate::card::sets) static YAVIMAYA_CRADLE_OF_GROWTH: CardRecord =
     );
 
 // MH2 355 — Ignoble Hierarch
-// Audit: metadata-only — Card rules have not been implemented.
+static IGNOBLE_HIERARCH_MANA_COST: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
+static IGNOBLE_HIERARCH_ABILITIES: [AbilityDef; 2] = [
+    abilities::exalted(),
+    AbilityDef::activated_mana(
+        "{T}: Add {B}, {R}, or {G}.",
+        &IGNOBLE_HIERARCH_MANA_COST,
+        EffectDef::AddMana(AddManaEffectDef::choice(&[
+            ManaColor::Black,
+            ManaColor::Red,
+            ManaColor::Green,
+        ])),
+    ),
+];
+
 pub(in crate::card::sets) static IGNOBLE_HIERARCH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("404f83fb-0090-49d5-a4d0-c963adac2fb2"),
     "Ignoble Hierarch",
-    crate::card::CardArt::new("3139cce8-3467-4c50-add2-5b78fb33b90a", "Mark Zug"),
-    crate::card::CardSet::ModernHorizons2,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("3139cce8-3467-4c50-add2-5b78fb33b90a", "Mark Zug"),
+    CardSet::ModernHorizons2,
+    // Noble Hierarch in the other three colours: the same one-mana
+    // accelerant, and the same 0/1 that exalted turns into a real
+    // dividend on a turn when only one creature attacks.
+    CardRules::new_creature(mana_cost!("{G}"), &["Goblin", "Shaman"], 0, 1)
+        .with_abilities(&IGNOBLE_HIERARCH_ABILITIES),
 );
 
 // MH2 380 — Urza's Saga
