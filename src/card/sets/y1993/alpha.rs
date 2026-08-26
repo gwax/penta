@@ -642,6 +642,7 @@ pub(in crate::card::sets) static ISLAND_SANCTUARY: CardRecord = CardRecord::new(
                 .with_event(ReplacementEventDef::WouldDraw {
                     player: PlayerRelation::You,
                     during_own_draw_step: true,
+                    except_first_in_draw_step: false,
                 })
                 .optional(),
             ReplacementEffectDef::Sequence(&ISLAND_SANCTUARY_REPLACEMENT),

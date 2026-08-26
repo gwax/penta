@@ -183,6 +183,7 @@ impl Game {
                 let ReplacementEventDef::WouldDraw {
                     player: relation,
                     during_own_draw_step,
+                    except_first_in_draw_step,
                 } = definition.event
                 else {
                     return;
@@ -204,6 +205,13 @@ impl Game {
                     || !definition.source_zones.contains(&ZoneKind::Battlefield)
                     || (during_own_draw_step
                         && (self.step != Step::Draw || self.active_player != player))
+                    // "Except the first one they draw in each of their draw
+                    // steps": the exempt draw is the one that actually
+                    // happens, which is what sets the flag this reads.
+                    || (except_first_in_draw_step
+                        && self.step == Step::Draw
+                        && self.active_player == player
+                        && !self.draw_step_draw_taken[player.index()])
                     || !condition_matches
                     || !self.draw_replacement_relation_matches(
                         permanent,
@@ -474,6 +482,7 @@ impl Game {
                 let ReplacementEventDef::WouldDraw {
                     player: relation,
                     during_own_draw_step,
+                    except_first_in_draw_step,
                 } = definition.event
                 else {
                     return;
@@ -503,6 +512,13 @@ impl Game {
                     || !definition.source_zones.contains(&ZoneKind::Battlefield)
                     || (during_own_draw_step
                         && (self.step != Step::Draw || self.active_player != player))
+                    // "Except the first one they draw in each of their draw
+                    // steps": the exempt draw is the one that actually
+                    // happens, which is what sets the flag this reads.
+                    || (except_first_in_draw_step
+                        && self.step == Step::Draw
+                        && self.active_player == player
+                        && !self.draw_step_draw_taken[player.index()])
                     || !condition_matches
                     || !self.draw_replacement_relation_matches(
                         permanent,

@@ -374,6 +374,7 @@ static RIDDLER_EXTRA_CARD: ReplacementAbilityDef = ReplacementAbilityDef::new()
     .with_event(ReplacementEventDef::WouldDraw {
         player: PlayerRelation::You,
         during_own_draw_step: false,
+        except_first_in_draw_step: false,
     })
     .with_condition(ReplacementConditionDef::ControllerHandAtMost(1));
 

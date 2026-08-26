@@ -33,6 +33,13 @@ distinguishes snapshots of the covered source and build inputs.
   fires for the land drop and stays quiet for the land somebody's spell put
   down.
 
+- **Sparing the draw-step draw from a replacement.** A draw trigger could
+  already exempt "the first one they draw in each of their draw steps"; a
+  draw *replacement* could not, so Hullbreacher had no way to leave their
+  turn-based draw alone while taking everything after it. The exemption is
+  now the same field on both, read from the same flag -- the draw that
+  claims it is the one that actually happens.
+
 - **A permission to cast one card out of a graveyard.** Casting from a
   graveyard was permitted only by a static ability on the battlefield naming
   a whole class of cards, so "choose target artifact card in your graveyard;

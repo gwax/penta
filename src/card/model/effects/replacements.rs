@@ -45,6 +45,12 @@ pub enum ReplacementEventDef {
     WouldDraw {
         player: PlayerRelation,
         during_own_draw_step: bool,
+        /// Whether the card a player is handed at the start of their own
+        /// draw step is spared, which is the exemption Hullbreacher prints:
+        /// a second card drawn in that same step is replaced, and so is
+        /// every draw taken outside it. The mirror of the same field on the
+        /// draw trigger matcher.
+        except_first_in_draw_step: bool,
     },
     /// A matching player would begin a turn. The turn is still prospective:
     /// none of its turn-based actions, counters, or beginning-of-turn events

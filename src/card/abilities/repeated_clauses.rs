@@ -155,6 +155,7 @@ pub const fn empty_library_draw_wins() -> AbilityDef {
             .with_event(ReplacementEventDef::WouldDraw {
                 player: PlayerRelation::You,
                 during_own_draw_step: false,
+                    except_first_in_draw_step: false,
             })
             .with_condition(ReplacementConditionDef::ControllerLibraryEmpty),
         ReplacementEffectDef::Sequence(&EMPTY_LIBRARY_DRAW_REPLACEMENT),
