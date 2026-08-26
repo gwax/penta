@@ -3,9 +3,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef,
-    CounterKind, DeckConstructionDef, EffectDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
+    CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CounterKind,
+    DeckConstructionDef, EffectDef, EffectRecipientDef, KeywordAbility, ManaColor,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
     PlayerRefDef, PlayerRelation, SacrificedAmountDef, TokenCharacteristics, TriggerConditionDef,
     TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
@@ -139,14 +139,13 @@ pub(in crate::card::sets) static GUT_TRUE_SOUL_ZEALOT: CardRecord = CardRecord::
                     optional: true,
                 },
             ),
-            AbilityDef::static_ability(
+            AbilityDef::deck_construction(
                 "Choose a Background (You can have a Background as a second commander.)",
-                EffectDef::Special("Choose a Background"),
-            )
-            .with_coverage(AbilityCoverageDef::metadata_only(
-                "Backgrounds are a Commander deck-construction rule. This engine plays no \
-                 format that has a command zone, so the clause names nothing a game can do.",
-            )),
+                DeckConstructionDef::ChooseABackground,
+                "The parenthesis is the whole sentence: it is a deck-construction \
+                 permission, checked where a Commander list is assembled and silent \
+                 once the game starts.",
+            ),
         ]),
 );
 

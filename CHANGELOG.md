@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Choosing a Background, and a second commander.** "Choose a Background"
+  is the other Commander deck-construction sentence, and it had nowhere to
+  go: the clause was recorded as doing nothing. A deck may now be led by two
+  commanders where a printed permission pairs them -- today, a commander
+  that chose a Background and a Background to choose. What a Background is
+  is its type line rather than its text, so a legendary creature does not
+  become one by being legendary, and a Background cannot lead alone.
+
 - **Phyrexian mana in an activation cost.** A spell could be cast by paying
   2 life for a Phyrexian symbol; an ability could not be activated that way.
   The branch was simply absent, so Etali's `{9}{G/P}` wanted green mana and

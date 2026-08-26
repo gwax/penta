@@ -4,7 +4,7 @@ use std::fmt;
 
 use crate::CardDefinitionId;
 use crate::Format;
-use crate::card::CardCatalog;
+use crate::card::{CardCatalog, CardDefinition};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Deck {
@@ -89,44 +89,86 @@ impl Deck {
         Ok(ValidatedDeck(self))
     }
 
-    /// Checks this deck as a Commander deck led by `commander`.
+    /// Checks this deck as a Commander deck led by `commanders`.
     ///
     /// This is deck construction only: the engine plays no format with a
     /// command zone, so a validated commander deck is a legal list rather
     /// than a game that can be started from it. What is checked is what the
-    /// singleton rules say -- who may lead (CR 903.3), that the leader is
-    /// not also in the deck, and that nothing else is duplicated (CR 903.5b)
-    /// -- and deliberately not colour identity, which no card in this
-    /// catalog prints and nothing here can yet compute.
+    /// singleton rules say -- who may lead (CR 903.3), that a second leader
+    /// is one the first is allowed to take, that no leader is also in the
+    /// deck, and that nothing else is duplicated (CR 903.5b) -- and
+    /// deliberately not colour identity, which nothing here can yet compute.
     ///
     /// # Errors
     ///
-    /// Returns [`DeckError`] when the commander is unknown or may not lead,
-    /// when it also appears in the deck, or when the list is the wrong size
-    /// or not singleton.
+    /// Returns [`DeckError`] when a commander is unknown, may not lead, or
+    /// may not be paired with the other, when one also appears in the deck,
+    /// or when the list is the wrong size or not singleton.
     pub fn validate_as_commander_deck(
         self,
         catalog: &CardCatalog,
-        commander: CardDefinitionId,
+        commanders: &[CardDefinitionId],
     ) -> Result<ValidatedDeck, DeckError> {
-        let Some(leader) = catalog.get(commander) else {
-            return Err(DeckError::UnknownCard(commander));
-        };
-        if !leader.may_be_commander() {
-            return Err(DeckError::NotALegalCommander(leader.name.clone()));
+        let leaders = Self::commander_definitions(catalog, commanders)?;
+        Self::commanders_may_lead_together(&leaders)?;
+        for leader in &leaders {
+            if self.main.contains(&leader.id) {
+                return Err(DeckError::CommanderInDeck(leader.name.clone()));
+            }
         }
-        if self.main.contains(&commander) {
-            return Err(DeckError::CommanderInDeck(leader.name.clone()));
-        }
-        // The commander is one of the hundred; the list beside it is the
-        // other ninety-nine.
-        if self.main.len() != COMMANDER_DECK_SIZE - 1 {
+        // The commanders are among the hundred; the list beside them is the
+        // rest of it.
+        let expected = COMMANDER_DECK_SIZE - leaders.len();
+        if self.main.len() != expected {
             return Err(DeckError::MainDeckTooSmall {
                 actual: self.main.len(),
-                minimum: COMMANDER_DECK_SIZE - 1,
+                minimum: expected,
             });
         }
+        self.main_deck_is_singleton(catalog)?;
+        Ok(ValidatedDeck(self))
+    }
 
+    fn commander_definitions<'a>(
+        catalog: &'a CardCatalog,
+        commanders: &[CardDefinitionId],
+    ) -> Result<Vec<&'a CardDefinition>, DeckError> {
+        if commanders.is_empty() || commanders.len() > MAXIMUM_COMMANDERS {
+            return Err(DeckError::WrongNumberOfCommanders(commanders.len()));
+        }
+        commanders
+            .iter()
+            .map(|commander| {
+                catalog
+                    .get(*commander)
+                    .ok_or(DeckError::UnknownCard(*commander))
+            })
+            .collect()
+    }
+
+    /// Who may lead, and who may lead beside whom. One commander answers for
+    /// itself (CR 903.3); a second is legal only where a printed permission
+    /// pairs the two, which today means a commander that chose a Background
+    /// and the Background it chose (CR 702.124a).
+    fn commanders_may_lead_together(leaders: &[&CardDefinition]) -> Result<(), DeckError> {
+        let [first, rest @ ..] = leaders else {
+            return Err(DeckError::WrongNumberOfCommanders(0));
+        };
+        if !first.may_be_commander() {
+            return Err(DeckError::NotALegalCommander(first.name.clone()));
+        }
+        for second in rest {
+            if !(first.may_choose_a_background() && second.is_background()) {
+                return Err(DeckError::CommandersDoNotPair {
+                    first: first.name.clone(),
+                    second: second.name.clone(),
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn main_deck_is_singleton(&self, catalog: &CardCatalog) -> Result<(), DeckError> {
         let mut counts = HashMap::<CardDefinitionId, usize>::new();
         for id in &self.main {
             if catalog.get(*id).is_none() {
@@ -146,10 +188,13 @@ impl Deck {
                 });
             }
         }
-
-        Ok(ValidatedDeck(self))
+        Ok(())
     }
 }
+
+/// A deck may be led by one commander, or by two where a printed permission
+/// pairs them (CR 903.3, CR 702.124a).
+const MAXIMUM_COMMANDERS: usize = 2;
 
 /// A Commander deck is a hundred cards counting the commander (CR 903.5a).
 const COMMANDER_DECK_SIZE: usize = 100;
@@ -184,6 +229,13 @@ pub enum DeckError {
     NotALegalCommander(String),
     /// The commander was also listed among the ninety-nine.
     CommanderInDeck(String),
+    /// Nothing printed on either lets these two lead the same deck.
+    CommandersDoNotPair {
+        first: String,
+        second: String,
+    },
+    /// A deck is led by one commander, or by two that pair.
+    WrongNumberOfCommanders(usize),
     TooManyCopies {
         card: String,
         count: usize,
@@ -214,6 +266,16 @@ impl fmt::Display for DeckError {
                 formatter,
                 "{card} is the commander and cannot also be in the deck"
             ),
+            Self::CommandersDoNotPair { first, second } => write!(
+                formatter,
+                "{first} and {second} cannot lead the same deck together"
+            ),
+            Self::WrongNumberOfCommanders(count) => {
+                write!(
+                    formatter,
+                    "a deck is led by one or two commanders, not {count}"
+                )
+            }
             Self::TooManyCopies { card, count, limit } => {
                 write!(
                     formatter,
@@ -230,10 +292,41 @@ impl Error for DeckError {}
 mod tests {
     use super::{Deck, DeckError};
     use crate::CardDefinitionId;
-    use crate::card::{CardCatalog, cards};
+    use crate::card::{
+        CardBehavior, CardCatalog, CardComposition, CardDefinition, CardRules, CardSet,
+        CardSupertype, ManaCost, cards,
+    };
 
     fn catalog() -> CardCatalog {
         crate::card::catalog().expect("catalog builds")
+    }
+
+    /// The catalog plus one Background, which the real one has none of: the
+    /// cube prints no Legendary Enchantment -- Background, so the only way to
+    /// exercise the pairing is to build one and hand it over.
+    fn catalog_with_a_background() -> (CardCatalog, CardDefinitionId) {
+        let id = CardDefinitionId::new(90_001);
+        let mut background = CardDefinition::new(
+            id,
+            "Test Background",
+            CardSet::CommanderLegendsBattleForBaldursGate,
+            false,
+            CardBehavior::Unsupported,
+        );
+        background.rules = CardRules::new_enchantment(ManaCost::new(0, 0))
+            .with_supertype(CardSupertype::Legendary)
+            .with_subtypes(&["Background"]);
+        let composition = CardComposition::single(background.name.clone(), background.rules);
+        background.parts = composition.parts;
+        background.structure = composition.structure;
+        background.play_options = composition.play_options;
+        let mut definitions: Vec<CardDefinition> =
+            catalog().definitions().into_iter().cloned().collect();
+        definitions.push(background);
+        (
+            CardCatalog::new(definitions).expect("the catalog still builds"),
+            id,
+        )
     }
 
     /// Ninety-nine distinct cards, which is a legal Commander list's size
@@ -291,7 +384,7 @@ mod tests {
             sideboard: Vec::new(),
         };
 
-        deck.validate_as_commander_deck(&catalog, cards::MINSC_BOO_TIMELESS_HEROES)
+        deck.validate_as_commander_deck(&catalog, &[cards::MINSC_BOO_TIMELESS_HEROES])
             .expect("ninety-nine distinct cards and a legal leader");
     }
 
@@ -304,7 +397,7 @@ mod tests {
         };
 
         let error = deck
-            .validate_as_commander_deck(&catalog, cards::GRIZZLY_BEARS)
+            .validate_as_commander_deck(&catalog, &[cards::GRIZZLY_BEARS])
             .expect_err("a Grizzly Bears leads nothing");
 
         assert!(matches!(error, DeckError::NotALegalCommander(_)));
@@ -321,7 +414,7 @@ mod tests {
         };
 
         let error = deck
-            .validate_as_commander_deck(&catalog, cards::MINSC_BOO_TIMELESS_HEROES)
+            .validate_as_commander_deck(&catalog, &[cards::MINSC_BOO_TIMELESS_HEROES])
             .expect_err("the leader is not also in the deck");
 
         assert!(matches!(error, DeckError::CommanderInDeck(_)));
@@ -344,7 +437,7 @@ mod tests {
         };
 
         let error = deck
-            .validate_as_commander_deck(&catalog, cards::MINSC_BOO_TIMELESS_HEROES)
+            .validate_as_commander_deck(&catalog, &[cards::MINSC_BOO_TIMELESS_HEROES])
             .expect_err("two of something is not singleton");
 
         assert!(matches!(error, DeckError::TooManyCopies { count: 2, .. }));
@@ -361,7 +454,7 @@ mod tests {
             sideboard: Vec::new(),
         };
 
-        deck.validate_as_commander_deck(&catalog, cards::MINSC_BOO_TIMELESS_HEROES)
+        deck.validate_as_commander_deck(&catalog, &[cards::MINSC_BOO_TIMELESS_HEROES])
             .expect("any number of basics is legal");
     }
 
@@ -376,7 +469,7 @@ mod tests {
         };
 
         let error = deck
-            .validate_as_commander_deck(&catalog, cards::MINSC_BOO_TIMELESS_HEROES)
+            .validate_as_commander_deck(&catalog, &[cards::MINSC_BOO_TIMELESS_HEROES])
             .expect_err("a hundred counts the commander");
 
         assert!(matches!(
@@ -386,5 +479,120 @@ mod tests {
                 minimum: 99
             }
         ));
+    }
+
+    /// Choosing a Background: the one pairing the deck layer knows, and the
+    /// three ways of getting it wrong.
+    mod backgrounds {
+        use super::{Deck, DeckError, cards, catalog, catalog_with_a_background, ninety_nine};
+
+        /// Gut prints "Choose a Background", so a Background may lead beside
+        /// them -- and the deck beside two commanders is ninety-eight.
+        #[test]
+        fn a_background_may_lead_beside_a_commander_that_chose_one() {
+            let (catalog, background) = catalog_with_a_background();
+            let mut main = ninety_nine(&catalog, &[cards::GUT_TRUE_SOUL_ZEALOT, background]);
+            main.pop();
+            let deck = Deck {
+                main,
+                sideboard: Vec::new(),
+            };
+
+            deck.validate_as_commander_deck(&catalog, &[cards::GUT_TRUE_SOUL_ZEALOT, background])
+                .expect("Gut chose a Background and this is one");
+        }
+
+        /// Minsc & Boo may lead, but they print no Background clause, so nothing
+        /// leads beside them.
+        #[test]
+        fn a_commander_that_chose_nothing_leads_alone() {
+            let (catalog, background) = catalog_with_a_background();
+            let mut main = ninety_nine(&catalog, &[cards::MINSC_BOO_TIMELESS_HEROES, background]);
+            main.pop();
+            let deck = Deck {
+                main,
+                sideboard: Vec::new(),
+            };
+
+            let error = deck
+                .validate_as_commander_deck(
+                    &catalog,
+                    &[cards::MINSC_BOO_TIMELESS_HEROES, background],
+                )
+                .expect_err("they never chose a Background");
+
+            assert!(matches!(error, DeckError::CommandersDoNotPair { .. }));
+        }
+
+        /// And what Gut chose has to actually be a Background: another legendary
+        /// creature is not one, however legendary it is.
+        #[test]
+        fn the_second_commander_has_to_be_a_background() {
+            let catalog = catalog();
+            let mut main = ninety_nine(
+                &catalog,
+                &[cards::GUT_TRUE_SOUL_ZEALOT, cards::EMRY_LURKER_OF_THE_LOCH],
+            );
+            main.pop();
+            let deck = Deck {
+                main,
+                sideboard: Vec::new(),
+            };
+
+            let error = deck
+                .validate_as_commander_deck(
+                    &catalog,
+                    &[cards::GUT_TRUE_SOUL_ZEALOT, cards::EMRY_LURKER_OF_THE_LOCH],
+                )
+                .expect_err("Emry is a commander, but she is not a Background");
+
+            assert!(matches!(error, DeckError::CommandersDoNotPair { .. }));
+        }
+
+        /// A Background cannot lead by itself: it is a second commander or it is
+        /// nothing.
+        #[test]
+        fn a_background_cannot_lead_alone() {
+            let (catalog, background) = catalog_with_a_background();
+            let deck = Deck {
+                main: ninety_nine(&catalog, &[background]),
+                sideboard: Vec::new(),
+            };
+
+            let error = deck
+                .validate_as_commander_deck(&catalog, &[background])
+                .expect_err("nothing on it says it can be your commander");
+
+            assert!(matches!(error, DeckError::NotALegalCommander(_)));
+        }
+
+        /// Two is the most a deck is led by, and none is not a deck.
+        #[test]
+        fn a_deck_is_led_by_one_or_two() {
+            let (catalog, background) = catalog_with_a_background();
+            let deck = Deck {
+                main: ninety_nine(&catalog, &[]),
+                sideboard: Vec::new(),
+            };
+
+            assert!(matches!(
+                deck.clone()
+                    .validate_as_commander_deck(&catalog, &[])
+                    .expect_err("a deck has a commander"),
+                DeckError::WrongNumberOfCommanders(0),
+            ));
+            assert!(matches!(
+                deck.validate_as_commander_deck(
+                    &catalog,
+                    &[
+                        cards::GUT_TRUE_SOUL_ZEALOT,
+                        background,
+                        cards::MINSC_BOO_TIMELESS_HEROES
+                    ],
+                )
+                .expect_err("three is more than any pairing allows"),
+                DeckError::WrongNumberOfCommanders(3),
+            ));
+        }
     }
 }

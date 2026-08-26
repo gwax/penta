@@ -17,4 +17,9 @@ pub enum DeckConstructionDef {
     /// The permission is spent entirely at deck construction: the card does
     /// nothing extra once the game begins.
     MayBeCommander,
+    /// "Choose a Background." This card may take a Background as a second
+    /// commander (CR 702.124a), which is the only thing the sentence does:
+    /// what the chosen Background then gives the deck is printed on the
+    /// Background rather than here.
+    ChooseABackground,
 }

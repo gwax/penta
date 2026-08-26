@@ -533,16 +533,35 @@ impl CardDefinition {
     pub fn may_be_commander(&self) -> bool {
         let legendary_creature = self.rules.has_type(CardType::Creature)
             && self.rules.has_supertype(CardSupertype::Legendary);
-        legendary_creature
-            || self.parts.iter().any(|part| {
-                part.rules.ability_clauses().iter().any(|ability| {
-                    ability.is_executable()
-                        && ability.definition
-                            == DeclarativeAbilityDef::DeckConstruction(
-                                DeckConstructionDef::MayBeCommander,
-                            )
-                })
+        legendary_creature || self.declares_deck_construction(DeckConstructionDef::MayBeCommander)
+    }
+
+    /// Whether this card prints "Choose a Background", which is what lets a
+    /// commander take a second one (CR 702.124a).
+    #[must_use]
+    pub fn may_choose_a_background(&self) -> bool {
+        self.declares_deck_construction(DeckConstructionDef::ChooseABackground)
+    }
+
+    /// Whether this card is a Background: the enchantment type a commander
+    /// that chose one pairs with. Nothing is printed on the card to say so;
+    /// the subtype is the whole of it.
+    #[must_use]
+    pub fn is_background(&self) -> bool {
+        self.rules.has_type(CardType::Enchantment)
+            && self.rules.has_supertype(CardSupertype::Legendary)
+            && self.rules.has_subtype("Background")
+    }
+
+    /// Whether any face of this card prints the named deck-construction
+    /// permission and actually carries it out.
+    fn declares_deck_construction(&self, permission: DeckConstructionDef) -> bool {
+        self.parts.iter().any(|part| {
+            part.rules.ability_clauses().iter().any(|ability| {
+                ability.is_executable()
+                    && ability.definition == DeclarativeAbilityDef::DeckConstruction(permission)
             })
+        })
     }
 
     #[must_use]
