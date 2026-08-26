@@ -60,13 +60,76 @@ pub(in crate::card::sets) static PRISMATIC_ENDING: CardRecord = CardRecord::new_
 );
 
 // MH2 32 — Solitude
-// Audit: metadata-only — Card rules have not been implemented.
+static EXILE_A_WHITE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::Color(ManaColor::White),
+    ZoneKind::Hand,
+    1,
+)
+.spent(SpendModeDef::Exile);
+
+/// "Up to one other": declining is a legal choice, and Solitude herself is
+/// never one of the options.
+static ANOTHER_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    1,
+)];
+
+/// Swords to Plowshares' pair, in the same order: the power the life is
+/// read from is the one the creature had as it left the battlefield.
+static SOLITUDE_EXILES: [EffectDef; 2] = [
+    EffectDef::MoveToZone {
+        counters: None,
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        from: None,
+        zone: ZoneKind::Exile,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        attachment: None,
+        controller: None,
+        tapped: false,
+    },
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
+        amount: ValueDef::TargetPower(TargetIndex::PRIMARY),
+    },
+];
+
+static SOLITUDE_ABILITIES: [AbilityDef; 5] = [
+    abilities::flash(),
+    abilities::lifelink(),
+    abilities::enters_trigger_with_targets(
+        "When this creature enters, exile up to one other target creature. That creature's \
+         controller gains life equal to its power.",
+        &ANOTHER_CREATURE,
+        EffectDef::Sequence(&SOLITUDE_EXILES),
+    ),
+    AbilityDef::alternative_cast(
+        mana_cost!("{0}"),
+        AlternativeCastKindDef::AlternativeCost,
+        Some("Evoke—Exile a white card from your hand."),
+        EffectDef::None,
+    )
+    .with_alternative_additional_cost(&EXILE_A_WHITE_CARD),
+    abilities::evoke_sacrifice("When this creature enters, if it was evoked, sacrifice it."),
+];
+
 pub(in crate::card::sets) static SOLITUDE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b648cc94-7880-456b-82ea-859746d52397"),
     "Solitude",
-    crate::card::CardArt::new("47a6234f-309f-4e03-9263-66da48b57153", "Evan Shipard"),
-    crate::card::CardSet::ModernHorizons2,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("47a6234f-309f-4e03-9263-66da48b57153", "Evan Shipard"),
+    CardSet::ModernHorizons2,
+    // Two white cards for a free Swords to Plowshares at instant speed, and
+    // a lifelinking 3/2 on the turns five mana is available instead.
+    CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Elemental", "Incarnation"], 3, 2)
+        .with_abilities(&SOLITUDE_ABILITIES),
 );
 
 // MH2 36 — Unbounded Potential
