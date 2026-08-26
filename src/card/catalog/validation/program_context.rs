@@ -654,6 +654,7 @@ fn static_object_set_supported(objects: ObjectSetDef) -> bool {
         | ObjectSetDef::One(
             ObjectRefDef::ResolvingObject
             | ObjectRefDef::Binding(_)
+            | ObjectRefDef::AdditionalCostObject(_)
             | ObjectRefDef::AbilityGrantSource
             | ObjectRefDef::Target(_)
             | ObjectRefDef::SourceOfTargetedStackObject(_)

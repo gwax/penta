@@ -436,6 +436,9 @@ pub enum ValueDef {
     /// The mana value of what a target slot points at, read from last-known
     /// information after a permanent or spell has left its zone.
     TargetManaValue(TargetIndex),
+    /// The power of one named object, wherever it is, using last-known
+    /// information after it leaves its zone.
+    ObjectPower(ObjectRefDef),
     /// The mana value of one named object, wherever it is. Distinct from
     /// [`Self::TargetManaValue`], which can only name a target slot: this
     /// reads a card an earlier step in the same resolution bound, which is
