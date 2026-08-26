@@ -438,6 +438,7 @@ mod vintage_cube_hexdrinker;
 mod vintage_cube_horizon_land;
 mod vintage_cube_ignoble_hierarch;
 mod vintage_cube_infect;
+mod vintage_cube_infernal_grasp;
 mod vintage_cube_inquisition_of_kozilek;
 mod vintage_cube_inti;
 mod vintage_cube_invigorate;

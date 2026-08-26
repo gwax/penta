@@ -174,13 +174,37 @@ pub(in crate::card::sets) static ECSTATIC_AWAKENER: CardRecord = CardRecord::new
 );
 
 // MID 107 — Infernal Grasp
-// Audit: metadata-only — Card rules have not been implemented.
+/// The life is part of the resolution rather than a cost, so a target that
+/// survives being destroyed still costs it -- and a Grasp that never
+/// resolves at all costs nothing.
+static INFERNAL_GRASP_EFFECTS: [EffectDef; 2] = [
+    EffectDef::Destroy {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        can_regenerate: true,
+        then: None,
+    },
+    EffectDef::LoseLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+];
+
+static A_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::HasType(CardType::Creature),
+)];
+
 pub(in crate::card::sets) static INFERNAL_GRASP: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("17824929-f131-4b8d-addb-66c25323155e"),
     "Infernal Grasp",
-    crate::card::CardArt::new("17824929-f131-4b8d-addb-66c25323155e", "Naomi Baker"),
-    crate::card::CardSet::InnistradMidnightHunt,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("17824929-f131-4b8d-addb-66c25323155e", "Naomi Baker"),
+    CardSet::InnistradMidnightHunt,
+    // Two mana, no restriction on what it answers, and the two life is the
+    // whole of the price.
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target creature. You lose 2 life.",
+        &A_CREATURE,
+        EffectDef::Sequence(&INFERNAL_GRASP_EFFECTS),
+    )),
 );
 
 // MID 128 — Ardent Elementalist
