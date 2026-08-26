@@ -4,9 +4,10 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CostModificationDef, EffectDef, EffectRecipientDef, GraveyardPlayPermissionDef,
-    ObjectPredicateDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
-    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    CompanionConditionDef, CostModificationDef, DeckConstructionDef, EffectDef, EffectRecipientDef,
+    GraveyardPlayPermissionDef, ObjectPredicateDef, PlayActionMatcherDef, PlayRestrictionDef,
+    PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
+    ValueDef, ZoneKind, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -74,13 +75,13 @@ pub(in crate::card::sets) static LURRUS_OF_THE_DREAM_DEN: CardRecord = CardRecor
     CardRules::new_creature(mana_cost!("{1}{W/B}{W/B}"), &["Cat", "Nightmare"], 3, 2)
         .with_supertype(CardSupertype::Legendary)
         .with_abilities(&[
-            AbilityDef::not_implemented(
+            AbilityDef::deck_construction(
                 "Companion — Each permanent card in your starting deck has mana value 2 or less. \
                  (If this card is your chosen companion, you may put it into your hand from \
                  outside the game for {3} as a sorcery.)",
-                "Companion is a deck-construction permission and a play from outside the game, \
-                 neither of which the engine represents; the card is played from a deck like any \
-                 other.",
+                DeckConstructionDef::Companion(CompanionConditionDef::PermanentManaValueAtMost(2)),
+                "Both halves are here: the deck-construction condition the deck layer checks, \
+                 and the special action that takes it from outside the game for {3}.",
             ),
             abilities::lifelink(),
             AbilityDef::static_ability(
@@ -123,13 +124,15 @@ pub(in crate::card::sets) static ZIRDA_THE_DAWNWAKER: CardRecord = CardRecord::n
     CardRules::new_creature(mana_cost!("{1}{R/W}{R/W}"), &["Elemental", "Fox"], 3, 3)
         .with_supertype(CardSupertype::Legendary)
         .with_abilities(&[
-            AbilityDef::not_implemented(
+            AbilityDef::deck_construction(
                 "Companion — Each permanent card in your starting deck has an activated ability. \
                  (If this card is your chosen companion, you may put it into your hand from \
                  outside the game for {3} as a sorcery.)",
-                "Companion is a deck-construction permission and a play from outside the game, \
-                 neither of which the engine represents; the card is played from a deck like any \
-                 other.",
+                DeckConstructionDef::Companion(
+                    CompanionConditionDef::EveryPermanentHasAnActivatedAbility,
+                ),
+                "Both halves are here: the deck-construction condition the deck layer checks, \
+                 and the special action that takes it from outside the game for {3}.",
             ),
             AbilityDef::static_ability(
                 "Abilities you activate that aren't mana abilities cost {2} less to activate. \
@@ -226,12 +229,13 @@ static YOUR_INSTANT_OR_SORCERY_SPELL: [AbilityTargetDef; 1] = [AbilityTargetDef:
 static LUTRI_WAS_CAST: TriggerConditionDef = TriggerConditionDef::SourceWasCast;
 
 static LUTRI_ABILITIES: [AbilityDef; 3] = [
-    AbilityDef::not_implemented(
+    AbilityDef::deck_construction(
         "Companion — Each nonland card in your starting deck has a different name. (If this card \
          is your chosen companion, you may put it into your hand from outside the game for {3} \
          as a sorcery.)",
-        "Companion is a deck-construction permission and a play from outside the game, neither \
-         of which the engine represents; the card is played from a deck like any other.",
+        DeckConstructionDef::Companion(CompanionConditionDef::NonlandNamesAreDistinct),
+        "Both halves are here: the deck-construction condition the deck layer checks, and the \
+         special action that takes it from outside the game for {3}.",
     ),
     abilities::flash(),
     AbilityDef::triggered_if_with_targets(

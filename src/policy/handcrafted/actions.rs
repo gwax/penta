@@ -139,6 +139,10 @@ impl HandcraftedPolicy {
             // The same bargain as foretell, paid the other way round: the
             // card costs nothing later, so it is worth a little more.
             Action::Plot { .. } => 140,
+            // Three mana for a card that was never in the deck. Worth more
+            // than either of the two above, and still not worth skipping a
+            // turn's real play for.
+            Action::TakeCompanion { .. } => 300,
             // The second half of a Room is a whole other card for its own
             // cost, and it is there whenever nothing better presents itself.
             Action::UnlockDoor { .. } => 500,

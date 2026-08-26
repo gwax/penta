@@ -25,6 +25,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Companion, both halves.** The keyword was recorded as doing nothing: it
+  is a deck-construction permission and a play from outside the game, and
+  the engine had neither. It has both now. The condition a companion prints
+  is asked of the deck it sits beside -- every permanent under a mana value,
+  every permanent with an activated ability, every nonland name distinct --
+  and the answer is settled before the first turn, because "your starting
+  deck" stops existing the moment a card is drawn. A companion whose
+  condition was met can then be taken with a special action: {3}, at sorcery
+  speed, from outside the game into your hand. Taking one ends it; however
+  many a sideboard made legal, a game has one companion.
+
 - **Choosing a Background, and a second commander.** "Choose a Background"
   is the other Commander deck-construction sentence, and it had nowhere to
   go: the clause was recorded as doing nothing. A deck may now be led by two

@@ -4,9 +4,9 @@ use crate::ids::{
 
 use super::{
     CardBehavior, CardEffectStatus, CardPart, CardPrinting, CardRules, CardSet, CardStructure,
-    CardSupertype, CardType, DeckConstructionDef, DeclarativeAbilityDef, DoubleFacedKind,
-    ImplementationStatus, ManaCost, ModeSetDef, PlayActionKind, PlayRestriction, PrintedManaCost,
-    SpellForm, TargetSlotDef,
+    CardSupertype, CardType, CompanionConditionDef, DeckConstructionDef, DeclarativeAbilityDef,
+    DoubleFacedKind, ImplementationStatus, ManaCost, ModeSetDef, PlayActionKind, PlayRestriction,
+    PrintedManaCost, SpellForm, TargetSlotDef,
 };
 
 /// A named alternative to the cost supplied by a play option.
@@ -541,6 +541,55 @@ impl CardDefinition {
     #[must_use]
     pub fn may_choose_a_background(&self) -> bool {
         self.declares_deck_construction(DeckConstructionDef::ChooseABackground)
+    }
+
+    /// What this card asks of a deck it would be the companion of, or
+    /// nothing when it is not a companion at all (CR 702.139a).
+    #[must_use]
+    pub fn companion_condition(&self) -> Option<CompanionConditionDef> {
+        self.parts.iter().find_map(|part| {
+            part.rules.ability_clauses().iter().find_map(|ability| {
+                match (ability.is_executable(), ability.definition) {
+                    (
+                        true,
+                        DeclarativeAbilityDef::DeckConstruction(DeckConstructionDef::Companion(
+                            condition,
+                        )),
+                    ) => Some(condition),
+                    _ => None,
+                }
+            })
+        })
+    }
+
+    /// Whether any face of this card prints an activated ability, which is
+    /// what one companion asks of every permanent beside it.
+    #[must_use]
+    pub fn has_an_activated_ability(&self) -> bool {
+        self.parts.iter().any(|part| {
+            part.rules.ability_clauses().iter().any(|ability| {
+                matches!(
+                    ability.definition,
+                    DeclarativeAbilityDef::Activated(_) | DeclarativeAbilityDef::ActivatedMana(_)
+                )
+            })
+        })
+    }
+
+    /// Whether this card is a permanent card: one that would enter the
+    /// battlefield if it resolved (CR 110.4a). Kindred is not among them --
+    /// it never appears alone, and what a Kindred Instant is is an instant.
+    #[must_use]
+    pub fn is_permanent_card(&self) -> bool {
+        [
+            CardType::Artifact,
+            CardType::Creature,
+            CardType::Enchantment,
+            CardType::Land,
+            CardType::Planeswalker,
+        ]
+        .into_iter()
+        .any(|kind| self.rules.has_type(kind))
     }
 
     /// Whether this card is a Background: the enchantment type a commander

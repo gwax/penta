@@ -56,6 +56,11 @@ impl Game {
             })?;
         let (deck_one_main, deck_one_sideboard) = deck_one.into_parts();
         let (deck_two_main, deck_two_sideboard) = deck_two.into_parts();
+        // "Your starting deck" is what a companion reads (CR 702.139a), and
+        // the library stops being it the moment a card is drawn, so the
+        // question is answered here and the answer kept.
+        let starting_decks = [deck_one_main.clone(), deck_two_main.clone()];
+        let sideboards = [deck_one_sideboard.clone(), deck_two_sideboard.clone()];
 
         let format_rules = format.rules();
 
@@ -105,6 +110,8 @@ impl Game {
                     graveyard: Vec::new(),
                     exile: Vec::new(),
                     outside_game: Vec::new(),
+                    // Filled in below, once the sideboards exist to read.
+                    companions: Vec::new(),
                     mana_pool: ManaPool::default(),
                     mana: Vec::new(),
                     lands_played_this_turn: 0,
@@ -149,6 +156,25 @@ impl Game {
                     counters: crate::game::counters::Counters::new(),
                 });
             }
+        }
+
+        for player in [PlayerId::One, PlayerId::Two] {
+            players[player.index()].companions = sideboards[player.index()]
+                .iter()
+                .copied()
+                .filter(|definition| {
+                    catalog
+                        .get(*definition)
+                        .and_then(crate::card::CardDefinition::companion_condition)
+                        .is_some_and(|condition| {
+                            crate::deck::companion_condition_is_met(
+                                condition,
+                                &catalog,
+                                &starting_decks[player.index()],
+                            )
+                        })
+                })
+                .collect();
         }
 
         Ok(Self {

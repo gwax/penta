@@ -175,3 +175,176 @@ fn the_permission_belongs_to_him() {
 
     assert!(castable_from_graveyard(&game, cards::GRIZZLY_BEARS).is_none());
 }
+
+/// The other half of the card: the keyword that keeps it out of the deck in
+/// the first place, and the {3} that fetches it back.
+mod companion {
+    use super::*;
+
+    /// A game whose player-one sideboard holds `sideboard` and whose starting
+    /// deck holds `deck` beside enough Mountains to shuffle.
+    fn staged(deck: &[CardDefinitionId], sideboard: &[CardDefinitionId]) -> Game {
+        let mut main = deck.to_vec();
+        while main.len() < 40 {
+            main.push(cards::MOUNTAIN);
+        }
+        let opponent = crate::Deck {
+            main: vec![cards::MOUNTAIN; 40],
+            sideboard: Vec::new(),
+        };
+        let mine = crate::Deck {
+            main,
+            sideboard: sideboard.to_vec(),
+        };
+        // The cube is the format these cards are legal in, and the format a
+        // companion is a real card in.
+        let mut game = Game::new_with_format(
+            crate::Format::VintageCube,
+            poc::catalog().unwrap(),
+            [mine, opponent],
+            0,
+        )
+        .expect("a legal game");
+        game.pregame = None;
+        game.step = Step::PrecombatMain;
+        game.active_player = PlayerId::One;
+        game.priority = PlayerId::One;
+        game.turns_started = [3, 2];
+        game
+    }
+
+    fn companion_offers(game: &Game) -> Vec<Action> {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(|action| matches!(action, Action::TakeCompanion { .. }))
+            .collect()
+    }
+
+    /// Every permanent in the deck costs two or less, so Lurrus is a legal
+    /// companion and the special action is on offer once three mana is up.
+    #[test]
+    fn a_two_drop_deck_may_take_lurrus() {
+        let mut game = staged(
+            &[cards::RAGAVAN_NIMBLE_PILFERER, cards::LIGHTNING_BOLT],
+            &[cards::LURRUS_OF_THE_DREAM_DEN],
+        );
+        assert!(
+            companion_offers(&game).is_empty(),
+            "three mana buys it, and there is none yet",
+        );
+
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+        let offer = companion_offers(&game)
+            .into_iter()
+            .next()
+            .expect("three mana is the whole cost");
+        game.apply(PlayerId::One, offer).expect("it is taken");
+
+        assert_eq!(
+            game.players[0]
+                .hand
+                .iter()
+                .filter(|card| card.definition == cards::LURRUS_OF_THE_DREAM_DEN)
+                .count(),
+            1,
+            "it went from outside the game to the hand",
+        );
+        assert!(
+            game.players[0].outside_game.is_empty(),
+            "and is no longer out there",
+        );
+        assert_eq!(game.players[0].mana_pool.total(), 0, "three mana paid");
+    }
+
+    /// One permanent above the curve and the condition fails, so nothing is
+    /// offered however much mana is available. An instant above it is fine:
+    /// the condition reads permanents.
+    #[test]
+    fn one_expensive_permanent_costs_the_companion() {
+        let mut game = staged(
+            &[cards::SNEAK_ATTACK, cards::RAGAVAN_NIMBLE_PILFERER],
+            &[cards::LURRUS_OF_THE_DREAM_DEN],
+        );
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+        assert!(
+            companion_offers(&game).is_empty(),
+            "a four-mana enchantment is a permanent card too",
+        );
+
+        let mut game = staged(
+            &[cards::CRYPTIC_COMMAND, cards::RAGAVAN_NIMBLE_PILFERER],
+            &[cards::LURRUS_OF_THE_DREAM_DEN],
+        );
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+        assert_eq!(
+            companion_offers(&game).len(),
+            1,
+            "a four-mana instant is not a permanent card",
+        );
+    }
+
+    /// A companion is taken once. Two in the sideboard is still one taken, and
+    /// the second stops being offered the moment the first is.
+    #[test]
+    fn a_game_has_one_companion() {
+        let mut game = staged(
+            &[cards::RAGAVAN_NIMBLE_PILFERER],
+            &[
+                cards::LURRUS_OF_THE_DREAM_DEN,
+                cards::ZIRDA_THE_DAWNWAKER,
+                cards::LUTRI_THE_SPELLCHASER,
+            ],
+        );
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 6);
+        let offers = companion_offers(&game);
+        assert!(
+            offers.len() > 1,
+            "more than one of them found the deck legal",
+        );
+
+        game.apply(
+            PlayerId::One,
+            offers.into_iter().next().expect("one of them"),
+        )
+        .expect("it is taken");
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+        assert!(
+            companion_offers(&game).is_empty(),
+            "the rest stay outside the game for good",
+        );
+    }
+
+    /// It is a sorcery-speed action: not on the opponent's turn, and not with
+    /// something on the stack.
+    #[test]
+    fn it_is_taken_only_when_a_sorcery_could_be_cast() {
+        let mut game = staged(
+            &[cards::RAGAVAN_NIMBLE_PILFERER],
+            &[cards::LURRUS_OF_THE_DREAM_DEN],
+        );
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+        assert_eq!(companion_offers(&game).len(), 1);
+
+        game.active_player = PlayerId::Two;
+        assert!(companion_offers(&game).is_empty(), "not on their turn");
+
+        game.active_player = PlayerId::One;
+        game.step = Step::DeclareAttackers;
+        assert!(
+            companion_offers(&game).is_empty(),
+            "and not outside a main phase",
+        );
+    }
+
+    /// A card that prints no companion clause is just a sideboard card.
+    #[test]
+    fn an_ordinary_sideboard_card_is_not_a_companion() {
+        let mut game = staged(&[cards::RAGAVAN_NIMBLE_PILFERER], &[cards::LIGHTNING_BOLT]);
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+        assert!(companion_offers(&game).is_empty());
+    }
+}

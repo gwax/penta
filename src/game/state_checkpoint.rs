@@ -502,6 +502,10 @@ impl Game {
                 self.players[0].lands_played_this_turn,
                 self.players[1].lands_played_this_turn,
             ],
+            companions: [
+                companion_definitions(&self.players[0].companions),
+                companion_definitions(&self.players[1].companions),
+            ],
             tried_to_draw_from_empty_library: [
                 self.players[0].tried_to_draw_from_empty_library,
                 self.players[1].tried_to_draw_from_empty_library,
@@ -632,6 +636,16 @@ impl Game {
             viewer: viewer.index(),
         }
     }
+}
+
+/// The definitions a seat may still take as a companion, as the wire names
+/// them. A definition id rather than an object id because the cards outside
+/// the game are re-minted on restore and would not keep their identities.
+fn companion_definitions(companions: &[CardDefinitionId]) -> Vec<u64> {
+    companions
+        .iter()
+        .map(|definition| definition.get())
+        .collect()
 }
 
 include!("state_checkpoint/restore.rs");

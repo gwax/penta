@@ -311,6 +311,10 @@ pub struct PlayerObservation {
     /// with revealed is public, so it is shown to the player who does not
     /// own it.
     pub opponent_revealed_library_top: Option<(GameObjectId, CardDefinitionId)>,
+    /// The companions this viewer may still take from outside the game.
+    /// Their own player knows what they brought; nobody else sees this, and
+    /// an empty list is what every game without a companion reports.
+    pub companions: Vec<(GameObjectId, CardDefinitionId)>,
     pub graveyards: [Vec<(GameObjectId, CardDefinitionId)>; 2],
     /// Each player's exile as this viewer sees it. A card lying face down
     /// is absent rather than shown, unless the viewer is its owner.

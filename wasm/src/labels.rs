@@ -31,6 +31,20 @@ impl WebGame {
                 ))
             })
             .or_else(|| {
+                // A companion is outside the game rather than in a zone, and
+                // its own player can still read it: the button that fetches
+                // it has to be able to say which card it fetches.
+                observation
+                    .companions
+                    .iter()
+                    .find_map(|(candidate, definition)| {
+                        (*candidate == id).then_some(ObjectCharacteristics::card(
+                            *definition,
+                            penta::CardPartId::PRIMARY,
+                        ))
+                    })
+            })
+            .or_else(|| {
                 observation
                     .battlefield
                     .iter()
@@ -207,6 +221,7 @@ impl WebGame {
             | Action::TurnFaceUp { .. }
             | Action::Foretell { .. }
             | Action::Plot { .. }
+            | Action::TakeCompanion { .. }
             | Action::UnlockDoor { .. }
             | Action::PassPriority
             | Action::PlayLand { .. }
@@ -493,6 +508,12 @@ impl WebGame {
             }
             Action::Plot { card } => {
                 format!("Plot {}", self.instance_name(observation, *card))
+            }
+            // Named for the card rather than for the keyword: what the
+            // button does is fetch that card, and it is the only one out
+            // there the player can reach.
+            Action::TakeCompanion { card } => {
+                format!("Take companion {}", self.instance_name(observation, *card))
             }
             // Named for the door rather than for the Room: "Unlock Forgotten
             // Cellar" says which half is being bought, and the Room's own

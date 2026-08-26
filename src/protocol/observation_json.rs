@@ -297,6 +297,9 @@ pub fn observation_json_for_format(
         "opponentRevealedLibraryTop": observation
             .opponent_revealed_library_top
             .map(|card| card_list_json(catalog, &[card])),
+        // The viewer's own companions, still outside the game. Empty for
+        // every game nobody brought one to, which is nearly all of them.
+        "companions": card_list_json(catalog, &observation.companions),
         "graveyards": [
             card_list_json(catalog, &observation.graveyards[0]),
             card_list_json(catalog, &observation.graveyards[1]),

@@ -129,6 +129,12 @@ pub(super) struct GameSnapshot {
     pub(super) cleanup_pending: bool,
     pub(super) mulligans: [u8; 2],
     pub(super) lands_played_this_turn: [u16; 2],
+    /// The companions each player may still take from outside the game,
+    /// named by definition. Additive: a checkpoint written before companions
+    /// existed restores a game in which nobody brought one, which is what
+    /// every game before them was.
+    #[serde(default, skip_serializing_if = "emptiness::is_empty_pair_of_vectors")]
+    pub(super) companions: [Vec<u64>; 2],
     pub(super) tried_to_draw_from_empty_library: [bool; 2],
     pub(super) mana: [Vec<ManaSnapshot>; 2],
     pub(super) creature_died_this_turn: bool,

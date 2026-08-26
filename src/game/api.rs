@@ -288,6 +288,7 @@ impl Game {
         self.add_ability_actions(player, &mut actions);
         self.add_face_up_actions(player, &mut actions);
         self.add_foretell_actions(player, &mut actions);
+        self.add_companion_actions(player, &mut actions);
         self.add_plot_actions(player, &mut actions);
         self.add_unlock_door_actions(player, &mut actions);
         actions
@@ -407,6 +408,42 @@ impl Game {
         Ok(())
     }
 
+    /// The companions this player may still take, as their own observation
+    /// reports them. Nobody else sees the list, which is why it is read off
+    /// the viewer rather than off both seats.
+    fn observed_companions(
+        &self,
+        viewer: PlayerId,
+    ) -> Vec<(GameObjectId, crate::CardDefinitionId)> {
+        let state = &self.players[viewer.index()];
+        state
+            .outside_game
+            .iter()
+            .filter(|card| state.companions.contains(&card.definition))
+            .map(|card| (card.id, card.definition))
+            .collect()
+    }
+
+    fn concede(&mut self, player: PlayerId) {
+        self.finish(GameResult::Winner {
+            winner: player.opponent(),
+            reason: WinReason::OpponentConceded,
+        });
+    }
+
+    /// The special actions, which share nothing but their shape: each is
+    /// taken without using the stack and resolves as it is taken.
+    fn take_special_action(&mut self, player: PlayerId, action: &Action) {
+        match *action {
+            Action::TurnFaceUp { permanent } => self.turn_face_up(player, permanent),
+            Action::Foretell { card } => self.foretell(player, card),
+            Action::TakeCompanion { card } => self.take_companion(player, card),
+            Action::Plot { card } => self.plot(player, card),
+            Action::UnlockDoor { room, door } => self.unlock_door(player, room, door),
+            _ => unreachable!("the caller admits only special actions"),
+        }
+    }
+
     fn apply_legal_action(&mut self, player: PlayerId, action: Action) {
         // Declaration members arrive as separate UI actions, but CR 508.1
         // and 509.1 make each completed set one turn-based action. Do not let
@@ -430,10 +467,11 @@ impl Game {
             }
             Action::CancelDecision { decision } => self.cancel_decision(decision),
             Action::ChooseUntap { permanents } => self.choose_untap(player, &permanents),
-            Action::TurnFaceUp { permanent } => self.turn_face_up(player, permanent),
-            Action::Foretell { card } => self.foretell(player, card),
-            Action::Plot { card } => self.plot(player, card),
-            Action::UnlockDoor { room, door } => self.unlock_door(player, room, door),
+            Action::TurnFaceUp { .. }
+            | Action::Foretell { .. }
+            | Action::TakeCompanion { .. }
+            | Action::Plot { .. }
+            | Action::UnlockDoor { .. } => self.take_special_action(player, &action),
             Action::PassPriority => self.pass_priority(player),
             Action::PlayLand { card, option } => self.play_land(player, card, option),
             Action::ActivateManaAbility {
@@ -498,18 +536,13 @@ impl Game {
             Action::BandAttackers { first, second } => self.form_band(first, second),
             Action::ExertAttacker { attacker } => self.exert_attacker(player, attacker),
             Action::FinishDeclaringAttackers => self.finish_declaring_attackers(),
-            Action::DeclareBlocker { blocker, attacker } => {
-                self.declare_blocker(blocker, attacker);
-            }
+            Action::DeclareBlocker { blocker, attacker } => self.declare_blocker(blocker, attacker),
             Action::FinishDeclaringBlockers => self.finish_declaring_blockers(),
             Action::AssignCombatDamage {
                 attacker,
                 assignments,
             } => self.assign_combat_damage(attacker, assignments),
-            Action::Concede => self.finish(GameResult::Winner {
-                winner: player.opponent(),
-                reason: WinReason::OpponentConceded,
-            }),
+            Action::Concede => self.concede(player),
         }
         if self.result.is_none() && !declaration_is_still_open {
             self.finish_rules_procedure();
@@ -823,6 +856,7 @@ impl Game {
             opponent_hand_size: opponent.hand.len(),
             last_seen_hand: self.last_seen_hands[viewer.index()].clone(),
             library_sizes: [self.players[0].library.len(), self.players[1].library.len()],
+            companions: self.observed_companions(viewer),
             revealed_library_top: self.observed_library_top(viewer, viewer),
             opponent_revealed_library_top: self.observed_library_top(viewer, viewer.opponent()),
             graveyards: [

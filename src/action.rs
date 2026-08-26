@@ -212,6 +212,12 @@ pub enum Action {
     Foretell {
         card: GameObjectId,
     },
+    /// Take your companion: pay {3} and move it from outside the game into
+    /// your hand (CR 702.139b). A special action like the ones above -- no
+    /// stack, nothing to respond to, and only when a sorcery could be cast.
+    TakeCompanion {
+        card: GameObjectId,
+    },
     /// Plot a card in hand: pay its plot cost and exile it face up, to be
     /// cast for nothing on a later turn (CR 702.170a). A special action like
     /// foretell, and available only when a sorcery could be cast.
