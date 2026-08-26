@@ -866,7 +866,9 @@ pub(in crate::card::sets) static URBORG_MINDSUCKER: CardRecord = CardRecord::new
 );
 
 // VIS 72 — Vampiric Tutor
-static VAMPIRIC_TUTOR_EFFECT: [EffectDef; 2] = [
+/// Imperial Seal prints this clause word for word, so the two share it: the
+/// only difference between the cards is that one is an instant.
+pub(in crate::card::sets) static VAMPIRIC_TUTOR_EFFECT: [EffectDef; 2] = [
     EffectDef::SearchZone {
         player: EffectRecipientDef::Controller,
         source: ZoneKind::Library,

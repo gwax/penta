@@ -127,6 +127,96 @@ fn vampiric_tutor_leaves_the_card_on_top_and_costs_two_life() {
     assert_eq!(game.players[PlayerId::One.index()].life, life - 2);
 }
 
+/// Imperial Seal prints Vampiric Tutor's clause, so what is worth checking
+/// is that the shared effect does the same thing for it -- and that the
+/// sorcery cannot be cast when the instant could.
+#[test]
+fn imperial_seal_tutors_to_the_top_and_costs_two_life() {
+    let mut game = ready_game();
+    game.players[PlayerId::One.index()].library.clear();
+    stack_library(
+        &mut game,
+        &[
+            (50_700, cards::GRIZZLY_BEARS),
+            (50_701, cards::SERRA_ANGEL),
+            (50_702, cards::LIGHTNING_BOLT),
+        ],
+    );
+    let seal = card(50_703, cards::IMPERIAL_SEAL, PlayerId::One);
+    let seal_id = seal.id;
+    game.players[PlayerId::One.index()].hand.push(seal);
+    game.players[PlayerId::One.index()].mana_pool.black = 1;
+    let life = game.players[PlayerId::One.index()].life;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == seal_id))
+        .expect("Imperial Seal is castable in a main phase");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    pass_priority_pair(&mut game);
+
+    let decision = game.observe(PlayerId::One).decision.expect("a search");
+    let angel = decision
+        .options
+        .iter()
+        .find(|option| {
+            option.card.is_some_and(|(_, characteristics)| {
+                characteristics.card_definition() == Some(cards::SERRA_ANGEL)
+            })
+        })
+        .expect("every card in the library is eligible")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![angel],
+        },
+    )
+    .expect("the search is answered");
+    resolve(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()]
+            .library
+            .last()
+            .map(|card| card.definition),
+        Some(cards::SERRA_ANGEL),
+        "the found card is on top",
+    );
+    assert_eq!(game.players[PlayerId::One.index()].life, life - 2);
+}
+
+/// The whole difference between the two: the Seal waits for your own main
+/// phase where the Tutor does not.
+#[test]
+fn imperial_seal_waits_where_vampiric_tutor_does_not() {
+    let mut game = ready_game();
+    let seal = card(50_800, cards::IMPERIAL_SEAL, PlayerId::One);
+    let seal_id = seal.id;
+    let tutor = card(50_801, cards::VAMPIRIC_TUTOR, PlayerId::One);
+    let tutor_id = tutor.id;
+    game.players[PlayerId::One.index()].hand.push(seal);
+    game.players[PlayerId::One.index()].hand.push(tutor);
+    game.players[PlayerId::One.index()].mana_pool.black = 2;
+    game.active_player = PlayerId::Two;
+    game.step = Step::Upkeep;
+    game.priority = PlayerId::One;
+
+    let castable = |game: &Game, card: GameObjectId| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card: id, .. } if *id == card))
+    };
+
+    assert!(
+        castable(&game, tutor_id),
+        "an instant is castable in their upkeep",
+    );
+    assert!(!castable(&game, seal_id), "and a sorcery is not");
+}
+
 #[test]
 fn mystical_tutor_offers_only_instants_and_sorceries() {
     let mut game = ready_game();

@@ -1,15 +1,23 @@
 //! Portal Three Kingdoms card records required by supported formats.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::sets::y1997::visions as catalog_vis;
+use crate::card::{AbilityDef, CardArt, CardRules, CardSet, EffectDef};
+use crate::mana_cost;
 
 // PTK 78 — Imperial Seal
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static IMPERIAL_SEAL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("822e30db-40c5-4099-868b-185ad9b7c7dc"),
     "Imperial Seal",
-    crate::card::CardArt::new("822e30db-40c5-4099-868b-185ad9b7c7dc", "Li Tie"),
-    crate::card::CardSet::PortalThreeKingdoms,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("822e30db-40c5-4099-868b-185ad9b7c7dc", "Li Tie"),
+    CardSet::PortalThreeKingdoms,
+    // Vampiric Tutor's clause at sorcery speed, which is the whole of the
+    // difference: the card you want is on top of your library, and you wait
+    // a turn to draw it.
+    CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell(
+        "Search your library for a card, then shuffle and put that card on top. You lose 2 life.",
+        EffectDef::Sequence(&catalog_vis::VAMPIRIC_TUTOR_EFFECT),
+    )),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&IMPERIAL_SEAL];
