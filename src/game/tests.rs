@@ -598,6 +598,7 @@ mod vintage_cube_ugin_eye_of_the_storms;
 mod vintage_cube_ulvenwald_oddity;
 mod vintage_cube_underworld_breach;
 mod vintage_cube_unearth;
+mod vintage_cube_uro;
 mod vintage_cube_ursine;
 mod vintage_cube_urza;
 mod vintage_cube_urzas_bauble;

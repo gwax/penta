@@ -3,10 +3,11 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardType, ComparisonDef,
-    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, PlayerSetDef,
-    SpellAdditionalCostDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AppliedEffectDef, AppliedRuleDef, CardArt, CardChoiceSourceDef, CardRules, CardSet,
+    CardSupertype, CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, PlayerRelation, PlayerSetDef, SpellAdditionalCostDef, SpendModeDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -197,13 +198,101 @@ pub(in crate::card::sets) static UNDERWORLD_RAGE_HOUND: CardRecord = CardRecord:
 );
 
 // THB 229 — Uro, Titan of Nature's Wrath
-// Audit: metadata-only — Card rules have not been implemented.
+/// Five cards out of your own graveyard, exiled to pay. The card being cast
+/// is on the stack by the time costs are paid, so "other" takes care of
+/// itself: it is not there to be chosen.
+static URO_EXILES_FIVE: SpellAdditionalCostDef =
+    SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Graveyard, 5)
+        .spent(SpendModeDef::Exile);
+
+/// "Unless it escaped" reads how the spell was cast, which the permanent
+/// remembers: an Uro cast for its printed cost sacrifices itself and leaves
+/// the growth spell behind.
+static URO_DID_NOT_ESCAPE: TriggerConditionDef = TriggerConditionDef::Not(
+    &TriggerConditionDef::SourceCastWith(AlternativeCastKindDef::Escape),
+);
+
+/// Entering and attacking are two ways for one printed ability to fire, so
+/// what it does is written once.
+static URO_EVENTS: [TriggerEventDef; 2] = [
+    TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Source,
+        None,
+        Some(ZoneKind::Battlefield),
+    ),
+    TriggerEventDef::attacks(ObjectPredicateDef::Source),
+];
+
+static FROM_YOUR_HAND: [CardChoiceSourceDef; 1] = [CardChoiceSourceDef::Zone(ZoneKind::Hand)];
+
+/// "You may put a land card": the land drop this hands out is free of the
+/// one a turn, and declining is a real answer -- a hand with a land you
+/// would rather keep is not made to play it.
+static URO_PUTS_A_LAND_DOWN: EffectDef = EffectDef::ChooseCards {
+    player: EffectRecipientDef::Controller,
+    sources: &FROM_YOUR_HAND,
+    object: ObjectPredicateDef::HasType(CardType::Land),
+    minimum: 0,
+    maximum: 1,
+    reveal: false,
+    destination: ZoneKind::Battlefield,
+    placement: ZonePlacement::Top,
+    arrival_effect: None,
+};
+
+static URO_GROWS: [EffectDef; 3] = [
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+    URO_PUTS_A_LAND_DOWN,
+];
+
+static URO_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::triggered_if(
+        "When Uro enters, sacrifice it unless it escaped.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        &URO_DID_NOT_ESCAPE,
+        EffectDef::Sacrifice {
+            object: EffectRecipientDef::Source,
+        },
+    ),
+    AbilityDef::triggered(
+        "Whenever Uro enters or attacks, you gain 3 life and draw a card, then you may put a \
+         land card from your hand onto the battlefield.",
+        TriggerEventDef::AnyOf(&URO_EVENTS),
+        EffectDef::Sequence(&URO_GROWS),
+    ),
+    AbilityDef::alternative_cast(
+        mana_cost!("{G}{G}{U}{U}"),
+        AlternativeCastKindDef::Escape,
+        Some(
+            "Escape—{G}{G}{U}{U}, Exile five other cards from your graveyard. (You may cast this \
+             card from your graveyard for its escape cost.)",
+        ),
+        EffectDef::None,
+    )
+    .with_alternative_additional_cost(&URO_EXILES_FIVE),
+];
+
 pub(in crate::card::sets) static URO_TITAN_OF_NATURE_S_WRATH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a0b6a71e-56cb-4d25-8f2b-7a4f1b60900d"),
     "Uro, Titan of Nature's Wrath",
-    crate::card::CardArt::new("a0b6a71e-56cb-4d25-8f2b-7a4f1b60900d", "Vincent Proce"),
-    crate::card::CardSet::TherosBeyondDeath,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("a0b6a71e-56cb-4d25-8f2b-7a4f1b60900d", "Vincent Proce"),
+    CardSet::TherosBeyondDeath,
+    // Three mana for a ramp spell that gains three and draws, and the same
+    // card again later as a 6/6 that does it every attack.
+    CardRules::new_creature(mana_cost!("{1}{G}{U}"), &["Elder", "Giant"], 6, 6)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&URO_ABILITIES),
 );
 
 // THB 237 — Soul-Guide Lantern
