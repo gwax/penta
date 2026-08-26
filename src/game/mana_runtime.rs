@@ -7,8 +7,8 @@ use super::{
     ObjectCountConditionDef, Permanent, PlayerId, RetiredObject, StackObject, TriggerContext,
     TriggerEventObject, ZoneKind, pay_cost_with_generic_strategy,
 };
-use crate::AbilityProgramDef;
 use crate::card::{AbilityCostList, ManaSplit};
+use crate::{AbilityProgramDef, ManaPaymentChoice};
 
 mod eligibility;
 mod pricing;
@@ -838,6 +838,32 @@ impl Game {
     ) -> bool {
         self.plan_mana_activations_for(player, cost, x, None, purpose)
             .is_some()
+    }
+
+    /// Every way this player may announce paying the flexible symbols in an
+    /// activation cost that they can then actually pay: the mana left after
+    /// the announcement has to be raisable, and the life the announcement
+    /// itself spends has to be there to spend (CR 118.4).
+    ///
+    /// `None` is the announcement that names nothing, which is the only one
+    /// a cost without a flexible symbol has.
+    pub(super) fn affordable_activation_payments(
+        &self,
+        player: PlayerId,
+        cost: ManaCost,
+        x: u16,
+        purpose: &ManaPaymentPurpose,
+    ) -> Vec<Option<ManaPaymentChoice>> {
+        Self::mana_payment_choices(cost)
+            .into_iter()
+            .filter_map(|choice| {
+                let (locked, life) = Self::locked_mana_payment(cost, &choice)?;
+                let affordable = i16::try_from(life)
+                    .is_ok_and(|life| self.players[player.index()].life >= life)
+                    && self.can_pay_cost_for(player, locked, x, purpose);
+                affordable.then(|| (!choice.alternatives().is_empty()).then_some(choice))
+            })
+            .collect()
     }
 
     pub(super) fn can_pay_cost_for_reserving_with_life(

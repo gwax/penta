@@ -248,6 +248,7 @@ fn sacrificed_card_copying_token_remains_nontoken_on_the_stack() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .expect("the copied Clue ability can be activated");
@@ -289,6 +290,7 @@ fn sacrificed_token_copying_card_remains_token_on_the_stack() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .expect("the copied Mogg Fanatic ability can be activated");

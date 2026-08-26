@@ -680,6 +680,7 @@ fn a_standing_cast_offer_reconstructs() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .expect("the loyalty ability activates");

@@ -21,6 +21,7 @@ fn domri_ultimate_grants_two_combat_damage_steps() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&ultimate));
     game.apply(PlayerId::One, ultimate).unwrap();

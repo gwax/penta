@@ -53,6 +53,7 @@ fn untap_source_game() -> (Game, GameObjectId, Action) {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     (game, source_id, action)
 }

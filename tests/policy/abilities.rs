@@ -156,6 +156,7 @@ fn handcrafted_prioritizes_time_vaults_declarative_extra_turn() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     let draw = Action::ActivateAbility {
         source: tome,
@@ -164,6 +165,7 @@ fn handcrafted_prioritizes_time_vaults_declarative_extra_turn() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     let observation = policy_observation(
         vec![
@@ -191,6 +193,7 @@ fn handcrafted_profiles_token_activations_from_copiable_characteristics() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         };
         let mut clue = permanent(source.0, cards::BLACK_LOTUS, PlayerId::One, None, None);
         clue.characteristics =
@@ -331,6 +334,7 @@ fn handcrafted_animates_a_manland_only_when_it_can_attack() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     let vault = || permanent(1, cards::MUTAVAULT, PlayerId::One, None, None);
 

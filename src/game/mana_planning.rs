@@ -1,5 +1,6 @@
 use std::{collections::HashMap, ops::ControlFlow};
 
+use crate::ManaPaymentChoice;
 use crate::card::{
     CostAdjustmentDef, CostAmountDef, CostModificationDef, FlexibleManaSymbol,
     SpellCostConditionDef,
@@ -143,8 +144,16 @@ impl Game {
                 ability,
                 cost_objects,
                 x,
+                mana_payment,
                 ..
-            } => self.ability_mana_requirement(player, *source, *ability, cost_objects, *x),
+            } => self.ability_mana_requirement(
+                player,
+                *source,
+                *ability,
+                cost_objects,
+                *x,
+                mana_payment.as_deref(),
+            ),
             _ => None,
         }
     }
@@ -198,6 +207,7 @@ impl Game {
         ability: AbilityOrigin,
         cost_objects: &[GameObjectId],
         x: u16,
+        mana_payment: Option<&ManaPaymentChoice>,
     ) -> Option<(ManaCost, u16, ManaPlanOptions, ManaPaymentPurpose)> {
         if let Some(card) = self.players[player.index()]
             .hand
@@ -224,7 +234,10 @@ impl Game {
         {
             return Self::activated_ability_mana_cost(&definition).map(|cost| {
                 (
-                    self.activation_mana_cost(&definition, source, cost),
+                    Self::announced_mana_cost(
+                        self.activation_mana_cost(&definition, source, cost),
+                        mana_payment,
+                    ),
                     x,
                     ManaPlanOptions::default(),
                     ManaPaymentPurpose::Ability {
@@ -270,7 +283,10 @@ impl Game {
             );
             return Self::activated_ability_mana_cost(&definition).map(|cost| {
                 (
-                    self.activation_mana_cost(&definition, source, cost),
+                    Self::announced_mana_cost(
+                        self.activation_mana_cost(&definition, source, cost),
+                        mana_payment,
+                    ),
                     x,
                     options,
                     purpose,
@@ -279,6 +295,16 @@ impl Game {
         }
 
         None
+    }
+
+    /// The mana an activation still owes once its announced flexible-symbol
+    /// payment is taken out. The planner has to raise this rather than the
+    /// printed cost: a Phyrexian symbol announced as 2 life is not a colour
+    /// anybody needs to find.
+    fn announced_mana_cost(cost: ManaCost, payment: Option<&ManaPaymentChoice>) -> ManaCost {
+        payment
+            .and_then(|payment| Self::locked_mana_payment(cost, payment))
+            .map_or(cost, |(locked, _life)| locked)
     }
 
     /// How much {C} a repeatable pay-life ongoing mana ability could still

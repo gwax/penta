@@ -17,6 +17,7 @@ fn copied_grant_source_definition_is_part_of_the_granted_ability_origin() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&stale_action));
 
@@ -42,6 +43,7 @@ fn copied_grant_source_definition_is_part_of_the_granted_ability_origin() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     }));
 }
 
@@ -111,6 +113,7 @@ fn declarative_activation_preserves_multiple_slots_before_sacrificing_its_source
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
 
     let invalid_slots = Action::ActivateAbility {
@@ -123,6 +126,7 @@ fn declarative_activation_preserves_multiple_slots_before_sacrificing_its_source
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     assert!(game.apply(PlayerId::One, invalid_slots).is_err());
     assert!(
@@ -228,6 +232,7 @@ fn one_ability_target_slot_resolves_for_every_selected_legal_target() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&action));
@@ -560,6 +565,7 @@ fn a_legacy_activation_after_a_shared_clause_keeps_its_own_origin() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&action));

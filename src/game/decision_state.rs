@@ -108,6 +108,7 @@ impl PregameAbilityAction {
             cost_objects: self.cost_objects.clone(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         }
     }
 }

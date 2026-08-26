@@ -3,6 +3,16 @@
 
 use super::*;
 
+/// Every way of activating Etali's transform ability that is on offer.
+fn transforms(game: &Game, etali: GameObjectId) -> Vec<Action> {
+    game.legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == etali),
+        )
+        .collect()
+}
+
 /// Etali on the battlefield after both libraries are stacked.
 fn staged(mine: &[CardDefinitionId], theirs: &[CardDefinitionId]) -> (Game, GameObjectId) {
     let mut game = ready_game();
@@ -127,19 +137,19 @@ fn the_lands_it_passed_are_not_castable() {
 }
 
 /// The transform is sorcery speed, and what it leaves is an 11/11 that
-/// poisons. The Phyrexian pip is paid with green mana here: paying two life
-/// for it is offered where a spell is cast rather than where an ability is
-/// activated, which the ability's coverage note records.
+/// poisons. The Phyrexian pip is paid with green mana here, which is the
+/// activation that announces nothing.
 #[test]
 fn it_transforms_into_the_back_face() {
     let (mut game, etali) = staged(&[cards::LIGHTNING_BOLT], &[cards::GRIZZLY_BEARS]);
     game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 9);
     game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
 
-    let transform = game
-        .legal_actions(PlayerId::One)
+    let transform = transforms(&game, etali)
         .into_iter()
-        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == etali))
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { mana_payment, .. } if mana_payment.is_none())
+        })
         .expect("ten mana turns it over");
     game.apply(PlayerId::One, transform).expect("it activates");
     drain_pending(&mut game);
@@ -183,5 +193,80 @@ fn the_back_face_poisons_what_it_hits() {
         game.players[1].life,
         life - 11,
         "and the damage still happened",
+    );
+}
+
+/// "{9}{G/P}": the Phyrexian pip is payable with two life instead of green
+/// mana, so nine colourless and a pulse is enough to turn it over.
+#[test]
+fn two_life_pays_the_phyrexian_pip() {
+    let (mut game, etali) = staged(&[cards::LIGHTNING_BOLT], &[cards::GRIZZLY_BEARS]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 9);
+
+    let offered = transforms(&game, etali);
+    assert_eq!(
+        offered.len(),
+        1,
+        "with no green anywhere, life is the only way to pay the pip",
+    );
+    game.apply(
+        PlayerId::One,
+        offered.into_iter().next().expect("one offer"),
+    )
+    .expect("it activates");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[0].life, 18, "two life for the pip");
+    let back = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == etali)
+        .expect("it is still there");
+    assert_eq!(game.power(back), Some(11), "and it turned over");
+    assert_eq!(
+        game.players[0].mana_pool.total(),
+        0,
+        "the nine generic was still paid with mana",
+    );
+}
+
+/// With the green mana available, both ways of paying are on offer: the
+/// branch is the player's to announce, not the engine's to pick.
+#[test]
+fn both_ways_of_paying_the_pip_are_offered() {
+    let (game, etali) = staged(&[cards::LIGHTNING_BOLT], &[cards::GRIZZLY_BEARS]);
+    let mut game = game;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 9);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+
+    let offered = transforms(&game, etali);
+
+    assert_eq!(offered.len(), 2, "green mana, or two life");
+    assert_eq!(
+        offered
+            .iter()
+            .filter(|action| {
+                matches!(action, Action::ActivateAbility { mana_payment, .. } if mana_payment.is_some())
+            })
+            .count(),
+        1,
+        "exactly one of them announces paying with life",
+    );
+}
+
+/// A player at two life may still pay it; one at one life may not (CR
+/// 118.4), and with no green mana that leaves the ability unactivatable.
+#[test]
+fn a_player_too_low_on_life_cannot_pay_the_pip() {
+    let (mut game, etali) = staged(&[cards::LIGHTNING_BOLT], &[cards::GRIZZLY_BEARS]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 9);
+    game.players[0].life = 2;
+    assert_eq!(transforms(&game, etali).len(), 1, "two life is payable");
+
+    game.players[0].life = 1;
+
+    assert!(
+        transforms(&game, etali).is_empty(),
+        "one life does not pay a two-life pip",
     );
 }

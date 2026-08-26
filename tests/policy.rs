@@ -154,6 +154,7 @@ fn bloodrush_action(source: CardInstanceId, target: CardInstanceId) -> Action {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     }
 }
 

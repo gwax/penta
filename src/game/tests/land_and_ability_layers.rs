@@ -62,6 +62,7 @@ fn factory_and_sorceress_queen_base_setters_follow_timestamp_without_losing_type
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -76,6 +77,7 @@ fn factory_and_sorceress_queen_base_setters_follow_timestamp_without_losing_type
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -112,6 +114,7 @@ fn factory_and_sorceress_queen_base_setters_follow_timestamp_without_losing_type
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -445,6 +448,7 @@ fn stage_copying_a_basic_land_stays_basic_through_blood_moon() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -509,6 +513,7 @@ fn stage_activation_already_on_the_stack_resolves_through_blood_moon() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -561,6 +566,7 @@ fn stage_copying_a_nonbasic_land_is_masked_but_persists_through_blood_moon() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();

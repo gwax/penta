@@ -143,6 +143,7 @@ fn nevinyrrals_disk_uses_the_shared_stack_and_destroys_every_named_type() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));
     game.apply(PlayerId::One, activation).unwrap();

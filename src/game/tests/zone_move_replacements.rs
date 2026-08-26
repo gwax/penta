@@ -291,6 +291,7 @@ fn activated_ability_resolves_only_after_ugins_nexus_replacement_choice() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .expect("Vraska can target Ugin's Nexus");
@@ -393,6 +394,7 @@ fn sacrifice_cost_finishes_only_after_ugins_nexus_replacement_choice() {
             cost_objects: vec![nexus],
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .expect("Ugin's Nexus can be sacrificed to Claws of Gix");

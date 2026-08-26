@@ -25,6 +25,18 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Phyrexian mana in an activation cost.** A spell could be cast by paying
+  2 life for a Phyrexian symbol; an ability could not be activated that way.
+  The branch was simply absent, so Etali's `{9}{G/P}` wanted green mana and
+  nine Souleater-style abilities across New Phyrexia silently wanted a
+  colour their controller might not have. An activation now determines its
+  total cost the way a cast does (CR 602.2b): each way of announcing the
+  flexible symbols is its own offered activation, one of them is the life
+  branch, and a player with the life but not the mana is offered the
+  ability rather than passed over. The announcement travels on the action,
+  so the mana planner raises what is actually still owed and a bot reading
+  the JSON can tell the two activations apart.
+
 - **Characteristic-defining power and toughness.** A creature whose body is
   a count -- a Lhurgoyf, a Keldon Warlord, Adeline -- was declared as a
   printed zero plus a continuous effect that added the count back on the

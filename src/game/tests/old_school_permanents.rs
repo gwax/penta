@@ -285,6 +285,7 @@ fn vraska_destroys_a_nonland_permanent_and_ultimates_into_three_assassins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     let at_the_land = Action::ActivateAbility {
         source: GameObjectId(10_000),
@@ -293,6 +294,7 @@ fn vraska_destroys_a_nonland_permanent_and_ultimates_into_three_assassins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     let actions = game.legal_actions(PlayerId::One);
     assert!(actions.contains(&destroy), "the angel is a legal target");
@@ -335,6 +337,7 @@ fn vraskas_ultimate_makes_three_assassins() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -384,6 +387,7 @@ fn jace_lets_an_opponent_split_the_top_three_and_takes_the_pile_he_likes() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -496,6 +500,7 @@ fn jaces_first_ability_taxes_attackers_until_his_controller_comes_back_around() 
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -573,6 +578,7 @@ fn pendelhaven_only_pumps_something_that_is_still_a_one_one_when_it_resolves() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     let at_the_two_one = Action::ActivateAbility {
         source: GameObjectId(10_000),
@@ -581,6 +587,7 @@ fn pendelhaven_only_pumps_something_that_is_still_a_one_one_when_it_resolves() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     let actions = game.legal_actions(PlayerId::One);
     assert!(actions.contains(&pump), "the 1/1 is a legal target");
@@ -642,6 +649,7 @@ fn pendelhaven_pumps_a_one_one_that_stays_one() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -685,6 +693,7 @@ fn glasses_of_urza_waits_on_the_stack_before_revealing_a_hand() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -722,6 +731,7 @@ fn dragon_whelp_only_burns_itself_out_on_the_fourth_activation() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     for _ in 0..3 {
         game.players[0].mana_pool.red = 1;
@@ -785,6 +795,7 @@ fn dragon_whelps_activation_count_resets_with_the_turn() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         };
         game.apply(PlayerId::One, action).unwrap();
         drain_pending(&mut game);
@@ -804,6 +815,7 @@ fn dragon_whelps_activation_count_resets_with_the_turn() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     game.apply(PlayerId::One, action).unwrap();
     drain_pending(&mut game);
@@ -837,6 +849,7 @@ fn stone_giant_throws_only_what_it_can_lift_and_the_landing_kills_it() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     let actions = game.legal_actions(PlayerId::One);
     assert!(
@@ -918,6 +931,7 @@ fn maze_of_ith_stops_the_damage_without_calling_off_the_attack() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     assert!(
         game.legal_actions(PlayerId::Two).contains(&maze),

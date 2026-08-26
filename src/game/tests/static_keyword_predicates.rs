@@ -535,6 +535,7 @@ fn silklash_spider_deals_x_to_every_flier_and_never_to_itself() {
             cost_objects: Vec::new(),
             x: 2,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();

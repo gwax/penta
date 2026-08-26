@@ -198,6 +198,7 @@ fn kor_haven_prevents_damage_from_the_attacker_but_not_to_it() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();

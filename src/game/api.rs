@@ -473,6 +473,7 @@ impl Game {
                 cost_objects,
                 x,
                 modes,
+                mana_payment,
             } => {
                 if self.is_pregame_ability_action(player, source, ability, &cost_objects) {
                     self.activate_pregame_ability(player, source, ability, &cost_objects);
@@ -486,6 +487,7 @@ impl Game {
                             cost_objects: &cost_objects,
                             x,
                             modes: &modes,
+                            mana_payment: mana_payment.as_deref(),
                         },
                     );
                 }

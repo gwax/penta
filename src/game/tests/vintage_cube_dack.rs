@@ -31,6 +31,7 @@ fn activate(game: &mut Game, dack: GameObjectId, index: usize, targets: Vec<Targ
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .expect("the loyalty ability activates");

@@ -319,12 +319,18 @@ impl Game {
                         definition.costs.as_slice(),
                     )
                     || definition.costs.iter().any(|cost| match cost {
-                        AbilityCostDef::Mana(cost) => !self.can_pay_cost_for(
-                            player,
-                            self.activation_mana_cost(&definition, permanent.card.id, *cost),
-                            0,
-                            &payment_purpose,
-                        ),
+                        // A flexible symbol has more than one way to be paid,
+                        // so what makes the cost payable is that one of them
+                        // is -- paying 2 life for a Phyrexian symbol counts
+                        // even with no mana of that colour anywhere.
+                        AbilityCostDef::Mana(cost) => self
+                            .affordable_activation_payments(
+                                player,
+                                self.activation_mana_cost(&definition, permanent.card.id, *cost),
+                                0,
+                                &payment_purpose,
+                            )
+                            .is_empty(),
                         AbilityCostDef::PayLife(amount) => {
                             self.players[player.index()].life
                                 < i16::try_from(*amount).unwrap_or(i16::MAX)
@@ -612,14 +618,30 @@ impl Game {
                                 {
                                     continue;
                                 }
-                                actions.push(Action::ActivateAbility {
-                                    source: permanent.card.id,
-                                    ability: effective.origin,
-                                    targets: selections.clone(),
-                                    cost_objects: cost_objects.clone(),
-                                    x,
-                                    modes: selected_modes.clone(),
-                                });
+                                // Each way of announcing the flexible
+                                // symbols is its own activation, the way each
+                                // affordable X and each chosen cost object is.
+                                for payment in payable_mana_cost.map_or_else(
+                                    || vec![None],
+                                    |cost| {
+                                        self.affordable_activation_payments(
+                                            player,
+                                            cost,
+                                            x,
+                                            &payment_purpose,
+                                        )
+                                    },
+                                ) {
+                                    actions.push(Action::ActivateAbility {
+                                        source: permanent.card.id,
+                                        ability: effective.origin,
+                                        targets: selections.clone(),
+                                        cost_objects: cost_objects.clone(),
+                                        x,
+                                        modes: selected_modes.clone(),
+                                        mana_payment: payment.map(Box::new),
+                                    });
+                                }
                             }
                         }
                     }
@@ -672,6 +694,7 @@ impl Game {
                     cost_objects: Vec::new(),
                     x: 0,
                     modes: Vec::new(),
+                    mana_payment: None,
                 });
             }
         }
@@ -699,6 +722,7 @@ impl Game {
                     cost_objects: Vec::new(),
                     x: 0,
                     modes: Vec::new(),
+                    mana_payment: None,
                 });
             }
             _ => {}

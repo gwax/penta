@@ -25,6 +25,7 @@ fn chaos_orb_chooses_during_resolution_and_uses_a_seeded_success_trial() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&action));
 
@@ -100,6 +101,7 @@ fn a_failed_chaos_orb_flip_still_destroys_the_orb() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -141,6 +143,7 @@ fn guardian_beast_preserves_chaos_orb_on_success_and_failure() {
                 cost_objects: Vec::new(),
                 x: 0,
                 modes: Vec::new(),
+                mana_payment: None,
             },
         )
         .unwrap();
@@ -189,6 +192,7 @@ fn chaos_orb_destroying_its_guardian_removes_its_own_protection() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -226,6 +230,7 @@ fn chaos_orb_can_be_activated_the_turn_it_enters_using_untapped_mana() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&action));
@@ -269,6 +274,7 @@ fn removing_chaos_orb_in_response_nullifies_its_flip() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();

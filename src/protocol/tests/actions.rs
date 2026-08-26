@@ -65,6 +65,7 @@ fn activated_actions_serialize_printed_and_granted_origins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     });
     assert_eq!(activated["ability"]["kind"], "printed");
     assert_eq!(
@@ -95,6 +96,7 @@ fn activated_actions_serialize_printed_and_granted_origins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     });
     assert_eq!(granted["ability"]["kind"], "granted");
     assert_eq!(granted["ability"]["source"], 9);
@@ -117,6 +119,7 @@ fn token_actions_serialize_their_exact_ability_origins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     });
     assert_eq!(token["ability"]["kind"], "token");
     assert_eq!(token["ability"]["partId"], 1);
@@ -135,6 +138,7 @@ fn token_actions_serialize_their_exact_ability_origins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     });
     assert_eq!(token_granted["ability"]["kind"], "tokenGranted");
     assert_eq!(token_granted["ability"]["source"], 13);
@@ -155,6 +159,7 @@ fn emblem_actions_serialize_their_exact_ability_origins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     });
     assert_eq!(
         emblem["ability"],
@@ -175,6 +180,7 @@ fn emblem_actions_serialize_their_exact_ability_origins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     });
     assert_eq!(
         emblem_granted["ability"],

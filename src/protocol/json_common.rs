@@ -4,7 +4,7 @@ use crate::card::{
     AlternateSpellKind, BasicLandType, CardArt, CardRules, DoubleFacedKind, HybridPair,
     ImplementationStatus, SpellForm, TargetPredicate, TokenStructure,
 };
-use crate::casting::{CastChoices, CastSignature};
+use crate::casting::{CastChoices, CastSignature, ManaPaymentChoice};
 use crate::{
     AbilityOrigin, AttackDefender, CardCatalog, DecisionVisibility, DecisionZone, GameObjectId,
     ManaColor, ObjectCharacteristics, PlayerId, Step, Target,
@@ -338,27 +338,32 @@ pub(super) fn cast_choices_json(choices: &CastChoices) -> Value {
         );
     }
     if !choices.mana_payment().alternatives().is_empty() {
-        value["manaPayment"] = Value::Array(
-            choices
-                .mana_payment()
-                .alternatives()
-                .iter()
-                .map(|payment| {
-                    let symbol = payment.symbol();
-                    json!({
-                        "symbol": symbol.symbol(),
-                        "count": payment.count(),
-                        "payWith": if symbol.life_cost().is_some() {
-                            "life"
-                        } else {
-                            "generic"
-                        },
-                    })
-                })
-                .collect(),
-        );
+        value["manaPayment"] = mana_payment_json(choices.mana_payment());
     }
     value
+}
+
+/// How each announced flexible symbol is being paid. Shared by a cast and an
+/// activation because they announce the same thing in the same shape.
+pub(super) fn mana_payment_json(payment: &ManaPaymentChoice) -> Value {
+    Value::Array(
+        payment
+            .alternatives()
+            .iter()
+            .map(|payment| {
+                let symbol = payment.symbol();
+                json!({
+                    "symbol": symbol.symbol(),
+                    "count": payment.count(),
+                    "payWith": if symbol.life_cost().is_some() {
+                        "life"
+                    } else {
+                        "generic"
+                    },
+                })
+            })
+            .collect(),
+    )
 }
 
 pub(super) fn cast_signature_json(signature: &CastSignature) -> Value {

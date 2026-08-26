@@ -263,6 +263,7 @@ fn handcrafted_scores_declarative_nevinyrrals_disk_by_the_board_swing() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
 
     let behind = policy_observation(
@@ -325,6 +326,7 @@ fn handcrafted_fires_nevinyrrals_disk_for_noncreature_permanents() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     let observation = policy_observation(
         vec![

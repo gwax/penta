@@ -2,10 +2,23 @@ use super::{
     AbilityCostDef, AbilityOrigin, AbilityProcedureDef, ActivationChoices, ActivationTimingDef,
     BattlefieldExitCompletion, CardBehavior, CardInstance, CharacteristicContext,
     CommittedTriggerEvent, CounterKind, DeclarativeAbilityDef, FrozenActivatedAbility, Game,
-    GameEvent, GameObjectId, ManaPaymentPurpose, ManaPlanOptions, ObjectCharacteristics,
+    GameEvent, GameObjectId, ManaCost, ManaPaymentPurpose, ManaPlanOptions, ObjectCharacteristics,
     ObjectInstance, PendingActivation, PlayRestriction, PlayerId, SacrificeQuota, Step, Target,
     TargetSelection, ZoneKind, ZoneMoveCause, ZonePlacement, remove_card,
 };
+
+use crate::ManaPaymentChoice;
+
+/// What one activation announced about paying its cost: the value of X, the
+/// objects its costs spend, what the mana is being raised for, and how any
+/// flexible symbol in it is being paid.
+#[derive(Clone, Copy)]
+struct AnnouncedActivationCost<'a> {
+    cost_objects: &'a [GameObjectId],
+    x: u16,
+    payment_purpose: &'a ManaPaymentPurpose,
+    mana_payment: Option<&'a ManaPaymentChoice>,
+}
 
 impl Game {
     /// Moves the counters a loyalty cost names and records that this
@@ -103,6 +116,7 @@ impl Game {
             cost_objects,
             x,
             modes,
+            mana_payment,
         } = choices;
         let Some(effective) = self.find_printed_card_ability(
             source_card,
@@ -146,9 +160,12 @@ impl Game {
             player,
             source,
             &definition,
-            cost_objects,
-            x,
-            &payment_purpose,
+            AnnouncedActivationCost {
+                cost_objects,
+                x,
+                payment_purpose: &payment_purpose,
+                mana_payment,
+            },
         );
         let chosen_permanents = targets
             .iter()
@@ -170,6 +187,26 @@ impl Game {
         self.check_state_based_actions();
     }
 
+    /// Spends what an announced flexible-symbol payment costs in life and
+    /// returns the mana still owed (CR 118.4, CR 602.2b). An activation that
+    /// announced nothing owes its cost exactly as printed, which is nearly
+    /// every activation there is.
+    fn announced_activation_cost(
+        &mut self,
+        player: PlayerId,
+        cost: ManaCost,
+        payment: Option<&ManaPaymentChoice>,
+    ) -> ManaCost {
+        let Some((locked, life)) = payment.and_then(|payment| {
+            let locked = Self::locked_mana_payment(cost, payment)?;
+            Some(locked)
+        }) else {
+            return cost;
+        };
+        self.lose_life(player, life);
+        locked
+    }
+
     /// Pays what a graveyard activation owes. The permanent it taps goes
     /// first, so automatic mana payment cannot tap it out from under the
     /// cost it is paying.
@@ -178,10 +215,14 @@ impl Game {
         player: PlayerId,
         source: GameObjectId,
         definition: &crate::card::ActivatedAbilityDef,
-        cost_objects: &[GameObjectId],
-        x: u16,
-        payment_purpose: &ManaPaymentPurpose,
+        announced: AnnouncedActivationCost<'_>,
     ) {
+        let AnnouncedActivationCost {
+            cost_objects,
+            x,
+            payment_purpose,
+            mana_payment,
+        } = announced;
         let priced_mana_cost = self.priced_ability_mana_cost(source, definition);
         if definition
             .costs
@@ -195,6 +236,7 @@ impl Game {
             match cost {
                 AbilityCostDef::Mana(printed) => {
                     let cost = priced_mana_cost.unwrap_or(*printed);
+                    let cost = self.announced_activation_cost(player, cost, mana_payment);
                     self.activate_mana_for_cost_avoiding_for(
                         player,
                         cost,
@@ -291,6 +333,7 @@ impl Game {
             cost_objects,
             x,
             modes,
+            mana_payment,
         } = choices;
         if self.activate_ongoing_effect_ability(player, source, ability) {
             return;
@@ -344,6 +387,7 @@ impl Game {
                 match cost {
                     AbilityCostDef::Mana(cost) => {
                         let cost = priced_mana_cost.unwrap_or(*cost);
+                        let cost = self.announced_activation_cost(player, cost, mana_payment);
                         self.activate_mana_for_cost_avoiding_for(
                             player,
                             cost,
@@ -457,6 +501,7 @@ impl Game {
                 cost_objects,
                 x,
                 modes,
+                mana_payment,
             };
             self.activate_graveyard_ability(player, source, ability, choices, &source_card);
             return;
@@ -577,6 +622,7 @@ impl Game {
                         // any discount, printed or granted, so what is paid
                         // is what the offer was priced at.
                         let cost = self.activation_mana_cost(&definition, source, *cost);
+                        let cost = self.announced_activation_cost(player, cost, mana_payment);
                         let payment_purpose = ManaPaymentPurpose::Ability {
                             source,
                             taps_source,

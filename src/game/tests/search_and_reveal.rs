@@ -496,6 +496,7 @@ fn sage_and_relic_barrier_use_the_shared_activated_ability_stack() {
             cost_objects: vec![ring_id],
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -524,6 +525,7 @@ fn sage_and_relic_barrier_use_the_shared_activated_ability_stack() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();

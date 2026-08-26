@@ -108,6 +108,7 @@ fn handcrafted_uses_domri_to_win_a_favorable_fight() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     let observation = policy_observation(
         vec![domri, fighter, victim],
@@ -120,6 +121,7 @@ fn handcrafted_uses_domri_to_win_a_favorable_fight() {
                 cost_objects: Vec::new(),
                 x: 0,
                 modes: Vec::new(),
+                mana_payment: None,
             },
             fight.clone(),
         ],
@@ -299,6 +301,7 @@ fn handcrafted_only_uses_orcish_mechanics_on_a_player_for_lethal() {
                 cost_objects: vec![vise],
                 x: 0,
                 modes: Vec::new(),
+                mana_payment: None,
             },
         ],
     );
@@ -327,6 +330,7 @@ fn handcrafted_scores_triskelion_from_its_declarative_damage_effect() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     let observation = policy_observation(
         vec![
@@ -342,6 +346,7 @@ fn handcrafted_scores_triskelion_from_its_declarative_damage_effect() {
                 cost_objects: Vec::new(),
                 x: 0,
                 modes: Vec::new(),
+                mana_payment: None,
             },
             hit_creature.clone(),
         ],
@@ -382,6 +387,7 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
                 cost_objects: vec![vise],
                 x: 0,
                 modes: Vec::new(),
+                mana_payment: None,
             },
             Action::ActivateAbility {
                 source: atog,
@@ -390,6 +396,7 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
                 cost_objects: vec![mox],
                 x: 0,
                 modes: Vec::new(),
+                mana_payment: None,
             },
         ],
     );
@@ -406,6 +413,7 @@ fn handcrafted_sacrifices_artifacts_to_atog_for_an_unblocked_lethal_attack() {
             cost_objects: vec![vise],
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         })
     );
 }

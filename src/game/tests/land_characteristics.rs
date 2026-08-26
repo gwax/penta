@@ -562,6 +562,7 @@ fn magical_hack_on_stage_applies_to_land_types_that_stage_later_copies() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();

@@ -175,6 +175,7 @@ fn ability_events_distinguish_the_stack_object_from_a_source_that_left_play() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();

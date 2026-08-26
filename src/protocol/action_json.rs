@@ -1,8 +1,8 @@
 use serde_json::{Value, json};
 
 use super::json_common::{
-    ability_origin_json, cast_choices_json, defender_json, instances_json, target_json,
-    target_selections_json,
+    ability_origin_json, cast_choices_json, defender_json, instances_json, mana_payment_json,
+    target_json, target_selections_json,
 };
 use crate::{Action, PlayerObservation};
 
@@ -114,6 +114,7 @@ pub fn action_json(action: &Action) -> Value {
             cost_objects,
             x,
             modes,
+            mana_payment,
         } => json!({
             "type": "ActivateAbility",
             "x": x,
@@ -137,6 +138,10 @@ pub fn action_json(action: &Action) -> Value {
                 .collect::<Vec<_>>(),
             "targetSelections": target_selections_json(targets),
             "costObjects": cost_objects.iter().map(|card| card.0).collect::<Vec<_>>(),
+            // Present only when the activation announced how to pay a
+            // flexible symbol, which nearly none do: a consumer reading an
+            // activation without the field reads it exactly as before.
+            "manaPayment": mana_payment.as_deref().map(mana_payment_json),
         }),
         Action::DeclareAttacker { attacker, defender } => {
             json!({ "type": "DeclareAttacker", "attacker": attacker.0, "defender": defender_json(*defender) })

@@ -1,20 +1,22 @@
 use crate::ObjectCharacteristics;
 use crate::action::AbilityOrigin;
 use crate::card::{AbilityDef, AbilityTargetDef};
-use crate::casting::TargetSelection;
+use crate::casting::{ManaPaymentChoice, TargetSelection};
 use crate::ids::ModeId;
 
 use super::GameObjectId;
 
 /// Everything one activation chose before its costs were paid: which slots
-/// it filled, which objects its costs spend, the value of X, and the modes
-/// it picked. All four are chosen as the ability is activated (CR 601.2b),
-/// so they travel together from the action to the stack object.
+/// it filled, which objects its costs spend, the value of X, the modes it
+/// picked, and how it announced paying any flexible symbol in its cost. All
+/// of it is chosen as the ability is activated (CR 601.2b, CR 602.2b), so it
+/// travels together from the action to the stack object.
 pub(super) struct ActivationChoices<'a> {
     pub(super) targets: Vec<TargetSelection>,
     pub(super) cost_objects: &'a [GameObjectId],
     pub(super) x: u16,
     pub(super) modes: &'a [ModeId],
+    pub(super) mana_payment: Option<&'a ManaPaymentChoice>,
 }
 
 use super::{ScopedEffect, StackAbilityResolver};

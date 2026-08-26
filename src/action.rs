@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fmt;
 
 use crate::card::{BasicLandType, CounterKind, ManaSplit};
-use crate::casting::{CastChoices, TargetSelection};
+use crate::casting::{CastChoices, ManaPaymentChoice, TargetSelection};
 use crate::{
     AbilityId, CardDefinitionId, CardPartId, GameObjectId, GrantId, ModeId, PlayOptionId, PlayerId,
 };
@@ -188,6 +188,15 @@ pub enum Action {
         /// (CR 601.2b), so they travel with the action. Empty for every
         /// ability that prints no modes, which is nearly all of them.
         modes: Vec<ModeId>,
+        /// How the flexible symbols in the activation cost were announced to
+        /// be paid: which copies of a Phyrexian symbol take 2 life instead
+        /// of mana. An activation determines its total cost the same way a
+        /// cast does (CR 602.2b), so the branch is announced rather than
+        /// chosen for the player while the cost is being paid.
+        ///
+        /// Boxed behind an option because nearly every ability prints no
+        /// flexible symbol at all and has nothing to announce.
+        mana_payment: Option<Box<ManaPaymentChoice>>,
     },
     /// Turn a face-down permanent face up by paying its morph cost. A
     /// special action rather than an ability: it uses no stack, nothing can

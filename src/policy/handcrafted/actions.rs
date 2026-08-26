@@ -187,6 +187,11 @@ impl HandcraftedPolicy {
                 cost_objects,
                 x,
                 modes: _,
+                // Paying two life for a Phyrexian symbol is a cost the
+                // handcrafted policy does not price: it takes whichever
+                // activation the ordering leaves first, the same way it
+                // takes the first of any two otherwise equal actions.
+                mana_payment: _,
             } => self.score_ability(observation, *source, *ability, targets, cost_objects, *x),
             Action::DeclareAttacker { attacker, defender } => {
                 Self::score_attack(observation, *attacker)

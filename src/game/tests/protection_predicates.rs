@@ -221,6 +221,7 @@ fn devoted_caretaker_grants_protection_from_spells_but_not_permanent_abilities()
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .expect("the Caretaker can protect its controller's permanent");

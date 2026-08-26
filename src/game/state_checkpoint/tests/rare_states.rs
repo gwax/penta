@@ -267,6 +267,7 @@ fn loyalty_action(
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     }
 }
 

@@ -152,6 +152,7 @@ fn triskelion_enters_with_counters_and_spends_one_to_deal_damage() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -357,6 +358,7 @@ fn order_of_leitbur_can_gain_first_strike() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
 
     assert!(game.legal_actions(PlayerId::One).contains(&activation));
@@ -611,6 +613,7 @@ fn ivory_tower_and_jayemdae_tome_provide_control_card_advantage() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -642,6 +645,7 @@ fn library_of_alexandria_draw_activation_keeps_its_printed_ability_id() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
 
     assert_eq!(activated_ability_for(&game, library_id, 0), expected_origin);

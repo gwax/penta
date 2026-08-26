@@ -51,6 +51,7 @@ fn goblin_sharpshooter_pings_a_creature_then_untaps_when_it_dies() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -116,6 +117,7 @@ fn sylvan_safekeeper_sacrifices_a_land_and_grants_true_shroud() {
             cost_objects: vec![land_id],
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -165,6 +167,7 @@ fn claws_of_gix_sacrifices_the_chosen_permanent_before_gaining_life() {
             cost_objects: vec![fodder_id],
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();

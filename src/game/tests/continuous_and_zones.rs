@@ -343,6 +343,7 @@ fn izzet_staticaster_reads_the_name_copied_by_thespians_stage() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .unwrap();
@@ -826,6 +827,7 @@ fn aetherling_dodges_a_blocker_and_comes_back_at_the_end_step() {
                 cost_objects: Vec::new(),
                 x: 0,
                 modes: Vec::new(),
+                mana_payment: None,
             },
         )
         .unwrap();

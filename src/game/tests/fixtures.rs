@@ -495,6 +495,7 @@ pub(in crate::game) fn plain_activation(source: GameObjectId, ability: AbilityOr
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     }
 }
 

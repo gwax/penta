@@ -2,11 +2,11 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, ActivationTimingDef, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, CounterKind, DrawEventMatcherDef, EffectDef,
-    EffectRecipientDef, ExiledCastPermissionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
-    ObjectSetDef, PlayerRelation, PlayerSetDef, TokenCountersDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, tokens,
+    AbilityCostDef, AbilityDef, ActivationTimingDef, CardArt, CardRules, CardSet, CardSupertype,
+    CardType, CounterKind, DrawEventMatcherDef, EffectDef, EffectRecipientDef,
+    ExiledCastPermissionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
+    PlayerRelation, PlayerSetDef, TokenCountersDef, TriggerEventDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, tokens,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::mana_cost;
@@ -184,13 +184,7 @@ static ETALI_FRONT_ABILITIES: [AbilityDef; 3] = [
             object: EffectRecipientDef::Source,
         },
     )
-    .with_activation_timing(ActivationTimingDef::SorcerySpeed)
-    .with_coverage(AbilityCoverageDef::partial(
-        "A Phyrexian symbol in an activation cost is payable only with mana here; paying two \
-         life instead is offered where a spell is cast rather than where an ability is \
-         activated. Everything else about the clause -- the nine generic, the sorcery window, \
-         and the face it turns over to -- is the same either way.",
-    )),
+    .with_activation_timing(ActivationTimingDef::SorcerySpeed),
 ];
 
 /// "They get that many poison counters": the amount is the damage that was

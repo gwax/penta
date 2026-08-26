@@ -32,6 +32,7 @@ fn phyrexian_furnace_eats_a_graveyard_from_the_bottom() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     assert!(game.legal_actions(PlayerId::One).contains(&activation));
     game.apply(PlayerId::One, activation).unwrap();

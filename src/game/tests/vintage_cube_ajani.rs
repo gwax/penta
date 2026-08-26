@@ -169,6 +169,7 @@ fn the_plus_two_grows_every_cat() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .expect("the loyalty ability activates");
@@ -228,6 +229,7 @@ fn activate(game: &mut Game, source: GameObjectId, index: usize, targets: Vec<Ta
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .expect("the loyalty ability activates");

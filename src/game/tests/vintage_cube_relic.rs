@@ -91,6 +91,7 @@ fn the_second_ability_puts_a_charge_counter_on_instead_of_making_mana() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     )
     .expect("the ability activates");

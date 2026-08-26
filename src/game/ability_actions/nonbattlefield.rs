@@ -116,6 +116,7 @@ impl Game {
                                 cost_objects: cost_objects.clone(),
                                 x,
                                 modes: Vec::new(),
+                                mana_payment: None,
                             });
                         }
                     }
@@ -189,6 +190,7 @@ impl Game {
                                 cost_objects: cost_objects.clone(),
                                 x: 0,
                                 modes: Vec::new(),
+                                mana_payment: None,
                             });
                         }
                     }
