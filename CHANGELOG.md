@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Asking about something that no longer exists.** A bound object was
+  looked for on the battlefield and then in every other zone, so a token
+  that had been sacrificed -- gone from all of them -- answered no to every
+  question. "If the sacrificed creature was a Hamster" is exactly a question
+  about that, and it is now answered from last-known information (CR
+  608.2h), which is where the amounts beside it were already read from.
+
 - **A bound on how much a player may draw.** A player rule could say what
   somebody may play, reveal, or hold, but not how many cards they may draw,
   so "each opponent can't draw more than one card each turn" had nothing to

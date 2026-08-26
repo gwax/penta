@@ -500,8 +500,26 @@ impl Game {
                 false,
             );
         }
-        self.card_in_nonbattlefield_zone(id)
-            .is_some_and(|(zone, card)| self.card_object_matches(predicate, card, zone, source))
+        if let Some((zone, card)) = self.card_in_nonbattlefield_zone(id) {
+            return self.card_object_matches(predicate, card, zone, source);
+        }
+        // Nowhere at all: a token that was sacrificed has ceased to exist,
+        // and "if the sacrificed creature was a Hamster" is a question about
+        // exactly that. Answered from last-known information (CR 608.2h),
+        // which is where the amounts beside it are read from too.
+        match self.retired_objects.get(&id) {
+            Some(crate::game::RetiredObject::Permanent { permanent, .. }) => self
+                .trigger_object_matches(
+                    predicate,
+                    &self.trigger_event_object(permanent),
+                    source,
+                    false,
+                ),
+            Some(crate::game::RetiredObject::Card(card)) => {
+                self.card_object_matches(predicate, card, ZoneKind::Graveyard, source)
+            }
+            Some(crate::game::RetiredObject::Stack(_)) | None => false,
+        }
     }
 
     /// The permanents a stack object has chosen as targets.

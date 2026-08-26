@@ -3,11 +3,14 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    PlayerRelation, SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
-    abilities,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef,
+    CounterKind, EffectDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    SacrificedAmountDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, abilities,
 };
+use crate::ids::ObjectBindingIndex;
 use crate::{TargetIndex, mana_cost};
 
 // CLB 11 — Blessed Hippogriff
@@ -158,13 +161,150 @@ pub(in crate::card::sets) static YOU_MEET_IN_A_TAVERN: CardRecord = CardRecord::
 );
 
 // CLB 285 — Minsc & Boo, Timeless Heroes
-// Audit: metadata-only — Card rules have not been implemented.
+static BOO_ABILITIES: [AbilityDef; 2] = [abilities::trample(), abilities::haste()];
+
+static BOO: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Hamster"], &[ManaColor::Red], 1, 1)
+        .with_name("Boo")
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&BOO_ABILITIES);
+
+static MINSC_MAKES_BOO: EffectDef = EffectDef::create_token(BOO);
+
+/// One ability with two events rather than two abilities: the card prints
+/// one, and Boo arrives once per event either way.
+static MINSC_ENTERS_OR_UPKEEP: [TriggerEventDef; 2] = [
+    TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Source,
+        None,
+        Some(ZoneKind::Battlefield),
+    ),
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::Upkeep,
+        player: PlayerRelation::You,
+    },
+];
+
+static A_TRAMPLER_OR_A_HASTY_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasKeyword(KeywordAbility::Trample),
+                ObjectPredicateDef::HasKeyword(KeywordAbility::Haste),
+            ]),
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+    1,
+)];
+
+/// "Where X is that creature's power": read off the creature that was
+/// sacrificed, from last-known information, since paying is what put it in
+/// the graveyard.
+static SACRIFICED_POWER: ValueDef =
+    ValueDef::ObjectPower(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY));
+
+static THE_SACRIFICED_WAS_A_HAMSTER: TriggerConditionDef =
+    TriggerConditionDef::BoundObjectMatches {
+        binding: ObjectBindingIndex::PRIMARY,
+        object: ObjectPredicateDef::Subtype("Hamster"),
+    };
+
+static MINSC_DRAWS: EffectDef = EffectDef::DrawCards {
+    recipient: EffectRecipientDef::Controller,
+    amount: SACRIFICED_POWER,
+};
+
+static MINSC_THROWS_IT: [EffectDef; 3] = [
+    EffectDef::Sacrifice {
+        object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+    },
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        amount: SACRIFICED_POWER,
+    },
+    EffectDef::IfCondition {
+        condition: &THE_SACRIFICED_WAS_A_HAMSTER,
+        then: &MINSC_DRAWS,
+    },
+];
+
+static MINSC_THROWS_IT_SEQUENCE: EffectDef = EffectDef::Sequence(&MINSC_THROWS_IT);
+
+/// The creature is named as the ability resolves rather than as a cost, so
+/// it is still on the battlefield while the ability is on the stack -- and
+/// naming it is what lets the damage read its power afterwards.
+static MINSC_CHOOSES_A_CREATURE: ChooseDef = ChooseDef {
+    binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+    unchosen: None,
+    chooser: PlayerRefDef::EffectController,
+    candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
+        ObjectPredicateDef::HasType(CardType::Creature),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    )),
+    exclude: None,
+    minimum: 1,
+    maximum: 1,
+    visibility: ChoiceVisibilityDef::Public,
+    then: &MINSC_THROWS_IT_SEQUENCE,
+};
+
+static MINSC_ABILITIES: [AbilityDef; 4] = [
+    AbilityDef::triggered(
+        "When Minsc & Boo enters and at the beginning of your upkeep, you may create Boo, a \
+         legendary 1/1 red Hamster creature token with trample and haste.",
+        TriggerEventDef::AnyOf(&MINSC_ENTERS_OR_UPKEEP),
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &MINSC_MAKES_BOO,
+        },
+    ),
+    AbilityDef::activated_with_targets(
+        "+1: Put three +1/+1 counters on up to one target creature with trample or haste.",
+        &[AbilityCostDef::Loyalty(1)],
+        &A_TRAMPLER_OR_A_HASTY_CREATURE,
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            kind: CounterKind::PlusOnePlusOne,
+            amount: ValueDef::Constant(3),
+        },
+    ),
+    // The target is declared as the ability is activated rather than when
+    // the sacrifice is actually made, which is the one place this differs
+    // from the printed reflexive trigger -- the same deviation Inti and
+    // Guide of Souls carry. A board with nothing to throw does not offer
+    // the ability at all.
+    AbilityDef::activated_with_targets(
+        "\u{2212}2: Sacrifice a creature. When you do, Minsc & Boo deals X damage to any target, \
+         where X is that creature's power. If the sacrificed creature was a Hamster, draw X cards.",
+        &[AbilityCostDef::Loyalty(-2)],
+        &ANY_TARGET,
+        EffectDef::Choose(MINSC_CHOOSES_A_CREATURE),
+    ),
+    AbilityDef::not_implemented(
+        "Minsc & Boo, Timeless Heroes can be your commander.",
+        "Deck construction for a format this engine does not play.",
+    ),
+];
+
+static ANY_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::AnyTarget,
+)];
+
 pub(in crate::card::sets) static MINSC_BOO_TIMELESS_HEROES: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("928036c9-11b8-493e-b9f2-8fbd3487cd19"),
     "Minsc & Boo, Timeless Heroes",
-    crate::card::CardArt::new("928036c9-11b8-493e-b9f2-8fbd3487cd19", "Andreas Zafiratos"),
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("928036c9-11b8-493e-b9f2-8fbd3487cd19", "Andreas Zafiratos"),
+    CardSet::CommanderLegendsBattleForBaldursGate,
+    // Four mana that leaves a hamster behind every turn, and the hamster is
+    // both the thing the plus grows and the thing the minus throws.
+    CardRules::new_planeswalker(mana_cost!("{2}{R}{G}"), &["Minsc"], 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&MINSC_ABILITIES),
 );
 
 // CLB 560 — Displacer Kitten
