@@ -531,13 +531,35 @@ pub(in crate::card::sets) static DEFENSIVE_STANCE: CardRecord = CardRecord::new(
 );
 
 // NPH 35 — Gitaxian Probe
-// Audit: metadata-only — Card rules have not been implemented.
+/// Any player, including yourself: looking at your own hand does nothing,
+/// but the clause does not stop you, and a Probe with no opponent worth
+/// reading is still a free card.
+static ANY_PLAYERS_HAND: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Any),
+)];
+
+static PROBE_LOOKS_THEN_DRAWS: [EffectDef; 2] = [
+    EffectDef::LookAtHand {
+        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    },
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+];
+
 pub(in crate::card::sets) static GITAXIAN_PROBE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("995486ce-58bb-4753-a812-0ca73ef1a235"),
     "Gitaxian Probe",
-    crate::card::CardArt::new("995486ce-58bb-4753-a812-0ca73ef1a235", "Chippy"),
-    crate::card::CardSet::NewPhyrexia,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("995486ce-58bb-4753-a812-0ca73ef1a235", "Chippy"),
+    CardSet::NewPhyrexia,
+    // Two life for a cantrip and a look at their hand -- and in a deck that
+    // counts spells cast, the look is beside the point.
+    CardRules::new_sorcery(mana_cost!("{U/P}")).with_ability(AbilityDef::spell_with_targets(
+        "Look at target player's hand.\nDraw a card.",
+        &ANY_PLAYERS_HAND,
+        EffectDef::Sequence(&PROBE_LOOKS_THEN_DRAWS),
+    )),
 );
 
 // NPH 36 — Impaler Shrike

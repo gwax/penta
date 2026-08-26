@@ -413,6 +413,7 @@ mod vintage_cube_galvanic_blast;
 mod vintage_cube_gau;
 mod vintage_cube_get_lost;
 mod vintage_cube_ghost_vacuum;
+mod vintage_cube_gitaxian_probe;
 mod vintage_cube_giver_of_runes;
 mod vintage_cube_glimmer_lens;
 mod vintage_cube_glorybringer;
