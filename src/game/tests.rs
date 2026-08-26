@@ -390,6 +390,7 @@ mod vintage_cube_displacer_kitten;
 mod vintage_cube_dragons_rage_channeler;
 mod vintage_cube_dreadhorde_arcanist;
 mod vintage_cube_duelist;
+mod vintage_cube_eagles_of_the_north;
 mod vintage_cube_echo_of_eons;
 mod vintage_cube_eldrazi;
 mod vintage_cube_elite_spellbinder;

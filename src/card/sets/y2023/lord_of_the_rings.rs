@@ -95,13 +95,50 @@ pub(in crate::card::sets) static THE_ONE_RING: CardRecord = CardRecord::new(
 );
 
 // LTR 7 — Eagles of the North
-// Audit: metadata-only — Card rules have not been implemented.
+static EAGLES_FIRST_STRIKE: AbilityDef = abilities::first_strike();
+
+static EAGLES_CHARGE: [AppliedEffectDef; 2] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)),
+    AppliedEffectDef::add_ability(&EAGLES_FIRST_STRIKE),
+];
+
+/// Every creature you control as the trigger resolves, the Eagles included:
+/// they are on the battlefield by the time their own arrival is read.
+static CREATURES_YOU_CONTROL_EAGLES: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static EAGLES_ABILITIES: [AbilityDef; 3] = [
+    abilities::flying(),
+    abilities::enters_trigger(
+        "When this creature enters, creatures you control get +1/+0 and gain first strike until \
+         end of turn.",
+        EffectDef::Apply {
+            recipient: CREATURES_YOU_CONTROL_EAGLES,
+            effect: AppliedEffectDef::Composite(&EAGLES_CHARGE),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    ),
+    abilities::typecycling(
+        "Plainscycling {1} ({1}, Discard this card: Search your library for a Plains card, \
+         reveal it, put it into your hand, then shuffle.)",
+        mana_cost!("{1}"),
+        ObjectPredicateDef::Subtype("Plains"),
+    ),
+];
+
 pub(in crate::card::sets) static EAGLES_OF_THE_NORTH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c1bd3bc0-77bd-40fe-b4f1-835a04cb6e41"),
     "Eagles of the North",
-    crate::card::CardArt::new("c1bd3bc0-77bd-40fe-b4f1-835a04cb6e41", "Axel Sauerwald"),
-    crate::card::CardSet::LordOfTheRings,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("c1bd3bc0-77bd-40fe-b4f1-835a04cb6e41", "Axel Sauerwald"),
+    CardSet::LordOfTheRings,
+    // Six mana is not what the card is for: one mana for the Plains is,
+    // and the six is what the last copy in the deck is worth on a board
+    // that is already wide.
+    CardRules::new_creature(mana_cost!("{5}{W}"), &["Bird", "Soldier"], 3, 3)
+        .with_abilities(&EAGLES_ABILITIES),
 );
 
 // LTR 26 — Reprieve
