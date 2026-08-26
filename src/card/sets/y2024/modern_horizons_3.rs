@@ -1877,13 +1877,78 @@ pub(in crate::card::sets) static WITCH_ENCHANTER: CardRecord = CardRecord::new_m
 );
 
 // MH3 241 — Sink into Stupor // Soporific Springs
-// Audit: metadata-only — Card rules have not been implemented.
-pub(in crate::card::sets) static SINK_INTO_STUPOR: CardRecord = CardRecord::new(
+/// One slot over two zones: a land is never a spell, so "nonland" is the
+/// whole of the restriction on either side of the "or".
+static A_SPELL_OR_NONLAND_PERMANENT_OF_THEIRS: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one(
+        AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+            zones: &[ZoneKind::Stack, ZoneKind::Battlefield],
+            controller: Some(PlayerRelation::Opponent),
+            owner: None,
+        },
+    )];
+
+/// Returning a spell is not countering it: one that cannot be countered is
+/// answered all the same, and its controller keeps the card.
+static STUPOR_RETURNS_IT: EffectDef = EffectDef::MoveToZone {
+    counters: None,
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    from: None,
+    zone: ZoneKind::Hand,
+    placement: ZonePlacement::Top,
+    arrival_effect: None,
+    attachment: None,
+    controller: None,
+    tapped: false,
+};
+
+static SPRINGS_PAID: [ReplacementEffectDef; 0] = [];
+
+static SPRINGS_ENTERS_TAPPED: [ReplacementEffectDef; 1] =
+    [ReplacementEffectDef::ModifyBattlefieldEntry(
+        BattlefieldEntryModificationDef::Tapped,
+    )];
+
+static SPRINGS_MANA_COST: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
+static SPRINGS_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::replacement(
+        "As this land enters, you may pay 3 life. If you don't, it enters tapped.",
+        ReplacementEffectDef::PayOr {
+            payment: EffectPaymentDef::life(PlayerSetDef::Related(PlayerRelation::You), 3),
+            if_paid: &SPRINGS_PAID,
+            if_declined: &SPRINGS_ENTERS_TAPPED,
+        },
+    ),
+    AbilityDef::activated_mana(
+        "{T}: Add {U}.",
+        &SPRINGS_MANA_COST,
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Blue)),
+    ),
+];
+
+const fn sink_into_stupor_rules() -> CardRules {
+    CardRules::new_instant(mana_cost!("{1}{U}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Return target spell or nonland permanent an opponent controls to its owner's hand.",
+        &A_SPELL_OR_NONLAND_PERMANENT_OF_THEIRS,
+        STUPOR_RETURNS_IT,
+    ))
+}
+
+const fn soporific_springs_rules() -> CardRules {
+    CardRules::new_land(&[]).with_abilities(&SPRINGS_ABILITIES)
+}
+
+pub(in crate::card::sets) static SINK_INTO_STUPOR: CardRecord = CardRecord::new_mdfc(
     PrintingAnchor::scryfall("5358b87a-1a29-426d-b165-40c97da2c14d"),
-    "Sink into Stupor",
-    crate::card::CardArt::new("5358b87a-1a29-426d-b165-40c97da2c14d", "Peter Polach"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    "Sink into Stupor // Soporific Springs",
+    CardArt::new("5358b87a-1a29-426d-b165-40c97da2c14d", "Peter Polach"),
+    CardSet::ModernHorizons3,
+    &[
+        ("Sink into Stupor", sink_into_stupor_rules()),
+        ("Soporific Springs", soporific_springs_rules()),
+    ],
 );
 
 // MH3 284 — Annoyed Altisaur
