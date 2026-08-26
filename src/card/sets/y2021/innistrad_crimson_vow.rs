@@ -134,13 +134,32 @@ pub(in crate::card::sets) static RECKLESS_IMPULSE: CardRecord = CardRecord::new(
 );
 
 // VOW 182 — Voldaren Epicure
-// Audit: metadata-only — Card rules have not been implemented.
+/// One clause with two instructions in the order it prints them: the damage
+/// is the reason the one-drop is played and the Blood is what it leaves
+/// behind.
+static EPICURE_ENTERS: [EffectDef; 2] = [
+    EffectDef::DealDamage {
+        recipient: EffectRecipientDef::Opponent,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::create_token(crate::card::tokens::blood()),
+];
+
 pub(in crate::card::sets) static VOLDAREN_EPICURE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ae154e64-f626-45fb-bd52-840c1c27b2d3"),
     "Voldaren Epicure",
-    crate::card::CardArt::new("ae154e64-f626-45fb-bd52-840c1c27b2d3", "Martina Fačková"),
-    crate::card::CardSet::InnistradCrimsonVow,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("ae154e64-f626-45fb-bd52-840c1c27b2d3", "Martina Fačková"),
+    CardSet::InnistradCrimsonVow,
+    // One mana for a body, a point of damage, and a card the Blood turns a
+    // dead draw into later.
+    CardRules::new_creature(mana_cost!("{R}"), &["Vampire"], 1, 1).with_ability(
+        abilities::enters_trigger(
+            "When this creature enters, it deals 1 damage to each opponent. Create a Blood token. \
+             (It's an artifact with \"{1}, {T}, Discard a card, Sacrifice this token: Draw a \
+             card.\")",
+            EffectDef::Sequence(&EPICURE_ENTERS),
+        ),
+    ),
 );
 
 // VOW 189 — Bramble Wurm
