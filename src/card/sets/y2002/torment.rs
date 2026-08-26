@@ -5,9 +5,10 @@ use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y2012::magic_2013 as catalog_m13;
 use crate::card::sets::y2016::eternal_masters as catalog_ema;
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
-    CardSet, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef,
+    ConditionDef, EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef,
+    ObjectCountConditionDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
     PlayerRefDef, PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
     ZoneKind, ZonePlacement, abilities,
 };
@@ -525,13 +526,37 @@ pub(in crate::card::sets) static BONESHARD_SLASHER: CardRecord = CardRecord::new
 );
 
 // TOR 51 — Cabal Ritual
-// Audit: metadata-only — Card rules have not been implemented.
+/// Threshold counts the graveyard as the spell resolves, so the cards the
+/// turn has already spent are in it -- which is why a storm turn tends to
+/// reach seven before it needs the five mana.
+static SEVEN_IN_YOUR_GRAVEYARD: ObjectCountConditionDef = ObjectCountConditionDef {
+    query: ObjectQueryDef::matching(
+        ObjectPredicateDef::Any,
+        &[ZoneKind::Graveyard],
+        PlayerRelation::You,
+    ),
+    comparison: ComparisonDef::GreaterOrEqual,
+    amount: 7,
+};
+
+static CABAL_THRESHOLD: ConditionDef = ConditionDef::ObjectCount(&SEVEN_IN_YOUR_GRAVEYARD);
+
 pub(in crate::card::sets) static CABAL_RITUAL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5403b49d-03a7-4cc3-af3c-df098c1c9c2e"),
     "Cabal Ritual",
-    crate::card::CardArt::new("5403b49d-03a7-4cc3-af3c-df098c1c9c2e", "Greg Hildebrandt"),
-    crate::card::CardSet::Torment,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("5403b49d-03a7-4cc3-af3c-df098c1c9c2e", "Greg Hildebrandt"),
+    CardSet::Torment,
+    // Dark Ritual with a late-game mode: two mana for three early, and for
+    // five once the graveyard is deep enough to say so.
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell(
+        "Add {B}{B}{B}.\nThreshold — Add {B}{B}{B}{B}{B} instead if there are seven or more \
+         cards in your graveyard.",
+        EffectDef::AddMana(
+            AddManaEffectDef::one(ManaColor::Black)
+                .with_amount(3)
+                .with_amount_override(CABAL_THRESHOLD, 5),
+        ),
+    )),
 );
 
 // TOR 52 — Cabal Surgeon
