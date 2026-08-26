@@ -111,7 +111,8 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         TriggerEventDef::SpellCast(object)
         | TriggerEventDef::SpellCopied(object)
         | TriggerEventDef::BecomesTargetOfSpell(object)
-        | TriggerEventDef::BecomesTargetOfSpellOrAbility(object) => {
+        | TriggerEventDef::BecomesTargetOfSpellOrAbility(object)
+        | TriggerEventDef::YouOrYourPermanentBecomesTarget(object) => {
             shared_object_predicate(object) && !trigger_predicate_requires_live_battlefield(object)
         }
         // A crime names only the player who committed it; what was targeted

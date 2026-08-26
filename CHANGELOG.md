@@ -25,6 +25,22 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A bound on how much a player may draw.** A player rule could say what
+  somebody may play, reveal, or hold, but not how many cards they may draw,
+  so "each opponent can't draw more than one card each turn" had nothing to
+  attach to. The bound is a player rule read where a draw begins: a draw
+  past it is not carried out at all, so nothing watching for a draw fires
+  and no draw replacement is spent on it, and the cards stay in the library
+  rather than being lost. Two such rules leave the smaller standing.
+
+- **Being pointed at, on either side of the table.** "Becomes the target"
+  reached one object -- the listener itself -- and no player at all, since
+  only object targets were captured. Players targeted by a spell or ability
+  now raise their own event, and a clause can watch a whole side of the
+  table: its controller, or any permanent that controller has. The spell or
+  ability that did the pointing is still what the predicate reads, so "an
+  opponent controls" is said there.
+
 - **A token copy for somebody else.** Every "create a token that's a copy
   of it" put the token under the resolving controller, so "each player other
   than its controller creates a token that's a copy of it" had no way to say

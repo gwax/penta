@@ -14,7 +14,31 @@ use super::super::{
 };
 
 impl Game {
+    /// "Each opponent can't draw more than one card each turn": the bound
+    /// the live static abilities put on this player, or none at all. Two
+    /// such rules leave the smaller standing, which is what each of them
+    /// says on its own terms.
+    fn draw_bound_this_turn(&self, player: PlayerId) -> Option<u16> {
+        let mut bound = None::<u16>;
+        self.visit_player_static_rules(player, |rule| {
+            if let crate::card::AppliedRuleDef::CannotDrawMoreThanEachTurn(amount) = rule {
+                let amount = u16::from(amount);
+                bound = Some(bound.map_or(amount, |current: u16| current.min(amount)));
+            }
+        });
+        bound
+    }
+
     pub(in crate::game) fn draw_card(&mut self, player: PlayerId) -> Option<GameObjectId> {
+        // A draw past the bound simply does not happen (CR 121.3), so
+        // nothing watching for a draw fires and no replacement is spent on
+        // it -- the instruction is not carried out at all.
+        if self
+            .draw_bound_this_turn(player)
+            .is_some_and(|bound| self.cards_drawn_this_turn[player.index()] >= bound)
+        {
+            return None;
+        }
         let mut replacements = self.draw_replacements[player.index()]
             .drain(..)
             .collect::<Vec<_>>();

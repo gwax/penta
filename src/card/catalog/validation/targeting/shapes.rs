@@ -53,7 +53,8 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         TriggerEventDef::SpellCast(_)
         | TriggerEventDef::SpellCopied(_)
         | TriggerEventDef::BecomesTargetOfSpell(_)
-        | TriggerEventDef::BecomesTargetOfSpellOrAbility(_) => {
+        | TriggerEventDef::BecomesTargetOfSpellOrAbility(_)
+        | TriggerEventDef::YouOrYourPermanentBecomesTarget(_) => {
             Some(ZoneKind::Stack)
         }
         // The cycled card is in the graveyard by the time the trigger goes
@@ -780,6 +781,7 @@ fn validate_applied_effect_shapes(
             | AppliedRuleDef::PlaysWithTopOfLibraryRevealed
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::MayPlayAdditionalLands(_)
+            | AppliedRuleDef::CannotDrawMoreThanEachTurn(_)
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::RevealsDrawnCards
             | AppliedRuleDef::DoublesTokensCreated,

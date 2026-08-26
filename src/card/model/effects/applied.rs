@@ -355,6 +355,12 @@ pub enum AppliedRuleDef {
     /// than merely present: two of them are two extra lands, which is what
     /// makes it a number instead of a flag.
     MayPlayAdditionalLands(u8),
+    /// "Each opponent can't draw more than one card each turn." A player
+    /// rule found the same way, and a bound rather than a flag: a draw past
+    /// the number simply does not happen, so nothing watching for a draw
+    /// fires and no draw replacement is spent on it. Two such rules leave
+    /// the smaller bound standing.
+    CannotDrawMoreThanEachTurn(u8),
     /// The affected player has no maximum hand size, so the cleanup step
     /// never asks them to discard. A player rule rather than an object one:
     /// it is found by walking the battlefield for statics naming that player.

@@ -111,6 +111,15 @@ pub enum TriggerEventDef {
     /// as the spell is cast, or as the ability goes onto the stack -- and
     /// once per targeting object however many of its slots name this one.
     BecomesTargetOfSpellOrAbility(ObjectPredicateDef),
+    /// "Whenever you or a permanent you control becomes the target of a
+    /// spell or ability an opponent controls."
+    ///
+    /// The listener is not what was pointed at, which is what separates this
+    /// from the two above: the clause watches a side of the table rather
+    /// than one object, and a player being targeted counts as much as a
+    /// permanent does. The predicate reads the spell or ability that did the
+    /// pointing, so "an opponent controls" is said there.
+    YouOrYourPermanentBecomesTarget(ObjectPredicateDef),
     StepBegins {
         step: TurnStepDef,
         player: PlayerRelation,

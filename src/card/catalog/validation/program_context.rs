@@ -334,6 +334,7 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
             | AppliedRuleDef::PlaysWithTopOfLibraryRevealed
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::MayPlayAdditionalLands(_)
+            | AppliedRuleDef::CannotDrawMoreThanEachTurn(_)
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::RevealsDrawnCards
             | AppliedRuleDef::DoublesTokensCreated,
@@ -459,6 +460,7 @@ fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRule
         | AppliedRuleDef::TriggersAnAdditionalTime(_)
         | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
         | AppliedRuleDef::MayPlayAdditionalLands(_)
+        | AppliedRuleDef::CannotDrawMoreThanEachTurn(_)
         | AppliedRuleDef::NoMaximumHandSize
         | AppliedRuleDef::RevealsDrawnCards
         | AppliedRuleDef::DoublesTokensCreated

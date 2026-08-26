@@ -435,6 +435,7 @@ fn validate_trigger_event_references(
         | TriggerEventDef::SpellCopied(predicate)
         | TriggerEventDef::BecomesTargetOfSpell(predicate)
         | TriggerEventDef::BecomesTargetOfSpellOrAbility(predicate)
+        | TriggerEventDef::YouOrYourPermanentBecomesTarget(predicate)
         | TriggerEventDef::CountersPlaced {
             object: predicate, ..
         }

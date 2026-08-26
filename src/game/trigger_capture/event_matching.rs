@@ -122,6 +122,30 @@ impl Game {
                         predicate, object, source, false, controller,
                     )
             }
+            // The listener is not what was pointed at: what it watches is
+            // its controller's side of the table, so the target is checked
+            // against that rather than against the source.
+            (
+                TriggerEventDef::YouOrYourPermanentBecomesTarget(predicate),
+                CommittedTriggerEvent::BecameTargetOfSpell { target, object }
+                | CommittedTriggerEvent::BecameTargetOfAbility { target, object },
+            ) => {
+                controller.is_some_and(|controller| {
+                    self.current_or_last_known_controller(*target) == Some(controller)
+                })
+                    && self.trigger_object_matches_for_controller(
+                        predicate, object, source, false, controller,
+                    )
+            }
+            (
+                TriggerEventDef::YouOrYourPermanentBecomesTarget(predicate),
+                CommittedTriggerEvent::PlayerBecameTarget { player, object },
+            ) => {
+                controller == Some(*player)
+                    && self.trigger_object_matches_for_controller(
+                        predicate, object, source, false, controller,
+                    )
+            }
             (
                 TriggerEventDef::BlocksOrBecomesBlockedBy {
                     creature: subject,

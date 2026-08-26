@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, InstalledTriggerDef, ObjectPredicateDef, PlayerRefDef, PlayerRelation,
-    TriggerEventDef, ZoneKind, abilities,
+    AbilityDef, AbilityTargetDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, EffectDef, EffectRecipientDef, InstalledTriggerDef,
+    ObjectPredicateDef, PlayerRefDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
+    abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -100,13 +101,45 @@ pub(in crate::card::sets) static ENTOURAGE_OF_TREST: CardRecord = CardRecord::ne
 );
 
 // CN2 77 — Leovold, Emissary of Trest
-// Audit: metadata-only — Card rules have not been implemented.
+static LEOVOLD_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::static_ability(
+        "Each opponent can't draw more than one card each turn.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Opponent,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotDrawMoreThanEachTurn(1)),
+        },
+    ),
+    // The turn-based draw for the turn is one of the two: an opponent who
+    // has already drawn a card off something of their own draws nothing in
+    // their draw step, and their second Brainstorm card never arrives.
+    AbilityDef::triggered(
+        "Whenever you or a permanent you control becomes the target of a spell or ability an \
+         opponent controls, you may draw a card.",
+        TriggerEventDef::YouOrYourPermanentBecomesTarget(ObjectPredicateDef::ControlledBy(
+            PlayerRelation::Opponent,
+        )),
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &LEOVOLD_DRAWS,
+        },
+    ),
+];
+
+static LEOVOLD_DRAWS: EffectDef = EffectDef::DrawCards {
+    recipient: EffectRecipientDef::Controller,
+    amount: ValueDef::Constant(1),
+};
+
 pub(in crate::card::sets) static LEOVOLD_EMISSARY_OF_TREST: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("49bb0ad3-1082-41f1-82a4-52a4006cc9b6"),
     "Leovold, Emissary of Trest",
-    crate::card::CardArt::new("49bb0ad3-1082-41f1-82a4-52a4006cc9b6", "Magali Villeneuve"),
-    crate::card::CardSet::ConspiracyTakeTheCrown,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("49bb0ad3-1082-41f1-82a4-52a4006cc9b6", "Magali Villeneuve"),
+    CardSet::ConspiracyTakeTheCrown,
+    // Three mana that turns every draw spell they have into one card and
+    // every removal spell they point at you into a replacement.
+    CardRules::new_creature(mana_cost!("{B}{G}{U}"), &["Elf", "Advisor"], 3, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&LEOVOLD_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

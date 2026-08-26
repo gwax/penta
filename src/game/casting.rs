@@ -807,11 +807,18 @@ impl Game {
         // event has taken the list.
         let crime_targets = targets.clone();
         let mut targeted = Vec::new();
+        let mut targeted_players = Vec::new();
         for target in &targets {
-            if let Target::Permanent(id) | Target::Card(id) = target
-                && !targeted.contains(id)
-            {
-                targeted.push(*id);
+            match target {
+                Target::Permanent(id) | Target::Card(id) if !targeted.contains(id) => {
+                    targeted.push(*id);
+                }
+                // Once per targeting spell however many of its slots name
+                // the same player, exactly as for an object (CR 115.7c).
+                Target::Player(player) if !targeted_players.contains(player) => {
+                    targeted_players.push(*player);
+                }
+                _ => {}
             }
         }
         self.events.push(GameEvent::SpellCast {
@@ -830,6 +837,12 @@ impl Game {
         for target in targeted {
             self.capture_battlefield_triggers(&CommittedTriggerEvent::BecameTargetOfSpell {
                 target,
+                object: cast_event.clone(),
+            });
+        }
+        for player in targeted_players {
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::PlayerBecameTarget {
+                player,
                 object: cast_event.clone(),
             });
         }

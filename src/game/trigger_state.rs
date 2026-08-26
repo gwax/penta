@@ -349,6 +349,14 @@ pub(super) enum CommittedTriggerEvent {
         target: GameObjectId,
         object: TriggerEventObject,
     },
+    /// A player became the target of a spell or of an ability. Kept apart
+    /// from the two above because a player is not an object: nothing on the
+    /// battlefield was pointed at, so a clause watching this reads the side
+    /// of the table rather than a permanent.
+    PlayerBecameTarget {
+        player: PlayerId,
+        object: TriggerEventObject,
+    },
     Transformed {
         object: TriggerEventObject,
     },
@@ -540,6 +548,7 @@ impl CommittedTriggerEvent {
             },
             Self::BecameTargetOfSpell { object, .. }
             | Self::BecameTargetOfAbility { object, .. }
+            | Self::PlayerBecameTarget { object, .. }
             | Self::SpellCopied { object }
             | Self::SpellCast { object } => TriggerContext {
                 object: Some(object.id),

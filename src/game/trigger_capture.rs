@@ -68,6 +68,7 @@ impl Game {
             return;
         };
         let mut targeted = Vec::new();
+        let mut targeted_players = Vec::new();
         for target in object
             .ability
             .as_ref()
@@ -75,15 +76,25 @@ impl Game {
             .flat_map(|payload| payload.targets.iter())
             .flat_map(crate::TargetSelection::targets)
         {
-            if let Target::Permanent(id) | Target::Card(id) = target
-                && !targeted.contains(id)
-            {
-                targeted.push(*id);
+            match target {
+                Target::Permanent(id) | Target::Card(id) if !targeted.contains(id) => {
+                    targeted.push(*id);
+                }
+                Target::Player(player) if !targeted_players.contains(player) => {
+                    targeted_players.push(*player);
+                }
+                _ => {}
             }
         }
         for target in targeted {
             self.capture_battlefield_triggers(&CommittedTriggerEvent::BecameTargetOfAbility {
                 target,
+                object: event.clone(),
+            });
+        }
+        for player in targeted_players {
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::PlayerBecameTarget {
+                player,
                 object: event.clone(),
             });
         }
