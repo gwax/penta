@@ -14,9 +14,9 @@ use crate::card::{
     MillUntilDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
     ObjectSetDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
     QuantifierDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, SumValueDef, TokenCopyExceptionsDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    SacrificedAmountDef, SumValueDef, TargetChooserDef, TokenCopyExceptionsDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnPhaseDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -3032,6 +3032,7 @@ pub(in crate::card::sets) static AURELIAS_FURY: CardRecord = CardRecord::new_wit
                 divided_total: Some(DividedTotal::ChosenX),
                 another: false,
                 excludes_source: false,
+                chooser: TargetChooserDef::Controller,
             }],
             // Everything chosen took damage, so the tap and the lock are the
             // same set of targets read again; each ignores what it cannot

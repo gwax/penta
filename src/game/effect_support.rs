@@ -13,6 +13,7 @@ use super::{
     TargetIndex, TargetSelection, TargetSlotId, TemporaryAbilityGrant, TriggerConditionDef,
     TriggerContext, ZoneKind, abilities,
 };
+use crate::card::TargetChooserDef;
 
 #[derive(Clone, Copy)]
 struct ResolvedAppliedEffect<'a> {
@@ -818,12 +819,24 @@ impl Game {
                 .targets_owned_by_player_matching(predicate, zones, owner, source)
                 .contains(&target);
         }
+        // Measured against whoever chose, which for almost every ability is
+        // its controller. A slot the clause handed to somebody else is still
+        // theirs on resolution: legality asks the same question it asked
+        // when the target was named.
+        let chooser = match definition.chooser {
+            TargetChooserDef::Controller => object.controller,
+            TargetChooserDef::EventPlayer => ability
+                .context
+                .trigger
+                .event_player
+                .unwrap_or(object.controller),
+        };
         Self::without_excluded_source(
             definition,
             source,
             self.ability_targets_matching(
                 definition.predicate,
-                object.controller,
+                chooser,
                 source,
                 ability.context.trigger,
             ),

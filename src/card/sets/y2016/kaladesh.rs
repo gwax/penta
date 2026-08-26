@@ -5,7 +5,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AttackEventMatcherDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectSetDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    ObjectSetDef, PlayerRelation, TargetChooserDef, TriggerEventDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -37,6 +38,7 @@ static OUTCOME_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
     divided_total: None,
     another: false,
     excludes_source: false,
+    chooser: TargetChooserDef::Controller,
 }];
 
 static OUTCOME_OWNED_BY_YOU: ObjectSetBindingIndex = ObjectSetBindingIndex::new(1);

@@ -861,6 +861,7 @@ impl Game {
             | AbilityTargetPredicate::OwnedByTargetPlayer { .. }
             // An Aura attaches to a permanent, so a stack slot never names one.
             | AbilityTargetPredicate::StackObject { .. }
+            | AbilityTargetPredicate::PlayerWithMoreObjectsThanChooser { .. }
             | AbilityTargetPredicate::Player(_) => false,
         }
     }

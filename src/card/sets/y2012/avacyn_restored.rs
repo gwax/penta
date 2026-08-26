@@ -14,8 +14,8 @@ use crate::card::{
     ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef,
     ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostCountDef,
-    SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    SpellAdditionalCostDef, SpendModeDef, TargetChooserDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -2794,6 +2794,7 @@ pub(in crate::card::sets) static GANG_OF_DEVILS: CardRecord = CardRecord::new_wi
                 divided_total: Some(DividedTotal::Fixed(3)),
                 another: false,
                 excludes_source: false,
+                chooser: TargetChooserDef::Controller,
             }], EffectDef::DealDamage {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::DividedAmongTargets,

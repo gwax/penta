@@ -12,9 +12,9 @@ use crate::card::{
     EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostDef, TokenCopyExceptionsDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostDef, TargetChooserDef,
+    TokenCopyExceptionsDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -486,6 +486,7 @@ pub(in crate::card::sets) static SALVAGE_SCOUT: CardRecord = CardRecord::new(
                 divided_total: None,
                 another: false,
                 excludes_source: false,
+                chooser: TargetChooserDef::Controller,
             }],
             EffectDef::MoveToZone {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -3379,6 +3380,7 @@ pub(in crate::card::sets) static CORPSE_CUR: CardRecord = CardRecord::new(
                     divided_total: None,
                     another: false,
                     excludes_source: false,
+                    chooser: TargetChooserDef::Controller,
                 }],
                 EffectDef::May {
                     player: EffectRecipientDef::Controller,

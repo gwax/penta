@@ -14,9 +14,9 @@ use crate::card::{
     ObjectQueryDef, ObjectRefDef, ObjectSetDef, PartitionItemsDef, PlayActionMatcherDef,
     PlayOptionDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, PrintedManaCost,
     ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    SpellForm, SplitIntoPilesDef, TargetConditionDef, TargetPredicate, TargetSlotDef,
-    TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef,
-    ZoneKind, ZoneMoveCauseDef,
+    SpellForm, SplitIntoPilesDef, TargetChooserDef, TargetConditionDef, TargetPredicate,
+    TargetSlotDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnKindDef,
+    TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
 };
 use crate::{
     AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, Format, GrantId,
@@ -62,6 +62,7 @@ fn semantic_target(minimum: u8, maximum: u8) -> AbilityTargetDef {
         divided_total: None,
         another: false,
         excludes_source: false,
+        chooser: TargetChooserDef::Controller,
     }
 }
 

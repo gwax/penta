@@ -60,11 +60,11 @@ pub use card::{
     PrintedManaCost, ReplacementAbilityDef, ReplacementChoiceDef, ReplacementConditionDef,
     ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, ScalarChoiceListDef,
     SetOperationDef, SpecialActionDef, SpellAbilityDef, SpellForm, SpellResolutionDestinationDef,
-    StaticAbilityDef, TapEventMatcherDef, TapPurposeDef, TargetConditionDef, TargetPredicate,
-    TargetSlotDef, TokenCharacteristics, TokenPart, TokenStructure, TriggerConditionDef,
-    TriggerEventDef, TriggeredAbilityDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueDef,
-    ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, applicable_part_ids,
-    face_down, tokens,
+    StaticAbilityDef, TapEventMatcherDef, TapPurposeDef, TargetChooserDef, TargetConditionDef,
+    TargetPredicate, TargetSlotDef, TokenCharacteristics, TokenPart, TokenStructure,
+    TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, TurnKindDef, TurnPhaseDef,
+    TurnStepDef, ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement,
+    applicable_part_ids, face_down, tokens,
 };
 pub use casting::{
     CastChoices, CastSignature, CostConfiguration, FlexibleManaPayment, ManaPaymentChoice,

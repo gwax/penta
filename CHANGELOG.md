@@ -25,6 +25,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A target somebody else chooses.** "That player chooses target player who
+  controls more creatures than they do" hands the choice to a player who
+  does not control the ability, and nothing in the target vocabulary could
+  say so: Oath of Druids stood in an intervening-if condition instead, which
+  produced the same outcome while being invisible to everything that answers
+  targeting. A slot can now name who fills it, and the player named is the
+  one asked, the one every relation in the slot is measured against, and the
+  one the option labels are written for. The comparison the Oath cycle makes
+  came with it: a player in the printed relation who has more of the named
+  objects than the chooser does, asked per candidate rather than once.
+
 - **"The player or planeswalker it's attacking."** An attack trigger carries
   the defending player, which is not the same thing as what the attack was
   declared against: a Battlesphere attacking a planeswalker was throwing its

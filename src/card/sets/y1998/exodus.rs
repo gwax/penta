@@ -4,11 +4,10 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::sets::y2011::innistrad as catalog_isd;
 use crate::card::sets::y2011::magic_2012 as catalog_m12;
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivationTimingDef, AddManaEffectDef, CardArt, CardRules, CardSet, CardType, ComparisonDef,
-    EffectDef, EffectRecipientDef, ManaColor, MillUntilDef, ObjectPredicateDef, ObjectQueryDef,
-    PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    AddManaEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
+    ManaColor, MillUntilDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, TurnStepDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -1206,26 +1205,19 @@ static MILL_UNTIL_1: MillUntilDef = MillUntilDef {
     then: None,
 };
 
-static CREATURES_THE_UPKEEP_PLAYER_CONTROLS: ObjectQueryDef = ObjectQueryDef::matching(
-    ObjectPredicateDef::HasType(CardType::Creature),
-    &[ZoneKind::Battlefield],
-    PlayerRelation::EventPlayer,
-);
-
-static CREATURES_THEIR_OPPONENT_CONTROLS: ObjectQueryDef = ObjectQueryDef::matching(
-    ObjectPredicateDef::HasType(CardType::Creature),
-    &[ZoneKind::Battlefield],
-    PlayerRelation::NotEventPlayer,
-);
-
-static THE_UPKEEP_PLAYER_IS_BEHIND: ValueComparisonDef = ValueComparisonDef {
-    left: ValueDef::CountMatchingObjects(&CREATURES_THE_UPKEEP_PLAYER_CONTROLS),
-    comparison: ComparisonDef::Less,
-    right: ValueDef::CountMatchingObjects(&CREATURES_THEIR_OPPONENT_CONTROLS),
-};
-
-static OATH_CONDITION: TriggerConditionDef =
-    TriggerConditionDef::ValueComparison(&THE_UPKEEP_PLAYER_IS_BEHIND);
+/// "Target player who controls more creatures than they do and is their
+/// opponent." The comparison is against whoever is choosing -- the player
+/// whose upkeep it is -- rather than against Oath's own controller, which
+/// is what makes this a targeting restriction rather than a condition.
+static AN_OPPONENT_WITH_MORE_CREATURES: [AbilityTargetDef; 1] =
+    [
+        AbilityTargetDef::exactly_one(AbilityTargetPredicate::PlayerWithMoreObjectsThanChooser {
+            relation: PlayerRelation::Opponent,
+            object: ObjectPredicateDef::HasType(CardType::Creature),
+            zones: &[ZoneKind::Battlefield],
+        })
+        .chosen_by_event_player(),
+    ];
 
 static OATH_DIGS_FOR_A_CREATURE: EffectDef = EffectDef::MillUntil(&MILL_UNTIL_1);
 
@@ -1235,7 +1227,7 @@ pub(in crate::card::sets) static OATH_OF_DRUIDS: CardRecord = CardRecord::new(
     CardArt::new("cf14de50-d123-400c-862e-2c95fd2aa23f", "Daren Bader"),
     CardSet::Exodus,
     CardRules::new_enchantment(mana_cost!("{1}{G}")).with_ability(
-        AbilityDef::triggered_if(
+        AbilityDef::triggered_with_targets(
             "At the beginning of each player's upkeep, that player chooses target player who \
              controls more creatures than they do and is their opponent. The first player may \
              reveal cards from the top of their library until they reveal a creature card. If the \
@@ -1245,17 +1237,12 @@ pub(in crate::card::sets) static OATH_OF_DRUIDS: CardRecord = CardRecord::new(
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::Any,
             },
-            &OATH_CONDITION,
+            &AN_OPPONENT_WITH_MORE_CREATURES,
             EffectDef::May {
                 player: EffectRecipientDef::EventPlayer,
                 effect: &OATH_DIGS_FOR_A_CREATURE,
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The ability does not target. In a two-player game the printed target has exactly one \
-             candidate and its legality is the condition checked here, so what happens is the \
-             same -- but nothing that answers targeting sees this ability.",
-        )),
+        ),
     ),
 );
 

@@ -16,9 +16,10 @@ use crate::card::{
     ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef,
     PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef,
     ReplacementEventDef, ResolvedEffectDurationDef, ScaledValueDef, SpellAdditionalCostCountDef,
-    SpellAdditionalCostDef, SpellResolutionDestinationDef, SpendModeDef, TokenCopyExceptionsDef,
-    TokenStatsDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueComparisonDef,
-    ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities,
+    SpellAdditionalCostDef, SpellResolutionDestinationDef, SpendModeDef, TargetChooserDef,
+    TokenCopyExceptionsDef, TokenStatsDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement,
+    abilities,
 };
 use crate::{ObjectSetBindingIndex, TargetIndex, mana_cost};
 
@@ -1508,6 +1509,7 @@ pub(in crate::card::sets) static INTO_THE_CORE: CardRecord = CardRecord::new(
             divided_total: None,
             another: false,
             excludes_source: false,
+            chooser: TargetChooserDef::Controller,
         }],
         EffectDef::MoveToZone {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -1541,6 +1543,7 @@ static KULDOTHA_FLAMEFIEND_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
     divided_total: Some(DividedTotal::Fixed(4)),
     another: false,
     excludes_source: false,
+    chooser: TargetChooserDef::Controller,
 }];
 
 pub(in crate::card::sets) static KULDOTHA_FLAMEFIEND: CardRecord = CardRecord::new(

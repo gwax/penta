@@ -109,6 +109,80 @@ impl Game {
         self.ability_targets_matching_for(predicate, controller, source, context, source_is_spell)
     }
 
+    /// How many matching objects this player has in these zones: what they
+    /// control on the battlefield, and what they own everywhere else.
+    fn player_object_count(
+        &self,
+        player: PlayerId,
+        object: ObjectPredicateDef,
+        zones: &[ZoneKind],
+        source: GameObjectId,
+    ) -> usize {
+        zones
+            .iter()
+            .map(|zone| match zone {
+                ZoneKind::Battlefield => self
+                    .battlefield
+                    .iter()
+                    .filter(|permanent| permanent.controller == player)
+                    .filter(|permanent| {
+                        self.trigger_object_matches(
+                            object,
+                            &self.trigger_event_object(permanent),
+                            source,
+                            false,
+                        )
+                    })
+                    .count(),
+                ZoneKind::Graveyard | ZoneKind::Hand | ZoneKind::Exile | ZoneKind::Library => {
+                    let state = &self.players[player.index()];
+                    let cards = match zone {
+                        ZoneKind::Graveyard => &state.graveyard,
+                        ZoneKind::Hand => &state.hand,
+                        ZoneKind::Exile => &state.exile,
+                        _ => &state.library,
+                    };
+                    cards
+                        .iter()
+                        .filter(|card| self.card_object_matches(object, card, *zone, source))
+                        .count()
+                }
+                ZoneKind::Stack | ZoneKind::Command => 0,
+            })
+            .sum()
+    }
+
+    /// The players a "controls more ... than they do" slot may name, which
+    /// is every player in the printed relation who is ahead of the chooser
+    /// on the objects the slot counts.
+    fn players_with_more_objects_than(
+        &self,
+        predicate: AbilityTargetPredicate,
+        chooser: PlayerId,
+        source: GameObjectId,
+        context: TriggerContext,
+        source_is_spell: bool,
+    ) -> Vec<Target> {
+        let AbilityTargetPredicate::PlayerWithMoreObjectsThanChooser {
+            relation,
+            object,
+            zones,
+        } = predicate
+        else {
+            return Vec::new();
+        };
+        let theirs = self.player_object_count(chooser, object, zones, source);
+        [PlayerId::One, PlayerId::Two]
+            .into_iter()
+            .filter(|player| {
+                self.player_relation_matches_for_source(*player, relation, chooser, source, context)
+                    && !self.player_is_protected_from(*player, source, source_is_spell)
+                    && self.player_object_count(*player, object, zones, source) > theirs
+            })
+            .map(Target::Player)
+            .collect()
+    }
+
     fn ability_targets_matching_for(
         &self,
         predicate: AbilityTargetPredicate,
@@ -164,6 +238,17 @@ impl Game {
                 })
                 .map(Target::Player)
                 .collect(),
+            // "Target player who controls more creatures than they do":
+            // measured against whoever is choosing, which is the player this
+            // walk is already relative to.
+            AbilityTargetPredicate::PlayerWithMoreObjectsThanChooser { .. } => self
+                .players_with_more_objects_than(
+                    predicate,
+                    controller,
+                    source,
+                    context,
+                    source_is_spell,
+                ),
             AbilityTargetPredicate::Object { .. } => self.ability_object_targets_matching(
                 predicate,
                 controller,

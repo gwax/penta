@@ -216,8 +216,29 @@ pub enum ObjectPredicateDef {
 
 /// The legal subject of one ability target slot.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum TargetChooserDef {
+    /// The player who controls the spell or ability, which is who chooses
+    /// unless something says otherwise.
+    Controller,
+    /// "That player chooses target ...", where "that player" is whoever the
+    /// event named: the player whose upkeep it is, for Oath of Druids. The
+    /// ability is still its controller's; only the choice moves.
+    EventPlayer,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum AbilityTargetPredicate {
     AnyTarget,
+    /// "Target player who controls more creatures than they do": a player
+    /// in this relation to whoever is choosing, who controls more matching
+    /// objects than that chooser does. The comparison is per candidate,
+    /// which is what makes it a targeting restriction rather than a
+    /// condition on the ability.
+    PlayerWithMoreObjectsThanChooser {
+        relation: PlayerRelation,
+        object: ObjectPredicateDef,
+        zones: &'static [ZoneKind],
+    },
     /// "Target player or planeswalker", which is every damage target except
     /// the creatures, narrowed to players in this relation.
     PlayerOrPlaneswalker(PlayerRelation),
@@ -273,6 +294,10 @@ pub enum StackTargetKindDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct AbilityTargetDef {
     pub predicate: AbilityTargetPredicate,
+    /// Who picks what fills this slot. The ability's controller does it
+    /// almost always (CR 601.2c); a few cards hand the choice to somebody
+    /// else and say so in their own text.
+    pub chooser: TargetChooserDef,
     pub minimum: u8,
     pub maximum: u8,
     /// The total this slot divides among its targets, when the card says
@@ -290,6 +315,14 @@ pub struct AbilityTargetDef {
 }
 
 impl AbilityTargetDef {
+    /// The same slot, filled by whoever the event named rather than by the
+    /// ability's controller: "that player chooses target ...".
+    #[must_use]
+    pub const fn chosen_by_event_player(mut self) -> Self {
+        self.chooser = TargetChooserDef::EventPlayer;
+        self
+    }
+
     /// The same slot, restricted to something no earlier slot named.
     #[must_use]
     pub const fn another(mut self) -> Self {
@@ -334,6 +367,7 @@ impl AbilityTargetDef {
     pub const fn exactly_chosen_x(predicate: AbilityTargetPredicate) -> Self {
         Self {
             predicate,
+            chooser: TargetChooserDef::Controller,
             minimum: Self::CHOSEN_X,
             maximum: Self::CHOSEN_X,
             divided_total: None,
@@ -349,6 +383,7 @@ impl AbilityTargetDef {
     pub const fn up_to_chosen_x(predicate: AbilityTargetPredicate) -> Self {
         Self {
             predicate,
+            chooser: TargetChooserDef::Controller,
             minimum: 0,
             maximum: Self::CHOSEN_X,
             divided_total: None,
@@ -390,6 +425,7 @@ impl AbilityTargetDef {
     pub const fn exactly_one(predicate: AbilityTargetPredicate) -> Self {
         Self {
             predicate,
+            chooser: TargetChooserDef::Controller,
             minimum: 1,
             maximum: 1,
             divided_total: None,
@@ -407,6 +443,7 @@ impl AbilityTargetDef {
     pub const fn one_or_more(predicate: AbilityTargetPredicate) -> Self {
         Self {
             predicate,
+            chooser: TargetChooserDef::Controller,
             minimum: 1,
             maximum: Self::UNLIMITED,
             divided_total: None,
@@ -421,6 +458,7 @@ impl AbilityTargetDef {
     pub const fn up_to(predicate: AbilityTargetPredicate, maximum: u8) -> Self {
         Self {
             predicate,
+            chooser: TargetChooserDef::Controller,
             minimum: 0,
             maximum,
             divided_total: None,

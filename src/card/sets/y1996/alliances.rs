@@ -6,7 +6,7 @@ use crate::card::{
     AlternativeCastKindDef, CardArt, CardRules, CardSet, CardSupertype, CardType, DividedTotal,
     EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef,
     ObjectRefDef, PlayerRefDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    TargetChooserDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -984,6 +984,7 @@ static PYROKINESIS_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
     divided_total: Some(DividedTotal::Fixed(4)),
     another: false,
     excludes_source: false,
+    chooser: TargetChooserDef::Controller,
 }];
 
 /// Exiled from hand rather than discarded: the card is spent without ever

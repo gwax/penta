@@ -5,6 +5,7 @@ impl Game {
             | AbilityTargetPredicate::PlayerOrPlaneswalker(_)
             | AbilityTargetPredicate::ControlledByTargetOf { .. }
             | AbilityTargetPredicate::OwnedByTargetPlayer { .. }
+            | AbilityTargetPredicate::PlayerWithMoreObjectsThanChooser { .. }
             | AbilityTargetPredicate::Player(_) => false,
             AbilityTargetPredicate::Object { object, .. }
             | AbilityTargetPredicate::StackObject { object, .. } => {

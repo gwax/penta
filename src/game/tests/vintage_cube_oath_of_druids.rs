@@ -178,3 +178,94 @@ fn declining_leaves_the_library_alone() {
     assert!(!on_battlefield(&game, cards::SERRA_ANGEL));
     assert_eq!(game.players[0].library.len(), 2);
 }
+
+/// The first decision the upkeep raises, without answering it.
+fn first_decision(game: &mut Game, player: PlayerId) -> DecisionObservation {
+    game.active_player = player;
+    game.step = Step::Upkeep;
+    game.priority = player;
+    game.handle_upkeep_triggers();
+    for _ in 0..8 {
+        if let Some(pending) = game.pending_decisions.first() {
+            return pending.observation.clone();
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    panic!("the upkeep raised nothing to answer");
+}
+
+/// "That player chooses target player": the choice belongs to whoever's
+/// upkeep it is, not to whoever controls the Oath.
+#[test]
+fn the_upkeep_player_chooses_the_target() {
+    let mut game = staged(&[cards::SERRA_ANGEL]);
+    game.battlefield
+        .push(creature(200_300, cards::GRIZZLY_BEARS, PlayerId::One));
+
+    let decision = first_decision(&mut game, PlayerId::Two);
+
+    assert_eq!(
+        decision.player,
+        PlayerId::Two,
+        "their upkeep, so their choice, even though the Oath is not theirs",
+    );
+    assert_eq!(
+        decision.options.len(),
+        1,
+        "one opponent, and they are ahead on creatures",
+    );
+    assert_eq!(
+        decision.options[0].label, "your opponent",
+        "and named from the seat being asked",
+    );
+}
+
+/// Nobody with more creatures is nobody to target, so the ability leaves the
+/// stack without asking anything else.
+#[test]
+fn a_level_board_offers_no_target() {
+    let mut game = staged(&[cards::SERRA_ANGEL]);
+    game.battlefield
+        .push(creature(200_400, cards::GRIZZLY_BEARS, PlayerId::One));
+    game.battlefield
+        .push(creature(200_401, cards::GRIZZLY_BEARS, PlayerId::Two));
+
+    game.active_player = PlayerId::One;
+    game.step = Step::Upkeep;
+    game.priority = PlayerId::One;
+    game.handle_upkeep_triggers();
+
+    assert!(
+        game.pending_decisions.is_empty(),
+        "no legal target is nothing to ask about",
+    );
+    assert!(game.stack.is_empty(), "and nothing waiting to resolve");
+}
+
+/// The comparison is against the player choosing rather than against the
+/// Oath's controller: player one being ahead means player one's own upkeep
+/// finds nobody to name, whoever owns the enchantment.
+#[test]
+fn the_comparison_is_made_from_the_choosing_seat() {
+    let mut game = staged(&[cards::SERRA_ANGEL]);
+    game.battlefield
+        .push(creature(200_500, cards::GRIZZLY_BEARS, PlayerId::One));
+    game.battlefield
+        .push(creature(200_501, cards::GRIZZLY_BEARS, PlayerId::One));
+    game.battlefield
+        .push(creature(200_502, cards::GRIZZLY_BEARS, PlayerId::Two));
+
+    // Player one is ahead two creatures to one, so their own upkeep names
+    // nobody and reveals nothing.
+    upkeep_of(&mut game, PlayerId::One, true);
+    assert!(!on_battlefield(&game, cards::SERRA_ANGEL));
+    assert_eq!(game.players[0].library.len(), 1, "nothing was revealed");
+
+    // Player two is behind, so theirs finds player one.
+    let decision = first_decision(&mut game, PlayerId::Two);
+    assert_eq!(decision.player, PlayerId::Two);
+    assert_eq!(decision.options.len(), 1);
+}

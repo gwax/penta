@@ -400,7 +400,10 @@ fn presentation_target_predicate(predicate: AbilityTargetPredicate) -> Option<Ta
                 Some(TargetPredicate::Permanent)
             }
         }
-        AbilityTargetPredicate::Player(_) => Some(TargetPredicate::Player),
+        AbilityTargetPredicate::Player(_)
+        | AbilityTargetPredicate::PlayerWithMoreObjectsThanChooser { .. } => {
+            Some(TargetPredicate::Player)
+        }
         AbilityTargetPredicate::Object { object, zones, .. } if zones == [ZoneKind::Stack] => {
             if object_predicate_implies(object, ObjectPredicateDef::NoncreatureSpell) {
                 Some(TargetPredicate::NoncreatureSpell)
@@ -459,6 +462,12 @@ impl AbilityTargetDef {
                 }
             }
             AbilityTargetPredicate::Player(relation) => player_target_label(relation).into(),
+            // The comparison is what the card says out loud, so the label
+            // says it too rather than settling for "target player".
+            AbilityTargetPredicate::PlayerWithMoreObjectsThanChooser { object, .. } => {
+                let subject = object_target_subject(object, TargetPredicate::Permanent);
+                format!("target player who controls more {subject}s than they do")
+            }
             AbilityTargetPredicate::StackObject { controller, .. } => {
                 let mut label = "target spell or ability".to_string();
                 if let Some(relation) = controller {

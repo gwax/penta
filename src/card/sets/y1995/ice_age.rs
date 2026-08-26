@@ -8,8 +8,8 @@ use crate::card::{
     AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType,
     DividedTotal, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
     ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef, SpellLifeCostDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    TargetChooserDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -2932,6 +2932,7 @@ static FIRE_COVENANT_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
     divided_total: Some(DividedTotal::ChosenX),
     another: false,
     excludes_source: false,
+    chooser: TargetChooserDef::Controller,
 }];
 
 pub(in crate::card::sets) static FIRE_COVENANT: CardRecord = CardRecord::new(

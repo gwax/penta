@@ -11,9 +11,9 @@ use crate::card::{
     GraveyardTypeConditionDef, ManaColor, MillLoopDef, ObjectChoiceBindingDef, ObjectPredicateDef,
     ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
     PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef,
-    TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, tokens,
+    SacrificedAmountDef, SpellAdditionalCostDef, SpendModeDef, TargetChooserDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{ObjectSetBindingIndex, TargetIndex, mana_cost};
@@ -609,6 +609,7 @@ static FURY_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
     divided_total: Some(DividedTotal::Fixed(4)),
     another: false,
     excludes_source: false,
+    chooser: TargetChooserDef::Controller,
 }];
 
 static EXILE_A_RED_CARD: SpellAdditionalCostDef =

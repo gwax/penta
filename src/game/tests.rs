@@ -17,8 +17,8 @@ use crate::{
     CardInstanceId, CardPart, CardPartId, CardPrinting, CardRules, CardStructure, CastChoices,
     DoubleFacedKind, EffectExecutionDef, ManaSpendEffectDef, ModeDef, ModeSetDef,
     ObjectBindingIndex, ObjectSetDef, PlayOptionDef, PlayOptionId, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, SpellForm, StackObjectId, TargetIndex,
-    TargetPredicate, TargetSelection, TargetSlotDef, TargetSlotId, ZonePlacement,
+    ReplacementEffectDef, ReplacementEventDef, SpellForm, StackObjectId, TargetChooserDef,
+    TargetIndex, TargetPredicate, TargetSelection, TargetSlotDef, TargetSlotId, ZonePlacement,
 };
 
 mod enumerated_apply;

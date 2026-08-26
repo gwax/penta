@@ -8,8 +8,8 @@ use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardArt, CardRules,
     CardSet, CardType, DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef,
     EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
-    ScaledValueDef, TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    ScaledValueDef, TargetChooserDef, TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -1377,6 +1377,7 @@ static FIRE_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef {
     divided_total: Some(DividedTotal::Fixed(2)),
     another: false,
     excludes_source: false,
+    chooser: TargetChooserDef::Controller,
 }];
 
 static ICE_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(

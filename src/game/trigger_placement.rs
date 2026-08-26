@@ -2,9 +2,10 @@ use super::{
     AbilityTargetDef, CardPartId, DecisionContinuation, DecisionKind, DecisionObservation,
     DecisionOption, DecisionOrderSemantics, DecisionPreference, DecisionVisibility, DecisionZone,
     EffectDef, Game, GameEvent, GameObjectId, ObjectCharacteristics, PendingDecision,
-    PendingTrigger, StackAbilityPayload, StackObject, StackObjectKind, Target, TargetSelection,
-    TargetSlotId, TriggerPlacementBatch, ZoneKind,
+    PendingTrigger, PlayerId, StackAbilityPayload, StackObject, StackObjectKind, Target,
+    TargetSelection, TargetSlotId, TriggerPlacementBatch, ZoneKind,
 };
+use crate::card::TargetChooserDef;
 
 impl Game {
     pub(super) fn begin_trigger_placement(&mut self) {
@@ -91,12 +92,15 @@ impl Game {
             return;
         }
 
+        let chooser = Self::target_chooser(&trigger, target);
         let options = candidates
             .iter()
             .enumerate()
             .map(|(index, candidate)| DecisionOption {
                 id: u32::try_from(index).unwrap_or(u32::MAX),
-                label: self.target_label(trigger.controller, *candidate),
+                // Labelled from the seat that is being asked: "you" has to
+                // mean the player reading it.
+                label: self.target_label(chooser, *candidate),
                 card: self.target_card(*candidate),
                 members: Vec::new(),
                 ability_text: None,
@@ -144,7 +148,9 @@ impl Game {
             PendingDecision {
                 observation: DecisionObservation {
                     id,
-                    player: trigger.controller,
+                    // The player who chooses is asked, which is not always
+                    // the player whose ability it is.
+                    player: chooser,
                     kind: DecisionKind::TriggerPlacement,
                     order_semantics: None,
                     source: Some(trigger.source.object),
@@ -180,12 +186,27 @@ impl Game {
             .unwrap_or_else(|| {
                 self.ability_targets_matching(
                     target.predicate,
-                    trigger.controller,
+                    Self::target_chooser(trigger, target),
                     trigger.source.object,
                     trigger.context.trigger,
                 )
             });
         Self::without_excluded_source(&target, trigger.source.object, candidates)
+    }
+
+    /// Who picks this slot's targets, and therefore who every relation in it
+    /// is measured against. The ability's controller unless the clause hands
+    /// the choice somewhere else; a clause that names the event player and
+    /// has no event falls back to the controller rather than to nobody.
+    fn target_chooser(trigger: &PendingTrigger, target: AbilityTargetDef) -> PlayerId {
+        match target.chooser {
+            TargetChooserDef::Controller => trigger.controller,
+            TargetChooserDef::EventPlayer => trigger
+                .context
+                .trigger
+                .event_player
+                .unwrap_or(trigger.controller),
+        }
     }
 
     /// Asks which mode a modal trigger was put onto the stack with. Only

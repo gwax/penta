@@ -8,8 +8,8 @@ use crate::card::{
     EffectDef, EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, HalvedValueDef,
     KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
     PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, RoundingDef,
-    SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    SacrificedAmountDef, TargetChooserDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -810,6 +810,7 @@ pub(in crate::card::sets) static ASHES_TO_ASHES: CardRecord = CardRecord::new_wi
                 divided_total: None,
                 another: false,
                 excludes_source: false,
+                chooser: TargetChooserDef::Controller,
             }],
             EffectDef::Sequence(&[
                 EffectDef::MoveToZone {

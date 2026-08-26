@@ -16,9 +16,9 @@ use crate::card::{
     ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
     PlayerSetDef, QuantifierDef, ReplacementConditionDef, ReplacementEffectDef,
     ResolvedEffectDurationDef, RoundingDef, SacrificedAmountDef, SimultaneousChooseDef,
-    SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef, TargetConditionDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef, TargetChooserDef,
+    TargetConditionDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::game::{
     CardAbilityResolver, CardRuntime, PileChoice, PileChosen, PileSplit, PilesSeparated,
@@ -2966,6 +2966,7 @@ static GHOULCALLERS_CHANT_TWO_TARGETS: [AbilityTargetDef; 1] = [AbilityTargetDef
     divided_total: None,
     another: false,
     excludes_source: false,
+    chooser: TargetChooserDef::Controller,
 }];
 
 static GHOULCALLERS_CHANT_MODES: [AbilityDef; 2] = [

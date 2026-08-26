@@ -15,6 +15,9 @@ impl Game {
                 | AbilityTargetPredicate::ControlledByTargetOf { .. }
                 | AbilityTargetPredicate::OwnedByTargetPlayer { .. }
                 | AbilityTargetPredicate::Object { .. }
+                // No Aura compares creature counts to decide who it can
+                // enchant; the slot exists for a triggered ability.
+                | AbilityTargetPredicate::PlayerWithMoreObjectsThanChooser { .. }
                 | AbilityTargetPredicate::StackObject { .. } => None,
             }
         })
