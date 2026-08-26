@@ -99,6 +99,17 @@ impl Game {
                 .find(|permanent| permanent.card.id == source)
                 .and_then(|permanent| self.power(permanent))
                 .map_or(0, i32::from),
+            // Read live: an intervening-if asking whether this was the
+            // first land is asked after the land drop was counted.
+            crate::card::ValueDef::LandsPlayedThisTurn(relation) => {
+                [PlayerId::One, PlayerId::Two]
+                    .into_iter()
+                    .filter(|player| {
+                        self.player_relation_matches(*player, relation, controller, context)
+                    })
+                    .map(|player| i32::from(self.players[player.index()].lands_played_this_turn))
+                    .sum()
+            }
             crate::card::ValueDef::DevotionTo(_)
             | crate::card::ValueDef::LibrarySize(_)
             | crate::card::ValueDef::SpellsCastThisGame(_)

@@ -568,6 +568,7 @@ impl HandcraftedPolicy {
             | ValueDef::AnyMatchingObject(_)
             | ValueDef::CountersOnSource(_)
             | ValueDef::CardsDrawnThisTurn(_)
+            | ValueDef::LandsPlayedThisTurn(_)
             | ValueDef::LifeGainedThisTurn(_)
             | ValueDef::DevotionTo(_)
             | ValueDef::BasicLandTypesControlled(_)

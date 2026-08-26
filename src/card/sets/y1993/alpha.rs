@@ -12,8 +12,8 @@ use crate::card::{
     ObjectRefDef, ObjectSetDef, OngoingEffectDef, PayOrDef, PlayerRefDef, PlayerRelation,
     PlayerSetDef, ReplacementAbilityDef, ReplacementChoiceDef, ReplacementConditionDef,
     ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, RoundingDef,
-    TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueComparisonDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -4116,13 +4116,47 @@ pub(in crate::card::sets) static ELVISH_ARCHERS: CardRecord = CardRecord::new_wi
 );
 
 // LEA 192 — Fastbond
-// Audit: metadata-only — Needs damage-history/source tracking or card-specific damage processing for “Whenever you play a land, if it wasn't the first land you played this turn, this enchantment deals 1 damage to you”.
+/// "If it wasn't the first land you played this turn": the land drop has
+/// already been counted by the time the trigger is read, so the second one
+/// is the count reaching two.
+static NOT_THE_FIRST_LAND_THIS_TURN: TriggerConditionDef =
+    TriggerConditionDef::ValueComparison(&ValueComparisonDef {
+        left: ValueDef::LandsPlayedThisTurn(PlayerRelation::You),
+        comparison: ComparisonDef::GreaterOrEqual,
+        right: ValueDef::Constant(2),
+    });
+
+static FASTBOND_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::static_ability(
+        "You may play any number of lands on each of your turns.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Controller,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayAnyNumberOfLands),
+        },
+    ),
+    AbilityDef::triggered_if(
+        "Whenever you play a land, if it wasn't the first land you played this turn, this \
+         enchantment deals 1 damage to you.",
+        TriggerEventDef::LandPlayed {
+            land: ObjectPredicateDef::Any,
+            player: PlayerRelation::You,
+        },
+        &NOT_THE_FIRST_LAND_THIS_TURN,
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static FASTBOND: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a575a9af-e1de-4a1d-91d8-440585377e4f"),
     "Fastbond",
-    crate::card::CardArt::new("a575a9af-e1de-4a1d-91d8-440585377e4f", "Mark Poole"),
-    crate::card::CardSet::Alpha,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("a575a9af-e1de-4a1d-91d8-440585377e4f", "Mark Poole"),
+    CardSet::Alpha,
+    // One mana that turns a hand of lands into a turn's worth of mana, and
+    // charges a life for each land after the first.
+    CardRules::new_enchantment(mana_cost!("{G}")).with_abilities(&FASTBOND_ABILITIES),
 );
 
 // LEA 193 — Fog

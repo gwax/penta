@@ -54,6 +54,7 @@ fn shared_condition_value(value: ValueDef, static_context: bool) -> bool {
         // computed.
         ValueDef::SourcePower
         | ValueDef::CardsDrawnThisTurn(_)
+        | ValueDef::LandsPlayedThisTurn(_)
         | ValueDef::LifeGainedThisTurn(_)
         | ValueDef::DevotionTo(_)
         | ValueDef::LibrarySize(_)

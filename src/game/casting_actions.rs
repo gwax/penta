@@ -31,7 +31,11 @@ impl Game {
         if player != self.active_player
             || !self.step.is_main()
             || !self.stack.is_empty()
-            || state.lands_played_this_turn > self.additional_land_plays(player)
+            || (state.lands_played_this_turn > self.additional_land_plays(player)
+                && !self.player_rule_applies(
+                    player,
+                    crate::card::AppliedRuleDef::MayPlayAnyNumberOfLands,
+                ))
         {
             return;
         }

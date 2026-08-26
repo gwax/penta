@@ -355,6 +355,10 @@ pub enum AppliedRuleDef {
     /// than merely present: two of them are two extra lands, which is what
     /// makes it a number instead of a flag.
     MayPlayAdditionalLands(u8),
+    /// "You may play any number of lands on each of your turns." Not a
+    /// number: Fastbond removes the bound rather than raising it, and a
+    /// count large enough to look unbounded would still be one.
+    MayPlayAnyNumberOfLands,
     /// "Each opponent can't draw more than one card each turn." A player
     /// rule found the same way, and a bound rather than a flag: a draw past
     /// the number simply does not happen, so nothing watching for a draw

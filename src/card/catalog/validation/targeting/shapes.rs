@@ -387,6 +387,7 @@ fn validate_value_shape(
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
         | ValueDef::CardsDrawnThisTurn(_)
+        | ValueDef::LandsPlayedThisTurn(_)
         | ValueDef::LifeGainedThisTurn(_)
         | ValueDef::DevotionTo(_)
         | ValueDef::BasicLandTypesControlled(_)
@@ -784,6 +785,7 @@ fn validate_applied_effect_shapes(
             | AppliedRuleDef::PlaysWithTopOfLibraryRevealed
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::MayPlayAdditionalLands(_)
+            | AppliedRuleDef::MayPlayAnyNumberOfLands
             | AppliedRuleDef::CannotDrawMoreThanEachTurn(_)
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::RevealsDrawnCards

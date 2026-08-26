@@ -322,6 +322,10 @@ pub enum ValueDef {
     /// put it on the stack. A cost that sacrifices exactly one permanent --
     /// every printed one so far -- reads that permanent's mana value.
     SacrificedManaValue,
+    /// How many lands a player has played this turn, counted the way the
+    /// land drop is: "if it wasn't the first land you played this turn"
+    /// asks whether this count has passed one.
+    LandsPlayedThisTurn(PlayerRelation),
     /// What a player began the game on, which is a rule of the format
     /// rather than anything on the board: "half your starting life total"
     /// is ten in a game that started at twenty and twenty in one that

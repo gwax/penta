@@ -33,6 +33,14 @@ distinguishes snapshots of the covered source and build inputs.
   fires for the land drop and stays quiet for the land somebody's spell put
   down.
 
+- **Playing any number of lands, and counting how many.** The land drop
+  could be raised by a number but not removed, so "you may play any number
+  of lands on each of your turns" had only a large number to pretend with.
+  It is now a rule of its own that takes the bound away. The count of lands
+  played this turn is readable beside it, which is what "if it wasn't the
+  first land you played this turn" asks: the drop is counted before the
+  trigger reads it, so the second land is the count reaching two.
+
 - **Counting the card types in a linked exile pile.** The pile a permanent
   keeps beside it could be measured in power and toughness but not in kinds
   of card, so "four or more card types among cards exiled with this
