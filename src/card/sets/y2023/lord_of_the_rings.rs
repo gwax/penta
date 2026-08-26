@@ -4,12 +4,13 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    ChoiceVisibilityDef, ChooseDef, ComparisonDef, ConditionDef, CounterKind, CreatureTypeSetDef,
-    DrawEventMatcherDef, EffectDef, EffectRecipientDef, ManaColor, ManaRestrictionDef,
-    ManaSpendEffectDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, ConditionDef,
+    CounterKind, CreatureTypeSetDef, DrawEventMatcherDef, EffectDef, EffectRecipientDef, ManaColor,
+    ManaRestrictionDef, ManaSpendEffectDef, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::mana_cost;
 use crate::{ObjectSetBindingIndex, TargetIndex};
@@ -444,13 +445,87 @@ pub(in crate::card::sets) static GENEROUS_ENT: CardRecord = CardRecord::new_with
 );
 
 // LTR 193 — Arwen, Mortal Queen
-// Audit: metadata-only — Card rules have not been implemented.
+static ARWEN_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{1}")),
+    AbilityCostDef::RemoveCountersFromSource {
+        kind: CounterKind::Indestructible,
+        amount: 1,
+    },
+];
+
+/// "Another target creature": Arwen is not among the choices, which is what
+/// keeps her from handing herself the counters twice.
+static ANOTHER_CREATURE: [AbilityTargetDef; 1] =
+    [
+        AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::HasType(CardType::Creature))
+            .excluding_source(),
+    ];
+
+static ARWEN_INDESTRUCTIBLE: AbilityDef = abilities::indestructible();
+
+/// The counter she spends buys the other creature a turn of
+/// indestructibility outright, and both of them keep the pair of counters
+/// afterwards -- so the ability is a trade of her own safety for two
+/// permanently bigger creatures.
+static ARWEN_BLESSING: [EffectDef; 5] = [
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::add_ability(&ARWEN_INDESTRUCTIBLE),
+        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+    },
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        kind: CounterKind::Lifelink,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Source,
+        kind: CounterKind::Lifelink,
+        amount: ValueDef::Constant(1),
+    },
+];
+
+static ARWEN_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::as_enters(
+        "Arwen enters with an indestructible counter on her.",
+        ReplacementEffectDef::ModifyBattlefieldEntry(
+            BattlefieldEntryModificationDef::AddCounters {
+                kind: CounterKind::Indestructible,
+                amount: 1,
+            },
+        ),
+    ),
+    AbilityDef::activated_with_targets(
+        "{1}, Remove an indestructible counter from Arwen: Another target creature gains \
+         indestructible until end of turn. Put a +1/+1 counter and a lifelink counter on that \
+         creature and a +1/+1 counter and a lifelink counter on Arwen.",
+        &ARWEN_COST,
+        &ANOTHER_CREATURE,
+        EffectDef::Sequence(&ARWEN_BLESSING),
+    ),
+];
+
 pub(in crate::card::sets) static ARWEN_MORTAL_QUEEN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("547f92d4-cd1d-4ca7-a6e2-6473b4d3c832"),
     "Arwen, Mortal Queen",
-    crate::card::CardArt::new("547f92d4-cd1d-4ca7-a6e2-6473b4d3c832", "Miranda Meeks"),
-    crate::card::CardSet::LordOfTheRings,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("547f92d4-cd1d-4ca7-a6e2-6473b4d3c832", "Miranda Meeks"),
+    CardSet::LordOfTheRings,
+    // Three mana for a 2/2 that is hard to kill until the turn she decides
+    // to spend that on somebody else, and leaves both of them bigger for
+    // good when she does.
+    CardRules::new_creature(mana_cost!("{1}{G}{W}"), &["Elf", "Noble"], 2, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&ARWEN_ABILITIES),
 );
 
 // LTR 203 — Flame of Anor
