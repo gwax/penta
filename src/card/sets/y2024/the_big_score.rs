@@ -4,8 +4,9 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
-    TokenCopyExceptionsDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRefDef, PlayerRelation,
+    ResolvedEffectDurationDef, TokenCopyExceptionsDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -183,16 +184,73 @@ pub(in crate::card::sets) static LOOT_THE_PATHFINDER: CardRecord = CardRecord::n
 );
 
 // BIG 41 — Generous Plunderer
-// Audit: metadata-only — Card rules have not been implemented.
+static AN_OPPONENT_PLUNDERER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+)];
+
+/// Yours untapped and theirs tapped, which is the whole of the bargain: the
+/// Treasure you keep is usable this turn and the one you hand over is not.
+static PLUNDERER_TREASURES: EffectDef = EffectDef::Sequence(&PLUNDERER_TREASURE_PAIR);
+
+static PLUNDERER_TREASURE_PAIR: [EffectDef; 2] = [
+    EffectDef::create_token(crate::card::tokens::treasure()),
+    EffectDef::create_token(crate::card::tokens::treasure())
+        .with_controller(PlayerRefDef::Target(TargetIndex::PRIMARY))
+        .entering_tapped(),
+];
+
+/// Artifacts they control as the trigger resolves, which is what makes the
+/// Treasure handed over on the upkeep into damage on the attack.
+static THEIR_ARTIFACTS: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::Opponent,
+);
+
+static PLUNDERER_ABILITIES: [AbilityDef; 3] = [
+    abilities::menace(),
+    // The opponent is named as the upkeep trigger goes on the stack rather
+    // than when the Treasure is actually made, which is the one place this
+    // differs from the printed reflexive trigger -- and with two players
+    // there is only ever the one opponent to name.
+    AbilityDef::triggered_with_targets(
+        "At the beginning of your upkeep, you may create a Treasure token. When you do, target \
+         opponent creates a tapped Treasure token.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::You,
+        },
+        &AN_OPPONENT_PLUNDERER,
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &PLUNDERER_TREASURES,
+        },
+    ),
+    // "Defending player" is the opponent in a two-player game, whether the
+    // attack is aimed at them or at something they control.
+    AbilityDef::triggered(
+        "Whenever this creature attacks, it deals damage to defending player equal to the number \
+         of artifacts they control.",
+        TriggerEventDef::attack_declared(ObjectPredicateDef::Source, 1, None),
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Opponent,
+            amount: ValueDef::CountMatchingObjects(&THEIR_ARTIFACTS),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static GENEROUS_PLUNDERER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("351eea06-f5be-4044-b3b3-cc6bf805abb1"),
     "Generous Plunderer",
-    crate::card::CardArt::new(
+    CardArt::new(
         "351eea06-f5be-4044-b3b3-cc6bf805abb1",
         "Josiah \"Jo\" Cameron",
     ),
-    crate::card::CardSet::TheBigScore,
-    crate::card::CardRules::unsupported(),
+    CardSet::TheBigScore,
+    // Two mana for a 2/2 that hands the other player a Treasure every
+    // upkeep and then bills them for it on the attack.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Rogue"], 2, 2)
+        .with_abilities(&PLUNDERER_ABILITIES),
 );
 
 // BIG 85 — Vaultborn Tyrant

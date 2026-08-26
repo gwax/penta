@@ -427,6 +427,7 @@ mod vintage_cube_fractured_identity;
 mod vintage_cube_gadgeteer;
 mod vintage_cube_galvanic_blast;
 mod vintage_cube_gau;
+mod vintage_cube_generous_plunderer;
 mod vintage_cube_get_lost;
 mod vintage_cube_ghost_vacuum;
 mod vintage_cube_gitaxian_probe;
