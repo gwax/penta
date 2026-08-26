@@ -447,6 +447,7 @@ impl HandcraftedPolicy {
             EffectDef::LoseTheGame { .. }
             | EffectDef::WinTheGame { .. }
             | EffectDef::CopyResolvingSpell { .. }
+            | EffectDef::CopyTargetSpell { .. }
             | EffectDef::None
             | EffectDef::AddMana(_)
             | EffectDef::AddManaEqualTo { .. }

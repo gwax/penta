@@ -89,6 +89,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::PutSpellIntoOwnersLibrary { .. }
         | EffectDef::Counter { .. }
         | EffectDef::CopyResolvingSpell { .. }
+        | EffectDef::CopyTargetSpell { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::CreateOngoingEffect(_)
         | EffectDef::CreateAttachedToken { .. }

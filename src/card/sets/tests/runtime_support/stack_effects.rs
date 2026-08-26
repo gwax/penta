@@ -223,6 +223,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         EffectDef::CopyResolvingSpell { .. } | EffectDef::Proliferate => {
             deferred_decision_allowed
         }
+
         // Naming a card is a decision window, and what follows it is bound by
         // the same rule as anything after one.
         EffectDef::ChooseCardName { then, .. }
@@ -500,6 +501,9 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         // "top of library or graveyard" a nonland explore ends in.
         | EffectDef::PutSpellIntoOwnersLibrary { object }
         | EffectDef::MayCastTargetWithoutPaying { object, .. }
+        // Copying a spell somebody else is casting asks the same question
+        // about the same kind of window, over a recipient naming the spell.
+        | EffectDef::CopyTargetSpell { object, .. }
         | EffectDef::Explore { object } => {
             deferred_decision_allowed && shared_effect_recipient(object)
         }

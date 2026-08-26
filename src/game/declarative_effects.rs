@@ -693,6 +693,24 @@ impl Game {
                     self.queue_copy_decision_chain(player, spell, None, "the copy", copies);
                 }
             }
+            // "Copy target instant or sorcery spell you control": the copy
+            // keeps what it copied and its controller is offered the
+            // retarget, exactly as a spell copying itself is.
+            EffectDef::CopyTargetSpell {
+                object: recipient,
+                chooser,
+            } => {
+                let Some(player) = self.player_reference(chooser, object, &context, scoped) else {
+                    return;
+                };
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Spell(id) = target
+                        && let Some(spell) = self.stack.iter().find(|item| item.id == id).cloned()
+                    {
+                        self.queue_copy_decision(player, spell, None, "the copy");
+                    }
+                }
+            }
             EffectDef::PutSpellIntoOwnersLibrary { object: recipient } => {
                 for target in self.effect_recipients(recipient, object, &context, scoped) {
                     if let Target::Spell(spell) = target {

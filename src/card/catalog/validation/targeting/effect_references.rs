@@ -240,6 +240,7 @@ fn validate_effect_references(
         | EffectDef::PutIntoLibraryBeneathTop { object, .. }
         | EffectDef::Counter { object, .. }
         | EffectDef::PutSpellIntoOwnersLibrary { object }
+        | EffectDef::CopyTargetSpell { object, .. }
         | EffectDef::CreateTokenCopyOf { object, .. }
         | EffectDef::Endure { object, .. } => {
             validate_recipient_target_references(object, target_count, scope)

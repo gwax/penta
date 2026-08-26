@@ -204,6 +204,15 @@ pub enum EffectDef {
         /// what "you may choose new targets for the copies" asks for.
         count: ValueDef,
     },
+    /// Copies a spell this effect names rather than the one it belongs to.
+    /// The copy keeps what it copied, colours included -- a card that
+    /// repaints its copy says so, and none of the ones written this way do.
+    CopyTargetSpell {
+        object: EffectRecipientDef,
+        /// Who retargets the copy, which is its controller: "you may choose
+        /// new targets for the copy" is addressed to whoever made it.
+        chooser: PlayerRefDef,
+    },
     /// Gives its controller an emblem, an object that sits outside every
     /// zone and does nothing but carry its abilities.
     CreateEmblem {

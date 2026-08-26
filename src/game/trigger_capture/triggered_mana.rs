@@ -53,7 +53,7 @@ EffectDef::SearchZone { .. } | EffectDef::ChooseCards { .. } |
 EffectDef::ReplaceNextDrawThisTurn { .. } | EffectDef::IfFormat { .. } |
 EffectDef::Counter { .. } |
 EffectDef::PutSpellIntoOwnersLibrary { .. } | EffectDef::CopyResolvingSpell {
-.. } | EffectDef::AddCounters { .. } | EffectDef::RemoveCounters { .. } |
+.. } | EffectDef::CopyTargetSpell { .. } | EffectDef::AddCounters { .. } | EffectDef::RemoveCounters { .. } |
 EffectDef::ChangeTextBasicLandType { .. } | EffectDef::ChooseColor { .. } |
 EffectDef::BecomeCopyOf { .. } | EffectDef::May { .. } |
 EffectDef::CannotBeForcedToSacrifice | EffectDef::CannotBeForcedToDiscard |

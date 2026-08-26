@@ -25,6 +25,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Copying a spell a clause names.** Copying the spell an effect belongs to
+  was already a declarative effect -- storm and replicate use it -- but
+  copying a spell the clause points at was only reachable through Fork's
+  legacy behaviour. It is an ordinary effect now, over a recipient naming the
+  spell, and it reuses the same copy-and-retarget window the other one does.
+
 - **Counting names rather than objects.** "Seven or more lands with different
   names" had nothing to read: a query could say how many objects it matched
   and not how many names they had between them. The count is now a value like

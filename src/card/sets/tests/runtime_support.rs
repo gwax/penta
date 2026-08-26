@@ -684,6 +684,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Counter { .. }
                     | EffectDef::PutSpellIntoOwnersLibrary { .. }
                     | EffectDef::CopyResolvingSpell { .. }
+                    | EffectDef::CopyTargetSpell { .. }
                     | EffectDef::AddCounters { .. }
                     | EffectDef::RemoveCounters { .. }
                     | EffectDef::ChangeTextBasicLandType { .. }

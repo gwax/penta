@@ -2,11 +2,11 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AppliedEffectDef,
-    AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CostModificationDef,
-    EffectDef, EffectRecipientDef, GraveyardPlayPermissionDef, ObjectPredicateDef,
-    PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, ResolvedEffectDurationDef, ValueDef,
-    abilities,
+    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    CostModificationDef, EffectDef, EffectRecipientDef, GraveyardPlayPermissionDef,
+    ObjectPredicateDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -206,13 +206,62 @@ pub(in crate::card::sets) static ZAGOTH_TRIOME: CardRecord = CardRecord::new_wit
 // IKO 355 — Lurrus of the Dream-Den (alternate printing)
 
 // IKO 356 — Lutri, the Spellchaser
-// Audit: metadata-only — Card rules have not been implemented.
+/// Yours rather than anybody's: Lutri copies what you are casting, not what
+/// is being cast at you.
+static YOUR_INSTANT_OR_SORCERY_SPELL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Instant),
+            ObjectPredicateDef::HasType(CardType::Sorcery),
+        ]),
+        zones: &[ZoneKind::Stack],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
+/// "If you cast it": a Lutri put onto the battlefield some other way is a
+/// 3/2 and nothing else, which is what keeps the trigger honest about being
+/// half of a spell rather than half of a creature.
+static LUTRI_WAS_CAST: TriggerConditionDef = TriggerConditionDef::SourceWasCast;
+
+static LUTRI_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::not_implemented(
+        "Companion — Each nonland card in your starting deck has a different name. (If this card \
+         is your chosen companion, you may put it into your hand from outside the game for {3} \
+         as a sorcery.)",
+        "Companion is a deck-construction permission and a play from outside the game, neither \
+         of which the engine represents; the card is played from a deck like any other.",
+    ),
+    abilities::flash(),
+    AbilityDef::triggered_if_with_targets(
+        "When Lutri enters, if you cast it, copy target instant or sorcery spell you control. \
+         You may choose new targets for the copy.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::Source,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        &LUTRI_WAS_CAST,
+        &YOUR_INSTANT_OR_SORCERY_SPELL,
+        EffectDef::CopyTargetSpell {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            chooser: PlayerRefDef::EffectController,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static LUTRI_THE_SPELLCHASER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("12c01a00-2128-4b6c-874f-a206eca3a756"),
     "Lutri, the Spellchaser",
-    crate::card::CardArt::new("12c01a00-2128-4b6c-874f-a206eca3a756", "Lie Setiawan"),
-    crate::card::CardSet::Ikoria,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("12c01a00-2128-4b6c-874f-a206eca3a756", "Lie Setiawan"),
+    CardSet::Ikoria,
+    // Three mana at instant speed for a body and a copy of whatever you were
+    // already casting -- and in a singleton cube the companion clause costs
+    // the deck nothing it was not already paying.
+    CardRules::new_creature(mana_cost!("{1}{U/R}{U/R}"), &["Elemental", "Otter"], 3, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&LUTRI_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

@@ -148,6 +148,7 @@ impl Game {
             | EffectDef::Counter { .. }
             | EffectDef::PutSpellIntoOwnersLibrary { .. }
             | EffectDef::CopyResolvingSpell { .. }
+            | EffectDef::CopyTargetSpell { .. }
             | EffectDef::AddCounters { .. }
             | EffectDef::RemoveCounters { .. }
             | EffectDef::ChangeTextBasicLandType { .. }

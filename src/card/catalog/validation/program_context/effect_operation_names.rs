@@ -76,7 +76,9 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::ChooseCards { .. } => "ChooseCards",
         EffectDef::ReplaceNextDrawThisTurn { .. } => "ReplaceNextDrawThisTurn",
         EffectDef::IfFormat { .. } => "IfFormat",
-        EffectDef::Counter { .. } | EffectDef::CopyResolvingSpell { .. } => "Counter",
+        EffectDef::Counter { .. }
+        | EffectDef::CopyResolvingSpell { .. }
+        | EffectDef::CopyTargetSpell { .. } => "Counter",
         EffectDef::PutSpellIntoOwnersLibrary { .. } => "PutSpellIntoOwnersLibrary",
         EffectDef::DrainLife { .. } => "DrainLife",
         EffectDef::AddManaEqualTo { .. } => "AddManaEqualTo",

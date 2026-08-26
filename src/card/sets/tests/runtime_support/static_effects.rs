@@ -316,6 +316,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Counter { .. }
         | EffectDef::PutSpellIntoOwnersLibrary { .. }
         | EffectDef::CopyResolvingSpell { .. }
+        | EffectDef::CopyTargetSpell { .. }
         | EffectDef::AddCounters { .. }
         | EffectDef::RemoveCounters { .. }
         | EffectDef::ChangeTextBasicLandType { .. }

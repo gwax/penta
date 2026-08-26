@@ -461,6 +461,7 @@ mod vintage_cube_lose_focus;
 mod vintage_cube_lotus_cobra;
 mod vintage_cube_luminarch_aspirant;
 mod vintage_cube_lurrus;
+mod vintage_cube_lutri;
 mod vintage_cube_magda;
 mod vintage_cube_malcolm;
 mod vintage_cube_mana;
