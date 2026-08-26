@@ -317,6 +317,11 @@ pub enum ValueDef {
     /// put it on the stack. A cost that sacrifices exactly one permanent --
     /// every printed one so far -- reads that permanent's mana value.
     SacrificedManaValue,
+    /// What a player began the game on, which is a rule of the format
+    /// rather than anything on the board: "half your starting life total"
+    /// is ten in a game that started at twenty and twenty in one that
+    /// started at forty, whatever has happened since.
+    StartingLifeTotal(PlayerRelation),
     /// How many objects the step before this one matched: the land cards a
     /// discard actually took. Zero without such a step behind it.
     MatchedCount,

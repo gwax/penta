@@ -617,6 +617,7 @@ mod vintage_cube_tendrils;
 mod vintage_cube_territorial_kavu;
 mod vintage_cube_tersa_lightshatter;
 mod vintage_cube_tezzeret_cruel_captain;
+mod vintage_cube_the_endstone;
 mod vintage_cube_the_mightstone_and_weakstone;
 mod vintage_cube_the_one_ring;
 mod vintage_cube_thieving_skydiver;

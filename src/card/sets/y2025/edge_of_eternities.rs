@@ -5,11 +5,12 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
     AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
     ComparisonDef, CounterKind, CreatureTypeSetDef, DeclarativeAbilityDef, EffectDef,
-    EffectRecipientDef, EmblemCharacteristics, ManaColor, ModalSpellDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectSetDef, PlayerRelation, QuantifierDef, ReplacementAbilityDef,
-    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    EffectRecipientDef, EmblemCharacteristics, HalvedValueDef, ManaColor, ModalSpellDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRelation, QuantifierDef,
+    ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
+    ResolvedEffectDurationDef, RoundingDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, TriggeredAbilityDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -543,13 +544,57 @@ pub(in crate::card::sets) static ICETILL_EXPLORER: CardRecord = CardRecord::new(
 );
 
 // EOE 391 — The Endstone
-// Audit: metadata-only — Card rules have not been implemented.
+/// One ability with two events rather than two abilities: the card prints
+/// one, and a turn with a land and a spell in it draws twice either way.
+static PLAY_A_LAND_OR_CAST_A_SPELL: [TriggerEventDef; 2] = [
+    TriggerEventDef::LandPlayed {
+        land: ObjectPredicateDef::Any,
+        player: PlayerRelation::You,
+    },
+    TriggerEventDef::SpellCast(ObjectPredicateDef::ControlledBy(PlayerRelation::You)),
+];
+
+/// Half of what the game began on rather than half of what is left: it sets
+/// the total to the same number every end step, which is a gain from below
+/// it and a loss from above.
+static HALF_YOUR_STARTING_LIFE: ValueDef = ValueDef::Halved(&HalvedValueDef::new(
+    ValueDef::StartingLifeTotal(PlayerRelation::You),
+    RoundingDef::Up,
+));
+
+static ENDSTONE_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::triggered(
+        "Whenever you play a land or cast a spell, draw a card.",
+        TriggerEventDef::AnyOf(&PLAY_A_LAND_OR_CAST_A_SPELL),
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+    AbilityDef::triggered(
+        "At the beginning of your end step, your life total becomes half your starting life \
+         total, rounded up.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::End,
+            player: PlayerRelation::You,
+        },
+        EffectDef::SetLifeTotal {
+            recipient: EffectRecipientDef::Controller,
+            total: HALF_YOUR_STARTING_LIFE,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static THE_ENDSTONE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1227eb7f-c2a5-4112-98d0-70275a63c26a"),
     "The Endstone",
-    crate::card::CardArt::new("1227eb7f-c2a5-4112-98d0-70275a63c26a", "Hidetaka Tenjin"),
-    crate::card::CardSet::EdgeOfEternities,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("1227eb7f-c2a5-4112-98d0-70275a63c26a", "Hidetaka Tenjin"),
+    CardSet::EdgeOfEternities,
+    // Seven mana that draws a card for everything you do and hands the ten
+    // life back every end step, which is what makes the seven payable.
+    CardRules::new_artifact(mana_cost!("{7}"))
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&ENDSTONE_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

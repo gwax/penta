@@ -487,6 +487,7 @@ fn validate_value_target_references(
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness
         | ValueDef::LifeTotal(_)
+        | ValueDef::StartingLifeTotal(_)
         | ValueDef::SourceToughness
         | ValueDef::TriggerEventAmount
         | ValueDef::CardsInHandAbove { .. }

@@ -33,6 +33,13 @@ distinguishes snapshots of the covered source and build inputs.
   fires for the land drop and stays quiet for the land somebody's spell put
   down.
 
+- **What the game started on, as a number a card can read.** Life totals
+  were readable and starting life was not, so "half your starting life
+  total" had nothing to halve. It is a rule of the format rather than
+  anything on the board -- ten in a game that began at twenty and twenty in
+  one that began at forty -- and it reads that rule rather than assuming
+  one.
+
 - **Paying an amount of energy the payer chooses.** A resolution could ask
   for a fixed amount of energy or for an amount of generic mana the payer
   picked, but not for an amount of energy they picked -- so "you may pay any
