@@ -214,6 +214,9 @@ fn shared_entry_replacement_condition(condition: ConditionDef) -> bool {
             .iter()
             .copied()
             .all(shared_entry_replacement_condition),
+        // A turn count is read off the game rather than out of a zone, so
+        // there is nothing about it for the entry walk to be unable to see.
+        ConditionDef::ControllerTurnsTakenAtMost(_) => true,
     }
 }
 

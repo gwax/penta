@@ -4,11 +4,12 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::TargetIndex;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, ActivationTimingDef, AddManaEffectDef,
-    AdditionalTriggerDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, CharacteristicOperationDef, CounterKind, CreatureTypeSetDef,
-    DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
-    DrawEventMatcherDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectRefDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, PlayerSetDef,
+    AdditionalTriggerDef, AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, CharacteristicOperationDef, ConditionDef,
+    CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, DrawEventMatcherDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
     ResolvedEffectDurationDef, SetOperationDef, TopOfLibraryCostDef, TriggerConditionDef,
     TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
@@ -279,13 +280,42 @@ pub(in crate::card::sets) static VIVI_ORNITIER: CardRecord = CardRecord::new_wit
 );
 
 // FIN 289 — Starting Town
-// Audit: metadata-only — Card rules have not been implemented.
+static TOWN_PAYS_A_LIFE: [AbilityCostDef; 2] =
+    [AbilityCostDef::TapSource, AbilityCostDef::PayLife(1)];
+
+static STARTING_TOWN_ABILITIES: [AbilityDef; 3] = [
+    // "Your first, second, or third turn of the game" counts the turns you
+    // have taken rather than the turn number: on the draw, your third turn
+    // is the game's sixth, and the Town still comes in untapped.
+    AbilityDef::as_enters(
+        "This land enters tapped unless it's your first, second, or third turn of the game.",
+        ReplacementEffectDef::Conditional {
+            condition: ConditionDef::ControllerTurnsTakenAtMost(3),
+            if_true: &[],
+            if_false: &TOWN_ENTERS_TAPPED,
+        },
+    ),
+    abilities::tap_for(ManaColor::Colorless),
+    AbilityDef::activated_mana(
+        "{T}, Pay 1 life: Add one mana of any color.",
+        &TOWN_PAYS_A_LIFE,
+        EffectDef::AddMana(AddManaEffectDef::any_color()),
+    ),
+];
+
+static TOWN_ENTERS_TAPPED: [ReplacementEffectDef; 1] =
+    [ReplacementEffectDef::ModifyBattlefieldEntry(
+        BattlefieldEntryModificationDef::Tapped,
+    )];
+
 pub(in crate::card::sets) static STARTING_TOWN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("fc7d1912-7e27-49ef-bd98-375d975a42b0"),
     "Starting Town",
-    crate::card::CardArt::new("fc7d1912-7e27-49ef-bd98-375d975a42b0", "Hristo D. Chukov"),
-    crate::card::CardSet::FinalFantasy,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("fc7d1912-7e27-49ef-bd98-375d975a42b0", "Hristo D. Chukov"),
+    CardSet::FinalFantasy,
+    // A City of Brass for the turns that matter and a tapped land after
+    // them, which is the trade a deck makes for fixing it only needs early.
+    CardRules::new_land(&["Town"]).with_abilities(&STARTING_TOWN_ABILITIES),
 );
 
 // FIN 551c — Traveling Chocobo

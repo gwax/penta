@@ -30,6 +30,11 @@ pub enum ConditionDef {
     /// Held behind a reference so that adding it does not widen every
     /// condition, and with it the mana-ability activation this sits inside.
     ObjectCount(&'static ObjectCountConditionDef),
+    /// The condition's controller has begun no more than this many turns.
+    /// "Unless it's your first, second, or third turn of the game" counts
+    /// the turns you have taken rather than the turn number: on the draw,
+    /// your third turn is the game's sixth.
+    ControllerTurnsTakenAtMost(u8),
 }
 
 /// The parts of a counting condition. Split out of [`ConditionDef`] so the

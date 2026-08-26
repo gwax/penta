@@ -139,6 +139,9 @@ impl Game {
                 );
                 crate::game::effect_support::compare(&count, comparison, &usize::from(amount))
             }
+            ConditionDef::ControllerTurnsTakenAtMost(turns) => {
+                self.turns_started[controller.index()] <= u32::from(turns)
+            }
         }
     }
 

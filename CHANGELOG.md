@@ -25,6 +25,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **How many turns you have taken.** A condition could ask what is on the
+  battlefield and how much of it, but not how far into the game its
+  controller is, so "unless it's your first, second, or third turn" had
+  nothing to read. It counts turns taken rather than the turn number: on the
+  draw, your third turn is the game's sixth, and the clause is about yours.
+
 - **Sunburst.** A permanent could enter with counters for its X or for the
   times it was kicked, but not for the colours that paid for it. The entry
   modification joins those two, reading a count the permanent now carries

@@ -469,6 +469,11 @@ impl Game {
                 );
                 crate::game::effect_support::compare(&count, comparison, &usize::from(amount))
             }
+            // Read as the permanent enters, which is the only moment the
+            // clause asks about.
+            ConditionDef::ControllerTurnsTakenAtMost(turns) => {
+                self.turns_started[context.controller.index()] <= u32::from(turns)
+            }
         }
     }
 

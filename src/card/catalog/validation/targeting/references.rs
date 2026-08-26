@@ -301,6 +301,8 @@ fn validate_condition(
     match condition {
         ConditionDef::Exists(query) => validate_query(query, target_count, scope),
         ConditionDef::ObjectCount(counting) => validate_query(counting.query, target_count, scope),
+        // A turn count names nothing and reads nothing but the game.
+        ConditionDef::ControllerTurnsTakenAtMost(_) => Ok(()),
         ConditionDef::All(conditions) => conditions
             .iter()
             .try_for_each(|condition| validate_condition(*condition, target_count, scope)),
