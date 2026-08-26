@@ -266,6 +266,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::MayPlayWithoutPaying { .. }
         | EffectDef::ExileGrantingOwnerPlay { .. }
         | EffectDef::ExileGrantingControllerPlayThisTurn { .. }
+        | EffectDef::PermitCastFromGraveyardThisTurn { .. }
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::Detain { .. }
         | EffectDef::ExchangeControl { .. }

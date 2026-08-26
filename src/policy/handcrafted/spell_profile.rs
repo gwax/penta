@@ -476,6 +476,7 @@ impl HandcraftedPolicy {
             | EffectDef::LookAtTopAndDistribute { .. }
             | EffectDef::LookAtHand { .. }
             | EffectDef::ExileOneFromEachZone(_)
+            | EffectDef::PermitCastFromGraveyardThisTurn { .. }
             | EffectDef::MillWhileMatching(_)
             | EffectDef::LookAtRandomCardInHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }

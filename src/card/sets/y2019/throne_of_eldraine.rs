@@ -662,13 +662,65 @@ pub(in crate::card::sets) static WITCH_S_COTTAGE: CardRecord = CardRecord::new(
 );
 
 // ELD 342 — Emry, Lurker of the Loch
-// Audit: metadata-only — Card rules have not been implemented.
+static ARTIFACTS_YOU_CONTROL_EMRY: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static AN_ARTIFACT_CARD_IN_YOUR_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Artifact),
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: Some(PlayerRelation::You),
+    },
+)];
+
+static EMRY_TAP_COST: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
+static EMRY_ABILITIES: [AbilityDef; 3] = [
+    // Affinity is a discount the card prints about itself, read from hand
+    // where the spell is being paid for rather than off the battlefield.
+    AbilityDef::static_ability(
+        "Affinity for artifacts (This spell costs {1} less to cast for each artifact you \
+         control.)",
+        EffectDef::ReduceGenericCostBy(ValueDef::CountMatchingObjects(&ARTIFACTS_YOU_CONTROL_EMRY)),
+    )
+    .with_source_zones(&[ZoneKind::Hand]),
+    abilities::enters_trigger(
+        "When Emry enters, mill four cards.",
+        EffectDef::Mill {
+            player: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(4),
+            binding: None,
+            then: None,
+        },
+    ),
+    // The cost is still owed and the timing rules still apply: what the
+    // permission buys is that the graveyard is a legal place to cast the
+    // named card from, and only until the turn is over.
+    AbilityDef::activated_with_targets(
+        "{T}: Choose target artifact card in your graveyard. You may cast that card this turn. \
+         (You still pay its costs. Timing rules still apply.)",
+        &EMRY_TAP_COST,
+        &AN_ARTIFACT_CARD_IN_YOUR_GRAVEYARD,
+        EffectDef::PermitCastFromGraveyardThisTurn {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static EMRY_LURKER_OF_THE_LOCH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("157f343d-8583-4827-a77d-d916e6a5caa1"),
     "Emry, Lurker of the Loch",
-    crate::card::CardArt::new("157f343d-8583-4827-a77d-d916e6a5caa1", "Livia Prima"),
-    crate::card::CardSet::ThroneOfEldraine,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("157f343d-8583-4827-a77d-d916e6a5caa1", "Livia Prima"),
+    CardSet::ThroneOfEldraine,
+    // A one-mana 1/2 on any board with two artifacts, and the mill she
+    // arrives with is where she finds what to recast.
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Merfolk", "Wizard"], 1, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&EMRY_ABILITIES),
 );
 
 // ELD 372 — Questing Beast

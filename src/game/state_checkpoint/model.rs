@@ -70,6 +70,11 @@ pub(super) struct ExilePlayPermissionSnapshot {
     /// covers one card, which is all of them but a pile's.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) group: Option<u32>,
+    /// Whether this permission names a card in a graveyard rather than one
+    /// in exile. Absent for every permission written before Emry's, all of
+    /// which were about exile.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) from_graveyard: bool,
 }
 
 mod balance;

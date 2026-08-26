@@ -713,6 +713,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::MayPlayWithoutPaying { .. }
                     | EffectDef::ExileGrantingOwnerPlay { .. }
                     | EffectDef::ExileGrantingControllerPlayThisTurn { .. }
+                    | EffectDef::PermitCastFromGraveyardThisTurn { .. }
                     | EffectDef::ReturnLinkedExiles { .. }
                     | EffectDef::Detain { .. }
                     | EffectDef::GainControl { .. }

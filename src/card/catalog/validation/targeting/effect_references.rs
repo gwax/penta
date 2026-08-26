@@ -245,6 +245,7 @@ fn validate_effect_references(
             object, then: None, ..
         }
         | EffectDef::Sacrifice { object }
+        | EffectDef::PermitCastFromGraveyardThisTurn { object }
         | EffectDef::DiscardCards { object }
         | EffectDef::ChangeTextBasicLandType { object }
         | EffectDef::ChooseColor { object, .. }

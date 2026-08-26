@@ -33,6 +33,14 @@ distinguishes snapshots of the covered source and build inputs.
   fires for the land drop and stays quiet for the land somebody's spell put
   down.
 
+- **A permission to cast one card out of a graveyard.** Casting from a
+  graveyard was permitted only by a static ability on the battlefield naming
+  a whole class of cards, so "choose target artifact card in your graveyard;
+  you may cast that card this turn" had nothing to write down. A resolved
+  permission can now name one card in a graveyard for the turn, recorded
+  beside the exile permissions it is otherwise identical to -- same card,
+  same holder, same expiry -- with the zone telling the two apart.
+
 - **Asking about something that no longer exists.** A bound object was
   looked for on the battlefield and then in every other zone, so a token
   that had been sacrificed -- gone from all of them -- answered no to every

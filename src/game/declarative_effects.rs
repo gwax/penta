@@ -526,6 +526,14 @@ impl Game {
             | EffectDef::ReturnLinkedExiles { .. } => {
                 self.resolve_linked_exile_effect(scoped, object, &context);
             }
+            EffectDef::PermitCastFromGraveyardThisTurn { object: recipient } => {
+                let controller = object.controller;
+                for target in self.effect_recipients(recipient, object, &context, scoped) {
+                    if let Target::Card(card) = target {
+                        self.permit_graveyard_cast_this_turn(card, controller);
+                    }
+                }
+            }
             EffectDef::Detain { object: recipient } => {
                 let controller = object.controller;
                 let created = self.turns_started[controller.index()];

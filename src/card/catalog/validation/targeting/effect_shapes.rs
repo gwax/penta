@@ -374,6 +374,7 @@ fn validate_effect_target_shapes(
         | EffectDef::BecomeCopyOf { object, .. }
         | EffectDef::ExileGrantingOwnerPlay { object, .. }
         | EffectDef::ExileGrantingControllerPlayThisTurn { object }
+        | EffectDef::PermitCastFromGraveyardThisTurn { object }
         | EffectDef::GainControl { object, .. }
         | EffectDef::Transform { object }
         | EffectDef::PutIntoLibraryBeneathTop { object, .. }

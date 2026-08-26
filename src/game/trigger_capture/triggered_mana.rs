@@ -49,6 +49,7 @@ EffectDef::Cascade | EffectDef::Proliferate | EffectDef::Explore { .. } |
 EffectDef::LookAtTopAndSelect { .. } | EffectDef::LookAtTopAndDistribute { ..
 } | EffectDef::LookAtHand { .. } | EffectDef::LookAtRandomCardInHand { .. } |
 EffectDef::ExileOneFromEachZone(_) |
+EffectDef::PermitCastFromGraveyardThisTurn { .. } |
 EffectDef::MillWhileMatching(_) |
 EffectDef::RevealAtRandomFromHand { .. } | EffectDef::RevealHand { .. } |
 EffectDef::SearchZone { .. } | EffectDef::ChooseCards { .. } |

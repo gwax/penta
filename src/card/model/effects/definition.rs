@@ -688,9 +688,12 @@ pub enum EffectDef {
     MillWhileMatching(&'static MillLoopDef),
     /// "Target opponent exiles the top card of their library, a card at
     /// random from their graveyard, and a card at random from their hand."
-    /// One effect rather than three exiles because what it grants is one
-    /// permission over the whole pile.
+    /// One effect because what it grants is one permission over the pile.
     ExileOneFromEachZone(&'static PileExileDef),
+    /// "You may cast that card this turn." The cost is still owed and the
+    /// timing rules still apply: the graveyard is merely a legal place to
+    /// cast the named card from, until the turn ends.
+    PermitCastFromGraveyardThisTurn { object: EffectRecipientDef },
     /// "Look at a card at random in target player's hand." Private to the
     /// looker rather than published, and one card rather than the hand.
     LookAtRandomCardInHand {

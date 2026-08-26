@@ -4,7 +4,7 @@
 
 use super::model::ExilePlayPermissionSnapshot;
 use super::{ExilePlayCost, ExilePlayPermission, GameObjectId, ManaCost, mana_cost_snapshot, wire};
-use crate::card::ExilePlayConditionDef;
+use crate::card::{ExilePlayConditionDef, ZoneKind};
 
 pub(super) fn permission_snapshot(permission: &ExilePlayPermission) -> ExilePlayPermissionSnapshot {
     ExilePlayPermissionSnapshot {
@@ -30,6 +30,7 @@ pub(super) fn permission_snapshot(permission: &ExilePlayPermission) -> ExilePlay
             .until_holder_end_step
             .map(|(player, turn)| (player.index(), turn)),
         group: permission.group.map(|group| group.0),
+        from_graveyard: permission.zone == ZoneKind::Graveyard,
     }
 }
 
@@ -70,5 +71,10 @@ pub(super) fn parse_permission(
             None => None,
         },
         group: permission.group.map(GameObjectId),
+        zone: if permission.from_graveyard {
+            ZoneKind::Graveyard
+        } else {
+            ZoneKind::Exile
+        },
     })
 }

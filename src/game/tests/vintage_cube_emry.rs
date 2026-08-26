@@ -1,0 +1,218 @@
+//! Emry, Lurker of the Loch: cheap on an artifact board, and the mill she
+//! arrives with is where she finds what to recast.
+
+use super::*;
+
+/// Player One holding Emry, with `board` under them and `graveyard` in
+/// their graveyard.
+fn staged(board: &[CardDefinitionId], graveyard: &[CardDefinitionId]) -> (Game, GameObjectId) {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].library.clear();
+    game.players[0].graveyard.clear();
+    for index in 0..8 {
+        game.players[0]
+            .library
+            .push(card(117_000 + index, cards::ISLAND, PlayerId::One));
+    }
+    for (index, definition) in graveyard.iter().enumerate() {
+        let id = 117_100 + u32::try_from(index).expect("a short graveyard");
+        game.players[0]
+            .graveyard
+            .push(card(id, *definition, PlayerId::One));
+    }
+    for definition in board {
+        game.put_onto_battlefield(PlayerId::One, *definition)
+            .expect("cataloged");
+    }
+    drain_pending(&mut game);
+    let card = game
+        .build_zone(PlayerId::One, &[cards::EMRY_LURKER_OF_THE_LOCH])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let held = card.id;
+    game.players[0].hand.push(card);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    (game, held)
+}
+
+/// The mana costs of every way Emry can be cast right now.
+fn casts(game: &Game, held: GameObjectId) -> Vec<Action> {
+    game.legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == held))
+        .collect()
+}
+
+/// Affinity: two artifacts take two off the three.
+#[test]
+fn affinity_pays_for_her() {
+    let (mut game, held) = staged(&[cards::HOWLING_MINE, cards::MANIFOLD_KEY], &[]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    assert!(
+        !casts(&game, held).is_empty(),
+        "one blue mana is the whole of what is left",
+    );
+}
+
+/// Without the artifacts the discount is not there.
+#[test]
+fn an_empty_board_pays_full_price() {
+    let (mut game, held) = staged(&[], &[]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    assert!(casts(&game, held).is_empty(), "one mana is not three");
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    assert!(!casts(&game, held).is_empty(), "three of them is");
+}
+
+/// She arrives and mills four.
+#[test]
+fn she_mills_four_on_arrival() {
+    let (mut game, held) = staged(&[cards::HOWLING_MINE, cards::MANIFOLD_KEY], &[]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    let library = game.players[0].library.len();
+
+    let cast = casts(&game, held)
+        .into_iter()
+        .next()
+        .expect("she is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[0].library.len(), library - 4);
+    assert_eq!(game.players[0].graveyard.len(), 4, "four cards milled");
+}
+
+/// Tapping her makes an artifact card in the graveyard castable, and it is
+/// cast from the graveyard for its own cost.
+#[test]
+fn her_tap_recasts_an_artifact() {
+    let (mut game, held) = staged(
+        &[cards::HOWLING_MINE, cards::MANIFOLD_KEY],
+        &[cards::BLACK_LOTUS],
+    );
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    let cast = casts(&game, held)
+        .into_iter()
+        .next()
+        .expect("she is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+    let emry = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::EMRY_LURKER_OF_THE_LOCH)
+        .expect("she is there")
+        .card
+        .id;
+    // She may not tap the turn she arrives; the ability is what is being
+    // tested rather than summoning sickness.
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    let lotus = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::BLACK_LOTUS)
+        .expect("the Lotus is in the graveyard")
+        .id;
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == lotus)),
+        "a card in the graveyard is not castable on its own",
+    );
+
+    let tap = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == emry
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets().contains(&Target::Card(lotus)))
+            }
+            _ => false,
+        })
+        .expect("she can point at the Lotus");
+    game.apply(PlayerId::One, tap).expect("it activates");
+    drain_pending(&mut game);
+
+    let recast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == lotus))
+        .expect("and now it may be cast from the graveyard");
+    game.apply(PlayerId::One, recast).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::BLACK_LOTUS),
+        "the Lotus is on the battlefield",
+    );
+}
+
+/// "Artifact card in your graveyard": a creature card in it is not one.
+#[test]
+fn a_nonartifact_card_is_not_a_target() {
+    let (mut game, held) = staged(
+        &[cards::HOWLING_MINE, cards::MANIFOLD_KEY],
+        &[cards::GRIZZLY_BEARS],
+    );
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    let cast = casts(&game, held)
+        .into_iter()
+        .next()
+        .expect("she is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+    let emry = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::EMRY_LURKER_OF_THE_LOCH)
+        .expect("she is there")
+        .card
+        .id;
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    let bears = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::GRIZZLY_BEARS)
+        .expect("the bear is in the graveyard")
+        .id;
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(
+                action,
+                Action::ActivateAbility { source, targets, .. }
+                    if *source == emry
+                        && targets.iter().any(|selection| {
+                            selection.targets().contains(&Target::Card(bears))
+                        })
+            )
+        }),
+        "a creature card is not an artifact card",
+    );
+}

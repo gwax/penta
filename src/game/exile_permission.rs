@@ -6,7 +6,7 @@
 //! for free and expires.
 
 use super::{CardDefinition, Game, GameObjectId, PlayOptionDef, PlayerId};
-use crate::card::ManaCost;
+use crate::card::{ManaCost, ZoneKind};
 
 /// What a card in exile costs the player who may play it.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -76,6 +76,11 @@ pub(super) struct ExilePlayPermission {
     /// it was granted on when that turn was somebody else's: "until your
     /// next end step" reaches across to the holder's own.
     pub(super) until_holder_end_step: Option<(PlayerId, u32)>,
+    /// Where the card this permission names is. Almost every one of them
+    /// is about a card in exile, which is what the zone defaults to; Emry
+    /// hands out one about a card in a graveyard, and the two are told
+    /// apart here rather than by two lists.
+    pub(super) zone: ZoneKind,
     /// The pile this permission belongs to, named by the object whose
     /// resolution made it. "You may cast a spell from among cards exiled
     /// this way" is one permission over several cards: casting any of them
@@ -136,6 +141,7 @@ impl Game {
             .find(|permission| {
                 permission.card == card
                     && permission.player == player
+                    && permission.zone == ZoneKind::Exile
                     // A look is not a permission to play.
                     && !permission.hidden_only
                     // "During any turn you attacked with a Rogue": asked
@@ -181,6 +187,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            zone: ZoneKind::Exile,
             group: None,
         });
     }
@@ -238,6 +245,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            zone: ZoneKind::Exile,
             group: None,
         });
     }
@@ -259,6 +267,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            zone: ZoneKind::Exile,
             group: None,
         });
     }
@@ -280,6 +289,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            zone: ZoneKind::Exile,
             group: None,
         });
     }
@@ -303,6 +313,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            zone: ZoneKind::Exile,
             group: None,
         });
     }
@@ -340,6 +351,7 @@ impl Game {
                     self.turns_started[player.index()].saturating_add(1)
                 },
             )),
+            zone: ZoneKind::Exile,
             group: None,
         });
     }
@@ -362,6 +374,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            zone: ZoneKind::Exile,
             group: None,
         });
     }
@@ -383,6 +396,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            zone: ZoneKind::Exile,
             group: None,
         });
     }
@@ -412,6 +426,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            zone: ZoneKind::Exile,
             group: None,
         });
     }
@@ -433,6 +448,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            zone: ZoneKind::Exile,
             group: None,
         });
     }
@@ -456,6 +472,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            zone: ZoneKind::Exile,
             group: None,
         });
     }
@@ -519,6 +536,49 @@ impl Game {
     }
 
     /// Drops the permission a play has just consumed.
+    /// The live permission `player` holds over a card in a graveyard, which
+    /// is what Emry's ability hands out.
+    pub(super) fn graveyard_cast_permission(
+        &self,
+        card: GameObjectId,
+        player: PlayerId,
+    ) -> Option<ExilePlayPermission> {
+        self.exile_play_permissions
+            .iter()
+            .copied()
+            .find(|permission| {
+                permission.card == card
+                    && permission.player == player
+                    && permission.zone == ZoneKind::Graveyard
+                    && permission.until_end_of_turn.is_none_or(|(owner, turn)| {
+                        self.turns_started[owner.index()] == turn && self.active_player == owner
+                    })
+            })
+    }
+
+    /// "Choose target artifact card in your graveyard. You may cast that
+    /// card this turn." The cost is still owed; what the permission grants
+    /// is that the graveyard is a legal place to cast it from.
+    pub(super) fn permit_graveyard_cast_this_turn(&mut self, card: GameObjectId, player: PlayerId) {
+        let active = self.active_player;
+        self.exile_play_permissions.push(ExilePlayPermission {
+            card,
+            player,
+            cost: ExilePlayCost::Printed,
+            until_end_of_turn: Some((active, self.turns_started[active.index()])),
+            adventure_return_only: false,
+            surcharge: ManaCost::default(),
+            not_before_turn: None,
+            face_down: false,
+            hidden_only: false,
+            spend_any_color: false,
+            condition: None,
+            until_holder_end_step: None,
+            zone: ZoneKind::Graveyard,
+            group: None,
+        });
+    }
+
     /// Puts the permission just granted over `card` into `group`'s pile.
     pub(super) fn group_last_exile_permission(&mut self, card: GameObjectId, group: GameObjectId) {
         if let Some(permission) = self

@@ -137,10 +137,15 @@ impl Game {
         player: PlayerId,
         option: &PlayOptionDef,
     ) -> bool {
-        self.matching_play_permission(card, player, option, |permission| {
-            matches!(permission, PlayPermission::Graveyard(_)).then_some(())
-        })
-        .is_some()
+        // A permission handed out by a resolution names one card for the
+        // turn; the static ones below name a whole class of them for as
+        // long as their source is on the battlefield.
+        self.graveyard_cast_permission(card.id, player).is_some()
+            || self
+                .matching_play_permission(card, player, option, |permission| {
+                    matches!(permission, PlayPermission::Graveyard(_)).then_some(())
+                })
+                .is_some()
     }
 
     /// What playing this card off the top of its owner's library would cost,

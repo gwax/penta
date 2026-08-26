@@ -398,6 +398,7 @@ mod vintage_cube_elspeth;
 mod vintage_cube_elspeth_storm_slayer;
 mod vintage_cube_elvish_reclaimer;
 mod vintage_cube_emperor_of_bones;
+mod vintage_cube_emry;
 mod vintage_cube_endurance;
 mod vintage_cube_enduring_innocence;
 mod vintage_cube_ephemerate;
