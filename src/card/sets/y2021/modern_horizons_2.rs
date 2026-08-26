@@ -10,9 +10,9 @@ use crate::card::{
     EffectPaymentDef, EffectRecipientDef, ExilePlayDurationDef, GraveyardTypeConditionDef,
     ManaColor, MillLoopDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
     ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementEffectDef, ReplacementEventDef, SacrificedAmountDef, SpellAdditionalCostDef,
-    SpendModeDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueComparisonDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{ObjectSetBindingIndex, TargetIndex, mana_cost};
@@ -1227,13 +1227,112 @@ pub(in crate::card::sets) static IGNOBLE_HIERARCH: CardRecord = CardRecord::new(
 );
 
 // MH2 380 — Urza's Saga
-// Audit: metadata-only — Card rules have not been implemented.
+static SAGA_TAP_FOR_COLORLESS_COST: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
+/// What chapter I hands the land. It is granted for good rather than for the
+/// turn: the Saga taps for mana from the moment the first chapter resolves
+/// until it sacrifices itself after the third.
+static SAGA_MANA_ABILITY: AbilityDef = AbilityDef::activated_mana(
+    "{T}: Add {C}.",
+    &SAGA_TAP_FOR_COLORLESS_COST,
+    EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+);
+
+static ARTIFACTS_YOU_CONTROL_SAGA: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+/// The token's own clause, printed on the token rather than on the Saga:
+/// it counts itself, so the first one is a 1/1 on an otherwise empty board.
+static CONSTRUCT_SIZE: [AbilityDef; 1] = [AbilityDef::static_ability(
+    "This token gets +1/+1 for each artifact you control.",
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::CountMatchingObjects(&ARTIFACTS_YOU_CONTROL_SAGA),
+            ValueDef::CountMatchingObjects(&ARTIFACTS_YOU_CONTROL_SAGA),
+        ),
+    },
+)];
+
+static SAGA_CONSTRUCT_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{2}")),
+    AbilityCostDef::TapSource,
+];
+
+static SAGA_CONSTRUCT_ABILITY: AbilityDef = AbilityDef::activated(
+    "{2}, {T}: Create a 0/0 colorless Construct artifact creature token with \"This token gets \
+     +1/+1 for each artifact you control.\"",
+    &SAGA_CONSTRUCT_COST,
+    EffectDef::create_artifact_creature_token(&["Construct"], &[], 0, 0)
+        .with_abilities(&CONSTRUCT_SIZE),
+);
+
+/// "An artifact card with mana cost {0} or {1}": a mana value of at most
+/// one, which is the same set of cards and the comparison the engine has.
+static A_CHEAP_ARTIFACT: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::ManaValueAtMost(1),
+]);
+
+static SAGA_CHAPTERS: [AbilityDef; 3] = [
+    abilities::saga_chapter(
+        1,
+        "I — This Saga gains \"{T}: Add {C}.\"",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::add_ability(&SAGA_MANA_ABILITY),
+            duration: ResolvedEffectDurationDef::Permanent,
+        },
+    ),
+    abilities::saga_chapter(
+        2,
+        "II — This Saga gains \"{2}, {T}: Create a 0/0 colorless Construct artifact creature \
+         token with 'This token gets +1/+1 for each artifact you control.'\"",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::add_ability(&SAGA_CONSTRUCT_ABILITY),
+            duration: ResolvedEffectDurationDef::Permanent,
+        },
+    ),
+    abilities::saga_chapter(
+        3,
+        "III — Search your library for an artifact card with mana cost {0} or {1}, put it onto \
+         the battlefield, then shuffle.",
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: A_CHEAP_ARTIFACT,
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: true,
+            destination: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+            attachment: None,
+            binding: None,
+            then: None,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static URZA_S_SAGA: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1cf96437-0943-40f9-b175-31a1504028ba"),
     "Urza's Saga",
-    crate::card::CardArt::new("2138dfbb-a4e3-49db-b908-95d0b2b7e82f", "Titus Lunter"),
-    crate::card::CardSet::ModernHorizons2,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("2138dfbb-a4e3-49db-b908-95d0b2b7e82f", "Titus Lunter"),
+    CardSet::ModernHorizons2,
+    // A land that costs nothing, taps for one turn's mana, spends the next
+    // two turns making Constructs, and fetches the artifact that makes them
+    // bigger on its way out.
+    // Two subtypes rather than one name: the land type "Urza's" that the
+    // Urzatron cares about, and the enchantment type "Saga" that the lore
+    // counters read.
+    CardRules::new_land(&["Urza's", "Saga"])
+        .with_type(CardType::Enchantment)
+        .with_abilities(&SAGA_CHAPTERS),
 );
 
 // MH2 421 — Goblin Anarchomancer

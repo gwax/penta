@@ -321,6 +321,9 @@ fn every_builtin_land_without_mana_is_named_explicitly() {
             // The same fetch, with the tapped land untapping again once you
             // are no longer the one behind on lands.
             "Fabled Passage",
+            // It prints no mana ability at all: chapter I hands it one, and
+            // by chapter III it has sacrificed itself again.
+            "Urza's Saga",
             // Its opening-hand action is executable, but the printed mana
             // ability remains partial until a mana result can branch on the
             // luck counter it places.
