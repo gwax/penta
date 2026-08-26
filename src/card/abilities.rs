@@ -19,7 +19,7 @@ use super::model::{
     SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostDef, SpellCostConditionDef,
     SpellCostModificationDef, SpellResolutionDestinationDef, SplitIntoPilesDef,
     TokenCopyExceptionsDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement,
+    ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 
@@ -970,6 +970,7 @@ include!("abilities/cost_modifications.rs");
 include!("abilities/keyword_actions.rs");
 include!("abilities/sagas.rs");
 include!("abilities/lands.rs");
+include!("abilities/death_triggers.rs");
 include!("abilities/repeated_clauses.rs");
 include!("abilities/keyword_mechanics.rs");
 include!("abilities/convoke_buyback.rs");
