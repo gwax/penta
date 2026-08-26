@@ -509,6 +509,7 @@ mod vintage_cube_multiversal_passage;
 mod vintage_cube_myr_battlesphere;
 mod vintage_cube_mystic_confluence;
 mod vintage_cube_nadu;
+mod vintage_cube_narset_parter_of_veils;
 mod vintage_cube_natural_order;
 mod vintage_cube_necromancy;
 mod vintage_cube_nethergoyf;

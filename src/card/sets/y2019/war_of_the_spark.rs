@@ -85,13 +85,68 @@ pub(in crate::card::sets) static JACE_WIELDER_OF_MYSTERIES: CardRecord =
     );
 
 // WAR 61 — Narset, Parter of Veils
-// Audit: metadata-only — Card rules have not been implemented.
+static A_NONCREATURE_NONLAND_CARD: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+]);
+
+/// "You may reveal": taking nothing is a legal answer, and what is left
+/// goes to the bottom in a random order rather than in the order it was
+/// seen -- so the four cards are not a free look at the next four draws.
+static NARSET_DIGS: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(4),
+    object: Some(A_NONCREATURE_NONLAND_CARD),
+    minimum: 0,
+    maximum: 1,
+    select_all_matching: false,
+    select_one_of_each_type: false,
+    reveal_inspected: false,
+    reveal_selected: true,
+    counted: None,
+    selected_zone: ZoneKind::Hand,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Library,
+    rest_placement: ZonePlacement::Bottom,
+    rest_random_order: true,
+    rest_counters: None,
+    selected_order_follows_choice: false,
+    then: None,
+    selected_hidden: false,
+    selected_linked_to_source: false,
+    selected_face_down: None,
+};
+
+static NARSET_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::static_ability(
+        "Each opponent can't draw more than one card each turn.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Opponent,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotDrawMoreThanEachTurn(1)),
+        },
+    ),
+    AbilityDef::activated(
+        "\u{2212}2: Look at the top four cards of your library. You may reveal a noncreature, \
+         nonland card from among them and put it into your hand. Put the rest on the bottom of \
+         your library in a random order.",
+        &[AbilityCostDef::Loyalty(-2)],
+        EffectDef::LookAtTopAndSelect {
+            player: EffectRecipientDef::Controller,
+            looker: EffectRecipientDef::Controller,
+            selection: &NARSET_DIGS,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static NARSET_PARTER_OF_VEILS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8c39f9b4-02b9-4d44-b8d6-4fd02ebbb0c5"),
     "Narset, Parter of Veils",
-    crate::card::CardArt::new("8c39f9b4-02b9-4d44-b8d6-4fd02ebbb0c5", "Magali Villeneuve"),
-    crate::card::CardSet::WarOfTheSpark,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("8c39f9b4-02b9-4d44-b8d6-4fd02ebbb0c5", "Magali Villeneuve"),
+    CardSet::WarOfTheSpark,
+    // Three mana that finds the spell the deck is built around and turns
+    // every draw spell the other player has into one card.
+    CardRules::new_planeswalker(mana_cost!("{1}{U}{U}"), &["Narset"], 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&NARSET_ABILITIES),
 );
 
 // WAR 79 — Bolas's Citadel
