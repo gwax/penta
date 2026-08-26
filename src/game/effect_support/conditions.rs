@@ -108,6 +108,11 @@ impl Game {
             // Delirium: "if there are four or more card types among cards in
             // your graveyard" is a comparison against a number rather than a
             // count of objects, so it is read here rather than by a query.
+            // The pile the source took, read the same way and from the same
+            // place a resolving effect reads it.
+            crate::card::ValueDef::CardTypesAmongLinkedExiles => {
+                self.card_types_among_linked_exiles(source)
+            }
             crate::card::ValueDef::CardTypesAmongGraveyards(player) => {
                 self.card_types_among_graveyards(player, controller)
             }

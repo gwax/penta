@@ -256,6 +256,11 @@ impl Game {
             | ValueDef::AffectedColorCount
             | ValueDef::TotalPowerOfLinkedExiles
             | ValueDef::TotalToughnessOfLinkedExiles => 0,
+            // Read off the pile the source took rather than off the board,
+            // which is where a resolving effect finds it too.
+            ValueDef::CardTypesAmongLinkedExiles => {
+                self.card_types_among_linked_exiles(object.source.unwrap_or(object.id))
+            }
             ValueDef::SourceCastX => self
                 .battlefield
                 .iter()
@@ -655,6 +660,34 @@ impl Game {
         names.sort_unstable();
         names.dedup();
         i32::try_from(names.len()).unwrap_or(i32::MAX)
+    }
+
+    /// How many card types are among the cards exiled with `source`. The
+    /// pile is read from where the cards actually are, so one that has left
+    /// exile since is no longer part of it.
+    pub(super) fn card_types_among_linked_exiles(&self, source: GameObjectId) -> i32 {
+        let mut seen = CardTypeSet::empty();
+        for (_, exiled) in self
+            .linked_exiles
+            .iter()
+            .filter(|(linked_source, _)| *linked_source == source)
+        {
+            // Still in exile: a card that has left is no longer one of the
+            // cards exiled with the source, whatever the pile remembers.
+            if let Some((crate::card::ZoneKind::Exile, card)) =
+                self.card_in_nonbattlefield_zone(*exiled)
+                && let Some(definition) = self.catalog.get(card.definition)
+            {
+                seen = seen.union(definition.rules.types());
+            }
+        }
+        i32::try_from(
+            CardType::ALL
+                .into_iter()
+                .filter(|card_type| seen.contains(*card_type))
+                .count(),
+        )
+        .unwrap_or(0)
     }
 
     pub(super) fn card_types_among_graveyards(

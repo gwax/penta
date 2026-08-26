@@ -469,6 +469,7 @@ mod vintage_cube_kaldra_compleat;
 mod vintage_cube_kappa_cannoneer;
 mod vintage_cube_kari_zev;
 mod vintage_cube_karn_scion_of_urza;
+mod vintage_cube_keen_eyed_curator;
 mod vintage_cube_kellan;
 mod vintage_cube_kitsa;
 mod vintage_cube_knight_of_the_reliquary;

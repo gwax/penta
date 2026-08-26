@@ -36,9 +36,12 @@ fn shared_condition_value(value: ValueDef, static_context: bool) -> bool {
         // Delirium is read live from a graveyard the same way a static
         // clause reads a battlefield count. Nothing in a graveyard is sized
         // by the layer being assembled, so asking cannot re-enter the walk.
-        ValueDef::Constant(_) | ValueDef::LifeTotal(_) | ValueDef::CardTypesAmongGraveyards(_) => {
-            true
-        }
+        // The pile a linked exile keeps is read live off that pile, which
+        // nothing in the layer walk sizes -- so asking cannot re-enter it.
+        ValueDef::Constant(_)
+        | ValueDef::LifeTotal(_)
+        | ValueDef::CardTypesAmongGraveyards(_)
+        | ValueDef::CardTypesAmongLinkedExiles => true,
         ValueDef::CountSpellsCastThisTurn(query) => shared_object_predicate(query.spell),
         ValueDef::CountMatchingObjects(query) | ValueDef::DistinctNamesAmong(query) => {
             (!static_context || query.relative_position.is_none()) && shared_query(*query)

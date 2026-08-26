@@ -3,10 +3,11 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AlternativeCastKindDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
-    CounterKind, DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    PlayerRefDef, PlayerRelation, TokenCopyExceptionsDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    ComparisonDef, CounterKind, DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, PlayerRefDef, PlayerRelation, TokenCopyExceptionsDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -325,13 +326,79 @@ pub(in crate::card::sets) static HIDDEN_GROTTO: CardRecord = CardRecord::new(
 // BLB 307 — Thundertrap Trainer (alternate printing)
 
 // BLB 322 — Keen-Eyed Curator
-// Audit: metadata-only — Card rules have not been implemented.
+static A_CARD_IN_A_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::Any,
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: None,
+    },
+)];
+
+static CURATOR_EXILE_COST: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{1}"))];
+
+/// Four card types among the cards he took, counted over the pile rather
+/// than over any zone: he keeps them, so a card that leaves exile stops
+/// counting and the rest still do.
+static CURATOR_HAS_FOUR_TYPES: TriggerConditionDef =
+    TriggerConditionDef::ValueComparison(&ValueComparisonDef {
+        left: ValueDef::CardTypesAmongLinkedExiles,
+        comparison: ComparisonDef::GreaterOrEqual,
+        right: ValueDef::Constant(4),
+    });
+
+static CURATOR_TRAMPLE: AbilityDef = abilities::trample();
+
+static CURATOR_GRANTS: [EffectDef; 2] = [
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(4),
+            ValueDef::Constant(4),
+        ),
+    },
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::add_ability(&CURATOR_TRAMPLE),
+    },
+];
+
+static CURATOR_BONUS: EffectDef = EffectDef::Sequence(&CURATOR_GRANTS);
+
+static CURATOR_ABILITIES: [AbilityDef; 2] = [
+    // "As long as", so the 7/7 comes and goes with the pile rather than
+    // being settled once.
+    AbilityDef::static_ability(
+        "As long as there are four or more card types among cards exiled with this creature, it \
+         gets +4/+4 and has trample.",
+        EffectDef::IfCondition {
+            condition: &CURATOR_HAS_FOUR_TYPES,
+            then: &CURATOR_BONUS,
+        },
+    ),
+    // Either graveyard: what he is played for is emptying theirs, and the
+    // card types he needs come from wherever they are.
+    AbilityDef::activated_with_targets(
+        "{1}: Exile target card from a graveyard.",
+        &CURATOR_EXILE_COST,
+        &A_CARD_IN_A_GRAVEYARD,
+        EffectDef::ExileLinkedToSource {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            face_down: false,
+            then: None,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static KEEN_EYED_CURATOR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("004a67ce-60ef-4cc2-9f4d-f30e3029d80a"),
     "Keen-Eyed Curator",
-    crate::card::CardArt::new("004a67ce-60ef-4cc2-9f4d-f30e3029d80a", "Mariah Tekulve"),
-    crate::card::CardSet::Bloomburrow,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("004a67ce-60ef-4cc2-9f4d-f30e3029d80a", "Mariah Tekulve"),
+    CardSet::Bloomburrow,
+    // Two mana for a 3/3 that answers a graveyard a card at a time, and
+    // turns into a 7/7 trampler for having done it four kinds of times.
+    CardRules::new_creature(mana_cost!("{G}{G}"), &["Raccoon", "Scout"], 3, 3)
+        .with_abilities(&CURATOR_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

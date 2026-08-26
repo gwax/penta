@@ -25,6 +25,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::AffectedManaValue
         | ValueDef::AffectedColorCount
+        | ValueDef::CardTypesAmongLinkedExiles
         | ValueDef::TotalPowerOfLinkedExiles
         | ValueDef::TotalToughnessOfLinkedExiles
         // Read live from every graveyard, which the static layer can see the
@@ -117,6 +118,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::SourcePower
         | ValueDef::AffectedManaValue
         | ValueDef::AffectedColorCount
+        | ValueDef::CardTypesAmongLinkedExiles
         | ValueDef::TotalPowerOfLinkedExiles
         | ValueDef::TotalToughnessOfLinkedExiles
         | ValueDef::SourceToughness

@@ -482,6 +482,7 @@ fn validate_value_target_references(
         | ValueDef::SourcePower
         | ValueDef::AffectedManaValue
         | ValueDef::AffectedColorCount
+        | ValueDef::CardTypesAmongLinkedExiles
         | ValueDef::TotalPowerOfLinkedExiles
         | ValueDef::TotalToughnessOfLinkedExiles
         | ValueDef::TriggeringObjectPower

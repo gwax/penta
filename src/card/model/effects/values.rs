@@ -245,6 +245,11 @@ pub enum ValueDef {
     /// ability's own source, added up. Sutured Ghoul is the body its own
     /// entry assembled, so the number is read off that pile rather than off
     /// the board.
+    /// How many card types are among the cards exiled with the source,
+    /// which is the pile the two totals below measure. The mirror of
+    /// [`Self::CardTypesAmongGraveyards`] over that pile rather than over a
+    /// zone: a card that is both an artifact and a creature counts twice.
+    CardTypesAmongLinkedExiles,
     TotalPowerOfLinkedExiles,
     TotalToughnessOfLinkedExiles,
     SourcePower,

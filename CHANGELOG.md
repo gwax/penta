@@ -33,6 +33,13 @@ distinguishes snapshots of the covered source and build inputs.
   fires for the land drop and stays quiet for the land somebody's spell put
   down.
 
+- **Counting the card types in a linked exile pile.** The pile a permanent
+  keeps beside it could be measured in power and toughness but not in kinds
+  of card, so "four or more card types among cards exiled with this
+  creature" had nothing to count. The new amount reads that pile the way the
+  graveyard one reads a zone, and only what is still in exile counts: a card
+  that has left is no longer one of the cards exiled with it.
+
 - **What the game started on, as a number a card can read.** Life totals
   were readable and starting life was not, so "half your starting life
   total" had nothing to halve. It is a rule of the format rather than

@@ -549,6 +549,7 @@ impl HandcraftedPolicy {
             | ValueDef::SourcePower
             | ValueDef::AffectedManaValue
             | ValueDef::AffectedColorCount
+            | ValueDef::CardTypesAmongLinkedExiles
             | ValueDef::TotalPowerOfLinkedExiles
             | ValueDef::TotalToughnessOfLinkedExiles
             | ValueDef::ObjectPower(_)

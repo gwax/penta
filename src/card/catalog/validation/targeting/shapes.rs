@@ -376,6 +376,7 @@ fn validate_value_shape(
         | ValueDef::SourcePower
         | ValueDef::AffectedManaValue
         | ValueDef::AffectedColorCount
+        | ValueDef::CardTypesAmongLinkedExiles
         | ValueDef::TotalPowerOfLinkedExiles
         | ValueDef::TotalToughnessOfLinkedExiles
         | ValueDef::SourceToughness
