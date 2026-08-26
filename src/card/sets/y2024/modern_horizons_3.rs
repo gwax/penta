@@ -948,16 +948,77 @@ pub(in crate::card::sets) static HORRIFIC_ASSAULT: CardRecord = CardRecord::new(
 );
 
 // MH3 161 — Malevolent Rumble
-// Audit: metadata-only — Card rules have not been implemented.
+static RUMBLE_SPAWN_ABILITIES: [AbilityDef; 1] = [AbilityDef::activated_mana(
+    "Sacrifice this token: Add {C}.",
+    &RUMBLE_SPAWN_COST,
+    EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+)];
+
+static RUMBLE_SPAWN_COST: [AbilityCostDef; 1] = [AbilityCostDef::SacrificeSource];
+
+/// Every card type a permanent card can have. A planeswalker is one too,
+/// and unlike the older cards written this way this one is new enough to
+/// mean it.
+static A_PERMANENT_CARD_RUMBLE: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ObjectPredicateDef::HasType(CardType::Enchantment),
+    ObjectPredicateDef::HasType(CardType::Land),
+    ObjectPredicateDef::HasType(CardType::Planeswalker),
+]);
+
+/// "A permanent card from among them": taking nothing is a legal answer,
+/// and everything not taken is buried whether or not it could have been.
+static RUMBLE_DIG: TopCardSelectionDef = TopCardSelectionDef {
+    count: ValueDef::Constant(4),
+    object: Some(A_PERMANENT_CARD_RUMBLE),
+    minimum: 0,
+    maximum: 1,
+    select_all_matching: false,
+    select_one_of_each_type: false,
+    reveal_inspected: true,
+    reveal_selected: true,
+    counted: None,
+    selected_zone: ZoneKind::Hand,
+    selected_placement: ZonePlacement::Top,
+    rest_zone: ZoneKind::Graveyard,
+    rest_placement: ZonePlacement::Top,
+    rest_random_order: false,
+    rest_counters: None,
+    selected_order_follows_choice: false,
+    then: None,
+    selected_hidden: false,
+    selected_linked_to_source: false,
+    selected_face_down: None,
+};
+
+static RUMBLE_EFFECTS: [EffectDef; 2] = [
+    EffectDef::LookAtTopAndSelect {
+        player: EffectRecipientDef::Controller,
+        looker: EffectRecipientDef::Controller,
+        selection: &RUMBLE_DIG,
+    },
+    EffectDef::create_creature_token(&["Eldrazi", "Spawn"], &[], 0, 1)
+        .with_abilities(&RUMBLE_SPAWN_ABILITIES),
+];
+
 pub(in crate::card::sets) static MALEVOLENT_RUMBLE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a178cfe8-f9fa-4255-88d0-54a0bed079f5"),
     "Malevolent Rumble",
-    crate::card::CardArt::new(
+    CardArt::new(
         "a178cfe8-f9fa-4255-88d0-54a0bed079f5",
         "Néstor Ossandón Leal",
     ),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardSet::ModernHorizons3,
+    // Two mana that finds a permanent, fills the graveyard with the three
+    // it did not want, and leaves behind the mana that makes the next spell
+    // a turn early.
+    CardRules::new_sorcery(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell(
+        "Reveal the top four cards of your library. You may put a permanent card from among them \
+         into your hand. Put the rest into your graveyard. Create a 0/1 colorless Eldrazi Spawn \
+         creature token with \"Sacrifice this token: Add {C}.\"",
+        EffectDef::Sequence(&RUMBLE_EFFECTS),
+    )),
 );
 
 // MH3 164 — Nyxborn Hydra

@@ -494,6 +494,7 @@ mod vintage_cube_lurrus;
 mod vintage_cube_lutri;
 mod vintage_cube_magda;
 mod vintage_cube_malcolm;
+mod vintage_cube_malevolent_rumble;
 mod vintage_cube_mana;
 mod vintage_cube_manamorphose;
 mod vintage_cube_manifold_key;
