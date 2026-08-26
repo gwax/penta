@@ -62,8 +62,8 @@ impl Game {
                     self.permit_cast_this_turn(exiled, object.controller);
                 }
             }
-            EffectDef::MayPlayWithoutPaying { objects } => {
-                self.permit_playing_without_paying(objects, object, context, scoped);
+            EffectDef::MayPlayWithoutPaying(permission) => {
+                self.permit_playing_without_paying(permission, object, context, scoped);
             }
             EffectDef::ReturnLinkedExiles {
                 object: predicate,
@@ -154,17 +154,32 @@ impl Game {
     /// "You may play those cards without paying their mana costs." The
     /// permission lasts the turn it was granted on, which is the turn the
     /// ability resolved.
+    /// Grants "you may play it without paying its mana cost" over a set of
+    /// cards, for as long as the clause that printed it says.
+    ///
+    /// A permission that outlives its resolution is simply granted. One that
+    /// does not is granted *and offered*: the offer is a standing decision,
+    /// taken by playing the card while it waits and declined by answering
+    /// it, and declining takes the permission straight back. A card with no
+    /// legal play is never offered, and its permission goes back at once
+    /// rather than lingering until the end of the turn.
     fn permit_playing_without_paying(
         &mut self,
-        objects: crate::card::ObjectSetDef,
+        permission: crate::card::FreePlayDef,
         object: &StackObject,
         context: &EffectResolutionContext,
         scoped: ScopedEffect,
     ) {
-        for target in self.effect_objects(objects, object, context, scoped) {
-            if let Target::Card(card) = target {
-                self.permit_free_play_this_turn(card, object.controller);
+        let player = object.controller;
+        for target in self.effect_objects(permission.objects, object, context, scoped) {
+            let Target::Card(card) = target else {
+                continue;
+            };
+            self.permit_free_play_this_turn(card, player);
+            if permission.duration == crate::card::FreePlayDurationDef::UntilEndOfTurn {
+                continue;
             }
+            self.offer_permitted_play(player, card, object, context, scoped);
         }
     }
 }

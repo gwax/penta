@@ -955,11 +955,8 @@ pub enum EffectDef {
     Saddle {
         object: EffectRecipientDef,
     },
-    /// "You may play those cards without paying their mana costs." The set
-    /// is named rather than the zone, and it lasts the turn it resolved on.
-    MayPlayWithoutPaying {
-        objects: ObjectSetDef,
-    },
+    /// "You may play those cards without paying their mana costs."
+    MayPlayWithoutPaying(FreePlayDef),
     /// The object sits out this many of its controller's untap steps.
     SkipNextUntapSteps {
         object: EffectRecipientDef,

@@ -25,6 +25,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"You may play it" as an offer rather than a permission.** A resolving
+  effect that says "you may play that card without paying its mana cost"
+  was granting a permission that lasted the rest of the turn, so a player
+  who declined kept the option anyway. The two readings are different
+  clauses: "until end of turn, you may cast those cards" says how long it
+  lasts, and a bare "you may cast it" lasts exactly as long as the
+  resolution that offered it. Both are now expressible, and the short one
+  is offered as a standing decision -- playing the card takes the offer,
+  answering it is the decline, and declining takes the permission back at
+  once.
+
 - **Companion, both halves.** The keyword was recorded as doing nothing: it
   is a deck-construction permission and a play from outside the game, and
   the engine had neither. It has both now. The condition a companion prints

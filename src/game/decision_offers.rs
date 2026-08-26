@@ -572,6 +572,83 @@ impl Game {
         );
     }
 
+    /// Offers a card the resolving effect has just made playable, and takes
+    /// the permission back if it is declined.
+    ///
+    /// The same standing-decision shape the exile-and-cast offer above uses:
+    /// playing the card takes the decision away, and answering it is the
+    /// decline. What differs is only where the card came from -- it was
+    /// already sitting in exile with the clause's permission on it, rather
+    /// than being put there by this effect.
+    pub(super) fn offer_permitted_play(
+        &mut self,
+        player: PlayerId,
+        card: GameObjectId,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) {
+        let Some((_, instance)) = self.card_in_nonbattlefield_zone(card) else {
+            self.consume_exile_play_permission(card);
+            return;
+        };
+        let printed = instance.definition;
+        let name = self
+            .catalog
+            .get(printed)
+            .map_or_else(|| "that card".to_owned(), |card| card.name.clone());
+        let mut playable = Vec::new();
+        self.add_offered_cast_actions(
+            CastOffer {
+                player,
+                card,
+                source_zone: CastSourceZone::Exile,
+                cost: CastOfferCost::Any,
+            },
+            &mut playable,
+        );
+        // A land is played rather than cast, and the permission is what
+        // makes that legal from exile; the ordinary land action is where it
+        // shows up.
+        let lands = self
+            .legal_actions(player)
+            .into_iter()
+            .filter(|action| {
+                matches!(action, crate::Action::PlayLand { card: land, .. } if *land == card)
+            })
+            .count();
+        if playable.is_empty() && lands == 0 {
+            self.consume_exile_play_permission(card);
+            return;
+        }
+        self.queue_decision(
+            player,
+            format!("Play {name} from exile, or decline"),
+            DecisionVisibility::Public,
+            DecisionPreference::PreferOption(0),
+            1..=1,
+            false,
+            vec![DecisionOption {
+                id: 0,
+                label: "Decline".into(),
+                card: Some((
+                    card,
+                    ObjectCharacteristics::card(printed, CardPartId::PRIMARY),
+                )),
+                members: Vec::new(),
+                ability_text: None,
+                zone: DecisionZone::Exile,
+            }],
+            DecisionContinuation::MayCastExiled {
+                player,
+                card,
+                object: Box::new(object.clone()),
+                context: context.clone(),
+                definition: scoped,
+            },
+        );
+    }
+
     /// "You may cast target instant or sorcery card from your graveyard
     /// without paying its mana cost."
     ///

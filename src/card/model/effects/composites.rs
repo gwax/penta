@@ -342,6 +342,29 @@ pub enum ExilePlayConditionDef {
     AttackedWithSubtypeThisTurn(&'static str),
 }
 
+/// "You may play those cards without paying their mana costs."
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct FreePlayDef {
+    /// Which cards the permission covers. A set rather than a zone, because
+    /// what a clause hands over is a pile it already knows about: the cards
+    /// a search bound, or the ones exiled with a source.
+    pub objects: ObjectSetDef,
+    pub duration: FreePlayDurationDef,
+}
+
+/// How long a "without paying its mana cost" permission lasts.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum FreePlayDurationDef {
+    /// "You may cast it": the offer stands only while the effect that made
+    /// it is resolving, and a card left unplayed is not playable afterwards.
+    /// This is what a bare "you may play" means.
+    WhileResolving,
+    /// "Until end of turn, you may cast those cards without paying their
+    /// mana costs": a permission that outlives the resolution that granted
+    /// it, and says so.
+    UntilEndOfTurn,
+}
+
 /// How long a permission to play an exiled card lasts.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ExilePlayDurationDef {

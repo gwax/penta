@@ -201,3 +201,121 @@ fn twenty_cards_unlocks_it() {
         "and it cost nothing to cast",
     );
 }
+
+/// Answers the standing "play it, or decline" offer by declining.
+fn decline(game: &mut Game) {
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the offer is waiting");
+    let options = decision
+        .options
+        .iter()
+        .map(|option| option.id)
+        .take(1)
+        .collect();
+    game.apply(
+        decision.player,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options,
+        },
+    )
+    .expect("declining is legal");
+}
+
+/// Unlocks the Isle and settles the stack, leaving the offer standing.
+fn unlock_and_settle(game: &mut Game, isle: GameObjectId) {
+    let action = unlock(game, isle).expect("nineteen cards is fewer than twenty");
+    game.apply(PlayerId::One, action).expect("it activates");
+    for _ in 0..8 {
+        if !game.stack.is_empty() && game.pending_decisions.is_empty() {
+            let priority = game.priority;
+            if game.apply(priority, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        }
+        break;
+    }
+}
+
+/// "You may play the exiled card" is an offer that stands while the ability
+/// resolves and no longer: a player who declines it does not keep the card
+/// playable for the rest of the turn.
+#[test]
+fn declining_puts_the_card_back_out_of_reach() {
+    let (mut game, isle) = staged(&[cards::BLACK_LOTUS], 20);
+    hide(&mut game, cards::BLACK_LOTUS);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == isle)
+    {
+        permanent.tapped = false;
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    unlock_and_settle(&mut game, isle);
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { .. })),
+        "the offer stands while the decision does",
+    );
+
+    decline(&mut game);
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { .. })),
+        "and is gone once it is declined",
+    );
+    assert_eq!(
+        game.players[0]
+            .exile
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::BLACK_LOTUS],
+        "the card itself stays hidden where it was",
+    );
+}
+
+/// Declining costs the activation rather than the card: pay the {U} and the
+/// tap again and the same card is offered again.
+#[test]
+fn a_second_activation_offers_it_again() {
+    let (mut game, isle) = staged(&[cards::BLACK_LOTUS], 20);
+    hide(&mut game, cards::BLACK_LOTUS);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == isle)
+    {
+        permanent.tapped = false;
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+
+    unlock_and_settle(&mut game, isle);
+    decline(&mut game);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == isle)
+    {
+        permanent.tapped = false;
+    }
+
+    unlock_and_settle(&mut game, isle);
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { .. })),
+        "the same hidden card, offered a second time",
+    );
+}

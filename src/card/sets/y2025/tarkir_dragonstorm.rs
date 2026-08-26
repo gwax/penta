@@ -5,11 +5,11 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, CreatedTokensDef, EffectDef,
-    EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef,
-    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, QuantifierDef,
-    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    EffectPaymentDef, EffectRecipientDef, FreePlayDef, FreePlayDurationDef, InstalledTriggerDef,
+    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PayOrDef,
+    PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    QuantifierDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -64,9 +64,11 @@ static UGIN_GAINS_AND_DRAWS: [EffectDef; 2] = [
 /// costs": the cards the search just exiled, named by what it bound rather
 /// than by anything about exile, since a card that was already there is not
 /// one of them.
-static UGIN_MAY_CAST_THEM: EffectDef = EffectDef::MayPlayWithoutPaying {
+static UGIN_MAY_CAST_THEM: EffectDef = EffectDef::MayPlayWithoutPaying(FreePlayDef {
     objects: ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY),
-};
+    // "Until end of turn" is printed, so this one outlives its resolution.
+    duration: FreePlayDurationDef::UntilEndOfTurn,
+});
 
 /// "Any number": the bound is the library, so the search offers everything
 /// that matches and takes as many as its controller wants.

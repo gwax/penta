@@ -2,12 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef,
-    ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, TopCardSelectionDef, TriggerConditionDef, ValueComparisonDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef,
+    EffectDef, EffectRecipientDef, FreePlayDef, FreePlayDurationDef, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, TopCardSelectionDef, TriggerConditionDef,
+    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ObjectBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -333,16 +333,15 @@ pub(in crate::card::sets) static SHELLDOCK_ISLE: CardRecord = CardRecord::new(
             "{U}, {T}: You may play the exiled card without paying its mana cost if a library \
              has twenty or fewer cards in it.",
             &SHELLDOCK_UNLOCK_COST,
-            EffectDef::MayPlayWithoutPaying {
+            // "You may play the exiled card": the offer stands while this
+            // ability resolves and no longer, so a player who declines has
+            // to pay the {U} and the tap again to be asked twice.
+            EffectDef::MayPlayWithoutPaying(FreePlayDef {
                 objects: ObjectSetDef::LinkedExiles(ObjectPredicateDef::Any),
-            },
+                duration: FreePlayDurationDef::WhileResolving,
+            }),
         )
-        .with_activation_condition(&A_LIBRARY_IS_NEARLY_EMPTY)
-        .with_coverage(AbilityCoverageDef::partial(
-            "The card is playable for the rest of the turn rather than only while this ability \
-             resolves, so a player who waits keeps the option a little longer than the printed \
-             clause allows.",
-        )),
+        .with_activation_condition(&A_LIBRARY_IS_NEARLY_EMPTY),
     ]),
 );
 

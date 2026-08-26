@@ -465,8 +465,10 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         }
         // The set is the whole of it: which cards may be played is what the
         // clause names, and every set the shared walk understands works.
-        EffectDef::MayPlayWithoutPaying { objects } => {
-            shared_effect_recipient(EffectRecipientDef::objects(objects))
+        // Either duration is shared -- one grants and stops, the other
+        // grants and offers, and both are the same walk's business.
+        EffectDef::MayPlayWithoutPaying(permission) => {
+            shared_effect_recipient(EffectRecipientDef::objects(permission.objects))
         }
         // Populate copies whatever the choice landed on, so like the rest of
         // these only its recipient has to be one the runtime understands.

@@ -157,7 +157,18 @@ fn sacrificing_it_plays_a_marked_card_for_free() {
         )
         .expect("tap and sacrifice is available");
     game.apply(PlayerId::One, action).expect("it activates");
-    settle(&mut game);
+    // Deliberately not settled: the offer to cast is a standing decision,
+    // and casting is what takes it away. Answering it would be the decline.
+    for _ in 0..8 {
+        if game.pending_decisions.is_empty() && !game.stack.is_empty() {
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        }
+        break;
+    }
 
     assert!(
         game.battlefield

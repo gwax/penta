@@ -7,12 +7,13 @@ use crate::card::{
     CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind,
     DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
     DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentCostDef,
-    EffectPaymentDef, EffectRecipientDef, ExilePlayDurationDef, GraveyardTypeConditionDef,
-    ManaColor, MillLoopDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    EffectPaymentDef, EffectRecipientDef, ExilePlayDurationDef, FreePlayDef, FreePlayDurationDef,
+    GraveyardTypeConditionDef, ManaColor, MillLoopDef, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    SacrificedAmountDef, SpellAdditionalCostDef, SpendModeDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, tokens,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{ObjectSetBindingIndex, TargetIndex, mana_cost};
@@ -1367,9 +1368,9 @@ static VOIDWALKER_MARKED_CARDS: ObjectQueryDef = ObjectQueryDef::matching(
     PlayerRelation::Opponent,
 );
 
-/// One card, chosen as the ability resolves, playable for the rest of the
-/// turn. What it costs is nothing at all, which is why the creature has to
-/// die to ask.
+/// One card, chosen as the ability resolves and cast then or not at all.
+/// What it costs is nothing at all, which is why the creature has to die to
+/// ask.
 static VOIDWALKER_TAKES_ONE: EffectDef = EffectDef::Choose(ChooseDef {
     binding: ObjectChoiceBindingDef::Objects(ObjectSetBindingIndex::PRIMARY),
     unchosen: None,
@@ -1379,9 +1380,10 @@ static VOIDWALKER_TAKES_ONE: EffectDef = EffectDef::Choose(ChooseDef {
     minimum: 1,
     maximum: 1,
     visibility: ChoiceVisibilityDef::Public,
-    then: &EffectDef::MayPlayWithoutPaying {
+    then: &EffectDef::MayPlayWithoutPaying(FreePlayDef {
         objects: ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY),
-    },
+        duration: FreePlayDurationDef::WhileResolving,
+    }),
 });
 
 static VOIDWALKER_COST: [AbilityCostDef; 2] =
