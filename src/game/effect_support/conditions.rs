@@ -90,6 +90,15 @@ impl Game {
                     self.player_relation_matches(*player, relation, controller, context)
                 })
                 .map_or(0, |player| i32::from(self.players[player.index()].life)),
+            // "Activate only if this creature's power is 3 or greater": read
+            // live off the source, so a pump that resolved in response is
+            // part of the answer.
+            crate::card::ValueDef::SourcePower => self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == source)
+                .and_then(|permanent| self.power(permanent))
+                .map_or(0, i32::from),
             crate::card::ValueDef::DevotionTo(_)
             | crate::card::ValueDef::LibrarySize(_)
             | crate::card::ValueDef::SpellsCastThisGame(_)

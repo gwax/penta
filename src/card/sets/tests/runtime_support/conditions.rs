@@ -45,7 +45,12 @@ fn shared_condition_value(value: ValueDef, static_context: bool) -> bool {
         }
         // A per-turn tally the game keeps and clears with the turn, which a
         // trigger's intervening-if can read before anything is resolving.
-        ValueDef::CardsDrawnThisTurn(_)
+        // A creature's own power is read live off the source, which every
+        // condition walk has in hand. Not offered to a static clause:
+        // sizing a creature by its own power would read the layer being
+        // computed.
+        ValueDef::SourcePower
+        | ValueDef::CardsDrawnThisTurn(_)
         | ValueDef::LifeGainedThisTurn(_)
         | ValueDef::DevotionTo(_)
         | ValueDef::LibrarySize(_)

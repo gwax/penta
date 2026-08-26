@@ -3,22 +3,91 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AlternativeCastKindDef, CardArt, CardRules, CardSet, CardType, ComparisonDef, CounterKind,
-    EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation,
-    TokenCopyExceptionsDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    AlternativeCastKindDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
+    CounterKind, DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    PlayerRefDef, PlayerRelation, TokenCopyExceptionsDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 // BLB 54 — Kitsa, Otterball Elite
-// Audit: metadata-only — Card rules have not been implemented.
+static KITSA_LOOTS: [EffectDef; 2] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+        selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
+    },
+];
+
+/// Yours rather than anybody's: Kitsa copies what you are casting, not what
+/// is being cast at you.
+static YOUR_INSTANT_OR_SORCERY_SPELL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Instant),
+            ObjectPredicateDef::HasType(CardType::Sorcery),
+        ]),
+        zones: &[ZoneKind::Stack],
+        controller: Some(PlayerRelation::You),
+        owner: None,
+    },
+)];
+
+/// Read live where the activation is offered, so the prowess trigger from
+/// the spell being copied is what turns the ability on: a 1/3 that has cast
+/// two noncreature spells this turn is a 3/5.
+static KITSA_IS_BIG_ENOUGH: TriggerConditionDef =
+    TriggerConditionDef::ValueComparison(&ValueComparisonDef {
+        left: ValueDef::SourcePower,
+        comparison: ComparisonDef::GreaterOrEqual,
+        right: ValueDef::Constant(3),
+    });
+
+static KITSA_LOOT_COST: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
+static KITSA_COPY_COST: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{2}")),
+    AbilityCostDef::TapSource,
+];
+
+static KITSA_ABILITIES: [AbilityDef; 4] = [
+    abilities::vigilance(),
+    abilities::prowess(),
+    AbilityDef::activated(
+        "{T}: Draw a card, then discard a card.",
+        &KITSA_LOOT_COST,
+        EffectDef::Sequence(&KITSA_LOOTS),
+    ),
+    AbilityDef::activated_with_targets(
+        "{2}, {T}: Copy target instant or sorcery spell you control. You may choose new targets \
+         for the copy. Activate only if Kitsa's power is 3 or greater.",
+        &KITSA_COPY_COST,
+        &YOUR_INSTANT_OR_SORCERY_SPELL,
+        EffectDef::CopyTargetSpell {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            chooser: PlayerRefDef::EffectController,
+        },
+    )
+    .with_activation_condition(&KITSA_IS_BIG_ENOUGH),
+];
+
 pub(in crate::card::sets) static KITSA_OTTERBALL_ELITE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c8ff751a-ec64-41d5-b22c-2a483ad9a9b2"),
     "Kitsa, Otterball Elite",
-    crate::card::CardArt::new("c8ff751a-ec64-41d5-b22c-2a483ad9a9b2", "Zoltan Boros"),
-    crate::card::CardSet::Bloomburrow,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("c8ff751a-ec64-41d5-b22c-2a483ad9a9b2", "Zoltan Boros"),
+    CardSet::Bloomburrow,
+    // Two mana for a body that loots every turn it has nothing better to
+    // do, and copies the spell that made it big enough on the turns it
+    // does. Vigilance is why the tap is not a real cost.
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Otter", "Wizard"], 1, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&KITSA_ABILITIES),
 );
 
 // BLB 75 — Stormchaser's Talent
