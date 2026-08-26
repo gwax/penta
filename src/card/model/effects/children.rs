@@ -14,6 +14,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
             on_failure,
             ..
         } => vec![*on_success, *on_failure],
+        EffectDef::MillWhileMatching(mill) => vec![*mill.body, *mill.on_match],
         EffectDef::Choose(choice) => vec![*choice.then],
         EffectDef::PayOr(payment) => payment
             .if_paid

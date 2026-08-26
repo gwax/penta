@@ -19,6 +19,15 @@ fn validate_effect_target_shapes(
             validate_effect_target_shapes(*on_success, targets, triggering_object_zone)?;
             validate_effect_target_shapes(*on_failure, targets, triggering_object_zone)
         }
+        EffectDef::ExileOneFromEachZone(pile) => {
+            validate_recipient_shape(pile.player, targets, RecipientExpectation::Player)
+        }
+        EffectDef::MillWhileMatching(mill) => {
+            validate_recipient_shape(mill.player, targets, RecipientExpectation::Player)?;
+            validate_object_predicate_shape(mill.object, targets)?;
+            validate_effect_target_shapes(*mill.body, targets, triggering_object_zone)?;
+            validate_effect_target_shapes(*mill.on_match, targets, triggering_object_zone)
+        }
         EffectDef::SearchZone {
             player,
             object,
@@ -199,7 +208,6 @@ fn validate_effect_target_shapes(
         | EffectDef::ChooseCards { player, .. }
         | EffectDef::TakeExtraTurn { player }
         | EffectDef::LookAtHand { player }
-        | EffectDef::ExileOneFromEachZone { player, .. }
         | EffectDef::LookAtRandomCardInHand { player }
         | EffectDef::RevealHand { player } => {
             validate_recipient_shape(player, targets, RecipientExpectation::Player)

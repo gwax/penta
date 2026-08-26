@@ -287,9 +287,6 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::LoseTheGame { player: recipient }
         | EffectDef::WinTheGame { player: recipient }
         | EffectDef::LookAtHand { player: recipient }
-        | EffectDef::ExileOneFromEachZone {
-            player: recipient, ..
-        }
         | EffectDef::LookAtRandomCardInHand { player: recipient }
         | EffectDef::ManifestDread { player: recipient }
         | EffectDef::RevealHand { player: recipient } => shared_effect_recipient(recipient),
@@ -323,6 +320,13 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
                 && then.is_none_or(|effect| {
                     shared_stack_effect_at_position(*effect, deferred_decision_allowed)
                 })
+        }
+        EffectDef::ExileOneFromEachZone(pile) => shared_effect_recipient(pile.player),
+        EffectDef::MillWhileMatching(mill) => {
+            shared_effect_recipient(mill.player)
+                && shared_object_predicate(mill.object)
+                && shared_stack_effect_at_position(*mill.body, deferred_decision_allowed)
+                && shared_stack_effect_at_position(*mill.on_match, deferred_decision_allowed)
         }
         EffectDef::MillUntil(mill) => {
             shared_effect_recipient(mill.player)

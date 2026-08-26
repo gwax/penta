@@ -677,7 +677,8 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::LookAtTopAndSelect { .. }
                     | EffectDef::LookAtTopAndDistribute { .. }
                     | EffectDef::LookAtHand { .. }
-                    | EffectDef::ExileOneFromEachZone { .. }
+                    | EffectDef::ExileOneFromEachZone(_)
+                    | EffectDef::MillWhileMatching(_)
                     | EffectDef::LookAtRandomCardInHand { .. }
                     | EffectDef::RevealAtRandomFromHand { .. }
                     | EffectDef::RevealHand { .. }

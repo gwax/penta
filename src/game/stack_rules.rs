@@ -140,7 +140,8 @@ impl Game {
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtTopAndDistribute { .. }
             | EffectDef::LookAtHand { .. }
-            | EffectDef::ExileOneFromEachZone { .. }
+            | EffectDef::ExileOneFromEachZone(_)
+            | EffectDef::MillWhileMatching(_)
             | EffectDef::LookAtRandomCardInHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }
             | EffectDef::RevealHand { .. }

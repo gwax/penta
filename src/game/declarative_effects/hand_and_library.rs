@@ -294,17 +294,13 @@ impl Game {
         context: &EffectResolutionContext,
     ) {
         match scoped.effect {
-            EffectDef::ExileOneFromEachZone {
-                player: recipient,
-                zones,
-                permission,
-            } => {
-                for target in self.effect_recipients(recipient, object, context, scoped) {
+            EffectDef::ExileOneFromEachZone(pile) => {
+                for target in self.effect_recipients(pile.player, object, context, scoped) {
                     if let Target::Player(player) = target {
                         self.exile_one_from_each_zone(
                             player,
-                            zones,
-                            permission,
+                            pile.zones,
+                            pile.permission,
                             object.card.id,
                             object.controller,
                         );
@@ -538,6 +534,13 @@ impl Game {
                             object.controller,
                             permission,
                         );
+                    }
+                }
+            }
+            EffectDef::MillWhileMatching(mill) => {
+                for target in self.effect_recipients(mill.player, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.mill_while_matching(player, mill, object, context, scoped);
                     }
                 }
             }
@@ -934,6 +937,47 @@ impl Game {
                 }
             }
             _ => unreachable!("resolve_hand_and_library_effect called for another effect"),
+        }
+    }
+}
+
+impl Game {
+    /// "…and repeat this process." The mill belongs to the loop rather than
+    /// to the body: what was milled decides whether there is another pass,
+    /// and a binding cannot carry that answer back out of the step that
+    /// wrote it.
+    fn mill_while_matching(
+        &mut self,
+        player: PlayerId,
+        loop_def: &'static crate::card::MillLoopDef,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) {
+        for _ in 0..loop_def.limit {
+            self.resolve_effect_def(scoped.with_effect(*loop_def.body), object, context.clone());
+            let mut milled = self.take_top_of_library(player, 1);
+            let Some(card) = milled.pop() else {
+                // An empty library mills nothing, and nothing is not a
+                // match, so this pass is the last.
+                return;
+            };
+            let matches = self.card_object_matches(
+                loop_def.object,
+                &card,
+                ZoneKind::Library,
+                object.source.unwrap_or(object.id),
+            );
+            let (card, _zone_change) = self.zone_change_card(card);
+            self.put_card_into_graveyard(player, card);
+            if !matches {
+                return;
+            }
+            self.resolve_effect_def(
+                scoped.with_effect(*loop_def.on_match),
+                object,
+                context.clone(),
+            );
         }
     }
 }

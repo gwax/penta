@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Repeating a process while the mill keeps matching.** "…and repeat this
+  process" had nowhere to live: a binding cannot carry an answer back out of
+  the step that wrote it, so a loop assembled from a mill and a condition
+  could never read what the mill turned up. The loop owns the mill instead --
+  each pass runs its body, mills one card, and runs a second effect when that
+  card matches -- and the pass that mills nothing, or mills something that
+  does not match, is the last. A hard limit is part of the effect, so a
+  process with nothing to stop it still stops.
+
 - **Emerge.** A cast could take an alternative cost, and it could take a
   nonmana one beside it, but nothing let the second settle the first: "the
   emerge cost reduced by that artifact's mana value" is one cost that varies

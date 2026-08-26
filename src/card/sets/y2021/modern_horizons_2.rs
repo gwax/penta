@@ -6,12 +6,13 @@ use crate::card::{
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardArt, CardRules,
     CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CounterKind,
     DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
-    DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectRecipientDef,
-    ExilePlayDurationDef, GraveyardTypeConditionDef, ManaColor, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, SacrificedAmountDef,
-    SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, tokens,
+    DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentCostDef,
+    EffectPaymentDef, EffectRecipientDef, ExilePlayDurationDef, GraveyardTypeConditionDef,
+    ManaColor, MillLoopDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ReplacementEventDef, SacrificedAmountDef, SpellAdditionalCostDef,
+    SpendModeDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, tokens,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{ObjectSetBindingIndex, TargetIndex, mana_cost};
@@ -812,13 +813,102 @@ pub(in crate::card::sets) static CAPTURED_BY_LAGACS: CardRecord = CardRecord::ne
 );
 
 // MH2 202 — Grist, the Hunger Tide
-// Audit: metadata-only — Needs three capabilities at once: a resolution loop that repeats a step while reading what the previous iteration milled, a reflexive triggered ability that chooses its target when the optional sacrifice is actually made rather than on activation, and characteristics that apply in every zone except the battlefield.
+static GRIST_INSECT: EffectDef =
+    EffectDef::create_creature_token(&["Insect"], &[ManaColor::Black, ManaColor::Green], 1, 1);
+
+static GRIST_LOYALTY: EffectDef = EffectDef::AddCounters {
+    object: EffectRecipientDef::Source,
+    kind: CounterKind::Loyalty,
+    amount: ValueDef::Constant(1),
+};
+
+/// An Insect card in the library keeps the process going. Grist himself is
+/// one everywhere but the battlefield, which is a clause this catalog does
+/// not carry yet, so a Grist on top ends the loop here.
+static AN_INSECT_CARD: ObjectPredicateDef = ObjectPredicateDef::Subtype("Insect");
+
+/// The library is what bounds this in practice; the limit is only there so
+/// a process with nothing to stop it still stops.
+static GRIST_PLUS_ONE: EffectDef = EffectDef::MillWhileMatching(&MillLoopDef {
+    player: EffectRecipientDef::Controller,
+    body: &GRIST_INSECT,
+    object: AN_INSECT_CARD,
+    on_match: &GRIST_LOYALTY,
+    limit: 512,
+});
+
+static GRIST_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    A_CREATURE_OR_PLANESWALKER,
+)];
+
+static GRIST_DESTROYS_IT: EffectDef = EffectDef::Destroy {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    can_regenerate: true,
+    then: None,
+};
+
+static A_CREATURE_YOU_CONTROL: EffectPaymentCostDef =
+    EffectPaymentCostDef::SacrificePermanentMatching(ObjectPredicateDef::HasType(
+        CardType::Creature,
+    ));
+
+static CREATURE_CARDS_IN_YOUR_GRAVEYARD: ObjectQueryDef = ObjectQueryDef::matching(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Graveyard],
+    PlayerRelation::You,
+);
+
+static GRIST_ABILITIES: [AbilityDef; 4] = [
+    AbilityDef::not_implemented(
+        "As long as Grist isn't on the battlefield, it's a 1/1 Insect creature in addition to its \
+         other types.",
+        "Needs characteristics that apply to a card in every zone but the battlefield.",
+    ),
+    AbilityDef::activated(
+        "+1: Create a 1/1 black and green Insect creature token, then mill a card. If an Insect \
+         card was milled this way, put a loyalty counter on Grist and repeat this process.",
+        &[AbilityCostDef::Loyalty(1)],
+        GRIST_PLUS_ONE,
+    ),
+    // The target is declared as the ability is activated rather than when
+    // the sacrifice is actually made, which is the one place this differs
+    // from the printed reflexive trigger: a board with nothing to destroy
+    // does not offer the ability at all.
+    AbilityDef::activated_with_targets(
+        "\u{2212}2: You may sacrifice a creature. When you do, destroy target creature or \
+         planeswalker.",
+        &[AbilityCostDef::Loyalty(-2)],
+        &GRIST_TARGET,
+        EffectDef::PayOr(PayOrDef::optional(
+            EffectPaymentDef {
+                payer: PlayerSetDef::Related(PlayerRelation::You),
+                cost: A_CREATURE_YOU_CONTROL,
+            },
+            &GRIST_DESTROYS_IT,
+        )),
+    ),
+    AbilityDef::activated(
+        "\u{2212}5: Each opponent loses life equal to the number of creature cards in your \
+         graveyard.",
+        &[AbilityCostDef::Loyalty(-5)],
+        EffectDef::LoseLife {
+            recipient: EffectRecipientDef::Opponent,
+            amount: ValueDef::CountMatchingObjects(&CREATURE_CARDS_IN_YOUR_GRAVEYARD),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static GRIST_THE_HUNGER_TIDE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8eadbeaf-f01c-4c85-8eaf-6a569a1bdf64"),
     "Grist, the Hunger Tide",
-    crate::card::CardArt::new("69af2825-18c2-4463-b6ba-42eaa070ccc1", "Yongjae Choi"),
-    crate::card::CardSet::ModernHorizons2,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("69af2825-18c2-4463-b6ba-42eaa070ccc1", "Yongjae Choi"),
+    CardSet::ModernHorizons2,
+    // Three mana that makes a body every turn and answers one on the turn
+    // it lands, which is why it is played over the planeswalkers that only
+    // do one of those.
+    CardRules::new_planeswalker(mana_cost!("{1}{B}{G}"), &["Grist"], 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&GRIST_ABILITIES),
 );
 
 // MH2 216 — Territorial Kavu

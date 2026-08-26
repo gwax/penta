@@ -11,12 +11,12 @@ use crate::card::{
     EffectPaymentDef, EffectRecipientDef, EmblemCharacteristics, ExiledCastPermissionDef,
     HalvedValueDef, InstalledTriggerDef, InstalledTriggerLifetimeDef, ManaColor, ManaCost,
     ManaSpendEffectDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, RoundingDef, SetOperationDef, SimultaneousChooseDef,
-    SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef, TargetConditionDef,
-    TokenCopyExceptionsDef, TokenCountersDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePickDef,
-    ZonePlacement, abilities, tokens,
+    ObjectSetDef, PayOrDef, PileExileDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, RoundingDef, SetOperationDef,
+    SimultaneousChooseDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef,
+    TargetConditionDef, TokenCopyExceptionsDef, TokenCountersDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
+    ZonePickDef, ZonePlacement, abilities, tokens,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 use crate::{TargetIndex, mana_cost};
@@ -2564,11 +2564,11 @@ static CRABOMINATION_ABILITIES: [AbilityDef; 2] = [
          at random from their graveyard, and a card at random from their hand. You may cast a \
          spell from among cards exiled this way without paying its mana cost.",
         &AN_OPPONENT,
-        EffectDef::ExileOneFromEachZone {
+        EffectDef::ExileOneFromEachZone(&PileExileDef {
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zones: &CRABOMINATION_ZONES,
             permission: Some(ExiledCastPermissionDef::FreeThisTurn),
-        },
+        }),
     ),
 ];
 

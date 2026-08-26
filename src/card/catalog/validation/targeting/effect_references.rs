@@ -19,6 +19,14 @@ fn validate_effect_references(
             validate_effect_references(*on_success, target_count, scope)?;
             validate_effect_references(*on_failure, target_count, scope)
         }
+        EffectDef::ExileOneFromEachZone(pile) => {
+            validate_recipient_target_references(pile.player, target_count, scope)
+        }
+        EffectDef::MillWhileMatching(mill) => {
+            validate_recipient_target_references(mill.player, target_count, scope)?;
+            validate_effect_references(*mill.body, target_count, scope)?;
+            validate_effect_references(*mill.on_match, target_count, scope)
+        }
         EffectDef::RevealAtRandomFromHand { player, then, .. } => {
             validate_recipient_target_references(player, target_count, scope)?;
             validate_effect_references(*then, target_count, scope)
@@ -372,7 +380,6 @@ fn validate_effect_references(
         | EffectDef::ChooseCards { player, .. }
         | EffectDef::TakeExtraTurn { player }
         | EffectDef::LookAtHand { player }
-        | EffectDef::ExileOneFromEachZone { player, .. }
         | EffectDef::LookAtRandomCardInHand { player }
         | EffectDef::RevealHand { player } => {
             validate_recipient_target_references(player, target_count, scope)

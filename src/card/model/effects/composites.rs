@@ -272,6 +272,29 @@ pub enum DiscardSelectionDef {
     RandomMatching(&'static ObjectPredicateDef),
 }
 
+/// One pile of cards exiled out of several zones at once.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct PileExileDef {
+    pub player: EffectRecipientDef,
+    pub zones: &'static [ZonePickDef],
+    /// What the effect's controller may do with the pile: cast one spell
+    /// from among its cards on the terms named here. It is one permission
+    /// over the whole pile rather than one per card, so casting any of them
+    /// spends it. `None` is a pure exile.
+    pub permission: Option<ExiledCastPermissionDef>,
+}
+
+/// One repeating mill: what runs before each mill, what the milled card has
+/// to be for the process to go on, what runs when it is, and the hard stop.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct MillLoopDef {
+    pub player: EffectRecipientDef,
+    pub body: &'static EffectDef,
+    pub object: ObjectPredicateDef,
+    pub on_match: &'static EffectDef,
+    pub limit: u16,
+}
+
 /// How one card is taken from a zone by an effect that exiles one card
 /// from each of several zones. A library has an order to read from; a hand
 /// and a graveyard do not, so a card is picked from them at random.
