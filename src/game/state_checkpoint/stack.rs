@@ -269,6 +269,7 @@ fn signature_snapshot(signature: &CastSignature) -> CastSignatureSnapshot {
             .iter()
             .map(target_selection_snapshot)
             .collect(),
+        spliced: signature.spliced().iter().map(|card| card.0).collect(),
     }
 }
 
@@ -734,7 +735,8 @@ fn parse_signature_snapshot(state: &CastSignatureSnapshot) -> Result<CastSignatu
                 .iter()
                 .map(parse_target_selection)
                 .collect::<Result<Vec<_>, _>>()?,
-        );
+        )
+        .with_spliced(state.spliced.iter().copied().map(GameObjectId).collect());
     Ok(CastSignature::from_validated_choices(form, choices))
 }
 

@@ -358,6 +358,20 @@ pub const fn saddle(minimum: u8, text: &'static str) -> AbilityDef {
     .with_activation_timing(ActivationTimingDef::SorcerySpeed)
 }
 
+/// Splice onto Arcane (CR 702.47a): a cost paid as somebody else's Arcane
+/// spell is cast, which adds this card's clause to that spell. The card
+/// stays in hand, so like plot this is not a way to cast it and nothing
+/// offers it as one -- the clause exists to carry the cost.
+#[must_use]
+pub const fn splice_onto_arcane(mana_cost: ManaCost) -> AbilityDef {
+    AbilityDef::alternative_cast(
+        mana_cost,
+        AlternativeCastKindDef::Splice,
+        None,
+        EffectDef::None,
+    )
+}
+
 /// Plot (CR 702.170a): a cost paid to a special action rather than to a
 /// cast. What it buys is a card sitting in exile that its owner may cast for
 /// nothing on a later turn, which is why the clause carries the cost and

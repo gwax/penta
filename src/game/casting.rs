@@ -384,6 +384,28 @@ impl Game {
         });
     }
 
+    /// "You may reveal this card from your hand": the spliced cards stay
+    /// where they are and everybody sees what was added to the spell.
+    fn reveal_spliced_cards(&mut self, player: PlayerId, spliced: &[GameObjectId]) {
+        let revealed: Vec<_> = spliced
+            .iter()
+            .filter_map(|spliced| {
+                self.players[player.index()]
+                    .hand
+                    .iter()
+                    .find(|candidate| candidate.id == *spliced)
+                    .map(|card| (card.id, card.definition))
+            })
+            .collect();
+        for (card, definition) in revealed {
+            self.events.push(GameEvent::CardRevealed {
+                player,
+                card,
+                definition,
+            });
+        }
+    }
+
     pub(super) fn cast_spell(
         &mut self,
         player: PlayerId,
@@ -394,6 +416,7 @@ impl Game {
         let (signature, cost, behavior, source_zone) = self
             .validated_cast_signature(player, card_id, choices, sacrifices)
             .expect("validated casting choices remain valid while paying costs");
+        self.reveal_spliced_cards(player, choices.spliced());
         let phyrexian_life = Self::mana_payment_life(choices.mana_payment())
             .expect("validated casting choices carry a valid flexible-mana payment");
         let phyrexian_symbols_paid_with_life =

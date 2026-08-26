@@ -10,6 +10,7 @@ use std::fmt;
 
 use crate::action::Target;
 use crate::card::{FlexibleManaSymbol, SpellForm};
+use crate::ids::GameObjectId;
 use crate::ids::{AdditionalCostId, AlternativeCostId, ModeId, PlayOptionId, TargetSlotId};
 
 /// Semantic cost choices made while casting a spell.
@@ -183,6 +184,11 @@ pub struct CastChoices {
     mana_payment: Option<Box<ManaPaymentChoice>>,
     x: u16,
     targets: Vec<TargetSelection>,
+    /// Cards revealed from the caster's hand and spliced onto this spell
+    /// (CR 702.47a). Each one adds its own clause and its own targets to
+    /// what is being cast, and its splice cost to what is being paid; the
+    /// cards themselves stay in hand.
+    spliced: Box<[GameObjectId]>,
 }
 
 impl Default for CastChoices {
@@ -201,6 +207,7 @@ impl CastChoices {
             mana_payment: None,
             x: 0,
             targets: Vec::new(),
+            spliced: Box::default(),
         }
     }
 
@@ -236,6 +243,17 @@ impl CastChoices {
     pub fn with_targets(mut self, targets: Vec<TargetSelection>) -> Self {
         self.targets = targets;
         self
+    }
+
+    #[must_use]
+    pub fn with_spliced(mut self, spliced: Vec<GameObjectId>) -> Self {
+        self.spliced = spliced.into_boxed_slice();
+        self
+    }
+
+    #[must_use]
+    pub fn spliced(&self) -> &[GameObjectId] {
+        &self.spliced
     }
 
     #[must_use]
@@ -292,6 +310,9 @@ pub struct CastSignature {
     costs: CostConfiguration,
     x: u16,
     targets: Vec<TargetSelection>,
+    /// The cards spliced onto this spell, frozen with the rest of what was
+    /// announced: their clauses are part of what it resolves.
+    spliced: Box<[GameObjectId]>,
 }
 
 impl CastSignature {
@@ -306,12 +327,18 @@ impl CastSignature {
             costs: choices.costs,
             x: choices.x,
             targets: choices.targets,
+            spliced: choices.spliced,
         }
     }
 
     #[must_use]
     pub const fn play_option(&self) -> PlayOptionId {
         self.play_option
+    }
+
+    #[must_use]
+    pub fn spliced(&self) -> &[GameObjectId] {
+        &self.spliced
     }
 
     #[must_use]

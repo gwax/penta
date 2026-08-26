@@ -250,7 +250,13 @@ pub enum Action {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ActionError {
     GameAlreadyFinished,
-    NotLegal { player: PlayerId, action: Action },
+    /// The action is boxed: an error is the cold path, and an unboxed
+    /// [`Action`] would make every `Result` in the apply chain as wide as
+    /// the widest cast anyone can announce.
+    NotLegal {
+        player: PlayerId,
+        action: Box<Action>,
+    },
 }
 
 impl fmt::Display for ActionError {

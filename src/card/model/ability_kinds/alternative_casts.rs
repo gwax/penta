@@ -147,6 +147,12 @@ pub enum AlternativeCastKindDef {
     /// free. The clause is written as an alternative so that the cost has
     /// somewhere printed to live, and nothing offers it as a cast.
     Plot,
+    /// Splice onto Arcane (CR 702.47a). Like plot this is not a way to cast
+    /// the card at all: the card stays in hand and what is cast is somebody
+    /// else's Arcane spell, which gains this card's instructions. The clause
+    /// is written as an alternative so the splice cost has somewhere printed
+    /// to live, and nothing offers it as a cast.
+    Splice,
     /// Cast using the supplied face-down copiable values. The spell's own
     /// clauses are not what it does while face down, so this kind changes the
     /// object rather than only its cost. Morph and Disguise choose different
@@ -206,6 +212,7 @@ impl AlternativeCastKindDef {
             Self::Offspring => "Offspring",
             Self::Plot => "Plot",
             Self::Bestow => "Bestow",
+            Self::Splice => "Splice",
             Self::Emerge => "Emerge",
             Self::Rebound => "Rebound",
             Self::WithoutPayingManaCost => "Without paying its mana cost",
@@ -229,6 +236,7 @@ impl AlternativeCastKindDef {
             Self::Warp,
             Self::Retrace,
             Self::Emerge,
+            Self::Splice,
             Self::WithoutPayingManaCost,
             Self::Flashback,
             Self::Overload,
@@ -365,6 +373,16 @@ impl AlternativeCastAbilityDef {
                 "Foretell".into()
             }
             (AlternativeCastKindDef::Plot, mana_cost) => Self::plot_rules_text(mana_cost),
+            // The reminder names what a splice does to somebody else's
+            // spell, which the cost alone cannot say.
+            (AlternativeCastKindDef::Splice, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
+                format!(
+                    "Splice onto Arcane {mana_cost} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)",
+                )
+            }
+            (AlternativeCastKindDef::Splice, AlternativeCastManaCostDef::ThisCardManaCost) => {
+                "Splice onto Arcane—the splice cost is equal to this card's mana cost.".into()
+            }
             // Whatever printed or granted these said it in its own words, so
             // that text is the reminder and the kind's name is the fallback.
             (

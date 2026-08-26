@@ -372,7 +372,7 @@ fn selected_modal_effects_resolve_distinct_and_deferred_flattened_targets() {
         panic!("the fixture is a modal spell")
     };
 
-    let distinct = Game::selected_spell_plan(spell, &[ModeId(1), ModeId(0)])
+    let distinct = Game::selected_spell_plan(spell, &[ModeId(1), ModeId(0)], &[])
         .expect("the selected modes form a valid plan");
     assert_eq!(distinct.target_defs, [FIRST_TARGETS[0], SECOND_TARGETS[0]],);
     assert_eq!(
@@ -389,7 +389,7 @@ fn selected_modal_effects_resolve_distinct_and_deferred_flattened_targets() {
         ],
     );
 
-    let repeated = Game::selected_spell_plan(spell, &[ModeId(1), ModeId(1)])
+    let repeated = Game::selected_spell_plan(spell, &[ModeId(1), ModeId(1)], &[])
         .expect("a repeatable targeted mode can be selected twice");
     assert_eq!(repeated.target_defs, [SECOND_TARGETS[0], SECOND_TARGETS[0]],);
     assert_eq!(

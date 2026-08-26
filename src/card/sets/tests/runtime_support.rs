@@ -859,6 +859,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             // Plot is not a cast at all: the clause exists so the plot cost
             // has somewhere printed to live.
             | AlternativeCastKindDef::Plot
+            // Splice is not a cast either: the card stays in hand and its
+            // clause is added to somebody else's spell.
+            | AlternativeCastKindDef::Splice
             | AlternativeCastKindDef::Escape
             | AlternativeCastKindDef::Retrace
             | AlternativeCastKindDef::Impending

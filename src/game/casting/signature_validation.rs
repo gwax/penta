@@ -268,6 +268,17 @@ impl Game {
             choices.costs(),
             offer.map(|offer| offer.cost),
         )?;
+        // Only an Arcane spell may be spliced onto, and every splice adds
+        // its own cost to what this cast is paying.
+        if !choices.spliced().is_empty()
+            && (!definition.rules.has_subtype("Arcane")
+                || self
+                    .spliced_spell_clauses(player, choices.spliced())
+                    .is_none())
+        {
+            return None;
+        }
+        cost = add_mana_cost(cost, self.total_splice_cost(choices.spliced()));
         // X comes from the mana cost's {X} or from a printed "pay X life",
         // and a spell with neither is cast for nothing at all.
         let life_cost = Self::spell_life_cost(definition, option);
@@ -305,7 +316,8 @@ impl Game {
             let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
                 unreachable!("spell_ability returns a spell clause")
             };
-            let plan = Self::selected_spell_plan(spell, choices.modes())?;
+            let spliced = self.spliced_spell_clauses(player, choices.spliced())?;
+            let plan = Self::selected_spell_plan(spell, choices.modes(), &spliced)?;
             if plan.target_defs.len() != choices.targets().len() {
                 return None;
             }

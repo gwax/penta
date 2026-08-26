@@ -29,13 +29,27 @@ pub(super) fn parse_cast_signature(value: &Value) -> Result<CastSignature, Strin
         .iter()
         .map(parse_target_selection)
         .collect::<Result<Vec<_>, _>>()?;
+    // Absent from every cast written before splice existed, all of which
+    // spliced nothing.
+    let spliced = match value.get("splicedCards") {
+        Some(value) => array(value)?
+            .iter()
+            .map(|card| {
+                read_u32(card)
+                    .map(GameObjectId)
+                    .map_err(|_| "spliced card id".to_owned())
+            })
+            .collect::<Result<Vec<_>, _>>()?,
+        None => Vec::new(),
+    };
     let choices = CastChoices::new(PlayOptionId(
         u8::try_from(usize_field(value, "playOptionId")?).map_err(|_| "play option too large")?,
     ))
     .with_modes(modes)
     .with_costs(CostConfiguration::new(alternative, additional))
     .with_x(u16::try_from(usize_field(value, "x")?).map_err(|_| "x too large")?)
-    .with_targets(selections);
+    .with_targets(selections)
+    .with_spliced(spliced);
     Ok(CastSignature::from_validated_choices(form, choices))
 }
 

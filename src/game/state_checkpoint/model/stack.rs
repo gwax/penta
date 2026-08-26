@@ -157,6 +157,10 @@ pub(in crate::game::state_checkpoint) struct CastSignatureSnapshot {
     pub(in crate::game::state_checkpoint) additional_costs: Vec<u8>,
     pub(in crate::game::state_checkpoint) x: u16,
     pub(in crate::game::state_checkpoint) targets: Vec<TargetSelectionSnapshot>,
+    /// The cards spliced onto this spell as it was cast. Absent from every
+    /// signature written before splice existed, all of which had none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(in crate::game::state_checkpoint) spliced: Vec<u32>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

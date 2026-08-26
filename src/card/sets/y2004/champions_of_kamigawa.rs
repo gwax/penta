@@ -2,10 +2,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AppliedEffectDef, CardArt, CardChoiceSourceDef,
-    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    PlayerRelation, TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardChoiceSourceDef, CardRules, CardSet,
+    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    TopCardSelectionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::mana_cost;
 
@@ -61,16 +61,11 @@ pub(in crate::card::sets) static THROUGH_THE_BREACH: CardRecord = CardRecord::ne
                 "You may put a creature card from your hand onto the battlefield. That creature gains haste. Sacrifice that creature at the beginning of the next end step.",
                 BREACH_PUT_ONTO_BATTLEFIELD,
             ),
-            // Not a second spell ability: splice is a cast-time option on
-            // the card in hand, which is why it reads as a static permission
-            // rather than as something this spell does on resolution.
-            AbilityDef::static_ability(
-                "Splice onto Arcane {2}{R}{R} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)",
-                EffectDef::Special("Splice onto Arcane {2}{R}{R}"),
-            )
-            .with_coverage(AbilityCoverageDef::metadata_only(
-                "Splice is not offered: casting an Arcane spell has no window for revealing another card from hand and adding its clause.",
-            )),
+            // Not a second spell ability and not a way to cast this card:
+            // splice is a cast-time option on the card in hand, so the
+            // clause exists to give the splice cost somewhere printed to
+            // live, exactly as plot's does.
+            abilities::splice_onto_arcane(mana_cost!("{2}{R}{R}")),
         ]),
 );
 

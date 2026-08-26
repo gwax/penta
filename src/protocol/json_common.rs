@@ -326,6 +326,17 @@ pub(super) fn cast_choices_json(choices: &CastChoices) -> Value {
         "x": choices.x(),
         "targetSelections": target_selections_json(choices.targets()),
     });
+    // Present only when something was spliced, which is nearly never: an
+    // older consumer reads a cast without the field exactly as before.
+    if !choices.spliced().is_empty() {
+        value["splicedCards"] = Value::Array(
+            choices
+                .spliced()
+                .iter()
+                .map(|card| Value::from(card.0))
+                .collect(),
+        );
+    }
     if !choices.mana_payment().alternatives().is_empty() {
         value["manaPayment"] = Value::Array(
             choices
@@ -364,6 +375,11 @@ pub(super) fn cast_signature_json(signature: &CastSignature) -> Value {
             .collect::<Vec<_>>(),
         "x": signature.x(),
         "targetSelections": target_selections_json(signature.targets()),
+        "splicedCards": signature
+            .spliced()
+            .iter()
+            .map(|card| card.0)
+            .collect::<Vec<_>>(),
     })
 }
 

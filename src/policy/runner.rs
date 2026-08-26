@@ -101,8 +101,8 @@ mod tests {
                     error.as_ref(),
                     ActionError::NotLegal {
                         player: PlayerId::One,
-                        action: Action::PassPriority,
-                    }
+                        action,
+                    } if **action == Action::PassPriority
                 )
         ));
     }

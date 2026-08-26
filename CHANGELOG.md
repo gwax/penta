@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Splice onto Arcane.** A card with splice could be cast, but its splice
+  clause was only recorded: there was no way to reveal it from your hand and
+  add its text to an Arcane spell you were already casting (CR 702.47a).
+  Announcing a cast now offers the splices as part of the same decision --
+  each revealed card adds its clauses and its targets to what is being cast,
+  and its splice cost to what is being paid, while the card itself stays in
+  hand whatever becomes of the spell.
+
 - **Playing a land, as an event of its own.** A clause could watch a land
   entering the battlefield, but not a land being *played* -- and the two are
   not the same thing: a land an effect puts onto the battlefield enters

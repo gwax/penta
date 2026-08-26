@@ -172,7 +172,8 @@ impl Game {
                     let DeclarativeAbilityDef::Spell(spell) = ability.definition else {
                         return None;
                     };
-                    Self::selected_spell_plan(spell, signature.modes())
+                    let spliced = self.spliced_clauses_of(signature.spliced())?;
+                    Self::selected_spell_plan(spell, signature.modes(), &spliced)
                         .map(|plan| plan.target_defs)
                         .filter(|targets| !targets.is_empty())
                 })

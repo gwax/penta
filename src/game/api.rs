@@ -335,7 +335,10 @@ impl Game {
             return Err(ActionError::GameAlreadyFinished);
         }
         if !self.action_is_legal_now(player, &action) {
-            return Err(ActionError::NotLegal { player, action });
+            return Err(ActionError::NotLegal {
+                player,
+                action: Box::new(action),
+            });
         }
 
         self.apply_legal_action(player, action);
@@ -394,7 +397,10 @@ impl Game {
             observation.legal_actions.contains(&action)
         };
         if !legal {
-            return Err(ActionError::NotLegal { player, action });
+            return Err(ActionError::NotLegal {
+                player,
+                action: Box::new(action),
+            });
         }
 
         self.apply_legal_action(player, action);

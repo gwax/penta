@@ -172,3 +172,94 @@ fn only_creature_cards_are_offered() {
         .collect::<Vec<_>>();
     assert_eq!(offered, vec!["Serra Angel"]);
 }
+
+/// Splice onto Arcane: a second Breach revealed from hand and paid for adds
+/// its clause to the one being cast, so two creatures arrive.
+#[test]
+fn a_spliced_breach_puts_a_second_creature_down() {
+    let (mut game, breach_id) = breach_with(&[cards::SERRA_ANGEL, cards::GRIZZLY_BEARS]);
+    let spliced = card(97_500, cards::THROUGH_THE_BREACH, PlayerId::One);
+    let spliced_id = spliced.id;
+    game.players[0].hand.push(spliced);
+    // {4}{R} for the cast and {2}{R}{R} for the splice.
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == breach_id && choices.spliced() == [spliced_id]
+            }
+            _ => false,
+        })
+        .expect("the splice is on offer");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::SERRA_ANGEL
+                || permanent.card.definition == cards::GRIZZLY_BEARS)
+            .count(),
+        2,
+        "one creature from the spell and one from the clause spliced onto it",
+    );
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.id == spliced_id),
+        "and the spliced card stayed in hand",
+    );
+    assert_eq!(game.players[0].mana_pool.total(), 0, "both costs were paid");
+}
+
+/// Without the mana for the splice cost, only the plain cast is offered.
+#[test]
+fn the_splice_cost_is_owed() {
+    let (mut game, breach_id) = breach_with(&[cards::SERRA_ANGEL]);
+    let spliced = card(97_600, cards::THROUGH_THE_BREACH, PlayerId::One);
+    let spliced_id = spliced.id;
+    game.players[0].hand.push(spliced);
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == breach_id && choices.spliced() == [spliced_id])
+        }),
+        "five mana pays for the cast and not for the splice",
+    );
+    assert!(
+        game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == breach_id && choices.spliced().is_empty())
+        }),
+        "but the plain cast is still there",
+    );
+}
+
+/// A card with no splice clause is not a legal thing to splice.
+#[test]
+fn a_card_without_splice_cannot_be_spliced() {
+    let (mut game, breach_id) = breach_with(&[cards::SERRA_ANGEL]);
+    let angel = game.players[0]
+        .hand
+        .iter()
+        .find(|card| card.definition == cards::SERRA_ANGEL)
+        .expect("the Angel is in hand")
+        .id;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 4);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 4);
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == breach_id && choices.spliced() == [angel])
+        }),
+        "splice is a clause the card has to print",
+    );
+}
