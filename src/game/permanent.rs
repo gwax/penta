@@ -38,6 +38,11 @@ struct Permanent {
     /// way and for the same reason as the X above: "for each time it was
     /// kicked" is asked after the spell is gone.
     pub(super) cast_kicks: u16,
+    /// How many colours of mana paid for that spell, which is what sunburst
+    /// counts. Read here rather than off the spell for the same reason as
+    /// the two above: the counters go on as the permanent enters, and by the
+    /// time anything else asks, the spell is gone.
+    pub(super) cast_colors: u16,
     /// How this permanent's spell was cast, when it was cast at all. Evoke's
     /// sacrifice and every other clause that asks "if it was cast this way"
     /// reads it here, because the spell object is gone by the time the
@@ -281,6 +286,7 @@ impl Permanent {
             damage: 0,
             cast_x: 0,
             cast_kicks: 0,
+            cast_colors: 0,
             cast_alternative: None,
             cast_from_zone: None,
             cast_at_instant_speed: false,

@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Sunburst.** A permanent could enter with counters for its X or for the
+  times it was kicked, but not for the colours that paid for it. The entry
+  modification joins those two, reading a count the permanent now carries
+  from its own cast the way it already carries the other two -- the spell is
+  gone by the time the counters go on. The payment planner already knew how
+  to spread generic mana across colours for converge, and sunburst wants
+  exactly that. The checkpoint carries the count additively.
+
 - **Copying a spell a clause names.** Copying the spell an effect belongs to
   was already a declarative effect -- storm and replicate use it -- but
   copying a spell the clause points at was only reachable through Fork's

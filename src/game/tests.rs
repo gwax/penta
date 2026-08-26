@@ -507,6 +507,7 @@ mod vintage_cube_overlord;
 mod vintage_cube_overlord_of_the_mistmoors;
 mod vintage_cube_paradoxical_outcome;
 mod vintage_cube_path;
+mod vintage_cube_pentad_prism;
 mod vintage_cube_pest_infestation;
 mod vintage_cube_phantasmal_image;
 mod vintage_cube_phelia;

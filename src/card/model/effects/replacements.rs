@@ -128,6 +128,13 @@ pub enum BattlefieldEntryModificationDef {
     AddKickCounters {
         kind: CounterKind,
     },
+    /// Sunburst (CR 702.44): as many counters as there were colours among
+    /// the mana that paid for its spell. Generic mana counts here as
+    /// whatever colour paid it, which is why a card with this wants its
+    /// payment spread across colours.
+    AddColorsSpentCounters {
+        kind: CounterKind,
+    },
 }
 
 /// The catalog-derived vocabulary presented by a scalar entry choice.

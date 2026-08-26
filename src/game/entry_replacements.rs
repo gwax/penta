@@ -525,6 +525,10 @@ impl Game {
                 let amount = entry.permanent.cast_kicks;
                 entry.permanent.add_counters(kind, amount);
             }
+            BattlefieldEntryModificationDef::AddColorsSpentCounters { kind } => {
+                let amount = entry.permanent.cast_colors;
+                entry.permanent.add_counters(kind, amount);
+            }
         }
     }
 

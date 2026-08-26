@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
-    CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
-    GraveyardPlayPermissionDef, ObjectPredicateDef, PlayActionMatcherDef, PlayRestrictionDef,
-    PlayerRelation, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardRules, CardSet,
+    CardType, CounterKind, EffectDef, EffectRecipientDef, GraveyardPlayPermissionDef,
+    ObjectPredicateDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation,
+    ReplacementEffectDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -144,13 +145,39 @@ pub(in crate::card::sets) static CRUCIBLE_OF_WORLDS: CardRecord = CardRecord::ne
 );
 
 // 5DN 143 — Pentad Prism
-// Audit: metadata-only — Card rules have not been implemented.
+static PRISM_REMOVE_A_COUNTER: [AbilityCostDef; 1] = [AbilityCostDef::RemoveCountersFromSource {
+    kind: CounterKind::named("charge"),
+    amount: 1,
+}];
+
+static PENTAD_PRISM_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::as_enters(
+        "Sunburst (This artifact enters with a charge counter on it for each color of mana spent \
+         to cast it.)",
+        ReplacementEffectDef::ModifyBattlefieldEntry(
+            BattlefieldEntryModificationDef::AddColorsSpentCounters {
+                kind: CounterKind::named("charge"),
+            },
+        ),
+    ),
+    AbilityDef::activated_mana(
+        "Remove a charge counter from this artifact: Add one mana of any color.",
+        &PRISM_REMOVE_A_COUNTER,
+        EffectDef::AddMana(AddManaEffectDef::any_color()),
+    ),
+];
+
 pub(in crate::card::sets) static PENTAD_PRISM: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("672b9b16-daef-44e6-9a3a-cfd9f3c78bc7"),
     "Pentad Prism",
-    crate::card::CardArt::new("672b9b16-daef-44e6-9a3a-cfd9f3c78bc7", "David Martin"),
-    crate::card::CardSet::FifthDawn,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("672b9b16-daef-44e6-9a3a-cfd9f3c78bc7", "David Martin"),
+    CardSet::FifthDawn,
+    // Two mana of two colours for two mana of any colours, later: a ritual
+    // that waits, which is why it wants a deck already casting things in
+    // more than one colour on turn two.
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_converge()
+        .with_abilities(&PENTAD_PRISM_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

@@ -847,7 +847,9 @@ impl CardRules {
         self.enchant
     }
 
-    /// "Converge --": this spell reads how many colours paid for it.
+    /// "Converge --", and sunburst with it: this spell reads how many
+    /// colours paid for it, so the payment spreads rather than draining one
+    /// colour at a time.
     #[must_use]
     pub const fn with_converge(mut self) -> Self {
         self.counts_colors_of_mana_spent = true;

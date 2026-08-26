@@ -91,6 +91,9 @@ impl Game {
                     crate::card::SpellForm::Combined(parts) => parts.first().copied(),
                 })
                 .unwrap_or(CardPartId::PRIMARY);
+            // Read before the card moves into the permanent below, which
+            // takes the spell apart.
+            let colors_spent = u16::from(object.colors_spent_count());
             let mut permanent = Permanent::entering(
                 object.card,
                 presented,
@@ -119,6 +122,9 @@ impl Game {
             // is still findable, because the permanent's own entry
             // replacement asks after it is gone.
             permanent.cast_kicks = self.repeatable_additional_cost_payments(object.id);
+            // Sunburst counts what paid for the spell, which only the spell
+            // knows.
+            permanent.cast_colors = colors_spent;
             permanent.cast_alternative = object.signature.as_ref().and_then(|signature| {
                 let card = self.catalog.get(definition)?;
                 let option = card.play_option(signature.play_option())?;

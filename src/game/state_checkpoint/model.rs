@@ -452,6 +452,10 @@ pub(super) struct PermanentSnapshot {
     /// that spell. Additive, and absent for everything nobody kicked.
     #[serde(default, skip_serializing_if = "emptiness::is_zero_u16")]
     pub(super) cast_kicks: u16,
+    /// How many colours paid for it. Additive, and absent for everything
+    /// nobody cast.
+    #[serde(default, skip_serializing_if = "emptiness::is_zero_u16")]
+    pub(super) cast_colors: u16,
     /// The alternative this permanent's spell was cast with, by its stable
     /// name. Stored as a string so the wire form does not depend on the
     /// order of a catalog enum.
