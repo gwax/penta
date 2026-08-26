@@ -457,6 +457,7 @@ fn validate_trigger_event_references(
         | TriggerEventDef::Cycled
         | TriggerEventDef::DoorUnlocked
         | TriggerEventDef::StepBegins { .. }
+        | TriggerEventDef::LandPlayed { .. }
         | TriggerEventDef::LifeGained(_)
         | TriggerEventDef::BecomesMonarch(_)
         | TriggerEventDef::DrewCard(_)

@@ -65,6 +65,7 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         | TriggerEventDef::Cycled
         | TriggerEventDef::DoorUnlocked
         | TriggerEventDef::StepBegins { .. }
+        | TriggerEventDef::LandPlayed { .. }
         | TriggerEventDef::DamageDealt(_)
         | TriggerEventDef::StateCondition
         | TriggerEventDef::LifeGained(_)

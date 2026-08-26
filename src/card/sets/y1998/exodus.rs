@@ -5,10 +5,10 @@ use crate::card::sets::y2011::innistrad as catalog_isd;
 use crate::card::sets::y2011::magic_2012 as catalog_m12;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivationTimingDef, CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef,
-    EffectRecipientDef, MillUntilDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    ActivationTimingDef, AddManaEffectDef, CardArt, CardRules, CardSet, CardType, ComparisonDef,
+    EffectDef, EffectRecipientDef, ManaColor, MillUntilDef, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRelation, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -1526,13 +1526,37 @@ pub(in crate::card::sets) static WORKHORSE: CardRecord = CardRecord::new(
 );
 
 // EXO 143 — City of Traitors
-// Audit: metadata-only — Card rules have not been implemented.
+static CITY_ABILITIES: [AbilityDef; 2] = [
+    // The playing rather than the entering: a land an effect puts onto the
+    // battlefield never was played, and the City survives it.
+    AbilityDef::triggered(
+        "When you play another land, sacrifice this land.",
+        TriggerEventDef::LandPlayed {
+            land: ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+            player: PlayerRelation::You,
+        },
+        EffectDef::Sacrifice {
+            object: EffectRecipientDef::Source,
+        },
+    ),
+    AbilityDef::activated_mana(
+        "{T}: Add {C}{C}.",
+        &CITY_MANA_COST,
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless).with_amount(2)),
+    ),
+];
+
+static CITY_MANA_COST: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
+
 pub(in crate::card::sets) static CITY_OF_TRAITORS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a7a8b6b8-b95f-4014-b17a-a6d44d965995"),
     "City of Traitors",
-    crate::card::CardArt::new("a7a8b6b8-b95f-4014-b17a-a6d44d965995", "Kev Walker"),
-    crate::card::CardSet::Exodus,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("a7a8b6b8-b95f-4014-b17a-a6d44d965995", "Kev Walker"),
+    CardSet::Exodus,
+    // Two mana from one land, for as long as you are willing to stop
+    // playing lands. The turn it arrives is free; every turn after is a
+    // choice between the mana and the land drop.
+    CardRules::new_land(&[]).with_abilities(&CITY_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

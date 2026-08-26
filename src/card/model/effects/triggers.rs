@@ -124,6 +124,15 @@ pub enum TriggerEventDef {
         step: TurnStepDef,
         player: PlayerRelation,
     },
+    /// "When you play another land." Playing a land is a special action
+    /// rather than a spell or an ability (CR 305.1), and it is not the same
+    /// event as the land entering: one an effect puts onto the battlefield
+    /// enters without ever having been played, and this does not fire for
+    /// it.
+    LandPlayed {
+        land: ObjectPredicateDef,
+        player: PlayerRelation,
+    },
     /// "Whenever one or more cards are put into exile from your library
     /// and/or your graveyard." One trigger for the whole move, however many
     /// cards it took, and the pair of zones is one clause rather than two.

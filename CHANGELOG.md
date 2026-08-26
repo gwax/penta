@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Playing a land, as an event of its own.** A clause could watch a land
+  entering the battlefield, but not a land being *played* -- and the two are
+  not the same thing: a land an effect puts onto the battlefield enters
+  without ever having been played (CR 305.1). The special action now raises
+  its own event beside the entry it causes, so "when you play another land"
+  fires for the land drop and stays quiet for the land somebody's spell put
+  down.
+
 - **Asking about something that no longer exists.** A bound object was
   looked for on the battlefield and then in every other zone, so a token
   that had been sacrificed -- gone from all of them -- answered no to every

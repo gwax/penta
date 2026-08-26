@@ -122,6 +122,24 @@ impl Game {
                         predicate, object, source, false, controller,
                     )
             }
+            (
+                TriggerEventDef::LandPlayed {
+                    land: predicate,
+                    player: relation,
+                },
+                CommittedTriggerEvent::LandPlayed { player, object },
+            ) => {
+                controller.is_some_and(|controller| {
+                    self.player_relation_matches(
+                        *player,
+                        relation,
+                        controller,
+                        TriggerContext::empty(),
+                    )
+                }) && self.trigger_object_matches_for_controller(
+                    predicate, object, source, false, controller,
+                )
+            }
             // The listener is not what was pointed at: what it watches is
             // its controller's side of the table, so the target is checked
             // against that rather than against the source.

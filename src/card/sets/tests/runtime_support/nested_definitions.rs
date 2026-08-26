@@ -122,6 +122,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         | TriggerEventDef::BecomesLevel(_)
         | TriggerEventDef::Cycled
         | TriggerEventDef::DoorUnlocked
+        // The land that was played is on the battlefield by the time the
+        // trigger is captured, so an ordinary predicate may read it.
+        | TriggerEventDef::LandPlayed { .. }
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
         | TriggerEventDef::Discarded(_)

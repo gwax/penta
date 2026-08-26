@@ -349,6 +349,15 @@ pub(super) enum CommittedTriggerEvent {
         target: GameObjectId,
         object: TriggerEventObject,
     },
+    /// A land was played, which is a special action rather than a zone
+    /// change of its own (CR 305.1). Kept apart from the entry it causes
+    /// because the two are not the same event: a land put onto the
+    /// battlefield by an effect enters without ever being played, and
+    /// "when you play another land" is about the playing.
+    LandPlayed {
+        player: PlayerId,
+        object: TriggerEventObject,
+    },
     /// A player became the target of a spell or of an ability. Kept apart
     /// from the two above because a player is not an object: nothing on the
     /// battlefield was pointed at, so a clause watching this reads the side
@@ -410,15 +419,18 @@ impl CommittedTriggerEvent {
                 amount: None,
                 damaged_object: None,
             },
-            // Who sacrificed it is the half that "whenever you sacrifice"
-            // reads, and what was sacrificed is the other.
-            Self::Sacrificed { object, player } => TriggerContext {
-                object: Some(object.id),
-                object_controller: Some(object.controller),
-                event_player: Some(*player),
-                amount: None,
-                damaged_object: None,
-            },
+            // Who did it is the half that "whenever you sacrifice" and "when
+            // you play another land" read, and what it was done to is the
+            // other.
+            Self::Sacrificed { object, player } | Self::LandPlayed { object, player } => {
+                TriggerContext {
+                    object: Some(object.id),
+                    object_controller: Some(object.controller),
+                    event_player: Some(*player),
+                    amount: None,
+                    damaged_object: None,
+                }
+            }
             // The event is the instruction rather than any token in it, so
             // nothing here names one; how many were made is the amount.
             Self::TokensCreated { tokens, controller } => TriggerContext {

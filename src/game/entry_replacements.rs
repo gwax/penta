@@ -791,6 +791,14 @@ impl Game {
             .last()
             .expect("a committed battlefield entry is present");
         let entered_event = self.trigger_event_object(entered);
+        // Raised before the entry below, since the play is what caused it:
+        // a clause about playing a land reads the land that was played.
+        if let EntryCompletion::LandPlayed { player } = entry.completion {
+            self.capture_battlefield_triggers(&CommittedTriggerEvent::LandPlayed {
+                player,
+                object: entered_event.clone(),
+            });
+        }
         self.capture_battlefield_triggers(&CommittedTriggerEvent::ZoneChanged {
             object: entered_event,
             from: entry.from,
