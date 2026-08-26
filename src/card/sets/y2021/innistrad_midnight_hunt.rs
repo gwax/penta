@@ -2,10 +2,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt,
-    CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TopCardSelectionDef, TriggerEventDef,
-    ValueDef, ZoneKind, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, PlayerRelation, TopCardSelectionDef, TriggerEventDef, ValueDef, ZoneKind,
+    abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -30,20 +30,15 @@ static ADELINE_ABILITIES: [AbilityDef; 3] = [
         "Adeline's power is equal to the number of creatures you control.",
         EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
-            // The printed power is zero, so the count is the whole of it.
             // Adeline is a creature you control, so she counts herself, and
-            // every token she makes adds one more before damage.
-            effect: AppliedEffectDef::modify_power_toughness(
-                ValueDef::CountMatchingObjects(&CREATURES_YOU_CONTROL),
-                ValueDef::Constant(0),
-            ),
+            // every token she makes adds one more before damage. The count
+            // defines her power rather than adding to it, which is why it
+            // also answers in a hand or a graveyard.
+            effect: AppliedEffectDef::define_power(ValueDef::CountMatchingObjects(
+                &CREATURES_YOU_CONTROL,
+            )),
         },
-    )
-    .with_coverage(AbilityCoverageDef::partial(
-        "A characteristic-defining ability sets power in every zone. This is a battlefield-only \
-         continuous effect, so the value is right wherever the card is played and absent for \
-         anything reading it in another zone.",
-    )),
+    ),
     // The token was never declared as an attacker, so nothing watching a
     // declaration sees it -- and with two players the one opponent is the
     // only thing it could be attacking.

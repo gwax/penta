@@ -8,7 +8,7 @@ use crate::card::{
     EffectDef, EffectExecutionDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
     KeywordAbility, ManaColor, ManaRestrictionDef, ObjectPredicateDef, ObjectQueryDef, PayOrDef,
     PlayerRelation, PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef, ScaledValueDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    SumValueDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -747,11 +747,17 @@ pub(in crate::card::sets) static CRUMBLE: CardRecord = CardRecord::new_with_lega
 );
 
 // ATQ 33 — Gaea's Avenger
-// Audit: partial — Its power and toughness are a battlefield-only continuous effect rather than a characteristic-defining ability, so they read as printed in every other zone.
 static ARTIFACTS_YOUR_OPPONENTS_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
     ObjectPredicateDef::HasType(CardType::Artifact),
     &[ZoneKind::Battlefield],
     PlayerRelation::Opponent,
+);
+
+/// "Each equal to 1 plus the number of artifacts your opponents control":
+/// the one is part of the amount, not a printed body the count adds to.
+static ONE_PLUS_OPPONENT_ARTIFACTS: SumValueDef = SumValueDef::new(
+    ValueDef::Constant(1),
+    ValueDef::CountMatchingObjects(&ARTIFACTS_YOUR_OPPONENTS_CONTROL),
 );
 
 pub(in crate::card::sets) static GAEAS_AVENGER: CardRecord = CardRecord::new_with_legacy_id(
@@ -759,25 +765,20 @@ pub(in crate::card::sets) static GAEAS_AVENGER: CardRecord = CardRecord::new_wit
     "Gaea's Avenger",
     CardArt::new("39d763bd-b0a9-46ba-bcd2-9304063446f2", "Pete Venters"),
     CardSet::Antiquities,
-    // The printed "1 plus" is the body itself, so the counted bonus only has
-    // to supply the rest.
+    // The printed 1/1 is what the corner says; the definition below is what
+    // the card actually is, in every zone.
     CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Treefolk"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "Gaea's Avenger's power and toughness are each equal to 1 plus the number of \
              artifacts your opponents control.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::modify_power_toughness(
-                    ValueDef::CountMatchingObjects(&ARTIFACTS_YOUR_OPPONENTS_CONTROL),
-                    ValueDef::CountMatchingObjects(&ARTIFACTS_YOUR_OPPONENTS_CONTROL),
+                effect: AppliedEffectDef::define_power_toughness(
+                    ValueDef::Sum(&ONE_PLUS_OPPONENT_ARTIFACTS),
+                    ValueDef::Sum(&ONE_PLUS_OPPONENT_ARTIFACTS),
                 ),
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "A characteristic-defining ability sets power and toughness in every zone. This is a \
-             battlefield-only continuous effect, so the value is right wherever the card is \
-             played and absent for anything reading it in another zone.",
-        )),
+        ),
     ),
 );
 

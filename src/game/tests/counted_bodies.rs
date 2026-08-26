@@ -1,9 +1,10 @@
-//! Creatures whose printed power and toughness are a battlefield count.
+//! Creatures whose power and toughness are a count rather than a number.
 //!
-//! These are declared as a zero-or-one body plus a static counted bonus, which
-//! is what the token vocabulary already did. That is right on the battlefield
-//! and is not a characteristic-defining ability, so each card names the gap;
-//! the last test here pins the difference rather than leaving it prose.
+//! Each is a characteristic-defining ability: the count is what the creature
+//! is, in layer 7a and in every zone (CR 604.3), rather than a bonus applied
+//! to a printed body on the battlefield. The last two tests here pin both
+//! halves of that -- the count outside the battlefield, and the coverage the
+//! cards claim -- rather than leaving either as prose.
 
 use super::*;
 use crate::ImplementationStatus;
@@ -106,24 +107,45 @@ fn a_counted_body_with_nothing_to_count_dies() {
     );
 }
 
-/// The declared gap, pinned: the bonus is a battlefield continuous effect, so
-/// a card of the same identity outside the battlefield carries only what is
-/// printed on it. A real characteristic-defining ability would not.
+/// A characteristic-defining ability functions in every zone, so the corner
+/// and the creature disagree on purpose: the card prints 0/0 and is not one
+/// anywhere.
 #[test]
-fn the_counted_body_is_absent_outside_the_battlefield() {
-    let catalog = poc::catalog().expect("catalog builds");
-    let warlord = catalog
+fn the_counted_body_answers_outside_the_battlefield() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let warlord = poc::catalog()
+        .expect("catalog builds")
         .get(cards::KELDON_WARLORD)
-        .expect("the card is cataloged");
-    let printed = warlord
+        .expect("the card is cataloged")
         .rules
         .creature_stats()
         .expect("Keldon Warlord is a creature");
     assert_eq!(
-        (printed.power, printed.toughness),
+        (warlord.power, warlord.toughness),
         (0, 0),
-        "the printed body is what any zone but the battlefield sees"
+        "the corner says nothing, which is why the ability has to"
     );
+
+    let card = game
+        .build_zone(PlayerId::One, &[cards::KELDON_WARLORD])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let card_id = card.id;
+    game.players[0].graveyard.push(card);
+    game.battlefield
+        .push(creature(10_001, cards::SAVANNAH_LIONS, PlayerId::One));
+    game.battlefield
+        .push(creature(10_002, cards::GRIZZLY_BEARS, PlayerId::One));
+
+    assert_eq!(
+        game.current_or_last_known_power(card_id),
+        Some(2),
+        "two non-Wall creatures out, counted from a graveyard",
+    );
+    assert_eq!(game.current_or_last_known_toughness(card_id), Some(2));
 }
 
 #[test]
@@ -138,8 +160,8 @@ fn every_counted_body_reports_its_declared_coverage() {
         let card = catalog.get(definition).expect("the card is cataloged");
         assert_eq!(
             card.rules.implementation_status(),
-            ImplementationStatus::Partial,
-            "{} is declared with its characteristic-defining gap named",
+            ImplementationStatus::Complete,
+            "{} defines its body rather than adding to it",
             card.name,
         );
     }

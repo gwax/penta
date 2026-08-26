@@ -402,6 +402,16 @@ pub(in super::super) fn shared_static_applied_effect(
             PowerToughnessOperationDef::SetBasePower(power)
             | PowerToughnessOperationDef::SetBaseToughness(power),
         )) => static_stat_value(power),
+        // A characteristic-defining ability is answered by the shared
+        // characteristics walk in every zone, so what it may read is what
+        // any other shared static stat may read.
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::Define { power, toughness },
+        )) => {
+            (power.is_some() || toughness.is_some())
+                && power.is_none_or(static_stat_value)
+                && toughness.is_none_or(static_stat_value)
+        }
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::BasicLandTypes(
             SetOperationDef::Add(land_types)
             | SetOperationDef::Remove(land_types)
@@ -579,6 +589,11 @@ fn static_stat_value(value: crate::card::ValueDef) -> bool {
         | crate::card::ValueDef::BasicLandTypesControlled(_) => true,
         crate::card::ValueDef::Scaled(scaled) => static_stat_value(scaled.value),
         crate::card::ValueDef::Halved(halved) => static_stat_value(halved.value),
+        // "That number plus 1" is one amount, not a printed body with a
+        // count over it, so a sum of two readable amounts is readable.
+        crate::card::ValueDef::Sum(sum) => {
+            static_stat_value(sum.left) && static_stat_value(sum.right)
+        }
         _ => false,
     }
 }

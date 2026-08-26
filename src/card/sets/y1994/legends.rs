@@ -1,18 +1,18 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
-    AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef, AppliedEffectDef,
-    AppliedRuleDef, BandingQuality, BasicLandType, BattlefieldEntryModificationDef, CardArt,
-    CardBehavior, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef,
-    ChooseDef, ColorChoiceOperationDef, ColorSet, ComparisonDef, ControlDurationDef,
-    CostModificationDef, CounterKind, DamageEventMatcherDef, DamageKindDef, DamageLimitDef,
-    DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef,
-    DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef,
-    InstalledTriggerDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, ScaledValueDef, SumValueDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
+    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BandingQuality,
+    BasicLandType, BattlefieldEntryModificationDef, CardArt, CardBehavior, CardRules, CardSet,
+    CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef, ColorChoiceOperationDef,
+    ColorSet, ComparisonDef, ControlDurationDef, CostModificationDef, CounterKind,
+    DamageEventMatcherDef, DamageKindDef, DamageLimitDef, DamagePreventionDef,
+    DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef, DiscardSelectionDef,
+    DividedTotal, EffectDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
+    KeywordAbility, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    ScaledValueDef, SumValueDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -4605,7 +4605,6 @@ pub(in crate::card::sets) static CHROMIUM: CardRecord = CardRecord::new_with_leg
 );
 
 // LEG 225 — Dakkon Blackblade
-// Audit: partial — Its power and toughness are a battlefield-only continuous effect rather than a characteristic-defining ability, so they read as printed in every other zone.
 static LANDS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
     ObjectPredicateDef::HasType(CardType::Land),
     &[ZoneKind::Battlefield],
@@ -4627,14 +4626,12 @@ pub(in crate::card::sets) static DAKKON_BLACKBLADE: CardRecord = CardRecord::new
              control.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::modify_power_toughness(ValueDef::CountMatchingObjects(&LANDS_YOU_CONTROL), ValueDef::CountMatchingObjects(&LANDS_YOU_CONTROL)),
+                effect: AppliedEffectDef::define_power_toughness(
+                    ValueDef::CountMatchingObjects(&LANDS_YOU_CONTROL),
+                    ValueDef::CountMatchingObjects(&LANDS_YOU_CONTROL),
+                ),
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "A characteristic-defining ability sets power and toughness in every zone. This is a \
-             battlefield-only continuous effect, so the value is right wherever the card is \
-             played and absent for anything reading it in another zone.",
-        ))),
+        )),
 );
 
 // LEG 226 — Gabriel Angelfire

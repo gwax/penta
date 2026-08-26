@@ -377,11 +377,28 @@ impl Game {
             })
     }
 
+    /// A card's power outside the battlefield: what its corner prints,
+    /// unless it prints a characteristic-defining ability instead, which
+    /// functions in every zone (CR 604.3).
     fn printed_card_power(&self, card: &CardInstance) -> Option<i16> {
-        self.catalog
-            .get(card.definition)
-            .and_then(|definition| definition.rules.creature_stats())
-            .map(|stats| stats.power)
+        self.printed_card_stats(card).map(|stats| stats.power)
+    }
+
+    /// The mirror of [`Self::printed_card_power`]. A Lhurgoyf in a graveyard
+    /// has the toughness its own text gives it there.
+    fn printed_card_toughness(&self, card: &CardInstance) -> Option<i16> {
+        self.printed_card_stats(card).map(|stats| stats.toughness)
+    }
+
+    /// Outside the battlefield nobody controls a card, so its owner is who
+    /// "you" means to any amount its own text reads (CR 108.4).
+    fn printed_card_stats(&self, card: &CardInstance) -> Option<crate::CreatureStats> {
+        let definition = self.catalog.get(card.definition)?;
+        let printed = definition.rules.creature_stats()?;
+        Some(
+            self.card_defined_stats(definition, card.id, card.owner)
+                .over(printed),
+        )
     }
 
     /// The object an Aura was attached to immediately before it left the
@@ -585,7 +602,10 @@ impl Game {
             .and_then(|permanent| self.toughness(permanent))
             .or_else(|| match self.retired_objects.get(&object) {
                 Some(RetiredObject::Permanent { toughness, .. }) => *toughness,
-                Some(RetiredObject::Card(_) | RetiredObject::Stack(_)) | None => None,
+                Some(RetiredObject::Card(card)) => self.printed_card_toughness(card),
+                Some(RetiredObject::Stack(_)) | None => self
+                    .card_in_nonbattlefield_zone(object)
+                    .and_then(|(_, card)| self.printed_card_toughness(card)),
             })
     }
 

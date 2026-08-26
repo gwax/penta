@@ -396,6 +396,18 @@ fn static_object_characteristic_supported(
             PowerToughnessOperationDef::SetBasePower(power)
             | PowerToughnessOperationDef::SetBaseToughness(power),
         ) => static_power_toughness_value_supported(power),
+        // A characteristic-defining ability defines its own source and
+        // names at least one half; the amounts it may read are the same
+        // ones any other static stat may read.
+        CharacteristicOperationDef::PowerToughness(PowerToughnessOperationDef::Define {
+            power,
+            toughness,
+        }) => {
+            recipient == EffectRecipientDef::Source
+                && (power.is_some() || toughness.is_some())
+                && power.is_none_or(static_power_toughness_value_supported)
+                && toughness.is_none_or(static_power_toughness_value_supported)
+        }
         // Static animation is deliberately narrower than resolving
         // characteristic changes. A direct source/attachment recipient
         // cannot feed back into its own selection; a group query must avoid

@@ -366,6 +366,9 @@ pub(in crate::game) fn attach_constant_resolved_characteristics(
                         }
                     }
                     PowerToughnessOperationDef::Switch => ResolvedPowerToughnessOperation::Switch,
+                    PowerToughnessOperationDef::Define { .. } => {
+                        panic!("a characteristic-defining ability has no resolved form")
+                    }
                 })
             }
         };

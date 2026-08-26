@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind,
     DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
     DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentCostDef,
     EffectPaymentDef, EffectRecipientDef, ExilePlayDurationDef, GraveyardTypeConditionDef,
@@ -985,7 +985,7 @@ pub(in crate::card::sets) static GRIST_THE_HUNGER_TIDE: CardRecord = CardRecord:
 /// Domain: how many of the five basic land types are among your lands. A
 /// Kavu on a two-colour board is a 2/2, and one behind a full spread of
 /// fetched duals is a 5/5.
-static KAVU_DOMAIN: AppliedEffectDef = AppliedEffectDef::set_base_power_toughness(
+static KAVU_DOMAIN: AppliedEffectDef = AppliedEffectDef::define_power_toughness(
     ValueDef::BasicLandTypesControlled(PlayerRelation::You),
     ValueDef::BasicLandTypesControlled(PlayerRelation::You),
 );
@@ -1053,12 +1053,7 @@ pub(in crate::card::sets) static TERRITORIAL_KAVU: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::Source,
                 effect: KAVU_DOMAIN,
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "A characteristic-defining ability sets power and toughness in every zone. This is a \
-             battlefield-only continuous effect, so the value is right wherever the card is \
-             played and absent for anything reading it in another zone.",
-        )),
+        ),
         AbilityDef::modal_triggered(
             "Whenever this creature attacks, choose one —\n• Discard a card. If you do, draw a \
              card.\n• Exile up to one target card from a graveyard.",

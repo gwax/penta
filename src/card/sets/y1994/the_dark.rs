@@ -1834,7 +1834,6 @@ pub(in crate::card::sets) static NIALL_SILVAIN: CardRecord = CardRecord::new_wit
 );
 
 // DRK 83 — People of the Woods
-// Audit: partial — Its toughness is a battlefield-only continuous effect rather than a characteristic-defining ability, so it reads as printed in every other zone.
 static FORESTS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
     ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
     &[ZoneKind::Battlefield],
@@ -1852,17 +1851,11 @@ pub(in crate::card::sets) static PEOPLE_OF_THE_WOODS: CardRecord = CardRecord::n
             "People of the Woods's toughness is equal to the number of Forests you control.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::modify_power_toughness(
-                    ValueDef::Constant(0),
-                    ValueDef::CountMatchingObjects(&FORESTS_YOU_CONTROL),
-                ),
+                effect: AppliedEffectDef::define_toughness(ValueDef::CountMatchingObjects(
+                    &FORESTS_YOU_CONTROL,
+                )),
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "A characteristic-defining ability sets toughness in every zone. This is a \
-             battlefield-only continuous effect, so the value is right wherever the card is \
-             played and absent for anything reading it in another zone.",
-        )),
+        ),
     ),
 );
 

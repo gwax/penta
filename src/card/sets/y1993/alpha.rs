@@ -2603,7 +2603,6 @@ pub(in crate::card::sets) static PESTILENCE: CardRecord = CardRecord::new_with_l
 );
 
 // LEA 121 — Plague Rats
-// Audit: partial — Its power and toughness are a battlefield-only continuous effect rather than a characteristic-defining ability, so they read as printed in every other zone.
 /// Every Plague Rats counts every other, whoever controls them, which is why
 /// this query is name-based rather than controller-based.
 static CREATURES_NAMED_LIKE_THE_SOURCE: ObjectQueryDef = ObjectQueryDef::matching(
@@ -2626,14 +2625,10 @@ pub(in crate::card::sets) static PLAGUE_RATS: CardRecord = CardRecord::new_with_
                 "Plague Rats's power and toughness are each equal to the number of creatures named Plague Rats on the battlefield.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::modify_power_toughness(ValueDef::CountMatchingObjects(&CREATURES_NAMED_LIKE_THE_SOURCE), ValueDef::CountMatchingObjects(&CREATURES_NAMED_LIKE_THE_SOURCE)),
+                    effect: AppliedEffectDef::define_power_toughness(ValueDef::CountMatchingObjects(&CREATURES_NAMED_LIKE_THE_SOURCE), ValueDef::CountMatchingObjects(&CREATURES_NAMED_LIKE_THE_SOURCE)),
                 },
             )
-            .with_coverage(AbilityCoverageDef::partial(
-                "A characteristic-defining ability sets power and toughness in every zone. This \
-                 is a battlefield-only continuous effect, so the value is right wherever the \
-                 card is played and absent for anything reading it in another zone.",
-            )),
+,
         ]),
 );
 
@@ -3433,7 +3428,6 @@ pub(in crate::card::sets) static IRONCLAW_ORCS: CardRecord = CardRecord::new_wit
 );
 
 // LEA 160 — Keldon Warlord
-// Audit: partial — Its power and toughness are a battlefield-only continuous effect rather than a characteristic-defining ability, so they read as printed in every other zone.
 static NON_WALL_CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
     ObjectPredicateDef::All(&[
         ObjectPredicateDef::HasType(CardType::Creature),
@@ -3454,14 +3448,10 @@ pub(in crate::card::sets) static KELDON_WARLORD: CardRecord = CardRecord::new_wi
                 "Keldon Warlord's power and toughness are each equal to the number of non-Wall creatures you control.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::modify_power_toughness(ValueDef::CountMatchingObjects(&NON_WALL_CREATURES_YOU_CONTROL), ValueDef::CountMatchingObjects(&NON_WALL_CREATURES_YOU_CONTROL)),
+                    effect: AppliedEffectDef::define_power_toughness(ValueDef::CountMatchingObjects(&NON_WALL_CREATURES_YOU_CONTROL), ValueDef::CountMatchingObjects(&NON_WALL_CREATURES_YOU_CONTROL)),
                 },
             )
-            .with_coverage(AbilityCoverageDef::partial(
-                "A characteristic-defining ability sets power and toughness in every zone. This \
-                 is a battlefield-only continuous effect, so the value is right wherever the \
-                 card is played and absent for anything reading it in another zone.",
-            )),
+,
         ]),
 );
 

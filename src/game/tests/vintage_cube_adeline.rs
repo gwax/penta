@@ -210,3 +210,72 @@ fn she_attacks_untapped() {
         "vigilance kept her untapped",
     );
 }
+
+/// A characteristic-defining ability functions in every zone (CR 604.3).
+/// From a graveyard she reads the same board -- minus herself, since she is
+/// no longer one of the creatures you control.
+#[test]
+fn her_power_answers_from_a_graveyard() {
+    let (mut game, adeline) = staged(&[cards::SAVANNAH_LIONS, cards::GRIZZLY_BEARS]);
+    assert_eq!(game.power(permanent(&game, adeline)), Some(3));
+
+    game.move_target_to_zone(
+        Target::Permanent(adeline),
+        ZoneKind::Graveyard,
+        ZoneMoveCause::Effect {
+            controller: PlayerId::One,
+        },
+        None,
+        ZonePlacement::Top,
+    );
+    drain_pending(&mut game);
+    let card = game.players[0]
+        .graveyard
+        .last()
+        .expect("she is in the graveyard")
+        .id;
+
+    assert_eq!(
+        game.current_or_last_known_power(card),
+        Some(2),
+        "the two creatures still out, and no longer herself",
+    );
+    assert_eq!(
+        game.current_or_last_known_toughness(card),
+        Some(4),
+        "the printed toughness is what she has anywhere",
+    );
+}
+
+/// Reading her in a hand asks the same question of the same board: nothing
+/// about the zone changes what the count counts.
+#[test]
+fn her_power_answers_from_a_hand() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    let card = game
+        .build_zone(PlayerId::One, &[cards::ADELINE_RESPLENDENT_CATHAR])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let card_id = card.id;
+    game.players[0].hand.push(card);
+
+    assert_eq!(
+        game.current_or_last_known_power(card_id),
+        Some(0),
+        "an empty board is no creatures at all",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.current_or_last_known_power(card_id),
+        Some(1),
+        "and one creature is one power, while she waits in hand",
+    );
+}

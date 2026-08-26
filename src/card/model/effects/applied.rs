@@ -64,6 +64,19 @@ pub enum PowerToughnessOperationDef {
     /// [`Self::SetBasePower`] and for the same reason: a card that changes
     /// only one half says only that half.
     SetBaseToughness(ValueDef),
+    /// Define power, toughness, or both in layer 7a, which is what a
+    /// characteristic-defining ability does (CR 604.3). Unlike every setter
+    /// above it, this applies in every zone rather than only on the
+    /// battlefield: a Lhurgoyf in a graveyard has the power its own text
+    /// gives it, not the zero printed in its corner.
+    ///
+    /// One variant with two options rather than three variants, because a
+    /// characteristic-defining ability names whichever halves it defines and
+    /// leaves the other printed: `None` is "the card's own number stands".
+    Define {
+        power: Option<ValueDef>,
+        toughness: Option<ValueDef>,
+    },
     /// Modify power and toughness in layer 7c.
     Modify {
         power: ValueDef,
@@ -833,6 +846,43 @@ impl AppliedEffectDef {
     pub const fn switch_power_toughness() -> Self {
         Self::Characteristic(CharacteristicOperationDef::PowerToughness(
             PowerToughnessOperationDef::Switch,
+        ))
+    }
+
+    /// A characteristic-defining power, with the printed toughness left
+    /// standing.
+    #[must_use]
+    pub const fn define_power(power: ValueDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::Define {
+                power: Some(power),
+                toughness: None,
+            },
+        ))
+    }
+
+    /// A characteristic-defining toughness, with the printed power left
+    /// standing.
+    #[must_use]
+    pub const fn define_toughness(toughness: ValueDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::Define {
+                power: None,
+                toughness: Some(toughness),
+            },
+        ))
+    }
+
+    /// A characteristic-defining power and toughness, each given by its own
+    /// amount: "its toughness is equal to that number plus 1" is a different
+    /// amount from the power beside it, not an offset applied to it.
+    #[must_use]
+    pub const fn define_power_toughness(power: ValueDef, toughness: ValueDef) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::Define {
+                power: Some(power),
+                toughness: Some(toughness),
+            },
         ))
     }
 

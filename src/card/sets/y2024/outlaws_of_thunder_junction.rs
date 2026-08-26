@@ -2,11 +2,11 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt,
-    CardRules, CardSet, CardSupertype, CardType, CounterKind, DiscardSelectionDef, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ResolvedEffectDurationDef, ScaledValueDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, CounterKind, DiscardSelectionDef, EffectDef, EffectRecipientDef,
+    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef, ScaledValueDef,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -34,19 +34,14 @@ static DUELIST_ABILITIES: [AbilityDef; 4] = [
         "Duelist of the Mind's power is equal to the number of cards you've drawn this turn.",
         EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
-            // The printed power is zero, so the counted part is the whole of
-            // it; the toughness the card prints is left alone.
-            effect: AppliedEffectDef::modify_power_toughness(
-                ValueDef::CardsDrawnThisTurn(PlayerRelation::You),
-                ValueDef::Constant(0),
-            ),
+            // The count defines her power outright, which is why it also
+            // answers in a hand or a graveyard; the printed toughness is
+            // left alone.
+            effect: AppliedEffectDef::define_power(ValueDef::CardsDrawnThisTurn(
+                PlayerRelation::You,
+            )),
         },
-    )
-    .with_coverage(AbilityCoverageDef::partial(
-        "A characteristic-defining ability sets power in every zone. This is a battlefield-only \
-         continuous effect, so the value is right wherever the card is played and absent for \
-         anything reading it in another zone.",
-    )),
+    ),
     AbilityDef::triggered(
         "Whenever you commit a crime, you may draw a card. If you do, discard a card. This ability triggers only once each turn.",
         TriggerEventDef::CommittedCrime(PlayerRelation::You),

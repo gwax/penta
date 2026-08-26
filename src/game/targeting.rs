@@ -189,6 +189,12 @@ impl Game {
             }
             mana_value += part.rules.mana_cost().map_or(0, ManaCost::mana_value);
             if let Some(stats) = part.rules.creature_stats() {
+                // A characteristic-defining ability answers here too: what a
+                // predicate asks of a card in a graveyard is what that card
+                // says it is there, not the number in its corner.
+                let stats = self
+                    .card_defined_stats(definition, id, controller)
+                    .over(stats);
                 power = Some(stats.power);
                 toughness = Some(stats.toughness);
             }

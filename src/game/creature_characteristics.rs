@@ -12,6 +12,25 @@ use super::{
 
 type BaseStatSetter = (ContinuousEffectTimestamp, u16, Option<i16>, Option<i16>);
 
+/// What a characteristic-defining ability says about each half, with `None`
+/// meaning "the printed number stands" (CR 604.3).
+#[derive(Clone, Copy, Debug, Default)]
+pub(super) struct DefinedStats {
+    power: Option<i16>,
+    toughness: Option<i16>,
+}
+
+impl DefinedStats {
+    /// Layer 7a over the printed corner: whichever halves are defined
+    /// replace what the card prints, and the rest is left alone.
+    pub(super) fn over(self, printed: crate::CreatureStats) -> crate::CreatureStats {
+        crate::CreatureStats {
+            power: self.power.unwrap_or(printed.power),
+            toughness: self.toughness.unwrap_or(printed.toughness),
+        }
+    }
+}
+
 thread_local! {
     /// Guards the live layer-7 walk when a static recipient predicate asks for
     /// power or toughness while that same walk is being assembled.
@@ -68,7 +87,7 @@ impl Game {
                 _ => None,
             })
             .collect::<Vec<_>>();
-        self.append_static_base_stat_setters(permanent, &mut setters);
+        let defined = self.defining_stats(permanent, &mut setters);
         if setters.is_empty() {
             // "Except it's a 1/1" travels with the copy, so it answers before
             // the copied card's own printed stats do.
@@ -76,23 +95,27 @@ impl Game {
                 .active_copy_values()
                 .and_then(|copy| copy.base_power_toughness)
             {
-                return Some(crate::CreatureStats { power, toughness });
+                return Some(defined.over(crate::CreatureStats { power, toughness }));
             }
             return self
                 .effective_rules(permanent)
-                .and_then(|rules| rules.creature_stats());
+                .and_then(|rules| rules.creature_stats())
+                .map(|printed| defined.over(printed));
         }
         // Applied in order rather than by taking the latest outright: a setter
         // that names only power leaves the toughness under it standing, which
         // the printed stats supply when nothing else has.
         setters.sort_by_key(|(timestamp, order, _, _)| (*timestamp, *order));
-        let mut stats = self
-            .effective_rules(permanent)
-            .and_then(|rules| rules.creature_stats())
-            .unwrap_or(crate::CreatureStats {
-                power: 0,
-                toughness: 0,
-            });
+        // Layer 7a first: what a characteristic-defining ability says is the
+        // base every 7b setter below then replaces or leaves standing.
+        let mut stats = defined.over(
+            self.effective_rules(permanent)
+                .and_then(|rules| rules.creature_stats())
+                .unwrap_or(crate::CreatureStats {
+                    power: 0,
+                    toughness: 0,
+                }),
+        );
         for (_, _, power, toughness) in setters {
             stats = crate::CreatureStats {
                 power: power.unwrap_or(stats.power),
@@ -102,13 +125,22 @@ impl Game {
         Some(stats)
     }
 
-    fn append_static_base_stat_setters(
+    /// Walks the statics that apply to this permanent, appending every
+    /// layer-7b base setter to `setters` and returning what any layer-7a
+    /// characteristic-defining ability says (CR 604.3).
+    ///
+    /// The two come out of one walk because they come from one place: a
+    /// defining ability is a static ability like the others, and reaching it
+    /// through this walk is what makes it stop applying when the permanent
+    /// loses its abilities.
+    fn defining_stats(
         &self,
         permanent: &Permanent,
         setters: &mut Vec<BaseStatSetter>,
-    ) {
+    ) -> DefinedStats {
+        let mut defined = DefinedStats::default();
         let Some(_pass) = StaticPowerToughnessLayerGuard::enter() else {
-            return;
+            return defined;
         };
         let result = self.visit_static_applied_effects(
             permanent,
@@ -133,6 +165,26 @@ impl Game {
                         Some(self.static_power_toughness_value(permanent, applied.source, power)),
                         None,
                     ),
+                    PowerToughnessOperationDef::Define { power, toughness } => {
+                        // Applied to the base rather than pushed as a setter:
+                        // 7a is under every 7b setter no matter which
+                        // timestamp each one carries.
+                        if let Some(power) = power {
+                            defined.power = Some(self.static_power_toughness_value(
+                                permanent,
+                                applied.source,
+                                power,
+                            ));
+                        }
+                        if let Some(toughness) = toughness {
+                            defined.toughness = Some(self.static_power_toughness_value(
+                                permanent,
+                                applied.source,
+                                toughness,
+                            ));
+                        }
+                        return ControlFlow::Continue(());
+                    }
                     _ => return ControlFlow::Continue(()),
                 };
                 setters.push((applied.timestamp, applied.component_order, power, toughness));
@@ -140,6 +192,54 @@ impl Game {
             },
         );
         debug_assert!(result.is_continue());
+        defined
+    }
+
+    /// What a characteristic-defining ability printed on this card says
+    /// about a copy of it that is not on the battlefield (CR 604.3). Every
+    /// amount is measured from `controller`, who outside the battlefield is
+    /// the card's owner.
+    ///
+    /// Behind the same guard the battlefield walk uses: an amount that asks
+    /// after a power would otherwise be able to ask after this one, and a
+    /// definition that cannot be computed leaves the printed number
+    /// standing rather than looping.
+    pub(super) fn card_defined_stats(
+        &self,
+        definition: &crate::card::CardDefinition,
+        id: GameObjectId,
+        controller: PlayerId,
+    ) -> DefinedStats {
+        let mut defined = DefinedStats::default();
+        let Some(_pass) = StaticPowerToughnessLayerGuard::enter() else {
+            return defined;
+        };
+        let measure = |value: ValueDef| {
+            let amount = self.static_stat_value(value, id, controller);
+            i16::try_from(amount.clamp(i32::from(i16::MIN), i32::from(i16::MAX))).ok()
+        };
+        for ability in definition.rules.ability_clauses() {
+            if !ability.is_executable() {
+                continue;
+            }
+            let Some(crate::card::EffectDef::StaticApply {
+                effect:
+                    AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                        PowerToughnessOperationDef::Define { power, toughness },
+                    )),
+                ..
+            }) = ability.declarative_effect()
+            else {
+                continue;
+            };
+            if let Some(power) = power {
+                defined.power = measure(power);
+            }
+            if let Some(toughness) = toughness {
+                defined.toughness = measure(toughness);
+            }
+        }
+        defined
     }
 
     pub(super) fn controls_land_type(&self, player: PlayerId, land_type: BasicLandType) -> bool {
@@ -199,7 +299,7 @@ impl Game {
     /// another such value, which is how "+2/+2 for each Aura attached to it"
     /// is expressed; everything outside this vocabulary stays a seam, and the
     /// boundary test rejects a card that reaches for one.
-    fn static_stat_value(
+    pub(super) fn static_stat_value(
         &self,
         value: ValueDef,
         source: GameObjectId,

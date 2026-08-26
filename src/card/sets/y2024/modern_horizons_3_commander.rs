@@ -6,8 +6,8 @@ use crate::card::{
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet,
     CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef,
     ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectSetDef, PlayerRefDef,
-    PlayerRelation, SpellAdditionalCostDef, SpendModeDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    PlayerRelation, SpellAdditionalCostDef, SpendModeDef, SumValueDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -34,6 +34,13 @@ pub(in crate::card::sets) static ULALEK_FUSED_ATROCITY: CardRecord = CardRecord:
         .with_metadata_only_creature_body()
         .printed_colors(&[])
         .with_abilities(&ULALEK_ABILITIES),
+);
+
+/// "That number plus 1", shared by both Lhurgoyfs in this set: each counts
+/// the card types in every graveyard and is one tougher than it is strong.
+static GOYF_TOUGHNESS_IN_ALL_GRAVEYARDS: SumValueDef = SumValueDef::new(
+    ValueDef::CardTypesAmongGraveyards(PlayerRelation::Any),
+    ValueDef::Constant(1),
 );
 
 // M3C 50 — Barrowgoyf
@@ -95,19 +102,14 @@ pub(in crate::card::sets) static BARROWGOYF: CardRecord = CardRecord::new_with_l
             "Barrowgoyf's power is equal to the number of card types among cards in all graveyards and its toughness is equal to that number plus 1.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
-                // The printed toughness carries the "plus 1", so the counted
-                // part is the same number on both sides.
-                effect: AppliedEffectDef::modify_power_toughness(
+                // Each half is its own amount: the toughness is the count
+                // plus one rather than the count applied to a printed body.
+                effect: AppliedEffectDef::define_power_toughness(
                     ValueDef::CardTypesAmongGraveyards(PlayerRelation::Any),
-                    ValueDef::CardTypesAmongGraveyards(PlayerRelation::Any),
+                    ValueDef::Sum(&GOYF_TOUGHNESS_IN_ALL_GRAVEYARDS),
                 ),
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "A characteristic-defining ability sets power and toughness in every zone. This is a \
-             battlefield-only continuous effect, so the value is right wherever the card is \
-             played and absent for anything reading it in another zone.",
-        )),
+        ),
         AbilityDef::triggered(
             "Whenever this creature deals combat damage to a player, you may mill that many cards. If you do, you may put a creature card from among them into your hand.",
             TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
@@ -137,19 +139,13 @@ static PYROGOYF_ABILITIES: [AbilityDef; 2] = [
         "Pyrogoyf's power is equal to the number of card types among cards in all graveyards and its toughness is equal to that number plus 1.",
         EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
-            // The printed toughness carries the "plus 1", so the counted part
-            // is the same number on both sides.
-            effect: AppliedEffectDef::modify_power_toughness(
+            // The same shape Barrowgoyf has, counted over the same pile.
+            effect: AppliedEffectDef::define_power_toughness(
                 ValueDef::CardTypesAmongGraveyards(PlayerRelation::Any),
-                ValueDef::CardTypesAmongGraveyards(PlayerRelation::Any),
+                ValueDef::Sum(&GOYF_TOUGHNESS_IN_ALL_GRAVEYARDS),
             ),
         },
-    )
-    .with_coverage(AbilityCoverageDef::partial(
-        "A characteristic-defining ability sets power and toughness in every zone. This is a \
-         battlefield-only continuous effect, so the value is right wherever the card is played \
-         and absent for anything reading it in another zone.",
-    )),
+    ),
     AbilityDef::triggered_with_targets(
         "Whenever this creature or another Lhurgoyf creature you control enters, that creature deals damage equal to its power to any target.",
         TriggerEventDef::zone_changed(A_LHURGOYF_YOU_CONTROL, None, Some(ZoneKind::Battlefield)),
@@ -172,8 +168,8 @@ pub(in crate::card::sets) static PYROGOYF: CardRecord = CardRecord::new_with_leg
     "Pyrogoyf",
     CardArt::new("f60be310-4461-4b84-95f0-b2095108bd79", "Xabi Gaztelua"),
     CardSet::ModernHorizons3Commander,
-    // The printed body is 0/1: the counted part supplies the rest, and the
-    // "plus 1" is the toughness this starts from.
+    // The printed 0/1 is only what the corner says; the ability below is
+    // what it is, wherever it is.
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Lhurgoyf"], 0, 1)
         .with_abilities(&PYROGOYF_ABILITIES),
 );

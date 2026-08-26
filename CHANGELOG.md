@@ -25,6 +25,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Characteristic-defining power and toughness.** A creature whose body is
+  a count -- a Lhurgoyf, a Keldon Warlord, Adeline -- was declared as a
+  printed zero plus a continuous effect that added the count back on the
+  battlefield. That is the right number where it was played and the wrong
+  one everywhere else: a characteristic-defining ability functions in every
+  zone (CR 604.3), so a Lhurgoyf in a graveyard is as big there as it would
+  be on the battlefield. Power and toughness can now be *defined* rather
+  than modified, in layer 7a under every setter above it, and the definition
+  answers wherever the card is -- to an amount reading its power, and to a
+  predicate asking after it. Eleven cards stopped declaring the gap.
+
 - **Deck-construction permissions, and commander legality.** "Minsc & Boo,
   Timeless Heroes can be your commander" is a whole printed sentence that no
   clause kind could hold: it is a rule of deck construction rather than of

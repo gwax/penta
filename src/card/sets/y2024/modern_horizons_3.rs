@@ -14,7 +14,7 @@ use crate::card::{
     ObjectSetDef, PayOrDef, PileExileDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
     ReplacementEffectDef, ResolvedEffectDurationDef, RoundingDef, SetOperationDef,
     SimultaneousChooseDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef,
-    TargetConditionDef, TokenCopyExceptionsDef, TokenCountersDef, TopCardSelectionDef,
+    SumValueDef, TargetConditionDef, TokenCopyExceptionsDef, TokenCountersDef, TopCardSelectionDef,
     TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
     ZonePickDef, ZonePlacement, abilities, tokens,
 };
@@ -563,7 +563,6 @@ pub(in crate::card::sets) static EMPEROR_OF_BONES: CardRecord = CardRecord::new_
 );
 
 // MH3 103 — Nethergoyf
-// Audit: partial — Power and toughness are a battlefield-only continuous effect rather than a characteristic-defining ability, so another zone reads the printed 0/1.
 /// The escape cost counts card types rather than cards: one Artifact
 /// Creature Land pays three quarters of it by itself, which is why the deck
 /// playing this is the one with a graveyard full of odd things.
@@ -572,25 +571,27 @@ static NETHERGOYF_ESCAPE_COST: SpellAdditionalCostDef =
         .counted(SpellAdditionalCostCountDef::CardTypesAtLeast(4))
         .spent(SpendModeDef::Exile);
 
+/// "That number plus 1", counted over your own graveyard alone.
+static NETHERGOYF_TOUGHNESS: SumValueDef = SumValueDef::new(
+    ValueDef::CardTypesAmongGraveyards(PlayerRelation::You),
+    ValueDef::Constant(1),
+);
+
 static NETHERGOYF_ABILITIES: [AbilityDef; 2] = [
     AbilityDef::static_ability(
         "This creature\'s power is equal to the number of card types among cards in your \
          graveyard and its toughness is equal to that number plus 1.",
         EffectDef::StaticApply {
             recipient: EffectRecipientDef::Source,
-            // The printed 0/1 carries the "plus 1", so the counted part is
-            // the same number on both sides -- the way Barrowgoyf reads it.
-            effect: AppliedEffectDef::modify_power_toughness(
+            // Each half is its own amount: the toughness is the count plus
+            // one rather than the count applied to a printed body -- the way
+            // Barrowgoyf reads it.
+            effect: AppliedEffectDef::define_power_toughness(
                 ValueDef::CardTypesAmongGraveyards(PlayerRelation::You),
-                ValueDef::CardTypesAmongGraveyards(PlayerRelation::You),
+                ValueDef::Sum(&NETHERGOYF_TOUGHNESS),
             ),
         },
-    )
-    .with_coverage(AbilityCoverageDef::partial(
-        "A characteristic-defining ability sets power and toughness in every zone. This is a \
-         battlefield-only continuous effect, so the value is right wherever the card is played \
-         and absent for anything reading it in another zone.",
-    )),
+    ),
     AbilityDef::alternative_cast(
         mana_cost!("{2}{B}"),
         AlternativeCastKindDef::Escape,

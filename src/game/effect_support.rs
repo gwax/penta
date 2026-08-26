@@ -671,6 +671,11 @@ impl Game {
                     }
                     // Nothing to freeze: the switch names no value.
                     PowerToughnessOperationDef::Switch => ResolvedPowerToughnessOperation::Switch,
+                    // A characteristic-defining ability is printed on a card
+                    // and read live wherever that card is; no resolving
+                    // effect creates one, and freezing one would fix a
+                    // number that is supposed to keep answering.
+                    PowerToughnessOperationDef::Define { .. } => return None,
                 })
             }
         })
