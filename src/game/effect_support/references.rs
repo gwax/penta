@@ -430,6 +430,18 @@ impl Game {
             .collect()
     }
 
+    /// What an attacking permanent is attacking, as a target: the defending
+    /// player, or the planeswalker the attack was declared against (CR
+    /// 506.3b). Nothing when it is not attacking, or has already left.
+    fn attacked_defender_target(&self, attacker: GameObjectId) -> Option<Target> {
+        match self.attack_defender_of(attacker)? {
+            crate::AttackDefender::Player(player) => Some(Target::Player(player)),
+            crate::AttackDefender::Planeswalker(planeswalker) => {
+                Some(Target::Permanent(planeswalker))
+            }
+        }
+    }
+
     pub(super) fn effect_recipients(
         &self,
         recipient: EffectRecipientDef,
@@ -447,6 +459,14 @@ impl Game {
             EffectRecipientSetDef::Objects(objects) => {
                 self.effect_objects(objects, object, context, scoped)
             }
+            // The declaration decides which kind this is: a player, or the
+            // planeswalker standing in front of them. An attacker that has
+            // left combat -- or left the battlefield -- names nothing.
+            EffectRecipientSetDef::DefenderOf(reference) => self
+                .effect_object_reference_id(reference, object, context, scoped)
+                .and_then(|attacker| self.attacked_defender_target(attacker))
+                .into_iter()
+                .collect(),
             EffectRecipientSetDef::Players(players) => self
                 .players_in_set(players, object, context, scoped)
                 .into_iter()

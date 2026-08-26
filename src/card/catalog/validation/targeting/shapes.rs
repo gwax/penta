@@ -312,6 +312,19 @@ fn validate_recipient_shape(
             }
             validate_player_set_shape(players, targets)
         }
+        // "The player or planeswalker it's attacking" is a player or an
+        // object depending on the declaration, so only a clause that
+        // accepts either may name it.
+        EffectRecipientSetDef::DefenderOf(_) => {
+            if matches!(expected, RecipientExpectation::Any) {
+                Ok(())
+            } else {
+                Err(GrantedAbilityValidationError::EffectRecipientKindMismatch {
+                    recipient,
+                    expected: EffectSubjectKind::Player,
+                })
+            }
+        }
     }
 }
 
@@ -646,6 +659,9 @@ fn recipient_may_name_nonbattlefield_object(
         // Players and the creatures they control: nothing outside the
         // battlefield is named either way.
         | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_)
+        // An attacker is on the battlefield, and so is anything it can be
+        // declared against.
+        | EffectRecipientSetDef::DefenderOf(_)
         | EffectRecipientSetDef::Players(_) => false,
     }
 }
@@ -704,6 +720,7 @@ fn recipient_nonbattlefield_zones_support_flashback(
             | ObjectSetDef::SharingNameWith(_),
         )
         | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_)
+        | EffectRecipientSetDef::DefenderOf(_)
         | EffectRecipientSetDef::Players(_) => true,
     }
 }

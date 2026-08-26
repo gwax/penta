@@ -232,6 +232,11 @@ fn validate_static_apply(
         EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_) => {
             Err("StaticApply with a mixed player-and-creature recipient")
         }
+        // A static clause says what it affects; what a creature is attacking
+        // is a fact about one combat, which a resolving clause reads.
+        EffectRecipientSetDef::DefenderOf(_) => {
+            Err("StaticApply with an attack-defender recipient")
+        }
         EffectRecipientSetDef::Players(players) => {
             if !static_player_set_supported(players) {
                 return Err("StaticApply with an unavailable static player recipient");

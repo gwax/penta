@@ -147,6 +147,11 @@ pub enum EffectRecipientSetDef {
     /// set names objects, and a player set names players. The damage matcher
     /// beside it already draws the same pair for the other direction.
     PlayersAndCreaturesTheyControl(PlayerSetDef),
+    /// "The player or planeswalker it's attacking." Which of the two it is
+    /// is settled by the declaration rather than by the clause, so neither
+    /// an object set nor a player set can say it alone. Nothing at all when
+    /// the named object is not attacking.
+    DefenderOf(ObjectRefDef),
 }
 
 /// An object or player set affected by an effect.
@@ -172,6 +177,9 @@ impl EffectRecipientDef {
     pub const ControllerOfTriggeringObject: Self =
         Self::player(PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject));
     pub const EventPlayer: Self = Self::player(PlayerRefDef::EventPlayer);
+    /// What the source is attacking, which is a player or a planeswalker.
+    pub const DefenderOfSource: Self =
+        Self(EffectRecipientSetDef::DefenderOf(ObjectRefDef::Source));
 
     #[must_use]
     pub const fn object(object: ObjectRefDef) -> Self {
@@ -209,6 +217,7 @@ impl EffectRecipientDef {
             EffectRecipientSetDef::LegalTargets(target) => Some(target),
             EffectRecipientSetDef::Objects(_)
             | EffectRecipientSetDef::Players(_)
+            | EffectRecipientSetDef::DefenderOf(_)
             | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_) => None,
         }
     }
@@ -218,6 +227,7 @@ impl EffectRecipientDef {
         match self.0 {
             EffectRecipientSetDef::Objects(ObjectSetDef::One(reference)) => Some(reference),
             EffectRecipientSetDef::LegalTargets(_)
+            | EffectRecipientSetDef::DefenderOf(_)
             | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_)
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::Binding(_)
@@ -241,6 +251,7 @@ impl EffectRecipientDef {
         match self.0 {
             EffectRecipientSetDef::Objects(ObjectSetDef::Query(query)) => Some(query),
             EffectRecipientSetDef::LegalTargets(_)
+            | EffectRecipientSetDef::DefenderOf(_)
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::One(_)
                 | ObjectSetDef::Binding(_)

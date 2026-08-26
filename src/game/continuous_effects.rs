@@ -955,6 +955,9 @@ impl Game {
                 | ObjectSetDef::SharingNameWithBinding { .. }
                 | ObjectSetDef::TopOfGraveyardMatching { .. },
             )
+            // A static clause names what it affects outright; nothing static
+            // is scoped to what a creature happens to be attacking.
+            | EffectRecipientSetDef::DefenderOf(_)
             | EffectRecipientSetDef::Players(_) => false,
         }
     }

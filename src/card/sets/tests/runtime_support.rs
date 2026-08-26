@@ -120,8 +120,11 @@ pub(super) fn shared_effect_recipient(recipient: EffectRecipientDef) -> bool {
         )
         // Both kinds at once is shared for the same reason each half is:
         // the players come from a relation, and the creatures they control
-        // from the ordinary battlefield walk.
+        // from the ordinary battlefield walk. What an attacker is attacking
+        // is shared too: the declaration recorded it, and the walk reads it
+        // back the same way either kind of recipient is read.
         | EffectRecipientSetDef::Players(_)
+        | EffectRecipientSetDef::DefenderOf(_)
         | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_) => true,
     }
 }

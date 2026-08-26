@@ -3,8 +3,8 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     CardTypeSet, ChoiceVisibilityDef, ChooseDef, ColorSet, ComparisonDef, ControlDurationDef,
     CountConditionDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef,
@@ -4276,7 +4276,6 @@ pub(in crate::card::sets) static MOX_OPAL: CardRecord = CardRecord::new(
 );
 
 // SOM 180 — Myr Battlesphere
-// Audit: partial — Damage from the attack trigger reaches the defending player rather than a planeswalker the Battlesphere is attacking.
 /// Untapped Myr under your control. The Battlesphere is a Myr itself, but
 /// an attacking one is tapped, so it is not among its own candidates unless
 /// something untapped it.
@@ -4303,9 +4302,11 @@ static BATTLESPHERE_PAYOFF: [EffectDef; 3] = [
         ),
         duration: ResolvedEffectDurationDef::UntilEndOfTurn,
     },
-    // The player an attack was declared against, which the trigger carries.
+    // "The player or planeswalker it's attacking": whichever the
+    // declaration named, read off the Battlesphere rather than off the
+    // trigger, which carries only the player.
     EffectDef::DealDamage {
-        recipient: EffectRecipientDef::EventPlayer,
+        recipient: EffectRecipientDef::DefenderOfSource,
         amount: ValueDef::BoundObjectCount(ObjectSetBindingIndex::PRIMARY),
     },
 ];
@@ -4337,13 +4338,7 @@ static BATTLESPHERE_ABILITIES: [AbilityDef; 2] = [
          it's attacking.",
         TriggerEventDef::attacks(ObjectPredicateDef::Source),
         BATTLESPHERE_TAPS_MYR,
-    )
-    .with_coverage(AbilityCoverageDef::partial(
-        "An attack trigger carries the defending player rather than the permanent the attack was \
-         declared against, so the damage reaches a planeswalker's controller instead of the \
-         planeswalker. Everything else about the clause -- how many Myr are tapped, the size it \
-         buys, and the damage that follows -- is the same either way.",
-    )),
+    ),
 ];
 
 pub(in crate::card::sets) static MYR_BATTLESPHERE: CardRecord = CardRecord::new(

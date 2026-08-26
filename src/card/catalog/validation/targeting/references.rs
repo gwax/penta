@@ -415,6 +415,11 @@ fn validate_recipient_target_references(
         | EffectRecipientSetDef::PlayersAndCreaturesTheyControl(players) => {
             validate_player_set(players, target_count, scope)
         }
+        // The attacker is named the same way any other object is; what it
+        // is attacking is read off the declaration rather than authored.
+        EffectRecipientSetDef::DefenderOf(reference) => {
+            validate_object_reference(reference, target_count, scope)
+        }
     }
 }
 

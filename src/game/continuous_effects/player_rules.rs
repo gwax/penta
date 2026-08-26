@@ -562,7 +562,8 @@ impl Game {
                     | PlayerRefDef::OpponentOf(_)
                     | PlayerRefDef::OwnerOf(_),
                 ),
-            ) => false,
+            )
+            | EffectRecipientSetDef::DefenderOf(_) => false,
         }
     }
 }

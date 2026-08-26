@@ -193,8 +193,10 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                         && shared_object_predicate(query.object)
                         && shared_static_query(query)
                 }
-                // A static clause names one kind of thing or the other.
+                // A static clause names one kind of thing or the other, and
+                // names it outright rather than by what it is attacking.
                 EffectRecipientSetDef::PlayersAndCreaturesTheyControl(_)
+                | EffectRecipientSetDef::DefenderOf(_)
                 | EffectRecipientSetDef::LegalTargets(_)
                 | EffectRecipientSetDef::Objects(
                     ObjectSetDef::One(

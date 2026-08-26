@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"The player or planeswalker it's attacking."** An attack trigger carries
+  the defending player, which is not the same thing as what the attack was
+  declared against: a Battlesphere attacking a planeswalker was throwing its
+  Myr past it at the player behind. A clause can now name what its source is
+  attacking, and get back whichever of the two the declaration named. It is
+  neither a player recipient nor an object one -- which of those it is is
+  settled in combat rather than by the clause -- so it is its own kind, and
+  only a clause that accepts either may ask for it.
+
 - **"You may play it" as an offer rather than a permission.** A resolving
   effect that says "you may play that card without paying its mana cost"
   was granting a permission that lasted the rest of the turn, so a player

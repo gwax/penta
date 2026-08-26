@@ -218,3 +218,53 @@ fn tapped_myr_cannot_pay() {
     assert_eq!(game.players[1].life, 20, "nothing was there to tap");
     assert_eq!(game.power(permanent(&game, body)), Some(4));
 }
+
+/// Attacks `defender` instead of the player across the table.
+fn attack_defender(game: &mut Game, sphere: GameObjectId, defender: AttackDefender, taken: usize) {
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: sphere,
+            defender,
+        },
+    )
+    .expect("it attacks");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+    settle(game, taken);
+}
+
+/// "The player or planeswalker it's attacking": a Battlesphere attacking a
+/// planeswalker throws its Myr at the planeswalker, not at the player
+/// standing behind it.
+#[test]
+fn the_damage_follows_the_attack_onto_a_planeswalker() {
+    let (mut game, sphere) = staged(0);
+    let body = cast(&mut game, sphere);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.turns_started = [6, 5];
+    let mut walker = creature(10_900, cards::VRASKA_THE_UNSEEN, PlayerId::Two);
+    walker.set_counters(CounterKind::Loyalty, 5);
+    let walker_id = walker.card.id;
+    game.battlefield.push(walker);
+    let before = game.players[1].life;
+
+    attack_defender(&mut game, body, AttackDefender::Planeswalker(walker_id), 4);
+
+    assert_eq!(
+        game.players[1].life, before,
+        "their life is not what the Myr were thrown at",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == walker_id)
+            .map(|permanent| permanent.counters(CounterKind::Loyalty)),
+        Some(1),
+        "five loyalty less the four Myr",
+    );
+}
