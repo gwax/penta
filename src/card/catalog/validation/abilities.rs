@@ -440,6 +440,7 @@ fn validate_ability_coverage(ability: &AbilityDef) -> Result<(), GrantedAbilityV
         | DeclarativeAbilityDef::SpecialAction(_)
         | DeclarativeAbilityDef::Pregame(_)
         | DeclarativeAbilityDef::Keyword(_)
+        | DeclarativeAbilityDef::DeckConstruction(_)
         | DeclarativeAbilityDef::Legacy => false,
     };
     if ability.is_executable()
@@ -574,6 +575,7 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
         DeclarativeAbilityDef::AlternativeCast(alternative) => (None, alternative.targets, false),
         DeclarativeAbilityDef::OptionalAdditionalCost(_)
         | DeclarativeAbilityDef::Keyword(_)
+        | DeclarativeAbilityDef::DeckConstruction(_)
         | DeclarativeAbilityDef::Legacy => (None, &[][..], false),
     };
 
@@ -607,6 +609,7 @@ fn validate_ability_definition(ability: &AbilityDef) -> Result<(), GrantedAbilit
         | DeclarativeAbilityDef::SpecialAction(_)
         | DeclarativeAbilityDef::Pregame(_)
         | DeclarativeAbilityDef::Keyword(_)
+        | DeclarativeAbilityDef::DeckConstruction(_)
         | DeclarativeAbilityDef::Legacy => None,
     };
     validate_ability_program_targets(targets, ability.effect.definition, trigger_event)?;

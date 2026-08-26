@@ -480,6 +480,7 @@ fn validate_effect_target_shapes(
                 | DeclarativeAbilityDef::SpecialAction(_)
                 | DeclarativeAbilityDef::Pregame(_)
                 | DeclarativeAbilityDef::Keyword(_)
+                | DeclarativeAbilityDef::DeckConstruction(_)
                 | DeclarativeAbilityDef::Legacy => None,
             };
             validate_program_target_shapes(

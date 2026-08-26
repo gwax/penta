@@ -818,6 +818,7 @@ pub(super) const fn ability_target_defs(ability: &AbilityDef) -> &'static [Abili
         | DeclarativeAbilityDef::SpecialAction(_)
         | DeclarativeAbilityDef::Pregame(_)
         | DeclarativeAbilityDef::Keyword(_)
+        | DeclarativeAbilityDef::DeckConstruction(_)
         | DeclarativeAbilityDef::Legacy => &[],
     }
 }

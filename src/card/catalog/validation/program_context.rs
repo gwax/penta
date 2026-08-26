@@ -56,6 +56,7 @@ pub(super) fn validate_ability_effect_context(
         | DeclarativeAbilityDef::SpecialAction(_)
         | DeclarativeAbilityDef::Pregame(_)
         | DeclarativeAbilityDef::Keyword(_)
+        | DeclarativeAbilityDef::DeckConstruction(_)
         | DeclarativeAbilityDef::Legacy => {
             validate_resolving_effect(effect, resolving_source_zones(ability)).map_err(
                 |operation| EffectProgramContextError {
@@ -79,6 +80,7 @@ fn resolving_source_zones(ability: &AbilityDef) -> &'static [ZoneKind] {
         | DeclarativeAbilityDef::AlternativeCast(_)
         | DeclarativeAbilityDef::OptionalAdditionalCost(_)
         | DeclarativeAbilityDef::Keyword(_)
+        | DeclarativeAbilityDef::DeckConstruction(_)
         | DeclarativeAbilityDef::Legacy => &[ZoneKind::Stack],
         DeclarativeAbilityDef::Static(_) | DeclarativeAbilityDef::Replacement(_) => &[],
     }

@@ -4,9 +4,9 @@ use crate::ids::{
 
 use super::{
     CardBehavior, CardEffectStatus, CardPart, CardPrinting, CardRules, CardSet, CardStructure,
-    CardSupertype, CardType, DeclarativeAbilityDef, DoubleFacedKind, ImplementationStatus,
-    ManaCost, ModeSetDef, PlayActionKind, PlayRestriction, PrintedManaCost, SpellForm,
-    TargetSlotDef,
+    CardSupertype, CardType, DeckConstructionDef, DeclarativeAbilityDef, DoubleFacedKind,
+    ImplementationStatus, ManaCost, ModeSetDef, PlayActionKind, PlayRestriction, PrintedManaCost,
+    SpellForm, TargetSlotDef,
 };
 
 /// A named alternative to the cost supplied by a play option.
@@ -523,6 +523,26 @@ impl CardDefinition {
     #[must_use]
     pub const fn is_basic_land(&self) -> bool {
         self.rules.has_type(CardType::Land) && self.rules.has_supertype(CardSupertype::Basic)
+    }
+
+    /// Whether this card may be the commander of a Commander deck: a
+    /// legendary creature, or any card that prints permission of its own
+    /// (CR 903.3a-b). The permission may be printed on either face, so
+    /// every part is asked.
+    #[must_use]
+    pub fn may_be_commander(&self) -> bool {
+        let legendary_creature = self.rules.has_type(CardType::Creature)
+            && self.rules.has_supertype(CardSupertype::Legendary);
+        legendary_creature
+            || self.parts.iter().any(|part| {
+                part.rules.ability_clauses().iter().any(|ability| {
+                    ability.is_executable()
+                        && ability.definition
+                            == DeclarativeAbilityDef::DeckConstruction(
+                                DeckConstructionDef::MayBeCommander,
+                            )
+                })
+            })
     }
 
     #[must_use]

@@ -852,6 +852,9 @@ pub enum DeclarativeAbilityDef {
     SpecialAction(SpecialActionDef),
     Pregame(PregameAbilityDef),
     Keyword(KeywordAbility),
+    /// A permission the card grants the deck it is built into. It is read
+    /// while a deck is assembled and is silent during play.
+    DeckConstruction(DeckConstructionDef),
     /// Transitional structural marker for a clause still dispatched through
     /// the owning card's legacy custom behavior.
     Legacy,
@@ -950,6 +953,7 @@ impl AbilityEffectDef {
 }
 
 include!("ability_kinds/coverage.rs");
+include!("ability_kinds/deck_construction.rs");
 include!("ability_kinds/conditions.rs");
 include!("ability_kinds/keywords.rs");
 include!("ability_kinds/triggered.rs");

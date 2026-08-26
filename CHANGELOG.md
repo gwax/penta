@@ -25,6 +25,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Deck-construction permissions, and commander legality.** "Minsc & Boo,
+  Timeless Heroes can be your commander" is a whole printed sentence that no
+  clause kind could hold: it is a rule of deck construction rather than of
+  play, so there was nothing for it to do at any point in a game and it was
+  recorded as unimplemented. Clauses may now say what they permit a deck
+  rather than a game, and the deck layer reads them: a Commander list is
+  validated against who may lead it -- a legendary creature, or any card
+  that prints permission of its own -- that the leader is not also among the
+  ninety-nine, and that nothing but a basic land is duplicated. This is deck
+  construction only; the engine still plays no format with a command zone.
+
 - **Splice onto Arcane.** A card with splice could be cast, but its splice
   clause was only recorded: there was no way to reveal it from your hand and
   add its text to an Arcane spell you were already casting (CR 702.47a).

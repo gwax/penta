@@ -516,7 +516,8 @@ impl Game {
             | DeclarativeAbilityDef::OptionalAdditionalCost(_)
             | DeclarativeAbilityDef::SpecialAction(_)
             | DeclarativeAbilityDef::Pregame(_)
-            | DeclarativeAbilityDef::Keyword(_) => None,
+            | DeclarativeAbilityDef::Keyword(_)
+            | DeclarativeAbilityDef::DeckConstruction(_) => None,
         });
         if let Some(ability_def) = declarative {
             let DeclarativeAbilityDef::Activated(definition) = ability_def.definition else {

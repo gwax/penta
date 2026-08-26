@@ -5,10 +5,10 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     CardArt, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef,
-    CounterKind, EffectDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    SacrificedAmountDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, abilities,
+    CounterKind, DeckConstructionDef, EffectDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, SacrificedAmountDef, TokenCharacteristics, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -285,9 +285,12 @@ static MINSC_ABILITIES: [AbilityDef; 4] = [
         &ANY_TARGET,
         EffectDef::Choose(MINSC_CHOOSES_A_CREATURE),
     ),
-    AbilityDef::not_implemented(
+    AbilityDef::deck_construction(
         "Minsc & Boo, Timeless Heroes can be your commander.",
-        "Deck construction for a format this engine does not play.",
+        DeckConstructionDef::MayBeCommander,
+        "The whole sentence is a deck-construction permission: a planeswalker \
+         may lead a Commander deck, which the deck layer checks and the game \
+         never revisits.",
     ),
 ];
 

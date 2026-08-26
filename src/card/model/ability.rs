@@ -6,12 +6,13 @@ use super::{
     AbilityCostDef, AbilityCostList, AbilityCoverageDef, AbilityEffectDef, AbilityProcedureDef,
     AbilityTargetDef, ActivatedAbilityDef, ActivationTimingDef, AlternativeCastAbilityDef,
     AlternativeCastKindDef, AlternativeCastManaCostDef, CardBehavior, ConditionDef,
-    DeclarativeAbilityDef, EffectDef, EffectExecutionDef, ImplementationStatus, KeywordAbility,
-    ManaCost, ModalSpellDef, OptionalAdditionalCostAbilityDef, PregameAbilityDef,
-    PregameConditionDef, PregameTimingDef, ReplacementAbilityDef, ReplacementConditionDef,
-    ReplacementEffectDef, ReplacementEventDef, SpecialActionDef, SpellAbilityDef,
-    SpellAdditionalCostDef, SpellLifeCostDef, SpellResolutionDestinationDef, StaticAbilityDef,
-    TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, ValueDef, ZoneKind,
+    DeckConstructionDef, DeclarativeAbilityDef, EffectDef, EffectExecutionDef,
+    ImplementationStatus, KeywordAbility, ManaCost, ModalSpellDef,
+    OptionalAdditionalCostAbilityDef, PregameAbilityDef, PregameConditionDef, PregameTimingDef,
+    ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
+    SpecialActionDef, SpellAbilityDef, SpellAdditionalCostDef, SpellLifeCostDef,
+    SpellResolutionDestinationDef, StaticAbilityDef, TriggerConditionDef, TriggerEventDef,
+    TriggeredAbilityDef, ValueDef, ZoneKind,
 };
 
 /// One printed rules clause and its implementation.
@@ -458,6 +459,22 @@ impl AbilityDef {
         )
     }
 
+    /// A permission the card grants the deck it is built into rather than
+    /// an ability it has in play. Nothing executes when a game is running.
+    #[must_use]
+    pub const fn deck_construction(
+        text: &'static str,
+        permission: DeckConstructionDef,
+        explanation: &'static str,
+    ) -> Self {
+        Self {
+            text,
+            definition: DeclarativeAbilityDef::DeckConstruction(permission),
+            effect: AbilityEffectDef::declarative(EffectDef::None),
+            coverage: AbilityCoverageDef::explained_complete(explanation),
+        }
+    }
+
     #[must_use]
     pub const fn replacement(text: &'static str, effect: ReplacementEffectDef) -> Self {
         Self::replacement_for(text, ReplacementEventDef::SourceEntersBattlefield, effect)
@@ -537,75 +554,6 @@ impl AbilityDef {
         Self::defined(
             text,
             DeclarativeAbilityDef::SpecialAction(SpecialActionDef::new(source_zones, costs)),
-            effect,
-        )
-    }
-
-    /// A rules-defined action taken before the first turn, without using the
-    /// stack. Its timing is structural rather than inferred from Oracle text.
-    #[must_use]
-    pub const fn pregame(
-        text: &'static str,
-        timing: PregameTimingDef,
-        condition: PregameConditionDef,
-        costs: &'static [AbilityCostDef],
-        effect: EffectDef,
-    ) -> Self {
-        Self::defined(
-            text,
-            DeclarativeAbilityDef::Pregame(
-                PregameAbilityDef::new(timing)
-                    .with_condition(condition)
-                    .with_costs(costs),
-            ),
-            effect,
-        )
-    }
-
-    #[must_use]
-    pub const fn opening_hand(text: &'static str, effect: EffectDef) -> Self {
-        Self::pregame(
-            text,
-            PregameTimingDef::OpeningHand,
-            PregameConditionDef::Always,
-            &[],
-            effect,
-        )
-    }
-
-    #[must_use]
-    pub const fn opening_hand_reveal(text: &'static str, effect: EffectDef) -> Self {
-        let mut ability = Self::opening_hand(text, effect);
-        let DeclarativeAbilityDef::Pregame(definition) = ability.definition else {
-            unreachable!()
-        };
-        ability.definition = DeclarativeAbilityDef::Pregame(definition.revealing_source());
-        ability
-    }
-
-    #[must_use]
-    pub const fn opening_hand_with(
-        text: &'static str,
-        condition: PregameConditionDef,
-        costs: &'static [AbilityCostDef],
-        effect: EffectDef,
-    ) -> Self {
-        Self::pregame(
-            text,
-            PregameTimingDef::OpeningHand,
-            condition,
-            costs,
-            effect,
-        )
-    }
-
-    #[must_use]
-    pub const fn mulligan_action(text: &'static str, effect: EffectDef) -> Self {
-        Self::pregame(
-            text,
-            PregameTimingDef::Mulligan,
-            PregameConditionDef::Always,
-            &[],
             effect,
         )
     }
@@ -823,6 +771,7 @@ impl AbilityDef {
             | DeclarativeAbilityDef::SpecialAction(_)
             | DeclarativeAbilityDef::Pregame(_)
             | DeclarativeAbilityDef::Keyword(_)
+            | DeclarativeAbilityDef::DeckConstruction(_)
             | DeclarativeAbilityDef::Legacy => {
                 panic!("only activated and triggered abilities have a selectable procedure")
             }
@@ -948,6 +897,7 @@ impl AbilityDef {
             | DeclarativeAbilityDef::OptionalAdditionalCost(_)
             | DeclarativeAbilityDef::Pregame(_)
             | DeclarativeAbilityDef::Keyword(_)
+            | DeclarativeAbilityDef::DeckConstruction(_)
             | DeclarativeAbilityDef::Legacy => {}
         }
         self
@@ -993,5 +943,6 @@ impl AbilityDef {
         }
     }
 }
+include!("ability/pregame_actions.rs");
 include!("ability/alternative_casts.rs");
 include!("ability/target_resolution.rs");

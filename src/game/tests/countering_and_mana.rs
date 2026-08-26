@@ -92,6 +92,7 @@ fn countering_acceptance_cards_report_complete_shared_implementations() {
                 | DeclarativeAbilityDef::OptionalAdditionalCost(_)
                 | DeclarativeAbilityDef::SpecialAction(_)
                 | DeclarativeAbilityDef::Keyword(_)
+                | DeclarativeAbilityDef::DeckConstruction(_)
                 | DeclarativeAbilityDef::Legacy => None,
             })
             .expect("an Elemental Blast has declarative modes");

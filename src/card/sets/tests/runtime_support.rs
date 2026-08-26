@@ -390,6 +390,7 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
             | DeclarativeAbilityDef::Static(_)
             | DeclarativeAbilityDef::OptionalAdditionalCost(_)
             | DeclarativeAbilityDef::SpecialAction(_)
+            | DeclarativeAbilityDef::DeckConstruction(_)
             | DeclarativeAbilityDef::Legacy => false,
         },
         // Stack-object rules use `AppliedStackEffect`; every other typed rule
@@ -892,7 +893,12 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                 effect == EffectDef::None || shared_stack_effect(effect)
             }
         },
-        DeclarativeAbilityDef::OptionalAdditionalCost(_) => effect == EffectDef::None,
+        // Neither clause resolves anything: a cost clause has already been
+        // paid where the spell was announced, and a deck-construction
+        // permission is read while a deck is assembled and never while a
+        // game runs. Both are shared exactly when they do nothing.
+        DeclarativeAbilityDef::OptionalAdditionalCost(_)
+        | DeclarativeAbilityDef::DeckConstruction(_) => effect == EffectDef::None,
         DeclarativeAbilityDef::Keyword(keyword) => shared_keyword(keyword),
         DeclarativeAbilityDef::SpecialAction(_) | DeclarativeAbilityDef::Legacy => false,
     }

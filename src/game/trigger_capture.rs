@@ -303,6 +303,7 @@ impl Game {
                     | DeclarativeAbilityDef::SpecialAction(_)
                     | DeclarativeAbilityDef::Pregame(_)
                     | DeclarativeAbilityDef::Keyword(_)
+                    | DeclarativeAbilityDef::DeckConstruction(_)
                     | DeclarativeAbilityDef::Legacy => return,
                 };
                 // Compatibility procedures execute elsewhere, so admitting
@@ -576,6 +577,7 @@ impl Game {
                 | DeclarativeAbilityDef::SpecialAction(_)
                 | DeclarativeAbilityDef::Pregame(_)
                 | DeclarativeAbilityDef::Keyword(_)
+                | DeclarativeAbilityDef::DeckConstruction(_)
                 | DeclarativeAbilityDef::Legacy => None,
             })
             .collect::<Vec<_>>();
