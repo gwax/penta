@@ -494,15 +494,32 @@ pub const fn crew(text: &'static str, minimum: u8) -> AbilityDef {
 }
 
 /// Crew's cost, kept beside it because a const slice cannot be built from a
-/// parameter inline.
+/// parameter inline: the table is indexed by the printed number.
 const fn crew_cost(minimum: u8) -> &'static [AbilityCostDef] {
-    match minimum {
-        1 => &[AbilityCostDef::TapCreaturesWithTotalPower { minimum: 1 }],
-        2 => &[AbilityCostDef::TapCreaturesWithTotalPower { minimum: 2 }],
-        3 => &[AbilityCostDef::TapCreaturesWithTotalPower { minimum: 3 }],
-        4 => &[AbilityCostDef::TapCreaturesWithTotalPower { minimum: 4 }],
-        5 => &[AbilityCostDef::TapCreaturesWithTotalPower { minimum: 5 }],
-        6 => &[AbilityCostDef::TapCreaturesWithTotalPower { minimum: 6 }],
-        _ => panic!("no printed Vehicle asks for more crew than six"),
-    }
+    let index = minimum as usize;
+    assert!(
+        index < CREW_COSTS.len(),
+        "no printed Vehicle asks for that much crew"
+    );
+    &CREW_COSTS[index]
+}
+
+/// One cost per crew number, from zero up. Zero is unreachable from any
+/// printed card and sits here only so the table is indexed by the number
+/// itself rather than by an offset.
+static CREW_COSTS: [[AbilityCostDef; 1]; 10] = [
+    crew_tap(0),
+    crew_tap(1),
+    crew_tap(2),
+    crew_tap(3),
+    crew_tap(4),
+    crew_tap(5),
+    crew_tap(6),
+    crew_tap(7),
+    crew_tap(8),
+    crew_tap(9),
+];
+
+const fn crew_tap(minimum: u8) -> [AbilityCostDef; 1] {
+    [AbilityCostDef::TapCreaturesWithTotalPower { minimum }]
 }

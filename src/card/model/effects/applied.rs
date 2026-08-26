@@ -385,6 +385,10 @@ pub enum AppliedRuleDef {
     /// allowance every creature has, so this counts the extra ones -- a card
     /// reading "an additional creature" says one.
     MayBlockAdditionalCreatures(u8),
+    /// "This creature crews Vehicles as though its power were N greater."
+    /// The bonus is only for the crewing: what the creature is worth in
+    /// combat, or to anything else that reads its power, is untouched.
+    CrewsAsThoughPowerGreater(u8),
     /// Another player cannot gain control of the affected permanent.
     CannotChangeController,
     /// The affected Aura stays attached even when protection would otherwise

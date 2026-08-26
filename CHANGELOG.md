@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Crewing for more than you are worth.** A creature contributed its power
+  to crew and nothing else, so "this token crews Vehicles as though its power
+  were 2 greater" had nowhere to live. The bonus is a rule read off the
+  creature being tapped, and it applies only to crewing a Vehicle -- the same
+  creature saddles a Mount for what it actually is, and its power is
+  untouched for combat and for everything else that asks. Crew's cost table
+  also stops at nine rather than six, since Shorikai asks for eight.
+
 - **How many turns you have taken.** A condition could ask what is on the
   battlefield and how much of it, but not how far into the game its
   controller is, so "unless it's your first, second, or third turn" had

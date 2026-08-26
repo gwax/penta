@@ -551,6 +551,7 @@ mod vintage_cube_sheltering_landscape;
 mod vintage_cube_sheoldreds_edict;
 mod vintage_cube_shieldbreaker;
 mod vintage_cube_shifting_woodland;
+mod vintage_cube_shorikai;
 mod vintage_cube_show_and_tell;
 mod vintage_cube_six;
 mod vintage_cube_skyclave_apparition;

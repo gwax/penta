@@ -9,8 +9,8 @@
 //! tapped for its own reasons may keep going.
 
 use super::{
-    DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
-    Game, GameObjectId, PendingActivation, PlayerId,
+    AppliedRuleDef, DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility,
+    DecisionZone, Game, GameObjectId, PendingActivation, Permanent, PlayerId,
 };
 
 impl Game {
@@ -29,10 +29,43 @@ impl Game {
             .filter(|permanent| !permanent.tapped)
             .filter(|permanent| !chosen.contains(&permanent.card.id))
             .filter_map(|permanent| {
-                self.creature_stats(permanent)
-                    .map(|stats| (permanent.card.id, i32::from(stats.power).max(0)))
+                self.creature_stats(permanent).map(|stats| {
+                    let power = i32::from(stats.power).max(0);
+                    (
+                        permanent.card.id,
+                        power.saturating_add(self.crew_power_bonus(permanent, source)),
+                    )
+                })
             })
             .collect()
+    }
+
+    /// What a creature contributes beyond its power when it is crewing.
+    ///
+    /// The bonus is read off the creature, and it applies only to crewing a
+    /// Vehicle: a Pilot that "crews Vehicles as though its power were 2
+    /// greater" saddles a Mount for what it actually is. Crew is the only
+    /// printed ability a Vehicle pays this way, so the thing being paid for
+    /// is what says which of the two this is.
+    fn crew_power_bonus(&self, permanent: &Permanent, paying_for: GameObjectId) -> i32 {
+        // A Vehicle is an artifact with the Vehicle subtype rather than a
+        // card type of its own, so that is what this asks.
+        let crewing = self
+            .battlefield
+            .iter()
+            .find(|candidate| candidate.card.id == paying_for)
+            .is_some_and(|candidate| self.effective_subtypes(candidate).contains(&"Vehicle"));
+        if !crewing {
+            return 0;
+        }
+        let mut bonus = 0_i32;
+        let _ = self.visit_applied_rules(permanent, |applied| {
+            if let AppliedRuleDef::CrewsAsThoughPowerGreater(extra) = applied.rule {
+                bonus = bonus.saturating_add(i32::from(extra));
+            }
+            std::ops::ControlFlow::Continue(())
+        });
+        bonus
     }
 
     /// Whether the board could pay at all, which is what makes the ability a

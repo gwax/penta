@@ -3,9 +3,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardType,
-    CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    AbilityCostDef, AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, CounterKind, DiscardSelectionDef, EffectDef, EffectRecipientDef,
+    ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef, ValueDef,
+    ZoneKind, abilities,
 };
 use crate::mana_cost;
 
@@ -64,13 +65,67 @@ pub(in crate::card::sets) static KAPPA_CANNONEER: CardRecord = CardRecord::new(
 );
 
 // NEC 76 — Shorikai, Genesis Engine
-// Audit: metadata-only — Card rules have not been implemented.
+/// The Pilot is worth three power to a Vehicle and one to everything else,
+/// so the loot pays for its own crew: three activations put an 8/8 in the
+/// air, and every one of them drew two cards on the way.
+static PILOT_CREWS_FOR_MORE: [AbilityDef; 1] = [AbilityDef::static_ability(
+    "This token crews Vehicles as though its power were 2 greater.",
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::CrewsAsThoughPowerGreater(2)),
+    },
+)];
+
+static SHORIKAI_MAKES_A_PILOT: EffectDef = EffectDef::create_creature_token(&["Pilot"], &[], 1, 1)
+    .with_abilities(&PILOT_CREWS_FOR_MORE)
+    .with_art(CardArt::new(
+        "be84f259-2809-48c9-9c70-861437f08c23",
+        "Mila Pesic",
+    ));
+
+static SHORIKAI_LOOTS: [EffectDef; 3] = [
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(2),
+    },
+    EffectDef::Discard {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+        selection: DiscardSelectionDef::RecipientChooses,
+        then: None,
+    },
+    SHORIKAI_MAKES_A_PILOT,
+];
+
+static SHORIKAI_ACTIVATION: [AbilityCostDef; 2] = [
+    AbilityCostDef::Mana(mana_cost!("{1}")),
+    AbilityCostDef::TapSource,
+];
+
+static SHORIKAI_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::activated(
+        "{1}, {T}: Draw two cards, then discard a card. Create a 1/1 colorless Pilot creature \
+         token with \"This token crews Vehicles as though its power were 2 greater.\"",
+        &SHORIKAI_ACTIVATION,
+        EffectDef::Sequence(&SHORIKAI_LOOTS),
+    ),
+    abilities::crew(
+        "Crew 8 (Tap any number of creatures you control with total power 8 or more: This \
+         Vehicle becomes an artifact creature until end of turn.)",
+        8,
+    ),
+];
+
 pub(in crate::card::sets) static SHORIKAI_GENESIS_ENGINE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("0347cf84-42f5-4674-99de-619b0ae51d62"),
     "Shorikai, Genesis Engine",
-    crate::card::CardArt::new("0347cf84-42f5-4674-99de-619b0ae51d62", "Wisnu Tan"),
-    crate::card::CardSet::KamigawaNeonDynastyCommander,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("0347cf84-42f5-4674-99de-619b0ae51d62", "Wisnu Tan"),
+    CardSet::KamigawaNeonDynastyCommander,
+    // Four mana that loots every turn and pays for its own crew while it
+    // does it -- the 8/8 is what the Pilots are for rather than the plan.
+    CardRules::new_vehicle(mana_cost!("{2}{W}{U}"), 8, 8)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&SHORIKAI_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =

@@ -417,6 +417,9 @@ fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRule
     match rule {
         AppliedRuleDef::AssignsNoCombatDamage
         | AppliedRuleDef::AssignsCombatDamageEqualToToughness
+        // Read off the creature being tapped to pay, which the crew walk
+        // has in hand.
+        | AppliedRuleDef::CrewsAsThoughPowerGreater(_)
         | AppliedRuleDef::CannotBeEnchanted
         | AppliedRuleDef::CannotBecomeEnchanted
         | AppliedRuleDef::CannotActivateAbilities
