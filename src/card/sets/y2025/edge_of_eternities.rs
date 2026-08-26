@@ -4,11 +4,12 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
     AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
-    CounterKind, CreatureTypeSetDef, EffectDef, EffectRecipientDef, EmblemCharacteristics,
-    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRelation, ReplacementAbilityDef,
+    ComparisonDef, CounterKind, CreatureTypeSetDef, DeclarativeAbilityDef, EffectDef,
+    EffectRecipientDef, EmblemCharacteristics, ManaColor, ModalSpellDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectSetDef, PlayerRelation, QuantifierDef, ReplacementAbilityDef,
     ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -167,13 +168,62 @@ pub(in crate::card::sets) static TEZZERET_CRUEL_CAPTAIN: CardRecord = CardRecord
 );
 
 // EOE 9 — Cosmogrand Zenith
-// Audit: metadata-only — Card rules have not been implemented.
+/// Exactly the second, not the second or later: the spell that caused the
+/// trigger has already been counted by the time this is read.
+static YOUR_SECOND_SPELL: TriggerConditionDef = TriggerConditionDef::SpellsCastThisTurn {
+    quantifier: QuantifierDef::Any,
+    player: PlayerRelation::You,
+    comparison: ComparisonDef::Equal,
+    amount: 2,
+};
+
+static CREATURES_YOU_CONTROL_ZENITH: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+static ZENITH_MODES: [AbilityDef; 2] = [
+    AbilityDef::spell(
+        "Create two 1/1 white Human Soldier creature tokens.",
+        EffectDef::create_creature_token(&["Human", "Soldier"], &[ManaColor::White], 1, 1)
+            .with_count(ValueDef::Constant(2)),
+    ),
+    // Each creature you control as the trigger resolves, which includes the
+    // tokens the other mode would have made and the Zenith itself.
+    AbilityDef::spell(
+        "Put a +1/+1 counter on each creature you control.",
+        EffectDef::AddCounters {
+            object: CREATURES_YOU_CONTROL_ZENITH,
+            kind: CounterKind::PlusOnePlusOne,
+            amount: ValueDef::Constant(1),
+        },
+    ),
+];
+
+static ZENITH_ABILITIES: [AbilityDef; 1] = [AbilityDef::defined(
+    "Whenever you cast your second spell each turn, choose one —\n• Create two 1/1 white Human \
+     Soldier creature tokens.\n• Put a +1/+1 counter on each creature you control.",
+    DeclarativeAbilityDef::Triggered(
+        TriggeredAbilityDef::new(TriggerEventDef::SpellCast(
+            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+        ))
+        .with_condition(&YOUR_SECOND_SPELL)
+        .with_modes(ModalSpellDef::choose_one(&ZENITH_MODES)),
+    ),
+    EffectDef::None,
+)];
+
 pub(in crate::card::sets) static COSMOGRAND_ZENITH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b3c1e5e3-4e6b-456a-958c-7a75c38f8183"),
     "Cosmogrand Zenith",
-    crate::card::CardArt::new("b3c1e5e3-4e6b-456a-958c-7a75c38f8183", "Anna Steinbauer"),
-    crate::card::CardSet::EdgeOfEternities,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("b3c1e5e3-4e6b-456a-958c-7a75c38f8183", "Anna Steinbauer"),
+    CardSet::EdgeOfEternities,
+    // Three mana for a 2/4 that pays a second time every turn the hand has
+    // two spells in it, and the choice is between going wider and going
+    // taller.
+    CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Soldier"], 2, 4)
+        .with_abilities(&ZENITH_ABILITIES),
 );
 
 // EOE 18 — Focus Fire

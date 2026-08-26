@@ -367,6 +367,7 @@ mod vintage_cube_concealing_curtains;
 mod vintage_cube_consider;
 mod vintage_cube_consult_star_charts;
 mod vintage_cube_cori_steel_cutter;
+mod vintage_cube_cosmogrand_zenith;
 mod vintage_cube_courser_of_kruphix;
 mod vintage_cube_coveted_jewel;
 mod vintage_cube_crabomination;
