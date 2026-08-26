@@ -627,6 +627,7 @@ fn static_player_set_supported(players: PlayerSetDef) -> bool {
             PlayerRefDef::EventPlayer
             | PlayerRefDef::Target(_)
             | PlayerRefDef::ControllerOf(_)
+            | PlayerRefDef::OpponentOf(_)
             | PlayerRefDef::OwnerOf(_),
         ) => false,
     }

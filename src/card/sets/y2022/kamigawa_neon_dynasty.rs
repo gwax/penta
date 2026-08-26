@@ -707,6 +707,7 @@ const KIKI_COPY: ObjectSetBindingIndex = ObjectSetBindingIndex::PRIMARY;
 static KIKI_COPIES: EffectDef = EffectDef::CreateTokenCopyOf {
     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
     exceptions: TokenCopyExceptionsDef::with_ability(&KIKI_GRANTS_HASTE),
+    controller: None,
     created: Some(CreatedTokensDef {
         binding: KIKI_COPY,
         then: &EffectDef::InstallTrigger(InstalledTriggerDef::once(&KIKI_SACRIFICES_IT)),

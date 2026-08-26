@@ -216,7 +216,9 @@ fn validate_trigger_player_reference(
         | PlayerRefDef::EnchantedPlayer
         | PlayerRefDef::EventPlayer
         | PlayerRefDef::Opponent => Ok(()),
-        PlayerRefDef::ControllerOf(reference) | PlayerRefDef::OwnerOf(reference) => {
+        PlayerRefDef::ControllerOf(reference)
+        | PlayerRefDef::OpponentOf(reference)
+        | PlayerRefDef::OwnerOf(reference) => {
             validate_trigger_object_reference(reference, event, target_count, scope)
         }
         PlayerRefDef::Target(_) => Err(unsupported_trigger_event(event)),

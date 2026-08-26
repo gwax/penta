@@ -55,6 +55,11 @@ pub enum PlayerRefDef {
     /// opponent" is a choice in a game with several; in this two-player
     /// engine it names exactly one player, and there is nothing to ask.
     Opponent,
+    /// "Each player other than its controller." The mirror of
+    /// [`Self::ControllerOf`], read the same way and with the same fallback
+    /// to last-known information: with two players, everybody who is not
+    /// the named object's controller is exactly one player.
+    OpponentOf(ObjectRefDef),
 }
 
 /// A set of players. Relations are measured from the resolving effect's

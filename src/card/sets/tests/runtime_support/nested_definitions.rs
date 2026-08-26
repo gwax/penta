@@ -170,7 +170,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                     | PlayerRefDef::Opponent,
                 ) => true,
                 DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(
-                    PlayerRefDef::ControllerOf(reference) | PlayerRefDef::OwnerOf(reference),
+                    PlayerRefDef::ControllerOf(reference)
+                    | PlayerRefDef::OpponentOf(reference)
+                    | PlayerRefDef::OwnerOf(reference),
                 ) => matches!(
                     reference,
                     ObjectRefDef::Source

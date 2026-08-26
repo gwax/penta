@@ -224,6 +224,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                         PlayerRefDef::EventPlayer
                         | PlayerRefDef::Target(_)
                         | PlayerRefDef::ControllerOf(_)
+                        | PlayerRefDef::OpponentOf(_)
                         | PlayerRefDef::OwnerOf(_),
                     ),
                 ) => false,

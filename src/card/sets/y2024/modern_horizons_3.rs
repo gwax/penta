@@ -159,6 +159,7 @@ static YOUR_NEW_TOKENS: ObjectQueryDef = ObjectQueryDef::controlled_by(
 static OCELOT_DOUBLES_THEM: EffectDef = EffectDef::CreateTokenCopyOf {
     object: EffectRecipientDef::objects(ObjectSetDef::Query(YOUR_NEW_TOKENS)),
     exceptions: TokenCopyExceptionsDef::NONE,
+    controller: None,
     created: None,
 };
 
@@ -1142,6 +1143,7 @@ static NANTUKO_IS_WEARING_A_CREATURE: TriggerConditionDef =
 static NANTUKO_COPIES_ITS_HOST: EffectDef = EffectDef::CreateTokenCopyOf {
     object: EffectRecipientDef::AttachedPermanent,
     exceptions: TokenCopyExceptionsDef::NONE,
+    controller: None,
     created: None,
 };
 

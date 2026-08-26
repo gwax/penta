@@ -4418,6 +4418,7 @@ pub(in crate::card::sets) static MYR_PROPAGATOR: CardRecord = CardRecord::new(
             EffectDef::CreateTokenCopyOf {
                 object: EffectRecipientDef::Source,
                 exceptions: TokenCopyExceptionsDef::NONE,
+                controller: None,
                 created: None,
             },
         ),

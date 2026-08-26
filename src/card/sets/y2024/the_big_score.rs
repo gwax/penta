@@ -229,6 +229,7 @@ static TYRANT_IS_NOT_A_TOKEN: TriggerConditionDef = TriggerConditionDef::SourceM
 static TYRANT_COPIES_ITSELF: EffectDef = EffectDef::CreateTokenCopyOf {
     object: EffectRecipientDef::Source,
     exceptions: TokenCopyExceptionsDef::with_added_types(CardTypeSet::single(CardType::Artifact)),
+    controller: None,
     created: None,
 };
 

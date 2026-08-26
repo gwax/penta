@@ -11,6 +11,15 @@ use super::super::{
 };
 use crate::card::{EffectDef, TokenCharacteristics};
 
+/// One "create a token that's a copy of it" instruction, whole.
+#[derive(Clone, Copy)]
+struct TokenCopyRequest {
+    recipient: crate::card::EffectRecipientDef,
+    exceptions: crate::card::TokenCopyExceptionsDef,
+    controller: Option<crate::card::PlayerRefDef>,
+    created: Option<crate::card::CreatedTokensDef>,
+}
+
 impl Game {
     /// "Create a <token> attached to it." One host, because one token is
     /// made: a clause naming several would have to say how many it makes.
@@ -47,13 +56,22 @@ impl Game {
     #[allow(clippy::too_many_arguments)]
     fn resolve_token_copies(
         &mut self,
-        recipient: crate::card::EffectRecipientDef,
-        exceptions: crate::card::TokenCopyExceptionsDef,
-        created: Option<crate::card::CreatedTokensDef>,
+        request: TokenCopyRequest,
         scoped: ScopedEffect,
         object: &StackObject,
         context: &EffectResolutionContext,
     ) {
+        let TokenCopyRequest {
+            recipient,
+            exceptions,
+            controller,
+            created,
+        } = request;
+        // "Each player other than its controller creates a token": whoever
+        // the clause names rather than whoever is resolving it.
+        let holder = controller
+            .and_then(|reference| self.player_reference(reference, object, context, scoped))
+            .unwrap_or(object.controller);
         let copies = self
             .effect_recipients(recipient, object, context, scoped)
             .into_iter()
@@ -108,16 +126,16 @@ impl Game {
             .collect::<Vec<_>>();
         let mut minted = Vec::new();
         for (copy, double_faced, presented) in copies {
-            for _ in 0..self.tokens_created(object.controller, 1) {
+            for _ in 0..self.tokens_created(holder, 1) {
                 minted.push(Target::Permanent(self.create_token_copy(
-                    object.controller,
+                    holder,
                     copy.clone(),
                     double_faced.clone(),
                     presented,
                 )));
             }
         }
-        self.capture_created_token_batch(object.controller, &minted);
+        self.capture_created_token_batch(holder, &minted);
         // Bound after every copy is made, so a clause naming them
         // names the whole batch rather than the last of them.
         if let Some(created) = created {
@@ -226,8 +244,19 @@ impl Game {
             EffectDef::CreateTokenCopyOf {
                 object: recipient,
                 exceptions,
+                controller,
                 created,
-            } => self.resolve_token_copies(recipient, exceptions, created, scoped, object, context),
+            } => self.resolve_token_copies(
+                TokenCopyRequest {
+                    recipient,
+                    exceptions,
+                    controller,
+                    created,
+                },
+                scoped,
+                object,
+                context,
+            ),
             _ => unreachable!("the caller admits only token-making clauses"),
         }
     }

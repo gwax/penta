@@ -322,6 +322,16 @@ impl Game {
             PlayerRefDef::OwnerOf(reference) => self
                 .object_reference_id(reference, object, context, scoped)
                 .and_then(|referenced| self.current_or_last_known_owner(referenced)),
+            // "Each player other than its controller", which with two
+            // players is the one who is not.
+            PlayerRefDef::OpponentOf(reference) => self
+                .player_reference(
+                    PlayerRefDef::ControllerOf(reference),
+                    object,
+                    context,
+                    scoped,
+                )
+                .map(PlayerId::opponent),
         }
     }
 

@@ -177,7 +177,9 @@ fn validate_player_reference(
 ) -> Result<(), GrantedAbilityValidationError> {
     match reference {
         PlayerRefDef::Target(target) => validate_target_index(target, target_count),
-        PlayerRefDef::ControllerOf(reference) | PlayerRefDef::OwnerOf(reference) => {
+        PlayerRefDef::ControllerOf(reference)
+        | PlayerRefDef::OpponentOf(reference)
+        | PlayerRefDef::OwnerOf(reference) => {
             validate_object_reference(reference, target_count, scope)
         }
         PlayerRefDef::EffectController

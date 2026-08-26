@@ -265,6 +265,10 @@ pub enum EffectDef {
         /// copiable value (CR 707.9a), so a later copy of the token copies
         /// them too.
         exceptions: TokenCopyExceptionsDef,
+        /// Who gets the copy. `None` is the effect's own controller, which
+        /// is what almost every printed clause means; "each player other
+        /// than its controller" names somebody else.
+        controller: Option<PlayerRefDef>,
         /// What to do with the copy this made, for a clause naming exactly it.
         created: Option<CreatedTokensDef>,
     },

@@ -2613,6 +2613,7 @@ pub(in crate::card::sets) static MIRRORWORKS: CardRecord = CardRecord::new(
             &EffectDef::CreateTokenCopyOf {
                 object: EffectRecipientDef::TriggeringObject,
                 exceptions: TokenCopyExceptionsDef::NONE,
+                controller: None,
                 created: None,
             },
         )),

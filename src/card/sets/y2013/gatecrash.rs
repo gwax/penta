@@ -2579,6 +2579,7 @@ pub(in crate::card::sets) static GIANT_ADEPHAGE: CardRecord = CardRecord::new_wi
             EffectDef::CreateTokenCopyOf {
                 object: EffectRecipientDef::Source,
                 exceptions: TokenCopyExceptionsDef::NONE,
+                controller: None,
                 created: None,
             },
         ),

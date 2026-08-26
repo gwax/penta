@@ -559,6 +559,7 @@ impl Game {
                     PlayerRefDef::EventPlayer
                     | PlayerRefDef::Target(_)
                     | PlayerRefDef::ControllerOf(_)
+                    | PlayerRefDef::OpponentOf(_)
                     | PlayerRefDef::OwnerOf(_),
                 ),
             ) => false,

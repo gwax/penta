@@ -186,7 +186,10 @@ fn validate_player_reference_shape(
         }
         // The runtime can derive a controller from both halves of an any-target
         // slot: a player is their own controller, while an object has one.
-        PlayerRefDef::ControllerOf(ObjectRefDef::Target(target)) => {
+        // "Each player other than its controller" reads a controller the
+        // same way, so it admits the same targets.
+        PlayerRefDef::ControllerOf(ObjectRefDef::Target(target))
+        | PlayerRefDef::OpponentOf(ObjectRefDef::Target(target)) => {
             validate_target_shape(target, targets, RecipientExpectation::Any, true)
         }
         // Players have no owner, so this derived reference requires an
@@ -197,7 +200,9 @@ fn validate_player_reference_shape(
         PlayerRefDef::OwnerOf(ObjectRefDef::Target(target)) => {
             validate_target_shape(target, targets, RecipientExpectation::Object, true)
         }
-        PlayerRefDef::ControllerOf(reference) | PlayerRefDef::OwnerOf(reference) => {
+        PlayerRefDef::ControllerOf(reference)
+        | PlayerRefDef::OpponentOf(reference)
+        | PlayerRefDef::OwnerOf(reference) => {
             validate_object_reference_shape(reference, targets)
         }
         PlayerRefDef::EffectController

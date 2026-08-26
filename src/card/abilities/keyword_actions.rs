@@ -38,6 +38,7 @@ pub const fn surveil(count: u8, then: Option<&'static EffectDef>) -> TopCardSele
 static POPULATE_COPY: EffectDef = EffectDef::CreateTokenCopyOf {
     object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
     exceptions: TokenCopyExceptionsDef::NONE,
+    controller: None,
     created: None,
 };
 

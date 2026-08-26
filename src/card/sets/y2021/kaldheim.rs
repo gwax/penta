@@ -220,6 +220,7 @@ static A_TOKEN_YOU_CONTROL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_o
 static CHARIOT_COPIES_A_TOKEN: EffectDef = EffectDef::CreateTokenCopyOf {
     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
     exceptions: TokenCopyExceptionsDef::NONE,
+    controller: None,
     created: None,
 };
 

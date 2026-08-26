@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A token copy for somebody else.** Every "create a token that's a copy
+  of it" put the token under the resolving controller, so "each player other
+  than its controller creates a token that's a copy of it" had no way to say
+  who gets it. The instruction now names a holder, and a player reference
+  can be read as the opponent of an object's controller rather than only of
+  the effect's own controller -- so the same spell hands the copy to you
+  when it exiles theirs and to them when it exiles yours.
+
 - **Repeating a process while the mill keeps matching.** "…and repeat this
   process" had nowhere to live: a binding cannot carry an answer back out of
   the step that wrote it, so a loop assembled from a mill and a condition

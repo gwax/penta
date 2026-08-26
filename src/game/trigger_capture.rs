@@ -617,6 +617,10 @@ impl Game {
             PlayerRefDef::OwnerOf(reference) => self
                 .trigger_event_object_reference(reference, ability_source, event)
                 .and_then(|object| self.current_or_last_known_owner(object)),
+            PlayerRefDef::OpponentOf(reference) => self
+                .trigger_event_object_reference(reference, ability_source, event)
+                .and_then(|object| self.current_or_last_known_controller(object))
+                .map(PlayerId::opponent),
             PlayerRefDef::Target(_) => None,
         }
     }
