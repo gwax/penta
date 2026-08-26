@@ -363,6 +363,7 @@ fn validate_effect_references(
         | EffectDef::ChooseCards { player, .. }
         | EffectDef::TakeExtraTurn { player }
         | EffectDef::LookAtHand { player }
+        | EffectDef::ExileOneFromEachZone { player, .. }
         | EffectDef::LookAtRandomCardInHand { player }
         | EffectDef::RevealHand { player } => {
             validate_recipient_target_references(player, target_count, scope)

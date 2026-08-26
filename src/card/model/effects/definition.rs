@@ -669,6 +669,22 @@ pub enum EffectDef {
         /// Whether a permanent moved to the battlefield arrives tapped.
         tapped: bool,
     },
+    /// "Target opponent exiles the top card of their library, a card at
+    /// random from their graveyard, and a card at random from their hand."
+    ///
+    /// One effect rather than three exiles in a row because what it grants
+    /// is one permission over the whole pile: the cards leave three zones
+    /// and arrive as a single group the controller may cast a bounded
+    /// number of spells from.
+    ExileOneFromEachZone {
+        player: EffectRecipientDef,
+        zones: &'static [ZonePickDef],
+        /// What the effect's controller may do with the pile: cast one
+        /// spell from among its cards on the terms named here. It is one
+        /// permission over the whole pile rather than one per card, so
+        /// casting any of them spends it. `None` is a pure exile.
+        permission: Option<ExiledCastPermissionDef>,
+    },
     /// "Look at a card at random in target player's hand." Private to the
     /// looker rather than published, and one card rather than the hand.
     LookAtRandomCardInHand {

@@ -272,6 +272,40 @@ pub enum DiscardSelectionDef {
     RandomMatching(&'static ObjectPredicateDef),
 }
 
+/// How one card is taken from a zone by an effect that exiles one card
+/// from each of several zones. A library has an order to read from; a hand
+/// and a graveyard do not, so a card is picked from them at random.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ZonePickModeDef {
+    Top,
+    AtRandom,
+}
+
+/// One zone an exile draws from, and how it draws.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ZonePickDef {
+    pub zone: ZoneKind,
+    pub pick: ZonePickModeDef,
+}
+
+impl ZonePickDef {
+    #[must_use]
+    pub const fn top(zone: ZoneKind) -> Self {
+        Self {
+            zone,
+            pick: ZonePickModeDef::Top,
+        }
+    }
+
+    #[must_use]
+    pub const fn at_random(zone: ZoneKind) -> Self {
+        Self {
+            zone,
+            pick: ZonePickModeDef::AtRandom,
+        }
+    }
+}
+
 /// What a permission to play an exiled card asks for where it is used.
 ///
 /// A closed vocabulary rather than a general condition: the permission

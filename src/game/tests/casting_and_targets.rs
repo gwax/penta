@@ -168,7 +168,7 @@ fn cast_validation_rejects_unrecognized_structured_choices() {
             Target::Player(PlayerId::Two),
         )]);
     let (signature, cost, _, _) = game
-        .validated_cast_signature(PlayerId::One, card_id, &valid)
+        .validated_cast_signature(PlayerId::One, card_id, &valid, &[])
         .expect("all structured choices are recognized and payable");
     assert_eq!(signature.play_option(), option_id);
     assert_eq!(signature.form(), &SpellForm::Part(CardPartId::PRIMARY));
@@ -188,7 +188,7 @@ fn cast_validation_rejects_unrecognized_structured_choices() {
             Target::Player(PlayerId::Two),
         )]);
     assert!(
-        game.validated_cast_signature(PlayerId::One, card_id, &canonical_modes)
+        game.validated_cast_signature(PlayerId::One, card_id, &canonical_modes, &[])
             .is_some(),
         "distinct modes are accepted in positional order",
     );
@@ -231,7 +231,7 @@ fn cast_validation_rejects_unrecognized_structured_choices() {
     ];
     for choices in invalid {
         assert!(
-            game.validated_cast_signature(PlayerId::One, card_id, &choices)
+            game.validated_cast_signature(PlayerId::One, card_id, &choices, &[])
                 .is_none(),
             "invalid structured choices were accepted: {choices:?}",
         );

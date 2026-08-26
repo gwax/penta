@@ -178,6 +178,7 @@ impl Game {
             | EffectDef::DiscardCards { .. }
             | EffectDef::Mill { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }
+            | EffectDef::ExileOneFromEachZone { .. }
             | EffectDef::SelectAtRandomFromZone { .. }
             | EffectDef::ExileTopAndMayCast { .. }
             | EffectDef::MillUntil { .. }

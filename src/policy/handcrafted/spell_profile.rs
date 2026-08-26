@@ -475,6 +475,7 @@ impl HandcraftedPolicy {
             | EffectDef::LookAtTopAndSelect { .. }
             | EffectDef::LookAtTopAndDistribute { .. }
             | EffectDef::LookAtHand { .. }
+            | EffectDef::ExileOneFromEachZone { .. }
             | EffectDef::LookAtRandomCardInHand { .. }
             | EffectDef::RevealAtRandomFromHand { .. }
             | EffectDef::RevealHand { .. }

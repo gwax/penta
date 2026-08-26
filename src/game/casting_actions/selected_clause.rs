@@ -83,6 +83,35 @@ impl Game {
         })
     }
 
+    /// Emerge's reduction (CR 702.119a): the emerge cost is reduced by the
+    /// mana value of the permanent sacrificed to pay it. The reduction is
+    /// generic only, so the caller applies it with `reduce_generic` and the
+    /// coloured pips are still owed in their own colours.
+    ///
+    /// Read off the objects the cast spends rather than off any choice of
+    /// its own: the sacrifice named in `additional_cost` is what settles
+    /// this, which is the one thing emerge adds to an ordinary alternative.
+    pub(in crate::game) fn emerge_generic_reduction(
+        &self,
+        kind: Option<AlternativeCastKindDef>,
+        sacrifices: &[GameObjectId],
+    ) -> u16 {
+        if kind != Some(AlternativeCastKindDef::Emerge) {
+            return 0;
+        }
+        sacrifices
+            .iter()
+            .filter_map(|sacrifice| {
+                self.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == *sacrifice)
+            })
+            .filter_map(|permanent| permanent.card.definition.card_definition())
+            .filter_map(|definition| self.catalog.get(definition))
+            .map(|definition| definition.rules.printed_mana_cost().mana_value())
+            .fold(0_u16, u16::saturating_add)
+    }
+
     pub(super) fn selected_alternative_kind(
         &self,
         definition: &CardDefinition,

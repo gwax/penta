@@ -674,6 +674,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::LookAtTopAndSelect { .. }
                     | EffectDef::LookAtTopAndDistribute { .. }
                     | EffectDef::LookAtHand { .. }
+                    | EffectDef::ExileOneFromEachZone { .. }
                     | EffectDef::LookAtRandomCardInHand { .. }
                     | EffectDef::RevealAtRandomFromHand { .. }
                     | EffectDef::RevealHand { .. }
@@ -853,6 +854,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             // trigger reads off the permanent afterwards.
             | AlternativeCastKindDef::Offspring
             | AlternativeCastKindDef::Warp
+            // Emerge says only what the cast costs and what is sacrificed
+            // to reach it.
+            | AlternativeCastKindDef::Emerge
             | AlternativeCastKindDef::Miracle
             | AlternativeCastKindDef::AlternativeCost
             | AlternativeCastKindDef::FaceDown { .. } => effect == EffectDef::None,

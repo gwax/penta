@@ -120,6 +120,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::InstallTrigger(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::LookAtHand { .. }
+        | EffectDef::ExileOneFromEachZone { .. }
         | EffectDef::LookAtRandomCardInHand { .. }
         | EffectDef::LoseLife { .. }
         | EffectDef::LoseTheGame { .. }

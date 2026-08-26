@@ -15,7 +15,7 @@ use crate::card::{
     ResolvedEffectDurationDef, RoundingDef, SetOperationDef, SimultaneousChooseDef,
     SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef, TargetConditionDef,
     TokenCopyExceptionsDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    ValueComparisonDef, ValueDef, ZoneKind, ZonePickDef, ZonePlacement, abilities, tokens,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 use crate::{TargetIndex, mana_cost};
@@ -2476,13 +2476,58 @@ pub(in crate::card::sets) static GUIDE_OF_SOULS: CardRecord = CardRecord::new(
 );
 
 // MH3 452 — Crabomination
-// Audit: metadata-only — Card rules have not been implemented.
+static SACRIFICE_AN_ARTIFACT: SpellAdditionalCostDef = SpellAdditionalCostDef::new(
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ZoneKind::Battlefield,
+    1,
+);
+
+/// The three zones, in the order the card names them. A library has a top
+/// to take from; a graveyard and a hand do not, so those are drawn at
+/// random.
+static CRABOMINATION_ZONES: [ZonePickDef; 3] = [
+    ZonePickDef::top(ZoneKind::Library),
+    ZonePickDef::at_random(ZoneKind::Graveyard),
+    ZonePickDef::at_random(ZoneKind::Hand),
+];
+
+static AN_OPPONENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+)];
+
+static CRABOMINATION_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::alternative_cast(
+        mana_cost!("{5}{B}{B}"),
+        AlternativeCastKindDef::Emerge,
+        Some(
+            "Emerge from artifact {5}{B}{B} (You may cast this spell by sacrificing an artifact \
+             and paying the emerge cost reduced by that artifact's mana value.)",
+        ),
+        EffectDef::None,
+    )
+    .with_alternative_additional_cost(&SACRIFICE_AN_ARTIFACT),
+    abilities::enters_trigger_with_targets(
+        "When this creature enters, target opponent exiles the top card of their library, a card \
+         at random from their graveyard, and a card at random from their hand. You may cast a \
+         spell from among cards exiled this way without paying its mana cost.",
+        &AN_OPPONENT,
+        EffectDef::ExileOneFromEachZone {
+            player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            zones: &CRABOMINATION_ZONES,
+            permission: Some(ExiledCastPermissionDef::FreeThisTurn),
+        },
+    ),
+];
+
 pub(in crate::card::sets) static CRABOMINATION: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b6ac511f-6c28-45f9-968b-9ac72872641b"),
     "Crabomination",
-    crate::card::CardArt::new("b6ac511f-6c28-45f9-968b-9ac72872641b", "Nicholas Gregory"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("b6ac511f-6c28-45f9-968b-9ac72872641b", "Nicholas Gregory"),
+    CardSet::ModernHorizons3,
+    // Six mana for a 5/5 is not the price anybody pays: an artifact that
+    // has already done its work pays most of it.
+    CardRules::new_creature(mana_cost!("{4}{B}{B}"), &["Crab", "Demon"], 5, 5)
+        .with_abilities(&CRABOMINATION_ABILITIES),
 );
 
 // MH3 457 — Detective's Phoenix (alternate printing)

@@ -392,7 +392,7 @@ impl Game {
         sacrifices: &[GameObjectId],
     ) {
         let (signature, cost, behavior, source_zone) = self
-            .validated_cast_signature(player, card_id, choices)
+            .validated_cast_signature(player, card_id, choices, sacrifices)
             .expect("validated casting choices remain valid while paying costs");
         let phyrexian_life = Self::mana_payment_life(choices.mana_payment())
             .expect("validated casting choices carry a valid flexible-mana payment");

@@ -37,6 +37,73 @@ static MANIFEST_DREAD: crate::card::TopCardSelectionDef = crate::card::TopCardSe
 };
 
 impl Game {
+    /// "Target opponent exiles the top card of their library, a card at
+    /// random from their graveyard, and a card at random from their hand."
+    ///
+    /// One pile out of three zones. The random picks are drawn through the
+    /// game's seeded RNG so a replay exiles the same cards, and each zone is
+    /// read as it stands when its turn comes -- nothing here moves a card
+    /// into a zone another pick could find.
+    fn exile_one_from_each_zone(
+        &mut self,
+        player: PlayerId,
+        zones: &'static [crate::card::ZonePickDef],
+        permission: Option<crate::card::ExiledCastPermissionDef>,
+        source: GameObjectId,
+        caster: PlayerId,
+    ) {
+        let mut pile = Vec::new();
+        for pick in zones {
+            let size = match pick.zone {
+                ZoneKind::Library => self.players[player.index()].library.len(),
+                ZoneKind::Hand => self.players[player.index()].hand.len(),
+                ZoneKind::Graveyard => self.players[player.index()].graveyard.len(),
+                ZoneKind::Exile | ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => 0,
+            };
+            if size == 0 {
+                continue;
+            }
+            let index = match pick.pick {
+                // The top of a library is the end of the vector, which is
+                // where a draw takes from.
+                crate::card::ZonePickModeDef::Top => size.saturating_sub(1),
+                crate::card::ZonePickModeDef::AtRandom => self.rng.index_below(size),
+            };
+            let cards = match pick.zone {
+                ZoneKind::Library => &mut self.players[player.index()].library,
+                ZoneKind::Hand => &mut self.players[player.index()].hand,
+                ZoneKind::Graveyard => &mut self.players[player.index()].graveyard,
+                ZoneKind::Exile | ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {
+                    continue;
+                }
+            };
+            let card = cards.remove(index);
+            let (card, _zone_change) = self.zone_change_card(card);
+            self.players[player.index()].exile.push(card.clone());
+            // One capture per zone: a clause watching for cards leaving a
+            // hand should not be told a library card left it.
+            self.capture_cards_exiled(core::slice::from_ref(&card), pick.zone);
+            pile.push(card.id);
+        }
+        let Some(permission) = permission else {
+            return;
+        };
+        // One permission over the pile, named by the object whose
+        // resolution made it: casting any one of these spends it, which is
+        // what "a spell from among cards exiled this way" allows.
+        for card in pile {
+            match permission {
+                crate::card::ExiledCastPermissionDef::EnergyEqualToManaValue => {
+                    self.permit_energy_cast(card, caster);
+                }
+                crate::card::ExiledCastPermissionDef::FreeThisTurn => {
+                    self.permit_free_play_this_turn(card, caster);
+                }
+            }
+            self.group_last_exile_permission(card, source);
+        }
+    }
+
     /// "Exile cards from the top of your library until you exile a nonland
     /// card." Everything walked past is exiled with it; only the card that
     /// matched gets the permission, and a library that ran out gives one to
@@ -227,6 +294,23 @@ impl Game {
         context: &EffectResolutionContext,
     ) {
         match scoped.effect {
+            EffectDef::ExileOneFromEachZone {
+                player: recipient,
+                zones,
+                permission,
+            } => {
+                for target in self.effect_recipients(recipient, object, context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.exile_one_from_each_zone(
+                            player,
+                            zones,
+                            permission,
+                            object.card.id,
+                            object.controller,
+                        );
+                    }
+                }
+            }
             EffectDef::DrawCards { recipient, amount } => {
                 let amount = self
                     .effect_value(amount, object, context, scoped)

@@ -48,6 +48,7 @@ EffectDef::ExileFromTopUntil { .. } | EffectDef::ManifestDread { .. } |
 EffectDef::Cascade | EffectDef::Proliferate | EffectDef::Explore { .. } |
 EffectDef::LookAtTopAndSelect { .. } | EffectDef::LookAtTopAndDistribute { ..
 } | EffectDef::LookAtHand { .. } | EffectDef::LookAtRandomCardInHand { .. } |
+EffectDef::ExileOneFromEachZone { .. } |
 EffectDef::RevealAtRandomFromHand { .. } | EffectDef::RevealHand { .. } |
 EffectDef::SearchZone { .. } | EffectDef::ChooseCards { .. } |
 EffectDef::ReplaceNextDrawThisTurn { .. } | EffectDef::IfFormat { .. } |

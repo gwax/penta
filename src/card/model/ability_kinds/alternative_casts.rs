@@ -107,6 +107,14 @@ pub enum AlternativeCastKindDef {
     /// hand, so rebound has nothing more to say about it and it goes to the
     /// graveyard like any other spell.
     Rebound,
+    /// Emerge (CR 702.119a): cast by sacrificing a permanent the ability
+    /// names and paying the emerge cost reduced by that permanent's mana
+    /// value. The reduction is generic only, so the coloured pips are still
+    /// owed in their own colours -- which is what keeps a big artifact from
+    /// paying for the whole spell. Written as an alternative because that is
+    /// what it is; what it adds is that the sacrifice named in
+    /// `additional_cost` also settles what the cast costs.
+    Emerge,
     /// Bestow (CR 702.103a): cast as an Aura spell for its bestow cost.
     /// Unlike every other kind here it changes what the spell is rather than
     /// only what it costs -- an Aura spell with "enchant creature", which is
@@ -198,6 +206,7 @@ impl AlternativeCastKindDef {
             Self::Offspring => "Offspring",
             Self::Plot => "Plot",
             Self::Bestow => "Bestow",
+            Self::Emerge => "Emerge",
             Self::Rebound => "Rebound",
             Self::WithoutPayingManaCost => "Without paying its mana cost",
             Self::FaceDown { label, .. } => label,
@@ -219,6 +228,7 @@ impl AlternativeCastKindDef {
             Self::Dash,
             Self::Warp,
             Self::Retrace,
+            Self::Emerge,
             Self::WithoutPayingManaCost,
             Self::Flashback,
             Self::Overload,
@@ -253,8 +263,44 @@ impl AlternativeCastAbilityDef {
             .map_or_else(|| default.to_owned(), std::borrow::ToOwned::to_owned)
     }
 
+    /// The kinds whose reminder is a fixed sentence rather than something
+    /// rebuilt from a cost, each of which a card may override with its own
+    /// printed text.
+    fn fixed_rules_text(self) -> Option<String> {
+        let default = match self.kind {
+            // Every printed bestow cost is a cost the card writes out, and
+            // Detective's Phoenix writes a nonmana one, so the reminder is
+            // taken from the clause rather than rebuilt from a mana cost.
+            AlternativeCastKindDef::Rebound => {
+                "Rebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)"
+            }
+            AlternativeCastKindDef::Bestow => {
+                "Bestow (If you cast this card for its bestow cost, it's an Aura spell with enchant creature. It becomes a creature again if it's not attached to a creature.)"
+            }
+            AlternativeCastKindDef::Impending => {
+                "Impending (If you cast this spell for its impending cost, it enters with time counters and isn't a creature until the last is removed.)"
+            }
+            // The printed reminder names what is sacrificed, which the cost
+            // itself does not say.
+            AlternativeCastKindDef::Emerge => {
+                "Emerge (You may cast this spell by sacrificing a permanent and paying the emerge cost reduced by that permanent's mana value.)"
+            }
+            AlternativeCastKindDef::Retrace => {
+                "Retrace (You may cast this card from your graveyard by discarding a land card in addition to paying its other costs.)"
+            }
+            AlternativeCastKindDef::Escape => {
+                "Escape (You may cast this card from your graveyard for its escape cost.)"
+            }
+            _ => return None,
+        };
+        Some(self.printed_rules_text(default))
+    }
+
     #[must_use]
     pub fn rules_text(self) -> String {
+        if let Some(text) = self.fixed_rules_text() {
+            return text;
+        }
         match (self.kind, self.mana_cost) {
             (AlternativeCastKindDef::Flashback, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
                 format!(
@@ -265,18 +311,6 @@ impl AlternativeCastAbilityDef {
                 AlternativeCastKindDef::Flashback,
                 AlternativeCastManaCostDef::ThisCardManaCost,
             ) => "Flashback—the flashback cost is equal to this card's mana cost. (You may cast this card from your graveyard for its flashback cost. Then exile it.)".into(),
-            // Every printed bestow cost is a cost the card writes out, and
-            // Detective's Phoenix writes a nonmana one, so the reminder is
-            // taken from the clause rather than rebuilt from a mana cost.
-            (AlternativeCastKindDef::Rebound, _) => self.printed_rules_text(
-                "Rebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)",
-            ),
-            (AlternativeCastKindDef::Bestow, _) => self.printed_rules_text(
-                "Bestow (If you cast this card for its bestow cost, it's an Aura spell with enchant creature. It becomes a creature again if it's not attached to a creature.)",
-            ),
-            (AlternativeCastKindDef::Impending, _) => self.printed_rules_text(
-                "Impending (If you cast this spell for its impending cost, it enters with time counters and isn't a creature until the last is removed.)",
-            ),
             (AlternativeCastKindDef::Warp, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
                 format!(
                     "Warp {mana_cost} (You may cast this card from your hand for its warp cost. Exile it at the beginning of the next end step, then you may cast it from exile on a later turn.)",
@@ -293,16 +327,6 @@ impl AlternativeCastAbilityDef {
                     "Dash {mana_cost} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)",
                 )
             }
-            (AlternativeCastKindDef::Retrace, _) => self.stack_text.map_or_else(
-                || {
-                    "Retrace (You may cast this card from your graveyard by discarding a land card in addition to paying its other costs.)".into()
-                },
-                std::borrow::ToOwned::to_owned,
-            ),
-            (AlternativeCastKindDef::Escape, _) => self.stack_text.map_or_else(
-                || "Escape (You may cast this card from your graveyard for its escape cost.)".into(),
-                std::borrow::ToOwned::to_owned,
-            ),
             (AlternativeCastKindDef::Overload, AlternativeCastManaCostDef::Fixed(mana_cost)) => {
                 format!(
                     "Overload {mana_cost} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
@@ -365,6 +389,16 @@ impl AlternativeCastAbilityDef {
                     "2/2 creature spell"
                 }
             ),
+            // Every kind whose reminder is a fixed sentence answered above.
+            (
+                AlternativeCastKindDef::Rebound
+                | AlternativeCastKindDef::Bestow
+                | AlternativeCastKindDef::Impending
+                | AlternativeCastKindDef::Emerge
+                | AlternativeCastKindDef::Retrace
+                | AlternativeCastKindDef::Escape,
+                _,
+            ) => unreachable!("answered by fixed_rules_text"),
         }
     }
 

@@ -136,11 +136,14 @@ impl Game {
     }
 
     #[allow(clippy::too_many_lines)]
+    /// `sacrifices` are the objects the cast spends on its additional cost.
+    /// Only emerge reads them here, and only to settle what it costs.
     pub(in crate::game) fn validated_cast_signature(
         &self,
         player: PlayerId,
         card_id: GameObjectId,
         choices: &CastChoices,
+        sacrifices: &[GameObjectId],
     ) -> Option<(CastSignature, ManaCost, CardBehavior, CastSourceZone)> {
         let state = &self.players[player.index()];
         let (card, source_zone) = state
@@ -331,8 +334,11 @@ impl Game {
         cost = add_mana_cost(cost, self.spell_cost_increase(player, card_id));
         let (cost, phyrexian_life) = Self::locked_mana_payment(cost, choices.mana_payment())?;
         let cost = reduce_generic(
-            cost,
-            self.spell_cost_reduction(definition.id, player, card_id),
+            reduce_generic(
+                cost,
+                self.spell_cost_reduction(definition.id, player, card_id),
+            ),
+            self.emerge_generic_reduction(alternative_kind, sacrifices),
         );
         let total_life = cast_life
             .saturating_add(library_life)

@@ -531,7 +531,7 @@ fn overload_does_not_silently_discard_selected_modal_effects() {
             Vec::new(),
         ));
     assert!(
-        game.validated_cast_signature(PlayerId::One, card_id, &forged)
+        game.validated_cast_signature(PlayerId::One, card_id, &forged, &[])
             .is_none(),
         "validation must reject overload when its selected mode effects would be dropped",
     );

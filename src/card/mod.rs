@@ -72,7 +72,8 @@ pub use model::{
     TokenCopyExceptionsDef, TokenCountersDef, TokenPart, TokenStatsDef, TokenStructure,
     TopCardSelectionDef, TopOfLibraryCostDef, TriggerConditionDef, TriggerEventDef,
     TriggeredAbilityDef, TurnKindDef, TurnPhaseDef, TurnStepDef, ValueComparisonDef, ValueDef,
-    ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, ZoneRelativePositionDef,
+    ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef, ZonePickDef, ZonePickModeDef,
+    ZonePlacement, ZoneRelativePositionDef,
 };
 
 /// The built-in catalog, validated once per process. Construction walks every

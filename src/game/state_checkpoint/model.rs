@@ -65,6 +65,11 @@ pub(super) struct ExilePlayPermissionSnapshot {
     /// without one, which all of them did.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) until_holder_end_step: Option<(usize, u32)>,
+    /// The pile a permission over several cards belongs to, named by the
+    /// object whose resolution granted it. Absent for every permission that
+    /// covers one card, which is all of them but a pile's.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) group: Option<u32>,
 }
 
 mod balance;

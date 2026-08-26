@@ -67,6 +67,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::Proliferate => "Proliferate",
         EffectDef::Explore { .. } => "Explore",
         EffectDef::LookAtHand { .. } => "LookAtHand",
+        EffectDef::ExileOneFromEachZone { .. } => "ExileOneFromEachZone",
         EffectDef::LookAtRandomCardInHand { .. } => "LookAtRandomCardInHand",
         EffectDef::RevealHand { .. } => "RevealHand",
         EffectDef::RevealAtRandomFromHand { .. } => "RevealAtRandomFromHand",

@@ -507,6 +507,17 @@ impl Game {
                                                 )
                                             };
                                         for sacrifices in sacrifice_choices {
+                                            // Emerge is the one alternative
+                                            // whose cost the sacrifice
+                                            // settles, so the reduction is
+                                            // read per way of paying it.
+                                            let payable_cost = reduce_generic(
+                                                payable_cost,
+                                                self.emerge_generic_reduction(
+                                                    alternative_kind,
+                                                    &sacrifices,
+                                                ),
+                                            );
                                             if !self.can_pay_cost_for_reserving_with_life(
                                                 player,
                                                 payable_cost,

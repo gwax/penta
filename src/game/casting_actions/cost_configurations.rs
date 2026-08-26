@@ -472,6 +472,9 @@ impl Game {
                         // different price and a different spell.
                         | AlternativeCastKindDef::Bestow
                         | AlternativeCastKindDef::Warp
+                        // Emerge is an ordinary cast from hand whose price
+                        // the sacrifice settles.
+                        | AlternativeCastKindDef::Emerge
                         // Face down is a way of casting the card from hand,
                         // not a permission to cast it elsewhere.
                         | AlternativeCastKindDef::FaceDown { .. }

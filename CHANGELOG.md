@@ -25,6 +25,33 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Emerge.** A cast could take an alternative cost, and it could take a
+  nonmana one beside it, but nothing let the second settle the first: "the
+  emerge cost reduced by that artifact's mana value" is one cost that varies
+  with what is sacrificed to pay it. The reduction is read off the objects
+  the cast spends, so each artifact on the battlefield is its own way to
+  cast the spell at its own price -- and it is generic only, so the coloured
+  pips are still owed in their own colours. An artifact that makes mana may
+  still be tapped for it first and sacrificed afterwards.
+
+- **A permission over a pile rather than a card.** Every permission to cast
+  from exile covered exactly one card, so "you may cast a spell from among
+  cards exiled this way" had no way to say that casting one of them ends the
+  offer. A permission now records the pile it belongs to, named by the
+  object whose resolution made it, and using one takes the rest of its pile
+  with it. The pile itself is one effect: one card out of each of several
+  zones -- the top of a library, and one drawn at random from a hand or a
+  graveyard through the recorded RNG -- exiled together. The checkpoint
+  carries the pile additively.
+
+- **Damage that cannot be prevented, from a permanent.** "Damage can't be
+  prevented this turn" was already a switch read ahead of every prevention
+  rule, but it belonged to the turn. Questing Beast's version belongs to a
+  permanent and covers only the combat damage the creatures it names deal,
+  so it is a rule read off the damage source in the same place. Protection
+  prevents the damage it stops (CR 702.16e), so it is part of what this
+  switches off, for that damage alone.
+
 - **Crewing for more than you are worth.** A creature contributed its power
   to crew and nothing else, so "this token crews Vehicles as though its power
   were 2 greater" had nowhere to live. The bonus is a rule read off the

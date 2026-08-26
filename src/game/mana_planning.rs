@@ -52,7 +52,11 @@ impl Game {
         action: &Action,
     ) -> Option<(ManaCost, u16, ManaPlanOptions, ManaPaymentPurpose)> {
         match action {
-            Action::CastSpell { card, choices, .. } => {
+            Action::CastSpell {
+                card,
+                choices,
+                sacrifices,
+            } => {
                 let definition = self
                     .players
                     .iter()
@@ -95,10 +99,25 @@ impl Game {
                 let total_life = cast_life
                     .saturating_add(library_life)
                     .saturating_add(phyrexian_life);
+                // Emerge's reduction is settled by what the cast sacrifices,
+                // so it is read off the action rather than off the board.
+                let emerge = self.emerge_generic_reduction(
+                    self.selected_alternative_kind_for_offer(
+                        definition,
+                        option,
+                        *card,
+                        choices.costs(),
+                        offer,
+                    ),
+                    sacrifices,
+                );
                 Some((
                     reduce_generic(
-                        locked,
-                        self.spell_cost_reduction(definition.id, player, *card),
+                        reduce_generic(
+                            locked,
+                            self.spell_cost_reduction(definition.id, player, *card),
+                        ),
+                        emerge,
                     ),
                     choices.x(),
                     ManaPlanOptions::default(),

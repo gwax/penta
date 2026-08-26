@@ -76,6 +76,11 @@ pub(super) struct ExilePlayPermission {
     /// it was granted on when that turn was somebody else's: "until your
     /// next end step" reaches across to the holder's own.
     pub(super) until_holder_end_step: Option<(PlayerId, u32)>,
+    /// The pile this permission belongs to, named by the object whose
+    /// resolution made it. "You may cast a spell from among cards exiled
+    /// this way" is one permission over several cards: casting any of them
+    /// spends it, so the rest go with it.
+    pub(super) group: Option<GameObjectId>,
 }
 
 impl ExilePlayCost {
@@ -176,6 +181,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            group: None,
         });
     }
 
@@ -232,6 +238,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            group: None,
         });
     }
 
@@ -252,6 +259,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            group: None,
         });
     }
 
@@ -272,6 +280,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            group: None,
         });
     }
 
@@ -294,6 +303,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            group: None,
         });
     }
 
@@ -330,6 +340,7 @@ impl Game {
                     self.turns_started[player.index()].saturating_add(1)
                 },
             )),
+            group: None,
         });
     }
 
@@ -351,6 +362,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            group: None,
         });
     }
 
@@ -371,6 +383,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            group: None,
         });
     }
 
@@ -399,6 +412,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            group: None,
         });
     }
 
@@ -419,6 +433,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            group: None,
         });
     }
 
@@ -441,6 +456,7 @@ impl Game {
             spend_any_color: false,
             condition: None,
             until_holder_end_step: None,
+            group: None,
         });
     }
 
@@ -503,8 +519,32 @@ impl Game {
     }
 
     /// Drops the permission a play has just consumed.
+    /// Puts the permission just granted over `card` into `group`'s pile.
+    pub(super) fn group_last_exile_permission(&mut self, card: GameObjectId, group: GameObjectId) {
+        if let Some(permission) = self
+            .exile_play_permissions
+            .iter_mut()
+            .rev()
+            .find(|permission| permission.card == card)
+        {
+            permission.group = Some(group);
+        }
+    }
+
     pub(super) fn consume_exile_play_permission(&mut self, card: GameObjectId) {
-        self.exile_play_permissions
-            .retain(|permission| permission.card != card);
+        // A permission over a pile is one permission however many cards it
+        // covers, so using it takes the whole pile's with it.
+        let groups = self
+            .exile_play_permissions
+            .iter()
+            .filter(|permission| permission.card == card)
+            .filter_map(|permission| permission.group)
+            .collect::<Vec<_>>();
+        self.exile_play_permissions.retain(|permission| {
+            permission.card != card
+                && !permission
+                    .group
+                    .is_some_and(|group| groups.contains(&group))
+        });
     }
 }
