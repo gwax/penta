@@ -2383,13 +2383,96 @@ pub(in crate::card::sets) static SORIN_OF_HOUSE_MARKOV: CardRecord = CardRecord:
 );
 
 // MH3 448 — Guide of Souls
-// Audit: metadata-only — Card rules have not been implemented.
+/// One life and one energy per creature, which is what makes the three-
+/// energy payment a matter of a turn or two rather than a deck built for it.
+static GUIDE_OF_SOULS_PAYOFF: [EffectDef; 2] = [
+    EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::AddPlayerCounters {
+        recipient: EffectRecipientDef::Controller,
+        kind: CounterKind::Energy,
+        amount: ValueDef::Constant(1),
+    },
+];
+
+/// All three stick: the counters and the type are permanent, so the
+/// creature is still a flying Angel next turn.
+static GUIDE_OF_SOULS_ANGEL: [EffectDef; 3] = [
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        kind: CounterKind::PlusOnePlusOne,
+        amount: ValueDef::Constant(2),
+    },
+    EffectDef::AddCounters {
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        kind: CounterKind::Flying,
+        amount: ValueDef::Constant(1),
+    },
+    EffectDef::Apply {
+        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect: AppliedEffectDef::add_creature_types(CreatureTypeSetDef::named(&["Angel"])),
+        duration: ResolvedEffectDurationDef::Permanent,
+    },
+];
+
+static GUIDE_OF_SOULS_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Attacking,
+        ]),
+        zones: &[ZoneKind::Battlefield],
+        controller: None,
+        owner: None,
+    },
+)];
+
+static GUIDE_OF_SOULS_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::triggered(
+        "Whenever another creature you control enters, you gain 1 life and get {E} (an energy \
+         counter).",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+            ]),
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        EffectDef::Sequence(&GUIDE_OF_SOULS_PAYOFF),
+    ),
+    // As with Inti, the target is declared when the attack trigger goes on
+    // the stack rather than when the energy is paid, which is the one place
+    // this differs from the printed reflexive trigger. "Whenever you attack"
+    // guarantees an attacking creature, so there is always something to name.
+    AbilityDef::triggered_with_targets(
+        "Whenever you attack, you may pay {E}{E}{E}. When you do, put two +1/+1 counters and a \
+         flying counter on target attacking creature. It becomes an Angel in addition to its \
+         other types.",
+        TriggerEventDef::attack_declared(ObjectPredicateDef::Any, 1, None),
+        &GUIDE_OF_SOULS_TARGET,
+        EffectDef::PayOr(PayOrDef::optional(
+            EffectPaymentDef {
+                payer: PlayerSetDef::Related(PlayerRelation::You),
+                cost: EffectPaymentCostDef::Energy(3),
+            },
+            &EffectDef::Sequence(&GUIDE_OF_SOULS_ANGEL),
+        )),
+    ),
+];
+
 pub(in crate::card::sets) static GUIDE_OF_SOULS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("298de33f-cb39-47c5-9579-54d91eb34414"),
     "Guide of Souls",
-    crate::card::CardArt::new("298de33f-cb39-47c5-9579-54d91eb34414", "Ryan Valle"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("298de33f-cb39-47c5-9579-54d91eb34414", "Ryan Valle"),
+    CardSet::ModernHorizons3,
+    // A one-mana body that turns every other creature into a life and an
+    // energy, and then spends the energy making one of them an Angel.
+    CardRules::new_creature(mana_cost!("{W}"), &["Human", "Cleric"], 1, 2)
+        .with_abilities(&GUIDE_OF_SOULS_ABILITIES),
 );
 
 // MH3 452 — Crabomination
