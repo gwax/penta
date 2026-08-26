@@ -264,6 +264,13 @@ pub enum AppliedRuleDef {
     /// under it is not asked how to divide its damage at all, so trample has
     /// nothing to spill and no blocker is dealt a lethal share.
     AssignsNoCombatDamage,
+    /// "Combat damage that would be dealt by creatures you control can't be
+    /// prevented." A rule about every prevention rather than one of them,
+    /// like the turn-wide version, but carried by a permanent and scoped to
+    /// the combat damage the affected creatures deal. Protection prevents
+    /// the damage it stops (CR 702.16e), so this switches that off too, for
+    /// this damage only.
+    CombatDamageCannotBePrevented,
     /// The affected creature assigns combat damage equal to its toughness
     /// rather than its power. Not a change to power: what it is remains what
     /// it is, and everything reading power sees the same number -- only the

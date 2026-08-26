@@ -28,6 +28,30 @@ impl Game {
         self.damage_target_from(None, target, amount)
     }
 
+    /// Questing Beast's clause: a rule about every prevention rather than
+    /// one of them, like the turn-wide switch, but carried by a permanent
+    /// and read off the creature dealing the damage. Only combat damage is
+    /// covered, and only while the creature is still on the battlefield to
+    /// carry the rule.
+    fn combat_damage_cannot_be_prevented(
+        &self,
+        source: Option<GameObjectId>,
+        combat: bool,
+    ) -> bool {
+        combat
+            && source.is_some_and(|source| {
+                self.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == source)
+                    .is_some_and(|permanent| {
+                        self.has_applied_rule(
+                            permanent,
+                            AppliedRuleDef::CombatDamageCannotBePrevented,
+                        )
+                    })
+            })
+    }
+
     /// Apply resolved prevention in creation order. Consumable promises are
     /// spent before unlimited prevention, matching the engine's historical
     /// Reverse Damage-before-Safe Passage behavior. A matching event promise
@@ -694,7 +718,8 @@ impl Game {
         // own but a rule about every other one, so it is read here, ahead of
         // both the installed rules and the static ones. Damage limits are
         // not prevention (CR 615.1) and still apply.
-        let preventable = !self.damage_cannot_be_prevented_this_turn;
+        let preventable = !self.damage_cannot_be_prevented_this_turn
+            && !self.combat_damage_cannot_be_prevented(source, combat);
         let amount = if preventable {
             self.apply_resolved_damage_prevention(event, amount)
         } else {

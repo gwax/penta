@@ -672,13 +672,74 @@ pub(in crate::card::sets) static EMRY_LURKER_OF_THE_LOCH: CardRecord = CardRecor
 );
 
 // ELD 372 — Questing Beast
-// Audit: metadata-only — Card rules have not been implemented.
+/// "Power 2 or less" is strictly-less-than-three, which is the comparison
+/// the engine has and the same set of creatures.
+static A_SMALL_BLOCKER: ObjectPredicateDef =
+    ObjectPredicateDef::PowerLessThan(ValueDef::Constant(3));
+
+static CREATURES_YOU_CONTROL_QB: EffectRecipientDef = EffectRecipientDef::matching_objects(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    &[ZoneKind::Battlefield],
+    PlayerRelation::You,
+);
+
+/// "That player controls": with two players the player just dealt combat
+/// damage by the Beast is the opponent, so the relation says it exactly.
+static THEIR_PLANESWALKER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Planeswalker),
+        zones: &[ZoneKind::Battlefield],
+        controller: Some(PlayerRelation::Opponent),
+        owner: None,
+    },
+)];
+
+static QUESTING_BEAST_ABILITIES: [AbilityDef; 6] = [
+    abilities::vigilance(),
+    abilities::deathtouch(),
+    abilities::haste(),
+    AbilityDef::static_ability(
+        "This creature can't be blocked by creatures with power 2 or less.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::cannot_be_blocked_by(A_SMALL_BLOCKER)),
+        },
+    ),
+    AbilityDef::static_ability(
+        "Combat damage that would be dealt by creatures you control can't be prevented.",
+        EffectDef::StaticApply {
+            recipient: CREATURES_YOU_CONTROL_QB,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CombatDamageCannotBePrevented),
+        },
+    ),
+    // "That much damage" is the combat damage that was actually dealt, so a
+    // Beast whose damage was reduced deals the reduced amount here too.
+    AbilityDef::triggered_with_targets(
+        "Whenever this creature deals combat damage to an opponent, it deals that much damage to \
+         target planeswalker that player controls.",
+        TriggerEventDef::combat_damage_to_related_player(
+            ObjectPredicateDef::Source,
+            PlayerRelation::Opponent,
+        ),
+        &THEIR_PLANESWALKER,
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::TriggerEventAmount,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static QUESTING_BEAST: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5357e802-2d25-48d3-a188-101c142787b7"),
     "Questing Beast",
-    crate::card::CardArt::new("5357e802-2d25-48d3-a188-101c142787b7", "Igor Kieryluk"),
-    crate::card::CardSet::ThroneOfEldraine,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("5357e802-2d25-48d3-a188-101c142787b7", "Igor Kieryluk"),
+    CardSet::ThroneOfEldraine,
+    // Four mana for a 4/4 that attacks the turn it lands, kills whatever
+    // blocks it, cannot be chump-blocked, and takes a planeswalker down
+    // with the player.
+    CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Beast"], 4, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&QUESTING_BEAST_ABILITIES),
 );
 
 // ELD 391 — Fabled Passage
