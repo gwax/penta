@@ -3,10 +3,13 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardType, CounterKind, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, ReplacementEffectDef, TriggerConditionDef, ValueDef,
+    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    CounterKind, CreatedTokensDef, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
+    ObjectPredicateDef, ObjectSetDef, PlayerRelation, ReplacementEffectDef, TokenCharacteristics,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
-use crate::ids::TargetIndex;
+use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
 
 // AER 51 — Aether Poisoner
@@ -91,13 +94,73 @@ pub(in crate::card::sets) static AETHER_CHASER: CardRecord = CardRecord::new(
 );
 
 // AER 87 — Kari Zev, Skyship Raider
-// Audit: metadata-only — Card rules have not been implemented.
+/// Ragavan is bound as he is made rather than found afterwards: a second
+/// attack the same turn would make another one, and the clause exiles the
+/// Monkey this attack brought.
+static RAGAVAN_IS_EXILED_AT_END_OF_COMBAT: EffectDef =
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+        "Exile that token at end of combat.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::EndOfCombat,
+            player: PlayerRelation::Any,
+        },
+        EffectDef::MoveToZone {
+            counters: None,
+            object: EffectRecipientDef::objects(ObjectSetDef::Binding(
+                ObjectSetBindingIndex::PRIMARY,
+            )),
+            from: None,
+            zone: ZoneKind::Exile,
+            placement: ZonePlacement::Top,
+            arrival_effect: None,
+            attachment: None,
+            controller: None,
+            tapped: false,
+        },
+    )));
+
+/// A named, legendary token: Ragavan is one of the few tokens that is a
+/// particular creature rather than a kind of one, which matters because two
+/// Kari Zevs cannot keep two of him.
+static RAGAVAN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Monkey"], &[ManaColor::Red], 2, 1)
+        .with_name("Ragavan")
+        .with_supertype(CardSupertype::Legendary)
+        .with_art(CardArt::new(
+            "1ebc91a9-23e0-4ca1-bc6d-e710ad2efb31",
+            "Daniel Ljunggren",
+        ));
+
+static RAGAVAN_TOKEN: EffectDef = EffectDef::create_token(RAGAVAN)
+    .entering_tapped()
+    .entering_attacking()
+    .with_created_tokens(CreatedTokensDef {
+        binding: ObjectSetBindingIndex::PRIMARY,
+        then: &RAGAVAN_IS_EXILED_AT_END_OF_COMBAT,
+    });
+
+static KARI_ZEV_ABILITIES: [AbilityDef; 3] = [
+    abilities::first_strike(),
+    abilities::menace(),
+    AbilityDef::triggered(
+        "Whenever Kari Zev attacks, create Ragavan, a legendary 2/1 red Monkey creature token. \
+         Ragavan enters tapped and attacking. Exile that token at end of combat.",
+        TriggerEventDef::attacks(ObjectPredicateDef::Source),
+        RAGAVAN_TOKEN,
+    ),
+];
+
 pub(in crate::card::sets) static KARI_ZEV_SKYSHIP_RAIDER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("72495879-39ce-449d-ad2f-ef32ea46f3aa"),
     "Kari Zev, Skyship Raider",
-    crate::card::CardArt::new("72495879-39ce-449d-ad2f-ef32ea46f3aa", "Brad Rigney"),
-    crate::card::CardSet::AetherRevolt,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("72495879-39ce-449d-ad2f-ef32ea46f3aa", "Brad Rigney"),
+    CardSet::AetherRevolt,
+    // Two mana that attacks as three power across two bodies, one of which
+    // is hard to block and the other of which is gone by the second main
+    // phase.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Pirate"], 1, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&KARI_ZEV_ABILITIES),
 );
 
 // AER 101 — Wrangle
