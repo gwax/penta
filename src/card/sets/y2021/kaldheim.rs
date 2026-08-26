@@ -2,12 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectSetDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
-    tokens,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef, CardArt,
+    CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRelation, TokenCopyExceptionsDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 // KHM 46 — Behold the Multiverse
 // Audit: metadata-only — Card rules have not been implemented.
@@ -207,13 +207,56 @@ pub(in crate::card::sets) static SNAKESKIN_VEIL: CardRecord = CardRecord::new(
 );
 
 // KHM 315 — Esika's Chariot
-// Audit: metadata-only — Card rules have not been implemented.
+/// A token you control, which the Chariot itself is not: what it copies is
+/// one of the Cats it brought, or anything else a token-making deck has
+/// lying around.
+static A_TOKEN_YOU_CONTROL: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
+    ObjectPredicateDef::All(&[
+        ObjectPredicateDef::Token,
+        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+    ]),
+)];
+
+static CHARIOT_COPIES_A_TOKEN: EffectDef = EffectDef::CreateTokenCopyOf {
+    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    exceptions: TokenCopyExceptionsDef::NONE,
+    created: None,
+};
+
+static ESIKA_S_CHARIOT_ABILITIES: [AbilityDef; 3] = [
+    abilities::enters_trigger(
+        "When Esika's Chariot enters, create two 2/2 green Cat creature tokens.",
+        EffectDef::create_creature_token(&["Cat"], &[ManaColor::Green], 2, 2)
+            .with_count(ValueDef::Constant(2))
+            .with_art(CardArt::new(
+                "2e07758f-0d1c-47d9-ba5a-43bc2a7423cd",
+                "Raoul Vitale",
+            )),
+    ),
+    AbilityDef::triggered_with_targets(
+        "Whenever Esika's Chariot attacks, create a token that's a copy of target token you \
+         control.",
+        TriggerEventDef::attacks(ObjectPredicateDef::Source),
+        &A_TOKEN_YOU_CONTROL,
+        CHARIOT_COPIES_A_TOKEN,
+    ),
+    abilities::crew(
+        "Crew 4 (Tap any number of creatures you control with total power 4 or more: This \
+         Vehicle becomes an artifact creature until end of turn.)",
+        4,
+    ),
+];
+
 pub(in crate::card::sets) static ESIKA_S_CHARIOT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("57a7d7e5-428d-4f42-8f13-9908fc65dcb4"),
     "Esika's Chariot",
-    crate::card::CardArt::new("57a7d7e5-428d-4f42-8f13-9908fc65dcb4", "WolfSkullJack"),
-    crate::card::CardSet::Kaldheim,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("57a7d7e5-428d-4f42-8f13-9908fc65dcb4", "WolfSkullJack"),
+    CardSet::Kaldheim,
+    // Four mana for four power of Cats, which then crew the Chariot they
+    // came with -- and every attack after that is another one of them.
+    CardRules::new_vehicle(mana_cost!("{3}{G}"), 4, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&ESIKA_S_CHARIOT_ABILITIES),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
