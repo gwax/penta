@@ -7,9 +7,9 @@ use crate::card::{
     ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, CreatedTokensDef, EffectDef,
     EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef,
-    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, QuantifierDef,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -406,13 +406,75 @@ pub(in crate::card::sets) static SAGU_WILDLING: CardRecord = CardRecord::new(
 );
 
 // TDM 343 — Cori-Steel Cutter
-// Audit: metadata-only — Card rules have not been implemented.
+/// Exactly the second, not the second or later: the spell that caused the
+/// trigger has already been counted by the time this is read.
+static CUTTER_SECOND_SPELL: TriggerConditionDef = TriggerConditionDef::SpellsCastThisTurn {
+    quantifier: QuantifierDef::Any,
+    player: PlayerRelation::You,
+    comparison: ComparisonDef::Equal,
+    amount: 2,
+};
+
+/// "You may attach this Equipment to it": the Monk is named rather than
+/// targeted, so the token the trigger just made is the one it moves onto --
+/// and declining leaves the Equipment where it was.
+static CUTTER_ATTACHES_TO_THE_MONK: EffectDef = EffectDef::May {
+    player: EffectRecipientDef::Controller,
+    effect: &EffectDef::Attach {
+        object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+    },
+};
+
+static CUTTER_PROWESS: [AbilityDef; 1] = [abilities::prowess()];
+
+static CUTTER_EQUIP_COST: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{1}{R}"))];
+
+static CUTTER_GRANT: [AppliedEffectDef; 3] = [
+    AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
+    AppliedEffectDef::add_ability(&CUTTER_TRAMPLE),
+    AppliedEffectDef::add_ability(&CUTTER_HASTE),
+];
+
+static CUTTER_TRAMPLE: AbilityDef = abilities::trample();
+static CUTTER_HASTE: AbilityDef = abilities::haste();
+
+static CORI_STEEL_CUTTER_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::static_ability(
+        "Equipped creature gets +1/+1 and has trample and haste.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::AttachedPermanent,
+            effect: AppliedEffectDef::Composite(&CUTTER_GRANT),
+        },
+    ),
+    AbilityDef::triggered_if(
+        "Flurry — Whenever you cast your second spell each turn, create a 1/1 white Monk \
+         creature token with prowess. You may attach this Equipment to it.",
+        TriggerEventDef::SpellCast(ObjectPredicateDef::ControlledBy(PlayerRelation::You)),
+        &CUTTER_SECOND_SPELL,
+        EffectDef::create_creature_token(&["Monk"], &[ManaColor::White], 1, 1)
+            .with_abilities(&CUTTER_PROWESS)
+            .with_art(CardArt::new(
+                "633d2d10-def7-426f-8496-ed6b45684299",
+                "Elizabeth Peiró",
+            ))
+            .with_created_tokens(CreatedTokensDef {
+                binding: ObjectSetBindingIndex::PRIMARY,
+                then: &CUTTER_ATTACHES_TO_THE_MONK,
+            }),
+    ),
+    abilities::equip(&CUTTER_EQUIP_COST, "Equip {1}{R}"),
+];
+
 pub(in crate::card::sets) static CORI_STEEL_CUTTER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("470dd3c8-07c9-42ef-aa9e-3c73b23607ff"),
     "Cori-Steel Cutter",
-    crate::card::CardArt::new("470dd3c8-07c9-42ef-aa9e-3c73b23607ff", "Tomas Duchek"),
-    crate::card::CardSet::TarkirDragonstorm,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("470dd3c8-07c9-42ef-aa9e-3c73b23607ff", "Tomas Duchek"),
+    CardSet::TarkirDragonstorm,
+    // Two mana that turns every second spell into a hasty attacker, and
+    // moves itself onto the new one for free every time.
+    CardRules::new_artifact(mana_cost!("{1}{R}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&CORI_STEEL_CUTTER_ABILITIES),
 );
 
 static ELSPETH_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
