@@ -581,6 +581,7 @@ mod vintage_cube_show_and_tell;
 mod vintage_cube_sink_into_stupor;
 mod vintage_cube_six;
 mod vintage_cube_skyclave_apparition;
+mod vintage_cube_slickshot_show_off;
 mod vintage_cube_smugglers_copter;
 mod vintage_cube_sneak_attack;
 mod vintage_cube_solitude;

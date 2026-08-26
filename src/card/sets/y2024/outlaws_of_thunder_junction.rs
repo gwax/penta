@@ -4,9 +4,9 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt,
     CardRules, CardSet, CardSupertype, CardType, CounterKind, DiscardSelectionDef, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation, ScaledValueDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
+    ResolvedEffectDurationDef, ScaledValueDef, TopCardSelectionDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -371,13 +371,41 @@ pub(in crate::card::sets) static ERODED_CANYON: CardRecord = CardRecord::new(
 );
 
 // OTJ 335 — Slickshot Show-Off
-// Audit: metadata-only — Card rules have not been implemented.
+/// A noncreature spell you cast, which is prowess with a bigger number and
+/// no toughness: what the Bird wants is one turn with several spells in it.
+static A_NONCREATURE_SPELL_YOU_CAST_SLICKSHOT: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+static SLICKSHOT_ABILITIES: [AbilityDef; 4] = [
+    abilities::flying(),
+    abilities::haste(),
+    AbilityDef::triggered(
+        "Whenever you cast a noncreature spell, this creature gets +2/+0 until end of turn.",
+        TriggerEventDef::SpellCast(A_NONCREATURE_SPELL_YOU_CAST_SLICKSHOT),
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(2),
+                ValueDef::Constant(0),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    ),
+    abilities::plot(mana_cost!("{1}{R}")),
+];
+
 pub(in crate::card::sets) static SLICKSHOT_SHOW_OFF: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("304523e7-f332-4c1d-9590-ff9a70daff26"),
     "Slickshot Show-Off",
-    crate::card::CardArt::new("304523e7-f332-4c1d-9590-ff9a70daff26", "Augusto Quirino"),
-    crate::card::CardSet::OutlawsOfThunderJunction,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("304523e7-f332-4c1d-9590-ff9a70daff26", "Augusto Quirino"),
+    CardSet::OutlawsOfThunderJunction,
+    // Two mana for a hasty flier that grows with every spell after it, and
+    // a plot cost that pays the two a turn early so the whole of a later
+    // turn's mana can go into the spells it grows on.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Bird", "Wizard"], 1, 2)
+        .with_abilities(&SLICKSHOT_ABILITIES),
 );
 
 // OTJ 359 — Pillage the Bog (alternate printing)
