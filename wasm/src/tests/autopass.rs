@@ -108,6 +108,7 @@ fn second_main_waits_for_spells_lands_and_non_mana_abilities() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
     ];
 
@@ -345,6 +346,7 @@ fn a_pump_ability_holds_combat_open_only_while_it_matters() {
             cost_objects: Vec::new(),
             x: 0,
             modes: Vec::new(),
+            mana_payment: None,
         },
         Action::PassPriority,
     ];

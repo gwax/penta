@@ -239,6 +239,7 @@ fn activated_action_labels_distinguish_exact_ability_origins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     let pump = Action::ActivateAbility {
         source,
@@ -254,6 +255,7 @@ fn activated_action_labels_distinguish_exact_ability_origins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
 
     // Multiple target/X/sacrifice variants of one origin remain one
@@ -328,6 +330,7 @@ fn activated_action_labels_show_distinct_x_and_every_selected_target() {
         cost_objects: Vec::new(),
         x,
         modes: Vec::new(),
+        mana_payment: None,
     };
     let zero = action(0);
     let two = action(2);
@@ -616,6 +619,7 @@ fn printed_ability_actions_expose_their_stable_origins_and_targets() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     assert_eq!(
         action_ability_origin(&action),
@@ -671,6 +675,7 @@ fn mana_and_granted_ability_actions_expose_their_stable_origins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     assert_eq!(
         action_ability_origin(&granted_action),
@@ -697,6 +702,7 @@ fn token_ability_actions_expose_their_stable_origins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     assert_eq!(
         action_ability_origin(&token_action),
@@ -719,6 +725,7 @@ fn token_ability_actions_expose_their_stable_origins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     assert_eq!(
         action_ability_origin(&token_granted_action),
@@ -743,6 +750,7 @@ fn emblem_ability_actions_expose_their_stable_origins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     assert_eq!(
         action_ability_origin(&emblem_action),
@@ -763,6 +771,7 @@ fn emblem_ability_actions_expose_their_stable_origins() {
         cost_objects: Vec::new(),
         x: 0,
         modes: Vec::new(),
+        mana_payment: None,
     };
     assert_eq!(
         action_ability_origin(&emblem_granted_action),

@@ -632,31 +632,7 @@ impl WebGame {
                 if choices.x() > 0 {
                     let _ = write!(label, " (X={})", choices.x());
                 }
-                if !choices.mana_payment().alternatives().is_empty() {
-                    let payments =
-                        choices
-                            .mana_payment()
-                            .alternatives()
-                            .iter()
-                            .map(|payment| {
-                                let symbol = payment.symbol();
-                                if let Some(life) = symbol.life_cost() {
-                                    format!(
-                                        "{} life for {} {}",
-                                        life.saturating_mul(payment.count()),
-                                        payment.count(),
-                                        symbol.symbol(),
-                                    )
-                                } else {
-                                    format!(
-                                        "{} {} with generic mana",
-                                        payment.count(),
-                                        symbol.symbol(),
-                                    )
-                                }
-                            })
-                            .collect::<Vec<_>>()
-                            .join(", ");
+                if let Some(payments) = mana_payment_label(choices.mana_payment()) {
                     let _ = write!(label, " (pay {payments})");
                 }
                 if !sacrifices.is_empty() {
@@ -683,10 +659,17 @@ impl WebGame {
                 cost_objects,
                 x,
                 modes,
+                mana_payment,
             } => {
                 let mut label = self.activation_label(observation, *source, *ability, modes);
                 if source_ability_has_multiple_x_values(observation, *source, *ability) {
                     let _ = write!(label, " (X={x})");
+                }
+                // Two activations of one ability can also differ only in how
+                // a Phyrexian symbol is being paid, so say which branch this
+                // one announced -- the same thing the cast label says.
+                if let Some(payments) = mana_payment.as_deref().and_then(mana_payment_label) {
+                    let _ = write!(label, " (pay {payments})");
                 }
                 // Two activations of one ability can differ only in which
                 // objects the cost spends -- the Lavamancer's pairs of
@@ -792,4 +775,34 @@ impl WebGame {
             _ => self.action_label(observation, action),
         }
     }
+}
+
+/// How an announced flexible-symbol payment reads, or nothing when the
+/// announcement names nothing. A cast and an activation announce the same
+/// thing, so they read it back the same way: two offers that differ only in
+/// which branch they took have to be told apart on the button.
+fn mana_payment_label(payment: &penta::ManaPaymentChoice) -> Option<String> {
+    if payment.alternatives().is_empty() {
+        return None;
+    }
+    Some(
+        payment
+            .alternatives()
+            .iter()
+            .map(|payment| {
+                let symbol = payment.symbol();
+                if let Some(life) = symbol.life_cost() {
+                    format!(
+                        "{} life for {} {}",
+                        life.saturating_mul(payment.count()),
+                        payment.count(),
+                        symbol.symbol(),
+                    )
+                } else {
+                    format!("{} {} with generic mana", payment.count(), symbol.symbol())
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(", "),
+    )
 }
