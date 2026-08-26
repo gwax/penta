@@ -3,18 +3,28 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, CardArt, CardRules, CardSet, CardType, CounterKind, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, tokens,
+    ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities, tokens,
 };
 use crate::mana_cost;
 
 // SOI 44 — Thraben Inspector
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static THRABEN_INSPECTOR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d140c3b7-ca78-483d-baeb-307b624fea8b"),
     "Thraben Inspector",
-    crate::card::CardArt::new("d140c3b7-ca78-483d-baeb-307b624fea8b", "Matt Stewart"),
-    crate::card::CardSet::ShadowsOverInnistrad,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("d140c3b7-ca78-483d-baeb-307b624fea8b", "Matt Stewart"),
+    CardSet::ShadowsOverInnistrad,
+    // One mana for a body and a card: the Clue is the reason the 1/2 is
+    // worth playing, and the body is the reason the card is cheap.
+    CardRules::new_creature(mana_cost!("{W}"), &["Human", "Soldier"], 1, 2).with_ability(
+        abilities::enters_trigger(
+            "When this creature enters, investigate. (Create a Clue token. It's an artifact with \
+             \"{2}, Sacrifice this token: Draw a card.\")",
+            EffectDef::create_token(tokens::clue()).with_art(CardArt::new(
+                "f2c859e1-181e-44d1-afbd-bbd6e52cf42a",
+                "John Avon",
+            )),
+        ),
+    ),
 );
 
 // SOI 233 — Tireless Tracker
