@@ -560,6 +560,7 @@ mod vintage_cube_prismatic_ending;
 mod vintage_cube_prismatic_vista;
 mod vintage_cube_profts_eidetic_memory;
 mod vintage_cube_psychic_frog;
+mod vintage_cube_pyrogoyf;
 mod vintage_cube_quantum_riddler;
 mod vintage_cube_questing_beast;
 mod vintage_cube_ragavan;

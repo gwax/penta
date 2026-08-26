@@ -5,9 +5,9 @@ use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet,
     CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef,
-    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectSetDef, PlayerRefDef,
-    PlayerRelation, SpellAdditionalCostDef, SpendModeDef, SumValueDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectRefDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, SpellAdditionalCostDef, SpendModeDef, SumValueDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -150,17 +150,16 @@ static PYROGOYF_ABILITIES: [AbilityDef; 2] = [
         "Whenever this creature or another Lhurgoyf creature you control enters, that creature deals damage equal to its power to any target.",
         TriggerEventDef::zone_changed(A_LHURGOYF_YOU_CONTROL, None, Some(ZoneKind::Battlefield)),
         &PYROGOYF_DAMAGE_TARGET,
-        EffectDef::DealDamage {
+        // "That creature" deals it, not Pyrogoyf: the Lhurgoyf that entered
+        // is both where the amount is read and what the damage is from, so
+        // protection and redirection answer the right object when the one
+        // entering is some other Lhurgoyf.
+        EffectDef::DealDamageFrom {
+            source: ObjectRefDef::TriggeringObject,
             recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::TriggeringObjectPower,
         },
-    )
-    .with_coverage(AbilityCoverageDef::partial(
-        "The damage is dealt by the Lhurgoyf that entered. Its amount is read from that \
-         creature, but the source recorded for the damage is Pyrogoyf, so protection from red \
-         and redirection answer the wrong object when some other Lhurgoyf is the one entering. \
-         No other Lhurgoyf is cataloged yet.",
-    )),
+    ),
 ];
 
 pub(in crate::card::sets) static PYROGOYF: CardRecord = CardRecord::new_with_legacy_id(
