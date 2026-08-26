@@ -4,15 +4,15 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CounterKind,
+    CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind,
     DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
     DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentCostDef,
     EffectPaymentDef, EffectRecipientDef, ExilePlayDurationDef, GraveyardTypeConditionDef,
     ManaColor, MillLoopDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
     ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
     ReplacementEffectDef, ReplacementEventDef, SacrificedAmountDef, SpellAdditionalCostDef,
-    SpendModeDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, tokens,
+    SpendModeDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueComparisonDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::ObjectBindingIndex;
 use crate::{ObjectSetBindingIndex, TargetIndex, mana_cost};
@@ -510,13 +510,83 @@ pub(in crate::card::sets) static VERMIN_GORGER: CardRecord = CardRecord::new(
 );
 
 // MH2 121 — Dragon's Rage Channeler
-// Audit: metadata-only — Card rules have not been implemented.
+static A_NONCREATURE_SPELL_YOU_CAST: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+static CHANNELER_SURVEIL: TopCardSelectionDef = abilities::surveil(1, None);
+
+/// Four card types among the cards in your own graveyard, which the surveil
+/// above is what fills: the look is the cost of nothing and the delirium is
+/// what it buys.
+static DELIRIUM: TriggerConditionDef = TriggerConditionDef::ValueComparison(&ValueComparisonDef {
+    left: ValueDef::CardTypesAmongGraveyards(PlayerRelation::You),
+    comparison: ComparisonDef::GreaterOrEqual,
+    right: ValueDef::Constant(4),
+});
+
+static CHANNELER_FLYING: AbilityDef = abilities::flying();
+
+static CHANNELER_MUST_ATTACK: AbilityDef =
+    abilities::attacks_each_combat_if_able("This creature attacks each combat if able.");
+
+/// Three grants under one condition, so they arrive and leave together: a
+/// graveyard that falls back under four takes the flying and the compulsion
+/// with it.
+static CHANNELER_DELIRIUM_GRANTS: [EffectDef; 3] = [
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::modify_power_toughness(
+            ValueDef::Constant(2),
+            ValueDef::Constant(2),
+        ),
+    },
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::add_ability(&CHANNELER_FLYING),
+    },
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::Source,
+        effect: AppliedEffectDef::add_ability(&CHANNELER_MUST_ATTACK),
+    },
+];
+
+static CHANNELER_DELIRIUM: EffectDef = EffectDef::Sequence(&CHANNELER_DELIRIUM_GRANTS);
+
+static CHANNELER_ABILITIES: [AbilityDef; 2] = [
+    AbilityDef::triggered(
+        "Whenever you cast a noncreature spell, surveil 1. (Look at the top card of your library. \
+         You may put that card into your graveyard.)",
+        TriggerEventDef::SpellCast(A_NONCREATURE_SPELL_YOU_CAST),
+        EffectDef::LookAtTopAndSelect {
+            player: EffectRecipientDef::Controller,
+            looker: EffectRecipientDef::Controller,
+            selection: &CHANNELER_SURVEIL,
+        },
+    ),
+    // "As long as", so it is asked live rather than once: the 3/3 flier is
+    // a 1/1 again the moment the fourth card type leaves the graveyard.
+    AbilityDef::static_ability(
+        "Delirium — As long as there are four or more card types among cards in your graveyard, \
+         this creature gets +2/+2, has flying, and attacks each combat if able.",
+        EffectDef::IfCondition {
+            condition: &DELIRIUM,
+            then: &CHANNELER_DELIRIUM,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static DRAGON_S_RAGE_CHANNELER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4ced112a-e775-4f97-97b3-74877e9dce12"),
     "Dragon's Rage Channeler",
-    crate::card::CardArt::new("4ced112a-e775-4f97-97b3-74877e9dce12", "Martina Fačková"),
-    crate::card::CardSet::ModernHorizons2,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("4ced112a-e775-4f97-97b3-74877e9dce12", "Martina Fačková"),
+    CardSet::ModernHorizons2,
+    // One mana for a 1/1 that fills its own graveyard and turns into a 3/3
+    // flier for doing what the deck was going to do anyway. The compulsion
+    // to attack is the price, and it is rarely one.
+    CardRules::new_creature(mana_cost!("{R}"), &["Human", "Shaman"], 1, 1)
+        .with_abilities(&CHANNELER_ABILITIES),
 );
 
 // MH2 126 — Fury

@@ -33,7 +33,12 @@ fn shared_query(query: ObjectQueryDef) -> bool {
 
 fn shared_condition_value(value: ValueDef, static_context: bool) -> bool {
     match value {
-        ValueDef::Constant(_) | ValueDef::LifeTotal(_) => true,
+        // Delirium is read live from a graveyard the same way a static
+        // clause reads a battlefield count. Nothing in a graveyard is sized
+        // by the layer being assembled, so asking cannot re-enter the walk.
+        ValueDef::Constant(_) | ValueDef::LifeTotal(_) | ValueDef::CardTypesAmongGraveyards(_) => {
+            true
+        }
         ValueDef::CountSpellsCastThisTurn(query) => shared_object_predicate(query.spell),
         ValueDef::CountMatchingObjects(query) | ValueDef::DistinctNamesAmong(query) => {
             (!static_context || query.relative_position.is_none()) && shared_query(*query)
@@ -46,7 +51,6 @@ fn shared_condition_value(value: ValueDef, static_context: bool) -> bool {
         | ValueDef::LibrarySize(_)
         | ValueDef::SpellsCastThisGame(_)
         | ValueDef::BasicLandTypesControlled(_)
-        | ValueDef::CardTypesAmongGraveyards(_)
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::PlayerCounters { .. }
         | ValueDef::SourceCastX => !static_context,
