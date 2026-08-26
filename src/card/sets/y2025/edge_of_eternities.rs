@@ -3,14 +3,14 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
-    ComparisonDef, CounterKind, CreatureTypeSetDef, DeclarativeAbilityDef, EffectDef,
-    EffectRecipientDef, EmblemCharacteristics, HalvedValueDef, ManaColor, ModalSpellDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRelation, QuantifierDef,
-    ReplacementAbilityDef, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, RoundingDef, TopCardSelectionDef, TriggerConditionDef,
-    TriggerEventDef, TriggeredAbilityDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    CardTypeSet, ComparisonDef, CounterKind, CreatureTypeSetDef, DeclarativeAbilityDef, EffectDef,
+    EffectRecipientDef, EmblemCharacteristics, GraveyardPlayPermissionDef, HalvedValueDef,
+    ManaColor, ModalSpellDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
+    PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, QuantifierDef, ReplacementAbilityDef,
+    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    RoundingDef, TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, TriggeredAbilityDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -534,13 +534,64 @@ pub(in crate::card::sets) static MIGHTFORM_HARMONIZER: CardRecord = CardRecord::
 );
 
 // EOE 362 — Icetill Explorer
-// Audit: metadata-only — Card rules have not been implemented.
+/// Lands only, played the ordinary way: what the permission adds is the
+/// zone, not a way of casting anything out of it.
+static A_LAND_FROM_YOUR_GRAVEYARD: PlayRestrictionDef = PlayRestrictionDef::new(
+    PlayActionMatcherDef::PlayLand,
+    ObjectPredicateDef::HasType(CardType::Land),
+);
+
+/// A land you control arriving, which is what landfall is: a land somebody
+/// else plays is not one, and the mill is what turns the extra land drop
+/// into more lands to play.
+static A_LAND_YOU_CONTROL_ICETILL: ObjectPredicateDef = ObjectPredicateDef::All(&[
+    ObjectPredicateDef::HasType(CardType::Land),
+    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+]);
+
+static ICETILL_ABILITIES: [AbilityDef; 3] = [
+    AbilityDef::static_ability(
+        "You may play an additional land on each of your turns.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Controller,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayAdditionalLands(1)),
+        },
+    ),
+    AbilityDef::static_ability(
+        "You may play lands from your graveyard.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Controller,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(
+                GraveyardPlayPermissionDef::unlimited(A_LAND_FROM_YOUR_GRAVEYARD),
+            )),
+        },
+    ),
+    AbilityDef::triggered(
+        "Landfall — Whenever a land you control enters, mill a card.",
+        TriggerEventDef::zone_changed(
+            A_LAND_YOU_CONTROL_ICETILL,
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        EffectDef::Mill {
+            player: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+            binding: None,
+            then: None,
+        },
+    ),
+];
+
 pub(in crate::card::sets) static ICETILL_EXPLORER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("895e5e9b-84dd-4741-8a2c-442165ea9b15"),
     "Icetill Explorer",
-    crate::card::CardArt::new("895e5e9b-84dd-4741-8a2c-442165ea9b15", "Raimaru"),
-    crate::card::CardSet::EdgeOfEternities,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("895e5e9b-84dd-4741-8a2c-442165ea9b15", "Raimaru"),
+    CardSet::EdgeOfEternities,
+    // Four mana for a 2/4 whose three clauses feed each other: the extra
+    // land drop wants lands, the mill finds them, and the graveyard is
+    // where the mill puts them.
+    CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Insect", "Scout"], 2, 4)
+        .with_abilities(&ICETILL_ABILITIES),
 );
 
 // EOE 391 — The Endstone

@@ -454,6 +454,7 @@ mod vintage_cube_headliner_scarlett;
 mod vintage_cube_hexdrinker;
 mod vintage_cube_horizon_land;
 mod vintage_cube_hullbreacher;
+mod vintage_cube_icetill_explorer;
 mod vintage_cube_ignoble_hierarch;
 mod vintage_cube_infect;
 mod vintage_cube_infernal_grasp;
