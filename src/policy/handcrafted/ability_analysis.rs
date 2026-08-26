@@ -439,6 +439,7 @@ impl HandcraftedPolicy {
                     | crate::card::EffectPaymentCostDef::Discard(_)
                     | crate::card::EffectPaymentCostDef::DiscardMatching(_)
                     | crate::card::EffectPaymentCostDef::ChosenGenericMana
+                    | crate::card::EffectPaymentCostDef::ChosenEnergy
                     | crate::card::EffectPaymentCostDef::MovePermanentMatching { .. }
                     | crate::card::EffectPaymentCostDef::SacrificePermanentMatching(_)
                     | crate::card::EffectPaymentCostDef::ObjectManaCostReducedBy { .. }

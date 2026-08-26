@@ -58,6 +58,8 @@ pub(super) enum ResolvedEffectPayment {
     DiscardMatching(ObjectPredicateDef),
     /// Generic mana in an amount the payer chooses, named the same way.
     ChosenGenericMana,
+    /// Energy in an amount the payer chooses.
+    ChosenEnergy,
     /// One matching permanent, moved to the named zone.
     MovePermanentMatching {
         object: ObjectPredicateDef,

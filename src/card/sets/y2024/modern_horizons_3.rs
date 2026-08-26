@@ -768,13 +768,51 @@ pub(in crate::card::sets) static DETECTIVES_PHOENIX: CardRecord = CardRecord::ne
 );
 
 // MH3 122 — Galvanic Discharge
-// Audit: metadata-only — Card rules have not been implemented.
+static A_CREATURE_OR_PLANESWALKER_DISCHARGE: [AbilityTargetDef; 1] =
+    [AbilityTargetDef::exactly_one_permanent(
+        ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::HasType(CardType::Planeswalker),
+        ]),
+    )];
+
+/// "That much damage": the amount the payment settled, which is what makes
+/// the three energy it hands out into three damage the turn it is cast and
+/// more than that on a board that has been banking it.
+static DISCHARGE_DAMAGE: EffectDef = EffectDef::DealDamage {
+    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    amount: ValueDef::PaidAmount,
+};
+
+static DISCHARGE_EFFECTS: [EffectDef; 2] = [
+    EffectDef::AddPlayerCounters {
+        recipient: EffectRecipientDef::Controller,
+        kind: CounterKind::Energy,
+        amount: ValueDef::Constant(3),
+    },
+    EffectDef::PayOr(PayOrDef::optional(
+        EffectPaymentDef {
+            payer: PlayerSetDef::Related(PlayerRelation::You),
+            cost: EffectPaymentCostDef::ChosenEnergy,
+        },
+        &DISCHARGE_DAMAGE,
+    )),
+];
+
 pub(in crate::card::sets) static GALVANIC_DISCHARGE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("32aa6e33-221f-414c-9b51-850d97a7e051"),
     "Galvanic Discharge",
-    crate::card::CardArt::new("32aa6e33-221f-414c-9b51-850d97a7e051", "Zoltan Boros"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("32aa6e33-221f-414c-9b51-850d97a7e051", "Zoltan Boros"),
+    CardSet::ModernHorizons3,
+    // One mana that kills a three-toughness creature and leaves the energy
+    // behind when it does not need all of it.
+    CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Choose target creature or planeswalker. You get {E}{E}{E} (three energy counters), then \
+         you may pay any amount of {E}. Galvanic Discharge deals that much damage to that \
+         permanent.",
+        &A_CREATURE_OR_PLANESWALKER_DISCHARGE,
+        EffectDef::Sequence(&DISCHARGE_EFFECTS),
+    )),
 );
 
 // MH3 128 — Molten Gatekeeper

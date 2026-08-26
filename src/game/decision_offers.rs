@@ -144,6 +144,12 @@ impl Game {
                 let _spent = self.pay_player_cost(player, cost, 0);
                 Some(amount)
             }
+            // The same shape in energy: the option id is how much is spent,
+            // and energy is spent from the counters rather than raised.
+            ResolvedEffectPayment::ChosenEnergy => {
+                let amount = u16::try_from(chosen).unwrap_or(u16::MAX);
+                self.spend_energy(player, amount).then_some(amount)
+            }
             ResolvedEffectPayment::MovePermanentMatching {
                 object: predicate,
                 zone,
@@ -297,6 +303,14 @@ impl Game {
             ResolvedEffectPayment::ChosenGenericMana => {
                 self.can_pay_cost(player, ManaCost::new(1, 0), 0)
             }
+            // Paying nothing is not paying, so one energy counter is what
+            // makes the choice worth offering at all.
+            ResolvedEffectPayment::ChosenEnergy => {
+                self.players[player.index()]
+                    .counters
+                    .count(CounterKind::Energy)
+                    >= 1
+            }
             // Payable only when the creatures on the board could add up to
             // it at all, so a player who cannot pay is never asked.
             ResolvedEffectPayment::SacrificeCreaturesWithTotalPower(total) => {
@@ -359,91 +373,6 @@ impl Game {
             })
             .map(|permanent| permanent.card.id)
             .collect()
-    }
-
-    /// The options a payment decision offers: declining, and then one entry
-    /// per way of paying. Everything but a matching discard has exactly one
-    /// way, so it stays the single option it has always been.
-    pub(super) fn payment_options(
-        &self,
-        player: PlayerId,
-        payment: ResolvedEffectPayment,
-        can_pay: bool,
-        decline: &str,
-    ) -> Vec<DecisionOption> {
-        let mut options = vec![DecisionOption {
-            id: 0,
-            label: decline.into(),
-            card: None,
-            members: Vec::new(),
-            ability_text: None,
-            zone: DecisionZone::None,
-        }];
-        if !can_pay {
-            return options;
-        }
-        match payment {
-            // One option per amount the payer can actually afford, with the
-            // amount as the option id.
-            ResolvedEffectPayment::ChosenGenericMana => {
-                for amount in 1..=self.maximum_generic_payment(player) {
-                    options.push(DecisionOption {
-                        id: u32::from(amount),
-                        label: format!("Pay {{{amount}}}"),
-                        card: None,
-                        members: Vec::new(),
-                        ability_text: None,
-                        zone: DecisionZone::None,
-                    });
-                }
-            }
-            ResolvedEffectPayment::MovePermanentMatching {
-                object: predicate,
-                zone,
-            } => {
-                let verb = if zone == ZoneKind::Hand {
-                    "Return"
-                } else {
-                    "Move"
-                };
-                options.extend(self.permanent_payment_options(player, predicate, verb));
-            }
-            ResolvedEffectPayment::SacrificePermanentMatching(predicate) => {
-                options.extend(self.permanent_payment_options(player, predicate, "Sacrifice"));
-            }
-            ResolvedEffectPayment::DiscardMatching(predicate) => {
-                for (index, card) in self
-                    .matching_cards_in_hand(player, predicate)
-                    .into_iter()
-                    .enumerate()
-                {
-                    let name = self
-                        .catalog
-                        .get(card.definition)
-                        .map_or_else(|| "a card".to_string(), |card| card.name.clone());
-                    options.push(DecisionOption {
-                        id: u32::try_from(index + 1).unwrap_or(u32::MAX),
-                        label: format!("Discard {name}"),
-                        card: Some((
-                            card.id,
-                            ObjectCharacteristics::card(card.definition, CardPartId::PRIMARY),
-                        )),
-                        members: Vec::new(),
-                        ability_text: None,
-                        zone: DecisionZone::Hand,
-                    });
-                }
-            }
-            payment => options.push(DecisionOption {
-                id: 1,
-                label: Self::effect_payment_label(payment),
-                card: None,
-                members: Vec::new(),
-                ability_text: None,
-                zone: DecisionZone::None,
-            }),
-        }
-        options
     }
 
     fn permanent_payment_options(
@@ -509,6 +438,7 @@ impl Game {
             // means a caller lost that answer.
             ResolvedEffectPayment::DiscardMatching(_)
             | ResolvedEffectPayment::ChosenGenericMana
+            | ResolvedEffectPayment::ChosenEnergy
             | ResolvedEffectPayment::MovePermanentMatching { .. }
             | ResolvedEffectPayment::SacrificePermanentMatching(_)
             // Named one creature at a time by its own decision, which is
@@ -553,6 +483,7 @@ impl Game {
             // the prompt the decision is introduced with.
             ResolvedEffectPayment::DiscardMatching(_) => "Discard a matching card".to_string(),
             ResolvedEffectPayment::ChosenGenericMana => "Pay {X}".to_string(),
+            ResolvedEffectPayment::ChosenEnergy => "Pay energy".to_string(),
             ResolvedEffectPayment::MovePermanentMatching { zone, .. } => {
                 if zone == ZoneKind::Hand {
                     "Return a matching permanent".to_string()
@@ -968,3 +899,4 @@ impl Game {
 }
 
 include!("decision_offers/copies.rs");
+include!("decision_offers/payment_options.rs");

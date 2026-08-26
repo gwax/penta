@@ -773,6 +773,7 @@ pub(super) fn resolved_effect_payment_snapshot(
         ResolvedEffectPayment::Mill(amount) => ResolvedEffectPaymentSnapshot::Mill(amount),
         ResolvedEffectPayment::Discard(amount) => ResolvedEffectPaymentSnapshot::Discard(amount),
         ResolvedEffectPayment::DiscardMatching(_) => ResolvedEffectPaymentSnapshot::DiscardMatching,
+        ResolvedEffectPayment::ChosenEnergy => ResolvedEffectPaymentSnapshot::ChosenEnergy,
         ResolvedEffectPayment::ChosenGenericMana => {
             ResolvedEffectPaymentSnapshot::ChosenGenericMana
         }

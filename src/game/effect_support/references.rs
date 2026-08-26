@@ -155,6 +155,7 @@ impl Game {
                 Resolved::MovePermanentMatching { object, zone }
             }
             Cost::ChosenGenericMana => Resolved::ChosenGenericMana,
+            Cost::ChosenEnergy => Resolved::ChosenEnergy,
             Cost::DiscardMatching(predicate) => Resolved::DiscardMatching(predicate),
         }
     }

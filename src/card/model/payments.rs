@@ -52,6 +52,11 @@ pub enum EffectPaymentCostDef {
     /// {X}" during a resolution, where X is settled by the payment rather
     /// than by the cast that produced it.
     ChosenGenericMana,
+    /// Energy in an amount the payer chooses, read back the same way. "You
+    /// may pay any amount of {E}" is this: unlike the fixed amount above,
+    /// what is spent is settled by the payer rather than by the card, and
+    /// paying nothing is a legal answer.
+    ChosenEnergy,
     /// Sacrifice one matching permanent the payer controls, named as part of
     /// the payment. Chain of Vapor asks for a land of their choice.
     SacrificePermanentMatching(ObjectPredicateDef),

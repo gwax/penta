@@ -33,6 +33,13 @@ distinguishes snapshots of the covered source and build inputs.
   fires for the land drop and stays quiet for the land somebody's spell put
   down.
 
+- **Paying an amount of energy the payer chooses.** A resolution could ask
+  for a fixed amount of energy or for an amount of generic mana the payer
+  picked, but not for an amount of energy they picked -- so "you may pay any
+  amount of {E}" had no cost to name. It is the same shape as the chosen
+  mana beside it: one option per amount the counters can afford, and the
+  paid branch reads back how much was spent.
+
 - **Sparing the draw-step draw from a replacement.** A draw trigger could
   already exempt "the first one they draw in each of their draw steps"; a
   draw *replacement* could not, so Hullbreacher had no way to leave their
