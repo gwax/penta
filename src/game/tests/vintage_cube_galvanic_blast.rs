@@ -175,3 +175,34 @@ fn losing_an_artifact_in_response_drops_it_back_to_two() {
 
     assert_eq!(damage_on(&game, angel), 2, "two artifacts is two damage");
 }
+
+/// "You control three or more artifacts", so the artifacts across the table
+/// are not yours to count -- and an artifact creature of your own is.
+#[test]
+fn metalcraft_counts_your_artifacts_and_only_yours() {
+    let (mut game, spell, _angel) = staged(2);
+    for _ in 0..3 {
+        game.put_onto_battlefield(PlayerId::Two, cards::MANIFOLD_KEY)
+            .expect("cataloged");
+    }
+    drain_pending(&mut game);
+
+    cast_at(&mut game, spell, Target::Player(PlayerId::Two));
+
+    assert_eq!(
+        game.players[1].life, 18,
+        "their three artifacts left it at two damage",
+    );
+
+    let (mut game, spell, _angel) = staged(2);
+    game.put_onto_battlefield(PlayerId::One, cards::ORNITHOPTER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    cast_at(&mut game, spell, Target::Player(PlayerId::Two));
+
+    assert_eq!(
+        game.players[1].life, 16,
+        "but an artifact creature of your own is the third artifact",
+    );
+}
