@@ -246,3 +246,81 @@ fn the_thopter_it_makes_is_blue() {
         "and blue alone, whatever it was made out of",
     );
 }
+
+/// An activated ability with no timing restriction: the Foundry answers an
+/// attack on the opponent's turn, and the Thopter it makes may block the
+/// turn it arrives -- summoning sickness stops attacking and tapping, not
+/// blocking (CR 302.6).
+#[test]
+fn it_makes_a_blocker_on_their_turn() {
+    let (mut game, foundry, _) = staged(&[cards::HOWLING_MINE]);
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    game.active_player = PlayerId::Two;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::Two;
+    game.apply(
+        PlayerId::Two,
+        Action::DeclareAttacker {
+            attacker: bears,
+            defender: AttackDefender::Player(PlayerId::One),
+        },
+    )
+    .expect("the Bears attack");
+    game.apply(PlayerId::Two, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+
+    for _ in 0..4 {
+        if game.priority == PlayerId::One {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let offers = activations(&game, foundry);
+    assert!(
+        !offers.is_empty(),
+        "nothing about the ability waits for your own main phase",
+    );
+    game.apply(
+        PlayerId::One,
+        offers.into_iter().next().expect("one of them").0,
+    )
+    .expect("it activates mid-combat");
+    drain_pending(&mut game);
+    let thopter = thopters(&game)
+        .first()
+        .expect("a Thopter to stand in the way")
+        .card
+        .id;
+
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+    game.apply(
+        PlayerId::One,
+        Action::DeclareBlocker {
+            blocker: thopter,
+            attacker: bears,
+        },
+    )
+    .expect("a creature that arrived this turn may still block");
+    game.apply(PlayerId::One, Action::FinishDeclaringBlockers)
+        .expect("the declaration finishes");
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == thopter && permanent.blocking.contains(&bears)),
+        "the Bears are blocked by a Thopter that did not exist when they were declared",
+    );
+}
