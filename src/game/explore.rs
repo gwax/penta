@@ -19,18 +19,16 @@ use super::{
 };
 
 impl Game {
-    /// One creature explores. A creature that is not on the battlefield any
-    /// more explores nothing, and an empty library reveals nothing.
+    /// One creature explores. A creature that has left the battlefield still
+    /// explores -- it simply has nowhere to put the counter (CR 701.40b) --
+    /// and a library with nothing on top reveals nothing but still grows the
+    /// creature.
     pub(super) fn explore(&mut self, creature: GameObjectId) {
-        let Some(player) = self
-            .battlefield
-            .iter()
-            .find(|permanent| permanent.card.id == creature)
-            .map(|permanent| permanent.controller)
-        else {
+        let Some(player) = self.current_or_last_known_controller(creature) else {
             return;
         };
         let Some(top) = self.players[player.index()].library.last() else {
+            self.add_explore_counter(creature);
             return;
         };
         let (revealed, definition) = (top.id, top.definition);

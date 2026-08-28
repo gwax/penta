@@ -40,6 +40,14 @@ distinguishes snapshots of the covered source and build inputs.
   channel. An ability now records that it is cycling rather than being
   recognised by what it charges.
 
+- **Exploring with nothing to reveal still grows the creature.** "If no card
+  is revealed, most likely because that player's library is empty, the
+  exploring creature receives a +1/+1 counter" -- the procedure returned
+  early instead and did nothing at all. A creature that has left the
+  battlefield also explores now rather than skipping the whole procedure: it
+  simply has nowhere to put the counter, which the counter step already
+  handled.
+
 - **"The player it's attacking" survives the attacker.** Myr Battlesphere's
   ruling is that a Battlesphere no longer on the battlefield when its attack
   trigger resolves still throws its Myr at what it was attacking, losing only
