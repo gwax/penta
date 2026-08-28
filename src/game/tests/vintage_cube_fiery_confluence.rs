@@ -189,3 +189,120 @@ fn the_three_modes_mix() {
             .any(|permanent| permanent.card.id == idol),
     );
 }
+
+/// "If all targets for the chosen modes become illegal before the Confluence
+/// resolves, the spell won't resolve and none of its effects will happen."
+/// Two burn modes and a shatter is still one spell: cracking the artifact it
+/// named in response saves the four damage as well.
+#[test]
+fn losing_its_only_target_stops_the_whole_spell() {
+    let (mut game, confluence) = staged();
+    let lotus = game
+        .put_onto_battlefield(PlayerId::Two, cards::BLACK_LOTUS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell {
+                card: id, choices, ..
+            } => {
+                *id == confluence
+                    && choices.modes() == [BURN, BURN, SHATTER]
+                    && choices.iter_targets().copied().collect::<Vec<_>>()
+                        == [Target::Permanent(lotus)]
+            }
+            _ => false,
+        })
+        .expect("two burns and a shatter at the Lotus");
+    game.apply(PlayerId::One, cast).expect("it is castable");
+
+    // They hold priority and crack the Lotus for mana rather than let it be
+    // shattered, which takes the spell's only target with it.
+    game.priority = PlayerId::Two;
+    let crack = Action::ActivateManaAbility {
+        source: lotus,
+        ability: mana_ability_for(&game, lotus, ManaColor::Blue),
+        color: ManaColor::Blue,
+        counters_removed: None,
+        cost_object: None,
+        combination: None,
+    };
+    game.apply(PlayerId::Two, crack)
+        .expect("its own ability sacrifices it");
+    settle(&mut game);
+
+    assert!(
+        game.stack.is_empty(),
+        "the Confluence left the stack one way or another",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::FIERY_CONFLUENCE),
+        "countered on resolution for having no legal targets",
+    );
+    assert_eq!(
+        game.players[1].life, 20,
+        "so the two burn modes never happened either",
+    );
+}
+
+/// The other half of the same ruling: with one target still legal the spell
+/// resolves, does nothing to the one that got away, and carries out every
+/// mode that needed no target.
+#[test]
+fn one_surviving_target_still_resolves_the_rest() {
+    let (mut game, confluence) = staged();
+    let lotus = game
+        .put_onto_battlefield(PlayerId::Two, cards::BLACK_LOTUS)
+        .expect("cataloged");
+    let key = game
+        .put_onto_battlefield(PlayerId::Two, cards::MANIFOLD_KEY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell {
+                card: id, choices, ..
+            } => {
+                *id == confluence
+                    && choices.modes() == [BURN, SHATTER, SHATTER]
+                    && choices.iter_targets().copied().collect::<Vec<_>>()
+                        == [Target::Permanent(lotus), Target::Permanent(key)]
+            }
+            _ => false,
+        })
+        .expect("a burn and both artifacts named");
+    game.apply(PlayerId::One, cast).expect("it is castable");
+
+    game.priority = PlayerId::Two;
+    let crack = Action::ActivateManaAbility {
+        source: lotus,
+        ability: mana_ability_for(&game, lotus, ManaColor::Blue),
+        color: ManaColor::Blue,
+        counters_removed: None,
+        cost_object: None,
+        combination: None,
+    };
+    game.apply(PlayerId::Two, crack)
+        .expect("its own ability sacrifices it");
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == key),
+        "the target that was still there is destroyed",
+    );
+    assert_eq!(game.players[1].life, 18, "and the burn mode still landed");
+}
