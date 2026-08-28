@@ -345,3 +345,70 @@ fn the_emblem_reads_an_opponents_permanent() {
 
     assert_eq!(offered, vec![bear], "only their side is a legal target");
 }
+
+/// "You choose the target for the triggered ability of Teferi's emblem
+/// after you've seen the card you drew." The draw is what triggers it, so
+/// the card is in hand by the time the question is asked -- which is what
+/// lets a drawn answer decide which permanent to eat.
+#[test]
+fn the_emblem_asks_after_the_card_is_in_hand() {
+    let (mut game, teferi) = staged(8, 0);
+    let bear = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    activate(&mut game, teferi, 2, &[]);
+    let hand = game.players[0].hand.len();
+    let library = game.players[0].library.len();
+
+    game.draw_card(PlayerId::One);
+    advance_to_decision(&mut game);
+
+    assert!(
+        game.pending_decisions.first().is_some_and(|pending| pending
+            .observation
+            .options
+            .iter()
+            .any(|option| option.card.map(|(object, _)| object) == Some(bear))),
+        "the emblem is asking which permanent to exile",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand + 1,
+        "and the card it drew is already in hand",
+    );
+    assert_eq!(game.players[0].library.len(), library - 1);
+}
+
+/// A token put into a library ceases to exist (CR 111.7), so the minus
+/// answers one for good rather than burying it two cards deep.
+#[test]
+fn a_tucked_token_simply_stops_existing() {
+    let (mut game, teferi) = staged(4, 0);
+    game.put_onto_battlefield(PlayerId::Two, cards::ESIKA_S_CHARIOT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let cat = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Token)
+        .expect("the Chariot brought its Cats")
+        .card
+        .id;
+    let library = game.players[1].library.len();
+
+    activate(&mut game, teferi, 1, &[cat]);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == cat),
+        "the Cat left the battlefield",
+    );
+    assert_eq!(
+        game.players[1].library.len(),
+        library,
+        "and no card joined their library: a token in any other zone is gone",
+    );
+}
