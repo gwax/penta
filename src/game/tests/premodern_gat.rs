@@ -658,3 +658,108 @@ fn a_mox_that_entered_taps_for_any_color() {
     .expect("the Mox taps for any color");
     assert_eq!(game.players[PlayerId::One.index()].mana_pool.green, 1);
 }
+
+/// "If you don't discard a land card, Mox Diamond never enters. It won't
+/// trigger abilities that look for something entering." A Mirrorworks
+/// watching for artifacts sees the Mox that paid and never sees the one
+/// that did not.
+#[test]
+fn a_declined_mox_never_enters_and_triggers_nothing() {
+    for pay in [true, false] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[PlayerId::One.index()].hand.clear();
+        let island = card(10_001, cards::ISLAND, PlayerId::One);
+        let island_id = island.id;
+        game.players[PlayerId::One.index()].hand.push(island);
+        game.put_onto_battlefield(PlayerId::One, cards::MIRRORWORKS)
+            .expect("cataloged");
+        drain_pending(&mut game);
+
+        let decision = cast_mox_diamond(&mut game);
+        let options = if pay {
+            vec![
+                decision
+                    .options
+                    .iter()
+                    .find(|option| option.card.is_some_and(|(card, _)| card == island_id))
+                    .expect("the Island is offered")
+                    .id,
+            ]
+        } else {
+            // Option zero is the standing "decline" the replacement offers.
+            vec![0]
+        };
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .expect("either answer is allowed");
+
+        // Anything the Mirrorworks has to say arrives now.
+        let mut watched = false;
+        for _ in 0..8 {
+            if let Some(pending) = game
+                .pending_decisions
+                .first()
+                .map(|pending| pending.observation.clone())
+            {
+                watched |= pending
+                    .prompt
+                    .starts_with("Whenever another nontoken artifact");
+                let options = pending
+                    .options
+                    .iter()
+                    .find(|option| option.label == "Decline")
+                    .map(|option| vec![option.id])
+                    .unwrap_or_default();
+                game.apply(
+                    pending.player,
+                    Action::ChooseDecision {
+                        decision: pending.id,
+                        options,
+                    },
+                )
+                .expect("declining is allowed");
+                continue;
+            }
+            if game.stack.is_empty() && game.pending_triggers.is_empty() {
+                break;
+            }
+            let priority = game.priority;
+            if game.apply(priority, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+        game.check_state_based_actions();
+
+        assert_eq!(
+            on_battlefield(&game, cards::MOX_DIAMOND),
+            pay,
+            "the Mox enters only when a land pays for it",
+        );
+        assert_eq!(
+            watched, pay,
+            "and only an entry something watched for is one the Mirrorworks saw",
+        );
+        if !pay {
+            assert!(
+                game.players[PlayerId::One.index()]
+                    .graveyard
+                    .iter()
+                    .any(|card| card.definition == cards::MOX_DIAMOND),
+                "the Mox went to the graveyard on the way",
+            );
+            assert!(
+                game.players[PlayerId::One.index()]
+                    .hand
+                    .iter()
+                    .any(|card| card.definition == cards::ISLAND),
+                "and the land it did not discard is still in hand",
+            );
+        }
+    }
+}
