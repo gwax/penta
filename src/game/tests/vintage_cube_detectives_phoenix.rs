@@ -231,3 +231,33 @@ fn the_printed_cast_collects_no_evidence() {
     );
     assert!(game.players[0].exile.is_empty());
 }
+
+/// "Unlike other Aura spells, an Aura spell with bestow isn't countered if
+/// its target is illegal as it begins to resolve. Rather, the effect making
+/// it an Aura spell ends... and it resolves and enters the battlefield as an
+/// enchantment creature."
+#[test]
+fn a_bestowed_phoenix_whose_host_dies_arrives_as_a_creature() {
+    let (mut game, phoenix, bears) = staged(true, &SIX_MANA_VALUE);
+
+    let cast = bestow_cast(&game, phoenix, bears).expect("bestow is offered from the graveyard");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    // The creature it was bestowed on is answered before it resolves.
+    game.move_permanents_to_graveyard(&[bears]);
+    drain_pending(&mut game);
+
+    let arrived = on_battlefield(&game).expect("it was not countered");
+    assert_eq!(arrived.attached_to, None, "with nothing to attach to");
+    let types = game.permanent_types(arrived).expect("it has types");
+    assert!(
+        types.contains(CardType::Creature),
+        "it came down as an enchantment creature instead",
+    );
+    assert!(types.contains(CardType::Enchantment));
+    assert!(
+        !game.effective_subtypes(arrived).contains(&"Aura"),
+        "and it is no longer an Aura",
+    );
+    assert!(game.has_flying(arrived), "the printed body flies");
+}

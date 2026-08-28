@@ -75,7 +75,13 @@ impl Game {
             .unwrap_or_else(|| behavior.types());
         let aura_host = Self::aura_host_for(&object);
         let aura_player = Self::aura_player_for(&object);
-        let aura_fizzles = spell_types.is_permanent()
+        // A bestow spell whose host is gone is not countered: it loses the
+        // Aura half and arrives as an enchantment creature (CR 702.103c),
+        // which entering unattached is enough to make it.
+        let bestowed = self.was_cast_for_bestow(&object);
+        let aura_host = aura_host.filter(|_| !bestowed || !self.spell_fizzles(&object));
+        let aura_fizzles = !bestowed
+            && spell_types.is_permanent()
             && (aura_host.is_some() || aura_player.is_some())
             && self.spell_fizzles(&object);
         if spell_types.is_permanent() && !aura_fizzles {
@@ -371,7 +377,8 @@ impl Game {
         let spell_types = self
             .stack_spell_types(object)
             .unwrap_or_else(|| behavior.types());
-        let aura_fizzles = spell_types.is_permanent()
+        let aura_fizzles = !self.was_cast_for_bestow(object)
+            && spell_types.is_permanent()
             && Self::aura_host_for(object).is_some()
             && self.spell_fizzles(object);
         let card_id = object.id;
@@ -382,6 +389,26 @@ impl Game {
             card: card_id,
             definition,
         });
+    }
+
+    /// Whether this spell was cast for its bestow cost. CR 702.103c: such a
+    /// spell is not countered when its target is gone -- it stops being an
+    /// Aura spell and resolves as an enchantment creature instead.
+    fn was_cast_for_bestow(&self, object: &StackObject) -> bool {
+        let Some(definition) = object.card.definition.card_definition() else {
+            return false;
+        };
+        let Some(signature) = object.signature.as_ref() else {
+            return false;
+        };
+        let Some(card) = self.catalog.get(definition) else {
+            return false;
+        };
+        let Some(option) = card.play_option(signature.play_option()) else {
+            return false;
+        };
+        self.selected_alternative_kind(card, option, object.id, signature.costs())
+            == Some(crate::card::AlternativeCastKindDef::Bestow)
     }
 
     /// The keyword one applied effect grants, when granting a keyword is all

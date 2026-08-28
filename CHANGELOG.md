@@ -40,6 +40,13 @@ distinguishes snapshots of the covered source and build inputs.
   channel. An ability now records that it is cycling rather than being
   recognised by what it charges.
 
+- **A bestow spell whose target is gone still comes down.** CR 702.103c and
+  Detective's Phoenix's own ruling: unlike other Aura spells, one cast for
+  its bestow cost is not countered when its target is illegal on resolution.
+  It stops being an Aura spell and enters as an enchantment creature. It was
+  countered like any other Aura, so answering the creature it was bestowed on
+  took the Phoenix with it.
+
 - **"You may cast that card" does not let you play a land.** A permission
   over an exiled card opened the land drop as readily as the cast, so a land
   stolen by Robber of the Rich or Ragavan could be played -- which both cards'
