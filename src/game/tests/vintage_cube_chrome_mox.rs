@@ -221,3 +221,25 @@ fn tapping_it_makes_one_mana() {
     assert_eq!(game.players[0].mana_pool.green, 1);
     assert_eq!(game.players[0].mana_pool.total(), 1);
 }
+
+/// "If the exiled card is colourless, it can't add mana", and the ability
+/// can never add {C} either: a Mox with Emrakul under it is a Mox that
+/// makes nothing, exactly like one that imprinted nothing at all.
+#[test]
+fn a_colourless_imprint_makes_nothing() {
+    let (mut game, mox) = staged(&[cards::EMRAKUL_THE_AEONS_TORN]);
+    let permanent = cast_imprinting(&mut game, mox, Some(cards::EMRAKUL_THE_AEONS_TORN));
+
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::EMRAKUL_THE_AEONS_TORN),
+        "it was imprinted, so the question is what its colours are",
+    );
+    assert_eq!(
+        offered_colors(&game, permanent),
+        Vec::new(),
+        "a colourless card names no colour, and {{C}} is not among them",
+    );
+}
