@@ -219,12 +219,12 @@ impl Game {
         player: PlayerId,
     ) -> bool {
         match condition {
-            crate::card::ExilePlayConditionDef::AttackedWithSubtypeThisTurn(subtype) => self
-                .battlefield
-                .iter()
-                .filter(|permanent| permanent.controller == player)
-                .filter(|permanent| permanent.attacked_this_turn)
-                .any(|permanent| self.effective_subtypes(permanent).contains(&subtype)),
+            // What the turn was attacked with, not what is still standing:
+            // a Rogue that attacked and then died still made this a turn
+            // you attacked with a Rogue.
+            crate::card::ExilePlayConditionDef::AttackedWithSubtypeThisTurn(subtype) => {
+                self.attacked_subtypes_this_turn[player.index()].contains(&subtype)
+            }
         }
     }
 

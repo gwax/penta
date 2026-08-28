@@ -102,11 +102,10 @@ fn the_stolen_card_is_castable_while_a_rogue_attacked() {
         "the Robber is a Rogue and it attacked this turn",
     );
 
-    // A later turn on which nothing attacked: the permission asks again.
+    // A later turn on which nothing attacked: the permission asks again,
+    // and what a turn was attacked with goes with the turn.
     game.turns_started = [6, 6];
-    for permanent in &mut game.battlefield {
-        permanent.attacked_this_turn = false;
-    }
+    game.attacked_subtypes_this_turn = [Vec::new(), Vec::new()];
     game.step = Step::PrecombatMain;
     assert!(
         !game
@@ -141,5 +140,57 @@ fn it_may_be_paid_for_in_any_color() {
             .any(|permanent| permanent.card.definition == cards::SERRA_ANGEL
                 && permanent.controller == PlayerId::One),
         "and it arrives under your control",
+    );
+}
+
+/// "During any turn you attacked with a Rogue" is what the turn did, not
+/// what is still standing: the Robber can die and the card stays castable.
+#[test]
+fn the_rogue_may_leave_the_battlefield_afterwards() {
+    let (mut game, robber) = staged(3, 0);
+    attack(&mut game, robber);
+    let stolen = game.players[1].exile[0].id;
+
+    game.move_permanents_to_graveyard(&[robber]);
+    drain_pending(&mut game);
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == robber),
+        "the Rogue that attacked is gone",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 5);
+    game.step = Step::PostcombatMain;
+    game.priority = PlayerId::One;
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == stolen)),
+        "the turn was still a turn you attacked with a Rogue",
+    );
+}
+
+/// A Rogue that never attacked buys nothing: it is the attack that is
+/// remembered, not the Rogue.
+#[test]
+fn a_rogue_that_stayed_home_buys_nothing() {
+    let (mut game, robber) = staged(3, 0);
+    attack(&mut game, robber);
+    let stolen = game.players[1].exile[0].id;
+    game.turns_started = [6, 6];
+    game.attacked_subtypes_this_turn = [Vec::new(), Vec::new()];
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 5);
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == stolen)),
+        "the Robber is still a Rogue, and it has not attacked this turn",
     );
 }

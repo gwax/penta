@@ -198,7 +198,9 @@ impl Game {
         payment: Option<&ManaPaymentChoice>,
     ) -> ManaCost {
         let Some((locked, life)) = payment.and_then(|payment| {
-            let locked = Self::locked_mana_payment(cost, payment)?;
+            // An activation is not a cast, so no cast-time "spend as though
+            // any colour" permission reaches it.
+            let locked = Self::locked_mana_payment(cost, payment, false)?;
             Some(locked)
         }) else {
             return cost;

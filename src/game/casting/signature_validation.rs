@@ -348,7 +348,11 @@ impl Game {
             cost,
             self.spell_cost_increase(player, card_id, choices.targets()),
         );
-        let (cost, phyrexian_life) = Self::locked_mana_payment(cost, choices.mana_payment())?;
+        let (cost, phyrexian_life) = Self::locked_mana_payment(
+            cost,
+            choices.mana_payment(),
+            self.card_mana_is_any_color(card_id),
+        )?;
         let cost = reduce_generic(
             Self::apply_spell_cost_reduction(
                 cost,

@@ -484,6 +484,16 @@ impl Game {
             simulation_fingerprint: crate::protocol::SIMULATION_FINGERPRINT.to_owned(),
             turns_started: self.turns_started,
             damage_taken_this_turn: self.damage_taken_this_turn,
+            attacked_subtypes_this_turn: [
+                self.attacked_subtypes_this_turn[0]
+                    .iter()
+                    .map(|subtype| (*subtype).to_owned())
+                    .collect(),
+                self.attacked_subtypes_this_turn[1]
+                    .iter()
+                    .map(|subtype| (*subtype).to_owned())
+                    .collect(),
+            ],
             damage_taken_by_group_this_turn: self
                 .damage_taken_by_group_this_turn
                 .iter()
@@ -641,6 +651,21 @@ impl Game {
 /// The definitions a seat may still take as a companion, as the wire names
 /// them. A definition id rather than an object id because the cards outside
 /// the game are re-minted on restore and would not keep their identities.
+/// The subtypes a seat attacked with this turn, matched back to the static
+/// names the engine uses. A name no printing carries is dropped rather than
+/// leaked into the game as a fresh static string.
+fn restore_attacked_subtypes(recorded: &[String]) -> Vec<&'static str> {
+    recorded
+        .iter()
+        .filter_map(|subtype| {
+            crate::card::CREATURE_TYPES
+                .iter()
+                .find(|known| *known == subtype)
+                .copied()
+        })
+        .collect()
+}
+
 fn companion_definitions(companions: &[CardDefinitionId]) -> Vec<u64> {
     companions
         .iter()

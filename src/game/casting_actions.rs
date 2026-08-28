@@ -338,7 +338,11 @@ impl Game {
                                             .into_iter()
                                             .filter_map(|choice| {
                                                 let (locked, phyrexian_life) =
-                                                    Self::locked_mana_payment(increased, &choice)?;
+                                                    Self::locked_mana_payment(
+                                                        increased,
+                                                        &choice,
+                                                        self.card_mana_is_any_color(card.id),
+                                                    )?;
                                                 let total_life = self
                                                     .configured_cast_life_payment(
                                                         definition,
@@ -475,6 +479,7 @@ impl Game {
                                                 Self::locked_mana_payment(
                                                     increased_cost,
                                                     &mana_payment,
+                                                    self.card_mana_is_any_color(card.id),
                                                 )
                                             else {
                                                 continue;

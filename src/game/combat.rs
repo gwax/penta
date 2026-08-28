@@ -34,6 +34,7 @@ impl Game {
                 self.permanent_has_executable_keyword(permanent, KeywordAbility::Vigilance)
             });
         let turns_started = self.turns_started;
+        let mut record_attacker_subtypes = None;
         if let Some(permanent) = self
             .battlefield
             .iter_mut()
@@ -43,6 +44,7 @@ impl Game {
             permanent.attack_defender = Some(defender);
             permanent.attacked_this_turn = true;
             permanent.attacks_this_turn = permanent.attacks_this_turn.saturating_add(1);
+            record_attacker_subtypes = Some(permanent.card.id);
             permanent.last_attacked_turn = Some((
                 permanent.controller,
                 turns_started[permanent.controller.index()],
@@ -52,6 +54,32 @@ impl Game {
                 // the state now for later attacker legality, but defer its
                 // trigger event until every attacker has been declared.
                 permanent.tapped = true;
+            }
+        }
+        // Recorded now, while the creature is still standing there: what a
+        // player attacked with this turn stays true afterwards, whatever
+        // becomes of the creature.
+        if let Some(attacker) = record_attacker_subtypes {
+            self.record_attacking_subtypes(attacker);
+        }
+    }
+
+    /// Remembers the subtypes of a creature its controller has just declared
+    /// as an attacker, for the clauses that ask what a turn was attacked
+    /// with rather than what is attacking now.
+    fn record_attacking_subtypes(&mut self, attacker: GameObjectId) {
+        let Some((controller, subtypes)) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == attacker)
+            .map(|permanent| (permanent.controller, self.effective_subtypes(permanent)))
+        else {
+            return;
+        };
+        let recorded = &mut self.attacked_subtypes_this_turn[controller.index()];
+        for subtype in subtypes.iter() {
+            if !recorded.contains(subtype) {
+                recorded.push(*subtype);
             }
         }
     }

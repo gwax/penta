@@ -56,9 +56,16 @@ impl Game {
     /// generic mana and the rest become the symbol's colored half. This keeps
     /// the mana solver from choosing the generic half again and collapsing two
     /// distinct legal actions into the same payment.
+    /// `any_color` is "you may spend mana as though it were mana of any
+    /// color to cast that spell": the coloured half of a flexible symbol
+    /// stops being a colour and becomes an amount, exactly as the printed
+    /// colours in the cost beside it already have. The symbol's other
+    /// alternatives are untouched, so paying 2 life for a Phyrexian pip is
+    /// still a line.
     pub(in crate::game) fn locked_mana_payment(
         mut cost: ManaCost,
         choice: &ManaPaymentChoice,
+        any_color: bool,
     ) -> Option<(ManaCost, u16)> {
         let mut seen = Vec::new();
         for payment in choice.alternatives() {
@@ -87,11 +94,20 @@ impl Game {
                 cost = cost.without_flexible(symbol, printed)?;
                 cost.generic = cost.generic.checked_add(generic.checked_mul(selected)?)?;
                 let colored = printed - selected;
-                let color = *symbol.mana_options().first()?;
-                add_fixed_mana(&mut cost, color, colored)?;
+                if any_color {
+                    cost.generic = cost.generic.checked_add(colored)?;
+                } else {
+                    let color = *symbol.mana_options().first()?;
+                    add_fixed_mana(&mut cost, color, colored)?;
+                }
             } else if let Some(amount) = symbol.life_cost() {
                 cost = cost.without_flexible(symbol, selected)?;
                 life = life.checked_add(amount.checked_mul(selected)?)?;
+                if any_color {
+                    let colored = printed - selected;
+                    cost = cost.without_flexible(symbol, colored)?;
+                    cost.generic = cost.generic.checked_add(colored)?;
+                }
             } else if selected != 0 {
                 return None;
             }

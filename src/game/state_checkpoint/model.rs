@@ -135,6 +135,11 @@ pub(super) struct GameSnapshot {
     /// every game before them was.
     #[serde(default, skip_serializing_if = "emptiness::is_empty_pair_of_vectors")]
     pub(super) companions: [Vec<u64>; 2],
+    /// The creature subtypes each seat attacked with this turn. Additive: a
+    /// checkpoint written before it existed restores a turn nobody is
+    /// recorded as having attacked in, which is what it meant.
+    #[serde(default, skip_serializing_if = "emptiness::is_empty_pair_of_names")]
+    pub(super) attacked_subtypes_this_turn: [Vec<String>; 2],
     pub(super) tried_to_draw_from_empty_library: [bool; 2],
     pub(super) mana: [Vec<ManaSnapshot>; 2],
     pub(super) creature_died_this_turn: bool,

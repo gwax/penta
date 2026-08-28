@@ -200,6 +200,7 @@ impl Game {
             turns_started: [1, 0],
             damage_taken_this_turn: [0; 2],
             damage_taken_by_group_this_turn: [[0; DamageSourceGroupDef::COUNT]; 2],
+            attacked_subtypes_this_turn: [Vec::new(), Vec::new()],
             active_player: PlayerId::One,
             priority: PlayerId::One,
             consecutive_passes: 0,

@@ -83,8 +83,11 @@ impl Game {
                     ),
                     self.spell_cost_increase(player, *card, choices.targets()),
                 );
-                let (locked, phyrexian_life) =
-                    Self::locked_mana_payment(increased, choices.mana_payment())?;
+                let (locked, phyrexian_life) = Self::locked_mana_payment(
+                    increased,
+                    choices.mana_payment(),
+                    self.card_mana_is_any_color(*card),
+                )?;
                 let cast_life = self.configured_cast_life_payment(
                     definition,
                     option,
@@ -305,7 +308,7 @@ impl Game {
     /// anybody needs to find.
     fn announced_mana_cost(cost: ManaCost, payment: Option<&ManaPaymentChoice>) -> ManaCost {
         payment
-            .and_then(|payment| Self::locked_mana_payment(cost, payment))
+            .and_then(|payment| Self::locked_mana_payment(cost, payment, false))
             .map_or(cost, |(locked, _life)| locked)
     }
 

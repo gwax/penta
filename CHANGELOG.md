@@ -25,6 +25,20 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **What a turn was attacked with.** "During any turn you attacked with a
+  Rogue" was answered by looking for a Rogue still on the battlefield that
+  had attacked, so a Rogue that attacked and then died stopped counting --
+  which the printed ruling says outright it should not. The subtypes each
+  player declared an attacker with are now recorded as the declaration
+  happens, and the turn is what clears them.
+
+- **Spending any colour on a flexible symbol.** "You may spend mana as
+  though it were mana of any color" already turned the printed colours of a
+  cost into an amount, but stopped at a hybrid or Phyrexian pip, which went
+  on demanding its own colour. The coloured half of a flexible symbol is now
+  an amount too, and the symbol's other alternatives are untouched: paying 2
+  life for a Phyrexian pip is still a line.
+
 - **An Aura that enchants a card in a graveyard.** Animate Dead's own
   enchant clause names a creature card in a graveyard, and an Aura could
   only ever name a permanent -- so the creature was chosen as the enters

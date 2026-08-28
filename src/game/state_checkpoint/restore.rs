@@ -193,6 +193,10 @@ impl Game {
             prospective_x: super::prospective_x::ProspectiveX::default(),
             successors: std::collections::HashMap::new(),
             damage_taken_this_turn: checkpoint.damage_taken_this_turn,
+            attacked_subtypes_this_turn: [
+                restore_attacked_subtypes(&checkpoint.attacked_subtypes_this_turn[0]),
+                restore_attacked_subtypes(&checkpoint.attacked_subtypes_this_turn[1]),
+            ],
             damage_taken_by_group_this_turn: {
                 let mut groups = [[0; DamageSourceGroupDef::COUNT]; 2];
                 for (seat, stored) in checkpoint

@@ -873,7 +873,7 @@ impl Game {
 
     /// Whether a permission over this card lets its mana be spent as any
     /// colour.
-    fn card_mana_is_any_color(&self, card: GameObjectId) -> bool {
+    pub(in crate::game) fn card_mana_is_any_color(&self, card: GameObjectId) -> bool {
         self.exile_play_permissions
             .iter()
             .any(|permission| permission.card == card && permission.spend_any_color)

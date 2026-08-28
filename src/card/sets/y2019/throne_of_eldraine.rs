@@ -3,13 +3,13 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::PlayOptionDef;
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef,
-    AbilityTargetPredicate, ActivationTimingDef, AlternateSpellKind, AlternativeCastKindDef,
-    AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardComposition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    CardTypeSet, ColorSet, ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef,
-    EffectDef, EffectRecipientDef, ExilePlayConditionDef, ExilePlayDurationDef, KeywordAbility,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    AbilityCostDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
+    ActivationTimingDef, AlternateSpellKind, AlternativeCastKindDef, AppliedEffectDef,
+    AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardComposition, CardEffectStatus,
+    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet, ColorSet,
+    ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef, EffectDef,
+    EffectRecipientDef, ExilePlayConditionDef, ExilePlayDurationDef, KeywordAbility, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
     ReplacementEffectDef, ResolvedEffectDurationDef, SpellForm, SpellResolutionDestinationDef,
     TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef,
     ZoneKind, ZonePlacement, abilities, tokens,
@@ -431,12 +431,7 @@ pub(in crate::card::sets) static ROBBER_OF_THE_RICH: CardRecord = CardRecord::ne
                         "Rogue",
                     )),
                 },
-            )
-            .with_coverage(AbilityCoverageDef::partial(
-                "Mana spent on the stolen card is owed as an amount rather than as colours, so \
-                 colourless mana pays for it too; and the Rogue that attacked has to still be on \
-                 the battlefield when the card is cast.",
-            )),
+            ),
         ]),
 );
 

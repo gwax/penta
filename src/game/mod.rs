@@ -568,6 +568,11 @@ pub struct Game {
     /// group such as "unblocked creatures" is only answerable then.
     damage_taken_this_turn: [u16; 2],
     damage_taken_by_group_this_turn: [[u16; DamageSourceGroupDef::COUNT]; 2],
+    /// The creature subtypes each player declared an attacker with this
+    /// turn. A record of what happened rather than a look at the board:
+    /// "during any turn you attacked with a Rogue" is still true once the
+    /// Rogue has left combat, left the battlefield, or died.
+    attacked_subtypes_this_turn: [Vec<&'static str>; 2],
     active_player: PlayerId,
     priority: PlayerId,
     consecutive_passes: u8,

@@ -518,6 +518,9 @@ impl Game {
         // combat did.
         self.damage_taken_this_turn = [0; 2];
         self.damage_taken_by_group_this_turn = [[0; crate::card::DamageSourceGroupDef::COUNT]; 2];
+        // "During any turn you attacked with a Rogue" is about this turn,
+        // so what was attacked with goes with it.
+        self.attacked_subtypes_this_turn = [Vec::new(), Vec::new()];
         // "It phases in before its controller untaps": ahead of the untap
         // itself, so a permanent that comes back this turn untaps with the
         // rest of them.
