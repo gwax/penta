@@ -366,3 +366,79 @@ fn the_ultimate_spares_one_of_each_type_and_every_land() {
     assert_eq!(theirs(cards::BLACK_LOTUS), 1, "one artifact survives");
     assert_eq!(theirs(cards::MOUNTAIN), 1, "lands are not touched at all");
 }
+
+/// "A permanent with more than one type may be chosen as any of its types.
+/// For example, an artifact creature may be chosen as the artifact, the
+/// creature, or both." A board whose only nonland permanent is an artifact
+/// creature loses nothing: the Juggernaut answers both headings by itself.
+/// And an opponent with none of a type still chooses among the types they
+/// do control -- there is no enchantment or planeswalker here to name.
+#[test]
+fn one_artifact_creature_answers_both_headings() {
+    let (mut game, _ajani) = ajani_on_battlefield();
+    let juggernaut = creature(91_300, cards::JUGGERNAUT, PlayerId::Two);
+    let juggernaut_id = juggernaut.card.id;
+    game.battlefield.push(juggernaut);
+    game.battlefield
+        .push(creature(91_301, cards::MOUNTAIN, PlayerId::Two));
+    let avenger = avenger(&mut game);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == avenger)
+    {
+        permanent.set_counters(CounterKind::Loyalty, 9);
+    }
+
+    activate(&mut game, avenger, 2, Vec::new());
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == juggernaut_id),
+        "the artifact creature is kept under both headings at once",
+    );
+    assert!(
+        game.players[1].graveyard.is_empty(),
+        "so nothing was sacrificed at all",
+    );
+}
+
+/// With more to choose from, one of each heading survives: the Juggernaut
+/// covers the artifact and a Bears covers the creature.
+#[test]
+fn the_ultimate_keeps_one_under_each_heading() {
+    let (mut game, _ajani) = ajani_on_battlefield();
+    game.battlefield
+        .push(creature(91_310, cards::JUGGERNAUT, PlayerId::Two));
+    for id in 91_311..91_314 {
+        game.battlefield
+            .push(creature(id, cards::GRIZZLY_BEARS, PlayerId::Two));
+    }
+    let avenger = avenger(&mut game);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == avenger)
+    {
+        permanent.set_counters(CounterKind::Loyalty, 9);
+    }
+
+    activate(&mut game, avenger, 2, Vec::new());
+
+    let theirs = |definition| {
+        game.battlefield
+            .iter()
+            .filter(|permanent| {
+                permanent.controller == PlayerId::Two && permanent.card.definition == definition
+            })
+            .count()
+    };
+    assert_eq!(theirs(cards::JUGGERNAUT), 1, "the artifact they kept");
+    assert_eq!(theirs(cards::GRIZZLY_BEARS), 1, "and the creature");
+    assert_eq!(
+        game.players[1].graveyard.len(),
+        2,
+        "the other two Bears went",
+    );
+}
