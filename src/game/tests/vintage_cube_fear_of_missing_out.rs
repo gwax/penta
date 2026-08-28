@@ -276,3 +276,83 @@ fn only_the_first_attack_each_turn_counts() {
         "the second attack of the turn triggers nothing",
     );
 }
+
+/// "If the target creature is an illegal target as the ability tries to
+/// resolve, it won't resolve and none of its effects will happen. There
+/// won't be an additional combat phase." The untap and the extra combat are
+/// one ability, so losing the target loses both.
+#[test]
+fn a_dead_target_costs_the_extra_combat_too() {
+    let (mut game, fomo) = staged(&FOUR_TYPES);
+    let lions = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.tap_permanent(lions);
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(fomo, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the trigger asks who to untap");
+    let option = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(object, _)| object == lions))
+        .expect("the Lions are a legal target")
+        .id;
+    game.apply(
+        decision.player,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![option],
+        },
+    )
+    .expect("naming them is legal");
+
+    // The named creature is gone before the ability resolves.
+    game.move_permanents_to_graveyard(&[lions]);
+    settle(&mut game);
+
+    let mut seen_second_combat = false;
+    let mut reached_postcombat = false;
+    for _ in 0..40 {
+        if game.step == Step::PostcombatMain {
+            reached_postcombat = true;
+            break;
+        }
+        if game.step == Step::EndOfCombat {
+            game.advance_step();
+            if game.step == Step::BeginningOfCombat {
+                seen_second_combat = true;
+            }
+            continue;
+        }
+        game.advance_step();
+    }
+    assert!(
+        reached_postcombat,
+        "combat ended into the ordinary postcombat main phase",
+    );
+    assert!(
+        !seen_second_combat,
+        "and the ability that would have bought a second one never resolved",
+    );
+}
