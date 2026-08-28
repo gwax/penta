@@ -11,6 +11,7 @@ use move_to_zone::MoveToZoneClause;
 
 mod attachment;
 mod damage;
+mod exile_to_play;
 mod hand_and_library;
 mod linked_exiles;
 mod mana;

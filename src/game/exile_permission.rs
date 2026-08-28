@@ -61,6 +61,11 @@ pub(super) struct ExilePlayPermission {
     /// many there are; who may see what they are is
     /// [`Self::hidden_from_owner`].
     pub(super) face_down: bool,
+    /// Whether this permission reaches playing a land. "You may play that
+    /// card" does; "you may cast that card" does not, and a land exiled
+    /// under a cast permission stays where it is (CR 305.1 -- playing a land
+    /// is not casting a spell).
+    pub(super) lands_may_be_played: bool,
     /// Whether the card is hidden from its own owner too. A card exiled
     /// face down may not be looked at unless something says otherwise
     /// (CR 713.2), and most things that exile face down do say so -- a
@@ -197,6 +202,7 @@ impl Game {
             zone: ZoneKind::Exile,
             group: None,
             hidden_from_owner: false,
+            lands_may_be_played: true,
         });
     }
 
@@ -256,7 +262,22 @@ impl Game {
             zone: ZoneKind::Exile,
             group: None,
             hidden_from_owner: false,
+            lands_may_be_played: true,
         });
+    }
+
+    /// Narrows the permission just granted over `card` to casting alone:
+    /// "you may cast that card" does not reach a land, where "you may play
+    /// that card" does.
+    pub(super) fn restrict_exile_permission_to_casting(&mut self, card: GameObjectId) {
+        if let Some(permission) = self
+            .exile_play_permissions
+            .iter_mut()
+            .rev()
+            .find(|permission| permission.card == card)
+        {
+            permission.lands_may_be_played = false;
+        }
     }
 
     /// Records that a card lies face down in exile and that nobody may look
@@ -279,6 +300,7 @@ impl Game {
             until_holder_end_step: None,
             zone: ZoneKind::Exile,
             group: None,
+            lands_may_be_played: true,
         });
     }
 
@@ -302,6 +324,7 @@ impl Game {
             zone: ZoneKind::Exile,
             group: None,
             hidden_from_owner: false,
+            lands_may_be_played: true,
         });
     }
 
@@ -325,6 +348,7 @@ impl Game {
             zone: ZoneKind::Exile,
             group: None,
             hidden_from_owner: false,
+            lands_may_be_played: true,
         });
     }
 
@@ -350,6 +374,7 @@ impl Game {
             zone: ZoneKind::Exile,
             group: None,
             hidden_from_owner: false,
+            lands_may_be_played: true,
         });
     }
 
@@ -389,6 +414,7 @@ impl Game {
             zone: ZoneKind::Exile,
             group: None,
             hidden_from_owner: false,
+            lands_may_be_played: true,
         });
     }
 
@@ -413,6 +439,7 @@ impl Game {
             zone: ZoneKind::Exile,
             group: None,
             hidden_from_owner: false,
+            lands_may_be_played: true,
         });
     }
 
@@ -436,6 +463,7 @@ impl Game {
             zone: ZoneKind::Exile,
             group: None,
             hidden_from_owner: false,
+            lands_may_be_played: true,
         });
     }
 
@@ -467,6 +495,7 @@ impl Game {
             zone: ZoneKind::Exile,
             group: None,
             hidden_from_owner: false,
+            lands_may_be_played: true,
         });
     }
 
@@ -490,6 +519,7 @@ impl Game {
             zone: ZoneKind::Exile,
             group: None,
             hidden_from_owner: false,
+            lands_may_be_played: true,
         });
     }
 
@@ -515,6 +545,7 @@ impl Game {
             zone: ZoneKind::Exile,
             group: None,
             hidden_from_owner: false,
+            lands_may_be_played: true,
         });
     }
 
@@ -630,6 +661,7 @@ impl Game {
             zone: ZoneKind::Graveyard,
             group: None,
             hidden_from_owner: false,
+            lands_may_be_played: true,
         });
     }
 

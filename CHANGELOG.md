@@ -40,6 +40,13 @@ distinguishes snapshots of the covered source and build inputs.
   channel. An ability now records that it is cycling rather than being
   recognised by what it charges.
 
+- **"You may cast that card" does not let you play a land.** A permission
+  over an exiled card opened the land drop as readily as the cast, so a land
+  stolen by Robber of the Rich or Ragavan could be played -- which both cards'
+  rulings deny, playing a land not being casting a spell. The clause now says
+  which of the two it grants, and the permission carries it across a
+  checkpoint; every clause that says "play" is unchanged.
+
 - **A permanent that stops being a creature stops having creature types.**
   Enduring Innocence comes back from the graveyard as an enchantment, and
   its own ruling says it is no longer a Sheep Glimmer -- a subtype belongs to

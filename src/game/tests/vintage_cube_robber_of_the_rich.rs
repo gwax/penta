@@ -194,3 +194,66 @@ fn a_rogue_that_stayed_home_buys_nothing() {
         "the Robber is still a Rogue, and it has not attacked this turn",
     );
 }
+
+/// CR 603.4, which the ruling spells out: the comparison is made when the
+/// trigger goes on the stack and again as it resolves. A hand emptied in
+/// response leaves the ability doing nothing at all.
+#[test]
+fn a_hand_emptied_in_response_steals_nothing() {
+    let (mut game, robber) = staged(3, 0);
+    let library = game.players[1].library.len();
+
+    game.step = Step::DeclareAttackers;
+    game.declare_attacker(robber, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    assert!(
+        !game.stack.is_empty() || !game.pending_triggers.is_empty(),
+        "their fuller hand raised the trigger",
+    );
+
+    // They pitch their hand before it resolves, so the second check fails.
+    game.players[1].hand.clear();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[1].library.len(),
+        library,
+        "nothing left their library",
+    );
+    assert!(
+        game.players[0].exile.is_empty() && game.players[1].exile.is_empty(),
+        "and nothing was exiled",
+    );
+}
+
+/// "An effect that instructs you to 'cast' a card doesn't allow you to play
+/// lands." A land off the top of their library is exiled and stays there.
+#[test]
+fn a_stolen_land_cannot_be_played() {
+    let (mut game, robber) = staged(3, 0);
+    game.players[1].library.clear();
+    game.players[1]
+        .library
+        .push(card(108_400, cards::ISLAND, PlayerId::Two));
+
+    attack(&mut game, robber);
+
+    let stolen = game.players[1]
+        .exile
+        .iter()
+        .chain(game.players[0].exile.iter())
+        .find(|card| card.definition == cards::ISLAND)
+        .expect("the Island was exiled")
+        .id;
+    game.step = Step::PostcombatMain;
+    game.priority = PlayerId::One;
+    game.players[0].lands_played_this_turn = 0;
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::PlayLand { card, .. } | Action::CastSpell { card, .. }
+                if *card == stolen)
+        }),
+        "the permission is to cast, and a land is played",
+    );
+}

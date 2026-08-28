@@ -343,6 +343,7 @@ static INTI_ABILITIES: [AbilityDef; 2] = [
             duration: ExilePlayDurationDef::UntilYourNextEndStep,
             spend_any_color: false,
             play_condition: None,
+            cast_only: false,
         },
     ),
 ];

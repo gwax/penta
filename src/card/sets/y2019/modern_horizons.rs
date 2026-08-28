@@ -378,6 +378,7 @@ static URZA_DIG: [EffectDef; 2] = [
         duration: ExilePlayDurationDef::ThisTurn,
         spend_any_color: false,
         play_condition: None,
+        cast_only: false,
     },
 ];
 
@@ -783,6 +784,7 @@ static SHINOBI_ABILITIES: [AbilityDef; 2] = [
             duration: ExilePlayDurationDef::ThisTurn,
             spend_any_color: false,
             play_condition: None,
+            cast_only: false,
         },
     ),
 ];

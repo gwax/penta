@@ -57,12 +57,17 @@ impl Game {
             .chain(state.library.last().map(|card| (card, ZoneKind::Library)))
             // Exile is walked for both players, the way the cast offers walk
             // it: a permission to *play* a card reaches a land, and a land
-            // somebody else exiled is still played from where it lies.
+            // somebody else exiled is still played from where it lies. A
+            // permission to *cast* one does not -- playing a land is not
+            // casting a spell (CR 305.1).
             .chain(
                 self.players
                     .iter()
                     .flat_map(|state| state.exile.iter())
-                    .filter(|card| self.exile_play_permission(card.id, player).is_some())
+                    .filter(|card| {
+                        self.exile_play_permission(card.id, player)
+                            .is_some_and(|permission| permission.lands_may_be_played)
+                    })
                     .map(|card| (card, ZoneKind::Exile)),
             )
         {

@@ -54,6 +54,7 @@ static SCARLETT_ABILITIES: [AbilityDef; 3] = [
             duration: ExilePlayDurationDef::ThisTurn,
             spend_any_color: false,
             play_condition: None,
+            cast_only: false,
         },
     ),
 ];

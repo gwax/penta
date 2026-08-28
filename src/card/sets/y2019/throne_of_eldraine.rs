@@ -430,6 +430,7 @@ pub(in crate::card::sets) static ROBBER_OF_THE_RICH: CardRecord = CardRecord::ne
                     play_condition: Some(ExilePlayConditionDef::AttackedWithSubtypeThisTurn(
                         "Rogue",
                     )),
+                    cast_only: true,
                 },
             ),
         ]),

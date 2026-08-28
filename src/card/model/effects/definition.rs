@@ -597,6 +597,10 @@ pub enum EffectDef {
         /// What has to be true where the card is played, asked there rather
         /// than where it was granted.
         play_condition: Option<ExilePlayConditionDef>,
+        /// Whether the clause says "cast" rather than "play". A cast
+        /// permission does not reach a land, which is played rather than
+        /// cast (CR 305.1); a play permission reaches both.
+        cast_only: bool,
     },
     /// "Exile the top card of your library. You may cast that card. If you
     /// don't, ..." The card is cast during this resolution rather than at

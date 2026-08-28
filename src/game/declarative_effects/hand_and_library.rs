@@ -8,7 +8,7 @@ use super::super::{
     PlayerId, ScopedEffect, StackObject, Target, ZoneKind, ZoneMoveCause, public_cards,
     remove_card,
 };
-use crate::card::{ArrivalAttachmentDef, ExilePlayDurationDef, ObjectPredicateDef};
+use crate::card::{ArrivalAttachmentDef, ObjectPredicateDef};
 
 /// Manifest dread (CR 701.34, 702.169): look at the top two, one goes down
 /// face down as a 2/2 and the other goes to the graveyard. The procedure is
@@ -101,6 +101,8 @@ impl Game {
                 }
                 crate::card::ExiledCastPermissionDef::FreeWhileResolving => {
                     self.permit_free_play_this_turn(*card, caster);
+                    // "You may cast", so a land among them stays in exile.
+                    self.restrict_exile_permission_to_casting(*card);
                 }
             }
             self.group_last_exile_permission(*card, source);
@@ -164,6 +166,7 @@ impl Game {
             }
             crate::card::ExiledCastPermissionDef::FreeWhileResolving => {
                 self.permit_free_play_this_turn(exiled, caster);
+                self.restrict_exile_permission_to_casting(exiled);
                 self.offer_permitted_play(caster, exiled, object, context, scoped);
             }
         }
@@ -642,47 +645,28 @@ impl Game {
                 duration,
                 spend_any_color,
                 play_condition,
+                cast_only,
             } => {
                 let count = self.effect_value(amount, object, context, scoped).max(0);
                 let Ok(count) = usize::try_from(count) else {
                     return;
                 };
-                let controller = object.controller;
+                let permission = super::exile_to_play::ExilePlayGrant {
+                    free,
+                    face_down,
+                    duration,
+                    spend_any_color,
+                    play_condition,
+                    cast_only,
+                };
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Player(player) = target {
-                        let mut moved = Vec::new();
-                        for card in self.take_top_of_library(player, count) {
-                            let (card, _zone_change) = self.zone_change_card(card);
-                            let exiled = card.id;
-                            self.players[player.index()].exile.push(card.clone());
-                            moved.push(card);
-                            match (free, face_down, duration) {
-                                (true, _, _) => self.permit_free_play_this_turn(exiled, controller),
-                                (false, true, _) => {
-                                    self.permit_face_down_play_this_turn(exiled, controller);
-                                }
-                                (false, false, ExilePlayDurationDef::ThisTurn) => {
-                                    self.permit_cast_this_turn(exiled, controller);
-                                }
-                                (false, false, ExilePlayDurationDef::UntilYourNextEndStep) => {
-                                    self.permit_play_until_your_next_end_step(exiled, controller);
-                                }
-                                // Bounded by the exile rather than by a turn:
-                                // what limits it is whatever the clause asks
-                                // for each time it is played.
-                                (false, false, ExilePlayDurationDef::WhileExiled) => {
-                                    self.permit_conditional_cast_while_exiled(exiled, controller);
-                                }
-                            }
-                            if spend_any_color || play_condition.is_some() {
-                                self.qualify_exile_permission(
-                                    exiled,
-                                    spend_any_color,
-                                    play_condition,
-                                );
-                            }
-                        }
-                        self.capture_cards_exiled(&moved, ZoneKind::Library);
+                        self.exile_top_of_library_to_play(
+                            player,
+                            count,
+                            object.controller,
+                            permission,
+                        );
                     }
                 }
             }
