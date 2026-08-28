@@ -202,3 +202,68 @@ fn the_third_step_will_not_skip_the_second() {
         "and it does not fly",
     );
 }
+
+/// "If Figure of Destiny is an 8/8 Kithkin Spirit Warrior Avatar with flying
+/// and first strike, and you activate its first ability, it will become a
+/// 2/2 Kithkin Spirit that still has flying and first strike." The steps
+/// repaint the types and the base power and toughness; nothing takes an
+/// ability back once it has been handed over.
+#[test]
+fn stepping_back_down_keeps_the_wings() {
+    let (mut game, figure) = staged(11);
+    assert!(activate(&mut game, figure, "{R/W}:"), "step one");
+    assert!(activate(&mut game, figure, "{R/W}{R/W}{R/W}:"), "step two");
+    assert!(
+        activate(&mut game, figure, "{R/W}{R/W}{R/W}{R/W}{R/W}{R/W}:"),
+        "step three",
+    );
+    assert_eq!(game.power(permanent(&game, figure)), Some(8), "an 8/8");
+
+    // One more hybrid mana, spent going backwards.
+    assert!(activate(&mut game, figure, "{R/W}:"), "step one again");
+
+    let figure_permanent = permanent(&game, figure);
+    assert_eq!(game.power(figure_permanent), Some(2), "a 2/2 again");
+    assert_eq!(game.toughness(figure_permanent), Some(2));
+    assert_eq!(
+        subtypes(&game, figure),
+        vec!["Kithkin".to_string(), "Spirit".to_string()],
+        "and a Kithkin Spirit again, the Warrior and Avatar painted over",
+    );
+    assert!(
+        game.permanent_has_executable_keyword(figure_permanent, KeywordAbility::Flying),
+        "but the flying stayed: the first step never mentions it",
+    );
+    assert!(
+        game.permanent_has_executable_keyword(figure_permanent, KeywordAbility::FirstStrike),
+        "and so did the first strike",
+    );
+}
+
+/// "It will not overwrite effects that modify power or toughness (whether
+/// from a static ability, counters, or a resolved spell or ability)." The
+/// step sets the base; a +1/+1 counter is still added on top of it.
+#[test]
+fn a_counter_rides_on_top_of_the_new_base() {
+    let (mut game, figure) = staged(1);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == figure)
+        .expect("it is on the battlefield")
+        .add_counters(CounterKind::PlusOnePlusOne, 1);
+    assert_eq!(
+        game.power(permanent(&game, figure)),
+        Some(2),
+        "a 1/1 and one"
+    );
+
+    assert!(activate(&mut game, figure, "{R/W}:"), "step one");
+
+    let figure_permanent = permanent(&game, figure);
+    assert_eq!(
+        game.power(figure_permanent),
+        Some(3),
+        "base two, and the counter still counts",
+    );
+    assert_eq!(game.toughness(figure_permanent), Some(3));
+}
