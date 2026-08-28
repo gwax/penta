@@ -142,3 +142,29 @@ fn their_tokens_are_not_counted() {
 
     assert_eq!(story(&game, staff), 1, "still only the Spirit's counter");
 }
+
+/// The tap costs nothing but a tap: an artifact has no summoning sickness
+/// (CR 302.6 is about creatures), so the Staff cashes the counter its own
+/// Spirit gave it on the turn it lands.
+#[test]
+fn it_draws_the_turn_it_arrives() {
+    let (mut game, staff) = staged();
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = game.turns_started[0];
+    }
+    let hand = game.players[0].hand.len();
+    assert_eq!(story(&game, staff), 1, "the Spirit it came with paid it");
+
+    let draw = draws(&game, staff)
+        .into_iter()
+        .next()
+        .expect("nothing about the Staff waits a turn");
+    game.apply(PlayerId::One, draw).expect("it activates");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand + 1,
+        "a card, the same turn"
+    );
+}
