@@ -165,3 +165,75 @@ fn the_grant_wears_off_and_the_counters_do_not() {
         "but the turn of indestructibility is over",
     );
 }
+
+/// "If the target is illegal as it tries to resolve, the ability does
+/// nothing. You won't get to put any counters on Arwen." The counter she
+/// spent is spent all the same: it was the cost.
+#[test]
+fn a_dead_target_costs_her_the_counter_and_gains_her_nothing() {
+    let (mut game, arwen, bears) = staged();
+
+    let offers = blessings(&game, arwen);
+    game.apply(PlayerId::One, offers[0].0.clone())
+        .expect("it activates");
+    assert_eq!(
+        permanent(&game, arwen).counters(CounterKind::Indestructible),
+        0,
+        "the counter went as the cost was paid",
+    );
+
+    game.move_permanents_to_graveyard(&[bears]);
+    drain_pending(&mut game);
+
+    let queen = permanent(&game, arwen);
+    assert_eq!(game.power(queen), Some(2), "she is no bigger");
+    assert_eq!(
+        queen.counters(CounterKind::PlusOnePlusOne),
+        0,
+        "the countered-out ability put nothing on her",
+    );
+    assert_eq!(queen.counters(CounterKind::Lifelink), 0);
+}
+
+/// "You remove the counter as a cost. If Arwen already received 2 damage
+/// earlier in the turn, it will be destroyed before you get to put a +1/+1
+/// counter on it." The blessing still lands on its target; she is simply
+/// not there to collect her half.
+#[test]
+fn two_damage_kills_her_the_moment_the_counter_is_spent() {
+    let (mut game, arwen, bears) = staged();
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == arwen)
+        .expect("she is there")
+        .damage = 2;
+    game.check_state_based_actions();
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == arwen),
+        "the counter is holding her up",
+    );
+
+    let offers = blessings(&game, arwen);
+    game.apply(PlayerId::One, offers[0].0.clone())
+        .expect("it activates");
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == arwen),
+        "with the counter spent, two damage on a 2/2 is lethal",
+    );
+
+    drain_pending(&mut game);
+    let bear = permanent(&game, bears);
+    assert_eq!(
+        game.power(bear),
+        Some(3),
+        "and the blessing she paid for still arrives",
+    );
+    assert!(game.permanent_has_executable_keyword(bear, KeywordAbility::Indestructible));
+}
