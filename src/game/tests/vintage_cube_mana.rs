@@ -427,3 +427,65 @@ fn vivi_grows_and_burns_on_a_noncreature_spell() {
     assert_eq!(vivi.counters(CounterKind::PlusOnePlusOne), 1);
     assert!(game.players[1].life < 20, "the opponent takes the damage");
 }
+
+/// The five Moxen are one card printed five ways: a free artifact that taps
+/// for exactly one colour. What is worth checking per member is which.
+#[test]
+fn each_mox_taps_for_its_own_color_and_no_other() {
+    for (definition, color) in [
+        (cards::MOX_EMERALD, ManaColor::Green),
+        (cards::MOX_JET, ManaColor::Black),
+        (cards::MOX_PEARL, ManaColor::White),
+        (cards::MOX_RUBY, ManaColor::Red),
+        (cards::MOX_SAPPHIRE, ManaColor::Blue),
+    ] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let mox = game
+            .put_onto_battlefield(PlayerId::One, definition)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        game.turns_started = [5, 5];
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+
+        let offered = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == mox)
+            .map(|permanent| {
+                game.mana_ability_activations(permanent)
+                    .into_iter()
+                    .map(|activation| activation.color)
+                    .collect::<Vec<_>>()
+            })
+            .expect("it is on the battlefield");
+        assert_eq!(
+            offered,
+            vec![color],
+            "{definition:?} makes {color:?} and nothing else",
+        );
+
+        game.apply(
+            PlayerId::One,
+            Action::ActivateManaAbility {
+                source: mox,
+                ability: mana_ability_for(&game, mox, color),
+                color,
+                counters_removed: None,
+                cost_object: None,
+                combination: None,
+            },
+        )
+        .unwrap_or_else(|error| panic!("{definition:?} taps for {color:?}: {error}"));
+
+        assert_eq!(game.players[0].mana_pool.amount(color), 1);
+        assert_eq!(
+            game.players[0].mana_pool.total(),
+            1,
+            "one mana, and no life or damage on the way",
+        );
+        assert_eq!(game.players[0].life, 20);
+    }
+}
