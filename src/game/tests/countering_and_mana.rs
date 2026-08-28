@@ -624,3 +624,61 @@ fn opponent_spells_and_abilities_put_a_discarded_smiter_onto_the_battlefield() {
     }));
     assert!(game.players[1].graveyard.is_empty());
 }
+
+/// "Target spell" and nothing more: a Counterspell may name a spell its own
+/// controller cast, and what it counters goes to its owner's graveyard --
+/// which for a creature spell is instead of the battlefield.
+#[test]
+fn a_counterspell_may_answer_its_own_controllers_spell() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    let bears = card(19_500, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.id;
+    game.players[0].hand.push(bears);
+    let counterspell = card(19_501, cards::COUNTERSPELL, PlayerId::One);
+    let counterspell_id = counterspell.id;
+    game.players[0].hand.push(counterspell);
+    game.players[0].mana_pool.green = 1;
+    game.players[0].mana_pool.colorless = 1;
+    game.players[0].mana_pool.blue = 2;
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(bears_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("the creature is cast");
+    let on_stack = game.stack.last().expect("it is waiting").id;
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            counterspell_id,
+            vec![Target::Spell(on_stack)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("nothing about the clause says whose spell it must be");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield.is_empty(),
+        "the creature never reached the battlefield",
+    );
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::GRIZZLY_BEARS, cards::COUNTERSPELL],
+        "both went to their owner's graveyard, the countered spell first: \
+         the Counterspell puts it there and only then leaves the stack itself",
+    );
+}
