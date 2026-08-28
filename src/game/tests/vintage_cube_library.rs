@@ -188,6 +188,59 @@ fn imperial_seal_tutors_to_the_top_and_costs_two_life() {
     assert_eq!(game.players[PlayerId::One.index()].life, life - 2);
 }
 
+/// The search may find nothing -- it is "search your library for a card",
+/// not "for a card you must take" -- and the two life is not conditional on
+/// finding one. What it buys then is a shuffle and a worse life total.
+#[test]
+fn declining_the_seals_search_still_costs_the_two_life() {
+    let mut game = ready_game();
+    game.players[PlayerId::One.index()].library.clear();
+    stack_library(
+        &mut game,
+        &[
+            (50_900, cards::GRIZZLY_BEARS),
+            (50_901, cards::SERRA_ANGEL),
+            (50_902, cards::LIGHTNING_BOLT),
+        ],
+    );
+    let seal = card(50_903, cards::IMPERIAL_SEAL, PlayerId::One);
+    let seal_id = seal.id;
+    game.players[PlayerId::One.index()].hand.push(seal);
+    game.players[PlayerId::One.index()].mana_pool.black = 1;
+    let life = game.players[PlayerId::One.index()].life;
+    let library = game.players[PlayerId::One.index()].library.len();
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == seal_id))
+        .expect("Imperial Seal is castable in a main phase");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    pass_priority_pair(&mut game);
+
+    let decision = game.observe(PlayerId::One).decision.expect("a search");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: Vec::new(),
+        },
+    )
+    .expect("taking nothing is allowed");
+    resolve(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library,
+        "every card stayed in the library",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life - 2,
+        "and the two life was paid for nothing",
+    );
+}
+
 /// The whole difference between the two: the Seal waits for your own main
 /// phase where the Tutor does not.
 #[test]
