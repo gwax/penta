@@ -207,3 +207,67 @@ fn it_cannot_copy_out_of_their_graveyard() {
 
     assert!(copy_action(&game, woodland, theirs).is_none());
 }
+
+/// "Because it isn't entering the battlefield when it becomes a copy, any
+/// 'when this enters' abilities of the copied card won't apply." A Titan
+/// copied out of the graveyard is a 6/6 with deathtouch and no Zombies.
+#[test]
+fn copying_something_does_not_make_it_enter() {
+    let mut graveyard = FOUR_TYPES.to_vec();
+    graveyard.push(cards::GRAVE_TITAN);
+    let (mut game, woodland) = staged(&graveyard);
+    let titan = graveyard_card(&game, cards::GRAVE_TITAN);
+    let before = game.battlefield.len();
+
+    let action = copy_action(&game, woodland, titan).expect("delirium offers the copy");
+    game.apply(PlayerId::One, action).expect("it activates");
+    drain_pending(&mut game);
+
+    let permanent = woodland_on_battlefield(&game);
+    assert_eq!(game.power(permanent), Some(6), "it is the Titan's body");
+    assert!(
+        game.permanent_has_executable_keyword(permanent, KeywordAbility::Deathtouch),
+        "and carries the printed abilities that come with it",
+    );
+    assert_eq!(
+        game.battlefield.len(),
+        before,
+        "but nothing entered, so the Titan's own arrival made no Zombies",
+    );
+}
+
+/// "Any effects that applied before it becomes a copy continue to apply, and
+/// the same is true of counters." Becoming something else is not a new
+/// object: it keeps what was already on it.
+#[test]
+fn what_was_already_on_it_stays_on_it() {
+    let mut graveyard = FOUR_TYPES.to_vec();
+    graveyard.push(cards::SERRA_ANGEL);
+    let (mut game, woodland) = staged(&graveyard);
+    let angel = graveyard_card(&game, cards::SERRA_ANGEL);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == woodland)
+    {
+        permanent.add_counters(CounterKind::PlusOnePlusOne, 1);
+        permanent.tapped = true;
+    }
+
+    let action = copy_action(&game, woodland, angel).expect("tapping is no bar to activating it");
+    game.apply(PlayerId::One, action).expect("it activates");
+    drain_pending(&mut game);
+
+    let permanent = woodland_on_battlefield(&game);
+    assert_eq!(
+        permanent.counters(CounterKind::PlusOnePlusOne),
+        1,
+        "the counter stayed through the change",
+    );
+    assert_eq!(
+        game.power(permanent),
+        Some(5),
+        "so what it copied is a 4/4 with a counter on it",
+    );
+    assert!(permanent.tapped, "and it is still tapped");
+}
