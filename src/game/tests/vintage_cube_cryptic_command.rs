@@ -270,3 +270,47 @@ fn countering_and_bouncing_declares_one_target_each() {
     assert_eq!(game.players[0].life, 20, "the Bolt was countered");
     assert!(game.battlefield.is_empty(), "and the Bears went home");
 }
+
+/// Its ruling, with its own example: "if you choose the second and fourth
+/// modes, and the permanent is an illegal target when it tries to resolve,
+/// you won't draw a card." Every target gone is the whole spell gone.
+#[test]
+fn a_lost_target_takes_the_draw_with_it() {
+    let (mut game, command) = staged();
+    let mountain = game
+        .put_onto_battlefield(PlayerId::Two, cards::MOUNTAIN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let hand = game.players[0].hand.len();
+    let library = game.players[0].library.len();
+
+    cast_with(
+        &mut game,
+        command,
+        &[mode(BOUNCE), mode(DRAW)],
+        &[Target::Permanent(mountain)],
+    );
+
+    // The only thing it named is answered before it resolves.
+    game.move_permanents_to_graveyard(&[mountain]);
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].library.len(),
+        library,
+        "no card was drawn: the spell did not resolve at all",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand - 1,
+        "and the Command itself is spent",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::CRYPTIC_COMMAND),
+        "it went to the graveyard having done nothing",
+    );
+}
