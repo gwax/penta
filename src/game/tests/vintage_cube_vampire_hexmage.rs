@@ -137,3 +137,42 @@ fn it_can_name_your_own_permanent() {
 
     assert!(activation(&game, hexmage, yours).is_some());
 }
+
+/// "Target permanent", and a permanent is a thing on the battlefield: a card
+/// waiting in exile with counters on it -- a suspended card is the ordinary
+/// case -- is not one, however many counters it is carrying.
+#[test]
+fn it_cannot_reach_counters_outside_the_battlefield() {
+    let (mut game, hexmage) = staged();
+    let mut waiting = card(66_000, cards::SERRA_ANGEL, PlayerId::One);
+    let waiting_id = waiting.id;
+    waiting.add_counters(CounterKind::named("time"), 3);
+    game.players[0].exile.push(waiting);
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source, targets, .. }
+            if *source == hexmage
+                && targets.iter().any(|selection| {
+                    selection.targets().iter().any(|chosen| {
+                        matches!(
+                            chosen,
+                            Target::Permanent(id) | Target::Card(id) if *id == waiting_id
+                        )
+                    })
+                }))
+        }),
+        "an exiled card is not a permanent to name",
+    );
+
+    // And with nothing else out, the ability has nobody to point at but the
+    // Hexmage itself.
+    let others = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == hexmage),
+        )
+        .count();
+    assert_eq!(others, 1, "only the Hexmage itself is on the battlefield");
+}
