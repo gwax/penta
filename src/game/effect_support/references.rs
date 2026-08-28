@@ -99,7 +99,7 @@ impl Game {
             ObjectRefDef::AttachedToSource => object
                 .source
                 .and_then(|source| self.current_or_last_known_attached_host(source))
-                .map(Target::Permanent),
+                .map(|host| self.attached_host_target(host)),
             ObjectRefDef::Target(target) => {
                 let slot = scoped.target_slot(target);
                 Self::raw_target_reference(target, object, scoped)
@@ -449,6 +449,25 @@ impl Game {
                 Some(Target::Permanent(planeswalker))
             }
         }
+    }
+
+    /// What an Aura's host is, as a target. Almost always a permanent; an
+    /// Aura enchanting a card in a graveyard has a card instead, and
+    /// "return enchanted creature card" has to be able to name it. A host
+    /// that is nowhere at all is still reported as a permanent, which is
+    /// what every last-known-information reader of this expects.
+    fn attached_host_target(&self, host: GameObjectId) -> Target {
+        if self
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == host)
+        {
+            return Target::Permanent(host);
+        }
+        if self.card_in_nonbattlefield_zone(host).is_some() {
+            return Target::Card(host);
+        }
+        Target::Permanent(host)
     }
 
     pub(super) fn effect_recipients(

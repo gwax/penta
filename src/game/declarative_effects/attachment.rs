@@ -23,10 +23,13 @@ impl Game {
         for target in self.effect_recipients(recipient, object, context, scoped) {
             let attached = match (onto_source, target) {
                 (true, Target::Permanent(id)) => self.try_attach(id, source),
-                (false, Target::Permanent(id)) => self.try_attach(source, id),
+                // A card is a legal host only for an Aura whose own clause
+                // names one where it is; the attachment check says so, and
+                // every other Aura fails it.
+                (false, Target::Permanent(id) | Target::Card(id)) => self.try_attach(source, id),
                 (false, Target::Player(player)) => self.try_attach_to_player(source, player),
                 (true, Target::Player(_) | Target::Card(_) | Target::Spell(_))
-                | (false, Target::Card(_) | Target::Spell(_)) => false,
+                | (false, Target::Spell(_)) => false,
             };
             if attached && !onto_source {
                 break;

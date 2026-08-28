@@ -765,107 +765,9 @@ impl Game {
         self.has_applied_rule(permanent, AppliedRuleDef::CannotChangeController)
     }
 
-    /// Whether an Aura may stay attached to `host`: the host has to still be
-    /// on the battlefield and still satisfy what the Aura enchants.
-    pub(super) fn is_legal_aura_host(&self, aura: &Permanent, host: GameObjectId) -> bool {
-        let Some(host) = self
-            .battlefield
-            .iter()
-            .find(|permanent| permanent.card.id == host)
-        else {
-            return false;
-        };
-        if self.cannot_be_enchanted(host) {
-            return false;
-        }
-        if self.effective_rules(aura).is_none() {
-            return false;
-        }
-        let Some(rules) = self.effective_rules(aura) else {
-            return false;
-        };
-        // An Aura that never announces a host as it is cast declares its
-        // restriction outright, because there is no target slot to read one
-        // from.
-        if let Some(object) = rules.enchant() {
-            return self.trigger_object_matches(
-                object,
-                &self.trigger_event_object(host),
-                aura.card.id,
-                false,
-            );
-        }
-        let Some(target) = rules.ability_clauses().iter().find_map(|ability| {
-            let target = Self::immediate_attachment_target(ability.declarative_effect()?)?;
-            // A bestowed permanent's restriction is printed on the bestow
-            // clause rather than on a spell clause: bestow is what turned it
-            // into an Aura, so bestow is what says what it may enchant.
-            match ability.definition {
-                DeclarativeAbilityDef::Spell(spell) => spell.targets().get(target.index()),
-                DeclarativeAbilityDef::AlternativeCast(alternative)
-                    if alternative.kind == crate::card::AlternativeCastKindDef::Bestow =>
-                {
-                    alternative.targets.get(target.index())
-                }
-                _ => None,
-            }
-        }) else {
-            return false;
-        };
-        match target.predicate {
-            AbilityTargetPredicate::Object {
-                object,
-                zones,
-                controller,
-                owner,
-            } => {
-                zones.contains(&ZoneKind::Battlefield)
-                        && controller.is_none_or(|relation| {
-                            self.player_relation_matches(
-                                host.controller,
-                                relation,
-                                aura.controller,
-                                TriggerContext::empty(),
-                            )
-                        })
-                        && owner.is_none_or(|relation| {
-                            self.player_relation_matches(
-                                host.card.owner,
-                                relation,
-                                aura.controller,
-                                TriggerContext::empty(),
-                            )
-                        })
-                        && self.trigger_object_matches(
-                            object,
-                            &self.trigger_event_object(host),
-                            aura.card.id,
-                            false,
-                        )
-                        // Hexproof only constrains targeting. Protection also
-                        // makes an existing attachment illegal, unless this
-                        // Aura is the one printing the exception -- which is
-                        // what an Aura granting protection from its own color
-                        // has to do to survive its own effect.
-                        && (self.remains_attached_through_protection(aura)
-                            || !self.is_protected_from_characteristics(
-                                host,
-                                &self.trigger_event_object(aura),
-                                false,
-                            ))
-            }
-            AbilityTargetPredicate::AnyTarget
-            | AbilityTargetPredicate::PlayerOrPlaneswalker(_)
-            | AbilityTargetPredicate::ControlledByTargetOf { .. }
-            | AbilityTargetPredicate::OwnedByTargetPlayer { .. }
-            // An Aura attaches to a permanent, so a stack slot never names one.
-            | AbilityTargetPredicate::StackObject { .. }
-            | AbilityTargetPredicate::PlayerWithMoreObjectsThanChooser { .. }
-            | AbilityTargetPredicate::Player(_) => false,
-        }
-    }
-
-    /// The permanent an Aura spell targeted, read off its own spell clause.
+    /// What an Aura spell targeted, read off its own spell clause. Usually a
+    /// permanent; an Aura whose slot names a card in a zone -- "enchant
+    /// creature card in a graveyard" -- comes back with that card instead.
     pub(super) fn aura_host_for(object: &StackObject) -> Option<GameObjectId> {
         let ability = object.ability.as_ref()?;
         let primary = match ability.resolver {
@@ -883,8 +785,8 @@ impl Game {
                 let target = Self::immediate_attachment_target(scoped.effect)?;
                 Self::chosen_targets(object, scoped.target_slot(target)).find_map(|target| {
                     match target {
-                        Target::Permanent(id) => Some(id),
-                        _ => None,
+                        Target::Permanent(id) | Target::Card(id) => Some(id),
+                        Target::Player(_) | Target::Spell(_) => None,
                     }
                 })
             })
@@ -963,6 +865,7 @@ impl Game {
     }
 }
 
+include!("continuous_effects/aura_hosts.rs");
 include!("continuous_effects/characteristics.rs");
 include!("continuous_effects/graveyard_sources.rs");
 include!("continuous_effects/static_predicates.rs");

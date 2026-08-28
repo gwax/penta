@@ -25,6 +25,16 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **An Aura that enchants a card in a graveyard.** Animate Dead's own
+  enchant clause names a creature card in a graveyard, and an Aura could
+  only ever name a permanent -- so the creature was chosen as the enters
+  trigger went on the stack rather than as the spell was cast. It could be
+  cast with no creature card anywhere, and an Aura whose card was answered
+  in response stayed on the battlefield enchanting nothing. An Aura spell
+  may now target a card in a zone its own slot names, enter attached to that
+  card, and survive state-based actions there long enough to return it --
+  which is what the printed card does between resolving and its trigger.
+
 - **What a card says about itself while it is not on the battlefield.** "As
   long as Grist isn't on the battlefield, it's a 1/1 Insect creature in
   addition to its other types" is a clause about a card rather than about a

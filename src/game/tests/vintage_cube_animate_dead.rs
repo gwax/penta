@@ -10,13 +10,22 @@ fn settle(game: &mut Game) {
             .first()
             .map(|pending| pending.observation.clone())
         {
-            let options = decision
-                .options
-                .iter()
-                .find(|option| option.label != "Decline")
-                .or_else(|| decision.options.first())
-                .map(|option| vec![option.id])
-                .unwrap_or_default();
+            let options = if decision.minimum > 1 {
+                decision
+                    .options
+                    .iter()
+                    .map(|option| option.id)
+                    .take(decision.minimum)
+                    .collect()
+            } else {
+                decision
+                    .options
+                    .iter()
+                    .find(|option| option.label != "Decline")
+                    .or_else(|| decision.options.first())
+                    .map(|option| vec![option.id])
+                    .unwrap_or_default()
+            };
             game.apply(
                 decision.player,
                 Action::ChooseDecision {
@@ -140,31 +149,54 @@ fn the_creature_is_sacrificed_when_the_aura_leaves() {
     );
 }
 
-/// With nothing legal to reanimate the trigger takes no target and nothing
-/// comes back. The Aura stays on the battlefield doing nothing, which is
-/// where this implementation parts company with the printed card: there, the
-/// creature card is the spell's own target, so a graveyard without one could
-/// not have been cast at.
+/// "Enchant creature card in a graveyard" is the spell's own target, so a
+/// graveyard with nothing in it worth naming is a spell that cannot be cast
+/// at all.
 #[test]
-fn nothing_comes_back_without_a_creature_card() {
+fn it_cannot_be_cast_without_a_creature_card() {
     for graveyard in [Vec::new(), vec![cards::LIGHTNING_BOLT]] {
-        let (mut game, animate) = staged(&graveyard);
-
-        cast(&mut game, animate);
+        let (game, animate) = staged(&graveyard);
 
         assert!(
             !game
-                .battlefield
+                .legal_actions(PlayerId::One)
                 .iter()
-                .any(|permanent| permanent.card.definition != cards::ANIMATE_DEAD),
-            "nothing was reanimated",
+                .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == animate)),
+            "two mana and no creature card is no cast",
         );
-        assert_eq!(
-            game.players[1].graveyard.len(),
-            graveyard.len(),
-            "their graveyard is untouched",
-        );
-        let aura = permanent(&game, cards::ANIMATE_DEAD).expect("the Aura resolved");
-        assert_eq!(aura.attached_to, None, "enchanting nothing");
     }
+}
+
+/// The card is the spell's target, so answering it in response counters the
+/// Aura on resolution rather than leaving it on the battlefield enchanting
+/// nothing.
+#[test]
+fn a_card_that_leaves_in_response_counters_the_spell() {
+    let (mut game, animate) = staged(&[cards::SERRA_ANGEL]);
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == animate))
+        .expect("two mana casts it");
+    game.apply(PlayerId::One, action).expect("it is cast");
+
+    // The Angel leaves the graveyard while the Aura is still on the stack.
+    let angel = game.players[1]
+        .graveyard
+        .pop()
+        .expect("the Angel was the only card there");
+    game.players[1].exile.push(angel);
+    settle(&mut game);
+
+    assert!(
+        permanent(&game, cards::ANIMATE_DEAD).is_none(),
+        "the Aura was countered rather than resolving",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::ANIMATE_DEAD),
+        "and went to its owner's graveyard",
+    );
 }

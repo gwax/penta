@@ -1960,9 +1960,9 @@ pub(in crate::card::sets) static WATER_ELEMENTAL: CardRecord = CardRecord::new_w
 );
 
 // LEA 92 — Animate Dead
-// Audit: partial — The creature card is chosen as the enters trigger goes on the stack rather than as the Aura spell is cast.
 /// Any graveyard, not only your own, and a creature card rather than a
-/// creature: what it enchants is still a card when it is chosen.
+/// creature: what it enchants is still a card when it is chosen, which is
+/// why this Aura's slot names a zone no other Aura's does.
 static A_CREATURE_CARD_IN_A_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::Object {
         object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -1976,7 +1976,9 @@ static A_CREATURE_CARD_IN_A_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef
 /// object, so a following effect would have nothing left to name.
 static ANIMATE_DEAD_REANIMATES: EffectDef = EffectDef::MoveToZone {
     counters: None,
-    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+    // "Return enchanted creature card": what the Aura is already attached
+    // to, which is the card its own spell targeted.
+    object: EffectRecipientDef::AttachedPermanent,
     from: None,
     zone: ZoneKind::Battlefield,
     placement: ZonePlacement::Top,
@@ -1991,8 +1993,12 @@ static ANIMATE_DEAD_REANIMATES: EffectDef = EffectDef::MoveToZone {
 /// nothing rather than reanimating from a graveyard.
 static ANIMATE_DEAD_IS_STILL_THERE: TriggerConditionDef = TriggerConditionDef::SourceOnBattlefield;
 
-static ANIMATE_DEAD_ABILITIES: [AbilityDef; 3] = [
-    AbilityDef::triggered_if_with_targets(
+static ANIMATE_DEAD_ABILITIES: [AbilityDef; 4] = [
+    abilities::aura_spell(
+        "Enchant creature card in a graveyard",
+        &A_CREATURE_CARD_IN_A_GRAVEYARD,
+    ),
+    AbilityDef::triggered_if(
         "When this Aura enters, if it's on the battlefield, it loses \"enchant creature card in a \
          graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\" \
          Return enchanted creature card to the battlefield under your control and attach this \
@@ -2003,17 +2009,8 @@ static ANIMATE_DEAD_ABILITIES: [AbilityDef; 3] = [
             Some(ZoneKind::Battlefield),
         ),
         &ANIMATE_DEAD_IS_STILL_THERE,
-        &A_CREATURE_CARD_IN_A_GRAVEYARD,
         ANIMATE_DEAD_REANIMATES,
-    )
-    .with_coverage(AbilityCoverageDef::partial(
-        "The card is chosen as this trigger goes on the stack rather than as the Aura spell is \
-         cast: an Aura enters attached to a battlefield permanent here, and a graveyard card is \
-         not one. So this can be cast with no creature card anywhere, and an Aura whose card is \
-         answered in response stays on the battlefield enchanting nothing; the printed card \
-         could not have been cast at all in the first case, and would have been countered on \
-         resolution in the second. Neither reanimates anything.",
-    )),
+    ),
     AbilityDef::triggered(
         "When this Aura leaves the battlefield, that creature's controller sacrifices it.",
         TriggerEventDef::zone_changed(
@@ -2046,9 +2043,11 @@ pub(in crate::card::sets) static ANIMATE_DEAD: CardRecord = CardRecord::new(
     // of losing it again when the Aura goes.
     CardRules::new_enchantment(mana_cost!("{1}{B}"))
         .with_subtypes(&["Aura"])
-        // "Enchant creature put onto the battlefield with this Aura" is
-        // narrower than this, but the card guarantees the narrowing itself:
-        // it only ever attaches to the creature it just returned.
+        // The restriction it *gains*: "enchant creature put onto the
+        // battlefield with this Aura" is narrower than this, but the card
+        // guarantees the narrowing itself -- it only ever attaches to the
+        // creature it just returned. What it loses at the same moment is
+        // the spell's own slot below, which is the graveyard one.
         .enchanting(ObjectPredicateDef::HasType(CardType::Creature))
         .with_abilities(&ANIMATE_DEAD_ABILITIES),
 );
