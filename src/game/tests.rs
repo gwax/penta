@@ -583,6 +583,7 @@ mod vintage_cube_remand;
 mod vintage_cube_retrofitter_foundry;
 mod vintage_cube_robber_of_the_rich;
 mod vintage_cube_saheeli;
+mod vintage_cube_savannah;
 mod vintage_cube_screaming_nemesis;
 mod vintage_cube_scythecat_cub;
 mod vintage_cube_seasoned_pyromancer;
