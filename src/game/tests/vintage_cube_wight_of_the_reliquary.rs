@@ -203,3 +203,36 @@ fn vigilance_keeps_the_fetch_open() {
         "so the fetch is still there to pay for",
     );
 }
+
+/// Her fetch costs a tap, and a tap is a creature's tap: a Wight that
+/// arrived this turn offers nothing however many creatures stand beside her.
+#[test]
+fn a_fresh_wight_cannot_fetch() {
+    let (mut game, wight, _) = staged(&[cards::GRIZZLY_BEARS], &[], &[cards::FOREST]);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == wight)
+    {
+        permanent.entered_controller_turn = game.turns_started[0];
+    }
+
+    assert!(
+        fetches(&game, wight).is_empty(),
+        "she has to have been here since the turn began",
+    );
+
+    // One turn older and the same board pays for it.
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == wight)
+    {
+        permanent.entered_controller_turn = 0;
+    }
+    assert_eq!(
+        fetches(&game, wight).len(),
+        1,
+        "the Bears beside her are food once she is settled",
+    );
+}
