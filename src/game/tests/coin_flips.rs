@@ -324,3 +324,57 @@ fn mana_crypt_taps_for_two_colorless() {
     .expect("it taps for mana");
     assert_eq!(game.players[PlayerId::One.index()].mana_pool.colorless, 2);
 }
+
+/// "No player may choose to take actions between determining the result of
+/// the flip and damage being dealt": the flip and the toll are one
+/// resolution, and the toll is damage from the artifact rather than life
+/// paid -- so anything watching for damage sees it, and nothing watching for
+/// life loss does.
+#[test]
+fn the_crypts_flip_and_its_damage_are_one_resolution() {
+    let mut checked = false;
+    for seed in 0..40 {
+        let mut game = ready_game_with_seed(seed);
+        game.battlefield.clear();
+        game.battlefield
+            .push(creature(10_000, cards::MANA_CRYPT, PlayerId::One));
+        game.players[PlayerId::One.index()].life = 20;
+        game.active_player = PlayerId::One;
+        game.priority = PlayerId::One;
+        game.step = Step::Upkeep;
+        game.handle_upkeep_triggers();
+        let before = game.events.len();
+
+        // One pass each is all it takes: the trigger resolves, and the flip
+        // and its consequence go with it.
+        drain_pending(&mut game);
+        assert!(
+            game.pending_decisions.is_empty(),
+            "the flip asks nobody anything on the way",
+        );
+
+        if game.players[PlayerId::One.index()].life == 20 {
+            continue;
+        }
+        checked = true;
+        let events = &game.events[before..];
+        assert!(
+            events.iter().any(|event| matches!(
+                event,
+                GameEvent::DamageDealt {
+                    player: PlayerId::One,
+                    amount: 3,
+                }
+            )),
+            "three damage was dealt: {events:?}",
+        );
+        assert!(
+            !events
+                .iter()
+                .any(|event| matches!(event, GameEvent::LifeLost { .. })),
+            "and nothing was paid",
+        );
+        break;
+    }
+    assert!(checked, "some seed loses the flip");
+}
