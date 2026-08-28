@@ -682,3 +682,58 @@ fn a_counterspell_may_answer_its_own_controllers_spell() {
          the Counterspell puts it there and only then leaves the stack itself",
     );
 }
+
+/// "If the target is legal but not countered (most likely because an effect
+/// says that the spell can't be countered), you do add mana." Abrupt Decay
+/// resolves and Mana Drain still pays out its two.
+#[test]
+fn a_drain_that_counters_nothing_still_pays_its_controller() {
+    let mut game = ready_game();
+    let target = creature(19_060, cards::SOL_RING, PlayerId::Two);
+    let target_id = target.card.id;
+    game.battlefield.push(target);
+    let decay = card(19_061, cards::ABRUPT_DECAY, PlayerId::One);
+    let drain = card(19_062, cards::MANA_DRAIN, PlayerId::Two);
+    game.players[0].hand.push(decay.clone());
+    game.players[1].hand.push(drain.clone());
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    let action = acceptance_cast_action_targeting(
+        &game,
+        PlayerId::One,
+        decay.id,
+        Target::Permanent(target_id),
+    );
+    game.apply(PlayerId::One, action).unwrap();
+    game.apply(PlayerId::One, Action::PassPriority).unwrap();
+    let decay_on_stack = game.stack.last().expect("the Decay is waiting").id;
+    game.apply(
+        PlayerId::Two,
+        cast_action(drain.id, vec![Target::Spell(decay_on_stack)], Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+    pass_priority_pair(&mut game);
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != target_id),
+        "the Decay could not be countered and did its work",
+    );
+
+    // Their own next main phase pays out all the same.
+    game.finish_cleanup();
+    game.start_next_turn();
+    assert_eq!(game.active_player, PlayerId::Two);
+    game.step = Step::Draw;
+    game.advance_step();
+    game.finish_rules_procedure();
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.players[1].mana_pool.colorless, 2,
+        "two for the Decay's mana value, countered or not",
+    );
+}
