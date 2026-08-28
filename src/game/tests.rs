@@ -491,6 +491,7 @@ mod vintage_cube_legolas_reflexes;
 mod vintage_cube_leovold;
 mod vintage_cube_leyline_binding;
 mod vintage_cube_library;
+mod vintage_cube_lightning_bolt;
 mod vintage_cube_liliana_of_the_veil;
 mod vintage_cube_lion_sash;
 mod vintage_cube_lions_eye_diamond;
