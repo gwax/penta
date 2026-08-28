@@ -216,3 +216,110 @@ fn a_nonartifact_card_is_not_a_target() {
         "a creature card is not an artifact card",
     );
 }
+
+/// "Reduces only the generic mana": five artifacts do not make her free, and
+/// the blue pip is not something colourless mana can answer.
+#[test]
+fn affinity_never_eats_the_blue_pip() {
+    let (mut game, held) = staged(
+        &[
+            cards::HOWLING_MINE,
+            cards::MANIFOLD_KEY,
+            cards::SOL_RING,
+            cards::MOX_RUBY,
+            cards::MOX_PEARL,
+        ],
+        &[],
+    );
+
+    assert!(casts(&game, held).is_empty(), "five artifacts are not five");
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    assert!(
+        casts(&game, held).is_empty(),
+        "and colourless mana does not pay a blue pip",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    assert!(
+        !casts(&game, held).is_empty(),
+        "the pip is all that is owed"
+    );
+}
+
+/// "Casting the target card causes it to leave your graveyard and become a
+/// new object": the Lotus that sacrifices itself for mana lands back in the
+/// graveyard the same turn, and the permission does not follow it there.
+#[test]
+fn the_permission_does_not_survive_a_trip_back_to_the_graveyard() {
+    let (mut game, _held) = staged(&[cards::HOWLING_MINE], &[cards::BLACK_LOTUS]);
+    let emry = game
+        .put_onto_battlefield(PlayerId::One, cards::EMRY_LURKER_OF_THE_LOCH)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    let lotus = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::BLACK_LOTUS)
+        .expect("it is buried")
+        .id;
+
+    let tap = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == emry
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets().contains(&Target::Card(lotus)))
+            }
+            _ => false,
+        })
+        .expect("she can point at the Lotus");
+    game.apply(PlayerId::One, tap).expect("it activates");
+    drain_pending(&mut game);
+    let recast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == lotus))
+        .expect("the permission is live");
+    game.apply(PlayerId::One, recast).expect("it is cast");
+    drain_pending(&mut game);
+
+    let on_battlefield = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::BLACK_LOTUS)
+        .expect("the Lotus resolved")
+        .card
+        .id;
+    let sacrifice = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateManaAbility { source, .. } if *source == on_battlefield)
+        })
+        .expect("it taps itself for mana");
+    game.apply(PlayerId::One, sacrifice).expect("it is spent");
+    drain_pending(&mut game);
+
+    let returned = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::BLACK_LOTUS)
+        .expect("it sacrificed itself back into the graveyard")
+        .id;
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == returned)),
+        "what came back is a new object the permission never named",
+    );
+}
