@@ -142,3 +142,50 @@ fn it_needs_the_green_mana() {
         "every deck can cast it; not every deck can use it",
     );
 }
+
+/// The other half of the ability, and the same exclusion on that side: a
+/// plain enchantment goes, and an enchantment creature stays.
+#[test]
+fn it_exiles_a_noncreature_enchantment() {
+    let (mut game, mite) = staged();
+    let oath = game
+        .put_onto_battlefield(PlayerId::Two, cards::OATH_OF_DRUIDS)
+        .expect("cataloged");
+    let innocence = game
+        .put_onto_battlefield(PlayerId::Two, cards::ENDURING_INNOCENCE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let offered = offered_targets(&game, mite);
+    assert!(offered.contains(&oath), "the Oath is a noncreature one");
+    assert!(
+        !offered.contains(&innocence),
+        "an enchantment creature is still a creature: {offered:?}",
+    );
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == mite
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets().contains(&Target::Permanent(oath)))
+            }
+            _ => false,
+        })
+        .expect("naming the Oath is legal");
+    game.apply(PlayerId::One, action).expect("it activates");
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::OATH_OF_DRUIDS),
+        "exiled, which is how an Oath stays answered",
+    );
+}
