@@ -225,3 +225,43 @@ fn the_ability_is_not_offered_from_the_battlefield() {
         "the permanent has no activated ability of its own",
     );
 }
+
+/// "Creatures that enter the battlefield later in the turn won't get
+/// -2/-2." The sweep is a one-shot effect that reads the battlefield as it
+/// resolves, not a shrinking blanket over the rest of the turn.
+#[test]
+fn a_creature_arriving_afterwards_is_untouched() {
+    let (mut game, harvester) = staged(5);
+    game.put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == harvester))
+        .expect("five mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Card(cards::SERRA_ANGEL))
+        .expect("a 4/4 survives it");
+    assert_eq!(game.toughness(angel), Some(2), "the sweep caught the Angel");
+
+    // Same turn, after the trigger has resolved.
+    game.put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Card(cards::GRIZZLY_BEARS))
+        .expect("a 2/2 that was never shrunk is still a 2/2");
+    assert_eq!(game.power(bears), Some(2));
+    assert_eq!(game.toughness(bears), Some(2));
+}
