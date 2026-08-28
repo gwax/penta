@@ -40,6 +40,14 @@ distinguishes snapshots of the covered source and build inputs.
   channel. An ability now records that it is cycling rather than being
   recognised by what it charges.
 
+- **An intervening if counts the counters its source last carried.** "If
+  there are four or more chorus counters on Malcolm" was answered by looking
+  for him on the battlefield, so a Malcolm killed in response to his own
+  trigger answered no -- where his ruling says the discarded card may still
+  be cast for free with the counters he had when he was last there. The
+  condition now reads last known information, which is what the sibling
+  "is it tapped" condition beside it already did.
+
 - **A free cast with no printed duration happens as the ability resolves.**
   Etali's and Crabomination's rulings both say it outright: you cast the
   exiled cards as part of the resolution, and "you can't wait to cast it

@@ -459,18 +459,21 @@ impl Game {
                         )
                     }),
                 // Read live off the source, so a card whose counters change
-                // during a turn answers differently each time it is asked.
+                // during a turn answers differently each time it is asked --
+                // and off what it last carried once it has left, the way
+                // `SourceIsTapped` below does. An ability that has lost its
+                // source uses last known information (CR 608.2h): Malcolm
+                // killed in response still pays for the discard with the
+                // four chorus counters he had when he was last there.
                 TriggerConditionDef::SourceCounters {
                     kind,
                     comparison,
                     amount,
-                } => self
-                    .battlefield
-                    .iter()
-                    .find(|permanent| permanent.card.id == source)
-                    .is_some_and(|permanent| {
-                        compare(&permanent.counters(*kind), *comparison, &u16::from(*amount))
-                    }),
+                } => compare(
+                    &self.current_or_last_known_counters(source, *kind),
+                    *comparison,
+                    &u16::from(*amount),
+                ),
                 // A permanent remembers how it was cast; a spell still on the
                 // stack carries the cast signature itself, which is where a
                 // "when you cast this spell, if it was kicked" trigger has to

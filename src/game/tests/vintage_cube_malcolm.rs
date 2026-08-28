@@ -212,3 +212,118 @@ fn the_offer_may_be_declined() {
         "every discard stayed put",
     );
 }
+
+/// "You may not play land cards discarded this way." The permission is to
+/// cast, and a land is played rather than cast, so the fourth connection
+/// buys nothing when what it threw away was a land.
+#[test]
+fn a_discarded_land_is_not_castable() {
+    let (mut game, malcolm) = staged(
+        &[],
+        &[
+            cards::MOUNTAIN,
+            cards::MOUNTAIN,
+            cards::MOUNTAIN,
+            cards::MOUNTAIN,
+        ],
+    );
+
+    for connection in 1..=4 {
+        connect(&mut game, malcolm, cards::MOUNTAIN, connection == 4);
+        assert_eq!(chorus(&game, malcolm), connection);
+    }
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::MOUNTAIN),
+        "no land came back",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .filter(|card| card.definition == cards::MOUNTAIN)
+            .count(),
+        4,
+        "all four discards are still in the graveyard",
+    );
+}
+
+/// "If Malcolm isn't on the battlefield as its triggered ability resolves,
+/// you won't put a chorus counter on it, but you'll still draw a card and
+/// discard a card. You may still cast the discarded card if he had four or
+/// more chorus counters when he was last on the battlefield."
+#[test]
+fn a_dead_malcolm_still_loots_and_still_pays() {
+    let (mut game, malcolm) = staged(&[], &[cards::MOX_JET, cards::MOX_JET]);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == malcolm)
+        .expect("he is there")
+        .add_counters(CounterKind::named("chorus"), 4);
+
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.priority = PlayerId::One;
+    game.declare_attacker(malcolm, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    game.finish_declaring_blockers();
+    game.deal_combat_damage();
+
+    // The trigger is waiting; he is not there to receive its counter.
+    game.move_permanents_to_graveyard(&[malcolm]);
+    let library = game.players[PlayerId::One.index()].library.len();
+
+    for _ in 0..24 {
+        if let Some(offer) = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| matches!(action, Action::CastSpell { .. }))
+        {
+            game.apply(PlayerId::One, offer).expect("the offer stands");
+            continue;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .map(|option| option.id)
+                .take(decision.minimum.max(1).min(decision.maximum))
+                .collect();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library - 1,
+        "the draw happened without him",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::MOX_JET),
+        "and the four counters he had when he left still paid for the discard",
+    );
+}
