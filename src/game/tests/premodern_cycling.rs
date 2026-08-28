@@ -546,3 +546,59 @@ mod channel_is_not_cycling {
         );
     }
 }
+
+/// Cycling is an activated ability, not a spell: Stifle answers it, and the
+/// discard stays paid because the cost was paid on activation.
+#[test]
+fn stifle_counters_a_cycling_ability_and_the_card_stays_discarded() {
+    let mut game = ready();
+    let miscalculation = card(20_010, cards::MISCALCULATION, PlayerId::One);
+    let miscalculation_id = miscalculation.id;
+    game.players[PlayerId::One.index()]
+        .hand
+        .push(miscalculation);
+    game.players[PlayerId::One.index()].mana_pool.colorless = 2;
+    let before = game.players[PlayerId::One.index()].library.len();
+
+    let action = cycle_action(&game, miscalculation_id).expect("cycling is offered");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    let ability = game
+        .stack
+        .last()
+        .expect("the cycling ability waits on the stack")
+        .id;
+
+    let counterspell = card(20_012, cards::COUNTERSPELL, PlayerId::Two);
+    let counterspell_id = counterspell.id;
+    game.players[PlayerId::Two.index()].hand.push(counterspell);
+    let stifle = card(20_011, cards::STIFLE, PlayerId::Two);
+    let stifle_id = stifle.id;
+    game.players[PlayerId::Two.index()].hand.push(stifle);
+    game.players[PlayerId::Two.index()].mana_pool.blue = 3;
+    game.apply(PlayerId::One, Action::PassPriority).unwrap();
+    assert!(
+        !game.legal_actions(PlayerId::Two).iter().any(
+            |action| matches!(action, Action::CastSpell { card, .. } if *card == counterspell_id)
+        ),
+        "what counters spells has nothing to name: cycling is not a spell",
+    );
+    game.apply(
+        PlayerId::Two,
+        cast_action(stifle_id, vec![Target::Spell(ability)], Vec::new(), 0),
+    )
+    .expect("an activated ability is what Stifle answers");
+    resolve(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        before,
+        "the countered ability drew nothing",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MISCALCULATION),
+        "but the discard was a cost, so it stays paid",
+    );
+}
