@@ -108,3 +108,28 @@ fn the_blue_red_talisman_makes_its_own_two() {
     assert_eq!(game.players[0].mana.len(), 1);
     assert_eq!(game.players[0].life, 19, "one damage from the artifact");
 }
+
+/// The damage is what the ability does rather than what it costs, so no
+/// amount of life stands between you and it: at one life the coloured half
+/// is still on offer, and taking it is a loss. (Contrast a Phyrexian pip,
+/// where the life is a cost and CR 118.4 refuses it.)
+#[test]
+fn one_life_does_not_stop_the_colored_half() {
+    let (mut game, talisman) = staged();
+    game.players[0].life = 1;
+
+    let red = mana_action(&game, talisman, ManaColor::Red).expect("the offer does not ask");
+    game.apply(PlayerId::One, red).expect("it activates");
+    game.check_state_based_actions();
+
+    assert_eq!(game.players[0].mana.len(), 1, "the mana was made");
+    assert_eq!(game.players[0].life, 0);
+    assert_eq!(
+        game.result(),
+        Some(GameResult::Winner {
+            winner: PlayerId::Two,
+            reason: WinReason::OpponentLostAllLife,
+        }),
+        "and the artifact killed its own controller",
+    );
+}
