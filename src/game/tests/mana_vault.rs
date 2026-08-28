@@ -348,3 +348,53 @@ fn draw_trigger_uses_last_known_tapped_status() {
         "the condition uses the tapped source's last-known information"
     );
 }
+
+/// The clause the card is played for, and the one that turns the other three
+/// on: three colourless off one mana, and the tapping is what the draw step
+/// then charges a life for.
+#[test]
+fn tapping_it_makes_three_and_buys_the_draw_step_damage() {
+    let mut game = ready_game();
+    let vault = game
+        .put_onto_battlefield(PlayerId::One, cards::MANA_VAULT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: vault,
+            ability: mana_ability_for(&game, vault, ManaColor::Colorless),
+            color: ManaColor::Colorless,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+        },
+    )
+    .expect("it taps for mana");
+
+    assert_eq!(
+        game.players[0].mana_pool.colorless, 3,
+        "one mana in, three out",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == vault)
+            .expect("it is still there")
+            .tapped,
+        "and it is tapped, which is the whole of the drawback",
+    );
+
+    game.step = Step::Upkeep;
+    game.advance_step();
+    assert_eq!(game.step, Step::Draw);
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+    assert_eq!(
+        game.players[0].life, 19,
+        "the draw step charges a life for leaving it tapped",
+    );
+}
