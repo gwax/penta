@@ -105,6 +105,62 @@ fn end_step(game: &mut Game) {
     settle(game);
 }
 
+/// Casts a Phantasmal Image and answers what it may enter as, returning the
+/// permanents it was offered as copies without taking any of them.
+fn copy_offers(game: &mut Game) -> Vec<GameObjectId> {
+    let image = game
+        .build_zone(PlayerId::One, &[cards::PHANTASMAL_IMAGE])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let image_id = image.id;
+    game.players[0].hand.push(image);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+    // A creature spell wants a main phase, which an end step is not.
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == image_id))
+        .expect("the Image is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    let mut offered = Vec::new();
+    for _ in 0..8 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            offered = decision
+                .options
+                .iter()
+                .filter_map(|option| option.card.map(|(id, _)| id))
+                .collect();
+            // Enter as itself, which is a 0/0 that dies at once and leaves
+            // the board as it was.
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: vec![decision.options[0].id],
+                },
+            )
+            .expect("entering as itself is offered");
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    settle(game);
+    game.check_state_based_actions();
+    offered
+}
+
 /// Either price makes the Insects: the trigger watches the permanent, not
 /// the creature.
 #[test]
@@ -164,4 +220,61 @@ fn the_counters_come_off_one_end_step_at_a_time() {
 
     assert_eq!(time_counters(&game), 0);
     assert!(is_a_creature(&game), "the last counter buys the body");
+}
+
+/// "You can cast that spell for its impending cost only when you could
+/// normally cast that creature spell." The cheaper price is an alternative
+/// cost, not flash: it waits for your own main phase with an empty stack
+/// exactly as the printed price does.
+#[test]
+fn the_impending_price_is_still_a_creature_spell() {
+    let (mut game, overlord) = staged();
+    let impending = |game: &Game| {
+        game.legal_actions(PlayerId::One).into_iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if card == overlord && choices.costs().alternative().is_some())
+        })
+    };
+    assert!(impending(&game), "your own main phase is the window");
+
+    game.step = Step::Upkeep;
+    assert!(!impending(&game), "an upkeep is not");
+
+    game.step = Step::PrecombatMain;
+    game.active_player = PlayerId::Two;
+    assert!(!impending(&game), "and neither is their turn");
+}
+
+/// What suppresses the body is a type-layer effect, so it is not only the
+/// Overlord's own attacks that notice: an impending Overlord is not a
+/// creature, and a copy effect that names one cannot name it. The Insects it
+/// made are on offer the whole time, and the Overlord joins them once the
+/// last time counter goes.
+#[test]
+fn nothing_can_copy_it_while_it_is_still_impending() {
+    let (mut game, overlord) = staged();
+    cast(&mut game, overlord, true);
+    let insects = insects(&game)
+        .iter()
+        .map(|permanent| permanent.card.id)
+        .collect::<Vec<_>>();
+    assert_eq!(insects.len(), 2, "the enters trigger fired either way");
+
+    assert_eq!(
+        copy_offers(&mut game),
+        insects,
+        "the Insects are copyable and the Overlord waiting behind them is not",
+    );
+
+    for _ in 0..4 {
+        end_step(&mut game);
+    }
+    assert!(is_a_creature(&game), "the last counter came off");
+
+    let body = on_battlefield(&game).expect("he is still there").card.id;
+    let offers = copy_offers(&mut game);
+    assert!(
+        offers.contains(&body),
+        "and now there is a creature there to copy",
+    );
 }
