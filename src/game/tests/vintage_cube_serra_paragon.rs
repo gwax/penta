@@ -273,3 +273,31 @@ fn the_mark_outlives_the_paragon() {
         "and still exiled",
     );
 }
+
+/// The land half is an ordinary land play, so it costs the turn's land drop
+/// as well as the Paragon's one play. Spending the drop elsewhere closes the
+/// land half and leaves the spell half open, which is the difference between
+/// the two limits.
+#[test]
+fn the_land_half_also_costs_your_land_drop() {
+    let (mut game, _paragon) = staged(&[cards::MOUNTAIN, cards::GRIZZLY_BEARS]);
+    game.players[0].lands_played_this_turn = 1;
+
+    let mountain = buried(&game, cards::MOUNTAIN).expect("it is buried");
+    assert!(
+        graveyard_play(&game, mountain).is_none(),
+        "this turn's land has already been played",
+    );
+
+    let bears = buried(&game, cards::GRIZZLY_BEARS).expect("it is buried too");
+    assert!(
+        graveyard_play(&game, bears).is_some(),
+        "but the Paragon's own once-a-turn is untouched",
+    );
+
+    play_from_graveyard(&mut game, cards::GRIZZLY_BEARS);
+    assert!(
+        on_battlefield(&game, cards::GRIZZLY_BEARS).is_some(),
+        "and the spell half is still there to be spent",
+    );
+}
