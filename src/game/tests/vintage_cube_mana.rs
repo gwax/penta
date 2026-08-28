@@ -489,3 +489,71 @@ fn each_mox_taps_for_its_own_color_and_no_other() {
         assert_eq!(game.players[0].life, 20);
     }
 }
+
+/// A mana creature's tap is a creature's tap: it waits for the turn after it
+/// arrives (CR 302.6), unlike the artifacts beside it in the same slot. The
+/// Elves make green and the Birds make whatever you name.
+#[test]
+fn a_mana_creature_waits_a_turn_and_then_makes_its_mana() {
+    for (definition, colors) in [
+        (cards::LLANOWAR_ELVES, &[ManaColor::Green][..]),
+        (cards::BIRDS_OF_PARADISE, &ManaColor::COLORS[..]),
+    ] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.turns_started = [5, 5];
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+        let creature = game
+            .put_onto_battlefield(PlayerId::One, definition)
+            .expect("cataloged");
+        drain_pending(&mut game);
+
+        let offered = |game: &Game| {
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == creature)
+                .map(|permanent| {
+                    game.mana_ability_activations(permanent)
+                        .into_iter()
+                        .map(|activation| activation.color)
+                        .collect::<Vec<_>>()
+                })
+                .expect("it is on the battlefield")
+        };
+        assert!(
+            offered(&game).is_empty(),
+            "{definition:?} arrived this turn, so its tap is not on offer",
+        );
+
+        // The same permanent, one turn older.
+        if let Some(permanent) = game
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == creature)
+        {
+            permanent.entered_controller_turn = 0;
+        }
+        let mut made = offered(&game);
+        made.sort_unstable();
+        let mut expected = colors.to_vec();
+        expected.sort_unstable();
+        assert_eq!(made, expected, "{definition:?} makes what it prints");
+
+        let color = colors[0];
+        game.apply(
+            PlayerId::One,
+            Action::ActivateManaAbility {
+                source: creature,
+                ability: mana_ability_for(&game, creature, color),
+                color,
+                counters_removed: None,
+                cost_object: None,
+                combination: None,
+            },
+        )
+        .unwrap_or_else(|error| panic!("{definition:?} taps for {color:?}: {error}"));
+        assert_eq!(game.players[0].mana_pool.amount(color), 1);
+    }
+}
