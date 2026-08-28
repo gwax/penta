@@ -23,6 +23,16 @@ the bot-wire epoch.
 This release reports engine 0.7.0 and protocol 29. The simulation fingerprint
 distinguishes snapshots of the covered source and build inputs.
 
+### Fixed
+
+- **Channel no longer counts as cycling.** Cycling raises its event as it is
+  activated, and the engine decided what was cycling by looking at the cost:
+  mana plus discarding the card from hand. Channel prints exactly that cost
+  and is a different keyword, so a card with both a channel ability and a
+  "when you cycle this card" trigger would have fired the trigger off the
+  channel. An ability now records that it is cycling rather than being
+  recognised by what it charges.
+
 ### Added
 
 - **Permanents that arrive together arrive at the same time.** Tokens made

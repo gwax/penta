@@ -302,6 +302,22 @@ impl AbilityDef {
         )
     }
 
+    /// The same as above, marked as cycling: the discard it pays with is
+    /// what raises the cycling event, and every other ability paying the
+    /// same way is not cycling.
+    #[must_use]
+    pub(crate) const fn cycling_ability(
+        text: &'static str,
+        costs: AbilityCostList,
+        effect: EffectDef,
+    ) -> Self {
+        Self::defined(
+            text,
+            DeclarativeAbilityDef::Activated(ActivatedAbilityDef::with_costs(costs).cycling()),
+            effect,
+        )
+    }
+
     /// "Choose one --" on an activated ability, which chooses its modes as
     /// it is activated (CR 601.2b) rather than as it resolves. The ability
     /// does nothing of its own beyond the modes it prints.

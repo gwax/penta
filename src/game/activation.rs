@@ -385,6 +385,7 @@ impl Game {
                 leaves_source: false,
             };
             let priced_mana_cost = self.priced_ability_mana_cost(source, &definition);
+            let is_cycling = definition.cycling;
             for cost in definition.costs.as_slice() {
                 match cost {
                     AbilityCostDef::Mana(cost) => {
@@ -428,11 +429,14 @@ impl Game {
                         self.capture_battlefield_triggers(&CommittedTriggerEvent::CardsDiscarded {
                             player,
                         });
-                        // Cycling is the only printed ability with this
-                        // shape, and CR 702.29b fires its trigger on
-                        // activation rather than on resolution -- so here,
-                        // beside the cost, rather than at the draw.
-                        self.capture_cycling_triggers(discarded_id, player);
+                        // CR 702.29b fires cycling's trigger on activation
+                        // rather than on resolution, so it belongs here
+                        // beside the cost rather than at the draw. Only
+                        // cycling raises it: channel pays the very same way
+                        // and is a different keyword.
+                        if is_cycling {
+                            self.capture_cycling_triggers(discarded_id, player);
+                        }
                     }
                     // The attacker named by the action, returned before the
                     // ability goes on the stack: it is a cost.

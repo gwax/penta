@@ -739,10 +739,9 @@ pub const fn enters_tapped(text: &'static str) -> AbilityDef {
 /// repeats the cost.
 #[must_use]
 pub const fn cycling(text: &'static str, cost: ManaCost) -> AbilityDef {
-    AbilityDef::activated_with_cost_list_and_targets(
+    AbilityDef::cycling_ability(
         text,
         AbilityCostList::two(AbilityCostDef::Mana(cost), AbilityCostDef::DiscardSource),
-        &[],
         EffectDef::DrawCards {
             recipient: EffectRecipientDef::Controller,
             amount: ValueDef::Constant(1),
@@ -760,10 +759,9 @@ pub const fn typecycling(
     cost: ManaCost,
     object: ObjectPredicateDef,
 ) -> AbilityDef {
-    AbilityDef::activated_with_cost_list_and_targets(
+    AbilityDef::cycling_ability(
         text,
         AbilityCostList::two(AbilityCostDef::Mana(cost), AbilityCostDef::DiscardSource),
-        &[],
         EffectDef::SearchZone {
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,

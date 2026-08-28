@@ -414,3 +414,135 @@ fn akromas_vengeance_destroys_artifacts_creatures_and_enchantments() {
         "the land is the only thing the sweeper does not name",
     );
 }
+
+/// Channel pays exactly what cycling pays -- mana, and discarding the card
+/// from hand -- and is a different keyword. A card printing both a
+/// channel-shaped ability and a cycling trigger must fire the trigger for
+/// the cycling and not for the channel, which is the difference the ability
+/// records about itself rather than one read off its cost.
+mod channel_is_not_cycling {
+    use super::*;
+    use crate::card::AbilityCostList;
+
+    static CHANNEL_DRAWS: EffectDef = EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(1),
+    };
+
+    static WHEN_CYCLED: EffectDef = EffectDef::GainLife {
+        recipient: EffectRecipientDef::Controller,
+        amount: ValueDef::Constant(3),
+    };
+
+    static BOTH_ABILITIES: [AbilityDef; 3] = [
+        abilities::cycling("Cycling {1}", crate::mana_cost!("{1}")),
+        AbilityDef::activated_with_cost_list_and_targets(
+            "Channel — {1}, Discard this card: Draw a card.",
+            AbilityCostList::two(
+                AbilityCostDef::Mana(crate::mana_cost!("{1}")),
+                AbilityCostDef::DiscardSource,
+            ),
+            &[],
+            CHANNEL_DRAWS,
+        )
+        .with_source_zones(&[ZoneKind::Hand]),
+        AbilityDef::triggered(
+            "When you cycle this card, you gain 3 life.",
+            TriggerEventDef::Cycled,
+            WHEN_CYCLED,
+        ),
+    ];
+
+    /// The test card, and the game holding one in hand with two mana up.
+    fn staged() -> (Game, GameObjectId, CardDefinitionId) {
+        let definition_id = CardDefinitionId::new(10_071);
+        let mut definition = CardDefinition::new(
+            definition_id,
+            "Cycling and channel test card",
+            CardSet::Magic2014,
+            false,
+            CardBehavior::Unsupported,
+        );
+        definition.rules =
+            CardRules::new_sorcery(ManaCost::new(2, 0)).with_abilities(&BOTH_ABILITIES);
+        synchronize_single_part_definition(&mut definition);
+
+        let mut game = ready();
+        let mut definitions: Vec<CardDefinition> =
+            game.catalog.definitions().into_iter().cloned().collect();
+        definitions.push(definition);
+        game.catalog = CardCatalog::new(definitions).expect("the catalog still builds");
+        let held = card(20_500, definition_id, PlayerId::One);
+        let held_id = held.id;
+        game.players[PlayerId::One.index()].hand.push(held);
+        game.players[PlayerId::One.index()].mana_pool.colorless = 2;
+        (game, held_id, definition_id)
+    }
+
+    /// Both abilities are offered from hand, and they cost the same.
+    #[test]
+    fn both_abilities_are_offered() {
+        let (game, held, _) = staged();
+
+        assert_eq!(
+            game.legal_actions(PlayerId::One)
+                .into_iter()
+                .filter(|action| {
+                    matches!(action, Action::ActivateAbility { source, .. } if *source == held)
+                })
+                .count(),
+            2,
+            "cycling and channel, paid the same way",
+        );
+    }
+
+    /// Cycling fires the trigger.
+    #[test]
+    fn cycling_gains_the_life() {
+        let (mut game, held, _) = staged();
+        let before = game.players[PlayerId::One.index()].life;
+        let cycling = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, ability, .. }
+                    if *source == held
+                        && matches!(ability, AbilityOrigin::Printed { ability, .. }
+                            if *ability == AbilityId(0)))
+            })
+            .expect("cycling is offered");
+        game.apply(PlayerId::One, cycling).expect("it is activated");
+        settle(&mut game);
+
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            before + 3,
+            "cycling is what the trigger watches for",
+        );
+    }
+
+    /// Channel does not, however identical the cost.
+    #[test]
+    fn channelling_gains_nothing() {
+        let (mut game, held, _) = staged();
+        let before = game.players[PlayerId::One.index()].life;
+        let channel = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, ability, .. }
+                    if *source == held
+                        && matches!(ability, AbilityOrigin::Printed { ability, .. }
+                            if *ability == AbilityId(1)))
+            })
+            .expect("the channel ability is offered");
+        game.apply(PlayerId::One, channel).expect("it is activated");
+        settle(&mut game);
+
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            before,
+            "a channel ability is not a cycle",
+        );
+    }
+}
