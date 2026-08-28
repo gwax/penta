@@ -171,3 +171,51 @@ fn one_card_can_pay_for_two_of_the_types() {
     assert!(body(&game).is_some(), "it escaped on three cards");
     assert_eq!(game.players[0].exile.len(), 3);
 }
+
+/// "The ability that defines its power and toughness works in all zones."
+/// Corpse Lunge reads the power of the card it exiled, and what it reads is
+/// the Goyf counting a graveyard it is no longer in: five types with it
+/// there, four once it has left.
+#[test]
+fn its_power_is_read_wherever_the_card_is() {
+    let (mut game, goyf) = staged(&[
+        cards::LIGHTNING_BOLT,
+        cards::PONDER,
+        cards::SOL_RING,
+        cards::OATH_OF_DRUIDS,
+    ]);
+    bury(&mut game, goyf);
+    let wall = game
+        .put_onto_battlefield(PlayerId::Two, cards::LIVING_WALL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let lunge = game
+        .build_zone(PlayerId::One, &[cards::CORPSE_LUNGE])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let lunge_id = lunge.id;
+    game.players[0].hand.push(lunge);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 3);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == lunge_id))
+        .expect("the Goyf is the creature card it exiles");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    let damage = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == wall)
+        .expect("a 0/6 survives it")
+        .damage;
+    assert_eq!(
+        damage, 4,
+        "four types left in the graveyard once the Goyf itself was exiled out of it",
+    );
+}
