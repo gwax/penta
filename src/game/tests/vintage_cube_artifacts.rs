@@ -559,3 +559,46 @@ fn nothing_else_can_equip_the_creature_wearing_the_greaves() {
         "and the Bears are reachable again the moment the Greaves leave",
     );
 }
+
+/// The half that is played on turn two: one colourless, and the tap it
+/// spends is the same tap the draw wants, so a Stone that made mana this
+/// turn cannot also cash itself in.
+#[test]
+fn the_mind_stone_makes_colorless_and_then_cannot_draw() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let stone = game
+        .put_onto_battlefield(PlayerId::One, cards::MIND_STONE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.players[PlayerId::One.index()].mana_pool = ManaPool::default();
+    let library = game.players[PlayerId::One.index()].library.len();
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: stone,
+            ability: mana_ability_for(&game, stone, ManaColor::Colorless),
+            color: ManaColor::Colorless,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+        },
+    )
+    .expect("it taps for mana");
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.colorless,
+        1,
+        "one colourless, which is what a two-mana rock is for",
+    );
+    assert!(
+        activation(&game, stone).is_none(),
+        "and the draw wants a tap the mana already spent",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library,
+        "so nothing was drawn",
+    );
+}
