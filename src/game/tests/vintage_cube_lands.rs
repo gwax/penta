@@ -227,3 +227,79 @@ fn every_fastland_taps_for_both_of_its_colors() {
         }
     }
 }
+
+/// A shock land carries its two basic types like any dual, so a fetch land
+/// naming those types finds it -- and putting it onto the battlefield is
+/// still an entry, so its own replacement asks about the two life.
+#[test]
+fn a_fetch_land_finds_a_shock_land_and_the_shock_still_asks() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let tarn = game
+        .put_onto_battlefield(PlayerId::One, cards::SCALDING_TARN)
+        .expect("cataloged");
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(62_000, cards::STEAM_VENTS, PlayerId::One));
+    drain_pending(&mut game);
+    let life = game.players[0].life;
+
+    let fetch = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == tarn))
+        .expect("the Tarn is ready to crack");
+    game.apply(PlayerId::One, fetch).expect("it activates");
+    pass_priority_pair(&mut game);
+
+    let search = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the search offers what it found");
+    assert_eq!(
+        search
+            .options
+            .iter()
+            .filter_map(|option| option
+                .card
+                .and_then(|(_, characteristics)| characteristics.card_definition()))
+            .collect::<Vec<_>>(),
+        vec![cards::STEAM_VENTS],
+        "an Island Mountain answers a search for an Island or Mountain card",
+    );
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: search.id,
+            options: vec![search.options[0].id],
+        },
+    )
+    .expect("taking it is legal");
+
+    let shock = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the shock land asks about its own two life");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: shock.id,
+            options: vec![1],
+        },
+    )
+    .expect("paying is offered");
+    drain_pending(&mut game);
+
+    let vents = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::STEAM_VENTS)
+        .expect("it arrived");
+    assert!(!vents.tapped, "the two life bought it untapped");
+    assert_eq!(
+        game.players[0].life,
+        life - 3,
+        "one for the Tarn and two for the Vents",
+    );
+}
