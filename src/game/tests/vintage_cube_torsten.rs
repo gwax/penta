@@ -202,3 +202,52 @@ fn dying_leaves_seven_soldiers() {
         "each a 1/1",
     );
 }
+
+/// "Reveal the top seven": all seven are shown to the table, not just the
+/// ones taken. That is what the other player learns from the trigger, and it
+/// costs nothing to leave a card behind after they have seen it.
+#[test]
+fn all_seven_are_revealed_whatever_is_taken() {
+    let library = [
+        cards::GRIZZLY_BEARS,
+        cards::LIGHTNING_BOLT,
+        cards::MOUNTAIN,
+        cards::SERRA_ANGEL,
+        cards::COUNTERSPELL,
+        cards::FOREST,
+        cards::PONDER,
+    ];
+    let (mut game, _torsten) = staged(&library);
+
+    let revealed = |game: &Game| {
+        let mut seen = game
+            .events
+            .iter()
+            .filter_map(|event| match event {
+                GameEvent::CardRevealed {
+                    player, definition, ..
+                } if *player == PlayerId::One => Some(*definition),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        seen.sort_unstable();
+        seen
+    };
+    let mut expected = library.to_vec();
+    expected.sort_unstable();
+    assert_eq!(
+        revealed(&game),
+        expected,
+        "every one of the seven was shown before anything was chosen",
+    );
+
+    // Taking one of them adds nothing further: the reveal already happened.
+    let before = revealed(&game).len();
+    take(&mut game, &[cards::SERRA_ANGEL]);
+    assert_eq!(
+        revealed(&game).len(),
+        before,
+        "and the card taken is not revealed a second time",
+    );
+    assert_eq!(in_hand(&game, cards::SERRA_ANGEL), 1);
+}
