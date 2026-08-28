@@ -123,3 +123,65 @@ fn it_does_not_reach_the_opponents_graveyard() {
         "only your own Mountain",
     );
 }
+
+/// "Crucible of Worlds doesn't allow you to activate abilities (such as
+/// cycling) of land cards in your graveyard." The permission is to play a
+/// land, and cycling is neither playing nor a land.
+#[test]
+fn it_opens_the_land_drop_and_not_the_cycling() {
+    let mut game = staged(true);
+    let steppe = card(87_100, cards::SECLUDED_STEPPE, PlayerId::One);
+    let steppe_id = steppe.id;
+    game.players[0].graveyard.push(steppe);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 2);
+
+    assert!(
+        land_plays(&game).contains(&steppe_id),
+        "the Steppe is a land, so the Crucible offers it as a land drop",
+    );
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == steppe_id)
+        ),
+        "but its cycling stays where it was printed, which is the hand",
+    );
+}
+
+/// "It doesn't change the times when you can play those land cards." One a
+/// turn, your own main phase, empty stack -- the same three gates an
+/// ordinary land drop waits for.
+#[test]
+fn it_does_not_change_when_a_land_may_be_played() {
+    let mut game = staged(true);
+    let mountain = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::MOUNTAIN)
+        .expect("it is buried")
+        .id;
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    assert!(
+        land_plays(&game).contains(&mountain),
+        "a main phase is the window"
+    );
+
+    game.step = Step::Upkeep;
+    assert!(!land_plays(&game).contains(&mountain), "an upkeep is not");
+
+    game.step = Step::PrecombatMain;
+    game.active_player = PlayerId::Two;
+    assert!(
+        !land_plays(&game).contains(&mountain),
+        "and neither is their turn",
+    );
+
+    game.active_player = PlayerId::One;
+    game.players[0].lands_played_this_turn = 1;
+    assert!(
+        !land_plays(&game).contains(&mountain),
+        "nor a turn whose land has already been played",
+    );
+}
