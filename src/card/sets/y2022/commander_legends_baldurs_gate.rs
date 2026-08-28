@@ -160,6 +160,7 @@ pub(in crate::card::sets) static YOU_MEET_IN_A_TAVERN: CardRecord = CardRecord::
 );
 
 // CLB 285 — Minsc & Boo, Timeless Heroes
+// Audit: partial — The minus names its damage target on activation instead of through a reflexive trigger, so an answered target counters the sacrifice too.
 static BOO_ABILITIES: [AbilityDef; 2] = [abilities::trample(), abilities::haste()];
 
 static BOO: TokenCharacteristics =
@@ -276,7 +277,10 @@ static MINSC_ABILITIES: [AbilityDef; 4] = [
     // the sacrifice is actually made, which is the one place this differs
     // from the printed reflexive trigger -- the same deviation Inti and
     // Guide of Souls carry. A board with nothing to throw does not offer
-    // the ability at all.
+    // the ability at all. It follows that an answer to the target counters
+    // the whole ability rather than only the reflexive trigger, so the
+    // creature that would have been thrown survives; the printed card has
+    // already sacrificed it by then and loses only the damage and the cards.
     AbilityDef::activated_with_targets(
         "\u{2212}2: Sacrifice a creature. When you do, Minsc & Boo deals X damage to any target, \
          where X is that creature's power. If the sacrificed creature was a Hamster, draw X cards.",

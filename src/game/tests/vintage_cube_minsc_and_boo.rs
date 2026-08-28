@@ -281,3 +281,57 @@ fn their_upkeep_offers_nothing() {
 
     assert!(boos(&game).is_empty(), "their upkeep is not yours");
 }
+
+/// "If there is no legal target for the reflexive trigger ... or if the
+/// target is illegal as the ability tries to resolve, you will not draw any
+/// cards even if the sacrificed creature was a Hamster." The target is
+/// declared here as the minus is activated rather than by a reflexive
+/// trigger, so an answer to the target counters the whole ability: no
+/// damage and no cards, and -- unlike the printed card, where the sacrifice
+/// has already happened by then -- the Hamster is still standing.
+#[test]
+fn an_answered_target_costs_the_damage_and_the_cards() {
+    let (mut game, minsc) = staged();
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let hand = game.players[0].hand.len();
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source,
+                ability: AbilityOrigin::Printed { ability, .. },
+                targets,
+                ..
+            } => {
+                *source == minsc
+                    && *ability == AbilityId(2)
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets().contains(&Target::Permanent(bears)))
+            }
+            _ => false,
+        })
+        .expect("the minus can name the Bears");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    // The Bears are answered while the minus is on the stack.
+    game.move_permanents_to_graveyard(&[bears]);
+    settle(&mut game, true);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand,
+        "a Hamster draws nothing when the throw has nowhere to land",
+    );
+    assert_eq!(game.players[1].life, 20, "and nothing took the damage");
+    assert_eq!(loyalty(&game, minsc), 1, "the loyalty was still paid");
+    assert!(
+        !boos(&game).is_empty(),
+        "the deviation this card carries: the target is named on activation, \
+         so the whole ability is countered and Boo is never thrown",
+    );
+}
