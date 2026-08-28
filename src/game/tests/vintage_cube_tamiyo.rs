@@ -289,3 +289,95 @@ fn she_cannot_buy_herself_back_with_her_own_minus_three() {
         "and she is not one of them: she is on the battlefield, not in the graveyard",
     );
 }
+
+/// "Her ability affects sacrifices, but not any other ways permanents can
+/// leave the battlefield. It won't stop a creature from dying due to lethal
+/// damage... and it won't stop a permanent from being put into its owner's
+/// graveyard due to the legend rule."
+#[test]
+fn she_stops_sacrifices_and_nothing_else() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.battlefield.push(tamiyo(98_060));
+    let bears = creature(98_061, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+
+    // Their removal is damage, not a sacrifice.
+    let bolt = card(98_062, cards::LIGHTNING_BOLT, PlayerId::Two);
+    let bolt_id = bolt.id;
+    game.players[1].hand.push(bolt);
+    game.players[1].mana_pool.red = 1;
+    game.priority = PlayerId::Two;
+    game.apply(
+        PlayerId::Two,
+        cast_action(bolt_id, vec![Target::Permanent(bears_id)], Vec::new(), 0),
+    )
+    .expect("they may point a Bolt at it");
+    resolve(&mut game);
+    game.check_state_based_actions();
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears_id),
+        "three damage kills a 2/2 with her standing there",
+    );
+
+    // And a second copy of her is the legend rule, not a sacrifice.
+    game.battlefield.push(tamiyo(98_063));
+    game.check_state_based_actions();
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition
+                == crate::game::ObjectKind::Card(cards::TAMIYO_COLLECTOR_OF_TALES))
+            .count(),
+        1,
+        "the legend rule takes one of the two",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::TAMIYO_COLLECTOR_OF_TALES),
+        "and it goes to the graveyard: a game rule is not a spell",
+    );
+}
+
+/// "If a spell or ability your opponent controls reduces your maximum hand
+/// size, her first ability won't stop you from discarding cards when the
+/// game rules cause you to discard during your cleanup step." The ordinary
+/// seven-card cleanup is that same game rule.
+#[test]
+fn the_cleanup_discard_is_a_game_rule_she_does_not_touch() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.battlefield.push(tamiyo(98_070));
+    game.players[0].hand.clear();
+    for index in 0..9 {
+        game.players[0]
+            .hand
+            .push(card(98_071 + index, cards::MOUNTAIN, PlayerId::One));
+    }
+    game.active_player = PlayerId::One;
+    game.step = Step::Cleanup;
+
+    game.cleanup();
+    assert!(
+        game.cleanup_pending,
+        "the game rules are asking for a discard"
+    );
+    let discard = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::DiscardCards { .. }))
+        .expect("cleanup offers the required discard");
+    game.apply(PlayerId::One, discard).expect("it is legal");
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        7,
+        "the game rules trimmed the hand to seven all the same",
+    );
+}
