@@ -254,3 +254,125 @@ fn it_counters_a_triggered_ability_too() {
         "the Djinn itself is untouched",
     );
 }
+
+/// "If the Tidebinder leaves the battlefield before its triggered ability
+/// resolves, the target ability will still be countered, but the source of
+/// the ability won't lose its abilities at all." The counter is the first
+/// half of the effect and lands either way; the silence is the second half
+/// and has nothing to hang on.
+#[test]
+fn a_dead_tidebinder_still_counters_but_silences_nothing() {
+    let (mut game, tidebinder, ids) = staged(&[cards::PRODIGAL_SORCERER]);
+    let sorcerer = ids[0];
+    they_ping_you(&mut game, sorcerer);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == tidebinder))
+        .expect("flash makes it castable on their turn");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    // Far enough for the body to resolve and its trigger to be put on the
+    // stack with a target, and no further.
+    let mut body = None;
+    for _ in 0..16 {
+        if let Some(permanent) = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::TISHANA_S_TIDEBINDER)
+        {
+            body = Some(permanent.card.id);
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .take(decision.minimum.max(1))
+                .map(|option| option.id)
+                .collect();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let body = body.expect("the Tidebinder resolved");
+    assert!(
+        !game.stack.objects.is_empty() || !game.pending_triggers.is_empty(),
+        "the trigger is still waiting, which is the whole of the case",
+    );
+
+    game.move_permanents_to_graveyard(&[body]);
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].life, 20,
+        "the ping was countered even though its answer had died",
+    );
+    for permanent in &mut game.battlefield {
+        if permanent.card.id == sorcerer {
+            permanent.tapped = false;
+        }
+    }
+    assert!(
+        !activations(&game, PlayerId::Two, sorcerer).is_empty(),
+        "and the Sorcerer never lost anything",
+    );
+}
+
+/// "If the affected permanent gains an ability after the effect begins to
+/// apply to it, it will keep that ability." The silence removes what was
+/// there when it resolved; the Boots strapped on afterwards are later in
+/// line and hand their keywords over.
+#[test]
+fn an_ability_granted_afterwards_survives_the_silence() {
+    let (mut game, tidebinder, ids) = staged(&[cards::PRODIGAL_SORCERER, cards::LAVASPUR_BOOTS]);
+    let sorcerer = ids[0];
+    let boots = ids[1];
+
+    they_ping_you(&mut game, sorcerer);
+    flash_it_in(&mut game, tidebinder);
+    assert!(
+        activations(&game, PlayerId::Two, sorcerer).is_empty(),
+        "the Sorcerer is silenced to begin with",
+    );
+
+    game.priority = PlayerId::Two;
+    let equip = activations(&game, PlayerId::Two, boots)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility { targets, .. } => targets
+                .iter()
+                .any(|selection| selection.targets().contains(&Target::Permanent(sorcerer))),
+            _ => false,
+        })
+        .expect("the Boots can be strapped to the Sorcerer");
+    game.apply(PlayerId::Two, equip).expect("it activates");
+    settle(&mut game);
+
+    let sorcerer = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == sorcerer)
+        .expect("he is still there");
+    assert!(
+        game.permanent_has_executable_keyword(sorcerer, KeywordAbility::Haste),
+        "what the Boots grant arrives after the silence and stays",
+    );
+    assert_eq!(game.power(sorcerer), Some(2), "and so does their +1/+0");
+}
