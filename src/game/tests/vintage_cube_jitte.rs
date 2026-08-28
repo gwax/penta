@@ -194,3 +194,57 @@ fn each_mode_is_its_own_activation_and_none_is_offered_without_a_counter() {
     // battlefield -- the Jitte itself is an Equipment.
     assert_eq!(modal(&game), 3);
 }
+
+/// "The ability can be used any time its controller has priority -- only the
+/// target creature choice has additional requirements. Choosing the +2/+2
+/// mode does nothing if the Jitte isn't equipped to a creature when the
+/// ability resolves." A bare Jitte still gains life, and still shrinks
+/// something, and its pump mode is a counter spent on nothing.
+#[test]
+fn an_unequipped_jitte_keeps_two_of_its_three_modes() {
+    let mut game = ready_game();
+    let (jitte_id, bears_id) = jitte_on_bears(&mut game);
+    game.damage_target_from_kind(Some(bears_id), Some(Target::Player(PlayerId::Two)), 2, true);
+    drain_pending(&mut game);
+    assert_eq!(
+        permanent(&game, jitte_id).counters(CounterKind::named("charge")),
+        2,
+        "two counters to spend",
+    );
+
+    // The creature wearing it leaves, so the Jitte is bare.
+    game.move_permanents_to_graveyard(&[bears_id]);
+    game.check_state_based_actions();
+    assert!(
+        permanent(&game, jitte_id).attached_to.is_none(),
+        "an Equipment whose creature is gone is unattached",
+    );
+
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let life = game.players[0].life;
+
+    spend_counter(&mut game, jitte_id, 2, None);
+    assert_eq!(
+        game.players[0].life,
+        life + 2,
+        "the life mode needs no host"
+    );
+
+    spend_counter(&mut game, jitte_id, 1, Some(theirs));
+    game.check_state_based_actions();
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == theirs),
+        "and neither does the shrink: a 2/1 dies to minus one",
+    );
+    assert_eq!(
+        permanent(&game, jitte_id).counters(CounterKind::named("charge")),
+        0,
+        "both counters are spent",
+    );
+}
