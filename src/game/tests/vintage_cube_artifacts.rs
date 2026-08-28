@@ -113,6 +113,38 @@ fn the_monolith_makes_three_and_stays_tapped_until_it_is_bought_back() {
     );
 }
 
+/// The clause the name is really about: it stays tapped through your untap
+/// step, so the four mana is the only way back. Anything else you tapped
+/// untaps beside it.
+#[test]
+fn the_monolith_does_not_untap_on_its_own() {
+    let mut game = ready_game();
+    let monolith = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIM_MONOLITH)
+        .expect("cataloged");
+    let ordinary = game
+        .put_onto_battlefield(PlayerId::One, cards::SOL_RING)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.tapped = true;
+    }
+    game.active_player = PlayerId::Two;
+    game.next_regular_player = PlayerId::One;
+
+    game.start_next_turn();
+
+    assert_eq!(game.active_player, PlayerId::One, "your own untap step");
+    let tapped = |id| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .expect("it is on the battlefield")
+            .tapped
+    };
+    assert!(tapped(monolith), "the Monolith is still down");
+    assert!(!tapped(ordinary), "and everything else got up");
+}
+
 #[test]
 fn the_mind_stone_trades_itself_for_a_card() {
     let mut game = ready_game();
