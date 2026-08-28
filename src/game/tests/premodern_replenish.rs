@@ -668,3 +668,85 @@ fn skycloud_expanse_pays_a_two_colour_cost() {
         "and its two colours cast a spell that needs both",
     );
 }
+
+/// The trick the card is played for: an exile ability that is still on the
+/// stack when the Wave leaves resolves afterwards, and the Wave is no longer
+/// there to give that creature back. What it took while it stood returns;
+/// what it takes after it has gone is gone for good.
+#[test]
+fn what_it_exiles_after_it_leaves_never_comes_back() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[1].exile.clear();
+    let mut wave = creature(10_000, cards::PARALLAX_WAVE, PlayerId::One);
+    wave.set_counters(CounterKind::named("fade"), 5);
+    let wave_id = wave.card.id;
+    game.battlefield.push(wave);
+    let bears = creature(10_010, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    let lions = creature(10_011, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let lions_id = lions.card.id;
+    game.battlefield.extend([bears, lions]);
+    game.priority = PlayerId::One;
+
+    let name_it = |game: &Game, target: GameObjectId| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    *source == wave_id
+                        && targets
+                            .iter()
+                            .any(|selection| selection.targets() == [Target::Permanent(target)])
+                }
+                _ => false,
+            })
+            .expect("a fade counter pays for it")
+    };
+
+    // The Bears go the ordinary way, while the Wave is still standing.
+    let first = name_it(&game, bears_id);
+    game.apply(PlayerId::One, first).unwrap();
+    drain_pending(&mut game);
+
+    // The Lions are named, and the Wave is answered before that resolves.
+    let second = name_it(&game, lions_id);
+    game.apply(PlayerId::One, second).unwrap();
+    game.destroy_permanent(wave_id);
+    drain_pending(&mut game);
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS),
+        "the Bears were exiled with a Wave that was still there to return them",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SAVANNAH_LIONS),
+        "the Lions were exiled by an ability that outlived its source",
+    );
+    assert_eq!(
+        game.players[1]
+            .exile
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::SAVANNAH_LIONS],
+        "and nothing is coming for them: the return trigger already resolved",
+    );
+}
