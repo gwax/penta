@@ -256,3 +256,73 @@ fn your_own_spell_pays_nothing() {
     assert_eq!(game.players[0].life, 20, "and nothing was paid");
     assert_eq!(pests(&game), 1, "the Bolt was still a spell she saw cast");
 }
+
+/// "If a player casts a spell that targets multiple permanents their
+/// opponent controls with ward, each of those ward abilities will trigger.
+/// If that player doesn't pay for all of them, the spell will be countered."
+#[test]
+fn two_wards_are_two_bills_and_one_unpaid_counters_it() {
+    let (mut game, witch) = staged(&[], &[cards::FEELING_OF_DREAD]);
+    let second = game
+        .put_onto_battlefield(PlayerId::One, cards::SEDGEMOOR_WITCH)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    let dread = game.players[1].hand[0].id;
+    game.players[1].mana_pool.white = 1;
+    game.players[1].mana_pool.colorless = 1;
+    game.priority = PlayerId::Two;
+    game.apply(
+        PlayerId::Two,
+        cast_action(
+            dread,
+            vec![Target::Permanent(witch), Target::Permanent(second)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("it may tap up to two creatures");
+
+    // Both wards triggered at once, so their controller orders them first.
+    let ordering = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("two triggers at once are ordered by the player who controls them");
+    assert_eq!(ordering.options.len(), 2, "one ward apiece");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: ordering.id,
+            options: ordering.options.iter().map(|option| option.id).collect(),
+        },
+    )
+    .expect("the order is theirs to pick");
+    settle(&mut game);
+
+    // One bill paid, one declined.
+    answer_ward(&mut game, PlayerId::Two, true);
+    answer_ward(&mut game, PlayerId::Two, false);
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[1].life, 17,
+        "the ward they did pay cost them three",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::SEDGEMOOR_WITCH)
+            .all(|permanent| !permanent.tapped),
+        "and the spell was countered, so neither Witch was tapped",
+    );
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::FEELING_OF_DREAD),
+        "the countered spell is in their graveyard",
+    );
+}
