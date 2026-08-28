@@ -209,3 +209,43 @@ fn somebody_elses_card_hitting_the_graveyard_does_nothing() {
         "with the Lions where it fell",
     );
 }
+
+/// Its ruling: "the last ability is a triggered ability, not a replacement
+/// ability. Players can respond to this ability." So the Wurm is in the
+/// graveyard, and stays there, for as long as the trigger waits on the
+/// stack -- which is the window a Soul-Guide Lantern or the like needs.
+#[test]
+fn the_shuffle_waits_on_the_stack_with_the_wurm_in_the_graveyard() {
+    let mut game = staged();
+    let wurm = game
+        .put_onto_battlefield(PlayerId::One, cards::WORLDSPINE_WURM)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    game.move_permanents_to_graveyard(&[wurm]);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::WORLDSPINE_WURM),
+        "a replacement would have moved it already; a trigger leaves it here",
+    );
+    assert!(
+        !game.pending_triggers.is_empty() || !game.stack.is_empty(),
+        "and the ability that will move it is waiting to be answered",
+    );
+    assert!(
+        game.players[0].library.is_empty(),
+        "nothing has been shuffled anywhere yet",
+    );
+
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].library.len(),
+        1,
+        "once it resolves the Wurm goes back into the library",
+    );
+    assert!(game.players[0].graveyard.is_empty());
+}
