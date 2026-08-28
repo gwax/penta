@@ -4926,16 +4926,44 @@ pub(in crate::card::sets) static CRYPTBORN_HORROR: CardRecord = CardRecord::new(
 );
 
 // RTR 213 — Deathrite Shaman
-// Audit: partial — A mana ability cannot both exile its graveyard target and produce a chosen color through the shared mana-ability path.
+/// "Add one mana of any color", named as the ability resolves. It is not a
+/// mana ability at all: it targets, and a targeted ability uses the stack
+/// however much mana it makes (CR 605.1a).
+static DEATHRITE_EXILES_A_LAND_FOR_MANA: EffectDef = EffectDef::Sequence(&[
+    EffectDef::MoveToZone {
+        counters: None,
+        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        from: None,
+        zone: ZoneKind::Exile,
+        controller: None,
+        placement: ZonePlacement::Top,
+        arrival_effect: None,
+        attachment: None,
+        tapped: false,
+    },
+    EffectDef::AddMana(AddManaEffectDef::choice(&ManaColor::COLORS)),
+]);
+
+static A_LAND_CARD_IN_A_GRAVEYARD: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
+    AbilityTargetPredicate::Object {
+        object: ObjectPredicateDef::HasType(CardType::Land),
+        zones: &[ZoneKind::Graveyard],
+        controller: None,
+        owner: None,
+    },
+)];
+
 pub(in crate::card::sets) static DEATHRITE_SHAMAN: CardRecord = CardRecord::new_with_legacy_id(
     1330,
     "Deathrite Shaman",
     CardArt::new("70496f16-c4c0-4c03-beef-454eb4824cd1", "Steve Argyle"),
     CardSet::ReturnToRavnica,
     CardRules::new_creature(mana_cost!("{B/G}"), &["Elf", "Shaman"], 1, 2).with_abilities(&[
-        AbilityDef::not_implemented(
+        AbilityDef::activated_with_targets(
             "{T}: Exile target land card from a graveyard. Add one mana of any color.",
-            "The shared mana-ability path requires a direct AddMana effect and cannot first exile a targeted graveyard card.",
+            &[AbilityCostDef::TapSource],
+            &A_LAND_CARD_IN_A_GRAVEYARD,
+            DEATHRITE_EXILES_A_LAND_FOR_MANA,
         ),
         AbilityDef::activated_with_targets(
             "{B}, {T}: Exile target instant or sorcery card from a graveyard. Each opponent loses 2 life.",
