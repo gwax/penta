@@ -521,8 +521,9 @@ impl CopyExceptionsDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ExiledCastPermissionDef {
     /// "You may cast that card by paying an amount of {E} equal to its mana
-    /// value rather than paying its mana cost." Nothing states a duration,
-    /// so it lasts as long as the card sits in exile.
+    /// value rather than paying its mana cost." No duration is printed,
+    /// which means the casting happens as the ability resolves: Amped
+    /// Raptor's ruling says you cannot wait to cast it later in the turn.
     EnergyEqualToManaValue,
     /// "You may cast any number of spells from among the nonland cards
     /// exiled this way without paying their mana costs." No duration is

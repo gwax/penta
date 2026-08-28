@@ -163,6 +163,8 @@ impl Game {
         match permission {
             crate::card::ExiledCastPermissionDef::EnergyEqualToManaValue => {
                 self.permit_energy_cast(exiled, caster);
+                self.restrict_exile_permission_to_casting(exiled);
+                self.offer_permitted_play(caster, exiled, object, context, scoped);
             }
             crate::card::ExiledCastPermissionDef::FreeWhileResolving => {
                 self.permit_free_play_this_turn(exiled, caster);

@@ -40,6 +40,13 @@ distinguishes snapshots of the covered source and build inputs.
   channel. An ability now records that it is cycling rather than being
   recognised by what it charges.
 
+- **An energy cast from exile happens as the ability resolves.** Amped
+  Raptor's ruling matches Etali's: you choose whether to cast the exiled card
+  as the trigger resolves, and cannot wait to cast it later in the turn. The
+  energy permission was granted for as long as the card sat in exile, so a
+  Raptor's find stayed castable all turn. It is now offered the way the free
+  ones are, and the card it names is a cast rather than a play.
+
 - **A bestow spell whose target is gone still comes down.** CR 702.103c and
   Detective's Phoenix's own ruling: unlike other Aura spells, one cast for
   its bestow cost is not countered when its target is illegal on resolution.

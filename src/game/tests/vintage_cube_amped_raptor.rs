@@ -42,6 +42,28 @@ fn cast_the_raptor(game: &mut Game) {
     settle(game);
 }
 
+/// The same, stopped at the standing cast offer: the permission the trigger
+/// hands out lives only while it waits.
+fn cast_the_raptor_holding_the_offer(game: &mut Game) {
+    let raptor = game
+        .build_zone(PlayerId::One, &[cards::AMPED_RAPTOR])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let raptor_id = raptor.id;
+    game.players[0].hand.push(raptor);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 2);
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == raptor_id))
+        .expect("two mana buys a Raptor");
+    game.apply(PlayerId::One, cast)
+        .expect("the Raptor is castable");
+    drain_to_decision(game);
+}
+
 fn settle(game: &mut Game) {
     for _ in 0..24 {
         if let Some(decision) = game
@@ -105,7 +127,7 @@ fn casting_it_digs_past_the_lands() {
 #[test]
 fn the_exiled_card_is_bought_with_energy() {
     let mut game = staged();
-    cast_the_raptor(&mut game);
+    cast_the_raptor_holding_the_offer(&mut game);
 
     let bolt = game.players[0]
         .exile
@@ -171,4 +193,45 @@ fn one_put_onto_the_battlefield_only_gets_the_energy() {
         "but the dig is not: it was never cast from a hand",
     );
     assert!(game.players[0].exile.is_empty());
+}
+
+/// "You choose whether or not to cast the exiled nonland card as the
+/// triggered ability resolves. If you do, you do so as part of the
+/// resolution of that ability. You can't wait to cast it later in the turn."
+#[test]
+fn the_card_it_found_cannot_be_cast_after_the_trigger() {
+    let mut game = staged();
+    cast_the_raptor_holding_the_offer(&mut game);
+    let bolt = game.players[0]
+        .exile
+        .iter()
+        .find(|card| card.definition == cards::LIGHTNING_BOLT)
+        .expect("the Bolt is in exile")
+        .id;
+    let castable = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == bolt))
+    };
+    assert!(castable(&game), "while the offer stands it may be cast");
+
+    // Declining is answering the offer, and the permission goes with it.
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].counters.count(CounterKind::Energy),
+        2,
+        "the energy is still there to spend on something else",
+    );
+    assert!(
+        !castable(&game),
+        "but the Bolt stays in exile: the window was the resolution",
+    );
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "and there it stays",
+    );
 }
