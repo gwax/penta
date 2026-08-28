@@ -40,6 +40,13 @@ distinguishes snapshots of the covered source and build inputs.
   channel. An ability now records that it is cycling rather than being
   recognised by what it charges.
 
+- **"The player it's attacking" survives the attacker.** Myr Battlesphere's
+  ruling is that a Battlesphere no longer on the battlefield when its attack
+  trigger resolves still throws its Myr at what it was attacking, losing only
+  the +X/+0 it would have given itself. The defender was read off the
+  battlefield, so answering the Battlesphere in response wasted the whole
+  ability. It now falls back to last known information (CR 608.2h).
+
 - **Equipment returning to a host that is gone arrives bare.** An arrival
   that names a host was all-or-nothing: if the host had left, the card did
   not move at all. That is right for an Aura (CR 303.4f) and wrong for

@@ -268,3 +268,82 @@ fn the_damage_follows_the_attack_onto_a_planeswalker() {
         "five loyalty less the four Myr",
     );
 }
+
+/// "As the last ability resolves, you can tap untapped Myr you control even
+/// if Myr Battlesphere is no longer on the battlefield by then. If that has
+/// happened, it won't get the +X/+0, but it will still deal X damage."
+#[test]
+fn a_dead_sphere_still_throws_its_myr() {
+    let (mut game, held) = staged(0);
+    let sphere = cast(&mut game, held);
+    settle(&mut game, 0);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    assert_eq!(myr_tokens(&game).len(), 4, "four Myr to throw");
+    let life = game.players[1].life;
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: sphere,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .expect("it attacks");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+
+    // Answered before the trigger resolves: the Myr are still here, and the
+    // thing that would have grown is not.
+    game.move_permanents_to_graveyard(&[sphere]);
+    settle(&mut game, 4);
+
+    assert_eq!(
+        game.players[1].life,
+        life - 4,
+        "the four Myr were thrown all the same",
+    );
+    assert!(
+        myr_tokens(&game).iter().all(|myr| myr.tapped),
+        "and they are what paid for it",
+    );
+}
+
+/// "You can tap any untapped Myr you control, not just the tokens ... this
+/// includes Myr that haven't been under your control since your most recent
+/// turn began." The ability taps them; it does not ask them to tap
+/// themselves, so summoning sickness has nothing to say.
+#[test]
+fn a_myr_that_just_arrived_can_still_be_tapped() {
+    let (mut game, held) = staged(0);
+    let sphere = cast(&mut game, held);
+    settle(&mut game, 0);
+    // Only the Battlesphere is old enough to attack; its Myr arrived with it
+    // and stay summoning sick.
+    for permanent in &mut game.battlefield {
+        if permanent.card.id == sphere {
+            permanent.entered_controller_turn = 0;
+        }
+    }
+    let sick = myr_tokens(&game)
+        .iter()
+        .filter(|myr| myr.entered_controller_turn == game.turns_started[0])
+        .count();
+    assert_eq!(sick, 4, "all four Myr are new this turn");
+    let life = game.players[1].life;
+
+    attack(&mut game, sphere, 4);
+
+    assert_eq!(
+        game.players[1].life,
+        life - 4,
+        "all four paid, however new they are",
+    );
+    assert!(
+        myr_tokens(&game).iter().all(|myr| myr.tapped),
+        "and every one of them is tapped for it",
+    );
+}

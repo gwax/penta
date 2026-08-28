@@ -443,7 +443,19 @@ impl Game {
     /// player, or the planeswalker the attack was declared against (CR
     /// 506.3b). Nothing when it is not attacking, or has already left.
     fn attacked_defender_target(&self, attacker: GameObjectId) -> Option<Target> {
-        match self.attack_defender_of(attacker)? {
+        // Last known information when the attacker has left (CR 608.2h):
+        // Myr Battlesphere's own ruling is that a Battlesphere answered in
+        // response still throws its Myr at what it was attacking, and only
+        // the +X/+0 half is lost with the body.
+        let defender = self.attack_defender_of(attacker).or_else(|| {
+            match self.retired_objects.get(&attacker) {
+                Some(crate::game::RetiredObject::Permanent { permanent, .. }) => {
+                    permanent.attack_defender
+                }
+                _ => None,
+            }
+        });
+        match defender? {
             crate::AttackDefender::Player(player) => Some(Target::Player(player)),
             crate::AttackDefender::Planeswalker(planeswalker) => {
                 Some(Target::Permanent(planeswalker))
