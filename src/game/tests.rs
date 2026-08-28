@@ -495,6 +495,7 @@ mod vintage_cube_lightning_bolt;
 mod vintage_cube_liliana_of_the_veil;
 mod vintage_cube_lion_sash;
 mod vintage_cube_lions_eye_diamond;
+mod vintage_cube_llanowar_elves;
 mod vintage_cube_loot_pathfinder;
 mod vintage_cube_loran;
 mod vintage_cube_lorien;
