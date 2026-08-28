@@ -206,3 +206,131 @@ fn only_tokens_are_legal_targets() {
     expected.sort_unstable();
     assert_eq!(offered, expected, "the Cats and nothing else");
 }
+
+/// Crew the Chariot by naming the given creatures, one at a time, and then
+/// declining to tap anything more.
+fn crew_with(game: &mut Game, chariot: GameObjectId, payers: &[GameObjectId]) {
+    let crew = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == chariot),
+        )
+        .expect("four power is on the battlefield");
+    game.apply(PlayerId::One, crew).expect("it crews");
+    for _ in 0..4 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            break;
+        };
+        let bear = decision.options.iter().find(|option| {
+            option
+                .card
+                .as_ref()
+                .is_some_and(|(id, _)| payers.contains(id))
+        });
+        let chosen = bear
+            .or_else(|| decision.options.first())
+            .expect("an option");
+        let stopping = bear.is_none();
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![chosen.id],
+            },
+        )
+        .expect("the offered choice is legal");
+        if stopping {
+            break;
+        }
+    }
+}
+
+/// A copy is of the token, not of its situation: copying a Cat that is
+/// tapped and attacking makes a Cat that is untapped and at home.
+#[test]
+fn the_copy_arrives_untapped_and_at_home() {
+    let (mut game, chariot) = staged();
+    // Bears to pay for crew, so both Cats are free to swing alongside.
+    for id in [90_001, 90_002] {
+        let mut bear = creature(id, cards::GRIZZLY_BEARS, PlayerId::One);
+        bear.entered_controller_turn = 0;
+        game.battlefield.push(bear);
+    }
+    let bears = [GameObjectId(90_001), GameObjectId(90_002)];
+
+    crew_with(&mut game, chariot, &bears);
+    settle(&mut game);
+    assert!(
+        cats(&game).iter().all(|cat| !cat.tapped),
+        "the Bears paid, so the Cats are still standing",
+    );
+
+    let before = cats(&game)
+        .iter()
+        .map(|cat| cat.card.id)
+        .collect::<Vec<_>>();
+    let swinging = before[0];
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    for attacker in [chariot, swinging] {
+        game.apply(
+            PlayerId::One,
+            Action::DeclareAttacker {
+                attacker,
+                defender: AttackDefender::Player(PlayerId::Two),
+            },
+        )
+        .expect("a crewed Chariot and a settled Cat may both attack");
+    }
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration is complete");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert!(
+        permanent(&game, swinging).tapped,
+        "the attacking Cat is tapped and attacking, which is what makes this worth asking",
+    );
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .expect("the attack trigger is asking")
+        .observation
+        .clone();
+    let attacking_cat = decision
+        .options
+        .iter()
+        .find(|option| option.card.as_ref().is_some_and(|(id, _)| *id == swinging))
+        .expect("the Cat that is attacking is a token you control");
+    game.apply(
+        decision.player,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![attacking_cat.id],
+        },
+    )
+    .expect("targeting it is legal");
+    settle(&mut game);
+
+    let copy = cats(&game)
+        .into_iter()
+        .find(|cat| !before.contains(&cat.card.id))
+        .expect("the trigger made a third Cat");
+    assert!(!copy.tapped, "the copy is untapped");
+    assert_eq!(
+        copy.attack_defender, None,
+        "and it is not attacking, however its original arrived",
+    );
+}
