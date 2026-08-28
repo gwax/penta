@@ -171,3 +171,73 @@ fn it_answers_an_instant_too() {
         vec![cards::LIGHTNING_BOLT],
     );
 }
+
+/// "Remand can target a spell that can't be countered. That spell won't be
+/// countered or returned to its owner's hand, but you'll draw a card."
+#[test]
+fn it_still_draws_off_a_spell_it_cannot_counter() {
+    let (mut game, remand, spell) = staged(cards::SUPREME_VERDICT);
+    game.battlefield
+        .push(creature(283_100, cards::GRIZZLY_BEARS, PlayerId::One));
+    let library = game.players[0].library.len();
+
+    cast_and_answer(&mut game, remand, spell);
+
+    assert!(
+        game.battlefield.is_empty(),
+        "the Verdict resolved and swept the board",
+    );
+    assert!(
+        game.players[1].hand.is_empty(),
+        "it was not put back into their hand",
+    );
+    assert_eq!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::SUPREME_VERDICT],
+        "it went where a resolved sorcery goes",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        library - 1,
+        "and the Remand drew its card either way",
+    );
+}
+
+/// "If you target a card that was cast with flashback with Remand, the card
+/// will still be exiled." Flashback's own replacement is what moves it, and
+/// it wins over "put it into its owner's hand instead".
+#[test]
+fn a_flashback_spell_is_exiled_rather_than_returned() {
+    let (mut game, remand, _unused) = staged(cards::GRIZZLY_BEARS);
+    game.players[1].hand.clear();
+    let flashed = game
+        .build_zone(PlayerId::Two, &[cards::FEELING_OF_DREAD])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let flashed_id = flashed.id;
+    game.players[1].graveyard.push(flashed);
+
+    cast_and_answer(&mut game, remand, flashed_id);
+
+    assert!(
+        game.players[1].hand.is_empty(),
+        "the counter did not put it back in their hand",
+    );
+    assert!(
+        game.players[1].graveyard.is_empty(),
+        "and it did not stay in the graveyard either",
+    );
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::FEELING_OF_DREAD),
+        "flashback exiles what it was cast from wherever the spell ends up",
+    );
+}
