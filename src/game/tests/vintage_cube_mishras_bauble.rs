@@ -187,3 +187,67 @@ fn it_can_look_at_your_own_library() {
         "your own library is left alone too",
     );
 }
+
+/// The look is the Bauble controller's alone: they are the one shown the
+/// card, and its owner learns nothing from having been looked at.
+#[test]
+fn only_the_cracker_sees_what_the_look_found() {
+    let (mut game, bauble) = staged();
+    let top = game.players[1]
+        .library
+        .last()
+        .expect("their library has a top card")
+        .definition;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == bauble
+                    && targets
+                        .iter()
+                        .any(|slot| slot.targets().contains(&Target::Player(PlayerId::Two)))
+            }
+            _ => false,
+        })
+        .expect("it can point at them");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    // Stop at the look rather than answering it.
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let seen = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the player who cracked it is the one shown the card");
+    // A pure look has nothing to choose, so what it found rides along as the
+    // members of the one option it offers.
+    assert_eq!(
+        seen.options
+            .iter()
+            .flat_map(|option| option.members.iter())
+            .filter_map(|(_, characteristics)| characteristics.card_definition())
+            .collect::<Vec<_>>(),
+        vec![top],
+        "and what they are shown is the top of the library they named",
+    );
+    assert!(
+        game.observe(PlayerId::Two).decision.is_none(),
+        "the player looked at is asked nothing and told nothing",
+    );
+    assert_eq!(
+        game.observe(PlayerId::Two).revealed_library_top,
+        None,
+        "their own library stays face down to them as well",
+    );
+}
