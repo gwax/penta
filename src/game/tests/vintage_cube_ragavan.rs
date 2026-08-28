@@ -187,3 +187,67 @@ fn connecting_steals_a_card_and_makes_treasure() {
         "which is yours to cast this turn",
     );
 }
+
+/// "If you exile a land card, you can't play that card." The permission is
+/// to cast, and a land is played rather than cast.
+#[test]
+fn a_stolen_land_stays_in_exile() {
+    let (mut game, ragavan) = staged(1);
+    game.players[1].library.clear();
+    game.players[1]
+        .library
+        .push(card(101_100, cards::MOUNTAIN, PlayerId::Two));
+    let monkey = cast(&mut game, ragavan, false);
+
+    game.step = Step::DeclareAttackers;
+    game.declare_attacker(monkey, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    game.finish_declaring_blockers();
+    game.deal_combat_damage();
+    resolve(&mut game);
+
+    let stolen = game.players[1]
+        .exile
+        .iter()
+        .find(|card| card.definition == cards::MOUNTAIN)
+        .expect("the Mountain was exiled")
+        .id;
+    game.step = Step::PostcombatMain;
+    game.priority = PlayerId::One;
+    game.players[0].lands_played_this_turn = 0;
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::PlayLand { card, .. } | Action::CastSpell { card, .. }
+                if *card == stolen)
+        }),
+        "a land is played, and what the trigger gave you is a cast",
+    );
+}
+
+/// "You'll create a Treasure token even if that player has no cards left in
+/// their library to exile."
+#[test]
+fn an_empty_library_still_pays_a_treasure() {
+    let (mut game, ragavan) = staged(1);
+    game.players[1].library.clear();
+    let monkey = cast(&mut game, ragavan, false);
+
+    game.step = Step::DeclareAttackers;
+    game.declare_attacker(monkey, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    game.finish_declaring_blockers();
+    game.deal_combat_damage();
+    resolve(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| game.effective_subtypes(permanent).contains(&"Treasure")),
+        "the Treasure comes whether or not there was anything to steal",
+    );
+    assert!(
+        game.players[1].exile.is_empty(),
+        "and nothing was exiled from an empty library",
+    );
+}
