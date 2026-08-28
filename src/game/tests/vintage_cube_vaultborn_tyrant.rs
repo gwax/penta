@@ -144,3 +144,67 @@ fn the_copy_does_not_copy_itself() {
 
     assert!(tokens(&game).is_empty(), "a token leaves nothing behind");
 }
+
+/// "Except for the listed exception, the token copies exactly what is
+/// printed... It doesn't copy whether it had any counters on it." A Tyrant
+/// that grew before it died leaves a plain 6/6 behind.
+#[test]
+fn the_copy_leaves_the_counters_behind() {
+    let (mut game, tyrant) = staged();
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == tyrant)
+    {
+        permanent.add_counters(CounterKind::PlusOnePlusOne, 2);
+        permanent.tapped = true;
+    }
+    assert_eq!(
+        game.power(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == tyrant)
+                .expect("it is there")
+        ),
+        Some(8),
+        "an 8/8 while the counters are on it",
+    );
+
+    kill(&mut game, tyrant);
+
+    let copies = tokens(&game);
+    assert_eq!(copies.len(), 1, "one copy");
+    assert_eq!(game.power(copies[0]), Some(6), "printed, not grown");
+    assert_eq!(copies[0].counters(CounterKind::PlusOnePlusOne), 0);
+    assert!(!copies[0].tapped, "and untapped, whatever the original was");
+}
+
+/// "Once the ability has triggered, lowering the power of the creature or
+/// removing it from the battlefield won't stop you from gaining life and
+/// drawing a card."
+#[test]
+fn a_creature_answered_in_response_still_pays() {
+    let (mut game, _tyrant) = staged();
+    let life = game.players[0].life;
+    let library = game.players[0].library.len();
+
+    let angel = game
+        .put_onto_battlefield(PlayerId::One, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    game.finish_rules_procedure();
+    assert!(
+        !game.stack.is_empty() || !game.pending_triggers.is_empty(),
+        "a 4/4 of yours raised the trigger",
+    );
+
+    // The creature that caused it is answered before it resolves.
+    game.move_permanents_to_graveyard(&[angel]);
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[0].life, life + 3, "the three life came anyway");
+    assert_eq!(
+        game.players[0].library.len(),
+        library - 1,
+        "and so did the card",
+    );
+}
