@@ -414,9 +414,23 @@ impl Game {
             // paid its repeatable cost. The spell is still on the stack --
             // a cast trigger resolves above it -- so the count is read off
             // its own record of what was paid for it.
-            ValueDef::TimesAdditionalCostPaid => i32::from(
-                self.repeatable_additional_cost_payments(object.source.unwrap_or(object.id)),
-            ),
+            //
+            // Squad asks the same question one zone change later: the spell
+            // is gone and the permanent it became carries the count, which
+            // is what an enters trigger has to read instead.
+            ValueDef::TimesAdditionalCostPaid => {
+                let source = object.source.unwrap_or(object.id);
+                let paid = self.repeatable_additional_cost_payments(source);
+                if paid > 0 {
+                    return i32::from(paid);
+                }
+                i32::from(
+                    self.battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == source)
+                        .map_or(0, |permanent| permanent.cast_kicks),
+                )
+            }
             ValueDef::CountersOnSource(kind) => object.source.map_or(0, |source| {
                 i32::from(self.current_or_last_known_counters(source, kind))
             }),

@@ -24,6 +24,11 @@ pub enum OptionalAdditionalCostKindDef {
     /// changes nothing by itself; what it buys is read back off the count by
     /// whatever the card prints about having been kicked.
     Multikicker,
+    /// Squad (CR 702.152): a cost that may be paid any number of times as
+    /// the creature spell is cast, and an enters trigger that makes that
+    /// many token copies of the creature. Repeatable like the two above;
+    /// what it buys is printed beside it and reads the count back.
+    Squad,
 }
 
 impl OptionalAdditionalCostKindDef {
@@ -33,14 +38,16 @@ impl OptionalAdditionalCostKindDef {
             Self::Buyback => "Buyback",
             Self::Replicate => "Replicate",
             Self::Multikicker => "Multikicker",
+            Self::Squad => "Squad",
         }
     }
 
-    /// Whether one cast may pay this cost more than once. Only replicate
-    /// does: every other optional additional cost is paid once or not at all.
+    /// Whether one cast may pay this cost more than once. Buyback is the
+    /// one that cannot: every repeatable cost buys a number rather than a
+    /// yes, and something on the card reads that number back.
     #[must_use]
     pub const fn repeatable(self) -> bool {
-        matches!(self, Self::Replicate | Self::Multikicker)
+        matches!(self, Self::Replicate | Self::Multikicker | Self::Squad)
     }
 }
 
@@ -72,6 +79,12 @@ impl OptionalAdditionalCostAbilityDef {
                  cast this spell.)"
             ),
             (OptionalAdditionalCostKindDef::Multikicker, None) => "Multikicker".into(),
+            (OptionalAdditionalCostKindDef::Squad, Some(cost)) => format!(
+                "Squad {cost} (As an additional cost to cast this spell, you may pay {cost} any \
+                 number of times. When this creature enters, create that many tokens that are \
+                 copies of it.)"
+            ),
+            (OptionalAdditionalCostKindDef::Squad, None) => "Squad".into(),
         }
     }
 

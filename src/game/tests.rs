@@ -578,6 +578,7 @@ mod vintage_cube_saheeli;
 mod vintage_cube_screaming_nemesis;
 mod vintage_cube_scythecat_cub;
 mod vintage_cube_seasoned_pyromancer;
+mod vintage_cube_securitron_squadron;
 mod vintage_cube_sedgemoor_witch;
 mod vintage_cube_senseis_divining_top;
 mod vintage_cube_sentinel_nameless_city;

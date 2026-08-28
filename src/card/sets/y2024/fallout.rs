@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, CardArt, CardRules, CardSet, CardType, CounterKind, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
-    abilities,
+    AbilityCoverageDef, AbilityDef, CardArt, CardRules, CardSet, CardType, CopyExceptionsDef,
+    CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    TriggerEventDef, ValueDef, ZoneKind, abilities,
 };
 use crate::mana_cost;
 
@@ -17,19 +17,23 @@ static A_CREATURE_TOKEN_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::Al
     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
 ]);
 
-static SECURITRON_SQUADRON_ABILITIES: [AbilityDef; 3] = [
-    // Squad is an additional cost paid any number of times, and the enters
-    // trigger reads how many. Nothing here records how a spell was paid for,
-    // and no cost repeats, so the clause is shown rather than run.
-    AbilityDef::static_ability(
-        "Squad {3} (As an additional cost to cast this spell, you may pay {3} any number of times. When this creature enters, create that many tokens that are copies of it.)",
-        EffectDef::None,
-    )
-    .with_coverage(AbilityCoverageDef::metadata_only(
-        "Squad is withheld: an additional cost cannot be paid a number of times the caster \
-         chooses, and nothing carries that number from the cast to the enters trigger.",
-    )),
+/// "Create that many tokens that are copies of it": the count is how many
+/// times the squad cost was paid, which the permanent carries over from the
+/// cast that made it.
+static SECURITRON_SQUAD_COPIES: EffectDef =
+    EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
+        object: &EffectRecipientDef::Source,
+        exceptions: CopyExceptionsDef::NONE,
+    })
+    .with_count(ValueDef::TimesAdditionalCostPaid);
+
+static SECURITRON_SQUADRON_ABILITIES: [AbilityDef; 4] = [
+    abilities::squad(mana_cost!("{3}")),
     abilities::vigilance(),
+    abilities::enters_trigger(
+        "When this creature enters, create that many tokens that are copies of it.",
+        SECURITRON_SQUAD_COPIES,
+    ),
     AbilityDef::triggered(
         "Whenever a creature token you control enters, put a +1/+1 counter on it.",
         TriggerEventDef::zone_changed(
@@ -42,7 +46,14 @@ static SECURITRON_SQUADRON_ABILITIES: [AbilityDef; 3] = [
             kind: CounterKind::PlusOnePlusOne,
             amount: ValueDef::Constant(1),
         },
-    ),
+    )
+    .with_coverage(AbilityCoverageDef::partial(
+        "Tokens made together enter one at a time here rather than at once, so a token that \
+         arrives alongside others is seen by the ones already down and not by the ones after \
+         it. One token is exact -- the Squadron that made it and the token itself, which is \
+         what the printed ruling says -- and a squad paid several times leaves fewer counters \
+         than simultaneous arrivals would.",
+    )),
 ];
 
 pub(in crate::card::sets) static SECURITRON_SQUADRON: CardRecord = CardRecord::new_with_legacy_id(

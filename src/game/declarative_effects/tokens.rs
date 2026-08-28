@@ -17,6 +17,10 @@ struct TokenCopyRequest {
     recipient: crate::card::EffectRecipientDef,
     exceptions: crate::card::CopyExceptionsDef,
     controller: Option<crate::card::PlayerRefDef>,
+    /// How many copies of each named object to make. One for nearly every
+    /// clause that copies a permanent; squad buys as many as it was paid
+    /// for.
+    count: crate::card::ValueDef,
     created: Option<crate::card::CreatedTokensDef>,
 }
 
@@ -65,8 +69,11 @@ impl Game {
             recipient,
             exceptions,
             controller,
+            count,
             created,
         } = request;
+        let count = usize::try_from(self.effect_value(count, object, context, scoped).max(0))
+            .unwrap_or(usize::MAX);
         // "Each player other than its controller creates a token": whoever
         // the clause names rather than whoever is resolving it.
         let holder = controller
@@ -137,7 +144,7 @@ impl Game {
             .collect::<Vec<_>>();
         let mut minted = Vec::new();
         for (copy, double_faced, presented) in copies {
-            for _ in 0..self.tokens_created(holder, 1) {
+            for _ in 0..self.tokens_created(holder, count) {
                 minted.push(Target::Permanent(self.create_token_copy(
                     holder,
                     copy.clone(),
@@ -187,13 +194,13 @@ impl Game {
                 created,
             } => {
                 if let Some(copy) = copy {
-                    debug_assert_eq!(count, crate::card::ValueDef::Constant(1));
                     debug_assert!(!tapped && !attacking && counters.is_none());
                     self.resolve_token_copies(
                         TokenCopyRequest {
                             recipient: *copy.object,
                             exceptions: copy.exceptions,
                             controller,
+                            count,
                             created,
                         },
                         scoped,

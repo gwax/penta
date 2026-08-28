@@ -67,6 +67,23 @@ pub const fn replicate(mana_cost: ManaCost) -> AbilityDef {
     )
 }
 
+/// Squad (CR 702.152): the same repeatable cost as replicate, bought by a
+/// creature spell rather than by a spell that copies itself. What the
+/// payments buy is printed beside it -- an enters trigger that makes that
+/// many token copies -- so all this says is what one payment costs.
+#[must_use]
+pub const fn squad(mana_cost: ManaCost) -> AbilityDef {
+    AbilityDef::optional_additional_cost(
+        OptionalAdditionalCostKindDef::Squad.label(),
+        OptionalAdditionalCostAbilityDef {
+            kind: OptionalAdditionalCostKindDef::Squad,
+            mana_cost: Some(mana_cost),
+            additional_cost: None,
+            resolution_destination: SpellResolutionDestinationDef::Graveyard,
+        },
+    )
+}
+
 static STORM_COPY: CopyStackObjectDef = CopyStackObjectDef {
     object: EffectRecipientDef::Source,
     controller: PlayerRefDef::EffectController,

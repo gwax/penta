@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Squad.** The keyword was withheld: an additional cost could not be paid
+  a number of times the caster chooses, and nothing carried that number from
+  the cast to the enters trigger. The first half already existed for
+  replicate and multikicker and only wanted a name; the second is new, and
+  the count now survives the zone change onto the permanent the spell became,
+  which is where an enters trigger has to read it. Token-copy creation takes
+  a count with it, so "create that many tokens that are copies of it" makes
+  that many.
+
 - **An activation discount that reaches a card in a zone.** "Abilities you
   activate cost {2} less to activate" was applied only to the abilities of
   permanents you control, so cycling a card in hand -- an ability you
