@@ -187,3 +187,74 @@ fn you_have_no_maximum_hand_size() {
         "nothing was discarded at cleanup",
     );
 }
+
+/// "It looks at how many cards you've drawn this turn, even if it wasn't on
+/// the battlefield when you drew those cards." Two cantrips before it lands
+/// are two draws it still counts.
+#[test]
+fn draws_from_before_it_arrived_still_count() {
+    let (mut game, memory, bears) = staged();
+    game.draw_card(PlayerId::One);
+    game.draw_card(PlayerId::One);
+
+    cast_memory(&mut game, memory);
+    begin_combat(&mut game);
+
+    assert_eq!(
+        counters_on(&game, bears),
+        2,
+        "three draws minus one, two of them from before it existed",
+    );
+}
+
+/// "The value of X is determined only once, as the ability resolves." A
+/// draw made while the trigger is on the stack is counted by it.
+#[test]
+fn a_draw_in_response_is_counted_too() {
+    let (mut game, memory, bears) = staged();
+    cast_memory(&mut game, memory);
+    game.draw_card(PlayerId::One);
+
+    // The trigger goes on the stack with two draws behind it.
+    game.step = Step::BeginningOfCombat;
+    game.begin_step_triggers();
+    for _ in 0..8 {
+        if !game.stack.is_empty() {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .map(|option| option.id)
+                .take(decision.minimum.max(1))
+                .collect();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the target is chosen as it goes on the stack");
+            continue;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert_eq!(game.stack.len(), 1, "the trigger is waiting");
+    game.draw_card(PlayerId::One);
+    settle(&mut game);
+
+    assert_eq!(
+        counters_on(&game, bears),
+        2,
+        "X was read on resolution, so the third draw is in it",
+    );
+}
