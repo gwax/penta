@@ -278,6 +278,13 @@ impl TriggerEventDef {
         Self::Attacks(AttackEventMatcherDef::any(attacker))
     }
 
+    /// "Whenever this creature attacks the player ...", which a planeswalker
+    /// standing in front of that player does not satisfy.
+    #[must_use]
+    pub const fn attacks_a_player(attacker: ObjectPredicateDef) -> Self {
+        Self::Attacks(AttackEventMatcherDef::any(attacker).against_a_player())
+    }
+
     #[must_use]
     pub const fn attacks_first_time_this_turn(attacker: ObjectPredicateDef) -> Self {
         Self::Attacks(AttackEventMatcherDef::first(attacker))

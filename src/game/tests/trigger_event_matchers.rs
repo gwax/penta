@@ -358,6 +358,7 @@ fn attack_tap_and_transform_matchers_read_committed_event_facts() {
         declaration_size: 3,
         attack_number: 1,
         defending_player: PlayerId::Two,
+        attacked_a_planeswalker: false,
     };
     game.battlefield[0].attacks_this_turn = 2;
     assert!(game.trigger_event_matches_for_controller(
@@ -635,6 +636,7 @@ fn attack_batch_freezes_all_conditions_and_consumes_once_only_once() {
             declaration_size: 2,
             attack_number: 1,
             defending_player: PlayerId::Two,
+            attacked_a_planeswalker: false,
         })
         .collect::<Vec<_>>();
     let mut immediate_resolutions = 0;
@@ -825,6 +827,7 @@ fn an_any_of_event_fires_on_each_alternative_and_no_others() {
             declaration_size: 1,
             attack_number: 1,
             defending_player: PlayerId::Two,
+            attacked_a_planeswalker: false,
         }),
         "and so does the attack half",
     );

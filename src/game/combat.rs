@@ -97,7 +97,8 @@ impl Game {
                 .iter()
                 .find(|permanent| permanent.card.id == *attacker)
                 .map(|permanent| {
-                    let defending_player = match Self::combat_defender(permanent) {
+                    let declared_against = Self::combat_defender(permanent);
+                    let defending_player = match declared_against {
                         AttackDefender::Player(player) => player,
                         AttackDefender::Planeswalker(walker) => self
                             .battlefield
@@ -110,6 +111,10 @@ impl Game {
                         declaration_size,
                         attack_number: permanent.attacks_this_turn,
                         defending_player,
+                        attacked_a_planeswalker: matches!(
+                            declared_against,
+                            AttackDefender::Planeswalker(_)
+                        ),
                     }
                 })
         }));

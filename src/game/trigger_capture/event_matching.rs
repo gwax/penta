@@ -310,6 +310,7 @@ impl Game {
                     declaration_size,
                     attack_number,
                     defending_player,
+                    attacked_a_planeswalker,
                 },
             ) => self.attacker_matches(
                 matcher,
@@ -318,6 +319,7 @@ impl Game {
                     declaration_size: *declaration_size,
                     attack_number: *attack_number,
                     defending_player: *defending_player,
+                    attacked_a_planeswalker: *attacked_a_planeswalker,
                 },
                 source,
                 controller,

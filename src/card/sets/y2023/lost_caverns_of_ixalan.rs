@@ -2,7 +2,7 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
+    AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
     AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
     ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, DiscardFollowUpDef,
     DiscardSelectionDef, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
@@ -472,9 +472,11 @@ pub(in crate::card::sets) static TISHANA_S_TIDEBINDER: CardRecord = CardRecord::
 // LCI 367 — Preacher of the Schism
 /// "Attacks the player with the most life": the condition belongs to the
 /// attack rather than being an intervening if, and the player it asks about
-/// is the one the attack was aimed at, which the event names.
+/// is the one the attack was aimed at, which the event names. The player
+/// themselves -- a planeswalker of theirs is a different thing to attack,
+/// whoever ends up being attacked by it.
 static PREACHER_ATTACKS_THE_LEADER: TriggerEventDef = TriggerEventDef::While {
-    event: &TriggerEventDef::attacks(ObjectPredicateDef::Source),
+    event: &TriggerEventDef::attacks_a_player(ObjectPredicateDef::Source),
     condition: &TriggerConditionDef::PlayerHasMostLife(PlayerRelation::EventPlayer),
 };
 
@@ -514,12 +516,7 @@ pub(in crate::card::sets) static PREACHER_OF_THE_SCHISM: CardRecord = CardRecord
             PREACHER_ATTACKS_THE_LEADER,
             EffectDef::create_creature_token(&["Vampire"], &[ManaColor::White], 1, 1)
                 .with_abilities(&PREACHER_LIFELINK),
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "An attack event resolves a planeswalker to the player who controls it, so a creature \
-             attacking the leading player's planeswalker triggers this where the printed clause \
-             names the player alone.",
-        )),
+        ),
         AbilityDef::triggered(
             "Whenever this creature attacks while you have the most life or are tied for most \
              life, you draw a card and you lose 1 life.",

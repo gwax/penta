@@ -222,6 +222,10 @@ pub(super) enum CommittedTriggerEvent {
         /// The player being attacked, including the controller of a
         /// planeswalker chosen as this attack's defender.
         defending_player: PlayerId,
+        /// Whether the attack was declared against a planeswalker rather
+        /// than against that player. Both are attacking them (CR 506.3b);
+        /// a clause that says "attacks the player" wants only the one.
+        attacked_a_planeswalker: bool,
     },
     /// One whole move of cards into exile, published once however many
     /// cards it took. "Whenever one or more cards are put into exile" reads

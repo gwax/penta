@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Attacking a player, as against attacking their planeswalker.** An attack
+  event resolved a planeswalker to the player who controls it, which is what
+  "attacks you" means (CR 506.3b) and not what "attacks the player with the
+  most life" means. A clause can now say which of the two it wants, so
+  Preacher of the Schism stops making a Vampire off an attack that was
+  pointed at a planeswalker rather than at the leading player. Every clause
+  that already read "attacks you" keeps counting both, which is what it says.
+
 - **A target somebody else chooses.** "That player chooses target player who
   controls more creatures than they do" hands the choice to a player who
   does not control the ability, and nothing in the target vocabulary could

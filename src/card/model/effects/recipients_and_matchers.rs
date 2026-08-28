@@ -545,6 +545,24 @@ pub struct AttackEventMatcherDef {
     /// creature attacking a planeswalker is attacking the player who
     /// controls it, so both halves are the same relation.
     pub defender: Option<PlayerRelation>,
+    /// Which kind of defender the attack has to have been declared against.
+    pub defender_kind: AttackDefenderKindDef,
+}
+
+/// Whether an attack clause counts a planeswalker as its player.
+///
+/// Attacking a planeswalker is attacking the player who controls it (CR
+/// 506.3b), which is what "attacks you" means; a clause that says "attacks
+/// the player" means the player and not their planeswalker, so the two are
+/// different questions rather than one relation.
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub enum AttackDefenderKindDef {
+    /// "Attacks you", "attacks a player": either the player or a
+    /// planeswalker they control.
+    #[default]
+    PlayerOrTheirPlaneswalker,
+    /// "Attacks the player with the most life": that player themselves.
+    PlayerOnly,
 }
 
 impl AttackEventMatcherDef {
@@ -555,7 +573,16 @@ impl AttackEventMatcherDef {
             declaration: AttackDeclarationRangeDef::ANY,
             attack_number: None,
             defender: None,
+            defender_kind: AttackDefenderKindDef::PlayerOrTheirPlaneswalker,
         }
+    }
+
+    /// "Attacks the player ...": a planeswalker is not the player, however
+    /// much attacking it is attacking them.
+    #[must_use]
+    pub const fn against_a_player(mut self) -> Self {
+        self.defender_kind = AttackDefenderKindDef::PlayerOnly;
+        self
     }
 
     /// "Attacks <player>", for the clauses that care who is being attacked.
@@ -573,6 +600,7 @@ impl AttackEventMatcherDef {
             declaration: AttackDeclarationRangeDef::ANY,
             attack_number: Some(1),
             defender: None,
+            defender_kind: AttackDefenderKindDef::PlayerOrTheirPlaneswalker,
         }
     }
 
@@ -587,6 +615,7 @@ impl AttackEventMatcherDef {
             declaration: AttackDeclarationRangeDef::between(minimum, maximum),
             attack_number: None,
             defender: None,
+            defender_kind: AttackDefenderKindDef::PlayerOrTheirPlaneswalker,
         }
     }
 }

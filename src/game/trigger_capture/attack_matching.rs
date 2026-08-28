@@ -15,6 +15,7 @@ pub(in crate::game) struct AttackEventFacts {
     pub(in crate::game) declaration_size: u8,
     pub(in crate::game) attack_number: u8,
     pub(in crate::game) defending_player: PlayerId,
+    pub(in crate::game) attacked_a_planeswalker: bool,
 }
 
 impl Game {
@@ -82,7 +83,16 @@ impl Game {
             declaration_size,
             attack_number,
             defending_player,
+            attacked_a_planeswalker,
         } = attack;
+        // "Attacks the player with the most life" is about the player. The
+        // planeswalker standing in front of them is a different object, and
+        // the clause that names one does not mean the other.
+        if attacked_a_planeswalker
+            && matcher.defender_kind == crate::card::AttackDefenderKindDef::PlayerOnly
+        {
+            return false;
+        }
         // Who is being attacked, for the clauses that ask. The event already
         // resolves a planeswalker to the player who controls it, so "attacks
         // you or a planeswalker you control" is one comparison.

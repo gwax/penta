@@ -178,3 +178,55 @@ fn the_condition_is_read_where_the_attack_happened() {
         "and they were behind when she attacked",
     );
 }
+
+/// She attacks a planeswalker the other player controls instead.
+fn attack_planeswalker(game: &mut Game, preacher: GameObjectId, walker: GameObjectId) {
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(preacher, AttackDefender::Planeswalker(walker));
+    game.finish_declaring_attackers();
+    settle(game);
+}
+
+/// Puts a planeswalker under the other player.
+fn their_planeswalker(game: &mut Game) -> GameObjectId {
+    let mut walker = creature(273_500, cards::VRASKA_THE_UNSEEN, PlayerId::Two);
+    walker.set_counters(CounterKind::Loyalty, 5);
+    let id = walker.card.id;
+    game.battlefield.push(walker);
+    id
+}
+
+/// "Attacks the player with the most life" means the player. Attacking a
+/// planeswalker they control is attacking them (CR 506.3b) and still not
+/// what the clause asks for, so no Vampire arrives.
+#[test]
+fn attacking_their_planeswalker_makes_no_vampire() {
+    let (mut game, preacher) = staged(10, 20);
+    let walker = their_planeswalker(&mut game);
+
+    attack_planeswalker(&mut game, preacher, walker);
+
+    assert!(
+        tokens(&game).is_empty(),
+        "the leader was not the one attacked",
+    );
+}
+
+/// The other clause says only "attacks", so a planeswalker is as good as a
+/// player for it: she draws and pays while she is the one ahead.
+#[test]
+fn attacking_a_planeswalker_still_draws_while_you_are_ahead() {
+    let (mut game, preacher) = staged(20, 10);
+    let walker = their_planeswalker(&mut game);
+    let hand = game.players[0].hand.len();
+
+    attack_planeswalker(&mut game, preacher, walker);
+
+    assert_eq!(game.players[0].hand.len(), hand + 1, "a card was drawn");
+    assert_eq!(game.players[0].life, 19, "and a life paid for it");
+    assert!(
+        tokens(&game).is_empty(),
+        "and the clause that names a player still said nothing",
+    );
+}
