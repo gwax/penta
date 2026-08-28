@@ -181,3 +181,66 @@ fn a_creature_already_in_the_graveyard_is_not_on_offer() {
             .any(|card| card.definition == cards::GRIZZLY_BEARS),
     );
 }
+
+/// Its ruling: "the ability that defines its power and toughness works in
+/// all zones, not just the battlefield." Corpse Lunge reads the power of the
+/// card it exiled out of the graveyard, and the Goyf counts the graveyards
+/// as they stand when it is read.
+#[test]
+fn its_power_is_read_out_of_the_graveyard_too() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    for (offset, definition) in [
+        cards::LIGHTNING_BOLT,
+        cards::PONDER,
+        cards::SOL_RING,
+        cards::BARROWGOYF,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        game.players[0].graveyard.push(card(
+            80_400 + u32::try_from(offset).expect("a short graveyard"),
+            definition,
+            PlayerId::One,
+        ));
+    }
+    let wall = game
+        .put_onto_battlefield(PlayerId::Two, cards::LIVING_WALL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let lunge = game
+        .build_zone(PlayerId::One, &[cards::CORPSE_LUNGE])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let lunge_id = lunge.id;
+    game.players[0].hand.push(lunge);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 3);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == lunge_id))
+        .expect("the Goyf is the creature card it exiles");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game, false);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == wall)
+            .expect("a 0/6 survives it")
+            .damage,
+        3,
+        "an instant, a sorcery and an artifact are what is left to count",
+    );
+}
