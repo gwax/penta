@@ -236,3 +236,77 @@ fn it_can_be_cast_for_its_miracle_cost() {
         "two mana, not six",
     );
 }
+
+/// Two miracle rulings at once. You may reveal and cast on any turn, not
+/// just your own; and the cast happens as the trigger resolves, so the
+/// timing rules that go with the card's type are ignored -- a creature comes
+/// down at instant speed in the middle of their main phase.
+#[test]
+fn a_miracle_creature_arrives_on_their_turn() {
+    let mut game = staged();
+    game.players[0].library = vec![card(89_040, cards::METAMORPHOSIS_FANATIC, PlayerId::One)];
+    game.turn = 3;
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.cards_drawn_this_turn = [0; 2];
+    game.drawn_this_turn = [Vec::new(), Vec::new()];
+    let drawn = game
+        .draw_card(PlayerId::One)
+        .expect("something drew it on their turn");
+
+    let reveal = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the reveal is offered on their turn too");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: reveal.id,
+            options: vec![1],
+        },
+    )
+    .expect("revealing is legal");
+    pass_until_decision(&mut game);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == drawn))
+        .expect("a creature spell, cast on their turn, as the trigger resolves");
+    let before = game.players[0].mana_pool.total();
+    game.apply(PlayerId::One, cast).expect("the cast is legal");
+    assert_eq!(before - game.players[0].mana_pool.total(), 2);
+
+    // The spell resolves, and its own enters trigger finds an empty
+    // graveyard of targets it may decline.
+    for _ in 0..16 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: Vec::new(),
+                },
+            )
+            .expect("declining the up-to-one target is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert!(
+        permanent(&game, cards::METAMORPHOSIS_FANATIC).is_some(),
+        "and it is on the battlefield in the middle of their main phase",
+    );
+    assert_eq!(game.active_player, PlayerId::Two, "which is still theirs");
+}
