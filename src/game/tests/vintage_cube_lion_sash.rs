@@ -163,3 +163,83 @@ fn the_equipped_creature_gets_the_counters() {
     assert_eq!(game.power(equipped), Some(4), "2/2 plus two counters");
     assert_eq!(game.toughness(equipped), Some(4));
 }
+
+/// The Sash itself, once it is on the battlefield.
+fn sash_permanent(game: &Game, sash: GameObjectId) -> &Permanent {
+    game.battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == sash)
+        .expect("the Sash is there")
+}
+
+/// Reconfigure's ruling: "Attaching an Equipment with reconfigure to a
+/// creature causes that Equipment to stop being a creature until it becomes
+/// unattached. It also loses any creature subtypes it had." The Sash is a
+/// Cat while it stands alone and an Equipment while it is worn.
+#[test]
+fn a_worn_sash_is_no_longer_a_cat() {
+    let (mut game, sash) = staged(&[]);
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 4);
+
+    let subtypes = |game: &Game| {
+        let mut subtypes = game.effective_subtypes(sash_permanent(game, sash)).to_vec();
+        subtypes.sort_unstable();
+        subtypes
+    };
+    let is_a_creature = |game: &Game| {
+        game.permanent_types(sash_permanent(game, sash))
+            .is_some_and(CardTypeSet::is_creature)
+    };
+    assert!(is_a_creature(&game), "on its own it is a creature");
+    assert_eq!(
+        subtypes(&game),
+        vec!["Cat", "Equipment"],
+        "an Equipment Cat while it stands alone",
+    );
+
+    let reconfigure = |game: &Game, host: Option<GameObjectId>| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    *source == sash
+                        && host.is_none_or(|host| {
+                            targets.iter().any(|selection| {
+                                selection.targets().contains(&Target::Permanent(host))
+                            })
+                        })
+                        && host.is_some()
+                            == targets
+                                .iter()
+                                .any(|selection| !selection.targets().is_empty())
+                }
+                _ => false,
+            })
+    };
+    let attach = reconfigure(&game, Some(bears)).expect("two mana straps it on");
+    game.apply(PlayerId::One, attach).expect("it activates");
+    resolve(&mut game);
+
+    assert!(!is_a_creature(&game), "worn, it is not a creature");
+    assert_eq!(
+        subtypes(&game),
+        vec!["Equipment"],
+        "and the Cat went with the creature type",
+    );
+
+    let unattach = reconfigure(&game, None).expect("the other half of reconfigure");
+    game.apply(PlayerId::One, unattach).expect("it activates");
+    resolve(&mut game);
+
+    assert!(is_a_creature(&game), "taken off, it is a creature again");
+    assert_eq!(subtypes(&game), vec!["Cat", "Equipment"], "and a Cat again");
+}
