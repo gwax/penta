@@ -298,3 +298,51 @@ fn the_ultimate_draws_half_the_library_and_makes_an_emblem() {
     );
     assert_eq!(game.emblems.len(), 1, "and the emblem stays");
 }
+
+/// The Clue she made is a real Clue: two mana and itself for a card. That
+/// card is a draw like any other, so cracking it can be the third of the
+/// turn and turn her over.
+#[test]
+fn cracking_her_clue_can_be_the_draw_that_turns_her() {
+    let (mut game, tamiyo) = staged(&[]);
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(tamiyo, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+    assert_eq!(clues(&game), 1, "one Clue for the attack");
+
+    game.draw_cards(PlayerId::One, 2);
+    settle(&mut game);
+    assert!(!is_planeswalker(&game), "two draws is not three");
+
+    let clue = game
+        .battlefield
+        .iter()
+        .find(|permanent| game.effective_subtypes(permanent).contains(&"Clue"))
+        .expect("the Clue is there")
+        .card
+        .id;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    game.step = Step::PostcombatMain;
+    game.priority = PlayerId::One;
+    let hand = game.players[0].hand.len();
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == clue))
+        .expect("two mana and the Clue itself buy a card");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    settle(&mut game);
+
+    assert_eq!(clues(&game), 0, "the Clue sacrificed itself");
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand + 1,
+        "and drew the card it promised",
+    );
+    assert!(
+        is_planeswalker(&game),
+        "which was the third draw of the turn",
+    );
+}
