@@ -395,6 +395,52 @@ fn checkpoint_preserves_predicate_filterable_cast_history() {
     assert!(rebuilt.spell_cast_history_this_turn.is_empty());
 }
 
+/// A face-down exile that hides from its owner is on the wire, and an older
+/// checkpoint that never carried the flag restores as the look-permitting
+/// kind every face-down exile used to be.
+#[test]
+fn a_face_down_exile_keeps_who_may_look_at_it() {
+    let mut game = crate::game::tests::ready_game();
+    let hidden =
+        crate::game::tests::card(90_400, crate::card::cards::LIGHTNING_BOLT, PlayerId::One);
+    let hidden_id = hidden.id;
+    game.players[PlayerId::One.index()].exile.push(hidden);
+    game.hide_from_everyone_while_exiled(hidden_id, PlayerId::One);
+
+    let (wire, rebuilt) = rebuild_current_checkpoint(&game, PlayerId::One, 90_401);
+    assert!(
+        rebuilt.exiled_card_is_hidden_from_owner(hidden_id),
+        "the flag survives the round trip",
+    );
+    assert!(
+        rebuilt.observe(PlayerId::One).exiles[PlayerId::One.index()].is_empty(),
+        "so the rebuilt game hides it from its owner too",
+    );
+
+    let mut legacy = wire;
+    for permission in legacy["checkpoint"]["exilePlayPermissions"]
+        .as_array_mut()
+        .expect("the checkpoint carries the permissions")
+    {
+        permission
+            .as_object_mut()
+            .expect("a permission is an object")
+            .remove("hiddenFromOwner");
+    }
+    let rebuilt = Game::from_observation_checkpoint(
+        game.catalog.clone(),
+        game.format,
+        &legacy,
+        &true_hidden_hypothesis(&game, PlayerId::One),
+        90_402,
+    )
+    .expect("an older checkpoint defaults the additive flag");
+    assert!(
+        !rebuilt.exiled_card_is_hidden_from_owner(hidden_id),
+        "and an older one restores as the kind its owner may look at",
+    );
+}
+
 include!("tests/resolved_effects.rs");
 
 include!("tests/prevention_and_replacements.rs");

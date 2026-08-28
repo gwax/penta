@@ -40,6 +40,16 @@ distinguishes snapshots of the covered source and build inputs.
   channel. An ability now records that it is cycling rather than being
   recognised by what it charges.
 
+- **A face-down exile nobody may look at.** Memory Jar exiles both hands
+  face down, and the ruling on it is that you cannot look at the cards you
+  exiled until they come back -- CR 713.2 hides a face-down exile from
+  everybody unless something says otherwise, and the Jar says nothing. The
+  engine handed every face-down exile to its owner to look at, which is right
+  for a foretold card or a hideaway land and wrong here: cracking the Jar
+  showed you your own buried hand. A face-down exile now records whether its
+  owner keeps a look, and a linked exile keeps none. Both players still count
+  the piles.
+
 ### Added
 
 - **Permanents that arrive together arrive at the same time.** Tokens made

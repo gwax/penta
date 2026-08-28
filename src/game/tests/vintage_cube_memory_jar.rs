@@ -126,23 +126,34 @@ fn everybody_draws_seven() {
     assert_eq!(game.players[1].exile.len(), 3);
 }
 
-/// Face down: each player sees their own exiled cards and counts the other
-/// player's without seeing them.
+/// Face down and nobody may look, your own hand included: what both players
+/// get is a count. "You can't look at the cards you exiled until they return
+/// to your hand" is the ruling, and CR 713.2 is why -- a card exiled face
+/// down is hidden unless something says otherwise, and the Jar says nothing.
 #[test]
-fn the_exiled_hands_are_face_down() {
+fn the_exiled_hands_are_face_down_to_everybody() {
     let (mut game, jar) = staged(2, 3);
 
     crack(&mut game, jar);
 
     let mine = game.observe(PlayerId::One);
-    assert_eq!(mine.exiles[0].len(), 2, "you can see what you put away");
+    assert!(
+        mine.exiles[0].is_empty(),
+        "you cannot look at what you put away either",
+    );
     assert!(
         mine.exiles[1].is_empty(),
-        "and cannot see what they put away",
+        "and certainly not at what they put away",
     );
     assert_eq!(
-        mine.face_down_exile_sizes[1], 3,
-        "only how much of it there was",
+        mine.face_down_exile_sizes,
+        [2, 3],
+        "both piles are counted by both players",
+    );
+    assert_eq!(
+        game.observe(PlayerId::Two).face_down_exile_sizes,
+        [2, 3],
+        "which is the same count from the other seat",
     );
 }
 

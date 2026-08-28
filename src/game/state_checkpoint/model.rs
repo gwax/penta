@@ -53,6 +53,11 @@ pub(super) struct ExilePlayPermissionSnapshot {
     /// look-only permission, which is what every game without one has.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) hidden_only: bool,
+    /// Additive: a checkpoint written before a face-down exile could hide
+    /// from its own owner restores as one its owner may look at, which is
+    /// what every face-down exile was until Memory Jar's.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub(super) hidden_from_owner: bool,
     /// Additive: whether mana spent on this card may be of any colour.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(super) spend_any_color: bool,

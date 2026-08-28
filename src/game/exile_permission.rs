@@ -57,9 +57,16 @@ pub(super) struct ExilePlayPermission {
     /// sets it: a card exiled this turn is castable on a later one, and
     /// "later" is the whole cost of the two mana.
     pub(super) not_before_turn: Option<(PlayerId, u32)>,
-    /// Whether the card lies face down in exile. Only its owner sees what it
-    /// is; everybody may count how many there are.
+    /// Whether the card lies face down in exile. Everybody may count how
+    /// many there are; who may see what they are is
+    /// [`Self::hidden_from_owner`].
     pub(super) face_down: bool,
+    /// Whether the card is hidden from its own owner too. A card exiled
+    /// face down may not be looked at unless something says otherwise
+    /// (CR 713.2), and most things that exile face down do say so -- a
+    /// foretold card or a hideaway land is its owner's to look at. Memory
+    /// Jar is the other kind: nobody sees those hands until they come back.
+    pub(super) hidden_from_owner: bool,
     /// Whether mana spent on this card may be of any colour, which is a
     /// property of the permission rather than of the card.
     pub(super) spend_any_color: bool,
@@ -189,6 +196,7 @@ impl Game {
             until_holder_end_step: None,
             zone: ZoneKind::Exile,
             group: None,
+            hidden_from_owner: false,
         });
     }
 
@@ -247,6 +255,30 @@ impl Game {
             until_holder_end_step: None,
             zone: ZoneKind::Exile,
             group: None,
+            hidden_from_owner: false,
+        });
+    }
+
+    /// Records that a card lies face down in exile and that nobody may look
+    /// at it, which is what a card exiled face down means unless something
+    /// says otherwise (CR 713.2). Both players may still count them.
+    pub(super) fn hide_from_everyone_while_exiled(&mut self, card: GameObjectId, owner: PlayerId) {
+        self.exile_play_permissions.push(ExilePlayPermission {
+            card,
+            player: owner,
+            cost: ExilePlayCost::Printed,
+            until_end_of_turn: None,
+            adventure_return_only: false,
+            surcharge: ManaCost::default(),
+            not_before_turn: None,
+            face_down: true,
+            hidden_from_owner: true,
+            hidden_only: true,
+            spend_any_color: false,
+            condition: None,
+            until_holder_end_step: None,
+            zone: ZoneKind::Exile,
+            group: None,
         });
     }
 
@@ -269,6 +301,7 @@ impl Game {
             until_holder_end_step: None,
             zone: ZoneKind::Exile,
             group: None,
+            hidden_from_owner: false,
         });
     }
 
@@ -291,6 +324,7 @@ impl Game {
             until_holder_end_step: None,
             zone: ZoneKind::Exile,
             group: None,
+            hidden_from_owner: false,
         });
     }
 
@@ -315,6 +349,7 @@ impl Game {
             until_holder_end_step: None,
             zone: ZoneKind::Exile,
             group: None,
+            hidden_from_owner: false,
         });
     }
 
@@ -353,6 +388,7 @@ impl Game {
             )),
             zone: ZoneKind::Exile,
             group: None,
+            hidden_from_owner: false,
         });
     }
 
@@ -376,6 +412,7 @@ impl Game {
             until_holder_end_step: None,
             zone: ZoneKind::Exile,
             group: None,
+            hidden_from_owner: false,
         });
     }
 
@@ -398,6 +435,7 @@ impl Game {
             until_holder_end_step: None,
             zone: ZoneKind::Exile,
             group: None,
+            hidden_from_owner: false,
         });
     }
 
@@ -428,6 +466,7 @@ impl Game {
             until_holder_end_step: None,
             zone: ZoneKind::Exile,
             group: None,
+            hidden_from_owner: false,
         });
     }
 
@@ -450,6 +489,7 @@ impl Game {
             until_holder_end_step: None,
             zone: ZoneKind::Exile,
             group: None,
+            hidden_from_owner: false,
         });
     }
 
@@ -474,6 +514,7 @@ impl Game {
             until_holder_end_step: None,
             zone: ZoneKind::Exile,
             group: None,
+            hidden_from_owner: false,
         });
     }
 
@@ -485,9 +526,18 @@ impl Game {
             .any(|permission| permission.card == card && permission.face_down)
     }
 
+    /// Whether nobody at all may look at this exiled card, its owner
+    /// included. False for every face-down exile that hands its owner a
+    /// look, which is most of them.
+    pub(super) fn exiled_card_is_hidden_from_owner(&self, card: GameObjectId) -> bool {
+        self.exile_play_permissions
+            .iter()
+            .any(|permission| permission.card == card && permission.hidden_from_owner)
+    }
+
     /// One player's exile as another sees it. A card lying face down is
     /// absent from the list rather than shown, unless the viewer is the one
-    /// who put it there.
+    /// who put it there and the clause that hid it left them a look.
     pub(super) fn observed_exile(
         &self,
         owner: PlayerId,
@@ -496,7 +546,10 @@ impl Game {
         self.players[owner.index()]
             .exile
             .iter()
-            .filter(|card| viewer == owner || !self.exiled_card_is_face_down(card.id))
+            .filter(|card| {
+                !self.exiled_card_is_face_down(card.id)
+                    || (viewer == owner && !self.exiled_card_is_hidden_from_owner(card.id))
+            })
             .map(|card| (card.id, card.definition))
             .collect()
     }
@@ -576,6 +629,7 @@ impl Game {
             until_holder_end_step: None,
             zone: ZoneKind::Graveyard,
             group: None,
+            hidden_from_owner: false,
         });
     }
 

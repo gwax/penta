@@ -19,7 +19,11 @@ impl Game {
         }
         if let Some((_, instance)) = self.card_in_nonbattlefield_zone(exiled) {
             let owner = instance.owner;
-            self.permit_look_while_exiled(exiled, owner);
+            // Nobody may look at a card exiled face down unless something
+            // says so (CR 713.2), and a linked exile says nothing: the
+            // hands Memory Jar puts away are hidden from both players until
+            // the end step hands them back.
+            self.hide_from_everyone_while_exiled(exiled, owner);
         }
     }
 

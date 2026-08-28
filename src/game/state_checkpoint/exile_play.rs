@@ -22,6 +22,7 @@ pub(super) fn permission_snapshot(permission: &ExilePlayPermission) -> ExilePlay
             .map(|(player, turn)| (player.index(), turn)),
         face_down: permission.face_down,
         hidden_only: permission.hidden_only,
+        hidden_from_owner: permission.hidden_from_owner,
         spend_any_color: permission.spend_any_color,
         attacked_with_subtype: permission.condition.map(|condition| match condition {
             ExilePlayConditionDef::AttackedWithSubtypeThisTurn(subtype) => subtype.to_owned(),
@@ -76,5 +77,6 @@ pub(super) fn parse_permission(
         } else {
             ZoneKind::Exile
         },
+        hidden_from_owner: permission.hidden_from_owner,
     })
 }
