@@ -119,3 +119,65 @@ fn tapping_it_stops_a_blocker() {
         "it cannot block this turn",
     );
 }
+
+/// Every way of cycling `card` that is on offer.
+fn cyclings(game: &Game, card: GameObjectId) -> Vec<Action> {
+    game.legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == card),
+        )
+        .collect()
+}
+
+/// "Abilities you activate" is not "abilities of permanents you control":
+/// cycling a card in hand is an ability you activate, and Zirda discounts
+/// it down to the printed floor.
+#[test]
+fn it_discounts_an_ability_activated_from_hand() {
+    let (mut game, _, _) = staged(&[]);
+    let card = game
+        .build_zone(PlayerId::One, &[cards::MISCALCULATION])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let card_id = card.id;
+    game.players[0].hand.push(card);
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert_eq!(
+        cyclings(&game, card_id).len(),
+        1,
+        "cycling {{2}} costs {{1}} with the Fox out",
+    );
+}
+
+/// Without Zirda the same card wants its printed two.
+#[test]
+fn cycling_costs_its_printed_two_without_the_fox() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    let card = game
+        .build_zone(PlayerId::One, &[cards::MISCALCULATION])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let card_id = card.id;
+    game.players[0].hand.push(card);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(
+        cyclings(&game, card_id).is_empty(),
+        "one mana does not pay a cycling cost of two",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert_eq!(cyclings(&game, card_id).len(), 1, "two mana does");
+}

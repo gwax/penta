@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **An activation discount that reaches a card in a zone.** "Abilities you
+  activate cost {2} less to activate" was applied only to the abilities of
+  permanents you control, so cycling a card in hand -- an ability you
+  activate if ever there was one -- paid full price. A discount now reads a
+  card in a hand, a graveyard, or exile the same way it reads a permanent,
+  with the same printed floor.
+
 - **What a turn was attacked with.** "During any turn you attacked with a
   Rogue" was answered by looking for a Rogue still on the battlefield that
   had attacked, so a Rogue that attacked and then died stopped counting --

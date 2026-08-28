@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CompanionConditionDef, CostModificationDef, DeckConstructionDef, EffectDef, EffectRecipientDef,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
+    AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CompanionConditionDef,
+    CostModificationDef, DeckConstructionDef, EffectDef, EffectRecipientDef,
     GraveyardPlayPermissionDef, ObjectPredicateDef, PlayActionMatcherDef, PlayRestrictionDef,
     PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
     ValueDef, ZoneKind, abilities,
@@ -142,12 +142,7 @@ pub(in crate::card::sets) static ZIRDA_THE_DAWNWAKER: CardRecord = CardRecord::n
                     amount: ValueDef::Constant(2),
                     minimum: 1,
                 }),
-            )
-            .with_coverage(AbilityCoverageDef::partial(
-                "The discount reaches the activated abilities of permanents you control. An \
-                 ability you activate from somewhere else -- cycling a card in hand, or a \
-                 graveyard ability -- is outside what the shared cost vocabulary can name.",
-            )),
+            ),
             AbilityDef::activated_with_targets(
                 "{1}, {T}: Target creature can't block this turn.",
                 &ZIRDA_BLOCK_COST,

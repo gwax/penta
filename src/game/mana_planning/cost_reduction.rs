@@ -427,24 +427,45 @@ impl Game {
         cost: ManaCost,
     ) -> ManaCost {
         let mut total = cost;
+        let mut discounts = Vec::new();
         for permanent in &self.battlefield {
             let Some(rules) = self.effective_rules(permanent) else {
                 continue;
             };
             for ability in rules.ability_clauses() {
-                let Some(EffectDef::ModifyCost(
-                    CostModificationDef::SourceAbilityIncrease { source, amount },
-                )) = ability
+                let Some(effect) = ability
                     .is_executable()
                     .then(|| ability.declarative_effect())
                     .flatten()
                 else {
                     continue;
                 };
-                if self.trigger_object_matches(source, object, permanent.card.id, false) {
-                    total = add_mana_cost(total, amount);
+                match effect {
+                    EffectDef::ModifyCost(CostModificationDef::SourceAbilityIncrease {
+                        source,
+                        amount,
+                    }) if self.trigger_object_matches(source, object, permanent.card.id, false) => {
+                        total = add_mana_cost(total, amount);
+                    }
+                    // "Abilities you activate" reaches a card in a hand or a
+                    // graveyard as readily as a permanent: what the clause
+                    // names is the activation, and the card object answers
+                    // the same predicate a permanent would.
+                    EffectDef::ModifyCost(CostModificationDef::AbilityReduction {
+                        permanent: matcher,
+                        amount,
+                        minimum,
+                    }) if self.trigger_object_matches(matcher, object, permanent.card.id, false) => {
+                        let amount =
+                            self.cost_reduction_value(amount, permanent.controller, permanent.card.id);
+                        discounts.push((amount, minimum));
+                    }
+                    _ => {}
                 }
             }
+        }
+        for (amount, minimum) in discounts {
+            total = Self::reduce_ability_cost(total, amount, minimum);
         }
         total
     }
