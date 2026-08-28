@@ -208,3 +208,83 @@ fn it_cannot_pay_for_itself() {
         "the card being cast is not in hand to be exiled",
     );
 }
+
+/// Its ruling: the two enters triggers are ordered by their controller, and
+/// the sacrifice is a trigger of its own rather than part of the arrival --
+/// so Grief is on the battlefield while the discard happens, and there is a
+/// window with it standing there before the evoke bill comes due.
+#[test]
+fn an_evoked_grief_stands_while_its_discard_resolves() {
+    let (mut game, grief) = staged(
+        &[cards::DARK_RITUAL],
+        &[cards::ANCESTRAL_RECALL, cards::SWAMP],
+    );
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == grief && choices.costs().alternative().is_some()
+            }
+            _ => false,
+        })
+        .expect("evoke is offered");
+    game.apply(PlayerId::One, action).expect("it is castable");
+
+    // Let the spell resolve, and stop as soon as its triggers are waiting.
+    for _ in 0..8 {
+        if game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::GRIEF)
+        {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .map(|option| option.id)
+                .take(decision.minimum.max(1).min(decision.maximum))
+                .collect();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::GRIEF),
+        "the body arrived: the sacrifice is a trigger rather than part of the cast",
+    );
+    assert_eq!(
+        their_hand(&game),
+        vec![cards::ANCESTRAL_RECALL, cards::SWAMP],
+        "and nothing has been taken from them yet",
+    );
+
+    settle(&mut game, Some(cards::ANCESTRAL_RECALL));
+
+    assert_eq!(their_hand(&game), vec![cards::SWAMP], "the Recall went");
+    assert!(
+        game.battlefield.is_empty(),
+        "and only then did the evoke bill come due",
+    );
+}
