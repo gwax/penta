@@ -138,3 +138,49 @@ fn an_empty_ballot_asks_nothing() {
     );
     assert_eq!(game.battlefield.len(), 1, "and your own creature is safe");
 }
+
+/// "None of the candidate permanents are targeted." A creature wearing
+/// Lightning Greaves cannot be pointed at by anything, and the ballot names
+/// it all the same.
+#[test]
+fn shroud_is_no_defence_against_the_ballot() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let bears = creature(87_040, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let mut greaves = creature(87_041, cards::LIGHTNING_GREAVES, PlayerId::Two);
+    greaves.attached_to = Some(bears_id);
+    game.battlefield.push(greaves);
+    drain_pending(&mut game);
+    assert!(
+        game.permanent_has_executable_keyword(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == bears_id)
+                .expect("the Bears are there"),
+            KeywordAbility::Shroud,
+        ),
+        "the Greaves are on, so nothing may target it",
+    );
+
+    cast_judgment(&mut game);
+    vote_for(&mut game, PlayerId::One, bears_id);
+    vote_for(&mut game, PlayerId::Two, bears_id);
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears_id),
+        "voting is not targeting: the shrouded creature was exiled",
+    );
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+        "exiled rather than destroyed",
+    );
+}
