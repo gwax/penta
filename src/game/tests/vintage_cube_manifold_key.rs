@@ -167,3 +167,71 @@ fn it_makes_a_creature_unblockable_for_the_turn() {
         "and cannot once the Key has spoken",
     );
 }
+
+/// "Activating it after a creature has become blocked won't cause that
+/// creature to become unblocked." The restriction is checked as blockers are
+/// declared; a block already made is a fact about combat rather than a
+/// permission that can be taken back.
+#[test]
+fn it_does_not_undo_a_block_that_has_already_happened() {
+    let (mut game, key) = staged();
+    let mine = creature(84_020, cards::GRIZZLY_BEARS, PlayerId::One);
+    let mine_id = mine.card.id;
+    game.battlefield.push(mine);
+    let theirs = creature(84_021, cards::SERRA_ANGEL, PlayerId::Two);
+    let theirs_id = theirs.card.id;
+    game.battlefield.push(theirs);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    game.turns_started = [2, 1];
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: mine_id,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .expect("it attacks");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+    drain_pending(&mut game);
+
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+    game.apply(
+        PlayerId::Two,
+        Action::DeclareBlocker {
+            blocker: theirs_id,
+            attacker: mine_id,
+        },
+    )
+    .expect("the Angel blocks");
+    game.apply(PlayerId::Two, Action::FinishDeclaringBlockers)
+        .expect("the declaration finishes");
+    drain_pending(&mut game);
+
+    // Too late: the Key makes it unblockable, and it is already blocked.
+    activate_at(&mut game, key, mine_id);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == theirs_id)
+            .expect("the Angel is there")
+            .blocking,
+        vec![mine_id],
+        "the block stands",
+    );
+    let life = game.players[1].life;
+    game.step = Step::CombatDamage;
+    game.deal_combat_damage();
+    drain_pending(&mut game);
+    assert_eq!(
+        game.players[1].life, life,
+        "and the damage went to the blocker rather than past it",
+    );
+}
