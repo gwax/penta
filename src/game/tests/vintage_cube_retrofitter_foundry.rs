@@ -189,3 +189,53 @@ fn it_works_on_their_turn_too() {
         "a Servo on their turn"
     );
 }
+
+/// "Sacrifice a Thopter" names a creature type, not the Foundry's own work:
+/// a blue Thopter another artifact made is food for the free 4/4 just the
+/// same.
+#[test]
+fn it_eats_somebody_elses_thopter() {
+    let (mut game, foundry) = staged(1);
+    let thopter_foundry = game
+        .put_onto_battlefield(PlayerId::One, cards::THOPTER_FOUNDRY)
+        .expect("cataloged");
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::HOWLING_MINE)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+
+    let make_a_thopter = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source,
+                cost_objects,
+                ..
+            } => *source == thopter_foundry && cost_objects == &[mine],
+            _ => false,
+        })
+        .expect("a mana and the Mine to melt down");
+    game.apply(PlayerId::One, make_a_thopter)
+        .expect("it activates");
+    drain_pending(&mut game);
+
+    let theirs = token_named(&game, "Thopter").expect("the other Foundry made one");
+    let blue = ManaColor::Blue.color_index().expect("blue is a colour");
+    assert!(
+        game.permanent_colors(theirs)[blue],
+        "a blue Thopter, which the Retrofitter never makes itself",
+    );
+
+    activate(&mut game, foundry, 3);
+
+    let construct = token_named(&game, "Construct").expect("a Construct arrived");
+    assert_eq!(game.power(construct), Some(4));
+    assert!(
+        token_named(&game, "Thopter").is_none(),
+        "and the borrowed Thopter paid for it",
+    );
+}
