@@ -2252,7 +2252,7 @@ pub(in crate::card::sets) static BALM_OF_RESTORATION: CardRecord = CardRecord::n
 );
 
 // FEM 83 — Conch Horn
-// Audit: metadata-only — Needs ordered-library inspection, selection, and visibility handling for “{1}, {T}, Sacrifice this artifact: Draw two then put a card from your hand on top of your library”.
+// Audit: metadata-only — Needs ordered-library inspection, selection, and visibility handling for “{1}, {T}, Sacrifice this artifact: Draw two cards, then put a card from your hand on top of your library”.
 pub(in crate::card::sets) static CONCH_HORN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("860a9ba3-e4c4-4af9-bdfe-1ada39289fd5"),
     "Conch Horn",

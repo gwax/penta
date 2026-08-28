@@ -3991,7 +3991,7 @@ pub(in crate::card::sets) static DESPERATE_RAVINGS: CardRecord = CardRecord::new
     CardSet::Innistrad,
     CardRules::new_instant(mana_cost!("{1}{R}")).with_abilities(&[
         AbilityDef::spell(
-            "Draw two then discard a card at random.",
+            "Draw two cards, then discard a card at random.",
             EffectDef::Sequence(&[
                 EffectDef::DrawCards {
                     recipient: EffectRecipientDef::Controller,

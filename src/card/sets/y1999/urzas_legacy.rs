@@ -390,7 +390,7 @@ pub(in crate::card::sets) static FRANTIC_SEARCH: CardRecord = CardRecord::new_wi
     // Free if three of the lands paying for it untap again, which is why a
     // deck that wants to fill its graveyard plays it over a plain cantrip.
     CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell(
-        "Draw two then discard two cards. Untap up to three lands.",
+        "Draw two cards, then discard two cards. Untap up to three lands.",
         EffectDef::Sequence(&[
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,

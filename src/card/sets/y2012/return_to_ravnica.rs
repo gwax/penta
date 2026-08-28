@@ -3939,7 +3939,7 @@ pub(in crate::card::sets) static IZZET_CHARM: CardRecord = CardRecord::new_with_
     CardSet::ReturnToRavnica,
     CardRules::new_instant(mana_cost!("{U}{R}")).with_ability(
         AbilityDef::choose_one_spell(
-            "Choose one —\n• Counter target noncreature spell unless its controller pays {2}.\n• Izzet Charm deals 2 damage to target creature.\n• Draw two then discard two cards.",
+            "Choose one —\n• Counter target noncreature spell unless its controller pays {2}.\n• Izzet Charm deals 2 damage to target creature.\n• Draw two cards, then discard two cards.",
             &[
                 AbilityDef::spell_with_targets("Counter a noncreature spell unless its controller pays {2}", &[AbilityTargetDef::exactly_one_spell(
                     ObjectPredicateDef::NoncreatureSpell,
@@ -3951,7 +3951,7 @@ pub(in crate::card::sets) static IZZET_CHARM: CardRecord = CardRecord::new_with_
                         amount: ValueDef::Constant(2),
                     }),
                 AbilityDef::spell(
-                    "Draw two then discard two cards",
+                    "Draw two cards, then discard two cards",
                     EffectDef::Sequence(&[
                         EffectDef::DrawCards {
                             recipient: EffectRecipientDef::Controller,
@@ -4633,7 +4633,7 @@ pub(in crate::card::sets) static THOUGHTFLARE: CardRecord = CardRecord::new_with
     CardArt::new("d90514aa-e356-4502-9e0e-76ab7644a07a", "David Rapoza"),
     CardSet::ReturnToRavnica,
     CardRules::new_instant(mana_cost!("{3}{U}{R}")).with_ability(AbilityDef::spell(
-        "Draw four then discard two cards.",
+        "Draw four cards, then discard two cards.",
         EffectDef::Sequence(&[
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,

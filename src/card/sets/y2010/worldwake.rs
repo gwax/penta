@@ -163,7 +163,7 @@ static JACE_THE_MIND_SCULPTOR_ABILITIES: [AbilityDef; 4] = [
         },
     ),
     AbilityDef::activated(
-        "0: Draw three then put two cards from your hand on top of your library in any \
+        "0: Draw three cards, then put two cards from your hand on top of your library in any \
          order.",
         &[AbilityCostDef::Loyalty(0)],
         abilities::brainstorm(),

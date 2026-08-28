@@ -565,7 +565,7 @@ pub(in crate::card::sets) static BRAINSTORM: CardRecord = CardRecord::new_with_l
     // what it buys is the top of the library, and a fetchland turns the two
     // cards put back into two cards nobody has to draw.
     CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell(
-        "Draw three then put two cards from your hand on top of your library in any \
+        "Draw three cards, then put two cards from your hand on top of your library in any \
              order.",
         abilities::brainstorm(),
     )),

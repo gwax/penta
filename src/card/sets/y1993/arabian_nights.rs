@@ -1564,7 +1564,7 @@ pub(in crate::card::sets) static BAZAAR_OF_BAGHDAD: CardRecord = CardRecord::new
     CardArt::new("ff37b863-f8c4-4584-8cc2-ac0e096e583f", "Jeff A. Menges"),
     CardSet::ArabianNights,
     CardRules::new_land(&[]).with_abilities(&[AbilityDef::activated(
-        "{T}: Draw two then discard three cards.",
+        "{T}: Draw two cards, then discard three cards.",
         &[AbilityCostDef::TapSource],
         EffectDef::Sequence(&[
             EffectDef::DrawCards {

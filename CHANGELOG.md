@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **Sixteen clauses said "draw two then" where the card says "draw two
+  cards, then".** A dropped "cards," ran through the catalog: Brainstorm and
+  Frantic Search drew two of nothing, Primeval Titan searched for two land
+  rather than two land cards, and Nissa's emblem line read the same way.
+  Rules behaviour was never affected -- the clause text is what a client
+  renders -- but a card catalog that prints the wrong words is wrong.
+
 - **Channel no longer counts as cycling.** Cycling raises its event as it is
   activated, and the engine decided what was cycling by looking at the cost:
   mana plus discarding the card from hand. Channel prints exactly that cost

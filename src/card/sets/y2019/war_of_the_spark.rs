@@ -379,7 +379,7 @@ static NISSA_ABILITIES: [AbilityDef; 3] = [
         EffectDef::Sequence(&NISSA_AWAKENS_A_LAND),
     ),
     AbilityDef::activated(
-        "−8: You get an emblem with \"Lands you control have indestructible.\" Search your library for any number of Forest put them onto the battlefield tapped, then shuffle.",
+        "−8: You get an emblem with \"Lands you control have indestructible.\" Search your library for any number of Forest cards, put them onto the battlefield tapped, then shuffle.",
         &[AbilityCostDef::Loyalty(-8)],
         EffectDef::Sequence(&NISSA_ULTIMATE),
     ),

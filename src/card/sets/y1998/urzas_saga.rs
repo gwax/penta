@@ -601,7 +601,7 @@ pub(in crate::card::sets) static ATTUNEMENT: CardRecord = CardRecord::new_with_l
     // A net card down every time, and that is the point: the deck wants the
     // graveyard, and the enchantment comes back to do it again.
     CardRules::new_enchantment(mana_cost!("{2}{U}")).with_ability(AbilityDef::activated(
-        "Return this enchantment to its owner's hand: Draw three then discard four cards.",
+        "Return this enchantment to its owner's hand: Draw three cards, then discard four cards.",
         &[AbilityCostDef::ReturnSourceToHand],
         EffectDef::Sequence(&[
             EffectDef::DrawCards {

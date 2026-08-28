@@ -261,7 +261,7 @@ static OVERLORD_ABILITIES: [AbilityDef; 4] = [
         },
     ),
     AbilityDef::triggered(
-        "Whenever this permanent enters or attacks, mill four then you may return a \
+        "Whenever this permanent enters or attacks, mill four cards, then you may return a \
          non-Avatar creature card or a planeswalker card from your graveyard to your hand.",
         TriggerEventDef::AnyOf(&OVERLORD_EVENTS),
         EffectDef::Sequence(&OVERLORD_DIGS),

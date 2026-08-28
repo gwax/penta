@@ -1290,7 +1290,7 @@ pub(in crate::card::sets) static DROWN_IN_FILTH: CardRecord = CardRecord::new_wi
     CardSet::DragonsMaze,
     CardRules::new_sorcery(mana_cost!("{B}{G}")).with_ability(
         AbilityDef::spell_with_targets(
-            "Choose target creature. Mill four then that creature gets -1/-1 until end of turn for each land card in your graveyard.",
+            "Choose target creature. Mill four cards, then that creature gets -1/-1 until end of turn for each land card in your graveyard.",
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],

@@ -1873,7 +1873,7 @@ pub(in crate::card::sets) static FAITHLESS_LOOTING: CardRecord = CardRecord::new
     CardSet::DarkAscension,
     CardRules::new_sorcery(mana_cost!("{R}")).with_abilities(&[
         AbilityDef::spell(
-            "Draw two then discard two cards.",
+            "Draw two cards, then discard two cards.",
             EffectDef::Sequence(&[
                 EffectDef::DrawCards {
                     recipient: EffectRecipientDef::Controller,

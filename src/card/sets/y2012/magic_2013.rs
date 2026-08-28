@@ -3589,7 +3589,7 @@ pub(in crate::card::sets) static RANGERS_PATH: CardRecord = CardRecord::new_with
     CardArt::new("26858a53-1054-407a-b2a2-34a7c4ae0f10", "Tomasz Jedruszek"),
     CardSet::Magic2013,
     CardRules::new_sorcery(mana_cost!("{3}{G}")).with_ability(AbilityDef::spell(
-        "Search your library for up to two Forest put them onto the battlefield tapped, then shuffle.",
+        "Search your library for up to two Forest cards, put them onto the battlefield tapped, then shuffle.",
         EffectDef::SearchZone {
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,

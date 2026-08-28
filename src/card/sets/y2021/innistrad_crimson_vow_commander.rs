@@ -47,7 +47,7 @@ pub(in crate::card::sets) static OCCULT_EPIPHANY: CardRecord = CardRecord::new_w
     // The draw is a wash and the Spirits are the card: a hand with five
     // types in it turns X of nothing into five fliers.
     CardRules::new_instant(mana_cost!("{X}{U}")).with_ability(AbilityDef::spell(
-        "Draw X then discard X cards. Create a 1/1 white Spirit creature token with \
+        "Draw X cards, then discard X cards. Create a 1/1 white Spirit creature token with \
              flying for each card type among cards discarded this way.",
         EffectDef::Sequence(&OCCULT_EPIPHANY_EFFECT),
     )),

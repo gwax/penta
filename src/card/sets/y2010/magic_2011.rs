@@ -221,7 +221,7 @@ pub(in crate::card::sets) static PRIMEVAL_TITAN: CardRecord = CardRecord::new_wi
     CardRules::new_creature(mana_cost!("{4}{G}{G}"), &["Giant"], 6, 6).with_abilities(&[
         abilities::trample(),
         AbilityDef::triggered(
-            "Whenever this creature enters or attacks, you may search your library for up to two land put them onto the battlefield tapped, then shuffle.",
+            "Whenever this creature enters or attacks, you may search your library for up to two land cards, put them onto the battlefield tapped, then shuffle.",
             TriggerEventDef::AnyOf(&ENTERS_OR_ATTACKS),
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
