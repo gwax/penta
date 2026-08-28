@@ -192,3 +192,47 @@ fn landfall_does_not_care_where_the_land_came_from() {
 
     assert_eq!(game.players[0].life, 21, "one life for the land drop");
 }
+
+/// The permission says where a land may come from, not when: the top card is
+/// still a land drop, so it waits for your own main phase with an empty
+/// stack.
+#[test]
+fn the_permission_does_not_change_when_a_land_may_be_played() {
+    let (mut game, _courser) = staged(&[cards::FOREST]);
+    let forest = top(&game);
+
+    game.step = Step::Upkeep;
+    assert!(
+        land_play_of(&game, forest).is_none(),
+        "a land drop waits for a main phase",
+    );
+
+    game.step = Step::PrecombatMain;
+    let bolt = card(96_400, cards::LIGHTNING_BOLT, PlayerId::One);
+    let bolt_id = bolt.id;
+    game.players[0].hand.push(bolt);
+    game.players[0].mana_pool.red = 1;
+    game.apply(
+        PlayerId::One,
+        cast_action(bolt_id, vec![Target::Player(PlayerId::Two)], Vec::new(), 0),
+    )
+    .expect("something goes on the stack");
+    assert!(
+        land_play_of(&game, forest).is_none(),
+        "and for an empty stack",
+    );
+
+    settle(&mut game);
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::One;
+    assert!(
+        land_play_of(&game, forest).is_none(),
+        "and for your own turn",
+    );
+
+    game.active_player = PlayerId::One;
+    assert!(
+        land_play_of(&game, forest).is_some(),
+        "with all three back in place it is playable again",
+    );
+}
