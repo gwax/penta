@@ -189,3 +189,123 @@ fn the_ability_pays_out_only_once_each_turn() {
 
     assert_eq!(game.cards_drawn_this_turn[0], 1, "three crimes, one payout");
 }
+
+/// "At least one card in an opponent's graveyard": the crime need not be a
+/// spell and need not touch anything they control on the battlefield.
+/// Tapping a Cauldron for a card in their graveyard is enough.
+#[test]
+fn eating_a_card_from_their_graveyard_is_a_crime() {
+    let (mut game, _duelist) = staged();
+    let cauldron = game
+        .put_onto_battlefield(PlayerId::One, cards::AGATHAS_SOUL_CAULDRON)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.players[1].graveyard.clear();
+    let theirs = game
+        .build_zone(PlayerId::Two, &[cards::LIGHTNING_BOLT])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let theirs_id = theirs.id;
+    game.players[1].graveyard.push(theirs);
+    drain_pending(&mut game);
+    game.cards_drawn_this_turn = [0; 2];
+    let hand_before = game.players[0].hand.len();
+
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == cauldron
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Card(theirs_id))
+            }
+            _ => false,
+        })
+        .expect("the Cauldron can point at a card in their graveyard");
+    game.apply(PlayerId::One, activate).expect("it activates");
+    settle(&mut game);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.cards_drawn_this_turn[0], 1,
+        "an ability aimed into their graveyard is a crime too",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand_before,
+        "the draw and the discard cancel out",
+    );
+}
+
+/// "The spell or ability that constituted a crime doesn't have to have
+/// resolved yet or at all." Countering the Bolt takes the damage away and
+/// leaves the crime where it was committed: on casting.
+#[test]
+fn a_countered_spell_was_still_a_crime() {
+    let (mut game, _duelist) = staged();
+    let theirs = creature(90_030, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let theirs_id = theirs.card.id;
+    game.battlefield.push(theirs);
+    let bolt = card(90_031, cards::LIGHTNING_BOLT, PlayerId::One);
+    let bolt_id = bolt.id;
+    game.players[0].hand.push(bolt);
+    let counterspell = card(90_032, cards::COUNTERSPELL, PlayerId::Two);
+    let counterspell_id = counterspell.id;
+    game.players[1].hand.push(counterspell);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == bolt_id
+                    && choices
+                        .targets()
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(theirs_id))
+            }
+            _ => false,
+        })
+        .expect("the Bolt can point at their creature");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    game.apply(PlayerId::One, Action::PassPriority)
+        .expect("they get a word in");
+    let answer = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == counterspell_id))
+        .expect("two blue answers it");
+    game.apply(PlayerId::Two, answer).expect("it is cast");
+    settle(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == theirs_id),
+        "the Bears never took the damage",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "because the Bolt was countered",
+    );
+    assert_eq!(
+        game.cards_drawn_this_turn[0], 1,
+        "the crime was committed as it was cast, and paid out anyway",
+    );
+}
