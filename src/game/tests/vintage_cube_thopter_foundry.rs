@@ -181,3 +181,68 @@ fn it_costs_a_mana() {
         "an artifact alone does not pay for it",
     );
 }
+
+/// "{W/B}{U}": the hybrid pip takes either colour, and the blue one takes
+/// only blue.
+#[test]
+fn the_hybrid_pip_takes_either_half() {
+    for (first, castable) in [
+        (ManaColor::White, true),
+        (ManaColor::Black, true),
+        (ManaColor::Green, false),
+    ] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[0].hand.clear();
+        let foundry = game
+            .build_zone(PlayerId::One, &[cards::THOPTER_FOUNDRY])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        let foundry_id = foundry.id;
+        game.players[0].hand.push(foundry);
+        game.turns_started = [5, 5];
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+        game.add_unrestricted_mana(PlayerId::One, first, 1);
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+        let offered = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if card == foundry_id));
+        assert_eq!(
+            offered, castable,
+            "{first:?} beside a blue mana pays the hybrid half",
+        );
+    }
+}
+
+/// The token is blue, which is the one thing about it the other tests leave
+/// out -- and it is what the Foundry is played for in a deck full of
+/// colourless artifacts.
+#[test]
+fn the_thopter_it_makes_is_blue() {
+    let (mut game, foundry, artifacts) = staged(&[cards::HOWLING_MINE]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    let eat_the_mine = activations(&game, foundry)
+        .into_iter()
+        .find(|(_, spent)| spent == &vec![artifacts[0]])
+        .expect("the Mine is food");
+    game.apply(PlayerId::One, eat_the_mine.0)
+        .expect("it activates");
+    drain_pending(&mut game);
+
+    let made = thopters(&game);
+    let colors = game.permanent_colors(made[0]);
+    let blue = ManaColor::Blue.color_index().expect("blue is a colour");
+    assert!(colors[blue], "a blue Thopter");
+    assert_eq!(
+        colors.iter().filter(|present| **present).count(),
+        1,
+        "and blue alone, whatever it was made out of",
+    );
+}
