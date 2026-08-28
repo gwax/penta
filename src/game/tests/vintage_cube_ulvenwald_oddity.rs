@@ -136,3 +136,36 @@ fn transforming_changes_the_subtypes() {
     assert!(subtypes.contains(&"Beast"));
     assert!(subtypes.contains(&"Horror"));
 }
+
+/// The anthem is a static effect rather than something the transform did
+/// once: a creature that arrives afterwards is bigger and hasty the moment
+/// it lands, and shrinks again if the Behemoth leaves.
+#[test]
+fn a_creature_that_arrives_later_is_grown_too() {
+    let (mut game, oddity, _bears) = staged(5);
+    let action = transform(&mut game, oddity).expect("seven mana pays for it");
+    game.apply(PlayerId::One, action).expect("it activates");
+    drain_pending(&mut game);
+
+    let latecomer = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let lions = permanent(&game, latecomer);
+    assert_eq!(game.power(lions), Some(3), "a 2/1 arrives as a 3/2");
+    assert_eq!(game.toughness(lions), Some(2));
+    assert!(game.permanent_has_executable_keyword(lions, KeywordAbility::Haste));
+    assert!(game.permanent_has_executable_keyword(lions, KeywordAbility::Trample));
+
+    game.move_permanents_to_graveyard(&[oddity]);
+    game.check_state_based_actions();
+
+    let lions = permanent(&game, latecomer);
+    assert_eq!(
+        game.power(lions),
+        Some(2),
+        "and is a 2/1 again once it is gone"
+    );
+    assert!(!game.permanent_has_executable_keyword(lions, KeywordAbility::Trample));
+}
