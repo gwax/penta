@@ -64,7 +64,11 @@ fn settle(game: &mut Game, keep: bool) {
 
 /// Casts a Tendrils at Player Two, leaving the stack for the caller.
 fn cast_tendrils(game: &mut Game) {
-    let tendrils = card(10_000, cards::TENDRILS_OF_AGONY, PlayerId::One);
+    cast_tendrils_numbered(game, 10_000);
+}
+
+fn cast_tendrils_numbered(game: &mut Game, id: u32) {
+    let tendrils = card(id, cards::TENDRILS_OF_AGONY, PlayerId::One);
     let tendrils_id = tendrils.id;
     game.players[PlayerId::One.index()].hand.push(tendrils);
     let pool = &mut game.players[PlayerId::One.index()].mana_pool;
@@ -159,4 +163,101 @@ fn the_loss_is_not_damage() {
             .any(|event| matches!(event, GameEvent::DamageDealt { .. })),
         "a drain that dealt damage would be a different card",
     );
+}
+
+/// "The copies are put directly onto the stack. They aren't cast": a second
+/// Tendrils counts the first one and the cantrip, and none of the copies the
+/// first one made.
+#[test]
+fn the_copies_are_not_cast_and_do_not_feed_a_later_storm() {
+    let mut game = ready_game();
+    cast_cantrips(&mut game, 1);
+    cast_tendrils(&mut game);
+    settle(&mut game, true);
+    assert_eq!(game.players[1].life, 16, "the original and one copy");
+
+    cast_tendrils_numbered(&mut game, 10_001);
+    settle(&mut game, true);
+
+    assert_eq!(
+        game.players[1].life,
+        16 - 6,
+        "two spells were cast before the second one, so it copies twice",
+    );
+    assert_eq!(game.players[0].life, 24 + 6);
+}
+
+/// "Spells cast from zones other than a player's hand and spells that were
+/// countered are counted": the cantrip counts even though it never resolved,
+/// and so does the Counterspell that answered it.
+#[test]
+fn a_countered_spell_still_feeds_the_storm_count() {
+    let mut game = ready_game();
+    let opt = card(20_100, cards::OPT, PlayerId::One);
+    let opt_id = opt.id;
+    game.players[PlayerId::One.index()].hand.push(opt);
+    game.players[PlayerId::One.index()].mana_pool.blue = 1;
+    let counterspell = card(20_101, cards::COUNTERSPELL, PlayerId::Two);
+    let counterspell_id = counterspell.id;
+    game.players[PlayerId::Two.index()].hand.push(counterspell);
+    game.players[PlayerId::Two.index()].mana_pool.blue = 2;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(opt_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("a cantrip is castable");
+    acceptance_attempt_counterspell(&mut game, counterspell_id);
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::OPT),
+        "the cantrip was countered",
+    );
+
+    cast_tendrils(&mut game);
+    settle(&mut game, true);
+
+    assert_eq!(
+        game.players[1].life,
+        20 - 6,
+        "both the countered spell and the spell that countered it count",
+    );
+}
+
+/// "The triggered ability that creates the copies can itself be countered."
+/// Stifle answers the storm trigger, and the spell that raised it still
+/// resolves on its own.
+#[test]
+fn stifling_the_storm_trigger_leaves_one_drain() {
+    let mut game = ready_game();
+    let stifle = card(20_200, cards::STIFLE, PlayerId::Two);
+    let stifle_id = stifle.id;
+    game.players[PlayerId::Two.index()].hand.push(stifle);
+    game.players[PlayerId::Two.index()].mana_pool.blue = 1;
+    cast_cantrips(&mut game, 2);
+    cast_tendrils(&mut game);
+
+    let spell = game.stack.objects.first().expect("the Tendrils itself").id;
+
+    let trigger = game
+        .stack
+        .iter()
+        .map(|object| object.id)
+        .find(|id| *id != spell)
+        .expect("the storm trigger is above it");
+    game.apply(PlayerId::One, Action::PassPriority).unwrap();
+    game.apply(
+        PlayerId::Two,
+        cast_action(stifle_id, vec![Target::Spell(trigger)], Vec::new(), 0),
+    )
+    .expect("a triggered ability is what Stifle answers");
+    settle(&mut game, true);
+
+    assert_eq!(
+        game.players[1].life, 18,
+        "no copies were made, so only the original drained",
+    );
+    assert_eq!(game.players[0].life, 22);
 }
