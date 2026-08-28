@@ -152,3 +152,38 @@ fn mountaincycling_fetches_a_mountain() {
             .any(|card| card.definition == cards::OLIPHAUNT),
     );
 }
+
+/// "Typecycling is a form of cycling." It is the same activated ability
+/// with a search in place of the draw, so what reaches one reaches the
+/// other: Zirda takes two off it, and the printed one-mana floor is what is
+/// left.
+#[test]
+fn mountaincycling_is_cycling_for_everything_that_reads_it() {
+    let (mut game, oliphaunt, _bears) = staged(false);
+    game.players[PlayerId::One.index()].mana_pool = ManaPool::default();
+    let cyclings = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(|action| {
+                matches!(action, Action::ActivateAbility { source, .. } if *source == oliphaunt)
+            })
+            .count()
+    };
+    assert_eq!(cyclings(&game), 0, "with no mana it is not activatable");
+
+    game.put_onto_battlefield(PlayerId::One, cards::ZIRDA_THE_DAWNWAKER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(
+        cyclings(&game),
+        0,
+        "the discount does not make an ability free that prints a floor",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert_eq!(
+        cyclings(&game),
+        1,
+        "one mana pays the floor, which is where {{1}} minus {{2}} stops",
+    );
+}
