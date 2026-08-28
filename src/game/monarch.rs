@@ -4,6 +4,15 @@
 //! its holder a card at the beginning of their end step, it is taken by
 //! whoever deals combat damage to the current monarch, and cards can ask
 //! about it. Nobody is the monarch until something says so.
+//!
+//! Audit: partial — CR 720.4 and 720.5 are two inherent *triggered*
+//! abilities with no source, controlled by whoever was the monarch when they
+//! triggered. Both are carried out here as rules the moment they apply, and
+//! a trigger needs a permanent or an emblem to hang on. Nothing in a
+//! two-player game changes hands between the trigger and its resolution on
+//! its own, so the outcomes match; what is missing is the window in between,
+//! where the draw could be answered -- countered by a Stifle, or kept by the
+//! player who was the monarch when a later spell took the crown off them.
 
 use super::{CommittedTriggerEvent, Game, GameObjectId, PlayerId};
 
@@ -27,8 +36,7 @@ impl Game {
 
     /// "Whenever a creature deals combat damage to the monarch, that
     /// creature's controller becomes the monarch" (CR 720.5). Read where the
-    /// damage lands rather than installed as a trigger, because it is a
-    /// rule of the game rather than an ability anything controls.
+    /// damage lands rather than put on the stack; see the module note.
     pub(super) fn combat_damage_may_steal_the_crown(
         &mut self,
         source: Option<GameObjectId>,
@@ -50,8 +58,8 @@ impl Game {
     }
 
     /// "At the beginning of the monarch's end step, that player draws a
-    /// card" (CR 720.4). A turn-based action, so it uses no stack and
-    /// nothing responds to it.
+    /// card" (CR 720.4). Carried out as the step begins rather than put on
+    /// the stack; see the module note.
     pub(super) fn monarch_draws_at_end_step(&mut self) {
         if self.monarch == Some(self.active_player) {
             self.draw_instruction(self.active_player, 1);

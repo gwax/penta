@@ -156,3 +156,51 @@ fn combat_damage_to_the_monarch_takes_the_crown() {
         "and combat damage takes it",
     );
 }
+
+/// "The game will have exactly one monarch from that point forward. As a
+/// player becomes the monarch, the current monarch ceases being the
+/// monarch." Nobody holds it to begin with, and the crown moves rather than
+/// being copied.
+#[test]
+fn the_crown_starts_nowhere_and_is_held_by_one_seat() {
+    let mut game = ready_game();
+    assert_eq!(game.monarch(), None, "the game starts with no monarch");
+
+    game.set_monarch(PlayerId::One);
+    assert_eq!(game.monarch(), Some(PlayerId::One));
+
+    game.set_monarch(PlayerId::Two);
+    assert_eq!(
+        game.monarch(),
+        Some(PlayerId::Two),
+        "the second crowning takes it off the first seat",
+    );
+}
+
+/// The end step draws for whoever holds the crown at that moment, and for
+/// nobody when the crown has moved on.
+#[test]
+fn the_draw_follows_the_crown_rather_than_the_seat_that_had_it() {
+    let mut game = ready_game();
+    game.set_monarch(PlayerId::One);
+    game.active_player = PlayerId::One;
+    let before = game.players[0].library.len();
+
+    game.set_monarch(PlayerId::Two);
+    game.handle_end_step();
+
+    assert_eq!(
+        game.players[0].library.len(),
+        before,
+        "player one no longer holds it at their own end step",
+    );
+
+    game.active_player = PlayerId::Two;
+    let theirs = game.players[1].library.len();
+    game.handle_end_step();
+    assert_eq!(
+        game.players[1].library.len(),
+        theirs - 1,
+        "and the seat that does draws at theirs",
+    );
+}
