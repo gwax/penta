@@ -279,3 +279,31 @@ fn her_power_answers_from_a_hand() {
         "and one creature is one power, while she waits in hand",
     );
 }
+
+/// "Although the Human tokens created by the triggered ability are
+/// attacking, they were never declared as attacking creatures." A Gleam of
+/// Battle watching the declaration counts the creature that was declared
+/// and nothing that merely arrived attacking afterwards.
+#[test]
+fn her_token_was_never_declared_an_attacker() {
+    let (mut game, adeline) = staged(&[cards::GLEAM_OF_BATTLE]);
+    attack_with(&mut game, &[adeline]);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        permanent(&game, adeline).counters(CounterKind::PlusOnePlusOne),
+        1,
+        "she was declared, so the Gleam counted her",
+    );
+    let humans = humans(&game);
+    assert_eq!(humans.len(), 1, "and her attack made its Human");
+    assert_eq!(
+        humans[0].counters(CounterKind::PlusOnePlusOne),
+        0,
+        "which is attacking without ever having been declared",
+    );
+    assert!(
+        humans[0].attacking,
+        "attacking all the same, which is what makes the distinction worth drawing",
+    );
+}
