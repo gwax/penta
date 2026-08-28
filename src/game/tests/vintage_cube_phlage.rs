@@ -202,3 +202,57 @@ fn attacking_helixes_again() {
     assert_eq!(game.players[1].life, 14, "another three");
     assert_eq!(game.players[0].life, 26);
 }
+
+/// "After an escaped spell resolves, it enters the battlefield and will
+/// return to its owner's graveyard if it dies later. It can escape again."
+/// The second escape costs another five cards, and the body it brings back
+/// helixes again on the way in.
+#[test]
+fn it_escapes_a_second_time_from_the_graveyard_it_died_into() {
+    let (mut game, phlage) = staged(10);
+    let buried = bury(&mut game, phlage);
+    game.priority = PlayerId::One;
+    let cast = casts_of(&game, buried)
+        .into_iter()
+        .next()
+        .expect("five of the ten and four mana is an escape");
+    game.apply(PlayerId::One, cast).expect("it escapes");
+    settle(&mut game);
+    game.check_state_based_actions();
+    assert!(on_battlefield(&game), "the first escape stuck");
+    assert_eq!(game.players[0].graveyard.len(), 5, "five cards are left");
+
+    let body = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::PHLAGE_TITAN_OF_FIRES_FURY)
+        .expect("it is there")
+        .card
+        .id;
+    game.move_permanents_to_graveyard(&[body]);
+    game.check_state_based_actions();
+    let returned = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::PHLAGE_TITAN_OF_FIRES_FURY)
+        .expect("it died back into the graveyard")
+        .id;
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 3);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 3);
+    game.priority = PlayerId::One;
+    let again = casts_of(&game, returned)
+        .into_iter()
+        .next()
+        .expect("the other five pay for a second escape");
+    game.apply(PlayerId::One, again).expect("it escapes again");
+    settle(&mut game);
+    game.check_state_based_actions();
+
+    assert!(on_battlefield(&game), "and it stays a second time");
+    assert_eq!(
+        game.players[1].life, 14,
+        "two helixes across the two escapes",
+    );
+    assert_eq!(game.players[0].exile.len(), 10, "ten cards paid for them");
+}
