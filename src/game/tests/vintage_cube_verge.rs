@@ -273,3 +273,34 @@ fn the_sunbillow_verge_offers_its_own_two_colours() {
     expected.sort_unstable();
     assert_eq!(offered, expected, "a Mountain switches the red half on");
 }
+
+/// "A Swamp or a Forest" is about types rather than about basics: a Bayou is
+/// both of them at once, and one land answering the condition twice over is
+/// still one land.
+#[test]
+fn a_dual_land_carrying_the_type_answers_the_condition() {
+    let (game, verge) = staged(&[cards::BAYOU]);
+
+    let mut offered = offered_colors(&game, verge);
+    offered.sort_unstable();
+    let mut expected = vec![ManaColor::Black, ManaColor::Green];
+    expected.sort_unstable();
+    assert_eq!(offered, expected, "a Swamp Forest is a Swamp and a Forest");
+}
+
+/// And the types are read as they stand rather than as they were printed. A
+/// Blood Moon takes the Bayou's two types away, and takes the Verge's own
+/// printed halves with them: what is left of both is a Mountain.
+#[test]
+fn a_blood_moon_leaves_neither_the_type_nor_the_verge() {
+    let (mut game, verge) = staged(&[cards::BAYOU]);
+    game.put_onto_battlefield(PlayerId::One, cards::BLOOD_MOON)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        offered_colors(&game, verge),
+        vec![ManaColor::Red],
+        "a nonbasic land that is a Mountain taps for red and nothing else",
+    );
+}
