@@ -351,3 +351,31 @@ fn a_fetchland_finds_it_and_it_still_arrives_tapped() {
         "one card left: the Maze came out and the surveil binned the next one",
     );
 }
+
+/// A Blood Moon takes the printed text with the type line: the Theater is a
+/// Mountain, which taps for red alone -- and, since "this land enters
+/// tapped" and the surveil are printed abilities rather than anything the
+/// basic types carry, it arrives untapped and looks at nothing.
+#[test]
+fn a_blood_moon_leaves_it_a_plain_untapped_mountain() {
+    let (mut game, land) = staged_with(cards::RAUCOUS_THEATER, cards::GRIZZLY_BEARS);
+    game.put_onto_battlefield(PlayerId::One, cards::BLOOD_MOON)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    play_and_surveil(&mut game, land, true);
+
+    let theater = the_land_named(&game, cards::RAUCOUS_THEATER).expect("it was played");
+    assert!(!theater.tapped, "the clause that taps it is gone");
+    assert_eq!(
+        colors_of(&game, theater.card.id),
+        vec![ManaColor::Red],
+        "and a Mountain makes red",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        1,
+        "nothing was surveilled: the trigger went with the rest of the text",
+    );
+    assert!(game.players[0].graveyard.is_empty());
+}
