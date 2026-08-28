@@ -259,3 +259,95 @@ fn the_black_green_land_taps_for_its_own_two() {
         ManaColor::Green,
     );
 }
+
+/// The basic types are what a fetchland reads: a Misty Rainforest looks for
+/// a Forest or an Island and the Hedge Maze is both. What it fetches still
+/// arrives tapped and still surveils, which is the whole cost of playing
+/// them over the originals.
+#[test]
+fn a_fetchland_finds_it_and_it_still_arrives_tapped() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    game.players[0].library.clear();
+    for definition in [cards::MOUNTAIN, cards::HEDGE_MAZE, cards::GRIZZLY_BEARS] {
+        let card = game
+            .build_zone(PlayerId::One, &[definition])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        game.players[0].library.push(card);
+    }
+    let fetch = game
+        .put_onto_battlefield(PlayerId::One, cards::MISTY_RAINFOREST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == fetch))
+        .expect("a life and a sacrifice");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    for _ in 0..12 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            // The search names the Maze; the surveil that follows bins
+            // whatever it turned up.
+            let options = decision
+                .options
+                .iter()
+                .find(|option| {
+                    matches!(
+                        option.card,
+                        Some((_, ObjectCharacteristics::Card { definition, .. }))
+                            if definition == cards::HEDGE_MAZE
+                    )
+                })
+                .or_else(|| decision.options.first())
+                .map(|option| vec![option.id])
+                .unwrap_or_default();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let maze = the_land_named(&game, cards::HEDGE_MAZE).expect("the Maze was found");
+    assert!(maze.tapped, "and it arrives tapped, fetched or played");
+    assert_eq!(
+        colors_of(&game, maze.card.id),
+        Vec::new(),
+        "so it makes nothing this turn",
+    );
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        2,
+        "the fetchland it sacrificed and the card its surveil binned",
+    );
+    assert_eq!(game.players[0].life, 19, "the fetch cost a life");
+    assert_eq!(
+        game.players[0].library.len(),
+        1,
+        "one card left: the Maze came out and the surveil binned the next one",
+    );
+}
