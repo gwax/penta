@@ -433,3 +433,60 @@ fn losing_the_last_counter_takes_the_abilities_back() {
         activated_ability_texts(&game, lion),
     );
 }
+
+/// "It doesn't grant keyword abilities, triggered abilities, or static
+/// abilities." A Runewing in the pile has flying and a dies trigger and
+/// nothing else: the Lion gains nothing at all, and dying draws no card.
+#[test]
+fn the_exiled_cards_triggered_abilities_stay_behind() {
+    let (mut game, cauldron, mine) = staged(&[cards::RUNEWING], &[cards::SAVANNAH_LIONS]);
+    let lion = mine[0];
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(94_500, cards::ISLAND, PlayerId::One));
+    let hand = game.players[0].hand.len();
+
+    eat(&mut game, cauldron, cards::RUNEWING, Some(lion));
+    assert_eq!(counters(&game, lion), 1, "a creature card, so it grew");
+
+    assert_eq!(
+        activated_ability_texts(&game, lion),
+        Vec::<&str>::new(),
+        "the Runewing prints no activated ability to hand over",
+    );
+    assert!(
+        !game.has_flying(
+            game.battlefield
+                .iter()
+                .find(|candidate| candidate.card.id == lion)
+                .expect("it is on the battlefield")
+        ),
+        "and flying is a keyword, which stays behind with the rest",
+    );
+
+    // Kill the Lion: if the dies trigger had come across, this would draw.
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|candidate| candidate.card.id == lion)
+    {
+        permanent.damage = 2;
+    }
+    game.check_state_based_actions();
+    resolve(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|candidate| candidate.card.id == lion),
+        "the Lion died",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand,
+        "and drew nothing on the way out",
+    );
+    assert_eq!(game.players[0].library.len(), 1, "the library is untouched");
+}
