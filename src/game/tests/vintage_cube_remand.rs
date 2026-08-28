@@ -241,3 +241,84 @@ fn a_flashback_spell_is_exiled_rather_than_returned() {
         "flashback exiles what it was cast from wherever the spell ends up",
     );
 }
+
+/// The draw is a second clause of one spell, not a separate one: if the
+/// spell Remand named is gone before Remand resolves, Remand is countered
+/// for having no legal targets (CR 608.2b) and draws nothing. That is the
+/// other side of drawing off a spell it merely fails to counter.
+#[test]
+fn a_fizzled_remand_draws_nothing() {
+    let (mut game, remand, spell) = staged(cards::GRIZZLY_BEARS);
+    let counterspell = card(283_100, cards::COUNTERSPELL, PlayerId::One);
+    let counterspell_id = counterspell.id;
+    game.players[0].hand.push(counterspell);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == spell))
+        .expect("they have the mana");
+    game.apply(PlayerId::Two, cast)
+        .expect("their spell is cast");
+    for _ in 0..4 {
+        if game.priority == PlayerId::One {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    // Remand names the Bears, and then a Counterspell held behind it names
+    // the same Bears and resolves first.
+    let bears = game
+        .stack
+        .objects
+        .iter()
+        .find(|object| object.card.definition == cards::GRIZZLY_BEARS)
+        .expect("their spell is on the stack")
+        .id;
+    for blue in [remand, counterspell_id] {
+        let cast =
+            game.legal_actions(PlayerId::One)
+                .into_iter()
+                .find(|action| match action {
+                    Action::CastSpell { card, choices, .. } => {
+                        *card == blue
+                            && choices.targets().iter().any(|selection| {
+                                selection.targets().contains(&Target::Spell(bears))
+                            })
+                    }
+                    _ => false,
+                })
+                .expect("both name the Bears");
+        game.apply(PlayerId::One, cast).expect("it is cast");
+    }
+    settle(&mut game);
+
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+        "the Counterspell got there first, so the Bears went to the graveyard",
+    );
+    assert!(
+        game.players[1].hand.is_empty(),
+        "and never came back to hand",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        2,
+        "Remand found nothing to counter and so did nothing at all",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::REMAND),
+        "it was countered by the game rules on the way",
+    );
+}
