@@ -74,32 +74,14 @@ impl Game {
             counters,
             tapped,
         } = clause;
-        let attachment = match attachment {
-            None => None,
-            Some(attachment) => {
-                let resolved = match attachment {
-                    ArrivalAttachmentDef::SourceToArrival => {
-                        object.source.map(ArrivalAttachment::SourceToArrival)
-                    }
-                    ArrivalAttachmentDef::ArrivalToHost(reference) => self
-                        .object_reference_target(reference, object, context, scoped)
-                        .and_then(|target| match target {
-                            Target::Permanent(host) => Some(ArrivalAttachment::ArrivalToHost(host)),
-                            _ => None,
-                        }),
-                    ArrivalAttachmentDef::ArrivalToPlayer(reference) => self
-                        .player_reference(reference, object, context, scoped)
-                        .map(ArrivalAttachment::ArrivalToPlayer),
-                };
-                // Attachment is part of the arrival, not an optional rider.
-                // If its required host or player no longer exists, an Aura
-                // cannot enter unattached (CR 303.4f).
-                let Some(resolved) = resolved else {
-                    return;
-                };
-                Some(resolved)
-            }
-        };
+        let attachment = attachment
+            .and_then(|attachment| self.arrival_attachment(attachment, object, context, scoped));
+        // A host that is gone is not the same answer for everything that
+        // attaches. An Aura cannot enter unattached (CR 303.4f) and does not
+        // enter at all; an Equipment simply arrives bare -- Sword of the
+        // Meek's own ruling says so outright. Which it is depends on the card
+        // being moved, so the decision waits for the loop below.
+        let lost_its_host = clause.attachment.is_some() && attachment.is_none();
         let arriving_controller = controller.map(|relation| {
             if self.player_relation_matches(
                 object.controller,
@@ -148,6 +130,11 @@ impl Game {
             if from.is_some_and(|expected| actual_zone != Some(expected)) {
                 continue;
             }
+            // An Aura whose host is gone stays where it is; anything else
+            // that attaches arrives bare.
+            if lost_its_host && self.moving_card_is_an_aura(target) {
+                continue;
+            }
             let arrived = self.move_target_to_zone(
                 target,
                 zone,
@@ -173,5 +160,56 @@ impl Game {
                 self.apply_arrival_effect(arrived, *effect, object, context, scoped);
             }
         }
+    }
+
+    /// The attachment an arrival carries, or `None` when what it named is no
+    /// longer there.
+    fn arrival_attachment(
+        &mut self,
+        attachment: ArrivalAttachmentDef,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) -> Option<ArrivalAttachment> {
+        match attachment {
+            ArrivalAttachmentDef::SourceToArrival => {
+                object.source.map(ArrivalAttachment::SourceToArrival)
+            }
+            ArrivalAttachmentDef::ArrivalToHost(reference) => self
+                .object_reference_target(reference, object, context, scoped)
+                .and_then(|target| match target {
+                    Target::Permanent(host) => Some(ArrivalAttachment::ArrivalToHost(host)),
+                    _ => None,
+                }),
+            ArrivalAttachmentDef::ArrivalToPlayer(reference) => self
+                .player_reference(reference, object, context, scoped)
+                .map(ArrivalAttachment::ArrivalToPlayer),
+        }
+    }
+
+    /// Whether what is being moved is an Aura, which is the one thing that
+    /// cannot arrive without the host its clause named.
+    fn moving_card_is_an_aura(&self, target: Target) -> bool {
+        if let Target::Permanent(id) = target {
+            return self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == id)
+                .is_some_and(|permanent| self.is_aura_permanent(permanent));
+        }
+        let definition = match target {
+            Target::Card(id) => self
+                .card_in_nonbattlefield_zone(id)
+                .map(|(_, card)| card.definition),
+            Target::Spell(id) => self
+                .stack
+                .iter()
+                .find(|candidate| candidate.id == id)
+                .and_then(|candidate| candidate.card.definition.card_definition()),
+            Target::Permanent(_) | Target::Player(_) => None,
+        };
+        definition
+            .and_then(|definition| self.catalog.get(definition))
+            .is_some_and(|card| card.rules.has_subtype("Aura"))
     }
 }

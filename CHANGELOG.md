@@ -40,6 +40,14 @@ distinguishes snapshots of the covered source and build inputs.
   channel. An ability now records that it is cycling rather than being
   recognised by what it charges.
 
+- **Equipment returning to a host that is gone arrives bare.** An arrival
+  that names a host was all-or-nothing: if the host had left, the card did
+  not move at all. That is right for an Aura (CR 303.4f) and wrong for
+  Equipment -- Sword of the Meek's ruling says that if it cannot be attached
+  to the creature that triggered it, "Sword of the Meek returns to the
+  battlefield and remains unattached", and instead it stayed in the
+  graveyard. What the moved card is now decides: an Aura still stays put.
+
 - **An intervening if counts the counters its source last carried.** "If
   there are four or more chorus counters on Malcolm" was answered by looking
   for him on the battlefield, so a Malcolm killed in response to his own
