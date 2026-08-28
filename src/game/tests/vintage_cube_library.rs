@@ -338,6 +338,68 @@ fn preordain_scries_two_and_lets_you_order_what_stays() {
     );
 }
 
+/// Keeping one and burying the other is the middle of the same choice, and
+/// the one kept is what the draw takes.
+#[test]
+fn preordain_can_keep_one_and_bury_the_other() {
+    let mut game = ready_game();
+    game.players[0].library.clear();
+    stack_library(
+        &mut game,
+        &[
+            (60_200, cards::LIGHTNING_BOLT),
+            (60_201, cards::SERRA_ANGEL),
+            (60_202, cards::SAVANNAH_LIONS),
+        ],
+    );
+    let preordain = card(60_203, cards::PREORDAIN, PlayerId::One);
+    let preordain_id = preordain.id;
+    game.players[0].hand.push(preordain);
+    game.players[0].mana_pool.blue = 1;
+    game.apply(
+        PlayerId::One,
+        cast_action(preordain_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("it is cast");
+    pass_priority_pair(&mut game);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the scry looks at two");
+    let angel = decision
+        .options
+        .iter()
+        .find(|option| option.label == "Serra Angel")
+        .expect("offered")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![angel],
+        },
+    )
+    .expect("keeping one of the two is allowed");
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "the kept card is the one drawn",
+    );
+    assert_eq!(
+        game.players[0]
+            .library
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::LIGHTNING_BOLT, cards::SAVANNAH_LIONS],
+        "and the Bolt went under the card that was never looked at",
+    );
+}
+
 /// Sending both to the bottom is the other end of the same choice.
 #[test]
 fn preordain_can_bury_both_cards_it_looked_at() {
