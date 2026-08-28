@@ -280,3 +280,57 @@ fn only_the_mode_with_a_legal_target_is_offered() {
         "no artifact means no artifact mode: {offered:?}"
     );
 }
+
+/// Its ruling: "the replacement effect will exile the target creature if it
+/// would die this turn for any reason, not just due to lethal damage." A
+/// Wrath of God is a reason.
+#[test]
+fn a_slammed_creature_destroyed_by_something_else_is_exiled_too() {
+    let (mut game, suplex) = staged(&[cards::GIANT_SPIDER]);
+    let spider = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GIANT_SPIDER)
+        .expect("it is here")
+        .card
+        .id;
+
+    cast_at(&mut game, suplex, SLAM, spider);
+    assert!(
+        on_battlefield(&game, cards::GIANT_SPIDER),
+        "four toughness takes three damage and lives",
+    );
+
+    let wrath = game
+        .build_zone(PlayerId::One, &[cards::WRATH_OF_GOD])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let wrath_id = wrath.id;
+    game.players[0].hand.push(wrath);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == wrath_id))
+        .expect("four mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        !on_battlefield(&game, cards::GIANT_SPIDER),
+        "the sweeper destroyed it",
+    );
+    assert!(
+        in_zone(&game.players[1].exile, cards::GIANT_SPIDER),
+        "and the replacement sent it to exile rather than the graveyard",
+    );
+    assert!(
+        !in_zone(&game.players[1].graveyard, cards::GIANT_SPIDER),
+        "which is the whole of what the mode buys",
+    );
+}
