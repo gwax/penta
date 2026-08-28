@@ -2286,7 +2286,7 @@ static COLOSSUS_ABILITIES: [AbilityDef; 4] = [
     abilities::infect(),
     abilities::indestructible(),
     AbilityDef::replacement_for(
-        "If this creature would be put into a graveyard from anywhere, reveal it and shuffle it into its owner's library instead.",
+        "If Blightsteel Colossus would be put into a graveyard from anywhere, reveal Blightsteel Colossus and shuffle it into its owner's library instead.",
         ReplacementEventDef::WouldMove {
             from: None,
             to: ZoneKind::Graveyard,

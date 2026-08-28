@@ -24,7 +24,56 @@ fn infect_damage_to_a_player_is_poison() {
     assert_eq!(
         game.players[1].counters.count(CounterKind::Poison),
         11,
-        "eleven poison, one short of the ten it takes to lose",
+        "eleven poison instead, which is past the ten it takes to lose",
+    );
+    game.check_state_based_actions();
+    assert_eq!(
+        game.result(),
+        Some(GameResult::Winner {
+            winner: PlayerId::One,
+            reason: WinReason::OpponentPoisoned,
+        }),
+        "and the tenth counter is a state-based loss",
+    );
+}
+
+/// Infect changes what damage does to creatures and players, not to
+/// planeswalkers: those still lose that much loyalty.
+#[test]
+fn infect_damage_to_a_planeswalker_is_still_loyalty() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let colossus = creature(95_040, cards::BLIGHTSTEEL_COLOSSUS, PlayerId::One);
+    let colossus_id = colossus.card.id;
+    game.battlefield.push(colossus);
+    let jace = game
+        .put_onto_battlefield(PlayerId::Two, cards::JACE_MEMORY_ADEPT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let starting = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == jace)
+        .expect("he is there")
+        .counters(CounterKind::Loyalty);
+
+    game.damage_target_from_kind(Some(colossus_id), Some(Target::Permanent(jace)), 2, true);
+    drain_pending(&mut game);
+
+    let walker = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == jace)
+        .expect("five loyalty survives two");
+    assert_eq!(
+        walker.counters(CounterKind::Loyalty),
+        starting - 2,
+        "the loyalty is what the damage removed",
+    );
+    assert_eq!(
+        walker.counters(CounterKind::MinusOneMinusOne),
+        0,
+        "and infect put no counters on him",
     );
 }
 
