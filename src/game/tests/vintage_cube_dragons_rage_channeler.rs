@@ -234,3 +234,38 @@ fn losing_the_fourth_type_takes_it_all_back() {
         "and free to stay home",
     );
 }
+
+/// Its ruling: damage stays marked until cleanup, so two damage that a 3/3
+/// shrugged off is lethal the moment the graveyard drops back below four
+/// card types.
+#[test]
+fn damage_it_survived_kills_it_when_delirium_goes() {
+    let (mut game, channeler) = staged(
+        &[
+            cards::MOUNTAIN,
+            cards::GRIZZLY_BEARS,
+            cards::LIGHTNING_BOLT,
+            cards::BLACK_LOTUS,
+        ],
+        &[],
+    );
+
+    game.damage_target_from(None, Some(Target::Permanent(channeler)), 2);
+    game.check_state_based_actions();
+    let body = permanent(&game, channeler);
+    assert_eq!(game.toughness(body), Some(3));
+    assert_eq!(body.damage, 2, "two damage marked on a 3/3 is survivable");
+
+    game.players[0]
+        .graveyard
+        .retain(|card| card.definition != cards::BLACK_LOTUS);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == channeler),
+        "a 1/1 with two damage on it is dead",
+    );
+}
