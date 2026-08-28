@@ -239,7 +239,23 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
             let stack_source_effect = source_zones == [ZoneKind::Stack]
                 && recipient == EffectRecipientDef::Source
                 && shared_cannot_be_countered_effect(effect);
-            battlefield_effect || stack_source_effect
+            // "As long as this isn't on the battlefield, it's a 1/1 Insect
+            // creature": what a card says about itself, read by the card
+            // view in whichever of its zones the clause names.
+            let card_source_effect = !source_zones.is_empty()
+                && source_zones.iter().all(|zone| {
+                    matches!(
+                        zone,
+                        ZoneKind::Library
+                            | ZoneKind::Hand
+                            | ZoneKind::Graveyard
+                            | ZoneKind::Exile
+                            | ZoneKind::Command
+                    )
+                })
+                && recipient == EffectRecipientDef::Source
+                && shared_card_characteristics(effect);
+            battlefield_effect || stack_source_effect || card_source_effect
         }
         EffectDef::IfCondition { condition, then } => {
             battlefield_only(source_zones)
@@ -380,6 +396,29 @@ fn shared_direct_characteristic_recipient(recipient: EffectRecipientDef) -> bool
         recipient.object_reference(),
         Some(ObjectRefDef::Source | ObjectRefDef::AttachedToSource)
     )
+}
+
+/// What a card may say about itself while it sits in a zone: types,
+/// subtypes, and a printed body, which is all a card view carries.
+fn shared_card_characteristics(effect: AppliedEffectDef) -> bool {
+    match effect {
+        AppliedEffectDef::Composite(effects) => {
+            !effects.is_empty() && effects.iter().copied().all(shared_card_characteristics)
+        }
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
+            SetOperationDef::Add(types),
+        )) => !types.is_empty(),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Subtypes(
+            SetOperationDef::Add(subtypes),
+        )) => !subtypes.is_empty(),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::SetBase {
+                power: crate::card::ValueDef::Constant(_),
+                toughness: crate::card::ValueDef::Constant(_),
+            },
+        )) => true,
+        _ => false,
+    }
 }
 
 pub(in super::super) fn shared_static_applied_effect(

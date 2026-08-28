@@ -25,6 +25,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **What a card says about itself while it is not on the battlefield.** "As
+  long as Grist isn't on the battlefield, it's a 1/1 Insect creature in
+  addition to its other types" is a clause about a card rather than about a
+  permanent, so the battlefield layer walk would never read it and nothing
+  else was looking. A static clause can now name the zones it works in and
+  hand its own card types, subtypes, and a body to the card view that
+  answers for it there. So a Grist milled off the top is an Insect and keeps
+  his own process going, a Grist in a graveyard is a creature card that his
+  own ultimate counts, and the Grist on the battlefield is a planeswalker
+  and nothing else.
+
 - **Attacking a player, as against attacking their planeswalker.** An attack
   event resolved a planeswalker to the player who controls it, which is what
   "attacks you" means (CR 506.3b) and not what "attacks the player with the

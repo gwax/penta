@@ -4,16 +4,17 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind,
-    DamageEventMatcherDef, DamageKindDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
-    DiscardFollowUpDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentCostDef,
-    EffectPaymentDef, EffectRecipientDef, ExilePlayDurationDef, FreePlayDef, FreePlayDurationDef,
-    GraveyardTypeConditionDef, ManaColor, MillLoopDef, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, SpellAdditionalCostDef, SpendModeDef, TargetChooserDef,
-    TopCardSelectionDef, TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities, tokens,
+    CardSupertype, CardType, CardTypeSet, CharacteristicOperationDef, ChoiceVisibilityDef,
+    ChooseDef, ComparisonDef, CounterKind, DamageEventMatcherDef, DamageKindDef,
+    DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardFollowUpDef, DiscardSelectionDef,
+    DividedTotal, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
+    ExilePlayDurationDef, FreePlayDef, FreePlayDurationDef, GraveyardTypeConditionDef, ManaColor,
+    MillLoopDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    SetOperationDef, SpellAdditionalCostDef, SpendModeDef, TargetChooserDef, TopCardSelectionDef,
+    TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, tokens,
 };
 use crate::{ObjectSetBindingIndex, TargetIndex, mana_cost};
 
@@ -875,10 +876,40 @@ static GRIST_LOYALTY: EffectDef = EffectDef::AddCounters {
     amount: ValueDef::Constant(1),
 };
 
-/// An Insect card in the library keeps the process going. Grist himself is
-/// one everywhere but the battlefield, which is a clause this catalog does
-/// not carry yet, so a Grist on top ends the loop here.
+/// An Insect card in the library keeps the process going -- and a Grist on
+/// top is one, which is what his own first clause is for.
 static AN_INSECT_CARD: ObjectPredicateDef = ObjectPredicateDef::Subtype("Insect");
+
+/// "A 1/1 Insect creature in addition to its other types": a creature card
+/// with an Insect subtype and a body, added to what the card already is
+/// rather than replacing it.
+static GRIST_IS_AN_INSECT: [AppliedEffectDef; 3] = [
+    AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(SetOperationDef::Add(
+        CardTypeSet::single(CardType::Creature),
+    ))),
+    AppliedEffectDef::Characteristic(CharacteristicOperationDef::Subtypes(SetOperationDef::Add(
+        &["Insect"],
+    ))),
+    AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+        PowerToughnessOperationDef::SetBase {
+            power: ValueDef::Constant(1),
+            toughness: ValueDef::Constant(1),
+        },
+    )),
+];
+
+static GRIST_IS_AN_INSECT_EVERYWHERE_ELSE: AppliedEffectDef =
+    AppliedEffectDef::Composite(&GRIST_IS_AN_INSECT);
+
+/// "As long as Grist isn't on the battlefield": every zone but that one,
+/// which is a list of source zones rather than a condition to recheck.
+static GRIST_OFF_THE_BATTLEFIELD: [ZoneKind; 5] = [
+    ZoneKind::Library,
+    ZoneKind::Hand,
+    ZoneKind::Graveyard,
+    ZoneKind::Exile,
+    ZoneKind::Command,
+];
 
 /// The library is what bounds this in practice; the limit is only there so
 /// a process with nothing to stop it still stops.
@@ -912,11 +943,15 @@ static CREATURE_CARDS_IN_YOUR_GRAVEYARD: ObjectQueryDef = ObjectQueryDef::matchi
 );
 
 static GRIST_ABILITIES: [AbilityDef; 4] = [
-    AbilityDef::not_implemented(
+    AbilityDef::static_ability(
         "As long as Grist isn't on the battlefield, it's a 1/1 Insect creature in addition to its \
          other types.",
-        "Needs characteristics that apply to a card in every zone but the battlefield.",
-    ),
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Source,
+            effect: GRIST_IS_AN_INSECT_EVERYWHERE_ELSE,
+        },
+    )
+    .with_source_zones(&GRIST_OFF_THE_BATTLEFIELD),
     AbilityDef::activated(
         "+1: Create a 1/1 black and green Insect creature token, then mill a card. If an Insect \
          card was milled this way, put a loyalty counter on Grist and repeat this process.",

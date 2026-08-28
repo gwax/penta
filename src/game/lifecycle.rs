@@ -6,7 +6,7 @@ use super::{
     PhysicalCard, PhysicalCardId, PlayerId, PlayerState, Pregame, ReplayRng, RetiredObject,
     StackObject, Step, TriggerContext, ValueDef, VecDeque, ZoneChangeOutcome, remove_card,
 };
-use crate::card::PlayerRelation;
+use crate::card::{PlayerRelation, ZoneKind};
 
 impl Game {
     /// Creates a game, shuffles both decks, and draws opening hands.
@@ -396,31 +396,41 @@ impl Game {
                 // read, and nothing in a graveyard or exile modifies it, so
                 // the printed value is the whole answer. Scavenge asks this
                 // of a card it has already exiled to pay its own cost.
-                Some(RetiredObject::Card(card)) => self.printed_card_power(card),
+                Some(RetiredObject::Card(card)) => self.printed_card_power(card, None),
                 Some(RetiredObject::Stack(_)) | None => self
                     .card_in_nonbattlefield_zone(object)
-                    .and_then(|(_, card)| self.printed_card_power(card)),
+                    .and_then(|(zone, card)| self.printed_card_power(card, Some(zone))),
             })
     }
 
     /// A card's power outside the battlefield: what its corner prints,
     /// unless it prints a characteristic-defining ability instead, which
     /// functions in every zone (CR 604.3).
-    fn printed_card_power(&self, card: &CardInstance) -> Option<i16> {
-        self.printed_card_stats(card).map(|stats| stats.power)
+    fn printed_card_power(&self, card: &CardInstance, zone: Option<ZoneKind>) -> Option<i16> {
+        self.printed_card_stats(card, zone).map(|stats| stats.power)
     }
 
     /// The mirror of [`Self::printed_card_power`]. A Lhurgoyf in a graveyard
     /// has the toughness its own text gives it there.
-    fn printed_card_toughness(&self, card: &CardInstance) -> Option<i16> {
-        self.printed_card_stats(card).map(|stats| stats.toughness)
+    fn printed_card_toughness(&self, card: &CardInstance, zone: Option<ZoneKind>) -> Option<i16> {
+        self.printed_card_stats(card, zone)
+            .map(|stats| stats.toughness)
     }
 
     /// Outside the battlefield nobody controls a card, so its owner is who
     /// "you" means to any amount its own text reads (CR 108.4).
-    fn printed_card_stats(&self, card: &CardInstance) -> Option<crate::CreatureStats> {
+    fn printed_card_stats(
+        &self,
+        card: &CardInstance,
+        zone: Option<ZoneKind>,
+    ) -> Option<crate::CreatureStats> {
         let definition = self.catalog.get(card.definition)?;
-        let printed = definition.rules.creature_stats()?;
+        // What the card says it is where it is comes first: a planeswalker
+        // card that is a 1/1 Insect in a graveyard has a body there and
+        // nothing in its corner to read it from.
+        let printed = zone
+            .and_then(|zone| Self::card_zone_stats(definition, zone))
+            .or_else(|| definition.rules.creature_stats())?;
         Some(
             self.card_defined_stats(definition, card.id, card.owner)
                 .over(printed),
@@ -628,10 +638,10 @@ impl Game {
             .and_then(|permanent| self.toughness(permanent))
             .or_else(|| match self.retired_objects.get(&object) {
                 Some(RetiredObject::Permanent { toughness, .. }) => *toughness,
-                Some(RetiredObject::Card(card)) => self.printed_card_toughness(card),
+                Some(RetiredObject::Card(card)) => self.printed_card_toughness(card, None),
                 Some(RetiredObject::Stack(_)) | None => self
                     .card_in_nonbattlefield_zone(object)
-                    .and_then(|(_, card)| self.printed_card_toughness(card)),
+                    .and_then(|(zone, card)| self.printed_card_toughness(card, Some(zone))),
             })
     }
 

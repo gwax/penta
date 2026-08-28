@@ -1,8 +1,10 @@
 use super::{
-    CardBehavior, CardDefinition, CardDefinitionId, CardSupertype, CardTypeSet,
-    CharacteristicContext, Cow, DeclarativeAbilityDef, Game, GameObjectId, ManaCost, ModeId,
-    ObjectCharacteristics, PlayRestriction, PlayerId, RetiredObject, StackObject, StackObjectKind,
-    Step, Target, TargetPredicate, TargetSelection, TriggerEventObject, applicable_part_ids,
+    AppliedEffectDef, CardBehavior, CardDefinition, CardDefinitionId, CardSupertype, CardTypeSet,
+    CharacteristicContext, CharacteristicOperationDef, Cow, DeclarativeAbilityDef, EffectDef,
+    EffectRecipientDef, Game, GameObjectId, ManaCost, ModeId, ObjectCharacteristics,
+    PlayRestriction, PlayerId, PowerToughnessOperationDef, RetiredObject, SetOperationDef,
+    StackObject, StackObjectKind, Step, Target, TargetPredicate, TargetSelection,
+    TriggerEventObject, ValueDef, ZoneKind, applicable_part_ids,
 };
 
 impl Game {
@@ -151,6 +153,64 @@ impl Game {
         })
     }
 
+    /// The applied effects a card's own static clauses hand it while it is
+    /// in `zone`. Only clauses that name the card itself, and only from the
+    /// zones the clause says it works in -- which is what makes "as long as
+    /// this isn't on the battlefield" a source-zone list rather than a
+    /// condition.
+    fn self_characteristics_in_zone(
+        definition: &CardDefinition,
+        zone: ZoneKind,
+    ) -> Vec<AppliedEffectDef> {
+        let mut applied = Vec::new();
+        for ability in definition.rules.ability_clauses() {
+            let (true, DeclarativeAbilityDef::Static(static_definition)) =
+                (ability.is_executable(), ability.definition)
+            else {
+                continue;
+            };
+            if !static_definition.source_zones.contains(&zone) {
+                continue;
+            }
+            let Some(EffectDef::StaticApply { recipient, effect }) = ability.declarative_effect()
+            else {
+                continue;
+            };
+            if recipient != EffectRecipientDef::Source {
+                continue;
+            }
+            match effect {
+                AppliedEffectDef::Composite(effects) => applied.extend(effects.iter().copied()),
+                effect => applied.push(effect),
+            }
+        }
+        applied
+    }
+
+    /// The body a card's own zone-scoped clause gives it, for a card whose
+    /// corner prints none. A planeswalker card that is "a 1/1 Insect
+    /// creature" anywhere but the battlefield has a power to read there and
+    /// nothing printed to read it from.
+    pub(super) fn card_zone_stats(
+        definition: &CardDefinition,
+        zone: ZoneKind,
+    ) -> Option<crate::CreatureStats> {
+        Self::self_characteristics_in_zone(definition, zone)
+            .into_iter()
+            .find_map(|effect| match effect {
+                AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                    PowerToughnessOperationDef::SetBase {
+                        power: ValueDef::Constant(power),
+                        toughness: ValueDef::Constant(toughness),
+                    },
+                )) => Some(crate::CreatureStats {
+                    power: i16::try_from(power).ok()?,
+                    toughness: i16::try_from(toughness).ok()?,
+                }),
+                _ => None,
+            })
+    }
+
     pub(super) fn printed_trigger_event_object(
         &self,
         id: GameObjectId,
@@ -200,6 +260,41 @@ impl Game {
             }
             for supertype in CardSupertype::ALL {
                 supertypes[supertype.index()] |= part.rules.has_supertype(supertype);
+            }
+        }
+        // What the card says about itself while it is here. "As long as
+        // Grist isn't on the battlefield, it's a 1/1 Insect creature in
+        // addition to its other types" is a clause about a card rather than
+        // about a permanent, so nothing in the battlefield layer walk would
+        // ever read it.
+        if let Some(zone) = context.zone() {
+            for effect in Self::self_characteristics_in_zone(definition, zone) {
+                match effect {
+                    AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
+                        SetOperationDef::Add(added),
+                    )) => types = types.union(added),
+                    AppliedEffectDef::Characteristic(CharacteristicOperationDef::Subtypes(
+                        SetOperationDef::Add(added),
+                    )) => {
+                        for subtype in added {
+                            if !subtypes.contains(subtype) {
+                                subtypes.push(*subtype);
+                            }
+                        }
+                    }
+                    AppliedEffectDef::Characteristic(
+                        CharacteristicOperationDef::PowerToughness(
+                            PowerToughnessOperationDef::SetBase {
+                                power: ValueDef::Constant(set_power),
+                                toughness: ValueDef::Constant(set_toughness),
+                            },
+                        ),
+                    ) => {
+                        power = i16::try_from(set_power).ok();
+                        toughness = i16::try_from(set_toughness).ok();
+                    }
+                    _ => {}
+                }
             }
         }
         Some(TriggerEventObject {

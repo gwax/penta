@@ -30,6 +30,21 @@ pub enum CharacteristicContext {
 }
 
 impl CharacteristicContext {
+    /// The zone this context is a view of, when it is a zone at all. The
+    /// stack and the battlefield answer `None`: what a card is there is a
+    /// spell or a permanent, and both have their own views.
+    #[must_use]
+    pub const fn zone(&self) -> Option<super::ZoneKind> {
+        match self {
+            Self::Library => Some(super::ZoneKind::Library),
+            Self::Hand => Some(super::ZoneKind::Hand),
+            Self::Graveyard => Some(super::ZoneKind::Graveyard),
+            Self::Exile => Some(super::ZoneKind::Exile),
+            Self::Command => Some(super::ZoneKind::Command),
+            Self::Stack { .. } | Self::Battlefield { .. } => None,
+        }
+    }
+
     const fn uses_canonical_outside_stack_parts(&self) -> bool {
         matches!(
             self,

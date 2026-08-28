@@ -193,7 +193,9 @@ fn the_minus_trades_a_creature_for_theirs() {
     assert_eq!(loyalty(&game, grist), 1, "three minus two");
 }
 
-/// The ultimate drains for the creature cards in your graveyard.
+/// The ultimate drains for the creature cards in your graveyard -- and
+/// paying it puts Grist himself among them, because a Grist that is not on
+/// the battlefield is a creature card too.
 #[test]
 fn the_ultimate_drains_for_the_graveyard() {
     let (mut game, grist) = staged(&[cards::ISLAND]);
@@ -214,8 +216,95 @@ fn the_ultimate_drains_for_the_graveyard() {
 
     activate(&mut game, grist, 3, &[]);
 
-    assert_eq!(
-        game.players[1].life, 17,
-        "three creature cards, and the land is not one",
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GRIST_THE_HUNGER_TIDE),
+        "spending the last loyalty put him there",
     );
+    assert_eq!(
+        game.players[1].life, 16,
+        "three Bears and Grist, and the land is not one of them",
+    );
+}
+
+/// "As long as Grist isn't on the battlefield, it's a 1/1 Insect creature":
+/// a Grist milled off the top is an Insect card, so the process keeps going
+/// the way it would for any other Insect.
+#[test]
+fn a_grist_on_top_is_an_insect_and_repeats_the_process() {
+    let (mut game, grist) = staged(&[
+        cards::ISLAND,
+        cards::GRIZZLY_BEARS,
+        cards::GRIST_THE_HUNGER_TIDE,
+    ]);
+
+    activate(&mut game, grist, 1, &[]);
+
+    assert_eq!(insects(&game), 2, "the Grist milled counted as an Insect");
+    assert_eq!(game.players[0].graveyard.len(), 2, "two cards milled");
+    assert_eq!(loyalty(&game, grist), 5, "the plus and the Insect");
+}
+
+/// He is one wherever he is not on the battlefield -- a hand and a
+/// graveyard alike -- and he is not one while he is.
+#[test]
+fn he_is_a_creature_card_off_the_battlefield_only() {
+    let (mut game, grist) = staged(&[]);
+    let is_a_creature_card = |game: &Game, card: &CardInstance, zone| {
+        game.card_object_matches(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            card,
+            zone,
+            grist,
+        )
+    };
+
+    let in_hand = game
+        .build_zone(PlayerId::One, &[cards::GRIST_THE_HUNGER_TIDE])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    assert!(
+        is_a_creature_card(&game, &in_hand, ZoneKind::Hand),
+        "a Grist in hand is a creature card",
+    );
+    game.players[0].graveyard.push(in_hand);
+    let buried = game.players[0].graveyard.last().expect("it is there");
+    assert!(
+        is_a_creature_card(&game, buried, ZoneKind::Graveyard),
+        "and so is one in a graveyard",
+    );
+
+    let permanent = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == grist)
+        .expect("he is on the battlefield");
+    assert!(
+        !game
+            .permanent_types(permanent)
+            .is_some_and(|types| types.contains(CardType::Creature)),
+        "the one on the battlefield is a planeswalker and nothing else",
+    );
+}
+
+/// The body travels with the type: a Grist outside the battlefield is a
+/// 1/1, whatever a predicate asks of it.
+#[test]
+fn the_card_off_the_battlefield_is_a_one_one() {
+    let (mut game, _grist) = staged(&[]);
+    let card = game
+        .build_zone(PlayerId::One, &[cards::GRIST_THE_HUNGER_TIDE])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let id = card.id;
+    game.players[0].graveyard.push(card);
+
+    assert_eq!(game.current_or_last_known_power(id), Some(1));
+    assert_eq!(game.current_or_last_known_toughness(id), Some(1));
 }

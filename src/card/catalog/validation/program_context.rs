@@ -209,6 +209,33 @@ fn static_ability_increase_supported(
         && static_object_predicate_supported(matcher)
 }
 
+/// What a card may say about itself while it is in a zone: the pieces the
+/// card view can carry, which are types, subtypes, and a printed body.
+fn card_static_applied_effect_supported(effect: AppliedEffectDef) -> bool {
+    match effect {
+        AppliedEffectDef::Composite(effects) => {
+            !effects.is_empty()
+                && effects
+                    .iter()
+                    .copied()
+                    .all(card_static_applied_effect_supported)
+        }
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
+            SetOperationDef::Add(types),
+        )) => !types.is_empty(),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Subtypes(
+            SetOperationDef::Add(subtypes),
+        )) => !subtypes.is_empty(),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+            PowerToughnessOperationDef::SetBase {
+                power: ValueDef::Constant(_),
+                toughness: ValueDef::Constant(_),
+            },
+        )) => true,
+        _ => false,
+    }
+}
+
 fn validate_static_apply(
     source_zones: &[ZoneKind],
     recipient: EffectRecipientDef,
@@ -221,6 +248,24 @@ fn validate_static_apply(
             Ok(())
         } else {
             Err("StaticApply outside its supported stack-source shape")
+        };
+    }
+    // "As long as this isn't on the battlefield, it's a 1/1 Insect creature":
+    // a clause about the card rather than about a permanent, read wherever
+    // the card is asked about. Only what the card says about itself, and
+    // only the characteristics a card-in-a-zone view can carry.
+    if !source_zones.is_empty()
+        && source_zones
+            .iter()
+            .all(|zone| matches!(zone, ZoneKind::Library | ZoneKind::Hand | ZoneKind::Exile))
+        || source_zones.contains(&ZoneKind::Library) && source_zones.contains(&ZoneKind::Graveyard)
+    {
+        return if recipient == EffectRecipientDef::Source
+            && card_static_applied_effect_supported(effect)
+        {
+            Ok(())
+        } else {
+            Err("StaticApply outside its supported card-source shape")
         };
     }
     if !matches!(source_zones, [ZoneKind::Battlefield | ZoneKind::Graveyard]) {
