@@ -108,3 +108,53 @@ fn neither_half_can_be_regenerated_through() {
         );
     }
 }
+
+/// "Because a spell with overload doesn't target when its overload cost is
+/// paid, it may affect permanents with hexproof or with protection from the
+/// appropriate color." The targeted half cannot name a creature wearing
+/// Lightning Greaves; the overloaded half kills it anyway.
+#[test]
+fn overload_reaches_a_creature_nothing_may_target() {
+    for overloaded in [false, true] {
+        let (mut game, damn) = staged(overloaded);
+        let bears = creature(95_600, cards::GRIZZLY_BEARS, PlayerId::Two);
+        let bears_id = bears.card.id;
+        game.battlefield.push(bears);
+        let mut greaves = creature(95_601, cards::LIGHTNING_GREAVES, PlayerId::Two);
+        greaves.attached_to = Some(bears_id);
+        game.battlefield.push(greaves);
+        drain_pending(&mut game);
+        assert!(
+            game.permanent_has_executable_keyword(
+                game.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == bears_id)
+                    .expect("the Bears are there"),
+                KeywordAbility::Shroud,
+            ),
+            "the Greaves are on",
+        );
+
+        if overloaded {
+            cast_damn(&mut game, damn, true);
+            assert!(
+                !game
+                    .battlefield
+                    .iter()
+                    .any(|permanent| permanent.card.id == bears_id),
+                "overload names nothing, so shroud is no answer to it",
+            );
+        } else {
+            assert!(
+                !game.legal_actions(PlayerId::One).iter().any(|action| {
+                    matches!(action, Action::CastSpell { card, choices, .. }
+                        if *card == damn
+                            && choices
+                                .iter_targets()
+                                .any(|target| *target == Target::Permanent(bears_id)))
+                }),
+                "the printed half has to name something, and cannot name this",
+            );
+        }
+    }
+}
