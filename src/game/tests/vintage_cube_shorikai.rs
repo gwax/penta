@@ -192,3 +192,73 @@ fn creatures_without_the_clause_pay_their_own_power() {
 
     assert!(crew_action(&game, shorikai).is_some(), "and four are eight");
 }
+
+/// The loot activation right now, if it is on offer.
+fn loot_action(game: &Game, shorikai: GameObjectId) -> Option<Action> {
+    game.legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, ability: AbilityOrigin::Printed { ability, .. }, .. }
+                if *source == shorikai && *ability == AbilityId(0))
+        })
+}
+
+/// A Vehicle is not a creature, so the tap in its cost is not a creature's
+/// tap: Shorikai loots on the turn it lands. Crewing is what changes that --
+/// what it leaves is a creature that has not been yours since the turn
+/// began, and CR 302.6 holds its {T} down for the rest of the turn.
+#[test]
+fn it_loots_the_turn_it_lands_and_stops_once_it_is_crewed() {
+    let (mut game, _old) = staged();
+    game.battlefield.clear();
+    let shorikai = game
+        .put_onto_battlefield(PlayerId::One, cards::SHORIKAI_GENESIS_ENGINE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == shorikai)
+            .expect("it is there")
+            .entered_controller_turn,
+        game.turns_started[0],
+        "it arrived this turn",
+    );
+
+    let loot = loot_action(&game, shorikai).expect("a Vehicle has no summoning sickness to have");
+    game.apply(PlayerId::One, loot).expect("it activates");
+    settle(&mut game);
+    assert_eq!(pilots(&game).len(), 1, "and it left a Pilot behind");
+
+    // Enough bodies to crew it, all of them just as new -- crew taps them as
+    // a cost rather than with a {T} of their own, so their own newness does
+    // not matter.
+    for index in 0..4 {
+        game.put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+            .unwrap_or_else(|error| panic!("bear {index}: {error}"));
+    }
+    drain_pending(&mut game);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == shorikai)
+    {
+        permanent.tapped = false;
+    }
+
+    let crew = crew_action(&game, shorikai).expect("four Bears are eight power");
+    game.apply(PlayerId::One, crew).expect("it crews");
+    settle(&mut game);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == shorikai)
+    {
+        permanent.tapped = false;
+    }
+
+    assert!(
+        loot_action(&game, shorikai).is_none(),
+        "now that it is a creature, its tap waits for your next turn",
+    );
+}
