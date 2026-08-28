@@ -221,3 +221,41 @@ fn mana_abilities_still_work_under_it() {
         "a land still taps for mana",
     );
 }
+
+/// "Split second doesn't stop triggered abilities from triggering... its
+/// controller puts it on the stack and chooses targets for it, if any. Those
+/// abilities will resolve as normal." A Sedgemoor Witch watching you cast
+/// this makes her Pest under it.
+#[test]
+fn a_trigger_still_fires_under_split_second() {
+    let (mut game, reflexes, bears) = staged();
+    game.put_onto_battlefield(PlayerId::One, cards::SEDGEMOOR_WITCH)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let pests = |game: &Game| {
+        game.battlefield
+            .iter()
+            .filter(|permanent| game.effective_subtypes(permanent).contains(&"Pest"))
+            .count()
+    };
+    assert_eq!(pests(&game), 0, "no Pest before it is cast");
+
+    cast_at(&mut game, reflexes, bears);
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { .. })),
+        "split second is on: nothing may be cast",
+    );
+
+    resolve(&mut game);
+
+    assert_eq!(
+        pests(&game),
+        1,
+        "and magecraft triggered and resolved all the same",
+    );
+}
