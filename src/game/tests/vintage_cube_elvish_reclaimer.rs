@@ -167,3 +167,55 @@ fn it_needs_a_land_to_eat() {
         "the sacrifice is part of the cost",
     );
 }
+
+/// The land he eats is a land card in your graveyard, so the third
+/// sacrifice pays for the fetch and turns his own anthem on: a 1/2 spends
+/// its activation and comes out the other side a 3/4.
+#[test]
+fn the_land_he_eats_can_be_the_third_one() {
+    let (mut game, reclaimer) = staged(&[cards::MOUNTAIN, cards::ISLAND], &[cards::SWAMP]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 2);
+    assert_eq!(
+        stats(&game, reclaimer),
+        (Some(1), Some(2)),
+        "two land cards is not three",
+    );
+
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == reclaimer)
+        })
+        .expect("two mana, a tap, and a land pay for it");
+    game.apply(PlayerId::One, activate).expect("it activates");
+    settle(&mut game);
+
+    assert_eq!(
+        stats(&game, reclaimer),
+        (Some(3), Some(4)),
+        "the Forest he sacrificed is the third land card in the graveyard",
+    );
+}
+
+/// The tap is a creature's tap, so a Reclaimer that arrived this turn has
+/// nothing to offer however much mana is up.
+#[test]
+fn a_fresh_reclaimer_cannot_activate() {
+    let (mut game, reclaimer) = staged(&[], &[cards::MOUNTAIN]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 2);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == reclaimer)
+    {
+        permanent.entered_controller_turn = game.turns_started[0];
+    }
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == reclaimer)
+        }),
+        "an Elf that arrived this turn cannot tap for it",
+    );
+}
