@@ -204,3 +204,49 @@ fn a_fresh_harvester_cannot_activate() {
         "summoning sickness stops the tap",
     );
 }
+
+/// "The value of X is determined only once, as the ability resolves." Not as
+/// it is activated: a Blood cashed in while the removal waits on the stack
+/// is a Blood the removal no longer counts.
+#[test]
+fn a_blood_spent_in_response_shrinks_the_removal() {
+    let (mut game, harvester, _bears) = staged(1);
+    let angel = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(bloods(&game), 2, "two Blood is -4/-4, which kills a 4/4");
+
+    let action = removal(&game, harvester, angel).expect("the removal is offered");
+    game.apply(PlayerId::One, action).expect("it activates");
+
+    // In response, one of the two is cashed in for a card.
+    let blood = game
+        .battlefield
+        .iter()
+        .find(|permanent| is_token_with(permanent, tokens::blood()))
+        .expect("one is still there")
+        .card
+        .id;
+    game.players[0]
+        .hand
+        .push(card(96_100, cards::FOREST, PlayerId::One));
+    game.players[0].mana_pool.colorless = 1;
+    let loot = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == blood))
+        .expect("the Blood can be cashed in while the removal waits");
+    game.apply(PlayerId::One, loot).expect("it activates");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(bloods(&game), 1, "one Blood is left when it resolves");
+    let survivor = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == angel)
+        .expect("minus two is not lethal to a 4/4");
+    assert_eq!(game.power(survivor), Some(2));
+    assert_eq!(game.toughness(survivor), Some(2));
+}
