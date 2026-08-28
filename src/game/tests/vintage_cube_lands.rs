@@ -303,3 +303,85 @@ fn a_fetch_land_finds_a_shock_land_and_the_shock_still_asks() {
         "one for the Tarn and two for the Vents",
     );
 }
+
+/// A shock land's ruling: "If an effect puts this land onto the battlefield
+/// tapped, you may pay 2 life, but it still enters tapped." The Wight fetches
+/// tapped, and paying buys nothing but the two life.
+#[test]
+fn a_shock_land_fetched_tapped_stays_tapped_however_it_is_paid_for() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let wight = game
+        .put_onto_battlefield(PlayerId::One, cards::WIGHT_OF_THE_RELIQUARY)
+        .expect("cataloged");
+    let fodder = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(62_100, cards::SACRED_FOUNDRY, PlayerId::One));
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let life = game.players[0].life;
+
+    let fetch = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, cost_objects, .. }
+                if *source == wight && cost_objects.contains(&fodder))
+        })
+        .expect("a spare creature pays for the search");
+    game.apply(PlayerId::One, fetch).expect("it activates");
+    pass_priority_pair(&mut game);
+
+    let search = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the search offers what it found");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: search.id,
+            options: vec![search.options[0].id],
+        },
+    )
+    .expect("taking it is legal");
+
+    let shock = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the shock land still asks about its two life");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: shock.id,
+            options: vec![1],
+        },
+    )
+    .expect("paying is offered");
+    drain_pending(&mut game);
+
+    let foundry = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SACRED_FOUNDRY)
+        .expect("it arrived");
+    assert!(
+        foundry.tapped,
+        "what put it there said tapped, and the two life does not answer that",
+    );
+    assert_eq!(
+        game.players[0].life,
+        life - 2,
+        "but the payment was made all the same",
+    );
+}
