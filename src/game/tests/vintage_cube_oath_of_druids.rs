@@ -269,3 +269,66 @@ fn the_comparison_is_made_from_the_choosing_seat() {
     assert_eq!(decision.player, PlayerId::Two);
     assert_eq!(decision.options.len(), 1);
 }
+
+/// "The ability doesn't resolve if it's no longer true at that time." The
+/// comparison is part of the targeting requirement, so a target whose lead
+/// is gone by resolution is an illegal target and the whole ability is
+/// removed from the stack.
+#[test]
+fn a_lead_lost_in_response_takes_the_ability_with_it() {
+    let mut game = staged(&[cards::SERRA_ANGEL]);
+    let theirs = creature(200_600, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let theirs_id = theirs.card.id;
+    game.battlefield.push(theirs);
+
+    // Player One is behind one creature to none, so their upkeep names
+    // Player Two.
+    let decision = first_decision(&mut game, PlayerId::One);
+    assert_eq!(decision.player, PlayerId::One);
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![decision.options[0].id],
+        },
+    )
+    .expect("naming the only legal target is legal");
+
+    // The lead goes away before the ability resolves.
+    game.move_permanents_to_graveyard(&[theirs_id]);
+    drain_pending(&mut game);
+
+    assert!(
+        !on_battlefield(&game, cards::SERRA_ANGEL),
+        "the ability did nothing at all",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        1,
+        "and nothing was revealed on the way",
+    );
+}
+
+/// "The ability can only target an opponent of the current player." Being
+/// behind your own board is not a thing that can happen, and the check is
+/// that the offer names the other seat rather than your own.
+#[test]
+fn the_only_target_it_ever_offers_is_the_opponent() {
+    let mut game = staged(&[cards::SERRA_ANGEL]);
+    game.battlefield
+        .push(creature(200_700, cards::GRIZZLY_BEARS, PlayerId::Two));
+    game.battlefield
+        .push(creature(200_701, cards::GRIZZLY_BEARS, PlayerId::Two));
+
+    let decision = first_decision(&mut game, PlayerId::One);
+
+    assert_eq!(
+        decision
+            .options
+            .iter()
+            .map(|option| option.label.as_str())
+            .collect::<Vec<_>>(),
+        vec!["your opponent"],
+        "their seat and no other, even with two creatures to name it for",
+    );
+}
