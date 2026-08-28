@@ -1,7 +1,9 @@
 use super::*;
 
+/// Mana alone is not a reason to hold Main 1 open: every untapped land would
+/// otherwise force a stop on a turn the player cannot spend it.
 #[test]
-fn human_main_one_stops_even_when_only_mana_actions_are_available() {
+fn human_main_one_yields_when_only_mana_actions_are_available() {
     let actions = [
         Action::Concede,
         Action::ActivateManaAbility {
@@ -27,7 +29,8 @@ fn human_main_one_stops_even_when_only_mana_actions_are_available() {
             false,
             &actions,
         ),
-        None
+        Some(Action::PassPriority),
+        "an actionless main phase on the human's own turn yields too",
     );
     assert_eq!(
         automatic_human_action(
@@ -43,6 +46,52 @@ fn human_main_one_stops_even_when_only_mana_actions_are_available() {
         ),
         Some(Action::PassPriority),
         "an actionless opponent main phase can still auto-yield",
+    );
+}
+
+/// What the player keeps when Main 1 no longer stops on its own: a stop they
+/// set, and the attack, which is a decision rather than a window.
+#[test]
+fn an_empty_main_one_still_honours_a_stop_and_the_attack_decision() {
+    let quiet = [Action::Concede, Action::PassPriority];
+    assert_eq!(
+        automatic_human_action(
+            Step::PrecombatMain,
+            true,
+            true,
+            false,
+            true,
+            true,
+            false,
+            false,
+            &quiet,
+        ),
+        None,
+        "a Main 1 stop still holds the window open",
+    );
+
+    let attacks = [
+        Action::Concede,
+        Action::DeclareAttacker {
+            attacker: CardInstanceId(7),
+            defender: penta::AttackDefender::Player(PlayerId::Two),
+        },
+        Action::FinishDeclaringAttackers,
+    ];
+    assert_eq!(
+        automatic_human_action(
+            Step::DeclareAttackers,
+            true,
+            true,
+            false,
+            false,
+            true,
+            false,
+            false,
+            &attacks,
+        ),
+        None,
+        "the step the skipped main phase runs into is the player's call",
     );
 }
 

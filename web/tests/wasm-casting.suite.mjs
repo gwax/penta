@@ -18,9 +18,10 @@ test("auto-pass declines an unavailable Chain Lightning copy", async () => {
     ).index,
   );
   state = JSON.parse(game.state_json());
-  game.act(state.actions.find((action) => action.label === "Pass priority").index);
-  state = JSON.parse(game.state_json());
 
+  // Casting the goblin was the last thing on offer, so auto-pass carries the
+  // rest of this turn and the opponent's whole turn on its own. The next
+  // window the player is handed is their next first main.
   assert.equal(state.turn, 2);
   assert.equal(state.step, "Precombat Main");
   assert.ok(

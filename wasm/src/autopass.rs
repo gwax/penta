@@ -418,12 +418,10 @@ pub(super) fn automatic_human_action_for_context(
     {
         return Some(pass.clone());
     }
-    // Never fast-forward through the human's entire turn. Even with no card
-    // actions available, Main 1 is the stable point where the player can see
-    // the draw and deliberately advance into combat.
-    if context.human_is_active && context.step == Step::PrecombatMain && context.stack_is_empty {
-        return None;
-    }
+    // Main 1 keeps no window of its own. A turn with nothing to cast, play,
+    // or activate is a turn the player never has to click through: the pass
+    // carries on to the first step that actually asks them something, and a
+    // phase stop is how they ask for the beat back.
     let has_meaningful_choice = actions.iter().any(|action| {
         !matches!(
             action,
