@@ -2728,6 +2728,12 @@ static CRABOMINATION_ABILITIES: [AbilityDef; 2] = [
         EffectDef::None,
     )
     .with_alternative_additional_cost(&SACRIFICE_AN_ARTIFACT),
+    // The free cast happens as the trigger resolves; what is not cast then
+    // stays in exile.
+    //
+    // Audit: partial — the pile is offered one card at a time rather than as
+    // a choice among the three, so which card the permission reaches is the
+    // order they were exiled in rather than the caster's pick.
     abilities::enters_trigger_with_targets(
         "When this creature enters, target opponent exiles the top card of their library, a card \
          at random from their graveyard, and a card at random from their hand. You may cast a \
@@ -2736,7 +2742,7 @@ static CRABOMINATION_ABILITIES: [AbilityDef; 2] = [
         EffectDef::ExileOneFromEachZone(&PileExileDef {
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             zones: &CRABOMINATION_ZONES,
-            permission: Some(ExiledCastPermissionDef::FreeThisTurn),
+            permission: Some(ExiledCastPermissionDef::FreeWhileResolving),
         }),
     ),
 ];

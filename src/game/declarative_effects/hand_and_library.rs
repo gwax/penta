@@ -49,9 +49,12 @@ impl Game {
         player: PlayerId,
         zones: &'static [crate::card::ZonePickDef],
         permission: Option<crate::card::ExiledCastPermissionDef>,
-        source: GameObjectId,
-        caster: PlayerId,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
     ) {
+        let source = object.card.id;
+        let caster = object.controller;
         let mut pile = Vec::new();
         for pick in zones {
             let size = match pick.zone {
@@ -91,16 +94,24 @@ impl Game {
         // One permission over the pile, named by the object whose
         // resolution made it: casting any one of these spends it, which is
         // what "a spell from among cards exiled this way" allows.
-        for card in pile {
+        for card in &pile {
             match permission {
                 crate::card::ExiledCastPermissionDef::EnergyEqualToManaValue => {
-                    self.permit_energy_cast(card, caster);
+                    self.permit_energy_cast(*card, caster);
                 }
-                crate::card::ExiledCastPermissionDef::FreeThisTurn => {
-                    self.permit_free_play_this_turn(card, caster);
+                crate::card::ExiledCastPermissionDef::FreeWhileResolving => {
+                    self.permit_free_play_this_turn(*card, caster);
                 }
             }
-            self.group_last_exile_permission(card, source);
+            self.group_last_exile_permission(*card, source);
+        }
+        // "As this ability resolves": a free cast with no printed duration
+        // happens here or not at all, so the permission is offered as a
+        // standing decision and declining takes it straight back.
+        if permission == crate::card::ExiledCastPermissionDef::FreeWhileResolving {
+            for card in pile {
+                self.offer_permitted_play(caster, card, object, context, scoped);
+            }
         }
     }
 
@@ -112,10 +123,13 @@ impl Game {
         &mut self,
         player: PlayerId,
         predicate: ObjectPredicateDef,
-        source: GameObjectId,
-        caster: PlayerId,
         permission: crate::card::ExiledCastPermissionDef,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
     ) {
+        let source = object.source.unwrap_or(object.id);
+        let caster = object.controller;
         let mut passed = Vec::new();
         let mut matched = None;
         while let Some(card) = self.players[player.index()].library.pop() {
@@ -148,8 +162,9 @@ impl Game {
             crate::card::ExiledCastPermissionDef::EnergyEqualToManaValue => {
                 self.permit_energy_cast(exiled, caster);
             }
-            crate::card::ExiledCastPermissionDef::FreeThisTurn => {
+            crate::card::ExiledCastPermissionDef::FreeWhileResolving => {
                 self.permit_free_play_this_turn(exiled, caster);
+                self.offer_permitted_play(caster, exiled, object, context, scoped);
             }
         }
     }
@@ -301,8 +316,9 @@ impl Game {
                             player,
                             pile.zones,
                             pile.permission,
-                            object.card.id,
-                            object.controller,
+                            object,
+                            context,
+                            scoped,
                         );
                     }
                 }
@@ -524,15 +540,10 @@ impl Game {
                 object: predicate,
                 permission,
             } => {
-                let source = object.source.unwrap_or(object.id);
                 for target in self.effect_recipients(recipient, object, context, scoped) {
                     if let Target::Player(player) = target {
                         self.exile_from_top_until(
-                            player,
-                            predicate,
-                            source,
-                            object.controller,
-                            permission,
+                            player, predicate, permission, object, context, scoped,
                         );
                     }
                 }

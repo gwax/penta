@@ -212,14 +212,22 @@ fn staged_with_their_cards() -> (Game, GameObjectId) {
     (game, held)
 }
 
-/// Casts the Crab for its printed cost and lets the trigger resolve.
+/// Casts the Crab for its printed cost and lets the trigger resolve, past
+/// the cast offer it hands out.
 fn hard_cast(game: &mut Game, held: GameObjectId) {
+    hard_cast_holding_offer(game, held);
+    drain_pending(game);
+}
+
+/// The same, stopped at the standing offer: the free cast happens while it
+/// waits or not at all.
+fn hard_cast_holding_offer(game: &mut Game, held: GameObjectId) {
     let action = casts(game, held)
         .into_iter()
         .next()
         .expect("six mana casts it");
     game.apply(PlayerId::One, action).expect("it is cast");
-    drain_pending(game);
+    drain_to_decision(game);
 }
 
 /// One card out of each of the three zones.
@@ -263,14 +271,8 @@ fn empty_zones_are_skipped() {
     );
 }
 
-/// The permission is the Crab's controller's: one of the three may be cast
-/// for nothing.
-#[test]
-fn one_of_the_three_may_be_cast_for_free() {
-    let (mut game, held) = staged_with_their_cards();
-    hard_cast(&mut game, held);
-    game.players[0].mana_pool = ManaPool::default();
-
+/// The exiled cards castable for nothing right now.
+fn free_casts(game: &Game) -> Vec<GameObjectId> {
     let mut free = game
         .legal_actions(PlayerId::One)
         .into_iter()
@@ -285,46 +287,88 @@ fn one_of_the_three_may_be_cast_for_free() {
         .collect::<Vec<_>>();
     free.sort_unstable();
     free.dedup();
-    assert_eq!(
-        free.len(),
-        3,
-        "every card in the pile is castable with no mana at all",
+    free
+}
+
+/// Declines the offer in front of you and stops at the next one.
+fn decline_offer(game: &mut Game) {
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("an offer is waiting");
+    game.apply(
+        decision.player,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![decision.options[0].id],
+        },
+    )
+    .expect("declining is what the offer's one option is");
+    drain_to_decision(game);
+}
+
+/// The permission is the Crab's controller's: one card out of their pile is
+/// castable for nothing while the offer waits.
+///
+/// Audit: partial — the pile is offered one card at a time rather than as a
+/// choice among the three, so which one the permission reaches is the order
+/// they were exiled in rather than the caster's pick.
+#[test]
+fn one_of_the_three_may_be_cast_for_free() {
+    let (mut game, held) = staged_with_their_cards();
+    hard_cast_holding_offer(&mut game, held);
+    game.players[0].mana_pool = ManaPool::default();
+
+    let free = free_casts(&game);
+    assert_eq!(free.len(), 1, "one of theirs, with no mana at all");
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|exiled| exiled.id == free[0]),
+        "and it is a card out of their zones",
     );
 }
 
+/// Declining is an answer like any other: the pile's one permission goes
+/// back, and the ability has resolved, so nothing in it may be cast later in
+/// the turn.
+#[test]
+fn declining_strands_the_whole_pile() {
+    let (mut game, held) = staged_with_their_cards();
+    hard_cast_holding_offer(&mut game, held);
+    game.players[0].mana_pool = ManaPool::default();
+
+    decline_offer(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        free_casts(&game).is_empty(),
+        "what was not cast as it resolved stays in exile",
+    );
+    assert_eq!(game.players[1].exile.len(), 3, "all three are still there");
+}
+
 /// "A spell", not all of them: casting one spends the permission over the
-/// whole pile.
+/// whole pile, and the offers behind it go with it.
 #[test]
 fn casting_one_spends_the_permission() {
     let (mut game, held) = staged_with_their_cards();
-    hard_cast(&mut game, held);
+    hard_cast_holding_offer(&mut game, held);
     game.players[0].mana_pool = ManaPool::default();
 
-    let bolt = game.players[1]
-        .exile
-        .iter()
-        .find(|card| card.definition == cards::LIGHTNING_BOLT)
-        .expect("their Bolt is in exile")
-        .id;
+    let first = *free_casts(&game).first().expect("one of them is on offer");
     let cast = game
         .legal_actions(PlayerId::One)
         .into_iter()
-        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == bolt))
-        .expect("the Bolt is free to cast");
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == first))
+        .expect("it is free to cast");
     game.apply(PlayerId::One, cast).expect("it is cast");
     drain_pending(&mut game);
 
     assert!(
-        !game
-            .legal_actions(PlayerId::One)
-            .iter()
-            .any(|action| match action {
-                Action::CastSpell { card, .. } => game.players[1]
-                    .exile
-                    .iter()
-                    .any(|exiled| exiled.id == *card),
-                _ => false,
-            }),
+        free_casts(&game).is_empty(),
         "the rest of the pile is no longer castable",
     );
 }

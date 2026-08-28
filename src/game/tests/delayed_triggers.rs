@@ -41,6 +41,53 @@ pub(super) fn drain_pending(game: &mut Game) {
     }
 }
 
+/// Resolves the stack the way [`drain_pending`] does but stops at the first
+/// waiting decision instead of answering it. What a standing offer is for is
+/// the window it holds open, so a test about one has to look inside that
+/// window rather than past it.
+pub(super) fn drain_to_decision(game: &mut Game) {
+    for _ in 0..16 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            // Everything on the way there is answered as usual; the offer
+            // itself is what this stops at.
+            if matches!(
+                game.pending_decisions
+                    .first()
+                    .map(|pending| &pending.continuation),
+                Some(DecisionContinuation::MayCastExiled { .. })
+            ) {
+                return;
+            }
+            let options = decision
+                .options
+                .iter()
+                .map(|option| option.id)
+                .take(decision.minimum.max(1).min(decision.maximum))
+                .collect::<Vec<_>>();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            return;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            return;
+        }
+    }
+}
+
 /// Rule 603.4 checks an intervening-if twice. Shadowborn Demon is the pair of
 /// checks in one card: a full graveyard means it never triggers, and a
 /// graveyard filled after it triggers means the ability resolves for nothing.

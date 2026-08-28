@@ -158,13 +158,18 @@ static A_NONLAND_CARD: ObjectPredicateDef =
 /// Both libraries, and the permission is always Etali's controller's: what
 /// their library turned up is yours to cast.
 ///
-/// The printed clause states no duration, so what it buys is read the way
-/// the engine reads every other such permission -- the card stays castable
-/// for the turn rather than only during this resolution.
+/// The printed clause states no duration, which means the casting happens as
+/// the ability resolves: a card left uncast stays in exile uncastable rather
+/// than waiting for later in the turn.
+///
+/// Audit: partial — each exiled card is offered in turn rather than as a
+/// pile to be cast in an order you choose, so "a spell you cast this way can
+/// be the target of a later spell you cast this way" only holds when the
+/// exile order already put them that way.
 static ETALI_TAKES_FROM_EVERYONE: EffectDef = EffectDef::ExileFromTopUntil {
     player: EffectRecipientDef::EachPlayer,
     object: A_NONLAND_CARD,
-    permission: ExiledCastPermissionDef::FreeThisTurn,
+    permission: ExiledCastPermissionDef::FreeWhileResolving,
 };
 
 static ETALI_TRANSFORM_COST: [AbilityCostDef; 1] = [AbilityCostDef::Mana(mana_cost!("{9}{G/P}"))];

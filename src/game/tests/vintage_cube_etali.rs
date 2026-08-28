@@ -13,8 +13,20 @@ fn transforms(game: &Game, etali: GameObjectId) -> Vec<Action> {
         .collect()
 }
 
-/// Etali on the battlefield after both libraries are stacked.
+/// Etali on the battlefield after both libraries are stacked, with the cast
+/// offers her trigger hands out already declined.
 fn staged(mine: &[CardDefinitionId], theirs: &[CardDefinitionId]) -> (Game, GameObjectId) {
+    let (mut game, etali) = staged_holding_offers(mine, theirs);
+    drain_pending(&mut game);
+    (game, etali)
+}
+
+/// The same, stopped at the standing cast offers rather than past them: the
+/// permission the trigger hands out lives only while they wait.
+fn staged_holding_offers(
+    mine: &[CardDefinitionId],
+    theirs: &[CardDefinitionId],
+) -> (Game, GameObjectId) {
     let mut game = ready_game();
     game.battlefield.clear();
     game.players[0].hand.clear();
@@ -40,7 +52,7 @@ fn staged(mine: &[CardDefinitionId], theirs: &[CardDefinitionId]) -> (Game, Game
     let etali = game
         .put_onto_battlefield(PlayerId::One, cards::ETALI_PRIMAL_CONQUEROR)
         .expect("cataloged");
-    drain_pending(&mut game);
+    drain_to_decision(&mut game);
     (game, etali)
 }
 
@@ -79,14 +91,28 @@ fn it_exiles_from_both_libraries_until_a_nonland() {
 
 /// The nonland card each library turned up may be cast for nothing, and the
 /// permission is Etali's controller's even for their card.
-#[test]
-fn their_card_is_yours_to_cast_for_free() {
-    let (game, _etali) = staged(
-        &[cards::MOUNTAIN, cards::LIGHTNING_BOLT],
-        &[cards::GRIZZLY_BEARS],
-    );
+/// Answers the standing offer in front of you by declining it, and stops at
+/// the next one.
+fn decline_offer(game: &mut Game) {
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("an offer is waiting");
+    game.apply(
+        decision.player,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![decision.options[0].id],
+        },
+    )
+    .expect("declining is what the offer's one option is");
+    drain_to_decision(game);
+}
 
-    let castable = game
+/// The exiled cards castable for nothing right now, by definition.
+fn free_casts(game: &Game) -> Vec<CardDefinitionId> {
+    let mut castable = game
         .legal_actions(PlayerId::One)
         .into_iter()
         .filter_map(|action| match action {
@@ -99,20 +125,64 @@ fn their_card_is_yours_to_cast_for_free() {
             _ => None,
         })
         .collect::<Vec<_>>();
+    castable.sort_unstable();
+    castable.dedup();
+    castable
+}
 
-    assert!(
-        castable.contains(&cards::GRIZZLY_BEARS),
-        "their creature is castable out of their own exile: {castable:?}",
+#[test]
+fn their_card_is_yours_to_cast_for_free() {
+    let (mut game, _etali) = staged_holding_offers(
+        &[cards::MOUNTAIN, cards::LIGHTNING_BOLT],
+        &[cards::GRIZZLY_BEARS],
     );
-    assert!(
-        castable.contains(&cards::LIGHTNING_BOLT),
-        "and so is yours: {castable:?}",
+
+    assert_eq!(
+        free_casts(&game),
+        vec![cards::LIGHTNING_BOLT],
+        "your own card is offered first",
     );
     assert_eq!(
         game.players[0].mana_pool.total(),
         0,
         "with no mana at all, which is what free means",
     );
+
+    decline_offer(&mut game);
+    assert_eq!(
+        free_casts(&game),
+        vec![cards::GRIZZLY_BEARS],
+        "and then their creature, out of their own exile",
+    );
+}
+
+/// "Any cards not cast remain in exile. They can't be cast on later turns."
+/// The offer is the whole of the permission: decline it and the card is
+/// stranded, on this turn as much as any later one.
+#[test]
+fn a_declined_card_is_stranded_in_exile() {
+    let (mut game, _etali) = staged_holding_offers(
+        &[cards::MOUNTAIN, cards::LIGHTNING_BOLT],
+        &[cards::GRIZZLY_BEARS],
+    );
+
+    decline_offer(&mut game);
+    decline_offer(&mut game);
+
+    assert!(
+        game.pending_decisions.is_empty(),
+        "both offers have been answered",
+    );
+    assert!(
+        free_casts(&game).is_empty(),
+        "and nothing in the pile may be cast for the rest of the turn",
+    );
+    assert_eq!(
+        exile_of(&game, PlayerId::One),
+        vec![cards::MOUNTAIN, cards::LIGHTNING_BOLT],
+        "the cards are still sitting there",
+    );
+    assert_eq!(exile_of(&game, PlayerId::Two), vec![cards::GRIZZLY_BEARS]);
 }
 
 /// A land it walked past is not castable: only the card that stopped the

@@ -525,6 +525,9 @@ pub enum ExiledCastPermissionDef {
     /// so it lasts as long as the card sits in exile.
     EnergyEqualToManaValue,
     /// "You may cast any number of spells from among the nonland cards
-    /// exiled this way without paying their mana costs."
-    FreeThisTurn,
+    /// exiled this way without paying their mana costs." No duration is
+    /// printed, which means the casting happens as the ability resolves:
+    /// what is not cast then stays in exile uncastable, so the permission
+    /// is offered rather than left standing for the turn.
+    FreeWhileResolving,
 }

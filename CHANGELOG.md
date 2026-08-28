@@ -40,6 +40,16 @@ distinguishes snapshots of the covered source and build inputs.
   channel. An ability now records that it is cycling rather than being
   recognised by what it charges.
 
+- **A free cast with no printed duration happens as the ability resolves.**
+  Etali's and Crabomination's rulings both say it outright: you cast the
+  exiled cards as part of the resolution, and "you can't wait to cast it
+  later in the turn". The permission was granted for the whole turn instead,
+  with a note claiming the clause stated no duration -- it states one, just
+  not in those words. The cards are now offered as the ability resolves, and
+  what is declined stays in exile uncastable. Each card is offered in turn
+  rather than as a pile to be cast in an order you choose, which is recorded
+  on both cards.
+
 - **A face-down exile nobody may look at.** Memory Jar exiles both hands
   face down, and the ruling on it is that you cannot look at the cards you
   exiled until they come back -- CR 713.2 hides a face-down exile from
