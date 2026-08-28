@@ -248,3 +248,60 @@ fn a_retraced_permanent_costs_a_land_from_hand() {
     );
     assert!(game.players[0].hand.is_empty());
 }
+
+/// Retrace is not flashback: the card is not exiled, so a countered spell
+/// lands back in the graveyard and the permission still reaches it. Only
+/// another land is needed to pay for the second try.
+#[test]
+fn a_countered_retrace_may_be_retraced_again() {
+    let (mut game, _six) = staged(&[], &[cards::GRIZZLY_BEARS]);
+    game.players[0]
+        .hand
+        .push(card(250_300, cards::MOUNTAIN, PlayerId::One));
+    game.players[0]
+        .hand
+        .push(card(250_301, cards::MOUNTAIN, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 2);
+
+    let counterspell = card(250_302, cards::COUNTERSPELL, PlayerId::Two);
+    let counterspell_id = counterspell.id;
+    game.players[1].hand.push(counterspell);
+    game.players[1].mana_pool.blue = 2;
+
+    let bears = game.players[0].graveyard[0].id;
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == bears))
+        .expect("retrace is payable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    acceptance_attempt_counterspell(&mut game, counterspell_id);
+    settle_taking(&mut game, None);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 2);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS),
+        "the countered spell never arrived",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+        "it went back to the graveyard rather than into exile",
+    );
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .all(|card| card.definition != cards::GRIZZLY_BEARS),
+        "retrace exiles nothing",
+    );
+    assert!(
+        castable(&game, cards::GRIZZLY_BEARS),
+        "and the second land in hand pays for another try",
+    );
+}
