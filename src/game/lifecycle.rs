@@ -251,6 +251,7 @@ impl Game {
             pending_discard_follow_up: None,
             next_decision_id: 0,
             pending_events: VecDeque::new(),
+            entry_event_batch: None,
             pending_procedures: VecDeque::new(),
             pending_triggers: Vec::new(),
             next_trigger_id: 0,

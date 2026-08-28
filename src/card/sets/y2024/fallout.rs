@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, CardArt, CardRules, CardSet, CardType, CopyExceptionsDef,
-    CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    TriggerEventDef, ValueDef, ZoneKind, abilities,
+    AbilityDef, CardArt, CardRules, CardSet, CardType, CopyExceptionsDef, CounterKind, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
+    abilities,
 };
 use crate::mana_cost;
 
@@ -46,14 +46,7 @@ static SECURITRON_SQUADRON_ABILITIES: [AbilityDef; 4] = [
             kind: CounterKind::PlusOnePlusOne,
             amount: ValueDef::Constant(1),
         },
-    )
-    .with_coverage(AbilityCoverageDef::partial(
-        "Tokens made together enter one at a time here rather than at once, so a token that \
-         arrives alongside others is seen by the ones already down and not by the ones after \
-         it. One token is exact -- the Squadron that made it and the token itself, which is \
-         what the printed ruling says -- and a squad paid several times leaves fewer counters \
-         than simultaneous arrivals would.",
-    )),
+    ),
 ];
 
 pub(in crate::card::sets) static SECURITRON_SQUADRON: CardRecord = CardRecord::new_with_legacy_id(

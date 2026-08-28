@@ -723,6 +723,16 @@ pub struct Game {
     pending_discard_follow_up: Option<DiscardFollowUp>,
     next_decision_id: u32,
     pending_events: VecDeque<PendingEvent>,
+    /// The entry events of a batch of permanents arriving together, held
+    /// back until every one of them is on the battlefield.
+    ///
+    /// Permanents that enter at the same time enter simultaneously (CR
+    /// 614.12 governs what may replace each of them; CR 603.10 and the
+    /// ordinary trigger rules govern what sees them), so a clause watching
+    /// arrivals sees the whole batch rather than each one against a board
+    /// the rest have not joined yet. `None` outside a batch, which is every
+    /// permanent that arrives on its own.
+    entry_event_batch: Option<Vec<CommittedTriggerEvent>>,
     pending_procedures: VecDeque<PendingProcedure>,
     pending_triggers: Vec<PendingTrigger>,
     next_trigger_id: u32,

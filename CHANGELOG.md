@@ -25,6 +25,16 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Permanents that arrive together arrive at the same time.** Tokens made
+  by one instruction entered the battlefield one at a time, so a clause
+  watching arrivals saw each of them against a board the rest had not joined
+  yet: three token copies of Securitron Squadron came down with two, three,
+  and four +1/+1 counters where the card's own ruling says four apiece. A
+  batch of arrivals now holds its entry events back until every permanent in
+  it is on the battlefield. Replacement effects are unchanged -- each
+  permanent still meets its own on the way in -- and only what watches the
+  arrivals waits.
+
 - **Squad.** The keyword was withheld: an additional cost could not be paid
   a number of times the caster chooses, and nothing carried that number from
   the cast to the enters trigger. The first half already existed for

@@ -303,6 +303,9 @@ impl Game {
             pending_discard_follow_up: None,
             next_decision_id: checkpoint.next_decision_id,
             pending_events: VecDeque::new(),
+            // A batch is a thing in flight, and a checkpoint is taken
+            // between them rather than inside one.
+            entry_event_batch: None,
             pending_procedures: VecDeque::new(),
             pending_triggers: Vec::new(),
             next_trigger_id: checkpoint.next_trigger_id,

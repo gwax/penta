@@ -26,7 +26,7 @@ fn staged(mana: u16) -> (Game, GameObjectId) {
 }
 
 fn settle(game: &mut Game) {
-    for _ in 0..24 {
+    for _ in 0..200 {
         if let Some(decision) = game
             .pending_decisions
             .first()
@@ -132,7 +132,8 @@ fn paying_squad_once_makes_one_copy_with_a_counter() {
     );
 }
 
-/// Paid twice, it makes two.
+/// Paid twice, it makes two -- and they see each other arrive, so each ends
+/// with three rather than the two and three sequential arrivals would give.
 #[test]
 fn paying_squad_twice_makes_two_copies() {
     let (mut game, card) = staged(7);
@@ -147,15 +148,26 @@ fn paying_squad_twice_makes_two_copies() {
     game.apply(PlayerId::One, squadded).expect("it is cast");
     settle(&mut game);
 
-    assert_eq!(squadrons(&game).len(), 3, "the Squadron and two copies");
+    let made = squadrons(&game);
+    assert_eq!(made.len(), 3, "the Squadron and two copies");
+    for token in made
+        .iter()
+        .filter(|permanent| !matches!(permanent.card.definition, ObjectKind::Card(_)))
+    {
+        assert_eq!(
+            token.counters(CounterKind::PlusOnePlusOne),
+            3,
+            "both tokens and the original each gave it one",
+        );
+    }
 }
 
-/// Three squads make three copies. How many counters each ends with is the
-/// simultaneity question the trigger's own coverage note records: tokens
-/// made together enter one at a time here, so the earlier ones do not see
-/// the later ones arrive.
+/// The worked example the card's own ruling gives: squad paid three times
+/// makes three tokens that enter at the same time, so each is seen arriving
+/// by all three of them and by the Squadron that made them -- four counters
+/// apiece.
 #[test]
-fn three_squads_make_three_copies() {
+fn three_squads_leave_four_counters_on_each_token() {
     let (mut game, card) = staged(10);
 
     let squadded = casts(&game, card)
@@ -170,6 +182,18 @@ fn three_squads_make_three_copies() {
 
     let made = squadrons(&game);
     assert_eq!(made.len(), 4, "the Squadron and three copies");
+    let tokens = made
+        .iter()
+        .filter(|permanent| !matches!(permanent.card.definition, ObjectKind::Card(_)))
+        .collect::<Vec<_>>();
+    assert_eq!(tokens.len(), 3);
+    for token in tokens {
+        assert_eq!(
+            token.counters(CounterKind::PlusOnePlusOne),
+            4,
+            "one from each of the three tokens, and one from the original",
+        );
+    }
     let original = made
         .iter()
         .find(|permanent| matches!(permanent.card.definition, ObjectKind::Card(_)))

@@ -142,17 +142,21 @@ impl Game {
                 Some((copy, double_faced, presented))
             })
             .collect::<Vec<_>>();
+        // "The tokens will all enter the battlefield simultaneously": one
+        // batch, so each of them is seen arriving by all the others.
         let mut minted = Vec::new();
-        for (copy, double_faced, presented) in copies {
-            for _ in 0..self.tokens_created(holder, count) {
-                minted.push(Target::Permanent(self.create_token_copy(
-                    holder,
-                    copy.clone(),
-                    double_faced.clone(),
-                    presented,
-                )));
+        self.entering_together(|game| {
+            for (copy, double_faced, presented) in copies {
+                for _ in 0..game.tokens_created(holder, count) {
+                    minted.push(Target::Permanent(game.create_token_copy(
+                        holder,
+                        copy.clone(),
+                        double_faced.clone(),
+                        presented,
+                    )));
+                }
             }
-        }
+        });
         self.capture_created_token_batch(holder, &minted);
         // Bound after every copy is made, so a clause naming them
         // names the whole batch rather than the last of them.
@@ -241,11 +245,16 @@ impl Game {
                 let count =
                     usize::try_from(self.effect_value(count, object, context, scoped).max(0))
                         .unwrap_or(usize::MAX);
-                for _ in 0..self.tokens_created(controller, count) {
-                    minted.push(Target::Permanent(self.create_token_arriving(
-                        controller, token, None, tapped, defender, counters,
-                    )));
-                }
+                // "Create four 1/1 Myr": they arrive at the same time, so a
+                // clause watching arrivals sees all four rather than each
+                // against a board the others have not joined yet.
+                self.entering_together(|game| {
+                    for _ in 0..game.tokens_created(controller, count) {
+                        minted.push(Target::Permanent(game.create_token_arriving(
+                            controller, token, None, tapped, defender, counters,
+                        )));
+                    }
+                });
                 self.capture_created_token_batch(controller, &minted);
                 // Bound after every one is made, so a clause naming them
                 // names the whole batch rather than the last of them.
