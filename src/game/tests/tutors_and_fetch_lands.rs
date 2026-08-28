@@ -602,3 +602,97 @@ fn a_fetch_pays_its_cost_even_when_it_finds_nothing() {
         );
     }
 }
+
+/// Stifling a fetch is the oldest use of the card: the life and the land
+/// are costs and are already spent when the ability goes on the stack, so
+/// countering it leaves its controller a land down, a life down, and with
+/// nothing to show for either.
+#[test]
+fn a_stifled_fetch_has_already_paid_for_itself() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[1].hand.clear();
+    let source = game
+        .put_onto_battlefield(PlayerId::One, cards::MISTY_RAINFOREST)
+        .expect("cataloged");
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(13_700, cards::TROPICAL_ISLAND, PlayerId::One));
+    let stifle = card(13_701, cards::STIFLE, PlayerId::Two);
+    let stifle_id = stifle.id;
+    game.players[1].hand.push(stifle);
+    game.players[1].mana_pool.blue = 1;
+    let life = game.players[0].life;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source: actual, .. } if *actual == source)
+        })
+        .expect("the fetch is offered");
+    game.apply(PlayerId::One, action).expect("it activates");
+    let ability = game.stack.last().expect("the search is on the stack").id;
+    assert_eq!(game.players[0].life, life - 1, "the life went in as a cost");
+
+    game.priority = PlayerId::Two;
+    game.apply(
+        PlayerId::Two,
+        cast_action(stifle_id, vec![Target::Spell(ability)], Vec::new(), 0),
+    )
+    .expect("an activated ability is what Stifle names");
+    drain_pending(&mut game);
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].library.len(),
+        1,
+        "the search never happened",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.controller == PlayerId::One),
+        "and nothing came out of it",
+    );
+    assert_eq!(game.players[0].life, life - 1, "the life is not given back");
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MISTY_RAINFOREST),
+        "nor is the land",
+    );
+}
+
+/// "Pay 1 life" is payable at one life, and paying it is how a fetchland
+/// kills its own controller.
+#[test]
+fn a_fetch_will_take_your_last_life() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let source = game
+        .put_onto_battlefield(PlayerId::One, cards::MISTY_RAINFOREST)
+        .expect("cataloged");
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(13_800, cards::TROPICAL_ISLAND, PlayerId::One));
+    game.players[0].life = 1;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source: actual, .. } if *actual == source)
+        })
+        .expect("one life is enough to pay one life");
+    game.apply(PlayerId::One, action).expect("it activates");
+    game.check_state_based_actions();
+
+    assert_eq!(game.players[0].life, 0);
+    assert!(game.result.is_some(), "zero life is a loss");
+}
