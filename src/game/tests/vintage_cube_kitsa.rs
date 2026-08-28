@@ -284,3 +284,85 @@ fn their_spell_is_not_a_target() {
         "but their spell is not one she may point at",
     );
 }
+
+/// "The copy is created on the stack, so it's not cast. Abilities that
+/// trigger when a player casts a spell won't trigger." Her own prowess is
+/// such an ability, and it counts the Bolt but not the copy of it -- and the
+/// copy resolves before the spell it was made from.
+#[test]
+fn the_copy_is_not_cast_and_resolves_first() {
+    let (mut game, kitsa, held) = staged(&[cards::LIGHTNING_BOLT, cards::LIGHTNING_BOLT]);
+    let cast = |game: &mut Game, spell: GameObjectId| {
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    *card == spell
+                        && choices.targets().iter().any(|selection| {
+                            selection.targets().contains(&Target::Player(PlayerId::Two))
+                        })
+                }
+                _ => false,
+            })
+            .expect("the Bolt can point at them");
+        game.apply(PlayerId::One, action).expect("it is cast");
+    };
+
+    cast(&mut game, held[0]);
+    settle(&mut game);
+    cast(&mut game, held[1]);
+    resolve_above(&mut game, 1);
+    assert_eq!(power(&game, kitsa), Some(3), "two casts, two prowess");
+
+    let offers = copy_offers(&game, kitsa);
+    game.apply(
+        PlayerId::One,
+        offers.into_iter().next().expect("she may copy it"),
+    )
+    .expect("it activates");
+    // The ability resolves, asks about the copy's targets, and puts the copy
+    // on the stack above the Bolt.
+    pass_priority_pair(&mut game);
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the copy's targets are asked about");
+    let keep = decision
+        .options
+        .iter()
+        .find(|option| option.label.contains("Keep"))
+        .expect("keeping them is one of the answers")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![keep],
+        },
+    )
+    .expect("keeping the original targets is legal");
+
+    assert_eq!(
+        game.stack.len(),
+        2,
+        "the copy sits on the stack above the spell it came from",
+    );
+    assert_eq!(
+        power(&game, kitsa),
+        Some(3),
+        "and it was put there rather than cast, so prowess did not see it",
+    );
+
+    // One object resolves: the copy, which is on top.
+    pass_priority_pair(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(game.stack.len(), 1, "one of the two resolved");
+    assert_eq!(
+        game.players[1].life, 14,
+        "the copy went first: three off the second Bolt's copy, \
+         with the Bolt itself still waiting",
+    );
+}
