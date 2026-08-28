@@ -498,3 +498,64 @@ fn the_greaves_put_their_creature_out_of_reach_of_everyone() {
         "shroud stops its own controller too, which is the cost of the card",
     );
 }
+
+/// Equip targets, and shroud stops targeting: the ruling is that a Greaves
+/// wearer is out of reach of your other Equipment too, and the Greaves
+/// cannot be taken off it -- only moved, and only once there is somewhere
+/// else to move them.
+#[test]
+fn nothing_else_can_equip_the_creature_wearing_the_greaves() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let greaves = game
+        .put_onto_battlefield(PlayerId::One, cards::LIGHTNING_GREAVES)
+        .expect("cataloged");
+    let clamp = game
+        .put_onto_battlefield(PlayerId::One, cards::SKULLCLAMP)
+        .expect("cataloged");
+    let bears = creature(83_100, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    drain_pending(&mut game);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 4);
+
+    let equips = |game: &Game, source: GameObjectId, host: GameObjectId| {
+        game.legal_actions(PlayerId::One).into_iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source: actual, targets, .. }
+                if actual == source
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(host)))
+        })
+    };
+    assert!(
+        equips(&game, clamp, bears_id),
+        "the Clamp can name a bare creature",
+    );
+
+    equip_to(&mut game, greaves, bears_id);
+
+    assert!(
+        !equips(&game, clamp, bears_id),
+        "and cannot name it once the Greaves are on",
+    );
+    assert!(
+        !equips(&game, greaves, bears_id),
+        "nor can the Greaves name it again themselves",
+    );
+
+    // Somewhere else to go is what the ruling says is missing.
+    let lions = creature(83_101, cards::SAVANNAH_LIONS, PlayerId::One);
+    let lions_id = lions.card.id;
+    game.battlefield.push(lions);
+    assert!(
+        equips(&game, greaves, lions_id),
+        "a second creature is somewhere for them to move",
+    );
+    equip_to(&mut game, greaves, lions_id);
+    assert!(
+        equips(&game, clamp, bears_id),
+        "and the Bears are reachable again the moment the Greaves leave",
+    );
+}
