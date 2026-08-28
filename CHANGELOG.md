@@ -40,6 +40,14 @@ distinguishes snapshots of the covered source and build inputs.
   channel. An ability now records that it is cycling rather than being
   recognised by what it charges.
 
+- **A permanent that stops being a creature stops having creature types.**
+  Enduring Innocence comes back from the graveyard as an enchantment, and
+  its own ruling says it is no longer a Sheep Glimmer -- a subtype belongs to
+  a card type and goes when that type does (CR 205.1b). The subtypes were
+  read off the printed line whatever the type line had become, so the
+  enchantment was still a Sheep. Creature types only: the other kinds sit on
+  cards whose type line nothing in the catalog takes that type away from.
+
 - **Exploring with nothing to reveal still grows the creature.** "If no card
   is revealed, most likely because that player's library is empty, the
   exploring creature receives a +1/+1 counter" -- the procedure returned

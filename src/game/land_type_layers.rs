@@ -846,7 +846,11 @@ impl Game {
             return Cow::Borrowed(&[]);
         };
         let retained = self.retained_printed_subtypes(permanent);
-        if permanent.text_changes.is_empty() && operations.is_empty() && retained.is_empty() {
+        if permanent.text_changes.is_empty()
+            && operations.is_empty()
+            && retained.is_empty()
+            && !self.has_subtypes_without_their_card_type(permanent, rules.subtypes())
+        {
             return Cow::Borrowed(rules.subtypes());
         }
 
@@ -875,7 +879,44 @@ impl Game {
         });
 
         Self::apply_subtype_operations(&mut subtypes, operations);
+        self.drop_subtypes_without_their_card_type(permanent, &mut subtypes);
         Cow::Owned(subtypes)
+    }
+
+    /// A subtype belongs to a card type, and goes when that type does
+    /// (CR 205.1b): an Enduring Innocence that comes back as an enchantment
+    /// is no longer a Sheep Glimmer, because it is no longer a creature.
+    ///
+    /// Audit: partial -- creature types only. The other kinds of subtype are
+    /// carried on cards whose type line the engine never takes that type
+    /// away from, so nothing in the catalog can tell the difference yet.
+    fn drop_subtypes_without_their_card_type(
+        &self,
+        permanent: &Permanent,
+        subtypes: &mut Vec<&'static str>,
+    ) {
+        if !self.is_a_creature_permanent(permanent) {
+            subtypes.retain(|subtype| crate::card::creature_type_name(subtype).is_none());
+        }
+    }
+
+    /// Whether any of these subtypes has lost the card type it belongs to,
+    /// which is what decides whether the printed list can be handed back as
+    /// it stands.
+    fn has_subtypes_without_their_card_type(
+        &self,
+        permanent: &Permanent,
+        subtypes: &[&'static str],
+    ) -> bool {
+        !self.is_a_creature_permanent(permanent)
+            && subtypes
+                .iter()
+                .any(|subtype| crate::card::creature_type_name(subtype).is_some())
+    }
+
+    fn is_a_creature_permanent(&self, permanent: &Permanent) -> bool {
+        self.permanent_types(permanent)
+            .is_some_and(|types| types.contains(CardType::Creature))
     }
 
     /// Basic land subtypes in effective type-line order, with duplicate types

@@ -155,3 +155,32 @@ fn the_second_death_is_permanent() {
         "and lies in the graveyard",
     );
 }
+
+/// Its ruling: "Sheep and Glimmer are both creature types. It won't have
+/// those creature types when its last ability returns it to the battlefield
+/// because it won't be a creature" (CR 205.1b).
+#[test]
+fn it_comes_back_without_its_creature_types() {
+    let (mut game, innocence) = staged();
+    let subtypes = |game: &Game| {
+        let mut subtypes = on_battlefield(game)
+            .map(|permanent| game.effective_subtypes(permanent).to_vec())
+            .expect("it is there");
+        subtypes.sort_unstable();
+        subtypes
+    };
+    let printed = subtypes(&game);
+    assert_eq!(
+        printed,
+        vec!["Glimmer", "Sheep"],
+        "a Sheep Glimmer while it is a creature",
+    );
+
+    game.destroy_permanent(innocence);
+    settle(&mut game);
+
+    assert!(
+        subtypes(&game).is_empty(),
+        "and nothing at all once the creature is gone: they were creature types",
+    );
+}
