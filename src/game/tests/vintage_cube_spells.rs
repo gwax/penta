@@ -201,6 +201,129 @@ fn the_soft_counters_ask_for_their_own_amount() {
     }
 }
 
+/// The other half of the same choice: paying the tax lets the spell
+/// through, and the counter goes to the graveyard having done nothing.
+#[test]
+fn the_soft_counters_let_a_paid_spell_resolve() {
+    for (definition, color, tax) in [
+        (cards::MANA_TITHE, ManaColor::White, 1),
+        (cards::SPELL_PIERCE, ManaColor::Blue, 2),
+        (cards::MISCALCULATION, ManaColor::Blue, 2),
+    ] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let bolt = card(50_820, cards::LIGHTNING_BOLT, PlayerId::Two);
+        let bolt_id = bolt.id;
+        game.players[PlayerId::Two.index()].hand.push(bolt);
+        game.players[PlayerId::Two.index()].mana_pool.red = 1;
+        game.players[PlayerId::Two.index()].mana_pool.colorless = tax;
+        game.players[PlayerId::One.index()].life = 20;
+        game.priority = PlayerId::Two;
+        game.apply(
+            PlayerId::Two,
+            cast_action(bolt_id, vec![Target::Player(PlayerId::One)], Vec::new(), 0),
+        )
+        .expect("the opponent casts something to counter");
+        let on_stack = game.stack.last().expect("the spell is on the stack").id;
+        game.apply(PlayerId::Two, Action::PassPriority).unwrap();
+
+        let counter = card(50_821, definition, PlayerId::One);
+        let counter_id = counter.id;
+        game.players[PlayerId::One.index()].hand.push(counter);
+        let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+        pool.add_color(color, 1);
+        pool.colorless += 1;
+        game.apply(
+            PlayerId::One,
+            cast_action(counter_id, vec![Target::Spell(on_stack)], Vec::new(), 0),
+        )
+        .unwrap_or_else(|error| panic!("{definition:?} answers a spell: {error}"));
+        pass_priority_pair(&mut game);
+
+        let decision = game
+            .observe(PlayerId::Two)
+            .decision
+            .unwrap_or_else(|| panic!("{definition:?} asks its controller to pay {tax}"));
+        let pay = decision
+            .options
+            .iter()
+            .find(|option| option.label == "Pay the cost")
+            .unwrap_or_else(|| panic!("{definition:?} offers paying"))
+            .id;
+        game.apply(
+            PlayerId::Two,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![pay],
+            },
+        )
+        .expect("paying is allowed");
+        drain_pending(&mut game);
+
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            17,
+            "{definition:?} was paid, so the Bolt resolved",
+        );
+        assert!(
+            game.players[PlayerId::One.index()]
+                .graveyard
+                .iter()
+                .any(|card| card.definition == definition),
+            "{definition:?} is in its own graveyard either way",
+        );
+    }
+}
+
+/// "Noncreature spell" is what separates the Pierce from the other two: a
+/// creature spell is not a legal target for it, and is for them.
+#[test]
+fn spell_pierce_alone_cannot_name_a_creature_spell() {
+    for (definition, color, names_creatures) in [
+        (cards::MANA_TITHE, ManaColor::White, true),
+        (cards::MISCALCULATION, ManaColor::Blue, true),
+        (cards::SPELL_PIERCE, ManaColor::Blue, false),
+    ] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let bears = card(50_830, cards::GRIZZLY_BEARS, PlayerId::Two);
+        let bears_id = bears.id;
+        game.players[PlayerId::Two.index()].hand.push(bears);
+        game.players[PlayerId::Two.index()].mana_pool.green = 1;
+        game.players[PlayerId::Two.index()].mana_pool.colorless = 1;
+        // A creature spell wants its caster's own main phase.
+        game.active_player = PlayerId::Two;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::Two;
+        game.apply(
+            PlayerId::Two,
+            cast_action(bears_id, Vec::new(), Vec::new(), 0),
+        )
+        .expect("a creature spell goes on the stack");
+        let on_stack = game.stack.last().expect("it is waiting").id;
+        game.apply(PlayerId::Two, Action::PassPriority).unwrap();
+
+        let counter = card(50_831, definition, PlayerId::One);
+        let counter_id = counter.id;
+        game.players[PlayerId::One.index()].hand.push(counter);
+        let pool = &mut game.players[PlayerId::One.index()].mana_pool;
+        pool.add_color(color, 1);
+        pool.colorless += 1;
+
+        let offered = game.legal_actions(PlayerId::One).into_iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if card == counter_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(on_stack)))
+        });
+        assert_eq!(
+            offered, names_creatures,
+            "{definition:?} against a creature spell",
+        );
+    }
+}
+
 #[test]
 fn mother_of_runes_protects_a_creature_from_the_color_she_names() {
     let mut game = ready_game();
