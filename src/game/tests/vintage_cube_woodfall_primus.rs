@@ -252,3 +252,44 @@ fn persist_returns_it_to_its_owner() {
         "under its owner's control",
     );
 }
+
+/// "When a permanent with persist returns to the battlefield, it's a new
+/// object with no memory of or connection to its previous existence." What
+/// it carried before -- counters it grew, and the tap it was under -- does
+/// not come back with it.
+#[test]
+fn what_returns_remembers_nothing_but_its_own_counter() {
+    let (mut game, primus, ids) = staged(&[cards::SOL_RING, cards::MOX_PEARL]);
+    cast(&mut game, primus, Some(ids[0]));
+    let first = body(&game).expect("it is here").card.id;
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == first)
+    {
+        permanent.add_counters(CounterKind::PlusOnePlusOne, 2);
+        permanent.tapped = true;
+    }
+    assert_eq!(
+        game.power(body(&game).expect("it is here")),
+        Some(8),
+        "an 8/8 while it stands there",
+    );
+
+    game.move_permanents_to_graveyard(&[first]);
+    cast_settle_with_target(&mut game, ids[1]);
+
+    let returned = body(&game).expect("persist brought it back");
+    assert_eq!(
+        returned.counters(CounterKind::PlusOnePlusOne),
+        0,
+        "the counters it grew stayed behind",
+    );
+    assert_eq!(
+        returned.counters(CounterKind::MinusOneMinusOne),
+        1,
+        "and the one persist gives it came with it",
+    );
+    assert_eq!(game.power(returned), Some(5), "so a 5/5 rather than a 7/7");
+    assert!(!returned.tapped, "and untapped, whatever it was before");
+}
