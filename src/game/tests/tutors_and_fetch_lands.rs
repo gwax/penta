@@ -531,3 +531,74 @@ fn a_fetch_finishes_the_lands_as_enters_choice_before_shuffling() {
     );
     assert!(game.pending_procedures.is_empty());
 }
+
+/// The life and the sacrifice are costs, so they are paid whatever the
+/// search turns up: a fetch may decline what it found, and a library with
+/// nothing to find leaves it just as poor. Either way the land is gone and
+/// the life with it.
+#[test]
+fn a_fetch_pays_its_cost_even_when_it_finds_nothing() {
+    // Declining a legal card, and having none to decline.
+    for library in [
+        vec![cards::TROPICAL_ISLAND, cards::MOUNTAIN],
+        vec![cards::MOUNTAIN, cards::MOUNTAIN],
+    ] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let source = game
+            .put_onto_battlefield(PlayerId::One, cards::MISTY_RAINFOREST)
+            .expect("cataloged");
+        game.players[0].library.clear();
+        for (index, definition) in library.iter().enumerate() {
+            game.players[0].library.push(card(
+                13_600 + u32::try_from(index).expect("two cards"),
+                *definition,
+                PlayerId::One,
+            ));
+        }
+        let life = game.players[0].life;
+        let deck = game.players[0].library.len();
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source: actual, .. } if *actual == source)
+            })
+            .expect("the fetch is offered");
+        game.apply(PlayerId::One, action).expect("it activates");
+        assert_eq!(game.players[0].life, life - 1, "the life is a cost");
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| permanent.card.id != source),
+            "and so is the land itself",
+        );
+
+        pass_priority_pair(&mut game);
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            game.apply(
+                PlayerId::One,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: Vec::new(),
+                },
+            )
+            .expect("taking nothing is allowed");
+        }
+        drain_pending(&mut game);
+
+        assert_eq!(
+            game.players[0].library.len(),
+            deck,
+            "every card stayed in the library",
+        );
+        assert!(
+            !game
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.controller == PlayerId::One),
+            "and nothing arrived to replace what was sacrificed",
+        );
+    }
+}
