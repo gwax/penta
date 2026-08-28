@@ -217,3 +217,66 @@ fn it_waits_for_a_sorcery_window() {
     game.step = Step::PostcombatMain;
     assert!(!offers(&game, nightmare).is_empty(), "either main phase is");
 }
+
+/// Cast it in your main phase and it is yours to use at once: you hold
+/// priority as it resolves, so the ability is live on the turn it entered
+/// and before anybody can answer the enchantment. The creature it eats may
+/// be just as new -- sacrificing does not care about summoning sickness.
+#[test]
+fn it_can_be_used_the_turn_it_is_cast() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    game.turns_started = [4, 4];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.players[0]
+        .graveyard
+        .push(card(99_100, cards::SERRA_ANGEL, PlayerId::One));
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let nightmare = card(99_101, cards::RECURRING_NIGHTMARE, PlayerId::One);
+    let nightmare_id = nightmare.id;
+    game.players[0].hand.push(nightmare);
+    let pool = &mut game.players[0].mana_pool;
+    pool.black = 1;
+    pool.colorless = 2;
+    game.apply(
+        PlayerId::One,
+        cast_action(nightmare_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("three mana buys it");
+    drain_pending(&mut game);
+
+    let entered = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::RECURRING_NIGHTMARE)
+        .expect("it resolved");
+    assert_eq!(
+        entered.entered_controller_turn, game.turns_started[0],
+        "it entered this turn",
+    );
+    let nightmare = entered.card.id;
+
+    let angel = game.players[0].graveyard[0].id;
+    activate(&mut game, nightmare, bears, angel);
+
+    assert_eq!(
+        on_battlefield(&game, cards::SERRA_ANGEL),
+        1,
+        "the Angel came back on the same turn the Nightmare arrived",
+    );
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::RECURRING_NIGHTMARE),
+        "and the enchantment is back in hand before anybody could answer it",
+    );
+}
