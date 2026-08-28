@@ -237,3 +237,39 @@ fn damage_to_a_blocking_creature_draws_nothing() {
         "and a blocked Frog draws nothing",
     );
 }
+
+/// "Until end of turn": the wings are rented, and the counters are not. A
+/// Frog that grew and flew keeps the body it bought and loses the flying
+/// when the turn ends.
+#[test]
+fn the_flying_wears_off_and_the_counter_does_not() {
+    let (mut game, frog) = staged(
+        &[cards::MOUNTAIN],
+        &[cards::MOUNTAIN, cards::ISLAND, cards::SWAMP],
+    );
+
+    let grow = activation(&game, frog, 1).expect("a card in hand pays for the counter");
+    game.apply(PlayerId::One, grow).expect("it activates");
+    settle(&mut game);
+    game.priority = PlayerId::One;
+    let fly = activation(&game, frog, 2).expect("three cards pay for the flying");
+    game.apply(PlayerId::One, fly).expect("it activates");
+    settle(&mut game);
+
+    assert!(game.permanent_has_executable_keyword(the_frog(&game), KeywordAbility::Flying));
+    assert_eq!(game.power(the_frog(&game)), Some(2), "a 1/2 that grew once");
+
+    game.step = Step::Cleanup;
+    game.finish_cleanup();
+    game.start_next_turn();
+
+    assert!(
+        !game.permanent_has_executable_keyword(the_frog(&game), KeywordAbility::Flying),
+        "the wings were only for the turn",
+    );
+    assert_eq!(
+        game.power(the_frog(&game)),
+        Some(2),
+        "and the counter is still a counter",
+    );
+}
