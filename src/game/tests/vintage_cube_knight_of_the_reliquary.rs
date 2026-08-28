@@ -171,3 +171,66 @@ fn another_land_cannot_pay() {
         "a Swamp is not a Forest or a Plains",
     );
 }
+
+/// Her ruling: the bonus applies only on the battlefield, and in every other
+/// zone she is the 2/2 she prints. Corpse Lunge reads the power of the card
+/// it exiled out of the graveyard, and what it reads is two -- three lands
+/// buried beside her included.
+#[test]
+fn she_is_a_two_two_outside_the_battlefield() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    for (index, definition) in [
+        cards::MOUNTAIN,
+        cards::FOREST,
+        cards::PLAINS,
+        cards::KNIGHT_OF_THE_RELIQUARY,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        game.players[0].graveyard.push(card(
+            91_900 + u32::try_from(index).expect("a small graveyard"),
+            definition,
+            PlayerId::One,
+        ));
+    }
+    let wall = game
+        .put_onto_battlefield(PlayerId::Two, cards::LIVING_WALL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let lunge = game
+        .build_zone(PlayerId::One, &[cards::CORPSE_LUNGE])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let lunge_id = lunge.id;
+    game.players[0].hand.push(lunge);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 3);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == lunge_id))
+        .expect("the Knight is the creature card it exiles");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == wall)
+            .expect("a 0/6 survives it")
+            .damage,
+        2,
+        "her printed two, with the three lands counting for nothing",
+    );
+}
