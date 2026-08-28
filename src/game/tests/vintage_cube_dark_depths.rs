@@ -216,3 +216,77 @@ fn settle_until_trigger_waits(game: &mut Game, depths: GameObjectId) {
         }
     }
 }
+
+/// "Dark Depths doesn't have a mana ability. It doesn't tap for colorless
+/// mana." A land that makes nothing is the other half of what the ten
+/// counters cost.
+#[test]
+fn it_makes_no_mana_at_all() {
+    let (game, depths) = staged(0);
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::ActivateManaAbility { source, .. } if *source == depths
+            )),
+        "the only ability it offers costs mana rather than making it",
+    );
+}
+
+/// "It won't trigger again while the ability is on the stack, but if the
+/// ability is countered and Dark Depths is still on the battlefield with no
+/// ice counters on it, it will trigger again immediately." Stifling the
+/// trigger buys nothing unless the land goes with it.
+#[test]
+fn a_stifled_state_trigger_fires_again() {
+    let (mut game, depths) = staged(30);
+    let stifle = card(93_000, cards::STIFLE, PlayerId::Two);
+    let stifle_id = stifle.id;
+    game.players[1].hand.push(stifle);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 1);
+    for _ in 0..9 {
+        remove_one(&mut game, depths);
+    }
+
+    let action = removals(&game, depths)
+        .into_iter()
+        .next()
+        .expect("the last counter can come off");
+    game.apply(PlayerId::One, action).expect("it activates");
+    settle_until_trigger_waits(&mut game, depths);
+    let trigger = game
+        .stack
+        .last()
+        .expect("the state trigger is waiting on the stack")
+        .id;
+
+    game.priority = PlayerId::Two;
+    game.apply(
+        PlayerId::Two,
+        cast_action(stifle_id, vec![Target::Spell(trigger)], Vec::new(), 0),
+    )
+    .expect("a triggered ability is what Stifle names");
+    settle(&mut game);
+
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::STIFLE),
+        "the Stifle resolved and countered that trigger",
+    );
+    assert!(
+        marit_lage(&game).is_some(),
+        "and the condition was still true, so it triggered again and paid out",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == depths),
+        "the land was sacrificed the second time around",
+    );
+}
