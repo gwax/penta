@@ -552,3 +552,54 @@ fn a_creature_whose_damage_was_prevented_still_regenerates() {
         "the Troll regenerated, because Incinerate never dealt it damage"
     );
 }
+
+/// The Petal is an artifact, so the tap in its cost is not a creature's tap:
+/// it may be cracked the turn it lands, for any of the five colours.
+#[test]
+fn lotus_petal_cracks_the_turn_it_arrives_for_any_color() {
+    for color in ManaColor::COLORS {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.turns_started = [5, 5];
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+        let petal = game
+            .put_onto_battlefield(PlayerId::One, cards::LOTUS_PETAL)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == petal)
+                .expect("it is there")
+                .entered_controller_turn,
+            game.turns_started[0],
+            "it arrived this turn",
+        );
+
+        game.apply(
+            PlayerId::One,
+            Action::ActivateManaAbility {
+                source: petal,
+                ability: mana_ability_for(&game, petal, color),
+                color,
+                counters_removed: None,
+                cost_object: None,
+                combination: None,
+            },
+        )
+        .unwrap_or_else(|error| panic!("a fresh Petal makes {color:?}: {error}"));
+
+        assert_eq!(
+            game.players[PlayerId::One.index()].mana_pool.amount(color),
+            1
+        );
+        assert_eq!(
+            game.players[PlayerId::One.index()].mana_pool.total(),
+            1,
+            "one mana of the colour named and nothing else",
+        );
+        assert!(game.battlefield.is_empty(), "and it sacrificed itself");
+    }
+}
