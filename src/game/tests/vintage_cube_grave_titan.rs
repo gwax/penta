@@ -108,3 +108,29 @@ fn the_zombies_outlive_the_titan() {
         "and the Titan does not",
     );
 }
+
+/// "Two 2/2 black Zombie creature tokens": black is part of what they are,
+/// and what the Titan is beyond that is not theirs to inherit.
+#[test]
+fn the_zombies_are_black_and_carry_nothing_of_the_titan() {
+    let mut game = staged();
+    game.put_onto_battlefield(PlayerId::One, cards::GRAVE_TITAN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let black = ManaColor::Black.color_index().expect("black is a colour");
+    let green = ManaColor::Green.color_index().expect("green is a colour");
+    for zombie in zombies(&game) {
+        let colors = game.permanent_colors(zombie);
+        assert!(colors[black], "a black Zombie");
+        assert!(!colors[green], "and black alone");
+        assert!(
+            !game.permanent_has_executable_keyword(zombie, KeywordAbility::Deathtouch),
+            "the Titan's deathtouch is the Titan's",
+        );
+        assert!(
+            !game.effective_subtypes(zombie).contains(&"Giant"),
+            "and so is being a Giant",
+        );
+    }
+}
