@@ -248,3 +248,72 @@ fn taking_nothing_pays_nothing() {
 
     assert!(illusions(&game).is_empty(), "and nothing is given back");
 }
+
+/// Two rulings that meet: "if it leaves the battlefield before its first
+/// ability resolves, the ability still exiles the target permanent", and
+/// "if there's no exiled card when it leaves, no player creates a token."
+/// Answering it in response takes the Illusion away and not the exile.
+#[test]
+fn answering_it_in_response_exiles_without_paying() {
+    let (mut game, apparition) = staged(&[cards::ICY_MANIPULATOR]);
+    let manipulator = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::ICY_MANIPULATOR)
+        .expect("they have it")
+        .card
+        .id;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == apparition))
+        .expect("three mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    // Resolve the body and answer the target choice, then kill it with the
+    // exile still on the stack.
+    for _ in 0..12 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .filter(|option| option.card.is_some_and(|(card, _)| card == manipulator))
+                .map(|option| option.id)
+                .take(1)
+                .collect::<Vec<_>>();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the choice is legal");
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let body = apparition_on_battlefield(&game);
+    game.destroy_permanent(body);
+    settle(&mut game);
+
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::ICY_MANIPULATOR),
+        "the exile happened even though its source had gone",
+    );
+    assert!(
+        illusions(&game).is_empty(),
+        "and there was nothing exiled yet when it left, so nobody was paid",
+    );
+}
