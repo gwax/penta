@@ -215,3 +215,50 @@ fn a_look_with_nothing_in_it_takes_nothing() {
     assert!(hand(&game).is_empty(), "no creature and no land to reveal");
     assert_eq!(game.players[0].library.len(), 5, "all five went back under");
 }
+
+/// Its ruling: "the earliest opportunity you have to cast it is during the
+/// first player's upkeep, before that player can play a land." It is an
+/// instant, and nothing about the free cast waits for a main phase.
+#[test]
+fn the_free_cast_is_available_in_an_upkeep() {
+    let (mut game, spell) = staged(&FIVE_CARDS);
+    game.step = Step::Upkeep;
+    game.players[0].lands_played_this_turn = 0;
+
+    let cast = casts(&game, spell)
+        .into_iter()
+        .next()
+        .expect("an upkeep is early enough for it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle_taking(&mut game, Some(cards::FOREST));
+
+    assert_eq!(
+        hand(&game),
+        vec![cards::FOREST],
+        "and the land it found is in hand before the land drop",
+    );
+}
+
+/// "You may reveal": with a creature and a land among the five you may still
+/// take neither, and then all five go under.
+#[test]
+fn a_look_may_be_declined_with_something_worth_taking() {
+    let (mut game, spell) = staged(&FIVE_CARDS);
+
+    let cast = casts(&game, spell)
+        .into_iter()
+        .next()
+        .expect("the free cast is on offer");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle_taking(&mut game, None);
+
+    assert!(
+        hand(&game).is_empty(),
+        "a Bears and a Forest were there for the taking, and neither was taken",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        5,
+        "so all five went to the bottom",
+    );
+}
