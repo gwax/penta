@@ -110,3 +110,75 @@ fn it_may_be_aimed_at_yourself() {
         "your own hand is a legal target",
     );
 }
+
+/// CR 118.4: nobody may pay more life than they have. Paying down to exactly
+/// zero is allowed -- it is a loss on the next state-based check, not an
+/// illegal payment -- so the offer stops below two rather than at two.
+#[test]
+fn the_life_payment_stops_when_the_life_runs_out() {
+    let (mut game, probe) = staged(&[cards::SWAMP]);
+    game.players[0].life = 2;
+    assert!(
+        cast_at_them(&game, probe, true).is_some(),
+        "two life is exactly two life",
+    );
+
+    game.players[0].life = 1;
+    assert!(
+        cast_at_them(&game, probe, true).is_none(),
+        "one life cannot pay two",
+    );
+    assert!(
+        cast_at_them(&game, probe, false).is_none(),
+        "and there is no mana to pay it with instead",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    assert!(
+        cast_at_them(&game, probe, false).is_some(),
+        "a blue mana is the way out",
+    );
+}
+
+/// "The targeted player may have no cards in their hand. You'll still draw a
+/// card."
+#[test]
+fn an_empty_hand_is_still_a_look_and_a_draw() {
+    let (mut game, probe) = staged(&[]);
+    let library = game.players[0].library.len();
+
+    let cast = cast_at_them(&game, probe, true).expect("it is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.observe(PlayerId::One)
+            .last_seen_hand
+            .map(|(player, cards)| (player, cards.len())),
+        Some((PlayerId::Two, 0)),
+        "an empty hand is what was seen",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        library - 1,
+        "and the card is drawn anyway",
+    );
+}
+
+/// "Count each Phyrexian mana symbol as 1": the Probe is a one-mana spell
+/// whichever way the pip was paid, unlike the two-brid symbols that carry a
+/// generic alternative.
+#[test]
+fn the_phyrexian_pip_counts_as_one_for_mana_value() {
+    let catalog = poc::catalog().expect("catalog builds");
+    let probe = catalog
+        .get(cards::GITAXIAN_PROBE)
+        .expect("the Probe is cataloged");
+
+    assert_eq!(
+        probe.rules.mana_cost().map(ManaCost::mana_value),
+        Some(1),
+        "two life is not two mana",
+    );
+}
