@@ -192,3 +192,31 @@ fn it_enters_tapped_and_taps_for_colorless() {
 
     assert_eq!(game.players[0].mana_pool.colorless, 1);
 }
+
+/// "This land or another land you control": a second Field watches the same
+/// arrivals the first one does, so each land drop past the seventh name is
+/// two Zombies -- and the two Fields are one name between them.
+#[test]
+fn a_second_field_doubles_every_arrival() {
+    let (mut game, _field) = staged(&[
+        cards::FIELD_OF_THE_DEAD,
+        cards::PLAINS,
+        cards::ISLAND,
+        cards::SWAMP,
+        cards::MOUNTAIN,
+        cards::FOREST,
+    ]);
+    assert_eq!(
+        zombies(&game),
+        0,
+        "two Fields and five basics are six names, not seven",
+    );
+
+    land_arrives(&mut game, cards::TUNDRA, PlayerId::One);
+
+    assert_eq!(zombies(&game), 2, "the seventh name is seen by both Fields");
+
+    land_arrives(&mut game, cards::TAIGA, PlayerId::One);
+
+    assert_eq!(zombies(&game), 4, "and so is the eighth");
+}
