@@ -260,3 +260,67 @@ fn the_counters_are_the_equipped_creatures_power() {
     assert_eq!(game.power(host), Some(3), "2 plus one rev counter");
     assert_eq!(game.toughness(host), Some(2), "and toughness is untouched");
 }
+
+/// The counters are on the Equipment rather than on what wears it, so the
+/// bonus grows while it is worn and walks away with the Chainsaw when it
+/// moves.
+#[test]
+fn the_bonus_belongs_to_the_chainsaw_rather_than_its_host() {
+    let (mut game, saw, theirs) = staged(&[cards::GRIZZLY_BEARS, cards::SAVANNAH_LIONS]);
+    let equipment = cast(&mut game, saw, None);
+    let first = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let second = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let equip_to = |game: &mut Game, host: GameObjectId| {
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source, targets, .. }
+                    if *source == equipment
+                        && targets
+                            .iter()
+                            .any(|slot| slot.targets().contains(&Target::Permanent(host))))
+            })
+            .expect("equip is activatable");
+        game.apply(PlayerId::One, action).expect("it equips");
+        settle(game);
+    };
+    let power = |game: &Game, id: GameObjectId| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .and_then(|permanent| game.power(permanent))
+    };
+
+    equip_to(&mut game, first);
+    assert_eq!(power(&game, first), Some(2), "no counters, no bonus yet");
+
+    game.move_permanents_to_graveyard(&[theirs[0]]);
+    settle(&mut game);
+    assert_eq!(power(&game, first), Some(3), "a counter while it is worn");
+    game.move_permanents_to_graveyard(&[theirs[1]]);
+    settle(&mut game);
+    assert_eq!(power(&game, first), Some(4), "and another");
+
+    equip_to(&mut game, second);
+
+    assert_eq!(
+        power(&game, first),
+        Some(2),
+        "what it left is its printed self again",
+    );
+    assert_eq!(
+        power(&game, second),
+        Some(4),
+        "and the two counters went with the Chainsaw onto the 2/1",
+    );
+}
