@@ -160,3 +160,48 @@ fn an_empty_board_still_pays_the_rest() {
     );
     assert_eq!(game.players[0].life, 23);
 }
+
+/// "If any abilities trigger, they will wait to be put on the stack until
+/// after the spell resolves." A Runewing sacrificed to the toll draws its
+/// controller a card, but not until the discard has already taken their
+/// hand: they end holding the card they drew rather than discarding it.
+#[test]
+fn a_dies_trigger_waits_until_the_toll_is_paid() {
+    let mut game = staged();
+    game.players[1].hand.clear();
+    game.players[1].library.clear();
+    let replacement = game
+        .build_zone(PlayerId::Two, &[cards::LIGHTNING_BOLT])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[1].library.push(replacement);
+    let runewing = creature(190_100, cards::RUNEWING, PlayerId::Two);
+    game.battlefield.push(runewing);
+
+    game.put_onto_battlefield(PlayerId::One, cards::ARCHON_OF_CRUELTY)
+        .expect("cataloged");
+    settle(&mut game);
+
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::RUNEWING),
+        "the Runewing was what they had to give up",
+    );
+    assert_eq!(
+        game.players[1].life, 17,
+        "and the three life was still paid"
+    );
+    assert_eq!(
+        game.players[1].hand.len(),
+        1,
+        "the discard found an empty hand, and the draw came afterwards",
+    );
+    assert!(
+        game.players[1].library.is_empty(),
+        "which is the card they drew",
+    );
+}
