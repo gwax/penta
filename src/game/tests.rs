@@ -473,6 +473,7 @@ mod vintage_cube_jitte;
 mod vintage_cube_kaito;
 mod vintage_cube_kaldra_compleat;
 mod vintage_cube_kappa_cannoneer;
+mod vintage_cube_karakas;
 mod vintage_cube_kari_zev;
 mod vintage_cube_karn_scion_of_urza;
 mod vintage_cube_keen_eyed_curator;
