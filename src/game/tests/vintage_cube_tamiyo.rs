@@ -174,3 +174,118 @@ fn the_plus_one_sorts_the_top_four_by_the_chosen_name() {
         "all four left the library",
     );
 }
+
+/// The minus three buys back any card in your graveyard, not only a
+/// creature or a spell -- the target says "target card".
+#[test]
+fn the_minus_three_returns_any_card_from_your_graveyard() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let planeswalker = tamiyo(98_040);
+    let tamiyo_id = planeswalker.card.id;
+    game.battlefield.push(planeswalker);
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    game.players[0]
+        .graveyard
+        .push(card(98_041, cards::MOUNTAIN, PlayerId::One));
+    game.players[0]
+        .graveyard
+        .push(card(98_042, cards::BLACK_LOTUS, PlayerId::One));
+    let lotus = game.players[0].graveyard[1].id;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source,
+                ability,
+                targets,
+                ..
+            } => {
+                *source == tamiyo_id
+                    && game
+                        .ability_for_origin(tamiyo_id, *ability)
+                        .is_some_and(|ability| ability.text.starts_with('\u{2212}'))
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Card(lotus))
+            }
+            _ => false,
+        })
+        .expect("the minus three can name the Lotus");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    resolve(&mut game);
+
+    assert_eq!(
+        game.players[0]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::BLACK_LOTUS],
+        "an artifact is a card like any other",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == tamiyo_id)
+            .expect("she is still there")
+            .counters(CounterKind::Loyalty),
+        2,
+        "and it cost her three loyalty",
+    );
+}
+
+/// Her ruling: at three loyalty the minus three is activatable, and she is
+/// not among its targets -- she is on the battlefield while they are chosen,
+/// not in the graveyard.
+#[test]
+fn she_cannot_buy_herself_back_with_her_own_minus_three() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mut planeswalker = tamiyo(98_050);
+    planeswalker.set_counters(CounterKind::Loyalty, 3);
+    let tamiyo_id = planeswalker.card.id;
+    game.battlefield.push(planeswalker);
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    game.players[0]
+        .graveyard
+        .push(card(98_051, cards::MOUNTAIN, PlayerId::One));
+
+    let minus_three = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(|action| match action {
+                Action::ActivateAbility {
+                    source, ability, ..
+                } => {
+                    *source == tamiyo_id
+                        && game
+                            .ability_for_origin(tamiyo_id, *ability)
+                            .is_some_and(|ability| ability.text.starts_with('\u{2212}'))
+                }
+                _ => false,
+            })
+            .collect::<Vec<_>>()
+    };
+    let offers = minus_three(&game);
+    assert_eq!(
+        offers.len(),
+        1,
+        "three loyalty pays for it, and the Mountain is the only card to name",
+    );
+    assert!(
+        !offers.iter().any(|action| matches!(action,
+            Action::ActivateAbility { targets, .. }
+                if targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .any(|target| *target == Target::Card(tamiyo_id)
+                        || *target == Target::Permanent(tamiyo_id)))),
+        "and she is not one of them: she is on the battlefield, not in the graveyard",
+    );
+}
