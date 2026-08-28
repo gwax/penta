@@ -104,3 +104,42 @@ fn he_is_silent_on_their_upkeep() {
     assert!(game.players[0].hand.is_empty());
     assert_eq!(game.players[0].library.len(), 1);
 }
+
+/// "If a card in a player's library has {X} in its mana cost, X is 0."
+/// A Braingeyser costs its owner two life off the top, however many cards
+/// it would have drawn had it been cast.
+#[test]
+fn an_x_spell_counts_its_x_as_zero() {
+    let mut game = staged(&[cards::BRAINGEYSER]);
+
+    take_upkeep(&mut game, PlayerId::One);
+
+    assert_eq!(
+        game.players[0]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::BRAINGEYSER],
+    );
+    assert_eq!(
+        game.players[0].life, 18,
+        "{{X}}{{U}}{{U}} is a mana value of two in the library",
+    );
+}
+
+/// The life is lost, not paid, and nothing stops it: a Confidant flipping
+/// something expensive at a low enough life total kills his own controller.
+#[test]
+fn he_will_kill_his_controller() {
+    let mut game = staged(&[cards::SERRA_ANGEL]);
+    game.players[0].life = 4;
+
+    take_upkeep(&mut game, PlayerId::One);
+
+    assert_eq!(game.players[0].life, -1, "a five-drop off four life");
+    assert!(
+        game.result.is_some(),
+        "which is a loss, checked as a state-based action",
+    );
+}
