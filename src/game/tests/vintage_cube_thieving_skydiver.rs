@@ -232,3 +232,80 @@ fn a_stolen_equipment_attaches_itself() {
         "and what it grants is his: a stolen Equipment equips nobody else",
     );
 }
+
+/// "If it was kicked": cast for his printed two he is a 2/1 flier and
+/// nothing else, and their artifact stays where it is.
+#[test]
+fn an_unkicked_skydiver_steals_nothing() {
+    let (mut game, skydiver) = staged(2);
+    let key = game
+        .put_onto_battlefield(PlayerId::Two, cards::MANIFOLD_KEY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let plain = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell {
+                card: id, choices, ..
+            } => *id == skydiver && choices.x() == 0,
+            _ => false,
+        })
+        .expect("two mana casts him without the kicker");
+    game.apply(PlayerId::One, plain).expect("it is cast");
+    settle(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::THIEVING_SKYDIVER),
+        "he arrived",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == key)
+            .expect("their Key is untouched")
+            .controller,
+        PlayerId::Two,
+        "and the trigger did nothing, because it was never kicked",
+    );
+}
+
+/// "The control-change effect lasts indefinitely ... it doesn't expire if
+/// Thieving Skydiver leaves the battlefield."
+#[test]
+fn what_he_took_stays_taken_after_he_dies() {
+    let (mut game, skydiver) = staged(3);
+    let key = game
+        .put_onto_battlefield(PlayerId::Two, cards::MANIFOLD_KEY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    cast_kicked_for(&mut game, skydiver, 1, key);
+
+    let thief = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::THIEVING_SKYDIVER)
+        .expect("he is on the battlefield")
+        .card
+        .id;
+    game.move_permanents_to_graveyard(&[thief]);
+    settle(&mut game);
+    game.cleanup();
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == key)
+            .expect("the Key is still on the battlefield")
+            .controller,
+        PlayerId::One,
+        "it does not go home when the thief does",
+    );
+}
