@@ -175,3 +175,33 @@ fn an_empty_board_leaves_it_uncastable() {
         "both halves need something to point at",
     );
 }
+
+/// "Destroy" is the word that an indestructible artifact answers: the Ingot
+/// is a legal target, the spell resolves, and it is still there afterwards.
+#[test]
+fn an_indestructible_artifact_survives_the_shatter() {
+    let (mut game, abrade, ids) = staged(&[cards::DARKSTEEL_INGOT]);
+
+    let offered = casts(&game, abrade);
+    assert!(
+        offered
+            .iter()
+            .any(|(modes, targets)| modes.as_slice() == [mode(SHATTER)]
+                && targets.as_slice() == [Target::Permanent(ids[0])]),
+        "indestructible is not hexproof: it can still be named: {offered:?}",
+    );
+
+    cast_at(&mut game, abrade, SHATTER, ids[0]);
+
+    assert!(
+        on_battlefield(&game, cards::DARKSTEEL_INGOT),
+        "and it shrugs the destruction off",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::ABRADE),
+        "while the Abrade is spent all the same",
+    );
+}
