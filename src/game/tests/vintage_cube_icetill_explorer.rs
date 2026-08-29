@@ -161,3 +161,64 @@ fn a_land_put_onto_the_battlefield_mills_too() {
         "landfall is about entering rather than about playing",
     );
 }
+
+/// "The effect ... is cumulative with similar effects": an Exploration
+/// beside the Explorer is a third land drop, not a wasted one.
+#[test]
+fn an_exploration_beside_it_is_a_third_drop() {
+    let (mut game, held) = staged(
+        &[cards::FOREST, cards::FOREST, cards::FOREST, cards::FOREST],
+        &[],
+    );
+    game.put_onto_battlefield(PlayerId::One, cards::EXPLORATION)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.players[0].lands_played_this_turn = 0;
+    game.priority = PlayerId::One;
+
+    assert!(play_land(&mut game, held[0]), "the first");
+    assert!(play_land(&mut game, held[1]), "the second");
+    assert!(play_land(&mut game, held[2]), "and the third");
+    assert!(
+        !play_land(&mut game, held[3]),
+        "three is where the two allowances stop",
+    );
+}
+
+/// "It doesn't allow you to activate abilities (such as cycling) of land
+/// cards in your graveyard", and it "doesn't change the times when you can
+/// play those land cards" either: the permission says where, not what or
+/// when.
+#[test]
+fn the_graveyard_permission_is_only_for_playing_them() {
+    let (mut game, _held) = staged(&[], &[cards::RAFFINES_TOWER]);
+    let tower = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::RAFFINES_TOWER)
+        .expect("it is in the graveyard")
+        .id;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if *card == tower)),
+        "the land itself may be played out of the graveyard",
+    );
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == tower)
+        ),
+        "but its cycling stays where the card is",
+    );
+
+    game.active_player = PlayerId::Two;
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if *card == tower)),
+        "and a land is played on your own turn, graveyard or not",
+    );
+}
