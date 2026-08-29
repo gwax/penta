@@ -227,3 +227,59 @@ fn a_card_held_from_before_can_go_back() {
         "the card held from before is on top",
     );
 }
+
+/// "Nothing can happen between the two, and no player may choose to take
+/// actions." The put-back is part of the resolution, so while it waits the
+/// other player has nothing to do but concede.
+#[test]
+fn nobody_acts_between_the_draws_and_the_put_back() {
+    let (mut game, brainstorm) = staged(&[cards::MOUNTAIN, cards::FOREST, cards::ISLAND]);
+
+    cast(&mut game, brainstorm);
+
+    assert!(
+        game.observe(PlayerId::One).decision.is_some(),
+        "the put-back is waiting",
+    );
+    assert_eq!(
+        game.legal_actions(PlayerId::Two),
+        vec![Action::Concede],
+        "and the other player is not offered a window",
+    );
+}
+
+/// A library two cards deep is what makes it a gamble: two come up, the
+/// third draw finds nothing, the two still go back, and the game ends on the
+/// state-based check afterwards.
+#[test]
+fn drawing_off_a_short_library_loses_the_game() {
+    let (mut game, brainstorm) = staged(&[cards::MOUNTAIN, cards::FOREST]);
+
+    cast(&mut game, brainstorm);
+    assert_eq!(
+        game.players[0].library.len(),
+        0,
+        "both of them were drawn and the third was not there",
+    );
+    assert!(
+        game.result.is_none(),
+        "the loss waits for the resolution to finish",
+    );
+
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[0].library.len(),
+        2,
+        "the put-back happened all the same",
+    );
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::Two,
+            reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+        }),
+        "and then the empty draw is collected",
+    );
+}
