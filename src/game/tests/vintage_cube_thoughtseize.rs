@@ -180,3 +180,37 @@ fn it_costs_two_when_it_hits() {
     assert!(in_graveyard(&game, cards::LIGHTNING_BOLT));
     assert_eq!(game.players[0].life, 18);
 }
+
+/// "Target player reveals their hand": the whole hand, lands included, even
+/// though a land is not a card you may take.
+#[test]
+fn the_whole_hand_is_revealed_lands_and_all() {
+    let (mut game, spell) = staged(&[cards::MOUNTAIN, cards::SERRA_ANGEL]);
+
+    seize(&mut game, spell, Some(cards::SERRA_ANGEL));
+
+    let revealed = game
+        .events()
+        .iter()
+        .filter_map(|event| match event {
+            GameEvent::CardRevealed {
+                player: PlayerId::Two,
+                definition,
+                ..
+            } => Some(*definition),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        revealed.contains(&cards::SERRA_ANGEL),
+        "the card that was taken was shown: {revealed:?}",
+    );
+    assert!(
+        revealed.contains(&cards::MOUNTAIN),
+        "and so was the land that could not be: {revealed:?}",
+    );
+    assert!(
+        in_graveyard(&game, cards::SERRA_ANGEL),
+        "the Angel is the one that went",
+    );
+}
