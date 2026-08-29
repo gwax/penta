@@ -212,3 +212,52 @@ fn it_does_not_double_their_triggers() {
         "their trigger is their own, and gains once",
     );
 }
+
+/// "Replacement effects are unaffected." Dark Depths enters with ten ice
+/// counters because a replacement says so as it enters, not because
+/// anything triggered: the Chocobo has nothing to add.
+#[test]
+fn a_replacement_on_the_way_in_is_left_alone() {
+    let (mut game, _chocobo) = staged(&[], &[]);
+
+    arrive(&mut game, cards::DARK_DEPTHS);
+
+    let depths = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::DARK_DEPTHS)
+        .expect("the land arrived");
+    assert_eq!(
+        depths.counters(CounterKind::named("ice")),
+        10,
+        "ten, not twenty: nothing triggered to be doubled",
+    );
+}
+
+/// The clause reads the arriving permanent's own triggers too: a surveil
+/// land that looks at one card looks at two when it lands beside a Chocobo.
+#[test]
+fn a_lands_own_enters_trigger_is_doubled() {
+    let (mut game, _chocobo) = staged(
+        &[
+            cards::LIGHTNING_BOLT,
+            cards::GRIZZLY_BEARS,
+            cards::SERRA_ANGEL,
+        ],
+        &[],
+    );
+    let library_before = game.players[0].library.len();
+
+    arrive(&mut game, cards::HEDGE_MAZE);
+
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        2,
+        "two surveil triggers, and this settle bins what each one turns up",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        library_before - 2,
+        "which is two cards off the top",
+    );
+}
