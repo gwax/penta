@@ -257,3 +257,38 @@ fn the_counter_needs_a_third_white_permanent() {
         "the only white permanents are Sorin and the creature itself",
     );
 }
+
+/// "Sorin doesn't need to have been on the battlefield when you gained the
+/// life." The tally is the turn's, not his: three gained before he lands
+/// still turns him over in the postcombat main phase.
+#[test]
+fn life_gained_before_he_arrived_still_counts() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.turns_started = [4, 4];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.players[0].life = 20;
+
+    // Three life in the upkeep, and Sorin cast afterwards.
+    game.gain_life(PlayerId::One, 3);
+    let sorin = game
+        .put_onto_battlefield(PlayerId::One, cards::SORIN_OF_HOUSE_MARKOV)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    postcombat_main(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != sorin),
+        "the creature is gone",
+    );
+    assert!(
+        permanent_named(&game, "Sorin, Ravenous Neonate").is_some(),
+        "he read a tally kept by the turn rather than by himself",
+    );
+}
