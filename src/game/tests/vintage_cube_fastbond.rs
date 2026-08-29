@@ -119,3 +119,40 @@ fn a_land_put_onto_the_battlefield_costs_nothing() {
     assert!(play_land(&mut game, held[0]), "the land drop is untouched");
     assert_eq!(game.players[0].life, 20, "and it is still the first");
 }
+
+/// Nothing stops the trigger and nothing checks whether you can afford it:
+/// a player at one life who plays a second land has played their last.
+#[test]
+fn it_will_kill_you_for_a_land_you_did_not_need() {
+    let (mut game, held) = staged(2);
+    game.players[0].life = 1;
+
+    assert!(play_land(&mut game, held[0]), "the first one is free");
+    assert_eq!(game.players[0].life, 1, "and costs nothing");
+
+    assert!(play_land(&mut game, held[1]), "the second one is offered");
+    game.check_state_based_actions();
+
+    assert_eq!(game.players[0].life, 0);
+    assert!(game.result.is_some(), "one damage was all it took");
+}
+
+/// Nothing about it is legendary: a second copy is a second trigger, so the
+/// same extra land costs two.
+#[test]
+fn two_fastbonds_are_two_damage_a_land() {
+    let (mut game, held) = staged(2);
+    game.put_onto_battlefield(PlayerId::One, cards::FASTBOND)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    assert!(play_land(&mut game, held[0]), "the first land is played");
+    assert_eq!(
+        game.players[0].life, 20,
+        "neither copy asks about the first one",
+    );
+
+    assert!(play_land(&mut game, held[1]), "and the second");
+    assert_eq!(game.players[0].life, 18, "one damage from each of them");
+}
