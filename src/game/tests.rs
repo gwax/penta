@@ -616,6 +616,7 @@ mod vintage_cube_skyclave_apparition;
 mod vintage_cube_slickshot_show_off;
 mod vintage_cube_smugglers_copter;
 mod vintage_cube_sneak_attack;
+mod vintage_cube_snuff_out;
 mod vintage_cube_solitude;
 mod vintage_cube_sorin_of_house_markov;
 mod vintage_cube_soul_guide_lantern;
