@@ -231,3 +231,69 @@ fn equipping_someone_else_moves_the_ability() {
     );
     assert_eq!(counters_on_hero(&game), 0, "the Hero kept nothing");
 }
+
+/// "If the Hero token is destroyed, the Equipment stays on the battlefield."
+#[test]
+fn losing_the_hero_leaves_the_equipment() {
+    let (mut game, planisphere) = staged(&[]);
+    let hero = hero(&game).card.id;
+
+    game.move_permanents_to_graveyard(&[hero]);
+    settle(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == planisphere),
+        "the Equipment is still there, wearing nobody",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == planisphere)
+            .expect("it is there")
+            .attached_to
+            .is_none(),
+        "and attached to nothing",
+    );
+}
+
+/// "It doesn't need to have been attached when the first or second card is
+/// drawn. As long as a creature you control has the granted ability when you
+/// draw your third card, that ability will trigger."
+#[test]
+fn the_first_two_draws_need_not_have_been_watched() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].library.clear();
+    for index in 0..8 {
+        game.players[0]
+            .library
+            .push(card(97_500 + index, cards::ISLAND, PlayerId::One));
+    }
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.cards_drawn_this_turn = [0; 2];
+
+    // Two cards drawn with nothing watching.
+    game.draw_card(PlayerId::One);
+    game.draw_card(PlayerId::One);
+    game.put_onto_battlefield(PlayerId::One, cards::ASTROLOGIAN_S_PLANISPHERE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    settle(&mut game);
+    assert_eq!(counters_on_hero(&game), 0, "it arrived to nothing");
+
+    game.draw_card(PlayerId::One);
+    settle(&mut game);
+
+    assert_eq!(
+        counters_on_hero(&game),
+        1,
+        "the third card of the turn is the third card of the turn",
+    );
+}
