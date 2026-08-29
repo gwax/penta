@@ -210,3 +210,74 @@ fn only_creature_cards_are_offered() {
         "the creature and not the land",
     );
 }
+
+/// "You sacrifice the creature only if you still control it. If that
+/// creature has left the battlefield, even if it came back, you don't
+/// sacrifice it." An Ephemerate in response to nothing at all is enough:
+/// what returns is a new object the delayed sacrifice has never heard of.
+#[test]
+fn a_creature_that_left_and_returned_is_not_sacrificed() {
+    let (mut game, sneak, _) = staged(1);
+    let ephemerate = game
+        .build_zone(PlayerId::One, &[cards::EPHEMERATE])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let ephemerate_id = ephemerate.id;
+    game.players[0].hand.push(ephemerate);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+
+    sneak_in(&mut game, sneak, Some(cards::SHIVAN_DRAGON));
+    let borrowed = dragon_on_battlefield(&game)
+        .expect("the Dragon is here")
+        .card
+        .id;
+
+    let blink = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == ephemerate_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(borrowed))
+            }
+            _ => false,
+        })
+        .expect("one white blinks it");
+    game.apply(PlayerId::One, blink).expect("it is cast");
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    drain_pending(&mut game);
+    let returned = dragon_on_battlefield(&game)
+        .expect("the Dragon came back")
+        .card
+        .id;
+    assert_ne!(returned, borrowed, "as a new object");
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        dragon_on_battlefield(&game).is_some(),
+        "and the end step has nothing to collect",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .all(|card| card.definition != cards::SHIVAN_DRAGON),
+        "the Dragon is not in the graveyard: it was never sacrificed",
+    );
+}
