@@ -44,6 +44,7 @@ pub(super) enum KeywordSnapshot {
     Persist,
     Indestructible,
     AttacksEachCombatIfAble,
+    AttacksPlayerEachCombatIfAble,
     Mountainwalk,
     Forestwalk,
     Plainswalk,

@@ -45,6 +45,9 @@ pub(in crate::game::state_checkpoint) fn keyword_snapshot(
         KeywordAbility::Persist => KeywordSnapshot::Persist,
         KeywordAbility::Indestructible => KeywordSnapshot::Indestructible,
         KeywordAbility::AttacksEachCombatIfAble => KeywordSnapshot::AttacksEachCombatIfAble,
+        KeywordAbility::AttacksPlayerEachCombatIfAble => {
+            KeywordSnapshot::AttacksPlayerEachCombatIfAble
+        }
         KeywordAbility::LegendaryLandwalk => KeywordSnapshot::LegendaryLandwalk,
         KeywordAbility::Landwalk(BasicLandType::Plains) => KeywordSnapshot::Plainswalk,
         KeywordAbility::Landwalk(BasicLandType::Island) => KeywordSnapshot::Islandwalk,
@@ -163,6 +166,9 @@ pub(in crate::game::state_checkpoint) const fn parse_keyword(
         KeywordSnapshot::Persist => KeywordAbility::Persist,
         KeywordSnapshot::Indestructible => KeywordAbility::Indestructible,
         KeywordSnapshot::AttacksEachCombatIfAble => KeywordAbility::AttacksEachCombatIfAble,
+        KeywordSnapshot::AttacksPlayerEachCombatIfAble => {
+            KeywordAbility::AttacksPlayerEachCombatIfAble
+        }
         KeywordSnapshot::LegendaryLandwalk => KeywordAbility::LegendaryLandwalk,
         KeywordSnapshot::Plainswalk => KeywordAbility::Landwalk(BasicLandType::Plains),
         KeywordSnapshot::Islandwalk => KeywordAbility::Landwalk(BasicLandType::Island),

@@ -187,6 +187,7 @@ pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
             | KeywordAbility::Landwalk(_)
             | KeywordAbility::LegendaryLandwalk
             | KeywordAbility::AttacksEachCombatIfAble
+            | KeywordAbility::AttacksPlayerEachCombatIfAble
             | KeywordAbility::Banding
             | KeywordAbility::BandsWithOther(_)
             | KeywordAbility::Unleash

@@ -50,6 +50,14 @@ pub const fn attacks_each_combat_if_able(text: &'static str) -> AbilityDef {
     keyword(text, KeywordAbility::AttacksEachCombatIfAble)
 }
 
+/// "Attacks that player this combat if able." A planeswalker that player
+/// controls does not satisfy it, so the attack has to be aimed at the player
+/// while that is possible.
+#[must_use]
+pub const fn attacks_player_each_combat_if_able(text: &'static str) -> AbilityDef {
+    keyword(text, KeywordAbility::AttacksPlayerEachCombatIfAble)
+}
+
 const ENTER_TAPPED: [ReplacementEffectDef; 1] = [ReplacementEffectDef::ModifyBattlefieldEntry(
     BattlefieldEntryModificationDef::Tapped,
 )];

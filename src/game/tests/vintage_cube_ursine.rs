@@ -176,3 +176,105 @@ fn the_bear_may_stay_home_before_the_trigger() {
         "nothing has required it to attack yet",
     );
 }
+
+/// "If you can't mill a card, you'll still follow the rest of the
+/// instructions": an empty library costs the bear nothing it was promised.
+#[test]
+fn an_empty_library_still_pays_the_rest() {
+    let (mut game, bear) = staged(&[], &[cards::LIGHTNING_BOLT]);
+    game.turns_started = [2, 1];
+
+    begin_combat(&mut game);
+
+    assert!(
+        game.players[0].library.is_empty(),
+        "there was nothing to mill"
+    );
+    assert_eq!(
+        game.power(bear_of(&game, bear)),
+        Some(4),
+        "the instant already in the graveyard is still one card type",
+    );
+    assert!(
+        game.permanent_has_executable_keyword(bear_of(&game, bear), KeywordAbility::Indestructible),
+        "and it is still indestructible",
+    );
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .contains(&Action::FinishDeclaringAttackers),
+        "and it still has to attack",
+    );
+}
+
+/// "Ursine Monstrosity must attack the chosen player if able, not a
+/// planeswalker they control." A declaration that sent it at the
+/// planeswalker would satisfy none of the requirement while attacking the
+/// player is possible, so it is not offered.
+#[test]
+fn the_bear_must_attack_the_player_and_not_their_planeswalker() {
+    let (mut game, bear) = staged(&[cards::GRIZZLY_BEARS], &[]);
+    game.turns_started = [2, 1];
+    let walker = game
+        .put_onto_battlefield(PlayerId::Two, cards::TEFERI_HERO_OF_DOMINARIA)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    begin_combat(&mut game);
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .contains(&Action::DeclareAttacker {
+                attacker: bear,
+                defender: AttackDefender::Planeswalker(walker),
+            }),
+        "the planeswalker is not a legal choice for it",
+    );
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .contains(&Action::DeclareAttacker {
+                attacker: bear,
+                defender: AttackDefender::Player(PlayerId::Two),
+            }),
+        "the player is what the requirement names",
+    );
+}
+
+/// The requirement is the bear's own: another creature beside it may still
+/// go after the planeswalker.
+#[test]
+fn the_requirement_does_not_follow_the_rest_of_the_board() {
+    let (mut game, _bear) = staged(&[cards::GRIZZLY_BEARS], &[]);
+    game.turns_started = [2, 1];
+    let walker = game
+        .put_onto_battlefield(PlayerId::Two, cards::TEFERI_HERO_OF_DOMINARIA)
+        .expect("cataloged");
+    let lions = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == lions)
+    {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+    begin_combat(&mut game);
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .contains(&Action::DeclareAttacker {
+                attacker: lions,
+                defender: AttackDefender::Planeswalker(walker),
+            }),
+        "the Lions are under no requirement at all",
+    );
+}

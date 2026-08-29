@@ -64,10 +64,12 @@ pub(in crate::card::sets) static METAMORPHOSIS_FANATIC: CardRecord = CardRecord:
 static MONSTROSITY_INDESTRUCTIBLE: AbilityDef = abilities::indestructible();
 
 /// "This creature attacks that player this combat if able." In a two-player
-/// game the chosen opponent is the only player there is to attack, so the
-/// requirement is the ordinary one; it is granted for the turn rather than
-/// printed, and the trigger renews it at the beginning of every combat.
-static MONSTROSITY_MUST_ATTACK: AbilityDef = abilities::attacks_each_combat_if_able(
+/// game the chosen opponent is the only player there is to attack, so what
+/// the requirement names is that seat; a planeswalker they control does not
+/// satisfy it, which is what separates this from the plain "attacks each
+/// combat if able". It is granted for the turn rather than printed, and the
+/// trigger renews it at the beginning of every combat.
+static MONSTROSITY_MUST_ATTACK: AbilityDef = abilities::attacks_player_each_combat_if_able(
     "This creature attacks that player this combat if able.",
 );
 

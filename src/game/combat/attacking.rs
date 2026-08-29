@@ -24,11 +24,12 @@ impl Game {
             })
             .flat_map(|permanent| {
                 defenders.iter().copied().filter_map(move |defender| {
-                    self.prospective_attack_is_affordable(permanent, defender)
-                        .then_some(Action::DeclareAttacker {
-                            attacker: permanent.card.id,
-                            defender,
-                        })
+                    (self.prospective_attack_is_affordable(permanent, defender)
+                        && self.requirements_allow_defender(permanent, defender))
+                    .then_some(Action::DeclareAttacker {
+                        attacker: permanent.card.id,
+                        defender,
+                    })
                 })
             })
             .collect()
@@ -82,17 +83,43 @@ impl Game {
 
     /// "Attacks each combat if able" never forces a player to pay a cost.
     /// A cost-free planeswalker attack can still make the requirement apply
-    /// when attacking the defending player would be taxed.
+    /// when attacking the defending player would be taxed -- unless the
+    /// requirement names a player, which a planeswalker never satisfies.
     pub(in crate::game) fn must_attack_if_able(&self, permanent: &Permanent) -> bool {
-        self.permanent_has_executable_keyword(permanent, KeywordAbility::AttacksEachCombatIfAble)
+        let any_defender = self
+            .permanent_has_executable_keyword(permanent, KeywordAbility::AttacksEachCombatIfAble);
+        let player_only = self.permanent_has_executable_keyword(
+            permanent,
+            KeywordAbility::AttacksPlayerEachCombatIfAble,
+        );
+        (any_defender || player_only)
             && self.can_attack_base(permanent)
             && self
                 .attack_defenders(permanent.controller)
                 .into_iter()
                 .any(|defender| {
-                    self.attack_pair_cost(permanent, defender)
-                        .is_some_and(|cost| cost == ManaCost::default())
+                    (any_defender || matches!(defender, AttackDefender::Player(_)))
+                        && self
+                            .attack_pair_cost(permanent, defender)
+                            .is_some_and(|cost| cost == ManaCost::default())
                 })
+    }
+
+    /// Whether the requirements this creature is under leave `defender` a
+    /// legal choice. A creature that has to attack a player cannot be sent
+    /// at a planeswalker while attacking that player is possible: the whole
+    /// declaration has to satisfy the maximum number of requirements it can
+    /// (CR 508.1d), and a planeswalker attack satisfies none of this one.
+    fn requirements_allow_defender(&self, permanent: &Permanent, defender: AttackDefender) -> bool {
+        if matches!(defender, AttackDefender::Player(_))
+            || !self.permanent_has_executable_keyword(
+                permanent,
+                KeywordAbility::AttacksPlayerEachCombatIfAble,
+            )
+        {
+            return true;
+        }
+        !self.must_attack_if_able(permanent)
     }
 
     /// Whether every "can't attack unless ..." clause this creature prints

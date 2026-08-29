@@ -107,6 +107,13 @@ pub enum KeywordAbility {
     /// like one: a static requirement with no parameters that several cards
     /// state in the same words.
     AttacksEachCombatIfAble,
+    /// "Attacks that player this combat if able." The same requirement
+    /// narrowed to a player: a planeswalker attack does not satisfy it, so
+    /// while attacking the defending player is possible the declaration has
+    /// to be aimed there (CR 508.1d). In a two-player game the chosen
+    /// opponent is the only player there is, which is why the seat is not a
+    /// parameter.
+    AttacksPlayerEachCombatIfAble,
     /// CR 702.14. One keyword parameterized by land type: the creature cannot
     /// be blocked as long as the defending player controls a land of that
     /// type. The printed variants differ only in which type they name.
@@ -166,6 +173,7 @@ impl KeywordAbility {
             Self::Undying => 14,
             Self::Menace => 15,
             Self::AttacksEachCombatIfAble => 16,
+            Self::AttacksPlayerEachCombatIfAble => 36,
             // 17 and 27 were the old dense bits for protection from creatures
             // and multicolored. Protection qualities are predicates now and
             // deliberately remain outside the simple-keyword bitset.
