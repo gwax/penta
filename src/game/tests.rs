@@ -571,6 +571,7 @@ mod vintage_cube_ponder;
 mod vintage_cube_portable_hole;
 mod vintage_cube_portal_to_phyrexia;
 mod vintage_cube_preacher_of_the_schism;
+mod vintage_cube_primeval_titan;
 mod vintage_cube_prismatic_ending;
 mod vintage_cube_prismatic_vista;
 mod vintage_cube_profts_eidetic_memory;
