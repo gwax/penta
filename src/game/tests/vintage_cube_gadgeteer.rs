@@ -160,3 +160,52 @@ fn the_discount_stops_at_one_mana() {
         "a one-mana ability is left where it is",
     );
 }
+
+/// "Activated abilities of artifacts *you control*": theirs are not yours
+/// to discount, so their Clue still wants its printed two.
+#[test]
+fn their_artifacts_pay_full_price() {
+    let mut game = staged();
+    game.create_token(PlayerId::Two, tokens::clue());
+    drain_pending(&mut game);
+    let clue = game
+        .battlefield
+        .iter()
+        .find(|permanent| is_token_with(permanent, tokens::clue()))
+        .expect("the Clue token arrived")
+        .card
+        .id;
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+    game.priority = PlayerId::Two;
+
+    assert!(
+        !game.legal_actions(PlayerId::Two).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == clue)
+        ),
+        "one mana buys nothing across the table",
+    );
+
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+    assert!(
+        game.legal_actions(PlayerId::Two).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == clue)
+        ),
+        "their own two mana is what it costs them",
+    );
+}
+
+/// The trigger watches artifact spells rather than artifacts arriving: a
+/// Clue token entering is no spell, and leaves no second Clue behind.
+#[test]
+fn a_token_arriving_is_not_a_spell() {
+    let mut game = staged();
+    game.create_token(PlayerId::One, tokens::clue());
+    drain_pending(&mut game);
+    settle(&mut game);
+
+    assert_eq!(
+        clues(&game),
+        1,
+        "the token that arrived is the only one there is",
+    );
+}
