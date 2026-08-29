@@ -156,3 +156,51 @@ fn a_basic_land_search_will_not_find_it() {
         "the Forest is a basic land card and the Savannah is not",
     );
 }
+
+/// The other nine of the cycle, each with the pair its basic land types
+/// make: one card printed ten ways, and what is worth checking per member
+/// is which two colours it answers for.
+const ORIGINAL_DUALS: [(CardDefinitionId, [ManaColor; 2]); 10] = [
+    (cards::BADLANDS, [ManaColor::Black, ManaColor::Red]),
+    (cards::BAYOU, [ManaColor::Black, ManaColor::Green]),
+    (cards::PLATEAU, [ManaColor::Red, ManaColor::White]),
+    (cards::SAVANNAH, [ManaColor::Green, ManaColor::White]),
+    (cards::SCRUBLAND, [ManaColor::White, ManaColor::Black]),
+    (cards::TAIGA, [ManaColor::Red, ManaColor::Green]),
+    (cards::TROPICAL_ISLAND, [ManaColor::Green, ManaColor::Blue]),
+    (cards::TUNDRA, [ManaColor::White, ManaColor::Blue]),
+    (cards::UNDERGROUND_SEA, [ManaColor::Blue, ManaColor::Black]),
+    (cards::VOLCANIC_ISLAND, [ManaColor::Blue, ManaColor::Red]),
+];
+
+/// "This has the mana abilities associated with both of its basic land
+/// types" -- and only those two, for every member of the cycle.
+#[test]
+fn every_original_dual_taps_for_its_own_two() {
+    for (definition, colors) in ORIGINAL_DUALS {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let land = game
+            .put_onto_battlefield(PlayerId::One, definition)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+
+        let mut offered = colors_of(&game, land);
+        offered.sort_unstable();
+        let mut expected = colors.to_vec();
+        expected.sort_unstable();
+        assert_eq!(offered, expected, "{definition:?} makes its own two");
+        assert!(
+            !game
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == land)
+                .expect("it entered")
+                .tapped,
+            "{definition:?} asks nothing on the way in",
+        );
+    }
+}
