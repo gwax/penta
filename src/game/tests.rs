@@ -437,6 +437,7 @@ mod vintage_cube_flickerwisp;
 mod vintage_cube_force_of_negation;
 mod vintage_cube_forth_eorlingas;
 mod vintage_cube_fractured_identity;
+mod vintage_cube_frantic_search;
 mod vintage_cube_gadgeteer;
 mod vintage_cube_galvanic_blast;
 mod vintage_cube_galvanic_discharge;
