@@ -193,3 +193,75 @@ fn stomp_reaches_through_protection() {
         "and the rule is in force for the rest of the turn",
     );
 }
+
+/// "If an Adventure spell leaves the stack in any way other than resolving
+/// -- most likely by being countered -- that card won't be exiled and the
+/// spell's controller won't be able to cast it as a permanent later."
+#[test]
+fn a_countered_stomp_takes_the_giant_with_it() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].graveyard.clear();
+    let giant = card(80_030, cards::BONECRUSHER_GIANT, PlayerId::One);
+    let giant_id = giant.id;
+    game.players[0].hand.push(giant);
+    let bears = creature(80_031, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let counterspell = card(80_032, cards::COUNTERSPELL, PlayerId::Two);
+    let counterspell_id = counterspell.id;
+    game.players[1].hand.push(counterspell);
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 1;
+    game.players[1].mana_pool.blue = 2;
+
+    let stomp = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == giant_id
+                    && choices.play_option() == PlayOptionId(1)
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(bears_id))
+            }
+            _ => false,
+        })
+        .expect("Stomp can point at the Bears");
+    game.apply(PlayerId::One, stomp).expect("it is cast");
+    let on_stack = game.stack.last().expect("Stomp is on the stack").id;
+    game.apply(PlayerId::One, Action::PassPriority)
+        .expect("they get a word in");
+    game.apply(
+        PlayerId::Two,
+        cast_action(
+            counterspell_id,
+            vec![Target::Spell(on_stack)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("two blue answers it");
+    resolve(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears_id),
+        "the Bears never took the two damage",
+    );
+    assert!(
+        game.players[0].exile.is_empty(),
+        "and nothing was exiled: only a resolving Adventure exiles itself",
+    );
+    let buried = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::BONECRUSHER_GIANT)
+        .expect("the card is in its owner's graveyard");
+    assert!(
+        cast_with(&game, buried.id, PlayOptionId::DEFAULT).is_none(),
+        "so there is no Giant to cast later",
+    );
+}
