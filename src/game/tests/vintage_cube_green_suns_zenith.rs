@@ -190,3 +190,61 @@ fn zero_finds_nothing_in_a_library_of_two_drops() {
         );
     }
 }
+
+/// "If Green Sun's Zenith is countered, none of its effects will happen.
+/// Notably, it will be put into its owner's graveyard rather than shuffled
+/// into its owner's library." The shuffle-back is part of the resolution,
+/// not part of the card.
+#[test]
+fn a_countered_zenith_goes_to_the_graveyard() {
+    let (mut game, zenith) = staged(&[cards::GRIZZLY_BEARS], 3);
+    let counterspell = card(278_500, cards::COUNTERSPELL, PlayerId::Two);
+    let counterspell_id = counterspell.id;
+    game.players[1].hand.push(counterspell);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == zenith && choices.x() == 2)
+        })
+        .expect("it is castable for two");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    let on_stack = game.stack.last().expect("the Zenith is on the stack").id;
+    game.apply(PlayerId::One, Action::PassPriority)
+        .expect("they get a word in");
+    game.apply(
+        PlayerId::Two,
+        cast_action(
+            counterspell_id,
+            vec![Target::Spell(on_stack)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("two blue answers it");
+    settle(&mut game);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GREEN_SUN_S_ZENITH),
+        "a countered spell goes to its owner's graveyard",
+    );
+    assert_eq!(
+        game.players[0]
+            .library
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::GRIZZLY_BEARS],
+        "and the search never happened, so the Bears are still in there",
+    );
+    assert!(
+        game.battlefield.is_empty(),
+        "nothing was put onto the battlefield",
+    );
+}
