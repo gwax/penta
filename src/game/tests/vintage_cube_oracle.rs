@@ -161,3 +161,36 @@ fn devotion_is_recounted_if_oracle_leaves_before_its_trigger_resolves() {
         );
     }
 }
+
+/// "Phyrexian mana symbols do count toward your devotion to their colour."
+/// A Spined Thopter's {U/P} is a blue pip, whatever it was paid with.
+#[test]
+fn a_phyrexian_pip_counts_toward_devotion() {
+    let mut game = staged(3, &[cards::SPINED_THOPTER]);
+
+    play_oracle(&mut game);
+
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::One,
+            reason: WinReason::WonByAnEffect,
+        }),
+        "the Oracle's two and the Thopter's one reach three cards",
+    );
+}
+
+/// "Mana symbols in the text boxes of permanents you control don't count."
+/// A Talisman of Curiosity says {U} twice in its rules text and prints {2}
+/// on top of the card, which is what devotion reads.
+#[test]
+fn a_blue_symbol_in_the_text_box_adds_nothing() {
+    let mut game = staged(3, &[cards::TALISMAN_OF_CURIOSITY]);
+
+    play_oracle(&mut game);
+
+    assert_eq!(
+        game.result, None,
+        "two devotion against three cards, whatever the Talisman taps for",
+    );
+}
