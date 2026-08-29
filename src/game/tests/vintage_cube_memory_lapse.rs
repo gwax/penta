@@ -172,3 +172,38 @@ fn they_draw_it_again() {
         "the same card, one turn later",
     );
 }
+
+/// "If the spell was cast using flashback, flashback will change the spell's
+/// destination from its owner's library to exile." The Lapse's replacement
+/// says library; flashback's says exile, and exile is where it goes.
+#[test]
+fn a_flashback_spell_is_exiled_rather_than_stacked() {
+    let (mut game, lapse, _unused) = staged(cards::GRIZZLY_BEARS);
+    game.players[1].hand.clear();
+    let flashed = game
+        .build_zone(PlayerId::Two, &[cards::FEELING_OF_DREAD])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let flashed_id = flashed.id;
+    game.players[1].graveyard.push(flashed);
+
+    cast_and_answer(&mut game, lapse, flashed_id);
+
+    assert!(
+        game.players[1].library.is_empty(),
+        "it never reached the top of their library",
+    );
+    assert!(
+        game.players[1].graveyard.is_empty(),
+        "nor stayed in the graveyard it was cast from",
+    );
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::FEELING_OF_DREAD),
+        "flashback exiles it wherever the counter would have sent it",
+    );
+}
