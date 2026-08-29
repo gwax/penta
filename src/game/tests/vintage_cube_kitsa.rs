@@ -366,3 +366,110 @@ fn the_copy_is_not_cast_and_resolves_first() {
          with the Bolt itself still waiting",
     );
 }
+
+/// A copy of a spell has no card behind it, so countering one is the end of
+/// it: a Remand that says "put it into its owner's hand instead" has nothing
+/// to put anywhere (CR 707.10a), and still draws its card.
+#[test]
+fn remanding_a_copy_leaves_nothing_to_return() {
+    let (mut game, kitsa, held) =
+        staged(&[cards::LIGHTNING_BOLT, cards::LIGHTNING_BOLT, cards::REMAND]);
+    let cast_bolt = |game: &mut Game, spell: GameObjectId| {
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    *card == spell
+                        && choices.targets().iter().any(|selection| {
+                            selection.targets().contains(&Target::Player(PlayerId::Two))
+                        })
+                }
+                _ => false,
+            })
+            .expect("the Bolt can point at them");
+        game.apply(PlayerId::One, action).expect("it is cast");
+    };
+
+    cast_bolt(&mut game, held[0]);
+    settle(&mut game);
+    cast_bolt(&mut game, held[1]);
+    resolve_above(&mut game, 1);
+    assert_eq!(power(&game, kitsa), Some(3), "two casts, two prowess");
+
+    game.apply(
+        PlayerId::One,
+        copy_offers(&game, kitsa)
+            .into_iter()
+            .next()
+            .expect("she may copy it"),
+    )
+    .expect("it activates");
+    pass_priority_pair(&mut game);
+    let targets = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the copy's targets are asked about");
+    let keep = targets
+        .options
+        .iter()
+        .find(|option| option.label.contains("Keep"))
+        .expect("keeping them is one of the answers")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: targets.id,
+            options: vec![keep],
+        },
+    )
+    .expect("keeping the original targets is legal");
+
+    let copy = game
+        .stack
+        .objects
+        .last()
+        .expect("the copy is on top of the stack")
+        .id;
+    let hand = game.players[0].hand.len();
+    let library = game.players[0].library.len();
+    let cast_remand = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == held[2]
+                    && choices
+                        .targets()
+                        .iter()
+                        .any(|selection| selection.targets() == [Target::Spell(copy)])
+            }
+            _ => false,
+        })
+        .expect("the Remand can name the copy");
+    game.apply(PlayerId::One, cast_remand).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        !game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "the copy had no card to go to hand",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand,
+        "the Remand left the hand and the drawn card took its place",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        library - 1,
+        "and the draw happened all the same",
+    );
+    assert_eq!(
+        game.players[1].life, 14,
+        "the Bolt that was copied still resolved, and the copy never did",
+    );
+}
