@@ -186,3 +186,68 @@ fn your_own_unblocked_attackers_take_nothing() {
     assert!(game.players[1].hand.is_empty());
     assert_eq!(controller_of(&game, jewel), Some(PlayerId::One));
 }
+
+/// "A creature attacking a planeswalker you control won't cause Coveted
+/// Jewel's last ability to trigger." The clause reads "attack you".
+#[test]
+fn an_attack_on_your_planeswalker_takes_nothing() {
+    let (mut game, jewel, attackers) = staged(&[cards::GRIZZLY_BEARS]);
+    let walker = game
+        .put_onto_battlefield(PlayerId::One, cards::JACE_THE_MIND_SCULPTOR)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let hand = game.players[1].hand.len();
+
+    game.step = Step::DeclareBlockers;
+    game.attackers_declared = true;
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == attackers[0])
+    {
+        permanent.attacking = true;
+        permanent.attack_defender = Some(AttackDefender::Planeswalker(walker));
+    }
+    game.finish_declaring_blockers();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        controller_of(&game, jewel),
+        Some(PlayerId::One),
+        "the Jewel stays: nobody attacked its controller",
+    );
+    assert_eq!(
+        game.players[1].hand.len(),
+        hand,
+        "and they drew nothing for it",
+    );
+}
+
+/// "Untap it": the Jewel changes hands ready to be used, however tapped out
+/// it was when they came through.
+#[test]
+fn what_changes_hands_arrives_untapped() {
+    let (mut game, jewel, attackers) = staged(&[cards::GRIZZLY_BEARS]);
+    game.priority = PlayerId::One;
+    let mana = Action::ActivateManaAbility {
+        source: jewel,
+        ability: mana_ability_for(&game, jewel, ManaColor::Blue),
+        color: ManaColor::Blue,
+        counters_removed: None,
+        cost_object: None,
+        combination: None,
+    };
+    game.apply(PlayerId::One, mana).expect("it taps for three");
+    assert_eq!(game.players[0].mana_pool.blue, 3, "three blue");
+    game.priority = PlayerId::Two;
+
+    attack(&mut game, &attackers, &[]);
+
+    let stolen = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == jewel)
+        .expect("the Jewel is still on the battlefield");
+    assert_eq!(stolen.controller, PlayerId::Two, "under new management");
+    assert!(!stolen.tapped, "and untapped, whatever it was before");
+}
