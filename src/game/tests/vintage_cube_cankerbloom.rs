@@ -287,3 +287,55 @@ fn proliferating_nothing_is_allowed() {
         "and nothing was added"
     );
 }
+
+/// "You can choose any permanent that has a counter, including ones
+/// controlled by opponents." Their creature is on the menu -- which is worth
+/// knowing in both directions, since a -1/-1 counter grows the same way a
+/// +1/+1 one does.
+#[test]
+fn their_permanents_are_candidates_too() {
+    let (mut game, bloom) = staged(&[]);
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == theirs)
+    {
+        permanent.set_counters(CounterKind::MinusOneMinusOne, 1);
+    }
+    game.priority = PlayerId::One;
+
+    activate(&mut game, bloom, 2, None);
+    let seat = deciding(&game).expect("it asks what to proliferate");
+    let decision = game.observe(seat).decision.expect("just checked");
+    let option = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(found, _)| found == theirs))
+        .expect("their Angel carries a counter, so it is on the menu")
+        .id;
+    game.apply(
+        seat,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![option],
+        },
+    )
+    .expect("the answer is legal");
+    settle(&mut game);
+
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == theirs)
+        .expect("a 4/4 with two -1/-1 counters is still standing");
+    assert_eq!(
+        angel.counters(CounterKind::MinusOneMinusOne),
+        2,
+        "the counter it had grew by one",
+    );
+    assert_eq!(game.power(angel), Some(2), "which is two off a 4/4");
+}
