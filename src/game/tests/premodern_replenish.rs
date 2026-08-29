@@ -750,3 +750,69 @@ fn what_it_exiles_after_it_leaves_never_comes_back() {
         "and nothing is coming for them: the return trigger already resolved",
     );
 }
+
+/// "Each player returns to the battlefield all cards *they own*." The Wave
+/// is not a Control Magic: what it took from the other player goes back to
+/// them, and what it took from you comes back to you.
+#[test]
+fn parallax_wave_hands_each_creature_back_to_its_owner() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mut wave = creature(10_000, cards::PARALLAX_WAVE, PlayerId::One);
+    wave.set_counters(CounterKind::named("fade"), 5);
+    let wave_id = wave.card.id;
+    game.battlefield.push(wave);
+    let mine = creature(10_010, cards::SAVANNAH_LIONS, PlayerId::One);
+    let mine_id = mine.card.id;
+    let theirs = creature(10_011, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let theirs_id = theirs.card.id;
+    game.battlefield.extend([mine, theirs]);
+    game.priority = PlayerId::One;
+
+    // One of each, taken with two of its counters.
+    for target in [mine_id, theirs_id] {
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    *source == wave_id
+                        && targets
+                            .iter()
+                            .any(|selection| selection.targets() == [Target::Permanent(target)])
+                }
+                _ => false,
+            })
+            .expect("any creature is a legal thing to name, yours included");
+        game.apply(PlayerId::One, action).expect("it activates");
+        drain_pending(&mut game);
+    }
+    assert!(
+        game.battlefield.len() == 1,
+        "both creatures are in exile, and only the Wave is left",
+    );
+
+    game.destroy_permanent(wave_id);
+    drain_pending(&mut game);
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    let owner_of = |game: &Game, definition| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == definition)
+            .map(|permanent| permanent.controller)
+    };
+    assert_eq!(
+        owner_of(&game, cards::SAVANNAH_LIONS),
+        Some(PlayerId::One),
+        "yours comes back to you",
+    );
+    assert_eq!(
+        owner_of(&game, cards::GRIZZLY_BEARS),
+        Some(PlayerId::Two),
+        "and theirs goes back to them",
+    );
+}
