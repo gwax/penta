@@ -908,3 +908,41 @@ fn the_library_is_shuffled_even_when_nothing_is_found() {
     assert_eq!(after.len(), before.len(), "nothing was found to take");
     assert_ne!(after, before, "but the library was shuffled all the same");
 }
+
+/// Nothing about a fetchland waits for your turn: the Catacombs are cracked
+/// at the other player's end step, which is when the deck that plays them
+/// would rather do it.
+#[test]
+fn a_fetch_may_be_cracked_on_their_turn() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let source = game
+        .put_onto_battlefield(PlayerId::One, cards::VERDANT_CATACOMBS)
+        .expect("cataloged");
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(14_200, cards::BAYOU, PlayerId::One));
+    game.active_player = PlayerId::Two;
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source: actual, .. } if *actual == source)
+        })
+        .expect("their end step is as good a time as any");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::BAYOU),
+        "the Bayou is on the battlefield before your turn even begins",
+    );
+    assert_eq!(game.players[0].life, 19, "the life was paid on their turn");
+}
