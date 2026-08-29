@@ -511,6 +511,7 @@ mod vintage_cube_magda;
 mod vintage_cube_malcolm;
 mod vintage_cube_malevolent_rumble;
 mod vintage_cube_mana;
+mod vintage_cube_mana_leak;
 mod vintage_cube_manamorphose;
 mod vintage_cube_manifold_key;
 mod vintage_cube_mastery;
