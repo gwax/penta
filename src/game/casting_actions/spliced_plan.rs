@@ -61,6 +61,7 @@ impl Game {
         &self,
         definition: &CardDefinition,
         player: PlayerId,
+        cast: GameObjectId,
     ) -> Vec<Vec<GameObjectId>> {
         if !definition.rules.has_subtype("Arcane") {
             return vec![Vec::new()];
@@ -68,6 +69,10 @@ impl Game {
         let eligible: Vec<GameObjectId> = self.players[player.index()]
             .hand
             .iter()
+            // The spell being cast is on the stack by the time splice cards
+            // are revealed, so a card can never be spliced onto itself
+            // (CR 702.47a) however many splice clauses it prints.
+            .filter(|held| held.id != cast)
             .filter(|held| {
                 self.catalog
                     .get(held.definition)

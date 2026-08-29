@@ -286,7 +286,7 @@ impl Game {
                 {
                     continue;
                 }
-                for spliced in self.splice_selections(definition, player) {
+                for spliced in self.splice_selections(definition, player, card.id) {
                     let Some(splice_clauses) = self.spliced_clauses_of(&spliced) else {
                         continue;
                     };

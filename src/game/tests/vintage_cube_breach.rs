@@ -263,3 +263,63 @@ fn a_card_without_splice_cannot_be_spliced() {
         "splice is a clause the card has to print",
     );
 }
+
+/// "Putting the card onto the battlefield is optional. When the ability
+/// resolves, you can choose not to."
+#[test]
+fn the_creature_may_be_left_in_hand() {
+    let (mut game, breach_id) = breach_with(&[cards::SERRA_ANGEL]);
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == breach_id))
+        .expect("five mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_until_decision(&mut game);
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("a choice is offered");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: Vec::new(),
+        },
+    )
+    .expect("taking nothing is an answer");
+    drain_pending(&mut game);
+
+    assert!(game.battlefield.is_empty(), "nothing was put down");
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "and the Angel is still in hand",
+    );
+}
+
+/// "A card with a splice ability can't be spliced onto itself": the Breach
+/// being cast is on the stack rather than in hand, so with only that copy
+/// there is nothing to reveal.
+#[test]
+fn the_breach_cannot_splice_itself() {
+    let (mut game, breach_id) = breach_with(&[cards::SERRA_ANGEL]);
+    // The splice cost as well as the printed one, so nothing but the rules
+    // is standing in the way.
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+
+    let offers = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == breach_id))
+        .count();
+    assert_eq!(
+        offers, 1,
+        "one plain cast and no spliced one: it is its own only copy",
+    );
+}
