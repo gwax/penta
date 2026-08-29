@@ -534,6 +534,20 @@ impl Game {
                 then, otherwise, ..
             } => Self::immediate_attachment_target(*then)
                 .or_else(|| Self::immediate_attachment_target(*otherwise)),
+            // Both of these carry a nested procedure the same way a sequence
+            // does, so an Attach inside one is still part of the clause.
+            EffectDef::ForEachInBinding { effect, .. } => {
+                Self::immediate_attachment_target(*effect)
+            }
+            EffectDef::PutOntoBattlefieldThen { then, .. } => {
+                Self::immediate_attachment_target(*then)
+            }
+            // These attach something, but never an Aura to the host its own
+            // spell named: the first two put the source onto the object, and
+            // pairing is not attachment at all.
+            EffectDef::AttachToSource { .. }
+            | EffectDef::Reconfigure { .. }
+            | EffectDef::PairWithSource { .. } => None,
             other => {
                 debug_assert!(Self::effect_never_attaches(other));
                 None
@@ -542,7 +556,9 @@ impl Game {
     }
 
     /// Every effect that cannot attach anything. Listed exhaustively so a
-    /// new effect has to be classified rather than silently answering None.
+    /// new effect has to be classified rather than silently answering None,
+    /// which is why it is one long enumeration rather than a rule.
+    #[allow(clippy::too_many_lines)]
     fn effect_never_attaches(effect: EffectDef) -> bool {
         matches!(
             effect,
@@ -641,6 +657,28 @@ impl Game {
                 | EffectDef::CreateAttachedToken { .. }
                 | EffectDef::StaticApply { .. }
                 | EffectDef::Apply { .. }
+                | EffectDef::Proliferate
+                | EffectDef::Scry { .. }
+                | EffectDef::Explore { .. }
+                | EffectDef::Endure { .. }
+                | EffectDef::Cascade
+                | EffectDef::GainClassLevel { .. }
+                | EffectDef::CannotAttackIf(_)
+                | EffectDef::PutSpellIntoOwnersLibrary { .. }
+                | EffectDef::CreateMyriadTokens
+                | EffectDef::ExchangeControl { .. }
+                | EffectDef::ExileFromTopUntil { .. }
+                | EffectDef::ManifestDread { .. }
+                | EffectDef::MillWhileMatching { .. }
+                | EffectDef::ExileOneFromEachZone { .. }
+                | EffectDef::LookAtRandomCardInHand { .. }
+                | EffectDef::RevealAtRandomFromHand { .. }
+                // A card these let somebody cast later attaches through its
+                // own resolution, not through the clause that freed it.
+                | EffectDef::ExileGrantingOwnerPlay { .. }
+                | EffectDef::ExileTopAndMayCast { .. }
+                | EffectDef::MayCastTargetWithoutPaying { .. }
+                | EffectDef::PermitCastFromGraveyardThisTurn { .. }
                 | EffectDef::Special(_)
         )
     }

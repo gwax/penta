@@ -168,3 +168,70 @@ fn it_draws_the_turn_it_arrives() {
         "a card, the same turn"
     );
 }
+
+/// A story counter is a counter like any other: proliferate finds it and
+/// adds one, which is a second card the Staff never had to make a token
+/// for.
+#[test]
+fn proliferate_adds_a_story_counter() {
+    let (mut game, staff) = staged();
+    assert_eq!(story(&game, staff), 1, "the Spirit it came with");
+    let progress = game
+        .build_zone(PlayerId::One, &[cards::STEADY_PROGRESS])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let progress_id = progress.id;
+    game.players[0].hand.push(progress);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == progress_id))
+        .expect("three mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    for _ in 0..12 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .filter(|option| option.card.is_some_and(|(id, _)| id == staff))
+                .map(|option| option.id)
+                .collect::<Vec<_>>();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the Staff is one of the permanents it may add to");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert_eq!(
+        story(&game, staff),
+        2,
+        "the proliferate put a second story counter on it",
+    );
+    assert_eq!(
+        draws(&game, staff).len(),
+        1,
+        "and the tap is still the limit on spending them",
+    );
+}
