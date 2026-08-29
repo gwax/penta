@@ -193,3 +193,76 @@ fn it_cycles_for_three_colors() {
         vec![cards::GIANT_GROWTH],
     );
 }
+
+/// "A basic Swamp, Mountain, or Forest card": a Bayou is a Swamp and a
+/// Forest and still not one of them, because the supertype is what the
+/// clause asks for. And the fetch is not a land drop, so the basic it
+/// finds does not stop you playing one from hand.
+#[test]
+fn a_dual_with_the_right_types_is_not_basic_enough() {
+    let (mut game, landscape) = staged(&[cards::BAYOU, cards::FOREST]);
+    let held = card(97_800, cards::MOUNTAIN, PlayerId::One);
+    let held_id = held.id;
+    game.players[0].hand.push(held);
+    game.players[0].lands_played_this_turn = 0;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == landscape)
+        })
+        .expect("the fetch is offered");
+    game.apply(PlayerId::One, action).expect("it activates");
+    settle(&mut game);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the search asks what to find");
+    let offered: Vec<CardDefinitionId> = decision
+        .options
+        .iter()
+        .filter_map(|option| {
+            option
+                .card
+                .and_then(|(_, characteristics)| characteristics.card_definition())
+        })
+        .collect();
+    assert_eq!(
+        offered,
+        vec![cards::FOREST],
+        "the Forest is basic and the Bayou only has the types",
+    );
+
+    let forest = decision
+        .options
+        .iter()
+        .find(|option| {
+            option.card.is_some_and(|(_, characteristics)| {
+                characteristics.card_definition() == Some(cards::FOREST)
+            })
+        })
+        .expect("the Forest is offered")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![forest],
+        },
+    )
+    .expect("finding it is legal");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].lands_played_this_turn, 0,
+        "putting a land onto the battlefield is not playing one",
+    );
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if *card == held_id)),
+        "so the Mountain in hand is still a land drop waiting",
+    );
+}
