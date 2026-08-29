@@ -664,3 +664,58 @@ fn every_shock_land_taps_for_its_own_two_colors() {
         assert_eq!(offered, expected, "{definition:?} makes its own two");
     }
 }
+
+/// A Blood Moon reads lands on the battlefield and nothing else: the Tower
+/// in hand still cycles for its printed three, and the one that is played
+/// arrives untapped as a plain Mountain.
+#[test]
+fn a_blood_moon_leaves_cycling_from_hand_alone() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.put_onto_battlefield(PlayerId::One, cards::BLOOD_MOON)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let held = card(41_500, cards::RAFFINES_TOWER, PlayerId::One);
+    let held_id = held.id;
+    game.players[PlayerId::One.index()].hand.push(held);
+    let played = card(41_501, cards::RAFFINES_TOWER, PlayerId::One);
+    let played_id = played.id;
+    game.players[PlayerId::One.index()].hand.push(played);
+    game.players[PlayerId::One.index()].lands_played_this_turn = 0;
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let play = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == played_id))
+        .expect("a land drop is available");
+    game.apply(PlayerId::One, play).expect("it is playable");
+    drain_pending(&mut game);
+    let tower = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::RAFFINES_TOWER)
+        .expect("it was played");
+    assert!(!tower.tapped, "as a Mountain it has no clause to tap it");
+    let tower_id = tower.card.id;
+    let offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility { source, color, .. } if source == tower_id => Some(color),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(offered, vec![ManaColor::Red], "and a Mountain makes red");
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    assert!(
+        game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == held_id)
+        }),
+        "the copy in hand is not a land on the battlefield, so it cycles as printed",
+    );
+}
