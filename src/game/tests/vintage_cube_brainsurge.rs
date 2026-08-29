@@ -165,3 +165,66 @@ fn it_can_be_cast_at_instant_speed() {
         "an instant is castable in their end step",
     );
 }
+
+/// "The two cards you put on top can be from the four you just drew or ones
+/// that were already in your hand." A card held from before is as good a
+/// thing to bury as anything the Brainsurge turned up.
+#[test]
+fn a_card_held_from_before_may_go_back() {
+    let (mut game, brainsurge) = staged(&[
+        cards::MOUNTAIN,
+        cards::PLAINS,
+        cards::SWAMP,
+        cards::ISLAND,
+        cards::FOREST,
+    ]);
+    let held = game
+        .build_zone(PlayerId::One, &[cards::SERRA_ANGEL])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[0].hand.push(held);
+
+    cast(&mut game, brainsurge);
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("it asks which two go back");
+    let named = |definition| {
+        decision
+            .options
+            .iter()
+            .find(|option| {
+                option.card.is_some_and(|(_, characteristics)| {
+                    characteristics == ObjectCharacteristics::card(definition, CardPartId::PRIMARY)
+                })
+            })
+            .unwrap_or_else(|| panic!("{definition:?} is on the menu"))
+            .id
+    };
+    let chosen = vec![named(cards::SERRA_ANGEL), named(cards::FOREST)];
+
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: chosen,
+        },
+    )
+    .expect("the hand is the hand, whenever the cards arrived");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        library_top(&game, 2),
+        vec![cards::FOREST, cards::SERRA_ANGEL],
+        "the Angel went back under the Forest named after it",
+    );
+    assert!(
+        !game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "and it is no longer in hand",
+    );
+}
