@@ -40,6 +40,12 @@ distinguishes snapshots of the covered source and build inputs.
   checkpoint member; checkpoint format 9, replay version 2, and protocol 29
   are unchanged.
 
+- **A required choice with nothing to choose paid out anyway.** A Currency
+  Converter whose bank was empty still cashed out: nothing was put into a
+  graveyard, but "if it's a nonland card" read an object that was never
+  chosen and answered yes, so the tap made a free 2/2 Rogue every turn. A
+  mandatory object choice with no candidates now does nothing, and the
+  instructions that read the chosen object do not run.
 - **Sixteen clauses said "draw two then" where the card says "draw two
   cards, then".** A dropped "cards," ran through the catalog: Brainstorm and
   Frantic Search drew two of nothing, Primeval Titan searched for two land

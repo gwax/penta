@@ -49,6 +49,14 @@ impl Game {
             return;
         };
 
+        // A required choice with nothing to choose is not made at all, and
+        // what follows it reads the object that would have been chosen: a
+        // Currency Converter with an empty bank puts no card anywhere and
+        // so pays out neither half of "if it's a land ... if it's a nonland".
+        if definition.minimum > 0 && state.candidates.is_empty() {
+            return;
+        }
+
         // A mandatory instruction has no decision when every legal object is
         // forced, unless its binding preserves resolution order and at least
         // two objects still need ordering. An optional instruction still asks,

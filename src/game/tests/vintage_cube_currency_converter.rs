@@ -248,3 +248,77 @@ fn cycling_a_card_is_a_discard() {
         1,
     );
 }
+
+/// "Whenever *you* discard a card": their discard is their business. A
+/// Thoughtseize takes a card out of their hand and the Converter says
+/// nothing about it.
+#[test]
+fn their_discard_is_not_yours() {
+    let (mut game, _converter) = staged(&[cards::THOUGHTSEIZE]);
+    game.players[1].hand.clear();
+    game.players[1].graveyard.clear();
+    let theirs = game
+        .build_zone(PlayerId::Two, &[cards::GRIZZLY_BEARS])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[1].hand.push(theirs);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                game.players[0]
+                    .hand
+                    .iter()
+                    .any(|held| held.id == *card && held.definition == cards::THOUGHTSEIZE)
+                    && choices
+                        .iter_targets()
+                        .copied()
+                        .eq(std::iter::once(Target::Player(PlayerId::Two)))
+            }
+            _ => false,
+        })
+        .expect("a black mana points it at them");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    // Their hand holds one card, so nothing is left to choose.
+    settle(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+        "their card was discarded",
+    );
+    assert!(
+        game.players[0].exile.is_empty(),
+        "and nothing was banked: the Converter watches your discards only",
+    );
+    assert!(deciding(&game).is_none(), "it did not even ask");
+}
+
+/// Nothing about the cash-out is a cost beyond the tap, so an empty bank
+/// does not stop it being activated -- it simply does as much as it can,
+/// which is nothing at all.
+#[test]
+fn an_empty_bank_cashes_out_for_nothing() {
+    let (mut game, converter) = staged(&[]);
+
+    activate(&mut game, converter, 2);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == converter && permanent.tapped),
+        "the tap was paid",
+    );
+    assert!(
+        subtyped(&game, "Treasure").is_empty() && subtyped(&game, "Rogue").is_empty(),
+        "and there was nothing in exile to pay for anything",
+    );
+}
