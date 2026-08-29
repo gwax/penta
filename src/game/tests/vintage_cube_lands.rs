@@ -552,3 +552,62 @@ fn two_different_fetchlands_both_find_the_same_triome() {
         assert!(found.tapped, "and it arrives tapped, as it says");
     }
 }
+
+/// "Land cards not on the battlefield aren't Forests while Yavimaya is on
+/// the battlefield", and "Yavimaya isn't a Forest while it's not on the
+/// battlefield" either. A fetchland reads the library, where the Cradle
+/// changes nothing at all.
+#[test]
+fn yavimaya_makes_forests_of_nothing_in_the_library() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.battlefield.push(creature(
+        41_400,
+        cards::YAVIMAYA_CRADLE_OF_GROWTH,
+        PlayerId::One,
+    ));
+    let heath = game
+        .put_onto_battlefield(PlayerId::One, cards::WINDSWEPT_HEATH)
+        .expect("cataloged");
+    game.players[PlayerId::One.index()].library.clear();
+    for (index, definition) in [
+        cards::ISLAND,
+        cards::YAVIMAYA_CRADLE_OF_GROWTH,
+        cards::FOREST,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        game.players[PlayerId::One.index()].library.push(card(
+            41_410 + u32::try_from(index).expect("three cards"),
+            definition,
+            PlayerId::One,
+        ));
+    }
+
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == heath))
+        .expect("the fetch is offered");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    pass_priority_pair(&mut game);
+
+    let offered = game
+        .pending_decisions
+        .first()
+        .expect("the search asks")
+        .observation
+        .options
+        .iter()
+        .filter_map(|option| match option.card {
+            Some((_, ObjectCharacteristics::Card { definition, .. })) => Some(definition),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        offered,
+        vec![cards::FOREST],
+        "the Island is still an Island in the library, and the Cradle is no Forest itself",
+    );
+}
