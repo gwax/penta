@@ -696,3 +696,124 @@ fn a_fetch_will_take_your_last_life() {
     assert_eq!(game.players[0].life, 0);
     assert!(game.result.is_some(), "zero life is a loss");
 }
+
+/// "A Forest or Plains card" is read off the type line, and Dryad Arbor's
+/// says Land Creature — Forest Dryad. A Heath finds it, and what arrives is
+/// a creature that has just entered: it may block, but it cannot attack or
+/// tap for its own mana until its controller's next turn.
+#[test]
+fn a_heath_can_fetch_a_dryad_arbor() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let source = game
+        .put_onto_battlefield(PlayerId::One, cards::WINDSWEPT_HEATH)
+        .expect("cataloged");
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(13_900, cards::DRYAD_ARBOR, PlayerId::One));
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source: actual, .. } if *actual == source)
+        })
+        .expect("the fetch is offered");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    pass_priority_pair(&mut game);
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the search asks");
+    let arbor = decision
+        .options
+        .iter()
+        .find(|option| {
+            matches!(
+                option.card,
+                Some((_, ObjectCharacteristics::Card { definition, .. }))
+                    if definition == cards::DRYAD_ARBOR
+            )
+        })
+        .expect("a Forest card is a Forest card, creature or not")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![arbor],
+        },
+    )
+    .expect("naming it is legal");
+    drain_pending(&mut game);
+
+    let fetched = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::DRYAD_ARBOR)
+        .expect("it is on the battlefield");
+    assert_eq!(game.power(fetched), Some(1), "a 1/1 as well as a land");
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(
+                action,
+                Action::ActivateManaAbility { source, .. } if *source == fetched.card.id
+            )
+        }),
+        "and it arrived this turn, so its mana ability waits (CR 302.6)",
+    );
+}
+
+/// Putting a land onto the battlefield is not playing one (CR 305.1), so
+/// the land drop is still there afterwards.
+#[test]
+fn a_fetch_does_not_spend_the_land_drop() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    let source = game
+        .put_onto_battlefield(PlayerId::One, cards::WINDSWEPT_HEATH)
+        .expect("cataloged");
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(13_910, cards::SAVANNAH, PlayerId::One));
+    let held = card(13_911, cards::FOREST, PlayerId::One);
+    let held_id = held.id;
+    game.players[0].hand.push(held);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.players[0].lands_played_this_turn = 0;
+
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source: actual, .. } if *actual == source)
+        })
+        .expect("the fetch is offered");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SAVANNAH),
+        "the Savannah came out",
+    );
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if *card == held_id)),
+        "and the land in hand may still be played this turn",
+    );
+}
