@@ -202,3 +202,104 @@ fn the_minus_two_finds_nothing_on_an_empty_board() {
     );
     assert!(game.players[1].graveyard.is_empty());
 }
+
+/// "A pile can be empty. If the player chooses an empty pile, no permanents
+/// will be sacrificed." Putting the whole board in one pile leaves the other
+/// one empty, and that is the one they take.
+#[test]
+fn an_empty_pile_is_a_pile_they_may_choose() {
+    let (mut game, liliana) = staged(6, &[], &[]);
+    let mut theirs = Vec::new();
+    for definition in [cards::SAVANNAH_LIONS, cards::SERRA_ANGEL, cards::FOREST] {
+        theirs.push(
+            game.put_onto_battlefield(PlayerId::Two, definition)
+                .expect("cataloged"),
+        );
+    }
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let ultimate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source,
+                ability: AbilityOrigin::Printed { ability, .. },
+                targets,
+                ..
+            } => {
+                *source == liliana
+                    && *ability == AbilityId(2)
+                    && targets
+                        .iter()
+                        .flat_map(TargetSelection::targets)
+                        .any(|target| *target == Target::Player(PlayerId::Two))
+            }
+            _ => false,
+        })
+        .expect("six loyalty pays for the ultimate");
+    game.apply(PlayerId::One, ultimate).expect("it activates");
+    while game.pending_decisions.is_empty() && !game.stack.is_empty() {
+        let priority = game.priority;
+        game.apply(priority, Action::PassPriority)
+            .expect("nothing to answer yet");
+    }
+
+    // Everything into one pile, which leaves the other one empty.
+    let split = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the split is offered to Liliana's controller");
+    let everything = split
+        .options
+        .iter()
+        .map(|option| option.id)
+        .collect::<Vec<_>>();
+    assert_eq!(everything.len(), 3, "their whole board is on offer");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: split.id,
+            options: everything,
+        },
+    )
+    .expect("one pile may hold all of it");
+
+    let choice = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the victim chooses a pile");
+    assert_eq!(choice.player, PlayerId::Two);
+    assert_eq!(choice.options.len(), 2, "an empty pile is still a pile");
+    let empty = choice
+        .options
+        .iter()
+        .find(|option| option.members.is_empty())
+        .expect("one of them holds nothing")
+        .id;
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: choice.id,
+            options: vec![empty],
+        },
+    )
+    .expect("taking the empty pile is legal");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        theirs.iter().all(|id| game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == *id)),
+        "they sacrificed nothing at all",
+    );
+    assert!(
+        game.players[1].graveyard.is_empty(),
+        "and nothing reached their graveyard",
+    );
+}
