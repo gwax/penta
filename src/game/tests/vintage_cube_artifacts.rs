@@ -602,3 +602,77 @@ fn the_mind_stone_makes_colorless_and_then_cannot_draw() {
         "so nothing was drawn",
     );
 }
+
+/// "Once Wishclaw Talisman runs out of wish counters, it remains on the
+/// battlefield. You can't activate its last ability at all."
+#[test]
+fn a_spent_wishclaw_talisman_stays_and_does_nothing() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let talisman = creature(79_020, cards::WISHCLAW_TALISMAN, PlayerId::One);
+    let talisman_id = talisman.card.id;
+    game.battlefield.push(talisman);
+    game.players[0]
+        .library
+        .push(card(79_021, cards::BLACK_LOTUS, PlayerId::One));
+    game.players[0].mana_pool.colorless = 1;
+
+    assert!(
+        activation(&game, talisman_id).is_none(),
+        "no wish counter, no activation",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == talisman_id),
+        "and it sits there all the same",
+    );
+}
+
+/// The price of the tutor: the opponent who was handed the Talisman may
+/// spend the counters that are left on their own turn, and hands it back.
+#[test]
+fn the_opponent_may_spend_the_wishes_they_were_given() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mut talisman = creature(79_030, cards::WISHCLAW_TALISMAN, PlayerId::Two);
+    talisman.add_counters(CounterKind::named("wish"), 2);
+    let talisman_id = talisman.card.id;
+    game.battlefield.push(talisman);
+    game.players[1].library.clear();
+    game.players[1]
+        .library
+        .push(card(79_031, cards::BLACK_LOTUS, PlayerId::Two));
+    game.players[1].mana_pool.colorless = 1;
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::Two;
+    let before = game.players[1].hand.len();
+
+    let action = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == talisman_id)
+        })
+        .expect("it is their turn and their artifact now");
+    game.apply(PlayerId::Two, action).expect("it is activated");
+    resolve(&mut game);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[1].hand.len(),
+        before + 1,
+        "they found what they wanted",
+    );
+    let talisman = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == talisman_id)
+        .expect("the artifact is still on the battlefield");
+    assert_eq!(
+        talisman.controller,
+        PlayerId::One,
+        "and it goes back across the table with the last wish in it",
+    );
+    assert_eq!(talisman.counters(CounterKind::named("wish")), 1);
+}
