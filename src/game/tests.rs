@@ -525,6 +525,7 @@ mod vintage_cube_monarch;
 mod vintage_cube_monstrous_rage;
 mod vintage_cube_more_spells;
 mod vintage_cube_mox_opal;
+mod vintage_cube_mox_sapphire;
 mod vintage_cube_multiversal_passage;
 mod vintage_cube_mutagenic_growth;
 mod vintage_cube_myr_battlesphere;
