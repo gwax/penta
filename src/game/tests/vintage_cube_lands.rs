@@ -611,3 +611,56 @@ fn yavimaya_makes_forests_of_nothing_in_the_library() {
         "the Island is still an Island in the library, and the Cradle is no Forest itself",
     );
 }
+
+/// Every shock land, with the two colours its basic land types make. The
+/// cycle is one card printed ten ways; what is worth checking per member is
+/// which pair it carries.
+const SHOCK_LANDS: [(CardDefinitionId, [ManaColor; 2]); 10] = [
+    (cards::BLOOD_CRYPT, [ManaColor::Black, ManaColor::Red]),
+    (cards::BREEDING_POOL, [ManaColor::Green, ManaColor::Blue]),
+    (cards::GODLESS_SHRINE, [ManaColor::White, ManaColor::Black]),
+    (
+        cards::HALLOWED_FOUNTAIN,
+        [ManaColor::White, ManaColor::Blue],
+    ),
+    (cards::OVERGROWN_TOMB, [ManaColor::Black, ManaColor::Green]),
+    (cards::SACRED_FOUNDRY, [ManaColor::Red, ManaColor::White]),
+    (cards::STEAM_VENTS, [ManaColor::Blue, ManaColor::Red]),
+    (cards::STOMPING_GROUND, [ManaColor::Red, ManaColor::Green]),
+    (cards::TEMPLE_GARDEN, [ManaColor::Green, ManaColor::White]),
+    (cards::WATERY_GRAVE, [ManaColor::Blue, ManaColor::Black]),
+];
+
+/// "This has the mana abilities associated with both of its basic land
+/// types" -- and only those two.
+#[test]
+fn every_shock_land_taps_for_its_own_two_colors() {
+    for (definition, colors) in SHOCK_LANDS {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let land = game
+            .put_onto_battlefield(PlayerId::One, definition)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        if let Some(permanent) = game
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == land)
+        {
+            permanent.tapped = false;
+        }
+
+        let mut offered = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .filter_map(|action| match action {
+                Action::ActivateManaAbility { source, color, .. } if source == land => Some(color),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        offered.sort_unstable();
+        let mut expected = colors.to_vec();
+        expected.sort_unstable();
+        assert_eq!(offered, expected, "{definition:?} makes its own two");
+    }
+}
