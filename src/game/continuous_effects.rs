@@ -563,6 +563,7 @@ impl Game {
                 | EffectDef::DealDamageAndApply { .. }
                 | EffectDef::DrainLife { .. }
                 | EffectDef::GainLife { .. }
+                | EffectDef::SetLifeTotal { .. }
                 | EffectDef::AddPlayerCounters { .. }
                 | EffectDef::DrawCards { .. }
                 | EffectDef::Discard { .. }
@@ -838,6 +839,8 @@ impl Game {
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::One(
                     ObjectRefDef::Binding(_)
+                    | ObjectRefDef::ZoneChangeSuccessor(_)
+                    | ObjectRefDef::ZoneChangeResultOfTriggeringObject
                     | ObjectRefDef::ResolvingObject
                     | ObjectRefDef::AdditionalCostObject(_)
                     | ObjectRefDef::AbilityGrantSource

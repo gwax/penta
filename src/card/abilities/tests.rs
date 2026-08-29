@@ -82,7 +82,6 @@ mod tests {
         assert!(matches!(
             *exile.then,
             EffectDef::MoveToZone {
-                from: Some(ZoneKind::Hand),
                 zone: ZoneKind::Exile,
                 ..
             }
@@ -184,7 +183,12 @@ mod tests {
 
         let artifact = ObjectPredicateDef::HasType(CardType::Artifact);
         let DeclarativeAbilityDef::Triggered(matching_dies) =
-            dies_trigger_matching("When an artifact dies, test.", artifact, effect).definition
+            dies_trigger_matching(
+                "When an artifact is put into a graveyard from the battlefield, test.",
+                artifact,
+                effect,
+            )
+            .definition
         else {
             unreachable!()
         };

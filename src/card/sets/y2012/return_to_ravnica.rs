@@ -507,7 +507,6 @@ pub(in crate::card::sets) static REST_IN_PEACE: CardRecord = CardRecord::new_wit
                     &[ZoneKind::Graveyard],
                     PlayerRelation::Any,
                 ),
-                from: None,
                 zone: ZoneKind::Exile,
                 controller: None,
                 placement: ZonePlacement::Top,
@@ -678,7 +677,6 @@ static TROSTANIS_JUDGMENT_EFFECTS: [EffectDef; 2] = [
     EffectDef::MoveToZone {
         counters: None,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-        from: None,
         zone: ZoneKind::Exile,
         placement: ZonePlacement::Top,
         arrival_effect: None,
@@ -841,7 +839,6 @@ pub(in crate::card::sets) static CYCLONIC_RIFT: CardRecord = CardRecord::new_wit
             EffectDef::MoveToZone {
                 counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                from: None,
                 zone: ZoneKind::Hand,
                 controller: None,
                 placement: ZonePlacement::Top,
@@ -860,7 +857,6 @@ pub(in crate::card::sets) static CYCLONIC_RIFT: CardRecord = CardRecord::new_wit
                     &[ZoneKind::Battlefield],
                     PlayerRelation::NotYou,
                 ),
-                from: None,
                 zone: ZoneKind::Hand,
                 controller: None,
                 placement: ZonePlacement::Top,
@@ -1105,7 +1101,6 @@ static JACE_ARCHITECT_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
     EffectDef::MoveToZone {
         counters: None,
         object: abilities::CHOSEN_PILE,
-        from: None,
         zone: ZoneKind::Hand,
         placement: ZonePlacement::Top,
         arrival_effect: None,
@@ -1116,7 +1111,6 @@ static JACE_ARCHITECT_PILE_MOVES: EffectDef = EffectDef::Sequence(&[
     EffectDef::MoveToZone {
         counters: None,
         object: abilities::UNCHOSEN_PILE,
-        from: None,
         zone: ZoneKind::Library,
         placement: ZonePlacement::Bottom,
         arrival_effect: None,
@@ -1355,7 +1349,6 @@ pub(in crate::card::sets) static TOWER_DRAKE: CardRecord = CardRecord::new_with_
 static VOIDWIELDER_RETURN: EffectDef = EffectDef::MoveToZone {
     counters: None,
     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-    from: None,
     zone: ZoneKind::Hand,
     controller: None,
     placement: ZonePlacement::Top,
@@ -1447,7 +1440,6 @@ pub(in crate::card::sets) static CREMATE: CardRecord = CardRecord::new_with_lega
             EffectDef::MoveToZone {
                 counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                from: None,
                 zone: ZoneKind::Exile,
                 controller: None,
                 placement: ZonePlacement::Top,
@@ -3154,17 +3146,10 @@ pub(in crate::card::sets) static WILD_BEASTMASTER: CardRecord = CardRecord::new(
 );
 
 // RTR 140 — Worldspine Wurm
-/// Both walks, because "from anywhere" needs both: the battlefield walk is
-/// what sees a permanent die, and only the graveyard walk sees a card that
-/// was milled or discarded. Neither sees the other's event, so the ability
-/// listening from both fires once either way.
-static WURM_GRAVEYARD_ZONES: [ZoneKind; 2] = [ZoneKind::Battlefield, ZoneKind::Graveyard];
-
 static WURM_SHUFFLES_ITSELF_BACK: [EffectDef; 2] = [
     EffectDef::MoveToZone {
         counters: None,
         object: EffectRecipientDef::Source,
-        from: None,
         zone: ZoneKind::Library,
         placement: ZonePlacement::Top,
         controller: None,
@@ -3193,16 +3178,16 @@ static WORLDSPINE_WURM_ABILITIES: [AbilityDef; 3] = [
             ))
             .with_amount(3),
     ),
-    // A trigger rather than a replacement, which is the whole reason the
-    // tokens happen: the Wurm reaches the graveyard, both abilities see it
-    // there, and only then does it go home.
+    // A trigger rather than a replacement. The ability belongs to the new
+    // graveyard object, even when the previous object was a permanent; the
+    // separate dies ability above is the one that looks back at the battlefield.
     AbilityDef::triggered(
         "When Worldspine Wurm is put into a graveyard from anywhere, shuffle it into its owner's \
          library.",
         TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Graveyard)),
         EffectDef::Sequence(&WURM_SHUFFLES_ITSELF_BACK),
     )
-    .with_source_zones(&WURM_GRAVEYARD_ZONES),
+    .with_source_zones(&[ZoneKind::Graveyard]),
 ];
 
 pub(in crate::card::sets) static WORLDSPINE_WURM: CardRecord = CardRecord::new_with_legacy_id(
@@ -3351,7 +3336,6 @@ pub(in crate::card::sets) static AZORIUS_CHARM: CardRecord = CardRecord::new_wit
             )], EffectDef::MoveToZone {
                 counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    from: None,
                     zone: ZoneKind::Library,
                     controller: None,
                     placement: ZonePlacement::Top,
@@ -3636,7 +3620,6 @@ pub(in crate::card::sets) static DRAMATIC_RESCUE: CardRecord = CardRecord::new_w
             EffectDef::MoveToZone {
                 counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                from: None,
                 zone: ZoneKind::Hand,
                 controller: None,
                 placement: ZonePlacement::Top,
@@ -4418,7 +4401,6 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new_wi
             )], EffectDef::MoveToZone {
                 counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    from: None,
                     zone: ZoneKind::Exile,
                     controller: None,
                     placement: ZonePlacement::Top,
@@ -4461,7 +4443,6 @@ pub(in crate::card::sets) static SKULL_REND: CardRecord = CardRecord::new_with_l
 static SKYMARK_ROC_RETURN: EffectDef = EffectDef::MoveToZone {
     counters: None,
     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-    from: None,
     zone: ZoneKind::Hand,
     controller: None,
     placement: ZonePlacement::Top,
@@ -4535,16 +4516,23 @@ pub(in crate::card::sets) static SPAWN_OF_RIX_MAADI: CardRecord = CardRecord::ne
 );
 
 // RTR 200 — Sphinx's Revelation
-// Audit: custom — Needs migration to declarative life gain and card draw that both use the spell's chosen X value.
 pub(in crate::card::sets) static SPHINXS_REVELATION: CardRecord = CardRecord::new_with_legacy_id(
     216,
     "Sphinx's Revelation",
     CardArt::new("404d9413-ef57-4b6e-8584-48a1dc7fe6f1", "Slawomir Maniak"),
     CardSet::ReturnToRavnica,
-    CardRules::new_instant(mana_cost!("{X}{W}{U}{U}")).with_ability(AbilityDef::custom_full(
+    CardRules::new_instant(mana_cost!("{X}{W}{U}{U}")).with_ability(AbilityDef::spell(
         "You gain X life and draw X cards.",
-        CardBehavior::SphinxsRevelation,
-        "Implemented by the named card-local special behavior.",
+        EffectDef::Sequence(&[
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::player(PlayerRefDef::EffectController),
+                amount: ValueDef::ChosenX,
+            },
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::player(PlayerRefDef::EffectController),
+                amount: ValueDef::ChosenX,
+            },
+        ]),
     )),
 );
 
@@ -4669,7 +4657,6 @@ pub(in crate::card::sets) static TREASURED_FIND: CardRecord = CardRecord::new_wi
             EffectDef::MoveToZone {
                 counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                from: None,
                 zone: ZoneKind::Hand,
                 controller: None,
                 placement: ZonePlacement::Top,
@@ -4933,7 +4920,6 @@ static DEATHRITE_EXILES_A_LAND_FOR_MANA: EffectDef = EffectDef::Sequence(&[
     EffectDef::MoveToZone {
         counters: None,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-        from: None,
         zone: ZoneKind::Exile,
         controller: None,
         placement: ZonePlacement::Top,
@@ -4986,7 +4972,6 @@ pub(in crate::card::sets) static DEATHRITE_SHAMAN: CardRecord = CardRecord::new_
                 EffectDef::MoveToZone {
                     counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    from: None,
                     zone: ZoneKind::Exile,
                     controller: None,
                     placement: ZonePlacement::Top,
@@ -5018,7 +5003,6 @@ pub(in crate::card::sets) static DEATHRITE_SHAMAN: CardRecord = CardRecord::new_
                 EffectDef::MoveToZone {
                     counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    from: None,
                     zone: ZoneKind::Exile,
                     controller: None,
                     placement: ZonePlacement::Top,
@@ -5339,7 +5323,6 @@ pub(in crate::card::sets) static CODEX_SHREDDER: CardRecord = CardRecord::new_wi
             EffectDef::MoveToZone {
                 counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                from: None,
                 zone: ZoneKind::Hand,
                 controller: None,
                 placement: ZonePlacement::Top,

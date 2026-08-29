@@ -25,6 +25,21 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **Zone-change triggers now keep both sides of the move.** A committed move
+  records the old object's last-known identity and the exact new object in the
+  destination instead of overloading one ID and guessing through the global
+  successor map at resolution. Leaves-the-battlefield triggers match the old
+  object; destination triggers such as Worldspine Wurm's from-anywhere clause
+  are discovered only after the new graveyard card exists, so a stolen Wurm
+  produces one dies trigger controlled by its last controller and one shuffle
+  trigger controlled by its owner. Rancor, Glistening Oil, Spine of Ish Sah,
+  Cyclopean Mummy, Mortus Strider, Enduring Innocence, and Serra Paragon use
+  the event's exact destination object. Kaldra Compleat no longer follows a
+  lethally damaged creature into its graveyard, where it is a new object and
+  no zone-change exception applies. The event-result ID is an additive
+  checkpoint member; checkpoint format 9, replay version 2, and protocol 29
+  are unchanged.
+
 - **Sixteen clauses said "draw two then" where the card says "draw two
   cards, then".** A dropped "cards," ran through the catalog: Brainstorm and
   Frantic Search drew two of nothing, Primeval Titan searched for two land
@@ -190,6 +205,16 @@ distinguishes snapshots of the covered source and build inputs.
   Preacher of the Schism stops making a Vampire off an attack that was
   pointed at a planeswalker rather than at the leading player. Every clause
   that already read "attacks you" keeps counting both, which is what it says.
+- **Six ISD-M14 deck cards now use shared declarative rules.** Negate and
+  Essence Scatter use the ordinary filtered counterspell effect; Pillar of
+  Flame uses the damage-linked exile-instead-of-dying rule; Sphinx's
+  Revelation composes chosen-X life gain and card draw; Blood Baron of Vizkopa
+  gates its +6/+6 and flying effect on live life-total comparisons; and
+  Worldfire exiles the named zones before setting both life totals to one.
+  Their five retired `CardBehavior` selectors and card-local execution paths
+  have been removed. Existing action and checkpoint vocabulary already
+  expresses all six cards, so protocol 29, replay version 2, and checkpoint
+  format 9 are unchanged.
 
 - **A target somebody else chooses.** "That player chooses target player who
   controls more creatures than they do" hands the choice to a player who
@@ -1250,6 +1275,16 @@ distinguishes snapshots of the covered source and build inputs.
   unchanged.
 
 ### Fixed
+
+- **Object references stop at zone changes.** Source, triggering-object, and
+  damaged-object references now preserve exact identity just as targets and
+  bindings already did, with retired objects available only for last-known
+  information. Printed exceptions such as a dies trigger's "return it" use
+  explicit one-zone-change references, which find the card created by that
+  move but do not chase it through another. `MoveToZone` consequently no
+  longer needs a destination-time `from` guard. These are internal card-model
+  semantics over the existing successor links, so protocol 29, replay version
+  2, and checkpoint format 9 are unchanged.
 
 - **Same-name permanents stay visually distinct when their game state does.**
   The browser's battlefield piles now compare the complete public permanent

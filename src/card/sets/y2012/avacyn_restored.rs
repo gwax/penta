@@ -5,17 +5,17 @@ use crate::card::sets::y1993::alpha;
 use crate::card::sets::y2003::mirrodin as catalog_mrd;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardBehavior,
-    CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ColorChoiceOperationDef,
-    ColorSet, ComparisonDef, ControlDurationDef, CostModificationDef, CounterKind,
-    CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef, DamagePreventionDef,
-    DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal,
-    EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef,
-    ManaSpendEffectDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostCountDef,
-    SpellAdditionalCostDef, SpendModeDef, TargetChooserDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, ChoiceVisibilityDef, ColorChoiceOperationDef, ColorSet, ComparisonDef,
+    ControlDurationDef, CostModificationDef, CounterKind, CreatureTypeSetDef,
+    DamageEventMatcherDef, DamageKindDef, DamagePreventionDef, DamageRecipientMatcherDef,
+    DamageSourceMatcherDef, DiscardSelectionDef, DividedTotal, EffectDef, EffectPaymentDef,
+    EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef, ManaSpendEffectDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef, ResolvedEffectDurationDef,
+    SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef,
+    SpendModeDef, TargetChooserDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -176,7 +176,6 @@ pub(in crate::card::sets) static BANISHING_STROKE: CardRecord = CardRecord::new_
             EffectDef::MoveToZone {
                 counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                from: None,
                 zone: ZoneKind::Library,
                 placement: ZonePlacement::Bottom,
                 arrival_effect: None,
@@ -549,7 +548,6 @@ pub(in crate::card::sets) static HOLY_JUSTICIAR: CardRecord = CardRecord::new_wi
                     then: &EffectDef::MoveToZone {
                         counters: None,
                         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                        from: None,
                         zone: ZoneKind::Exile,
                         placement: ZonePlacement::Top,
                         arrival_effect: None,
@@ -863,7 +861,6 @@ pub(in crate::card::sets) static TERMINUS: CardRecord = CardRecord::new_with_leg
             EffectDef::MoveToZone {
                 counters: None,
                 object: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::Any),
-                from: None,
                 zone: ZoneKind::Library,
                 controller: None,
                 placement: ZonePlacement::Bottom,
@@ -1362,7 +1359,6 @@ pub(in crate::card::sets) static INTO_THE_VOID: CardRecord = CardRecord::new_wit
         EffectDef::MoveToZone {
             counters: None,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            from: None,
             zone: ZoneKind::Hand,
             placement: ZonePlacement::Top,
             arrival_effect: None,
@@ -1469,7 +1465,6 @@ pub(in crate::card::sets) static MIST_RAVEN: CardRecord = CardRecord::new_with_l
             EffectDef::MoveToZone {
                 counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                from: None,
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
@@ -1557,7 +1552,6 @@ pub(in crate::card::sets) static PEEL_FROM_REALITY: CardRecord = CardRecord::new
                 EffectDef::MoveToZone {
                     counters: None,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    from: None,
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
@@ -1568,7 +1562,6 @@ pub(in crate::card::sets) static PEEL_FROM_REALITY: CardRecord = CardRecord::new
                 EffectDef::MoveToZone {
                     counters: None,
                     object: EffectRecipientDef::Target(TargetIndex(1)),
-                    from: None,
                     zone: ZoneKind::Hand,
                     placement: ZonePlacement::Top,
                     arrival_effect: None,
@@ -1776,7 +1769,6 @@ pub(in crate::card::sets) static VANISHMENT: CardRecord = CardRecord::new_with_l
             EffectDef::MoveToZone {
                 counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                from: None,
                 zone: ZoneKind::Library,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
@@ -1955,7 +1947,6 @@ pub(in crate::card::sets) static CRYPT_CREEPER: CardRecord = CardRecord::new_wit
             EffectDef::MoveToZone {
                 counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                from: None,
                 zone: ZoneKind::Exile,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
@@ -2100,8 +2091,7 @@ pub(in crate::card::sets) static DREAD_SLAVER: CardRecord = CardRecord::new_with
             "Whenever a creature dealt damage by this creature this turn dies, return it to the battlefield under your control. That creature is a black Zombie in addition to its other colors and types.",
             EffectDef::MoveToZone {
                 counters: None,
-                object: EffectRecipientDef::TriggeringObject,
-                from: None,
+                object: EffectRecipientDef::TriggeringZoneChangeResult,
                 zone: ZoneKind::Battlefield,
                 controller: Some(PlayerRelation::You),
                 placement: ZonePlacement::Top,
@@ -2131,7 +2121,6 @@ pub(in crate::card::sets) static DRIVER_OF_THE_DEAD: CardRecord = CardRecord::ne
             })], EffectDef::MoveToZone {
                 counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                from: None,
                 zone: ZoneKind::Battlefield,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
@@ -2601,7 +2590,6 @@ pub(in crate::card::sets) static ARCHWING_DRAGON: CardRecord = CardRecord::new_w
             EffectDef::MoveToZone {
                 counters: None,
                 object: EffectRecipientDef::Source,
-                from: None,
                 zone: ZoneKind::Hand,
                 placement: ZonePlacement::Top,
                 arrival_effect: None,
@@ -3115,19 +3103,21 @@ pub(in crate::card::sets) static MALIGNUS: CardRecord = CardRecord::new(
 );
 
 // AVR 149 — Pillar of Flame
-// Audit: custom — Needs a declarative damage-linked replacement that exiles a damaged creature if it would die that turn.
 pub(in crate::card::sets) static PILLAR_OF_FLAME: CardRecord = CardRecord::new_with_legacy_id(
     195,
     "Pillar of Flame",
     CardArt::new("c983e879-d9d2-47cc-9958-506711ca80cd", "Karl Kopinski"),
     CardSet::AvacynRestored,
-    CardRules::new_sorcery(mana_cost!("{R}")).with_ability(
-        AbilityDef::custom_full(
+    CardRules::new_sorcery(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
             "Pillar of Flame deals 2 damage to any target. If a creature dealt damage this way would die this turn, exile it instead.",
-            CardBehavior::PillarOfFlame,
-            "Implemented by the named card-local special behavior.",
-        ),
-    ),
+            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::AnyTarget)],
+            EffectDef::DealDamageAndApply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(2),
+                applied: AppliedEffectDef::Rule(AppliedRuleDef::ExileInsteadOfDying),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        )),
 );
 
 // AVR 150 — Raging Poltergeist
@@ -4798,7 +4788,6 @@ pub(in crate::card::sets) static VESSEL_OF_ENDLESS_REST: CardRecord = CardRecord
             })], EffectDef::MoveToZone {
                 counters: None,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                from: None,
                 zone: ZoneKind::Library,
                 placement: ZonePlacement::Bottom,
                 arrival_effect: None,
