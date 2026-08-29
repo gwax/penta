@@ -109,3 +109,63 @@ fn a_counter_added_afterwards_is_not_doubled() {
         "the +2 Berserk gave is settled: the counter adds its own one",
     );
 }
+
+/// Berserk says "destroy", and destruction is what regeneration answers: a
+/// Troll with a shield up walks away from the end step it was doomed to,
+/// unlike a creature Snuff Out names.
+#[test]
+fn a_regeneration_shield_saves_the_creature_it_doomed() {
+    let (mut game, _lions, held) = staged(1);
+    let mut troll = creature(99_500, cards::UTHDEN_TROLL, PlayerId::One);
+    troll.attacking = true;
+    troll.attacked_this_turn = true;
+    let troll_id = troll.card.id;
+    game.battlefield.push(troll);
+
+    cast_at(&mut game, held[0], troll_id);
+    assert_eq!(power_of(&game, troll_id), Some(4), "a 2/2 doubled");
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    let regenerate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == troll_id)
+        })
+        .expect("one red buys a shield");
+    game.apply(PlayerId::One, regenerate).expect("it activates");
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+
+    let survivor = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == troll_id)
+        .expect("the shield answered the destruction");
+    assert_eq!(
+        survivor.regeneration_shields, 0,
+        "and the shield was spent doing it",
+    );
+    assert!(survivor.tapped, "regenerating taps what it saves");
+}
