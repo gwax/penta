@@ -229,3 +229,83 @@ fn an_empty_graveyard_asks_nothing() {
         "and the Witness arrived all the same",
     );
 }
+
+/// "If a resolving spell puts Eternal Witness onto the battlefield, Eternal
+/// Witness's ability can target that card if it's put into your graveyard as
+/// it resolves." A Through the Breach finishes resolving -- and lands in the
+/// graveyard -- before the Witness it put down asks what to take.
+#[test]
+fn it_can_take_back_the_spell_that_put_it_down() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    let witness = game
+        .build_zone(PlayerId::One, &[cards::ETERNAL_WITNESS])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[0].hand.push(witness);
+    let breach = game
+        .build_zone(PlayerId::One, &[cards::THROUGH_THE_BREACH])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let breach_id = breach.id;
+    game.players[0].hand.push(breach);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 4);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == breach_id))
+        .expect("five mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+    // The Breach asks which creature to put down.
+    answer(&mut game, Some(cards::ETERNAL_WITNESS), None);
+    settle(&mut game);
+
+    let asking = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the Witness asks what to take back");
+    let offered = asking
+        .options
+        .iter()
+        .filter_map(|option| {
+            option
+                .card
+                .and_then(|(_, characteristics)| characteristics.card_definition())
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        offered,
+        vec![cards::THROUGH_THE_BREACH],
+        "the spell that put it down is in the graveyard by then",
+    );
+
+    answer(&mut game, Some(cards::THROUGH_THE_BREACH), None);
+    answer(&mut game, None, Some("Do it"));
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::THROUGH_THE_BREACH),
+        "and it comes back to hand",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::ETERNAL_WITNESS),
+        "with the Witness itself still standing, for the turn at least",
+    );
+}
