@@ -236,3 +236,41 @@ fn a_fresh_wight_cannot_fetch() {
         "the Bears beside her are food once she is settled",
     );
 }
+
+/// The tap and the creature are costs: a library with no land in it leaves
+/// her tapped, the creature eaten, and nothing found -- and she is bigger
+/// for it, which is the only thing the activation bought.
+#[test]
+fn a_landless_library_still_eats_the_creature() {
+    let (mut game, wight, ids) = staged(&[cards::GRIZZLY_BEARS], &[], &[cards::LIGHTNING_BOLT]);
+
+    let action = fetches(&game, wight)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility { cost_objects, .. } => cost_objects.contains(&ids[0]),
+            _ => false,
+        })
+        .expect("nothing about the offer asks what the library holds");
+    game.apply(PlayerId::One, action).expect("it activates");
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == ids[0]),
+        "the Bears were eaten as a cost",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        1,
+        "and the Bolt stayed where it was",
+    );
+    let wight = permanent(&game, wight);
+    assert!(wight.tapped, "she tapped for nothing");
+    assert_eq!(
+        game.power(wight),
+        Some(3),
+        "except the Bears in the graveyard, which is something",
+    );
+}
