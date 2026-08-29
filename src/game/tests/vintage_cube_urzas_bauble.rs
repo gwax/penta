@@ -171,3 +171,50 @@ fn an_empty_hand_still_pays_the_card() {
 
     assert_eq!(game.players[0].hand.len(), 1);
 }
+
+/// "Target player" is any player: pointing it at yourself is legal, and
+/// looks at one of your own cards.
+#[test]
+fn it_may_be_pointed_at_yourself() {
+    let (mut game, bauble) = staged(&[cards::LIGHTNING_BOLT]);
+    game.players[0]
+        .hand
+        .push(card(310_500, cards::GRIZZLY_BEARS, PlayerId::One));
+
+    crack_it(&mut game, bauble, PlayerId::One);
+
+    let seen = game
+        .observe(PlayerId::One)
+        .last_seen_hand
+        .expect("you looked at something");
+    assert_eq!(seen.0, PlayerId::One, "your own hand");
+    assert_eq!(
+        seen.1.iter().map(|card| card.1).collect::<Vec<_>>(),
+        vec![cards::GRIZZLY_BEARS],
+        "the one card you were holding",
+    );
+    assert!(
+        game.players[1]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "and theirs was never looked at",
+    );
+}
+
+/// The look is yours alone: the player whose hand it read learns nothing.
+#[test]
+fn the_other_player_is_shown_nothing() {
+    let (mut game, bauble) = staged(&[cards::LIGHTNING_BOLT, cards::GRIZZLY_BEARS]);
+
+    crack_it(&mut game, bauble, PlayerId::Two);
+
+    assert!(
+        game.observe(PlayerId::One).last_seen_hand.is_some(),
+        "you saw a card",
+    );
+    assert!(
+        game.observe(PlayerId::Two).last_seen_hand.is_none(),
+        "and they were told nothing about which one",
+    );
+}
