@@ -817,3 +817,94 @@ fn a_fetch_does_not_spend_the_land_drop() {
         "and the land in hand may still be played this turn",
     );
 }
+
+/// Searching a library is done in private: the searcher sees what is there
+/// and the other player is not shown the decision at all.
+#[test]
+fn a_library_search_is_private_to_the_searcher() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let source = game
+        .put_onto_battlefield(PlayerId::One, cards::POLLUTED_DELTA)
+        .expect("cataloged");
+    game.players[0].library.clear();
+    for (index, definition) in [cards::UNDERGROUND_SEA, cards::MOUNTAIN]
+        .into_iter()
+        .enumerate()
+    {
+        game.players[0].library.push(card(
+            14_000 + u32::try_from(index).expect("two cards"),
+            definition,
+            PlayerId::One,
+        ));
+    }
+
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source: actual, .. } if *actual == source)
+        })
+        .expect("the fetch is offered");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    pass_priority_pair(&mut game);
+
+    let searcher = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the searcher is asked what to find");
+    assert!(
+        searcher.options.iter().any(|option| matches!(
+            option.card,
+            Some((_, ObjectCharacteristics::Card { definition, .. }))
+                if definition == cards::UNDERGROUND_SEA
+        )),
+        "and sees the card that qualifies",
+    );
+    assert!(
+        game.observe(PlayerId::Two).decision.is_none(),
+        "the other player is not shown a library being read",
+    );
+}
+
+/// "Then shuffle" is part of the ability rather than part of finding
+/// something: a search that turns up nothing still leaves the library in a
+/// different order.
+#[test]
+fn the_library_is_shuffled_even_when_nothing_is_found() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let source = game
+        .put_onto_battlefield(PlayerId::One, cards::POLLUTED_DELTA)
+        .expect("cataloged");
+    game.players[0].library.clear();
+    for index in 0..8 {
+        game.players[0]
+            .library
+            .push(card(14_100 + index, cards::MOUNTAIN, PlayerId::One));
+    }
+    let before = game.players[0]
+        .library
+        .iter()
+        .map(|card| card.id)
+        .collect::<Vec<_>>();
+
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source: actual, .. } if *actual == source)
+        })
+        .expect("the fetch is offered");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    let after = game.players[0]
+        .library
+        .iter()
+        .map(|card| card.id)
+        .collect::<Vec<_>>();
+    assert_eq!(after.len(), before.len(), "nothing was found to take");
+    assert_ne!(after, before, "but the library was shuffled all the same");
+}
