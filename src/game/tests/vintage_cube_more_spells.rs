@@ -870,3 +870,64 @@ fn corpse_dance_returns_itself_only_when_bought_back() {
         );
     }
 }
+
+/// "You can cast a spell using flashback even if it was somehow put into
+/// your graveyard without having been cast", and "the mana value of the
+/// spell is determined only by its mana cost, no matter what the total cost
+/// to cast it was": a milled Firebolt flashed back for five is still a
+/// one-mana spell, which a Spell Blast answers by naming X=1.
+#[test]
+fn a_milled_firebolt_flashes_back_and_stays_a_one_drop() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    game.players[1].hand.clear();
+    // Straight into the graveyard: it was never cast from anywhere.
+    game.players[0]
+        .graveyard
+        .push(card(73_500, cards::FIREBOLT, PlayerId::One));
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 4;
+    let blast = card(73_501, cards::SPELL_BLAST, PlayerId::Two);
+    let blast_id = blast.id;
+    game.players[1].hand.push(blast);
+    game.players[1].mana_pool.blue = 1;
+    game.players[1].mana_pool.colorless = 4;
+
+    let flashback = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+            if *card == GameObjectId(73_500)
+                && choices.targets().iter().any(|selection| {
+                    selection.targets().contains(&Target::Player(PlayerId::Two))
+                }))
+        })
+        .expect("flashback does not ask how the card got there");
+    game.apply(PlayerId::One, flashback).expect("it is cast");
+    let on_stack = game.stack.last().expect("it is on the stack").id;
+    game.priority = PlayerId::Two;
+
+    let answers = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. }
+                if card == blast_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(on_stack)) =>
+            {
+                Some(choices.x())
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        answers,
+        vec![1],
+        "one, from the printed cost: the five it was paid for is not its size",
+    );
+}
