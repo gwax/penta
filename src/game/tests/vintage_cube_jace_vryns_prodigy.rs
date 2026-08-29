@@ -251,3 +251,82 @@ fn the_minus_three_buys_back_a_spell() {
         "and it was exiled rather than left in the graveyard",
     );
 }
+
+/// "Jace entering the battlefield while there are five or more cards in your
+/// graveyard" is not what flips him: only the activation asks, and only
+/// after its own discard.
+#[test]
+fn a_full_graveyard_does_not_flip_him_by_itself() {
+    let (game, jace) = staged(6);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == jace),
+        "he is still the creature he entered as",
+    );
+    assert!(
+        permanent_named(&game, "Jace, Telepath Unbound").is_none(),
+        "nothing has asked the question yet",
+    );
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        6,
+        "with a graveyard that would answer it",
+    );
+}
+
+/// "You can activate one of the planeswalker's loyalty abilities the turn it
+/// enters the battlefield." He flips in the middle of your main phase, and
+/// the plus is there to be used at once.
+#[test]
+fn the_flipped_planeswalker_may_move_at_once() {
+    let (mut game, jace) = staged(4);
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    loot(&mut game, jace);
+    let unbound = permanent_named(&game, "Jace, Telepath Unbound")
+        .expect("he came back as the planeswalker")
+        .card
+        .id;
+
+    let plus = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source,
+                ability: AbilityOrigin::Printed { ability, .. },
+                targets,
+                ..
+            } => {
+                *source == unbound
+                    && *ability == AbilityId(0)
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets() == [Target::Permanent(bears)])
+            }
+            _ => false,
+        })
+        .expect("the plus is offered on the turn he arrived");
+    game.apply(PlayerId::One, plus).expect("it activates");
+    settle(&mut game);
+
+    let shrunk = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("the Bears are still there");
+    assert_eq!(game.power(shrunk), Some(0), "two power off a 2/2");
+    assert_eq!(
+        permanent_named(&game, "Jace, Telepath Unbound")
+            .expect("he is still there")
+            .counters(CounterKind::Loyalty),
+        6,
+        "and the plus took him to six",
+    );
+}
