@@ -103,22 +103,31 @@ impl Game {
         expiration: ContinuousEffectExpiration,
         source: GameObjectId,
     ) -> bool {
+        if expiration.requires_source_tapped()
+            && !self
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == source && permanent.tapped)
+        {
+            return false;
+        }
+        if expiration.requires_source_to_remain()
+            && !self
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == source)
+        {
+            return false;
+        }
         match expiration {
-            ContinuousEffectExpiration::WhileSourceTapped => self
-                .battlefield
-                .iter()
-                .any(|permanent| permanent.card.id == source && permanent.tapped),
-            // The same question with the tap dropped: a source that has left
-            // takes what it did with it, and one that came back is a new
-            // object that never did it.
-            ContinuousEffectExpiration::WhileSourceRemains => self
-                .battlefield
-                .iter()
-                .any(|permanent| permanent.card.id == source),
             ContinuousEffectExpiration::EndOfTurn
             | ContinuousEffectExpiration::EndOfCombat
             | ContinuousEffectExpiration::UpkeepOf(_)
             | ContinuousEffectExpiration::TurnOf { .. }
+            | ContinuousEffectExpiration::WhileSourceTapped
+            | ContinuousEffectExpiration::WhileSourceRemains
+            | ContinuousEffectExpiration::NextMatchingCast
+            | ContinuousEffectExpiration::AnyOf(_)
             | ContinuousEffectExpiration::Never => true,
         }
     }
@@ -653,7 +662,6 @@ impl Game {
                 | EffectDef::BecomeMonarch { .. }
                 | EffectDef::VoteForPermanentToExile { .. }
                 | EffectDef::DamageCannotBePreventedThisTurn
-                | EffectDef::GrantFlashToNextSorcery
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ExileGrantingControllerPlayThisTurn { .. }
                 | EffectDef::MayPlayWithoutPaying { .. }

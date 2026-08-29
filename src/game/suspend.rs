@@ -5,8 +5,8 @@
 //! suspended card remains an ordinary targetable card object in that zone.
 
 use crate::card::{
-    CardEffectStatus, CardType, CharacteristicContext, DeclarativeAbilityDef, KeywordAbility,
-    PlayActionKind, SuspendAbilityDef, SuspendTimeDef, ZoneKind,
+    CardEffectStatus, CharacteristicContext, DeclarativeAbilityDef, KeywordAbility, PlayActionKind,
+    SuspendAbilityDef, SuspendTimeDef, ZoneKind,
 };
 use crate::{AbilityOrigin, Action, GameObjectId, PlayerId};
 
@@ -57,25 +57,7 @@ impl Game {
                 {
                     return false;
                 }
-                let part_has_flash = match &option.form {
-                    crate::card::SpellForm::Part(part) => {
-                        definition.part(*part).is_some_and(|part| {
-                            part.rules.has_executable_keyword(KeywordAbility::Flash)
-                        })
-                    }
-                    crate::card::SpellForm::Combined(parts) => parts.iter().any(|part| {
-                        definition.part(*part).is_some_and(|part| {
-                            part.rules.has_executable_keyword(KeywordAbility::Flash)
-                        })
-                    }),
-                };
-                let granted_flash = (types.contains(CardType::Sorcery)
-                    && self.sorcery_flash_grants[player.index()] > 0)
-                    || self.cast_as_though_it_had_flash(card, player, option);
-                types.contains(CardType::Instant)
-                    || part_has_flash
-                    || granted_flash
-                    || self.sorcery_speed_window(player)
+                self.spell_form_timing_allows(definition, card, player, option, types)
             })
     }
 

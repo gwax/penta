@@ -46,7 +46,7 @@ pub(super) enum DamageSourceGroupSnapshot {
 /// One resolved, turn-scoped damage redirection. Redirection changes the
 /// recipient before prevention is considered, so it is deliberately not a
 /// damage-source matcher or prevention snapshot.
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct ResolvedDamageRedirectSnapshot {
     pub(super) player: usize,

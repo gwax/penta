@@ -112,19 +112,6 @@ impl Game {
         for target in self.effect_recipients(recipient, object, context, scoped) {
             Self::apply_components_to(self, target, &components, base_resolution);
         }
-        // Everything else lasts until cleanup. Keeping the duration explicit
-        // here makes unsupported permanent/granted effects visible rather
-        // than silently changing their lifetime.
-        debug_assert!(matches!(
-            duration,
-            ResolvedEffectDurationDef::UntilEndOfTurn
-                | ResolvedEffectDurationDef::UntilEndOfCombat
-                | ResolvedEffectDurationDef::Permanent
-                | ResolvedEffectDurationDef::UntilYourNextUpkeep
-                | ResolvedEffectDurationDef::UntilYourNextTurn
-                | ResolvedEffectDurationDef::WhileSourceTapped
-                | ResolvedEffectDurationDef::WhileSourceRemains
-        ));
     }
 
     /// The same application, for recipients an effect has already resolved to
@@ -272,24 +259,36 @@ impl Game {
         controller: PlayerId,
         turns_started: u32,
     ) -> ContinuousEffectExpiration {
-        match duration {
-            ResolvedEffectDurationDef::UntilEndOfTurn => ContinuousEffectExpiration::EndOfTurn,
-            ResolvedEffectDurationDef::UntilEndOfCombat => ContinuousEffectExpiration::EndOfCombat,
-            ResolvedEffectDurationDef::UntilYourNextUpkeep => {
-                ContinuousEffectExpiration::UpkeepOf(controller)
-            }
-            ResolvedEffectDurationDef::UntilYourNextTurn => ContinuousEffectExpiration::TurnOf {
-                player: controller,
-                turn: turns_started.saturating_add(1),
-            },
-            ResolvedEffectDurationDef::Permanent => ContinuousEffectExpiration::Never,
-            ResolvedEffectDurationDef::WhileSourceTapped => {
-                ContinuousEffectExpiration::WhileSourceTapped
-            }
-            ResolvedEffectDurationDef::WhileSourceRemains => {
-                ContinuousEffectExpiration::WhileSourceRemains
-            }
-        }
+        ContinuousEffectExpiration::any_of(
+            [
+                duration
+                    .contains(ResolvedEffectDurationDef::UntilEndOfTurn)
+                    .then_some(ContinuousEffectExpiration::EndOfTurn),
+                duration
+                    .contains(ResolvedEffectDurationDef::UntilNextMatchingCast)
+                    .then_some(ContinuousEffectExpiration::NextMatchingCast),
+                duration
+                    .contains(ResolvedEffectDurationDef::UntilEndOfCombat)
+                    .then_some(ContinuousEffectExpiration::EndOfCombat),
+                duration
+                    .contains(ResolvedEffectDurationDef::UntilYourNextUpkeep)
+                    .then_some(ContinuousEffectExpiration::UpkeepOf(controller)),
+                duration
+                    .contains(ResolvedEffectDurationDef::UntilYourNextTurn)
+                    .then_some(ContinuousEffectExpiration::TurnOf {
+                        player: controller,
+                        turn: turns_started.saturating_add(1),
+                    }),
+                duration
+                    .contains(ResolvedEffectDurationDef::WhileSourceTapped)
+                    .then_some(ContinuousEffectExpiration::WhileSourceTapped),
+                duration
+                    .contains(ResolvedEffectDurationDef::WhileSourceRemains)
+                    .then_some(ContinuousEffectExpiration::WhileSourceRemains),
+            ]
+            .into_iter()
+            .flatten(),
+        )
     }
 
     fn apply_applied_effect_component(

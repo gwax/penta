@@ -232,7 +232,10 @@ reconstructs the open named counter collections carried by players.
 Format 10 represents resumable card handling as named object-collection
 operations, so a checkpoint can preserve each collection, its ordering, the
 player responsible for the next stage, and the ordinary effect that follows
-it. Partition and group-choice stages retain their pile semantics.
+it. Partition and group-choice stages retain their pile semantics. The format
+also stores Quicken-style cast-timing permissions in the same resolved
+permission collection as every other duration-bound timing grant, including
+the composed end-of-turn-or-next-matching-cast expiration.
 Supply a hypothesis for the zones the observation intentionally redacts, then
 construct a live local game:
 
@@ -1075,13 +1078,17 @@ used by live resolution. Those continuations preserve ordered collections and
 can hand successive choices to different players before an ordinary nested
 effect acts on chosen and unchosen groups. It also authenticates the ordered
 battlefield-exit continuation used when several cards enter one library at the
-same position.
+same position. Format 10 also removes the standalone `sorceryFlashGrants`
+counters. Quicken-style permissions are now ordinary resolved play
+permissions, including their authored predicate, composed expiration
+conditions, and next-matching-cast behavior.
 
 A format-9 continuation in the middle of one of those workflows does not carry
 the named bindings or remaining operation chain needed by the declarative
-model. Reconstruction consumers should require
-`reconstruction.checkpoint.v10`, keep checking the exact simulation
-fingerprint, and regenerate format-9 checkpoints with the current engine.
+model, and the old grant count cannot reconstruct the richer timing rule.
+Reconstruction consumers should require `reconstruction.checkpoint.v10`, keep
+checking the exact simulation fingerprint, and regenerate format-9
+checkpoints with the current engine.
 
 ### Migrating checkpoint format 8 to 9
 

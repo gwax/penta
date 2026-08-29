@@ -21,14 +21,14 @@ use crate::card::sets::{
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BasicLandType, BattlefieldEntryModificationDef, CardArt,
-    CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ChoiceVisibilityDef, ChooseDef,
-    ClassifyObjectsDef, ColorChoiceOperationDef, ColorSet, ComparisonDef, CounterKind,
-    CreatureTypeSetDef, DamageEventMatcherDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
-    HalvedValueDef, ManaColor, MoveObjectsDef, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, RoundingDef, SacrificedAmountDef,
-    ScaledValueDef, TargetConditionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    CardRules, CardSet, CardSupertype, CardType, CardTypeSet, CastTimingPermissionDef,
+    ChoiceVisibilityDef, ChooseDef, ClassifyObjectsDef, ColorChoiceOperationDef, ColorSet,
+    ComparisonDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DiscardSelectionDef,
+    EffectDef, EffectRecipientDef, HalvedValueDef, ManaColor, MoveObjectsDef,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef,
+    PlayerRelation, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    RoundingDef, SacrificedAmountDef, ScaledValueDef, TargetConditionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -888,7 +888,14 @@ pub(in crate::card::sets) static QUICKEN: CardRecord = CardRecord::new_with_lega
     CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell(
         "The next sorcery spell you cast this turn can be cast as though it had flash. (It can be cast any time you could cast an instant.)\nDraw a card.",
         EffectDef::Sequence(&[
-            EffectDef::GrantFlashToNextSorcery,
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Controller,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayCastAsThoughItHadFlash(
+                    CastTimingPermissionDef::new(ObjectPredicateDef::HasType(CardType::Sorcery)),
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn
+                    .or(ResolvedEffectDurationDef::UntilNextMatchingCast),
+            },
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),

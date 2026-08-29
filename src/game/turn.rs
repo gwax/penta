@@ -1,9 +1,9 @@
 use super::{
-    Action, AppliedRuleDef, CardBehavior, CombatDamageStage, CommittedTriggerEvent,
-    ContinuousEffectExpiration, CounterKind, DeclarativeAbilityDef, DeferredBeginTurnEffect,
-    EffectResolutionContext, Game, GameEvent, GameObjectId, GameResult, InstalledTriggerLifetime,
-    ManaPool, PendingProcedure, PlayerId, ReplacementEffectDef, ReplacementEventDef, Step,
-    TriggerContext, TurnPhaseDef, TurnPhaseResume, TurnStepDef, one_or_none,
+    Action, AppliedRuleDef, CardBehavior, CombatDamageStage, CommittedTriggerEvent, CounterKind,
+    DeclarativeAbilityDef, DeferredBeginTurnEffect, EffectResolutionContext, Game, GameEvent,
+    GameObjectId, GameResult, InstalledTriggerLifetime, ManaPool, PendingProcedure, PlayerId,
+    ReplacementEffectDef, ReplacementEventDef, Step, TriggerContext, TurnPhaseDef, TurnPhaseResume,
+    TurnStepDef, one_or_none,
 };
 
 mod begin_turn;
@@ -483,7 +483,6 @@ impl Game {
         self.creature_died_this_turn = false;
         self.damage_cannot_be_prevented_this_turn = false;
         self.creatures_died_this_turn = 0;
-        self.sorcery_flash_grants = [0; 2];
         self.turn_phase_queue.clear();
         self.turn_phase_resume = None;
         self.spells_cast_last_turn = self.spells_cast_this_turn;
@@ -713,7 +712,6 @@ impl Game {
         // These resolving permissions and restrictions last only until the
         // cleanup step. A later phase can still be inserted into this turn,
         // but it must not revive an expired Quicken or Aurelia's Fury effect.
-        self.sorcery_flash_grants = [0; 2];
         self.resolved_play_restrictions
             .retain(|restriction| restriction.expiration.survives_cleanup());
         self.resolved_attack_restrictions
@@ -757,14 +755,10 @@ impl Game {
             permanent.temporary_keywords.clear();
             permanent.resolved_continuous_effects.retain(|effect| {
                 effect.expiration.survives_cleanup()
-                    && (!matches!(
-                        effect.expiration,
-                        ContinuousEffectExpiration::WhileSourceTapped
-                    ) || still_tapped.contains(&effect.source.object))
-                    && (!matches!(
-                        effect.expiration,
-                        ContinuousEffectExpiration::WhileSourceRemains
-                    ) || still_present.contains(&effect.source.object))
+                    && (!effect.expiration.requires_source_tapped()
+                        || still_tapped.contains(&effect.source.object))
+                    && (!effect.expiration.requires_source_to_remain()
+                        || still_present.contains(&effect.source.object))
             });
             if permanent
                 .copy_expiration

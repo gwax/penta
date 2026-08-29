@@ -68,7 +68,7 @@ pub(super) fn parse_ongoing_effect(
     if !super::semantics::ability_locator_matches_origin(&snapshot.ability, origin) {
         return Err("ongoing effect ability locator disagrees with its origin".into());
     }
-    let expiration = parse_expiration(snapshot.expiration)?;
+    let expiration = parse_expiration(&snapshot.expiration)?;
     if expiration == super::ContinuousEffectExpiration::WhileSourceTapped {
         return Err("ongoing effect cannot have a source-tapped expiration".into());
     }

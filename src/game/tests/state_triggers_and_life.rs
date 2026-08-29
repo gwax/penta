@@ -1,4 +1,5 @@
 use super::*;
+use crate::CastTimingPermissionDef;
 use crate::card::{PlayActionMatcherDef, PlayRestrictionDef};
 
 static MUTAVAULT_TEST_CHARACTERISTICS: [AppliedEffectDef; 3] = [

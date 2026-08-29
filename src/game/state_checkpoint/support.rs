@@ -96,7 +96,7 @@ const fn parse_mana_color(color: ManaColorSnapshot) -> crate::ManaColor {
     }
 }
 
-const fn expiration_snapshot(
+fn expiration_snapshot(
     expiration: ContinuousEffectExpiration,
 ) -> ContinuousEffectExpirationSnapshot {
     match expiration {
@@ -119,12 +119,22 @@ const fn expiration_snapshot(
         ContinuousEffectExpiration::WhileSourceRemains => {
             ContinuousEffectExpirationSnapshot::WhileSourceRemains
         }
+        ContinuousEffectExpiration::NextMatchingCast => {
+            ContinuousEffectExpirationSnapshot::NextMatchingCast
+        }
+        ContinuousEffectExpiration::AnyOf(_) => ContinuousEffectExpirationSnapshot::AnyOf {
+            expirations: expiration
+                .atomic_members()
+                .into_iter()
+                .map(expiration_snapshot)
+                .collect(),
+        },
         ContinuousEffectExpiration::Never => ContinuousEffectExpirationSnapshot::Never,
     }
 }
 
 fn parse_expiration(
-    expiration: ContinuousEffectExpirationSnapshot,
+    expiration: &ContinuousEffectExpirationSnapshot,
 ) -> Result<ContinuousEffectExpiration, String> {
     match expiration {
         ContinuousEffectExpirationSnapshot::EndOfTurn => Ok(ContinuousEffectExpiration::EndOfTurn),
@@ -132,12 +142,12 @@ fn parse_expiration(
             Ok(ContinuousEffectExpiration::EndOfCombat)
         }
         ContinuousEffectExpirationSnapshot::UpkeepOf { seat } => Ok(
-            ContinuousEffectExpiration::UpkeepOf(player_from_index(seat)?),
+            ContinuousEffectExpiration::UpkeepOf(player_from_index(*seat)?),
         ),
         ContinuousEffectExpirationSnapshot::TurnOf { seat, turn } => {
             Ok(ContinuousEffectExpiration::TurnOf {
-                player: player_from_index(seat)?,
-                turn,
+                player: player_from_index(*seat)?,
+                turn: *turn,
             })
         }
         ContinuousEffectExpirationSnapshot::WhileSourceTapped => {
@@ -145,6 +155,19 @@ fn parse_expiration(
         }
         ContinuousEffectExpirationSnapshot::WhileSourceRemains => {
             Ok(ContinuousEffectExpiration::WhileSourceRemains)
+        }
+        ContinuousEffectExpirationSnapshot::NextMatchingCast => {
+            Ok(ContinuousEffectExpiration::NextMatchingCast)
+        }
+        ContinuousEffectExpirationSnapshot::AnyOf { expirations } => {
+            if expirations.is_empty() {
+                return Err("checkpoint expiration anyOf must not be empty".to_owned());
+            }
+            let parsed = expirations
+                .iter()
+                .map(parse_expiration)
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(ContinuousEffectExpiration::any_of(parsed))
         }
         ContinuousEffectExpirationSnapshot::Never => Ok(ContinuousEffectExpiration::Never),
     }

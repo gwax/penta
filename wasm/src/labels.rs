@@ -211,6 +211,7 @@ impl WebGame {
                 modes,
                 ..
             } => Some(self.activation_label(observation, *source, *ability, modes)),
+            Action::Suspend { card, ability, .. } => self.ability_rules_text(*card, *ability),
             Action::KeepHand
             | Action::TakeMulligan
             | Action::BottomCards { .. }
@@ -221,7 +222,6 @@ impl WebGame {
             | Action::TurnFaceUp { .. }
             | Action::Foretell { .. }
             | Action::Plot { .. }
-            | Action::Suspend { .. }
             | Action::TakeCompanion { .. }
             | Action::UnlockDoor { .. }
             | Action::PassPriority

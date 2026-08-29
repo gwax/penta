@@ -443,9 +443,6 @@ pub enum EffectDef {
         recipient: EffectRecipientDef,
         total: ValueDef,
     },
-    /// Lets the next sorcery its controller casts this turn be cast as
-    /// though it had flash.
-    GrantFlashToNextSorcery,
     /// Runs `then` only if the condition holds where this effect resolves.
     /// A condition on a triggered ability is an intervening-if and is checked
     /// twice; this one is part of the effect and is checked once.

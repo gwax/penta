@@ -30,10 +30,186 @@ pub(super) enum ContinuousEffectExpiration {
     /// For as long as the source is still on the battlefield. Read live, so
     /// nothing has to notice the moment it leaves.
     WhileSourceRemains,
+    /// Ends when the affected player next casts a spell matching the applied
+    /// permission. Cast legality queries do not satisfy this condition.
+    NextMatchingCast,
+    /// Ends when any contained atomic condition does. The authored duration
+    /// may be nested, but resolution flattens it into this allocation-free
+    /// set so resolved effects remain `Copy`.
+    AnyOf(ContinuousEffectExpirationSet),
     Never,
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(super) struct ContinuousEffectExpirationSet {
+    flags: u8,
+    upkeep_mask: u8,
+    turn_of: [Option<u32>; 2],
+}
+
+impl ContinuousEffectExpirationSet {
+    const END_OF_TURN: u8 = 1 << 0;
+    const END_OF_COMBAT: u8 = 1 << 1;
+    const WHILE_SOURCE_TAPPED: u8 = 1 << 2;
+    const WHILE_SOURCE_REMAINS: u8 = 1 << 3;
+    const NEXT_MATCHING_CAST: u8 = 1 << 4;
+
+    const fn has(self, flag: u8) -> bool {
+        self.flags & flag != 0
+    }
+
+    fn add(&mut self, flag: u8) {
+        self.flags |= flag;
+    }
+
+    fn insert(&mut self, expiration: ContinuousEffectExpiration) {
+        match expiration {
+            ContinuousEffectExpiration::EndOfTurn => self.add(Self::END_OF_TURN),
+            ContinuousEffectExpiration::EndOfCombat => self.add(Self::END_OF_COMBAT),
+            ContinuousEffectExpiration::UpkeepOf(player) => {
+                self.upkeep_mask |= 1 << player.index();
+            }
+            ContinuousEffectExpiration::TurnOf { player, turn } => {
+                self.turn_of[player.index()] = Some(turn);
+            }
+            ContinuousEffectExpiration::WhileSourceTapped => self.add(Self::WHILE_SOURCE_TAPPED),
+            ContinuousEffectExpiration::WhileSourceRemains => {
+                self.add(Self::WHILE_SOURCE_REMAINS);
+            }
+            ContinuousEffectExpiration::NextMatchingCast => self.add(Self::NEXT_MATCHING_CAST),
+            ContinuousEffectExpiration::AnyOf(other) => self.merge(other),
+            ContinuousEffectExpiration::Never => {}
+        }
+    }
+
+    fn merge(&mut self, other: Self) {
+        self.flags |= other.flags;
+        self.upkeep_mask |= other.upkeep_mask;
+        for (turn, other_turn) in self.turn_of.iter_mut().zip(other.turn_of) {
+            *turn = match (*turn, other_turn) {
+                (Some(current), Some(other)) => Some(current.min(other)),
+                (current, other) => current.or(other),
+            };
+        }
+    }
+
+    fn len(self) -> usize {
+        self.flags.count_ones() as usize
+            + self.upkeep_mask.count_ones() as usize
+            + self.turn_of.into_iter().flatten().count()
+    }
+
+    fn only(self) -> Option<ContinuousEffectExpiration> {
+        (self.len() == 1).then(|| {
+            if self.has(Self::END_OF_TURN) {
+                ContinuousEffectExpiration::EndOfTurn
+            } else if self.has(Self::END_OF_COMBAT) {
+                ContinuousEffectExpiration::EndOfCombat
+            } else if self.upkeep_mask & 1 != 0 {
+                ContinuousEffectExpiration::UpkeepOf(PlayerId::One)
+            } else if self.upkeep_mask & 2 != 0 {
+                ContinuousEffectExpiration::UpkeepOf(PlayerId::Two)
+            } else if let Some(turn) = self.turn_of[0] {
+                ContinuousEffectExpiration::TurnOf {
+                    player: PlayerId::One,
+                    turn,
+                }
+            } else if let Some(turn) = self.turn_of[1] {
+                ContinuousEffectExpiration::TurnOf {
+                    player: PlayerId::Two,
+                    turn,
+                }
+            } else if self.has(Self::WHILE_SOURCE_TAPPED) {
+                ContinuousEffectExpiration::WhileSourceTapped
+            } else if self.has(Self::WHILE_SOURCE_REMAINS) {
+                ContinuousEffectExpiration::WhileSourceRemains
+            } else {
+                ContinuousEffectExpiration::NextMatchingCast
+            }
+        })
+    }
+}
+
 impl ContinuousEffectExpiration {
+    pub(super) fn any_of(expirations: impl IntoIterator<Item = Self>) -> Self {
+        let mut set = ContinuousEffectExpirationSet::default();
+        for expiration in expirations {
+            set.insert(expiration);
+        }
+        set.only().unwrap_or_else(|| {
+            if set.len() == 0 {
+                Self::Never
+            } else {
+                Self::AnyOf(set)
+            }
+        })
+    }
+
+    pub(super) fn atomic_members(self) -> Vec<Self> {
+        let Self::AnyOf(set) = self else {
+            return vec![self];
+        };
+        let mut members = Vec::with_capacity(set.len());
+        if set.has(ContinuousEffectExpirationSet::END_OF_TURN) {
+            members.push(Self::EndOfTurn);
+        }
+        if set.has(ContinuousEffectExpirationSet::END_OF_COMBAT) {
+            members.push(Self::EndOfCombat);
+        }
+        if set.upkeep_mask & 1 != 0 {
+            members.push(Self::UpkeepOf(PlayerId::One));
+        }
+        if set.upkeep_mask & 2 != 0 {
+            members.push(Self::UpkeepOf(PlayerId::Two));
+        }
+        if let Some(turn) = set.turn_of[0] {
+            members.push(Self::TurnOf {
+                player: PlayerId::One,
+                turn,
+            });
+        }
+        if let Some(turn) = set.turn_of[1] {
+            members.push(Self::TurnOf {
+                player: PlayerId::Two,
+                turn,
+            });
+        }
+        if set.has(ContinuousEffectExpirationSet::WHILE_SOURCE_TAPPED) {
+            members.push(Self::WhileSourceTapped);
+        }
+        if set.has(ContinuousEffectExpirationSet::WHILE_SOURCE_REMAINS) {
+            members.push(Self::WhileSourceRemains);
+        }
+        if set.has(ContinuousEffectExpirationSet::NEXT_MATCHING_CAST) {
+            members.push(Self::NextMatchingCast);
+        }
+        members
+    }
+
+    pub(super) const fn expires_on_next_matching_cast(self) -> bool {
+        match self {
+            Self::NextMatchingCast => true,
+            Self::AnyOf(set) => set.has(ContinuousEffectExpirationSet::NEXT_MATCHING_CAST),
+            _ => false,
+        }
+    }
+
+    pub(super) const fn requires_source_tapped(self) -> bool {
+        match self {
+            Self::WhileSourceTapped => true,
+            Self::AnyOf(set) => set.has(ContinuousEffectExpirationSet::WHILE_SOURCE_TAPPED),
+            _ => false,
+        }
+    }
+
+    pub(super) const fn requires_source_to_remain(self) -> bool {
+        match self {
+            Self::WhileSourceRemains => true,
+            Self::AnyOf(set) => set.has(ContinuousEffectExpirationSet::WHILE_SOURCE_REMAINS),
+            _ => false,
+        }
+    }
+
     /// Whether this effect is still live as a turn begins, which is before
     /// the untap step. An until-your-next-upkeep effect is: the untap step
     /// comes first, so anything that has to be read there -- an untap
@@ -46,11 +222,17 @@ impl ContinuousEffectExpiration {
     ) -> bool {
         match self {
             Self::TurnOf { player, turn } => turns_started[player.index()] < turn,
+            Self::AnyOf(set) => set
+                .turn_of
+                .into_iter()
+                .enumerate()
+                .all(|(player, turn)| turn.is_none_or(|turn| turns_started[player] < turn)),
             Self::UpkeepOf(_)
             | Self::EndOfTurn
             | Self::EndOfCombat
             | Self::WhileSourceTapped
             | Self::WhileSourceRemains
+            | Self::NextMatchingCast
             | Self::Never => true,
         }
     }
@@ -59,11 +241,13 @@ impl ContinuousEffectExpiration {
     pub(super) fn survives_untap_step(self, active_player: PlayerId) -> bool {
         match self {
             Self::UpkeepOf(player) => player != active_player,
+            Self::AnyOf(set) => set.upkeep_mask & (1 << active_player.index()) == 0,
             Self::TurnOf { .. }
             | Self::EndOfTurn
             | Self::EndOfCombat
             | Self::WhileSourceTapped
             | Self::WhileSourceRemains
+            | Self::NextMatchingCast
             | Self::Never => true,
         }
     }
@@ -71,11 +255,22 @@ impl ContinuousEffectExpiration {
     pub(super) const fn survives_cleanup(self) -> bool {
         // An end-of-combat effect is already gone by cleanup; keeping it in
         // this list would be harmless but says the wrong thing.
-        !matches!(self, Self::EndOfTurn | Self::EndOfCombat)
+        match self {
+            Self::EndOfTurn | Self::EndOfCombat => false,
+            Self::AnyOf(set) => {
+                !set.has(ContinuousEffectExpirationSet::END_OF_TURN)
+                    && !set.has(ContinuousEffectExpirationSet::END_OF_COMBAT)
+            }
+            _ => true,
+        }
     }
 
     pub(super) const fn survives_end_of_combat(self) -> bool {
-        !matches!(self, Self::EndOfCombat)
+        match self {
+            Self::EndOfCombat => false,
+            Self::AnyOf(set) => !set.has(ContinuousEffectExpirationSet::END_OF_COMBAT),
+            _ => true,
+        }
     }
 }
 

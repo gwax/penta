@@ -100,7 +100,7 @@ pub(super) fn parse_resolved_player_rule(
         definition,
         source,
         affected_player: wire::player_from_index(snapshot.affected_seat)?,
-        expiration: parse_expiration(snapshot.expiration)?,
+        expiration: parse_expiration(&snapshot.expiration)?,
         rule,
     })
 }
@@ -129,7 +129,7 @@ pub(super) fn parse_resolved_player_protection(
         definition,
         source,
         affected_player: wire::player_from_index(snapshot.affected_seat)?,
-        expiration: parse_expiration(snapshot.expiration)?,
+        expiration: parse_expiration(&snapshot.expiration)?,
         quality,
     })
 }
@@ -158,7 +158,7 @@ pub(super) fn parse_resolved_attack_restriction(
         definition,
         source,
         affected_player: wire::player_from_index(snapshot.affected_seat)?,
-        expiration: parse_expiration(snapshot.expiration)?,
+        expiration: parse_expiration(&snapshot.expiration)?,
         restriction,
     })
 }
@@ -210,7 +210,7 @@ pub(super) fn parse_resolved_play_permission(
         definition,
         source,
         affected_player: wire::player_from_index(snapshot.affected_seat)?,
-        expiration: parse_expiration(snapshot.expiration)?,
+        expiration: parse_expiration(&snapshot.expiration)?,
         rule,
     })
 }
@@ -264,7 +264,7 @@ pub(super) fn parse_resolved_play_restriction(
         affected_player: wire::player_from_index(snapshot.affected_seat)?,
         timestamp: ContinuousEffectTimestamp(snapshot.timestamp),
         component_order: snapshot.component_order,
-        expiration: parse_expiration(snapshot.expiration)?,
+        expiration: parse_expiration(&snapshot.expiration)?,
         restriction,
     })
 }

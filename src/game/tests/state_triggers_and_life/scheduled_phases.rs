@@ -233,7 +233,18 @@ fn a_phase_scheduled_during_the_ending_phase_precedes_the_next_turn() {
     permanent.attacked_this_turn = true;
     permanent.attacks_this_turn = 1;
     permanent.damage_sources.push(source.card.id);
-    game.sorcery_flash_grants[PlayerId::One.index()] = 1;
+    game.resolve_effect_def(
+        ScopedEffect::primary(EffectDef::Apply {
+            recipient: EffectRecipientDef::Controller,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::MayCastAsThoughItHadFlash(
+                CastTimingPermissionDef::new(ObjectPredicateDef::HasType(CardType::Sorcery)),
+            )),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn
+                .or(ResolvedEffectDurationDef::UntilNextMatchingCast),
+        }),
+        &source,
+        TriggerContext::empty(),
+    );
     let play_rule = AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(PlayRestrictionDef::new(
         PlayActionMatcherDef::CastSpell,
         ObjectPredicateDef::NoncreatureSpell,
@@ -268,7 +279,7 @@ fn a_phase_scheduled_during_the_ending_phase_precedes_the_next_turn() {
     game.advance_step();
     assert_eq!(game.turn, 1);
     assert_eq!(game.step, Step::BeginningOfCombat);
-    assert_eq!(game.sorcery_flash_grants[PlayerId::One.index()], 0);
+    assert!(game.resolved_play_permissions.is_empty());
     assert!(game.resolved_play_restrictions.is_empty());
     let permanent = game
         .battlefield

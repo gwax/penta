@@ -504,18 +504,13 @@ impl Game {
         cast_via_flashback: bool,
         face_down: Option<crate::card::FaceDownCharacteristics>,
     ) -> StackObject {
-        // Every outstanding grant applies to the same next sorcery, whatever
-        // its timing, so consume them together based on the form actually cast.
-        let cast_is_sorcery = self
+        let timing_option = self
             .catalog
             .get(card.definition)
-            .and_then(|definition| {
-                let option = definition.play_option(signature.play_option())?;
-                Self::play_option_types(definition, option)
-            })
-            .is_some_and(|types| types.contains(CardType::Sorcery));
-        if cast_is_sorcery {
-            self.sorcery_flash_grants[player.index()] = 0;
+            .and_then(|definition| definition.play_option(signature.play_option()))
+            .cloned();
+        if let Some(option) = timing_option.as_ref() {
+            self.expire_cast_timing_permissions_for_cast(&card, player, option);
         }
         // A spell is first proposed on the stack, then mana abilities may be
         // activated and costs are paid. The operation cannot fail after the

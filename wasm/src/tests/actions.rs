@@ -1,4 +1,38 @@
 use super::*;
+use crate::action_view::animated_action_kind;
+
+#[test]
+fn suspend_actions_have_a_card_named_ability_label() {
+    let game = WebGame::new(
+        "Briksza Naya Midrange",
+        "Greer G/R Aggro",
+        "Handcrafted",
+        true,
+        2,
+        Some("isd-m14-standard".into()),
+    )
+    .unwrap();
+    let mut observation = game.session.engine().observe(game.human);
+    let strobe = CardInstanceId(89_999);
+    observation
+        .hand
+        .push((strobe, penta::card::cards::REALITY_STROBE));
+    let suspend = Action::Suspend {
+        card: strobe,
+        ability: AbilityOrigin::Printed {
+            definition: penta::card::cards::REALITY_STROBE,
+            part: penta::CardPartId::PRIMARY,
+            ability: penta::AbilityId(1),
+        },
+        x: 0,
+    };
+
+    assert_eq!(
+        game.action_label(&observation, &suspend),
+        "Suspend Reality Strobe"
+    );
+    assert_eq!(animated_action_kind(&suspend), "ability");
+}
 
 #[test]
 fn cast_action_labels_distinguish_normal_flashback_and_overload() {

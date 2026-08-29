@@ -112,7 +112,6 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::BecomeMonarch { .. } => "BecomeMonarch",
         EffectDef::VoteForPermanentToExile { .. } => "VoteForPermanentToExile",
         EffectDef::DamageCannotBePreventedThisTurn => "DamageCannotBePreventedThisTurn",
-        EffectDef::GrantFlashToNextSorcery => "GrantFlashToNextSorcery",
         EffectDef::May { .. } => "May",
         EffectDef::ExileLinkedToSource { .. } => "ExileLinkedToSource",
         EffectDef::PermitLookAtExiled { .. } => "PermitLookAtExiled",

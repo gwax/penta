@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardType, DiscardSelectionDef, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardType,
+    CastTimingPermissionDef, DiscardSelectionDef, EffectDef, EffectRecipientDef,
+    ObjectPredicateDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::mana_cost;
 
@@ -32,7 +32,6 @@ pub(in crate::card::sets) static SILENCE: CardRecord = CardRecord::new(
 );
 
 // M11 61 — Leyline of Anticipation
-// Audit: partial — The opening-hand action is declarative; the casting permission must grant flash to every spell its controller casts.
 pub(in crate::card::sets) static LEYLINE_OF_ANTICIPATION: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d7dbb092-3bb0-445e-ab26-d939cac92a73"),
     "Leyline of Anticipation",
@@ -40,7 +39,15 @@ pub(in crate::card::sets) static LEYLINE_OF_ANTICIPATION: CardRecord = CardRecor
     CardSet::Magic2011,
     CardRules::new_enchantment(mana_cost!("{2}{U}{U}")).with_abilities(&[
         abilities::begin_game_on_battlefield("If this card is in your opening hand, you may begin the game with it on the battlefield."),
-        AbilityDef::not_implemented("You may cast spells as though they had flash.", "Needs a battlefield casting-timing permission over every spell the controller may cast."),
+        AbilityDef::static_ability(
+            "You may cast spells as though they had flash.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Controller,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayCastAsThoughItHadFlash(
+                    CastTimingPermissionDef::new(ObjectPredicateDef::Any),
+                )),
+            },
+        ),
     ]),
 );
 

@@ -134,7 +134,6 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::GainControl { .. }
         | EffectDef::GainLife { .. }
         | EffectDef::SetLifeTotal { .. }
-        | EffectDef::GrantFlashToNextSorcery
         | EffectDef::SearchZonesAndExileRest { .. }
         | EffectDef::PutIntoLibraryBeneathTop { .. }
         | EffectDef::PutSourceOntoBattlefieldAttacking

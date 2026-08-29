@@ -15,7 +15,7 @@ use super::{
     parse_expiration, parse_snapshot_target, player_from_index, semantics, target_snapshot,
 };
 
-pub(super) const fn damage_redirect_snapshot(
+pub(super) fn damage_redirect_snapshot(
     redirect: ResolvedDamageRedirect,
 ) -> ResolvedDamageRedirectSnapshot {
     ResolvedDamageRedirectSnapshot {
@@ -27,13 +27,13 @@ pub(super) const fn damage_redirect_snapshot(
 }
 
 pub(super) fn parse_damage_redirect(
-    snapshot: ResolvedDamageRedirectSnapshot,
+    snapshot: &ResolvedDamageRedirectSnapshot,
 ) -> Result<ResolvedDamageRedirect, String> {
     Ok(ResolvedDamageRedirect {
         player: player_from_index(snapshot.player)?,
         source: GameObjectId(snapshot.source),
         destination: GameObjectId(snapshot.destination),
-        expiration: parse_expiration(snapshot.expiration)?,
+        expiration: parse_expiration(&snapshot.expiration)?,
     })
 }
 
@@ -197,7 +197,7 @@ pub(super) fn parse_damage_prevention(
         gain_life: snapshot.gain_life.map(player_from_index).transpose()?,
         source_ability,
         timestamp: ContinuousEffectTimestamp(snapshot.timestamp),
-        expiration: parse_expiration(snapshot.expiration)?,
+        expiration: parse_expiration(&snapshot.expiration)?,
     })
 }
 

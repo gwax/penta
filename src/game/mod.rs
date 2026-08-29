@@ -658,9 +658,6 @@ pub struct Game {
     /// any one damage event, so it is read where damage is dealt rather
     /// than installed as a prevention of its own.
     damage_cannot_be_prevented_this_turn: bool,
-    /// How many of each player's next sorceries may be cast as though they
-    /// had flash. Quicken grants one, and the grant lapses with the turn.
-    sorcery_flash_grants: [u8; 2],
     /// Whether each player has been told they cannot gain life for the rest
     /// of the game. A flag rather than an expiring rule because that is the
     /// only duration the clause is printed with; a turn-scoped version would

@@ -4,11 +4,11 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, CardTypeSet, ComparisonDef, CopyExceptionsDef, CounterKind,
-    CreatureTypeSetDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, ResolvedEffectDurationDef, TopOfLibraryCostDef, TriggerConditionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    CardSet, CardSupertype, CardType, CardTypeSet, CastTimingPermissionDef, ComparisonDef,
+    CopyExceptionsDef, CounterKind, CreatureTypeSetDef, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TopOfLibraryCostDef,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -443,75 +443,6 @@ pub(in crate::card::sets) static TAMIYO_COLLECTOR_OF_TALES: CardRecord =
     ));
 
 // WAR 221 — Teferi, Time Raveler
-/// Every spell, restricted to the moments its caster could cast a sorcery.
-/// The restriction is the whole clause: it bars nothing during their own
-/// main phase with an empty stack, and everything else.
-static ONLY_AT_SORCERY_SPEED: PlayRestrictionDef =
-    PlayRestrictionDef::new(PlayActionMatcherDef::CastSpell, ObjectPredicateDef::Any)
-        .only_at_sorcery_speed();
-
-/// The mirror of the static, pointed at his own controller and at sorceries
-/// alone. A permission rather than a granted keyword: nothing about the
-/// cards changes, so a sorcery countered by something reading its keywords
-/// still has none.
-static SORCERIES_AS_THOUGH_THEY_HAD_FLASH: AppliedEffectDef = AppliedEffectDef::Rule(
-    AppliedRuleDef::MayCastAsThoughItHadFlash(ObjectPredicateDef::HasType(CardType::Sorcery)),
-);
-
-static AN_ARTIFACT_CREATURE_OR_ENCHANTMENT: [AbilityTargetDef; 1] = [AbilityTargetDef::up_to(
-    AbilityTargetPredicate::Object {
-        object: ObjectPredicateDef::AnyOf(&[
-            ObjectPredicateDef::HasType(CardType::Artifact),
-            ObjectPredicateDef::HasType(CardType::Creature),
-            ObjectPredicateDef::HasType(CardType::Enchantment),
-        ]),
-        zones: &[ZoneKind::Battlefield],
-        controller: None,
-        owner: None,
-    },
-    1,
-)];
-
-/// The draw is not conditional on the bounce: "up to one" target means the
-/// ability resolves and draws whether or not anything was named.
-static TEFERI_BOUNCES_AND_DRAWS: EffectDef = EffectDef::Sequence(&[
-    EffectDef::MoveToZone {
-        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-        zone: ZoneKind::Hand,
-        placement: ZonePlacement::Top,
-    },
-    EffectDef::DrawCards {
-        recipient: EffectRecipientDef::Controller,
-        amount: ValueDef::Constant(1),
-    },
-]);
-
-static TEFERI_ABILITIES: [AbilityDef; 3] = [
-    AbilityDef::static_ability(
-        "Each opponent can cast spells only any time they could cast a sorcery.",
-        EffectDef::StaticApply {
-            recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::Opponent)),
-            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(ONLY_AT_SORCERY_SPEED)),
-        },
-    ),
-    AbilityDef::activated(
-        "+1: Until your next turn, you may cast sorcery spells as though they had flash.",
-        &[AbilityCostDef::Loyalty(1)],
-        EffectDef::Apply {
-            recipient: EffectRecipientDef::Controller,
-            effect: SORCERIES_AS_THOUGH_THEY_HAD_FLASH,
-            duration: ResolvedEffectDurationDef::UntilYourNextTurn,
-        },
-    ),
-    AbilityDef::activated_with_targets(
-        "\u{2212}3: Return up to one target artifact, creature, or enchantment to its owner's \
-         hand. Draw a card.",
-        &[AbilityCostDef::Loyalty(-3)],
-        &AN_ARTIFACT_CREATURE_OR_ENCHANTMENT,
-        TEFERI_BOUNCES_AND_DRAWS,
-    ),
-];
-
 pub(in crate::card::sets) static TEFERI_TIME_RAVELER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5cb76266-ae50-4bbc-8f96-d98f309b02d3"),
     "Teferi, Time Raveler",
@@ -521,7 +452,70 @@ pub(in crate::card::sets) static TEFERI_TIME_RAVELER: CardRecord = CardRecord::n
     // it to you, with a bounce-and-draw underneath it.
     CardRules::new_planeswalker(mana_cost!("{1}{W}{U}"), &["Teferi"], 4)
         .with_supertype(CardSupertype::Legendary)
-        .with_abilities(&TEFERI_ABILITIES),
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Each opponent can cast spells only any time they could cast a sorcery.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::players(PlayerSetDef::Related(
+                        PlayerRelation::Opponent,
+                    )),
+                    // The restriction bars nothing during an opponent's own
+                    // main phase with an empty stack, and every other cast.
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(
+                        PlayRestrictionDef::new(
+                            PlayActionMatcherDef::CastSpell,
+                            ObjectPredicateDef::Any,
+                        )
+                        .only_at_sorcery_speed(),
+                    )),
+                },
+            ),
+            AbilityDef::activated(
+                "+1: Until your next turn, you may cast sorcery spells as though they had flash.",
+                &[AbilityCostDef::Loyalty(1)],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Controller,
+                    // This is a permission rather than a granted keyword, so
+                    // the affected cards still do not have flash.
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::MayCastAsThoughItHadFlash(
+                        CastTimingPermissionDef::new(ObjectPredicateDef::HasType(
+                            CardType::Sorcery,
+                        )),
+                    )),
+                    duration: ResolvedEffectDurationDef::UntilYourNextTurn,
+                },
+            ),
+            AbilityDef::activated_with_targets(
+                "\u{2212}3: Return up to one target artifact, creature, or enchantment to its \
+                 owner's hand. Draw a card.",
+                &[AbilityCostDef::Loyalty(-3)],
+                &[AbilityTargetDef::up_to(
+                    AbilityTargetPredicate::Object {
+                        object: ObjectPredicateDef::AnyOf(&[
+                            ObjectPredicateDef::HasType(CardType::Artifact),
+                            ObjectPredicateDef::HasType(CardType::Creature),
+                            ObjectPredicateDef::HasType(CardType::Enchantment),
+                        ]),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: None,
+                        owner: None,
+                    },
+                    1,
+                )],
+                // The draw is not conditional on the optional bounce target.
+                EffectDef::Sequence(&[
+                    EffectDef::MoveToZone {
+                        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                        zone: ZoneKind::Hand,
+                        placement: ZonePlacement::Top,
+                    },
+                    EffectDef::DrawCards {
+                        recipient: EffectRecipientDef::Controller,
+                        amount: ValueDef::Constant(1),
+                    },
+                ]),
+            ),
+        ]),
 );
 
 // WAR 222 — Tenth District Legionnaire

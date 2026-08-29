@@ -226,7 +226,6 @@ impl Game {
             | EffectDef::BecomeMonarch { .. }
             | EffectDef::VoteForPermanentToExile { .. }
             | EffectDef::DamageCannotBePreventedThisTurn
-            | EffectDef::GrantFlashToNextSorcery
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::MayPlayWithoutPaying { .. }
             | EffectDef::ExileGrantingOwnerPlay { .. }

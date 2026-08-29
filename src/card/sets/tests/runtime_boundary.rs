@@ -2,8 +2,8 @@ use super::runtime_support::*;
 use super::*;
 use crate::card::{AppliedRuleDef, ArrivalAttachmentDef, InstalledTriggerDef};
 use crate::{
-    BattlefieldEntryModificationDef, CounterKind, DamageEventMatcherDef, ReplacementConditionDef,
-    TargetIndex, ZoneChangeEventMatcherDef,
+    BattlefieldEntryModificationDef, CastTimingPermissionDef, CounterKind, DamageEventMatcherDef,
+    ReplacementConditionDef, TargetIndex, ZoneChangeEventMatcherDef,
 };
 
 #[test]
@@ -658,5 +658,24 @@ fn source_tapped_duration_accepts_only_supported_recursive_leaves() {
         recipient,
         AppliedEffectDef::Composite(&UNSUPPORTED),
         ResolvedEffectDurationDef::WhileSourceTapped,
+    ));
+}
+
+#[test]
+fn cast_timing_permissions_compose_calendar_and_cast_expirations() {
+    let duration = ResolvedEffectDurationDef::UntilEndOfTurn
+        .or(ResolvedEffectDurationDef::UntilNextMatchingCast);
+    let recipient = EffectRecipientDef::Controller;
+    assert!(shared_resolving_apply(
+        recipient,
+        AppliedEffectDef::Rule(AppliedRuleDef::MayCastAsThoughItHadFlash(
+            CastTimingPermissionDef::new(ObjectPredicateDef::HasType(CardType::Sorcery)),
+        )),
+        duration,
+    ));
+    assert!(!shared_resolving_apply(
+        recipient,
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotGainLife),
+        duration,
     ));
 }
