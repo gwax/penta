@@ -181,3 +181,100 @@ fn cycling_costs_its_printed_two_without_the_fox() {
     game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
     assert_eq!(cyclings(&game, card_id).len(), 1, "two mana does");
 }
+
+/// "Effects that reduce the generic mana cost of an activation cost can't
+/// reduce that cost's coloured mana requirements ... {1}{R} would become
+/// {R}." A Combat Medic's {1}{W} keeps its white and loses its generic, and
+/// one white is all it takes.
+#[test]
+fn the_discount_eats_generic_and_leaves_the_colour() {
+    let (mut game, _, ids) = staged(&[cards::COMBAT_MEDIC]);
+    let medic = ids[0];
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == medic)
+    {
+        permanent.entered_controller_turn = 0;
+    }
+
+    let offered = |game: &Game| {
+        game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == medic),
+        )
+    };
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(
+        !offered(&game),
+        "a colourless mana pays for none of what is left",
+    );
+
+    game.players[0].mana_pool = ManaPool::default();
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    assert!(
+        offered(&game),
+        "but the white pip is the whole of the cost now",
+    );
+}
+
+/// "Activating Zirda's last ability after a creature has blocked won't
+/// remove the blocking creature from combat." The blocker stays where it
+/// is; what the ability stops is a block not yet made.
+#[test]
+fn it_does_not_undo_a_block_already_made() {
+    let (mut game, zirda, ids) = staged(&[cards::SAVANNAH_LIONS]);
+    let attacker = ids[0];
+    let blocker = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(attacker, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+    game.apply(PlayerId::Two, Action::DeclareBlocker { blocker, attacker })
+        .expect("the Bears block the Lions");
+    game.apply(PlayerId::Two, Action::FinishDeclaringBlockers)
+        .expect("the declaration finishes");
+
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    let stop = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == zirda
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets() == [Target::Permanent(blocker)])
+            }
+            _ => false,
+        })
+        .expect("the Bears are a legal thing to name");
+    game.apply(PlayerId::One, stop).expect("it activates");
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == blocker && permanent.blocking.contains(&attacker)),
+        "the block was already made and stands",
+    );
+}
