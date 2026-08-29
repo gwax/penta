@@ -282,3 +282,29 @@ fn it_is_a_three_one_flier() {
     assert_eq!(game.toughness(body), Some(1));
     assert!(game.permanent_has_executable_keyword(body, KeywordAbility::Flying));
 }
+
+/// "Playing the exiled card follows all normal timing restrictions." A
+/// sorcery taken this way waits for its owner's own main phase; the
+/// permission says when it may be cast from, not when.
+#[test]
+fn a_sorcery_taken_this_way_still_waits_for_their_main_phase() {
+    let (mut game, spellbinder) = staged(&[cards::DEMONIC_TUTOR]);
+    cast(&mut game, spellbinder);
+    take(&mut game, Some(cards::DEMONIC_TUTOR));
+    let tutor = in_their_exile(&game, cards::DEMONIC_TUTOR).expect("it is exiled");
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Black, 1);
+
+    assert!(
+        !they_can_cast(&mut game, tutor, 3),
+        "it is your turn, so their sorcery stays where it is",
+    );
+
+    // Their own main phase, with the stack empty.
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Black, 1);
+    assert!(
+        they_can_cast(&mut game, tutor, 3),
+        "and then the same three mana casts it",
+    );
+}
