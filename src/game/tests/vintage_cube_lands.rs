@@ -428,3 +428,44 @@ fn the_fastland_clause_counts_lands_and_only_lands() {
         "and a Dryad Arbor is a land, creature or not",
     );
 }
+
+/// The other half of the shock land's first ruling: it is not basic, but it
+/// has the basic land types, which is what a check land reads. An Isolated
+/// Chapel wants a Plains or a Swamp, and a Godless Shrine is both.
+#[test]
+fn a_shock_land_satisfies_a_check_land() {
+    // Nothing on the battlefield: the Chapel arrives tapped.
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let chapel = game
+        .put_onto_battlefield(PlayerId::One, cards::ISOLATED_CHAPEL)
+        .expect("cataloged");
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == chapel)
+            .expect("it entered")
+            .tapped,
+        "an empty board has neither a Plains nor a Swamp",
+    );
+
+    // The same Chapel beside a Godless Shrine, which is both of them.
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.put_onto_battlefield(PlayerId::One, cards::GODLESS_SHRINE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let chapel = game
+        .put_onto_battlefield(PlayerId::One, cards::ISOLATED_CHAPEL)
+        .expect("cataloged");
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == chapel)
+            .expect("it entered")
+            .tapped,
+        "the Shrine is a Plains and a Swamp, whether or not it is basic",
+    );
+}
