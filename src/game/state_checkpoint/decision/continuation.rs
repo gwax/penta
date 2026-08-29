@@ -1,5 +1,6 @@
 include!("pregame_continuation.rs");
 include!("counter_choice_continuation.rs");
+include!("trigger_continuation.rs");
 
 #[allow(clippy::too_many_lines)]
 fn parse_continuation(
@@ -14,6 +15,15 @@ fn parse_continuation(
         | DecisionContinuationSnapshot::ScryTop { .. }) => {
             parse_pregame_continuation(pregame, game)?
         }
+        DecisionContinuationSnapshot::ArrivingAttackerDefender {
+            player: chooser,
+            defending,
+            attackers,
+        } => DecisionContinuation::ArrivingAttackerDefender {
+            player: player(*chooser)?,
+            defending: player(*defending)?,
+            attackers: attackers.iter().copied().map(GameObjectId).collect(),
+        },
         DecisionContinuationSnapshot::BeginTurn {
             player: prospective_player,
             turn_kind,
@@ -745,73 +755,12 @@ fn parse_continuation(
                 effect: continuation.effect.with_effect(*definition.then),
             }
         }
-        DecisionContinuationSnapshot::TriggerOrder { batch, remaining } => {
-            DecisionContinuation::TriggerOrder {
-                batch: parse_trigger_batch(batch, game)?,
-                remaining: remaining
-                    .iter()
-                    .map(|batch| parse_trigger_batch(batch, game))
-                    .collect::<Result<Vec<_>, _>>()?,
-            }
+        triggers @ (DecisionContinuationSnapshot::TriggerOrder { .. }
+        | DecisionContinuationSnapshot::TriggerPlacement { .. }
+        | DecisionContinuationSnapshot::TriggerMode { .. }
+        | DecisionContinuationSnapshot::TriggerDivision { .. }) => {
+            parse_trigger_continuation(triggers, game)?
         }
-        DecisionContinuationSnapshot::TriggerPlacement {
-            trigger,
-            pending,
-            remaining,
-            candidates,
-        } => DecisionContinuation::TriggerPlacement {
-            trigger: parse_pending_trigger(trigger, game)?,
-            pending: pending
-                .iter()
-                .map(|trigger| parse_pending_trigger(trigger, game))
-                .collect::<Result<Vec<_>, _>>()?,
-            remaining: remaining
-                .iter()
-                .map(|batch| parse_trigger_batch(batch, game))
-                .collect::<Result<Vec<_>, _>>()?,
-            candidates: candidates.iter().copied().map(parse_target).collect(),
-        },
-        DecisionContinuationSnapshot::TriggerMode {
-            trigger,
-            pending,
-            remaining,
-        } => {
-            let trigger = parse_pending_trigger(trigger, game)?;
-            let modes = trigger
-                .modes
-                .ok_or("trigger-mode decision names a trigger that prints no modes")?;
-            DecisionContinuation::TriggerMode {
-                trigger,
-                pending: pending
-                    .iter()
-                    .map(|trigger| parse_pending_trigger(trigger, game))
-                    .collect::<Result<Vec<_>, _>>()?,
-                remaining: remaining
-                    .iter()
-                    .map(|batch| parse_trigger_batch(batch, game))
-                    .collect::<Result<Vec<_>, _>>()?,
-                modes,
-            }
-        }
-        DecisionContinuationSnapshot::TriggerDivision {
-            trigger,
-            pending,
-            remaining,
-            targets,
-            divisions,
-        } => DecisionContinuation::TriggerDivision {
-            trigger: parse_pending_trigger(trigger, game)?,
-            pending: pending
-                .iter()
-                .map(|trigger| parse_pending_trigger(trigger, game))
-                .collect::<Result<Vec<_>, _>>()?,
-            remaining: remaining
-                .iter()
-                .map(|batch| parse_trigger_batch(batch, game))
-                .collect::<Result<Vec<_>, _>>()?,
-            targets: targets.iter().copied().map(parse_target).collect(),
-            divisions: divisions.clone(),
-        },
         DecisionContinuationSnapshot::DrawActionWindow { card } => {
             parse_draw_action_window_continuation(game, observation, GameObjectId(*card))?
         }

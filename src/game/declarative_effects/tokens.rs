@@ -256,6 +256,24 @@ impl Game {
                     }
                 });
                 self.capture_created_token_batch(controller, &minted);
+                // "Attacking" without a named defender is the controller's
+                // choice as the creature enters (CR 506.3d), which only has
+                // an answer worth asking for when the defending player has a
+                // planeswalker to be sent at instead.
+                if attacking {
+                    let arriving = minted
+                        .iter()
+                        .filter_map(|target| match target {
+                            Target::Permanent(id) => Some(*id),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>();
+                    self.queue_arriving_attacker_defender(
+                        controller,
+                        controller.opponent(),
+                        &arriving,
+                    );
+                }
                 // Bound after every one is made, so a clause naming them
                 // names the whole batch rather than the last of them.
                 if let Some(created) = created {

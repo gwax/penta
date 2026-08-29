@@ -127,6 +127,15 @@ fn continuation_snapshot(
                     .collect(),
             }
         }
+        DecisionContinuation::ArrivingAttackerDefender {
+            player,
+            defending,
+            attackers,
+        } => DecisionContinuationSnapshot::ArrivingAttackerDefender {
+            player: player.index(),
+            defending: defending.index(),
+            attackers: attackers.iter().map(|attacker| attacker.0).collect(),
+        },
         DecisionContinuation::ScryBottom { player, revealed } => {
             DecisionContinuationSnapshot::ScryBottom {
                 player: player.index(),

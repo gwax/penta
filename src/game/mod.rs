@@ -72,6 +72,7 @@ mod creature_characteristics;
 mod crime;
 mod damage;
 mod decision;
+mod decision_arriving_attacker;
 mod decision_doomsday;
 mod decision_offers;
 mod decision_permanent_choice;

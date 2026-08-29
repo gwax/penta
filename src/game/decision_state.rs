@@ -205,6 +205,15 @@ pub(super) enum DecisionContinuation {
         player: PlayerId,
         revealed: Vec<CardInstance>,
     },
+    /// A creature that arrived attacking has to be told what it is
+    /// attacking: the defending player, or one of their planeswalkers
+    /// (CR 506.3d). One decision per arriving attacker, with the ones still
+    /// waiting carried along.
+    ArrivingAttackerDefender {
+        player: PlayerId,
+        defending: PlayerId,
+        attackers: Vec<GameObjectId>,
+    },
     ScryTop {
         player: PlayerId,
         top: Vec<CardInstance>,

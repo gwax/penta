@@ -307,3 +307,77 @@ fn her_token_was_never_declared_an_attacker() {
         "attacking all the same, which is what makes the distinction worth drawing",
     );
 }
+
+/// "You choose whether each token is attacking that opponent or a
+/// planeswalker they control as those tokens enter the battlefield."
+#[test]
+fn her_token_may_be_sent_at_a_planeswalker() {
+    let (mut game, adeline) = staged(&[]);
+    let walker = game
+        .put_onto_battlefield(PlayerId::Two, cards::JACE_THE_MIND_SCULPTOR)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: adeline,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .expect("she attacks");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+    settle(&mut game);
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the arriving Human asks what it is attacking");
+    let at_the_walker = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(id, _)| id == walker))
+        .expect("the planeswalker is one of the answers")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![at_the_walker],
+        },
+    )
+    .expect("sending it at the planeswalker is legal");
+    drain_pending(&mut game);
+
+    let human = humans(&game)[0];
+    assert_eq!(
+        human.attack_defender,
+        Some(AttackDefender::Planeswalker(walker)),
+        "the token went at the planeswalker",
+    );
+    assert_eq!(
+        permanent(&game, adeline).attack_defender,
+        Some(AttackDefender::Player(PlayerId::Two)),
+        "and Adeline is still attacking the player she was declared against",
+    );
+}
+
+/// With nothing else to attack there is nothing to ask: the token simply
+/// arrives attacking the one player there is.
+#[test]
+fn without_a_planeswalker_nothing_is_asked() {
+    let (mut game, adeline) = staged(&[]);
+    attack_with(&mut game, &[adeline]);
+    drain_pending(&mut game);
+
+    assert!(
+        game.pending_decisions.is_empty(),
+        "an empty board across the table leaves one legal defender",
+    );
+    assert_eq!(
+        humans(&game)[0].attack_defender,
+        Some(AttackDefender::Player(PlayerId::Two)),
+    );
+}

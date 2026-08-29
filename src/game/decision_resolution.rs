@@ -26,6 +26,25 @@ impl Game {
             DecisionContinuation::PregameActions { player, .. } => {
                 self.finish_opening_hand_actions(player);
             }
+            DecisionContinuation::ArrivingAttackerDefender {
+                player,
+                defending,
+                mut attackers,
+            } => {
+                if !attackers.is_empty() {
+                    let attacker = attackers.remove(0);
+                    let chosen = options.first().copied().unwrap_or(0);
+                    let defender = pending_options
+                        .iter()
+                        .find(|option| option.id == chosen)
+                        .and_then(|option| option.card.map(|(walker, _)| walker))
+                        .map_or(crate::AttackDefender::Player(defending), |walker| {
+                            crate::AttackDefender::Planeswalker(walker)
+                        });
+                    self.redirect_arriving_attacker(attacker, defender);
+                    self.queue_arriving_attacker_defender(player, defending, &attackers);
+                }
+            }
             continuation @ (DecisionContinuation::ScryBottom { .. }
             | DecisionContinuation::ScryTop { .. }) => {
                 self.resolve_scry_decision(continuation, &pending_options, options);

@@ -26,6 +26,9 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
             ..
         } => extend_begin_turn_ids(&mut ids, applied, replacements, deferred),
         DecisionContinuation::Endure { permanent, .. } => ids.push(*permanent),
+        DecisionContinuation::ArrivingAttackerDefender { attackers, .. } => {
+            ids.extend(attackers.iter().copied());
+        }
         DecisionContinuation::ChooseColor {
             object, context, ..
         }

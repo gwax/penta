@@ -33,6 +33,11 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         player: usize,
         revealed: Vec<DetachedCardSnapshot>,
     },
+    ArrivingAttackerDefender {
+        player: usize,
+        defending: usize,
+        attackers: Vec<u32>,
+    },
     ScryTop {
         player: usize,
         top: Vec<DetachedCardSnapshot>,

@@ -25,6 +25,24 @@ pub(super) fn add_declaration_cost(mut total: ManaCost, cost: ManaCost) -> ManaC
 }
 
 impl Game {
+    /// Points a creature that arrived attacking at the defender its
+    /// controller chose. It is already attacking when this runs -- the
+    /// choice is made as it enters, and no player has had priority in
+    /// between -- so only the defender changes.
+    pub(super) fn redirect_arriving_attacker(
+        &mut self,
+        attacker: GameObjectId,
+        defender: AttackDefender,
+    ) {
+        if let Some(permanent) = self
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == attacker && permanent.attacking)
+        {
+            permanent.attack_defender = Some(defender);
+        }
+    }
+
     pub(super) fn declare_attacker(&mut self, attacker: GameObjectId, defender: AttackDefender) {
         let vigilance = self
             .battlefield
