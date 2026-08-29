@@ -182,3 +182,68 @@ fn it_enters_tapped() {
             .is_some_and(|permanent| permanent.tapped),
     );
 }
+
+/// "Summoning sickness cares about when that permanent came under your
+/// control, not when it became a creature." A Colonnade that arrived this
+/// turn animates and still cannot attack -- or tap for its own mana.
+#[test]
+fn a_land_that_arrived_this_turn_is_summoning_sick() {
+    let (mut game, colonnade) = staged();
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == colonnade)
+    {
+        permanent.entered_controller_turn = game.turns_started[0];
+    }
+
+    animate(&mut game, colonnade);
+    assert_eq!(
+        game.power(permanent(&game, colonnade)),
+        Some(4),
+        "it is a 4/4 all the same",
+    );
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::DeclareAttacker { attacker, .. } if *attacker == colonnade
+            )),
+        "but it did not begin the turn here, so it does not attack",
+    );
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::ActivateManaAbility { source, .. } if *source == colonnade
+            )),
+        "and a creature's tap is a creature's tap, mana ability or not",
+    );
+}
+
+/// "When a land becomes a creature, that doesn't count as having a creature
+/// enter." A Champion of Lambholt watching for arrivals sees nothing.
+#[test]
+fn animating_it_is_not_a_creature_entering() {
+    let (mut game, colonnade) = staged();
+    let champion = game
+        .put_onto_battlefield(PlayerId::One, cards::CHAMPION_OF_LAMBHOLT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let before = permanent(&game, champion).counters(CounterKind::PlusOnePlusOne);
+
+    animate(&mut game, colonnade);
+
+    assert_eq!(
+        permanent(&game, champion).counters(CounterKind::PlusOnePlusOne),
+        before,
+        "the land was already there; it only changed what it is",
+    );
+}
