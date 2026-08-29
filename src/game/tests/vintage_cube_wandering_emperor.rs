@@ -237,3 +237,28 @@ fn she_has_flash() {
         "a planeswalker with flash is castable in their end step",
     );
 }
+
+/// "You may still only activate one of The Wandering Emperor's loyalty
+/// abilities on the turn she entered the battlefield." The permission moves
+/// when they may be used, not how many.
+#[test]
+fn instant_speed_is_still_one_ability_a_turn() {
+    let (mut game, emperor) = staged();
+
+    let samurai = loyalty_action(&game, emperor, 3).expect("she is fresh");
+    game.apply(PlayerId::One, samurai).expect("it activates");
+    settle(&mut game);
+
+    assert!(
+        loyalty_action(&game, emperor, 2).is_none(),
+        "the plus is closed for the rest of the turn",
+    );
+    assert!(
+        loyalty_action(&game, emperor, 3).is_none(),
+        "and so is the one she just used",
+    );
+    assert!(
+        loyalty_action(&game, emperor, 4).is_none(),
+        "one loyalty ability a turn is one, whatever the timing permission says",
+    );
+}
