@@ -304,3 +304,41 @@ fn only_one_loyalty_ability_each_turn() {
         "he has already gone this turn",
     );
 }
+
+/// "If the target player has no cards in hand, that player shuffles nothing
+/// into their library, and that player's library will remain empty. That
+/// player won't lose the game until they try to draw from the empty
+/// library."
+#[test]
+fn an_empty_hand_leaves_an_empty_library_and_a_living_player() {
+    let (mut game, jace) = staged(&[]);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == jace)
+    {
+        permanent.set_counters(CounterKind::Loyalty, 12);
+    }
+    game.players[1].hand.clear();
+
+    activate(&mut game, jace, 3, Some(Target::Player(PlayerId::Two)));
+    game.check_state_based_actions();
+
+    assert!(
+        game.players[1].library.is_empty(),
+        "nothing was shuffled back in",
+    );
+    assert!(
+        game.result.is_none(),
+        "an empty library is not a loss by itself",
+    );
+
+    // The draw is what collects them.
+    game.draw_card(PlayerId::Two);
+    game.check_state_based_actions();
+
+    assert!(
+        game.result.is_some(),
+        "drawing from an empty library is what ends it",
+    );
+}
