@@ -321,3 +321,56 @@ fn a_noncreature_card_it_exiled_is_not_a_candidate() {
         "the counters went on all the same",
     );
 }
+
+/// "Finality counters don't stop permanents from going to zones other than
+/// the graveyard. For example, if a permanent with a finality counter on it
+/// would be put into its owner's hand from the battlefield, it does so
+/// normally." Their Angel goes back to their hand, not to exile.
+#[test]
+fn a_finality_counter_does_not_stop_a_bounce() {
+    let (mut game, emperor) = staged(&[cards::SERRA_ANGEL]);
+    reach_combat(&mut game, Some(cards::SERRA_ANGEL));
+    adapt(&mut game, emperor);
+    if deciding(&game).is_some() {
+        answer(&mut game, Some(cards::SERRA_ANGEL));
+    }
+    let angel = on_battlefield(&game, cards::SERRA_ANGEL)
+        .expect("the Angel came back")
+        .card
+        .id;
+
+    let unsummon = card(124_000, cards::UNSUMMON, PlayerId::One);
+    let unsummon_id = unsummon.id;
+    game.players[0].hand.push(unsummon);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.priority = PlayerId::One;
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == unsummon_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(angel))
+            }
+            _ => false,
+        })
+        .expect("one blue bounces it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.players[1]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "the Angel is in its owner's hand",
+    );
+    assert!(
+        game.players[1].exile.is_empty(),
+        "the finality counter answers the graveyard and nothing else",
+    );
+}
