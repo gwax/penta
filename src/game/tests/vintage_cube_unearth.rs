@@ -168,3 +168,74 @@ fn it_cycles_when_the_graveyard_is_empty() {
             .any(|card| card.definition == cards::UNEARTH),
     );
 }
+
+/// "If a card in a player's graveyard has {X} in its mana cost, X is
+/// considered to be 0." A Walking Ballista costs {X}{X} and so sits in the
+/// graveyard at mana value nought, well inside the bound -- and X is still
+/// zero when it arrives, so it enters as a 0/0 and the game rules collect
+/// it again immediately. A Mirrorworks watching for artifacts is what shows
+/// it got there at all.
+#[test]
+fn an_x_creature_is_worth_nothing_in_the_graveyard() {
+    let (mut game, unearth) = staged(&[cards::WALKING_BALLISTA]);
+    game.put_onto_battlefield(PlayerId::One, cards::MIRRORWORKS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let ballista = graveyard_card(&game, cards::WALKING_BALLISTA);
+
+    let cast = cast_at(&game, unearth, ballista).expect("mana value zero is three or less");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    let mut watched = false;
+    for _ in 0..8 {
+        if let Some(pending) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            watched |= pending
+                .prompt
+                .starts_with("Whenever another nontoken artifact");
+            let options = pending
+                .options
+                .iter()
+                .find(|option| option.label == "Decline")
+                .map(|option| vec![option.id])
+                .unwrap_or_default();
+            game.apply(
+                pending.player,
+                Action::ChooseDecision {
+                    decision: pending.id,
+                    options,
+                },
+            )
+            .expect("declining is allowed");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+
+    assert!(watched, "the Ballista entered the battlefield");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::WALKING_BALLISTA),
+        "and left it again: X is zero here too, so it is a 0/0",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::WALKING_BALLISTA),
+        "back where it came from, having been on the battlefield in between",
+    );
+}
