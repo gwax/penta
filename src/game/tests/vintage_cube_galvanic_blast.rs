@@ -206,3 +206,61 @@ fn metalcraft_counts_your_artifacts_and_only_yours() {
         "but an artifact creature of your own is the third artifact",
     );
 }
+
+/// The mirror of that: the count is read on resolution, so an artifact made
+/// while the Blast is on the stack turns two damage into four -- and four is
+/// what kills a Serra Angel.
+#[test]
+fn a_servo_made_in_response_turns_two_damage_into_four() {
+    let (mut game, spell, angel) = staged(1);
+    let foundry = game
+        .put_onto_battlefield(PlayerId::One, cards::RETROFITTER_FOUNDRY)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    game.priority = PlayerId::One;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == spell
+                    && choices
+                        .targets()
+                        .iter()
+                        .any(|slot| slot.targets().contains(&Target::Permanent(angel)))
+            }
+            _ => false,
+        })
+        .expect("one red mana casts it");
+    game.apply(PlayerId::One, action).expect("it is cast");
+
+    // Two artifacts so far; the Foundry answers at instant speed with a third.
+    let make_a_servo = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source,
+                ability: AbilityOrigin::Printed { ability, .. },
+                ..
+            } => *source == foundry && *ability == AbilityId(1),
+            _ => false,
+        })
+        .expect("two mana and a tap while the Blast waits");
+    game.apply(PlayerId::One, make_a_servo)
+        .expect("it activates");
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == angel),
+        "three artifacts by the time it resolved, so four damage killed the Angel",
+    );
+}
