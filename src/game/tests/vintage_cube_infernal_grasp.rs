@@ -128,3 +128,57 @@ fn it_answers_on_their_turn() {
     assert!(!alive(&game, bears));
     assert_eq!(game.players[0].life, 18);
 }
+
+/// The other side of the life clause: it is part of the resolution, so a
+/// Grasp whose target is gone before it resolves is countered by the game
+/// rules and costs nothing at all (CR 608.2b).
+#[test]
+fn a_grasp_with_nothing_to_kill_costs_no_life() {
+    let (mut game, held, target) = staged(cards::GRIZZLY_BEARS);
+    let cast =
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    *card == held
+                        && choices.targets().iter().any(|selection| {
+                            selection.targets().contains(&Target::Permanent(target))
+                        })
+                }
+                _ => false,
+            })
+            .expect("it can point at their creature");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    // Answered while the Grasp is on the stack.
+    game.move_permanents_to_graveyard(&[target]);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[0].life, 20,
+        "no target, no resolution, and so no life",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::INFERNAL_GRASP),
+        "the Grasp is spent all the same",
+    );
+}
+
+/// Nothing checks whether you can afford it: two life at two life is the
+/// price of the last creature you answer.
+#[test]
+fn it_will_take_your_last_two_life() {
+    let (mut game, held, target) = staged(cards::SERRA_ANGEL);
+    game.players[0].life = 2;
+
+    grasp(&mut game, held, target);
+    game.check_state_based_actions();
+
+    assert!(!alive(&game, target), "the Angel died");
+    assert_eq!(game.players[0].life, 0);
+    assert!(game.result.is_some(), "and so did you");
+}
