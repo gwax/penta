@@ -191,3 +191,49 @@ fn the_grove_cannot_both_pay_and_draw() {
         "sacrificed for the card, it makes no mana at all",
     );
 }
+
+/// Life paid is not damage taken: a prevention shield that would have eaten
+/// an Ancient Tomb's two does nothing here, and the player who pays their
+/// last life loses with the mana still in their pool.
+#[test]
+fn the_life_is_paid_rather_than_dealt() {
+    let (mut game, canyon) = staged();
+    let angel = card(97_900, cards::GUARDIAN_ANGEL, PlayerId::One);
+    let angel_id = angel.id;
+    game.players[0].hand.push(angel);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    game.apply(
+        PlayerId::One,
+        cast_action(angel_id, vec![Target::Player(PlayerId::One)], Vec::new(), 2),
+    )
+    .expect("a shield of two is castable");
+    drain_pending(&mut game);
+    game.empty_mana_pools();
+    game.players[0].life = 1;
+
+    let ability = mana_ability_for(&game, canyon, ManaColor::White);
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: canyon,
+            ability,
+            color: ManaColor::White,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+        },
+    )
+    .expect("one life is enough to pay one life");
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[0].life, 0,
+        "the shield answers damage, and this is a payment",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.white, 1,
+        "the mana was made all the same",
+    );
+    assert!(game.result.is_some(), "and zero life is a loss");
+}
