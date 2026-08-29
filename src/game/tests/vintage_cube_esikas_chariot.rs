@@ -334,3 +334,115 @@ fn the_copy_arrives_untapped_and_at_home() {
         "and it is not attacking, however its original arrived",
     );
 }
+
+/// "The newly created token doesn't copy ... whether it has any counters on
+/// it": a Cat grown by two comes back the 2/2 the Chariot printed.
+#[test]
+fn counters_on_the_original_are_not_copied() {
+    let (mut game, chariot) = staged();
+    let bears = [90_001, 90_002].map(|id| {
+        let mut bear = creature(id, cards::GRIZZLY_BEARS, PlayerId::One);
+        bear.entered_controller_turn = 0;
+        let bear_id = bear.card.id;
+        game.battlefield.push(bear);
+        bear_id
+    });
+    let grown = cats(&game)[0].card.id;
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == grown)
+        .expect("a Cat is there")
+        .add_counters(CounterKind::PlusOnePlusOne, 2);
+    crew_with(&mut game, chariot, &bears);
+    settle(&mut game);
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: chariot,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .expect("a crewed Chariot may attack");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration is complete");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the attack trigger is asking");
+    let option = decision
+        .options
+        .iter()
+        .find(|option| option.card.as_ref().is_some_and(|(id, _)| *id == grown))
+        .expect("the grown Cat is a token you control")
+        .id;
+    game.apply(
+        decision.player,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![option],
+        },
+    )
+    .expect("naming it is legal");
+    settle(&mut game);
+
+    let copy = cats(&game)
+        .into_iter()
+        .find(|cat| cat.card.id != grown)
+        .expect("the trigger made another Cat");
+    assert_eq!(
+        copy.counters(CounterKind::PlusOnePlusOne),
+        0,
+        "the counters stayed with the Cat that had them",
+    );
+    assert_eq!(game.power(copy), Some(2), "so the copy is the printed 2/2");
+}
+
+/// "Target token you control": theirs is a token, and not one of yours.
+#[test]
+fn their_tokens_are_not_on_the_menu() {
+    let (mut game, chariot) = staged();
+    game.put_onto_battlefield(PlayerId::Two, cards::ESIKA_S_CHARIOT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let theirs = game
+        .battlefield
+        .iter()
+        .filter(|permanent| {
+            permanent.controller == PlayerId::Two && permanent.card.definition == ObjectKind::Token
+        })
+        .map(|permanent| permanent.card.id)
+        .collect::<Vec<_>>();
+    assert_eq!(theirs.len(), 2, "their Chariot brought Cats of its own");
+
+    let offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } if source == chariot => Some(targets),
+            _ => None,
+        })
+        .flatten()
+        .flat_map(|selection| selection.targets().to_vec())
+        .collect::<Vec<_>>();
+    assert!(
+        theirs
+            .iter()
+            .all(|id| !offered.contains(&Target::Permanent(*id))),
+        "their Cats are nobody's to copy but theirs",
+    );
+}
