@@ -77,6 +77,7 @@ static SKYCLAVE_APPARITION_ABILITIES: [AbilityDef; 2] = [
          control with mana value 4 or less.",
         &A_CHEAP_NONLAND_NONTOKEN,
         EffectDef::ExileLinkedToSource {
+            until_source_leaves: false,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             face_down: false,
             then: None,

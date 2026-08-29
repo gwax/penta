@@ -337,6 +337,7 @@ static UP_TO_ONE_NONLAND_PERMANENT_YOU_CONTROL: [AbilityTargetDef; 1] = [Ability
 /// name the card the exile just made.
 static KITTEN_BLINKS: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         face_down: false,
         then: None,

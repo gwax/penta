@@ -569,6 +569,7 @@ pub(in crate::card::sets) static FIEND_HUNTER: CardRecord = CardRecord::new_with
                     },
                     1,
                 )], EffectDef::ExileLinkedToSource {
+                    until_source_leaves: false,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
 face_down: false,
 then: None,

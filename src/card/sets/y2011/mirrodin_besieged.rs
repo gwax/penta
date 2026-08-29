@@ -2689,6 +2689,7 @@ pub(in crate::card::sets) static MYR_WELDER: CardRecord = CardRecord::new(
                 },
             )],
             EffectDef::ExileLinkedToSource {
+                until_source_leaves: false,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 face_down: false,
                 then: None,

@@ -27,6 +27,41 @@ impl Game {
         }
     }
 
+    /// One linked exile, kept apart from the match above only for its size.
+    #[allow(clippy::too_many_arguments)]
+    fn resolve_exile_linked_to_source(
+        &mut self,
+        recipient: EffectRecipientDef,
+        face_down: bool,
+        until_source_leaves: bool,
+        then: Option<&'static EffectDef>,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+        scoped: ScopedEffect,
+    ) {
+        let source = object.source.unwrap_or(object.id);
+        // "Exile it until this permanent leaves the battlefield" does
+        // nothing once that permanent has already gone: there is no
+        // later moment for what it took to come back (CR 610.3b). An
+        // ordinary linked exile is not conditional that way -- what a
+        // Parallax Wave takes on its way out stays taken.
+        if until_source_leaves
+            && !self
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == source)
+        {
+            return;
+        }
+        for exiled in self.exile_effect_objects(recipient, object, context, scoped) {
+            self.linked_exiles.push((source, exiled));
+            self.hide_linked_exile(exiled, face_down);
+        }
+        if let Some(then) = then {
+            self.resolve_effect_def(scoped.with_effect(*then), object, context.clone());
+        }
+    }
+
     pub(super) fn resolve_linked_exile_effect(
         &mut self,
         scoped: ScopedEffect,
@@ -37,16 +72,18 @@ impl Game {
             EffectDef::ExileLinkedToSource {
                 object: recipient,
                 face_down,
+                until_source_leaves,
                 then,
             } => {
-                let source = object.source.unwrap_or(object.id);
-                for exiled in self.exile_effect_objects(recipient, object, context, scoped) {
-                    self.linked_exiles.push((source, exiled));
-                    self.hide_linked_exile(exiled, face_down);
-                }
-                if let Some(then) = then {
-                    self.resolve_effect_def(scoped.with_effect(*then), object, context.clone());
-                }
+                self.resolve_exile_linked_to_source(
+                    recipient,
+                    face_down,
+                    until_source_leaves,
+                    then,
+                    object,
+                    context,
+                    scoped,
+                );
             }
             EffectDef::ExileGrantingOwnerPlay {
                 object: recipient,

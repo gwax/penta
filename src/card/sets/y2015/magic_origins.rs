@@ -28,6 +28,7 @@ static FIVE_IN_YOUR_GRAVEYARD: TriggerConditionDef = TriggerConditionDef::Object
 /// new object with the loyalty the back face prints.
 static JACE_TURNS_OVER: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object: EffectRecipientDef::Source,
         face_down: false,
         then: None,

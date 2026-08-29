@@ -3919,6 +3919,7 @@ pub(in crate::card::sets) static OBZEDAT_GHOST_COUNCIL: CardRecord = CardRecord:
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::Sequence(&[
                 EffectDef::ExileLinkedToSource {
+                    until_source_leaves: false,
                     object: EffectRecipientDef::Source,
 face_down: false,
 then: None,

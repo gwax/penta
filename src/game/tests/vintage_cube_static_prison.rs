@@ -188,3 +188,116 @@ fn the_opponents_main_phase_costs_nothing() {
     );
     assert_eq!(game.observe(PlayerId::One).energy_counters[0], 2);
 }
+
+/// "If a token is exiled this way, it will cease to exist and won't return
+/// to the battlefield." Letting the Prison go frees nothing.
+#[test]
+fn a_token_it_jails_never_comes_back() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.put_onto_battlefield(PlayerId::Two, cards::ESIKA_S_CHARIOT)
+        .expect("cataloged");
+    settle_paying(&mut game, true);
+    drain_pending(&mut game);
+    let cats = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition == ObjectKind::Token)
+        .count();
+    assert_eq!(cats, 2, "the Chariot brought two Cats");
+
+    let cat = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Token)
+        .expect("a Cat is there")
+        .card
+        .id;
+    let prison = game
+        .put_onto_battlefield(PlayerId::One, cards::STATIC_PRISON)
+        .expect("cataloged");
+    // Name a Cat rather than the Chariot that made them.
+    for _ in 0..8 {
+        if game.pending_decisions.is_empty() {
+            let priority = game.priority;
+            if game.apply(priority, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            break;
+        };
+        let options = decision
+            .options
+            .iter()
+            .find(|option| option.card.is_some_and(|(id, _)| id == cat))
+            .or_else(|| decision.options.first())
+            .map(|option| vec![option.id])
+            .unwrap_or_default();
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .expect("the offered choice is legal");
+    }
+    settle_paying(&mut game, true);
+    drain_pending(&mut game);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == ObjectKind::Token)
+            .count(),
+        cats - 1,
+        "one of them is in jail",
+    );
+
+    game.move_permanents_to_graveyard(&[prison]);
+    settle_paying(&mut game, true);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == ObjectKind::Token)
+            .count(),
+        cats - 1,
+        "and it does not walk out: a token in exile stops existing",
+    );
+}
+
+/// "If Static Prison leaves the battlefield before its first triggered
+/// ability resolves, the target permanent won't be exiled."
+#[test]
+fn a_prison_answered_on_the_way_in_jails_nobody() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let angel = creature(93_200, cards::SERRA_ANGEL, PlayerId::Two);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    let prison = game
+        .put_onto_battlefield(PlayerId::One, cards::STATIC_PRISON)
+        .expect("cataloged");
+
+    // The enters trigger is on the stack; the Prison is answered first.
+    game.move_permanents_to_graveyard(&[prison]);
+    settle_paying(&mut game, true);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == angel_id),
+        "the Angel never left the battlefield",
+    );
+    assert!(
+        game.players[1].exile.is_empty(),
+        "and nothing is in exile waiting on a Prison that is already gone",
+    );
+}

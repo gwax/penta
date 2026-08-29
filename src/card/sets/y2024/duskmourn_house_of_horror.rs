@@ -675,6 +675,7 @@ static GHOST_VACUUM_ABILITIES: [AbilityDef; 2] = [
         // this one took, and by then nothing else could tell those cards
         // apart from anything else in exile.
         EffectDef::ExileLinkedToSource {
+            until_source_leaves: false,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             face_down: false,
             then: None,

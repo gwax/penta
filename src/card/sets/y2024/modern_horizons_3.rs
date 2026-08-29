@@ -268,6 +268,7 @@ static ANOTHER_NONLAND_PERMANENT: [AbilityTargetDef; 1] = [AbilityTargetDef::up_
 
 static PHELIA_EXILE: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         face_down: false,
         then: None,
@@ -327,7 +328,10 @@ static PRISON_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
 )];
 
 static PRISON_ENTERS: [EffectDef; 3] = [
+    // "Until this enchantment leaves the battlefield": a Prison answered
+    // before its own trigger resolves exiles nobody (CR 610.3b).
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: true,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         face_down: false,
         then: None,
@@ -526,6 +530,7 @@ static EMPEROR_OF_BONES_ABILITIES: [AbilityDef; 3] = [
         },
         &EMPEROR_TARGET,
         EffectDef::ExileLinkedToSource {
+            until_source_leaves: false,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             face_down: false,
             then: None,
@@ -1796,6 +1801,7 @@ static ANOTHER_CAT_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
 /// straight back on the other face, under his owner's control.
 static AJANI_TURNS_OVER: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object: EffectRecipientDef::Source,
         face_down: false,
         then: None,
@@ -2258,6 +2264,7 @@ pub(in crate::card::sets) static NADU_WINGED_WISDOM: CardRecord = CardRecord::ne
 /// no summoning history, and a fresh set of loyalty.
 static TAMIYO_TURNS_OVER: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object: EffectRecipientDef::Source,
         face_down: false,
         then: None,
@@ -2452,6 +2459,7 @@ static SORIN_HAS_FED: TriggerConditionDef =
 /// his printed loyalty.
 static SORIN_TURNS_OVER: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object: EffectRecipientDef::Source,
         face_down: false,
         then: None,

@@ -487,6 +487,7 @@ pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new_wit
                 owner: None,
             },
         )], EffectDef::ExileLinkedToSource {
+                until_source_leaves: false,
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
 face_down: false,
 then: None,

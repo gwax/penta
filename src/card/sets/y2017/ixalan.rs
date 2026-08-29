@@ -43,6 +43,7 @@ static FREEBOOTER_RETURNS_IT: AbilityDef = AbilityDef::triggered(
 
 static FREEBOOTER_EXILE: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
         face_down: false,
         then: None,

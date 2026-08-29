@@ -3365,6 +3365,7 @@ pub(in crate::card::sets) static HELVAULT: CardRecord = CardRecord::new_with_leg
                     owner: None,
                 })],
                 EffectDef::ExileLinkedToSource {
+                    until_source_leaves: false,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
 face_down: false,
 then: None,
@@ -3383,6 +3384,7 @@ then: None,
                     owner: None,
                 })],
                 EffectDef::ExileLinkedToSource {
+                    until_source_leaves: false,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
 face_down: false,
 then: None,

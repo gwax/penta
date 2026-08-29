@@ -1586,6 +1586,7 @@ static MEMORY_JAR_EFFECT: [EffectDef; 3] = [
     // Face down: the point of the clause is that nobody learns what the
     // other player put away, only how much of it there was.
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object: EVERY_CARD_IN_HAND,
         face_down: true,
         then: None,

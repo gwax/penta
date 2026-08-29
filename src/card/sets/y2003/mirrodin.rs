@@ -121,6 +121,7 @@ static A_NONARTIFACT_NONLAND_CARD_IN_YOUR_HAND: ObjectQueryDef = ObjectQueryDef:
 /// The exile is linked to the Mox, which is what makes the mana ability
 /// able to read the card's colours later.
 static MOX_EXILES_THE_CHOSEN_CARD: EffectDef = EffectDef::ExileLinkedToSource {
+    until_source_leaves: false,
     object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
     face_down: false,
     then: None,

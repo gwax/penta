@@ -133,6 +133,7 @@ pub(in crate::card::sets) static BRANCHING_BOLT: CardRecord = CardRecord::new(
 /// Linked to the Sculler rather than exiled outright, which is the whole
 /// bargain: the card is gone only for as long as the body survives.
 static SCULLER_EXILE: EffectDef = EffectDef::ExileLinkedToSource {
+    until_source_leaves: false,
     object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
     face_down: false,
     then: None,

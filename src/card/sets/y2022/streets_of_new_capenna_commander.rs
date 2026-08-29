@@ -17,6 +17,7 @@ use crate::mana_cost;
 /// discard is over by the time this resolves, so what the trigger points at
 /// is the graveyard object rather than the one that was in hand.
 static EXILE_THE_DISCARDED_CARD: EffectDef = EffectDef::ExileLinkedToSource {
+    until_source_leaves: false,
     object: EffectRecipientDef::TriggeringObject,
     face_down: false,
     then: None,

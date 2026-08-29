@@ -103,6 +103,7 @@ static INSTALL_RETURN_EXILE_WHEN_SOURCE_LEAVES: EffectDef =
 #[must_use]
 pub const fn exile_until_source_leaves(object: EffectRecipientDef) -> EffectDef {
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: true,
         object,
         face_down: false,
         then: Some(&INSTALL_RETURN_EXILE_WHEN_SOURCE_LEAVES),
@@ -157,6 +158,7 @@ static INSTALL_RETURN_EXILE_AT_NEXT_END_STEP_UNDER_YOUR_CONTROL: EffectDef =
 #[must_use]
 pub const fn exile_until_next_end_step(object: EffectRecipientDef) -> EffectDef {
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object,
         face_down: false,
         then: Some(&INSTALL_RETURN_EXILE_AT_NEXT_END_STEP),
@@ -170,6 +172,7 @@ pub const fn exile_until_next_end_step_under_your_control(
     object: EffectRecipientDef,
 ) -> EffectDef {
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object,
         face_down: false,
         then: Some(&INSTALL_RETURN_EXILE_AT_NEXT_END_STEP_UNDER_YOUR_CONTROL),
@@ -192,6 +195,7 @@ static RETURN_LINKED_EXILES_TRANSFORMED: EffectDef = EffectDef::ReturnLinkedExil
 #[must_use]
 pub const fn exile_and_return_transformed(object: EffectRecipientDef) -> EffectDef {
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object,
         face_down: false,
         then: Some(&RETURN_LINKED_EXILES_TRANSFORMED),

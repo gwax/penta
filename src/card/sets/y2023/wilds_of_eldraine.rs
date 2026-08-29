@@ -173,6 +173,7 @@ static CAULDRON_GROWS_A_CREATURE: EffectDef = EffectDef::AddCounters {
 
 static CAULDRON_EXILES_THEN_GROWS: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         face_down: false,
         then: None,

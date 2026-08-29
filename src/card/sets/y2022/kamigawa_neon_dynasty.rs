@@ -154,6 +154,7 @@ static ONE_ARTIFACT_OR_CREATURE: [AbilityTargetDef; 1] = [AbilityTargetDef::exac
 
 static TOUCH_EXILES_IT: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         face_down: false,
         then: None,

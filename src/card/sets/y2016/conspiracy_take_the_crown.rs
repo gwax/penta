@@ -38,6 +38,7 @@ static JAILER_RELEASE: AbilityDef = AbilityDef::triggered(
 /// Jailer, and the delayed trigger is what "until" means.
 static JAILER_JAILS: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         face_down: false,
         then: None,

@@ -386,6 +386,7 @@ static CURATOR_ABILITIES: [AbilityDef; 2] = [
         &CURATOR_EXILE_COST,
         &A_CARD_IN_A_GRAVEYARD,
         EffectDef::ExileLinkedToSource {
+            until_source_leaves: false,
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             face_down: false,
             then: None,

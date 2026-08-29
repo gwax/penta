@@ -24,6 +24,7 @@ use crate::{TargetIndex, mana_cost};
 /// was stolen, which is when a blink is worth the mana.
 static BLINK_UNDER_YOUR_CONTROL: [EffectDef; 2] = [
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         face_down: false,
         then: None,
@@ -735,6 +736,7 @@ pub(in crate::card::sets) static RESTORATION_ANGEL: CardRecord = CardRecord::new
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::Sequence(&[
                     EffectDef::ExileLinkedToSource {
+                        until_source_leaves: false,
                         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
 face_down: false,
 then: None,

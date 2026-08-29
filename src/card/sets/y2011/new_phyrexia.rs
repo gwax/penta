@@ -1049,6 +1049,7 @@ pub(in crate::card::sets) static PHYREXIAN_INGESTER: CardRecord = CardRecord::ne
                     1,
                 )],
                 EffectDef::ExileLinkedToSource {
+                    until_source_leaves: false,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     face_down: false,
                     then: None,

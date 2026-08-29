@@ -364,6 +364,12 @@ pub enum EffectDef {
         /// face-down exile; only its owner knows what is in it, which is
         /// what keeps Memory Jar from showing both hands to the table.
         face_down: bool,
+        /// Whether the card prints "until this permanent leaves the
+        /// battlefield". Such an exile does nothing at all when the source
+        /// has already gone by the time the ability resolves (CR 610.3b) --
+        /// unlike an ordinary linked exile with a separate leave trigger,
+        /// where what it takes on the way past stays taken.
+        until_source_leaves: bool,
         then: Option<&'static EffectDef>,
     },
     /// Exiles, and leaves the card's own owner able to play it from there

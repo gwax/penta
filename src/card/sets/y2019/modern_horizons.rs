@@ -25,6 +25,7 @@ static NOT_YOUR_TURN: TriggerConditionDef =
 /// the spell, which is what lets the return name the card it just made.
 static EPHEMERATE_BLINKS: [EffectDef; 3] = [
     EffectDef::ExileLinkedToSource {
+        until_source_leaves: false,
         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         face_down: false,
         then: None,
