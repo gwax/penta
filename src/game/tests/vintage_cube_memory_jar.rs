@@ -235,3 +235,33 @@ fn an_empty_hand_still_draws() {
         "and nothing to come back to",
     );
 }
+
+/// "Each player ... draws seven cards" is not optional and not yours alone:
+/// a Jar cracked against a library three deep is a Jar that kills its
+/// opponent, once the state-based check catches up.
+#[test]
+fn it_draws_the_other_player_out_of_their_library() {
+    let (mut game, jar) = staged(1, 1);
+    game.players[1].library.truncate(3);
+
+    crack(&mut game, jar);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        7,
+        "you drew your seven off a library that had them",
+    );
+    assert!(
+        game.players[1].library.is_empty(),
+        "and they emptied theirs trying",
+    );
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::One,
+            reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+        }),
+        "which is a loss for the player who could not finish the draw",
+    );
+}
