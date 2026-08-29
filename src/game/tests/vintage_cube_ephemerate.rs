@@ -258,3 +258,105 @@ fn the_rebounded_cast_blinks_again() {
     let returned = blinked_creature(&game);
     assert_ne!(returned.card.id, after_first, "blinked a second time");
 }
+
+/// "Any counters on the exiled creature will cease to exist. Equipment
+/// attached to it will become unattached and remain on the battlefield."
+/// What comes back is a new object that remembers none of it.
+#[test]
+fn the_counters_go_and_the_equipment_falls_off() {
+    let (mut game, spell, _snapcaster) = staged();
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let clamp = game
+        .put_onto_battlefield(PlayerId::One, cards::SKULLCLAMP)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    settle(&mut game);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    let equip = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == clamp
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets() == [Target::Permanent(bears)])
+            }
+            _ => false,
+        })
+        .expect("equip is offered for that creature");
+    game.apply(PlayerId::One, equip).expect("it equips");
+    settle(&mut game);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("it is on the battlefield")
+        .add_counters(CounterKind::PlusOnePlusOne, 2);
+    game.priority = PlayerId::One;
+
+    cast(&mut game, spell, bears);
+
+    let returned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Card(cards::GRIZZLY_BEARS))
+        .expect("the Bears came back");
+    assert_ne!(returned.card.id, bears, "a new object came back");
+    assert_eq!(
+        returned.counters(CounterKind::PlusOnePlusOne),
+        0,
+        "the counters did not travel with it",
+    );
+    let clamp = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == clamp)
+        .expect("the Skullclamp is still on the battlefield");
+    assert!(
+        clamp.attached_to.is_none(),
+        "on nobody: what it was on is gone",
+    );
+}
+
+/// "If a token is exiled this way, it will cease to exist and won't return
+/// to the battlefield."
+#[test]
+fn a_token_it_blinks_never_comes_back() {
+    let (mut game, spell, _blinked) = staged();
+    game.put_onto_battlefield(PlayerId::One, cards::ESIKA_S_CHARIOT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    settle(&mut game);
+    let cat = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Token)
+        .expect("the Chariot brought its Cats")
+        .card
+        .id;
+    let tokens_before = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition == ObjectKind::Token)
+        .count();
+    game.priority = PlayerId::One;
+
+    cast(&mut game, spell, cat);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == ObjectKind::Token)
+            .count(),
+        tokens_before - 1,
+        "the Cat left and nothing came back in its place",
+    );
+    assert!(
+        game.players[0].exile.iter().all(|card| card.id != cat),
+        "and it is not sitting in exile either",
+    );
+}
