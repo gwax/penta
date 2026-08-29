@@ -385,3 +385,46 @@ fn a_shock_land_fetched_tapped_stays_tapped_however_it_is_paid_for() {
         "but the payment was made all the same",
     );
 }
+
+/// "Two or fewer other lands" counts lands and nothing else: a board of
+/// artifacts leaves the Vantage untapped, and a Dryad Arbor counts because
+/// it is a land, whatever else it also is.
+#[test]
+fn the_fastland_clause_counts_lands_and_only_lands() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    for index in 0..3 {
+        game.battlefield
+            .push(creature(61_200 + index, cards::SOL_RING, PlayerId::One));
+    }
+    let vantage = game
+        .put_onto_battlefield(PlayerId::One, cards::INSPIRING_VANTAGE)
+        .expect("cataloged");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == vantage)
+            .expect("it entered")
+            .tapped,
+        "three artifacts are not three lands",
+    );
+
+    let mut game = ready_game();
+    game.battlefield.clear();
+    for index in 0..3 {
+        game.battlefield
+            .push(creature(61_300 + index, cards::DRYAD_ARBOR, PlayerId::One));
+    }
+    let vantage = game
+        .put_onto_battlefield(PlayerId::One, cards::INSPIRING_VANTAGE)
+        .expect("cataloged");
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == vantage)
+            .expect("it entered")
+            .tapped,
+        "and a Dryad Arbor is a land, creature or not",
+    );
+}
