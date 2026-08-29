@@ -167,3 +167,48 @@ fn a_red_lhurgoyf_still_burns_through_protection_from_black() {
          nothing about red",
     );
 }
+
+/// "If Pyrogoyf ... leaves the battlefield while Pyrogoyf's last ability is
+/// on the stack, use its power as it last existed on the battlefield." A
+/// Pyrogoyf that dies on the way adds a creature card to a graveyard that
+/// had none, and the damage is still the one it was worth while it stood.
+#[test]
+fn a_dead_pyrogoyf_deals_the_power_it_had() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].graveyard.clear();
+    game.players[PlayerId::Two.index()].graveyard.clear();
+    // One card type between the two piles: an instant, and no creature.
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        63_500,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
+    let life = game.players[PlayerId::Two.index()].life;
+
+    let goyf = game
+        .put_onto_battlefield(PlayerId::One, cards::PYROGOYF)
+        .expect("cataloged");
+    assert_eq!(
+        game.power(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == goyf)
+                .expect("it is on the battlefield"),
+        ),
+        Some(1),
+        "one card type, so a 1/2",
+    );
+
+    // It dies with its own trigger still on the stack, which puts a creature
+    // card in the graveyard: a live recount would say two.
+    game.move_permanents_to_graveyard(&[goyf]);
+    game.check_state_based_actions();
+    aim_at(&mut game, "your opponent");
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        life - 1,
+        "one damage: what it was worth while it was there",
+    );
+}
