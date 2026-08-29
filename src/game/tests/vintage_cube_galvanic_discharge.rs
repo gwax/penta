@@ -146,3 +146,71 @@ fn it_answers_a_planeswalker() {
 
     assert!(!alive(&game, teferi), "four loyalty is all he had");
 }
+
+/// "If a spell that states you 'may pay' some amount of {E} has become an
+/// illegal target, the spell won't resolve. You can't pay any {E} even if
+/// you want to." The energy comes with the resolution, so answering the
+/// creature costs the caster the counters as well as the damage.
+#[test]
+fn an_answered_target_costs_the_energy_too() {
+    let (mut game, held, target) = staged(cards::GRIZZLY_BEARS, 1);
+
+    let cast =
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    *card == held
+                        && choices.targets().iter().any(|selection| {
+                            selection.targets().contains(&Target::Permanent(target))
+                        })
+                }
+                _ => false,
+            })
+            .expect("it can point at their creature");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    game.move_permanents_to_graveyard(&[target]);
+    drain_pending(&mut game);
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+
+    assert_eq!(
+        energy(&game),
+        1,
+        "the one that was banked is all there is: the spell never resolved",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GALVANIC_DISCHARGE),
+        "and the Discharge was spent for nothing",
+    );
+}
+
+/// "Energy counters aren't mana. They don't go away as steps, phases, and
+/// turns end." What the Discharge banks is there next turn.
+#[test]
+fn the_energy_survives_the_turn() {
+    let (mut game, held, target) = staged(cards::SERRA_ANGEL, 0);
+    discharge(&mut game, held, target, 0);
+    assert_eq!(energy(&game), 3, "three banked and none spent");
+
+    game.empty_mana_pools();
+    game.cleanup();
+    game.check_state_based_actions();
+
+    assert_eq!(
+        energy(&game),
+        3,
+        "the cleanup takes mana and damage, not energy",
+    );
+}
