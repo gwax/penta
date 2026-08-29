@@ -247,3 +247,53 @@ fn animating_it_is_not_a_creature_entering() {
         "the land was already there; it only changed what it is",
     );
 }
+
+/// "Once Celestial Colonnade has attacked, tapping it for mana won't remove
+/// it from combat." Vigilance leaves it untapped to be tapped, and it is
+/// still an attacker afterwards.
+#[test]
+fn tapping_it_for_mana_does_not_take_it_out_of_combat() {
+    let (mut game, colonnade) = staged();
+    animate(&mut game, colonnade);
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: colonnade,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .expect("a 4/4 with vigilance attacks");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+    assert!(
+        !permanent(&game, colonnade).tapped,
+        "vigilance kept it untapped",
+    );
+
+    game.empty_mana_pools();
+    let white = Action::ActivateManaAbility {
+        source: colonnade,
+        ability: mana_ability_for(&game, colonnade, ManaColor::White),
+        color: ManaColor::White,
+        counters_removed: None,
+        cost_object: None,
+        combination: None,
+    };
+    game.apply(PlayerId::One, white)
+        .expect("an untapped land taps for mana, attacking or not");
+
+    assert_eq!(game.players[0].mana_pool.white, 1);
+    let attacking = permanent(&game, colonnade);
+    assert!(attacking.tapped, "it is tapped now");
+    assert!(
+        attacking.attacking,
+        "and still attacking: tapping an attacker does not call it home",
+    );
+    assert_eq!(
+        attacking.attack_defender,
+        Some(AttackDefender::Player(PlayerId::Two)),
+    );
+}
