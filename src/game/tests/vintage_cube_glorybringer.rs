@@ -191,3 +191,63 @@ fn it_flies_and_has_haste() {
     assert!(game.permanent_has_executable_keyword(glorybringer, KeywordAbility::Flying));
     assert!(game.permanent_has_executable_keyword(glorybringer, KeywordAbility::Haste));
 }
+
+/// "You can exert it even if there isn't a legal target for that triggered
+/// ability." A board with nothing but their own Dragon on it is a board the
+/// trigger cannot point at, and the exert is offered all the same.
+#[test]
+fn it_may_be_exerted_with_nothing_to_shoot() {
+    let (mut game, dragon, bears, _their_dragon) = staged();
+    game.battlefield
+        .retain(|permanent| permanent.card.id != bears);
+
+    attack_with(&mut game, dragon);
+    assert_eq!(
+        exert_actions(&game),
+        vec![dragon],
+        "the offer does not depend on the trigger having a target",
+    );
+
+    game.apply(PlayerId::One, Action::ExertAttacker { attacker: dragon })
+        .expect("exerting is legal");
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == dragon && permanent.exerted),
+        "and the Dragon owes its untap step for nothing",
+    );
+}
+
+/// "You can't do so later in combat": exert is a choice made as the attack
+/// is declared, and once the declaration is over the offer is gone.
+#[test]
+fn exert_is_not_offered_after_the_declaration() {
+    let (mut game, dragon, _bears, _their_dragon) = staged();
+    attack_with(&mut game, dragon);
+    assert_eq!(exert_actions(&game), vec![dragon], "while it is being made");
+
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+
+    assert!(
+        exert_actions(&game).is_empty(),
+        "and not once it is finished",
+    );
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+    assert!(
+        exert_actions(&game).is_empty(),
+        "nor later in the combat it started",
+    );
+}
