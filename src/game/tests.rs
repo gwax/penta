@@ -396,6 +396,7 @@ mod vintage_cube_demonic_tutor;
 mod vintage_cube_descendant_of_storms;
 mod vintage_cube_detectives_phoenix;
 mod vintage_cube_displacer_kitten;
+mod vintage_cube_doomsday;
 mod vintage_cube_dragons_rage_channeler;
 mod vintage_cube_dreadhorde_arcanist;
 mod vintage_cube_duelist;
