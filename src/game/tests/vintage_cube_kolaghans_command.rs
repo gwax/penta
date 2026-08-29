@@ -228,3 +228,95 @@ fn a_mode_with_no_target_is_not_offered() {
         "an empty graveyard and no artifact leave two modes: {offered:?}",
     );
 }
+
+/// "If at least one target is still legal, the spell will resolve but will
+/// have no effect on any illegal targets." Cracking the artifact it named
+/// saves the artifact and nothing else: the two damage still lands.
+#[test]
+fn one_answered_target_does_not_save_the_other() {
+    let (mut game, command) = staged(&[], &[cards::BLACK_LOTUS]);
+    let lotus = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::BLACK_LOTUS)
+        .expect("it is here")
+        .card
+        .id;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell {
+                card: id, choices, ..
+            } => {
+                *id == command
+                    && choices.modes() == [mode(DESTROY), mode(BOLT)]
+                    && choices.iter_targets().copied().collect::<Vec<_>>()
+                        == [Target::Permanent(lotus), Target::Player(PlayerId::Two)]
+            }
+            _ => false,
+        })
+        .expect("the Lotus and their face");
+    game.apply(PlayerId::One, action).expect("it is cast");
+
+    // They crack the Lotus for mana rather than let it be destroyed.
+    game.priority = PlayerId::Two;
+    let crack = Action::ActivateManaAbility {
+        source: lotus,
+        ability: mana_ability_for(&game, lotus, ManaColor::Green),
+        color: ManaColor::Green,
+        counters_removed: None,
+        cost_object: None,
+        combination: None,
+    };
+    game.apply(PlayerId::Two, crack)
+        .expect("its own ability sacrifices it");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[1].life, 18,
+        "the mode that still had a target resolved",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::KOLAGHAN_S_COMMAND),
+        "and the Command is spent",
+    );
+}
+
+/// "Follow the instructions of the modes you chose in the order they are
+/// printed": the creature comes back before the discard is made, so it is
+/// among the cards that may be discarded.
+#[test]
+fn the_returned_card_is_there_to_be_discarded() {
+    let (mut game, command) = staged(&[cards::SERRA_ANGEL], &[]);
+    let angel = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::SERRA_ANGEL)
+        .expect("it is in the graveyard")
+        .id;
+    assert!(game.players[0].hand.len() == 1, "only the Command is held");
+
+    cast_with(
+        &mut game,
+        command,
+        &[RETURN, DISCARD],
+        &[Target::Card(angel), Target::Player(PlayerId::One)],
+    );
+
+    assert!(
+        game.players[0].hand.is_empty(),
+        "the Angel came back and was the only card there to discard",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "so it went straight back where it came from",
+    );
+}
