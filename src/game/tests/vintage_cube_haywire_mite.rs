@@ -189,3 +189,54 @@ fn it_exiles_a_noncreature_enchantment() {
         "exiled, which is how an Oath stays answered",
     );
 }
+
+/// Nothing in the cost is a tap, so the Mite eats something the turn it
+/// lands: one mana, one artifact, and a body that was never going to attack.
+#[test]
+fn a_fresh_mite_still_eats() {
+    let (mut game, mite) = staged();
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == mite)
+    {
+        permanent.entered_controller_turn = game.turns_started[0];
+    }
+    game.put_onto_battlefield(PlayerId::Two, cards::BLACK_LOTUS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let action = activation(&game, mite).expect("summoning sickness stops taps, not sacrifices");
+    game.apply(PlayerId::One, action).expect("it activates");
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::BLACK_LOTUS),
+        "the Lotus is gone on the turn the Mite arrived",
+    );
+}
+
+/// "Exile" rather than "destroy": indestructible is no answer to it.
+#[test]
+fn it_exiles_an_indestructible_artifact() {
+    let (mut game, mite) = staged();
+    game.put_onto_battlefield(PlayerId::Two, cards::DARKSTEEL_INGOT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let action = activation(&game, mite).expect("one green and a sacrifice");
+    game.apply(PlayerId::One, action).expect("it activates");
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::DARKSTEEL_INGOT),
+        "what cannot be destroyed can still be exiled",
+    );
+    assert_eq!(game.players[0].life, 22, "and the Mite paid out on the way");
+}
