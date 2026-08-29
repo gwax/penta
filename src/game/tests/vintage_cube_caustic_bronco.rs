@@ -206,3 +206,74 @@ fn it_saddles_only_as_a_sorcery_and_only_for_the_turn() {
     game.cleanup();
     assert!(!saddled(&game, bronco), "the saddle ends with the turn");
 }
+
+/// "If the revealed card doesn't have a mana cost (because it's a land card,
+/// for example), its mana value is 0." The card still comes to hand; nobody
+/// pays for it.
+#[test]
+fn a_land_off_the_top_costs_nobody_anything() {
+    let (mut game, bronco) = staged(&[], &[cards::MOUNTAIN]);
+    let before = [
+        game.players[PlayerId::One.index()].life,
+        game.players[PlayerId::Two.index()].life,
+    ];
+
+    attack(&mut game, bronco);
+
+    assert_eq!(
+        [
+            game.players[PlayerId::One.index()].life,
+            game.players[PlayerId::Two.index()].life,
+        ],
+        before,
+        "a land is mana value nought either way round",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::MOUNTAIN),
+        "and it is in hand all the same",
+    );
+}
+
+/// "If Caustic Bronco isn't on the battlefield as its triggered ability
+/// resolves, use whether it was saddled or not before it left." Killing it
+/// with the trigger on the stack does not turn the drain back around.
+#[test]
+fn a_dead_bronco_is_remembered_as_saddled() {
+    let (mut game, bronco) = staged(
+        &[cards::GRIZZLY_BEARS, cards::GRIZZLY_BEARS],
+        &[cards::SERRA_ANGEL],
+    );
+    let before = [
+        game.players[PlayerId::One.index()].life,
+        game.players[PlayerId::Two.index()].life,
+    ];
+    let saddle = saddle_action(&game, bronco).expect("two bears are four power");
+    game.apply(PlayerId::One, saddle).expect("it activates");
+    settle(&mut game);
+
+    game.step = Step::DeclareAttackers;
+    game.declare_attacker(bronco, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    // The trigger is on the stack; the Bronco is answered before it resolves.
+    game.move_permanents_to_graveyard(&[bronco]);
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bronco),
+        "it is gone",
+    );
+    assert_eq!(
+        [
+            game.players[PlayerId::One.index()].life,
+            game.players[PlayerId::Two.index()].life,
+        ],
+        [before[0], before[1] - 5],
+        "and it was saddled when it left, so they still pay",
+    );
+}
