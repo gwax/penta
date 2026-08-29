@@ -144,3 +144,72 @@ fn it_needs_the_two_mana() {
         "the ability costs two on top of the tap",
     );
 }
+
+/// "Reveal it": what the Map finds is shown, which is the difference between
+/// it and a tutor that keeps its answer to itself.
+#[test]
+fn it_shows_what_it_found() {
+    let (mut game, map) = staged(&[cards::WASTELAND]);
+    let found = game.players[0].library[0].id;
+
+    crack(&mut game, map);
+
+    assert!(
+        game.events.iter().any(|event| matches!(
+            event,
+            GameEvent::CardRevealed {
+                player: PlayerId::One,
+                card,
+                definition,
+            } if *card == found && *definition == cards::WASTELAND
+        )),
+        "the land it took was revealed on the way to hand",
+    );
+}
+
+/// The tap is an artifact's tap: the Map cracks on the turn it arrives.
+#[test]
+fn it_cracks_the_turn_it_lands() {
+    let (mut game, map) = staged(&[cards::WASTELAND]);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == map)
+    {
+        permanent.entered_controller_turn = game.turns_started[0];
+    }
+
+    crack(&mut game, map);
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::WASTELAND),
+        "nothing about it waits a turn",
+    );
+}
+
+/// The mana, the tap and the Map are costs: a library with no land in it
+/// spends all three for nothing.
+#[test]
+fn a_landless_library_still_costs_the_map() {
+    let (mut game, map) = staged(&[cards::LIGHTNING_BOLT]);
+
+    crack(&mut game, map);
+
+    assert!(game.players[0].hand.is_empty(), "there was nothing to find");
+    assert_eq!(
+        game.players[0].library.len(),
+        1,
+        "and the Bolt stayed where it was",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::EXPEDITION_MAP),
+        "the Map is spent all the same",
+    );
+    assert_eq!(game.players[0].mana_pool.total(), 0, "and so is the mana");
+}
