@@ -255,3 +255,52 @@ fn it_sacrifices_itself_at_the_end_step() {
         "sacrificed into its owner's graveyard",
     );
 }
+
+/// "If a card has multiple abilities giving you permission to cast it, such
+/// as ... an escape ability and a flashback ability, you choose which one to
+/// apply." A Firebolt under a Breach is offered both ways, and each is
+/// priced its own way -- flashback for {4}{R}, escape for {R} and three
+/// cards.
+#[test]
+fn a_flashback_card_is_offered_both_permissions() {
+    let (mut game, _breach) =
+        staged(&[cards::FIREBOLT, cards::PLAINS, cards::ISLAND, cards::SWAMP]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    assert_eq!(
+        escapes(&game, cards::FIREBOLT).len(),
+        2,
+        "one red and three cards buys the escape, at either target",
+    );
+
+    // The flashback price on top of it: five mana, and no cards exiled.
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 4);
+    let firebolt = in_graveyard(&game, cards::FIREBOLT).expect("it is there");
+    let flashback = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == firebolt
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::Two))
+                    && choices.costs().alternative().is_some()
+            }
+            _ => false,
+        })
+        .expect("flashback is a permission of its own");
+    game.apply(PlayerId::One, flashback).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(game.players[1].life, 18, "the Firebolt resolved");
+    assert_eq!(
+        game.players[0].exile.len(),
+        1,
+        "flashback exiled the card itself and nothing else",
+    );
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        3,
+        "the three that escape would have eaten are untouched",
+    );
+}
