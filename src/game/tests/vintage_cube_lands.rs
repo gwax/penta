@@ -469,3 +469,86 @@ fn a_shock_land_satisfies_a_check_land() {
         "the Shrine is a Plains and a Swamp, whether or not it is basic",
     );
 }
+
+/// Cycling is an activated ability with no timing restriction of its own, so
+/// a triome held up is a land on your turn and a card on theirs.
+#[test]
+fn a_triome_cycles_on_the_other_players_turn() {
+    let mut game = ready_game();
+    game.players[PlayerId::One.index()].hand.clear();
+    let triome = card(41_200, cards::SPARAS_HEADQUARTERS, PlayerId::One);
+    let triome_id = triome.id;
+    game.players[PlayerId::One.index()].hand.push(triome);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    game.active_player = PlayerId::Two;
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+    let library_before = game.players[PlayerId::One.index()].library.len();
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == triome_id)
+        })
+        .expect("their end step is as good a time as any");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library_before - 1,
+        "the card was drawn",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SPARAS_HEADQUARTERS),
+        "and the land it was is in the graveyard",
+    );
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if *card == triome_id)),
+        "a land you cycled is not a land you played",
+    );
+}
+
+/// Three basic land types answer more fetchlands than two: the same
+/// Headquarters is what a Heath is looking for and what a Rainforest is.
+#[test]
+fn two_different_fetchlands_both_find_the_same_triome() {
+    for fetch in [cards::WINDSWEPT_HEATH, cards::MISTY_RAINFOREST] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let source = game
+            .put_onto_battlefield(PlayerId::One, fetch)
+            .expect("cataloged");
+        game.players[PlayerId::One.index()].library.clear();
+        game.players[PlayerId::One.index()].library.push(card(
+            41_300,
+            cards::SPARAS_HEADQUARTERS,
+            PlayerId::One,
+        ));
+
+        let crack = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateAbility { source: actual, .. } if *actual == source)
+            })
+            .expect("the fetch is offered");
+        game.apply(PlayerId::One, crack).expect("it activates");
+        pass_priority_pair(&mut game);
+        drain_pending(&mut game);
+
+        let found = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::SPARAS_HEADQUARTERS)
+            .unwrap_or_else(|| panic!("{fetch:?} found the Headquarters"));
+        assert!(found.tapped, "and it arrives tapped, as it says");
+    }
+}
