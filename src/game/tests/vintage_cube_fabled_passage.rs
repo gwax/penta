@@ -140,3 +140,75 @@ fn an_empty_search_does_nothing() {
         "only the Passage left the battlefield",
     );
 }
+
+/// "A basic land card": a Bayou is a Swamp and a Forest and still not basic,
+/// so the search passes it over.
+#[test]
+fn only_a_basic_is_worth_finding() {
+    let (mut game, passage) = staged(3);
+    game.players[0]
+        .library
+        .push(card(98_500, cards::BAYOU, PlayerId::One));
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == passage),
+        )
+        .expect("the Passage can be cracked");
+    game.apply(PlayerId::One, action)
+        .expect("the ability activates");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let offered = game
+        .pending_decisions
+        .first()
+        .expect("the search asks")
+        .observation
+        .options
+        .iter()
+        .filter_map(|option| match option.card {
+            Some((_, ObjectCharacteristics::Card { definition, .. })) => Some(definition),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        offered,
+        vec![cards::MOUNTAIN],
+        "the Mountain is basic and the Bayou only has the types",
+    );
+}
+
+/// The untap is not bookkeeping: the land it found pays for something the
+/// same turn, which is the whole difference between this and an Evolving
+/// Wilds.
+#[test]
+fn the_land_it_untapped_pays_at_once() {
+    let (mut game, passage) = staged(3);
+    game.empty_mana_pools();
+
+    crack(&mut game, passage);
+
+    let mountain = fetched(&game).card.id;
+    let red = Action::ActivateManaAbility {
+        source: mountain,
+        ability: mana_ability_for(&game, mountain, ManaColor::Red),
+        color: ManaColor::Red,
+        counters_removed: None,
+        cost_object: None,
+        combination: None,
+    };
+    game.apply(PlayerId::One, red)
+        .expect("an untapped Mountain taps for red");
+
+    assert_eq!(game.players[0].mana_pool.red, 1);
+}
