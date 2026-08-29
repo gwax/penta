@@ -866,6 +866,7 @@ pub(in crate::card::sets) static CAPTURED_BY_LAGACS: CardRecord = CardRecord::ne
 );
 
 // MH2 202 — Grist, the Hunger Tide
+// Audit: partial — The minus names its destruction target on activation instead of through a reflexive trigger, so an answered target counters the sacrifice too.
 static GRIST_INSECT: EffectDef =
     EffectDef::create_creature_token(&["Insect"], &[ManaColor::Black, ManaColor::Green], 1, 1);
 
@@ -960,7 +961,10 @@ static GRIST_ABILITIES: [AbilityDef; 4] = [
     // The target is declared as the ability is activated rather than when
     // the sacrifice is actually made, which is the one place this differs
     // from the printed reflexive trigger: a board with nothing to destroy
-    // does not offer the ability at all.
+    // does not offer the ability at all. It follows that an answer to the
+    // target counters the whole ability, so the creature that would have
+    // paid for it survives; the printed card still offers the sacrifice and
+    // loses only the destruction.
     AbilityDef::activated_with_targets(
         "\u{2212}2: You may sacrifice a creature. When you do, destroy target creature or \
          planeswalker.",
