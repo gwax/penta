@@ -155,3 +155,93 @@ fn jaces_ultimate_wins_once_it_has_emptied_the_library() {
         "and the ultimate's own check wins on the spot",
     );
 }
+
+/// The plus is two clauses in the order printed: the mill happens first, so
+/// pointing it at yourself buries two cards and then draws the third.
+#[test]
+fn jaces_plus_mills_before_it_draws() {
+    for at_yourself in [false, true] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[PlayerId::One.index()].hand.clear();
+        game.players[PlayerId::One.index()].library.clear();
+        game.players[PlayerId::Two.index()].graveyard.clear();
+        // Bottom to top: the Angel is the third card down.
+        for (index, definition) in [cards::SERRA_ANGEL, cards::GRIZZLY_BEARS, cards::MOUNTAIN]
+            .into_iter()
+            .enumerate()
+        {
+            game.players[PlayerId::One.index()].library.push(card(
+                81_100 + u32::try_from(index).expect("three cards"),
+                definition,
+                PlayerId::One,
+            ));
+        }
+        let jace = game
+            .put_onto_battlefield(PlayerId::One, cards::JACE_WIELDER_OF_MYSTERIES)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        let victim = if at_yourself {
+            PlayerId::One
+        } else {
+            PlayerId::Two
+        };
+        let their_library = game.players[PlayerId::Two.index()].library.len();
+
+        let plus = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    *source == jace
+                        && targets
+                            .iter()
+                            .any(|selection| selection.targets() == [Target::Player(victim)])
+                }
+                _ => false,
+            })
+            .expect("the plus names a player");
+        game.apply(PlayerId::One, plus).expect("it activates");
+        pass_priority_pair(&mut game);
+        drain_pending(&mut game);
+
+        if at_yourself {
+            assert_eq!(
+                game.players[PlayerId::One.index()]
+                    .hand
+                    .iter()
+                    .map(|card| card.definition)
+                    .collect::<Vec<_>>(),
+                vec![cards::SERRA_ANGEL],
+                "the two on top were milled before the draw took the third",
+            );
+            assert_eq!(
+                game.players[PlayerId::One.index()].graveyard.len(),
+                2,
+                "and those two are in the graveyard",
+            );
+        } else {
+            assert_eq!(
+                game.players[PlayerId::Two.index()].graveyard.len(),
+                2,
+                "their two went to their graveyard",
+            );
+            assert_eq!(
+                game.players[PlayerId::Two.index()].library.len(),
+                their_library - 2,
+                "off the top of their library",
+            );
+            assert_eq!(
+                game.players[PlayerId::One.index()]
+                    .hand
+                    .iter()
+                    .map(|card| card.definition)
+                    .collect::<Vec<_>>(),
+                vec![cards::MOUNTAIN],
+                "and you drew your own top card either way",
+            );
+        }
+    }
+}
