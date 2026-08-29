@@ -655,6 +655,7 @@ mod vintage_cube_thopter_foundry;
 mod vintage_cube_thoughtseize;
 mod vintage_cube_thraben_inspector;
 mod vintage_cube_thundertrap_trainer;
+mod vintage_cube_tifa_lockhart;
 mod vintage_cube_time_spiral;
 mod vintage_cube_tinker;
 mod vintage_cube_tireless_tracker;
