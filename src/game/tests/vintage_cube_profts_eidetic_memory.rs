@@ -258,3 +258,54 @@ fn a_draw_in_response_is_counted_too() {
         "X was read on resolution, so the third draw is in it",
     );
 }
+
+/// "Target creature you control": theirs is not one, so a board with only
+/// their creature on it leaves the trigger nothing to point at and nobody
+/// grows.
+#[test]
+fn their_creature_is_not_a_target() {
+    let (mut game, memory, bears) = staged();
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    cast_memory(&mut game, memory);
+    game.draw_card(PlayerId::One);
+
+    game.step = Step::BeginningOfCombat;
+    game.begin_step_triggers();
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() || game.stack.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    if let Some(decision) = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+    {
+        let offered = decision
+            .options
+            .iter()
+            .filter_map(|option| option.card.map(|(id, _)| id))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            offered,
+            vec![bears],
+            "your own Bears and nothing across the table",
+        );
+    }
+    settle(&mut game);
+
+    assert_eq!(counters_on(&game, bears), 1, "your creature grew");
+    assert_eq!(
+        counters_on(&game, theirs),
+        0,
+        "and theirs was never a candidate",
+    );
+}
