@@ -50,6 +50,18 @@ fn activate_at(game: &mut Game, key: GameObjectId, target: GameObjectId) {
     drain_pending(game);
 }
 
+/// Whether the Key's untap is offered at `target`.
+fn untap_offered_at(game: &Game, key: GameObjectId, target: GameObjectId) -> bool {
+    game.legal_actions(PlayerId::One).iter().any(|action| {
+        matches!(action, Action::ActivateAbility { source, targets, .. }
+            if *source == key
+                && targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .any(|chosen| *chosen == Target::Permanent(target)))
+    })
+}
+
 /// The untap names another artifact, and untaps it.
 #[test]
 fn it_untaps_another_artifact() {
@@ -79,14 +91,7 @@ fn it_cannot_untap_itself() {
     game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
 
     assert!(
-        !game.legal_actions(PlayerId::One).iter().any(|action| {
-            matches!(action, Action::ActivateAbility { source, targets, .. }
-                if *source == key
-                    && targets
-                        .iter()
-                        .flat_map(crate::casting::TargetSelection::targets)
-                        .any(|chosen| *chosen == Target::Permanent(key)))
-        }),
+        !untap_offered_at(&game, key, key),
         "the Key is not another artifact",
     );
 }
@@ -102,14 +107,7 @@ fn the_untap_names_artifacts_only() {
     game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
 
     assert!(
-        !game.legal_actions(PlayerId::One).iter().any(|action| {
-            matches!(action, Action::ActivateAbility { source, targets, .. }
-                if *source == key
-                    && targets
-                        .iter()
-                        .flat_map(crate::casting::TargetSelection::targets)
-                        .any(|chosen| *chosen == Target::Permanent(bears_id)))
-        }),
+        !untap_offered_at(&game, key, bears_id),
         "a bear is not an artifact",
     );
 }
@@ -233,5 +231,92 @@ fn it_does_not_undo_a_block_that_has_already_happened() {
     assert_eq!(
         game.players[1].life, life,
         "and the damage went to the blocker rather than past it",
+    );
+}
+
+/// "Another target artifact" says nothing about who controls it, and
+/// untapping something of theirs is a legal, if rarely wise, use of it.
+#[test]
+fn it_untaps_an_artifact_they_control() {
+    let (mut game, key) = staged();
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::BLACK_LOTUS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.tap_permanent(theirs);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    assert!(
+        untap_offered_at(&game, key, theirs),
+        "their Lotus is another artifact like any other",
+    );
+    activate_at(&mut game, key, theirs);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == theirs)
+            .is_some_and(|permanent| !permanent.tapped),
+        "and it untapped",
+    );
+}
+
+/// An artifact creature is an artifact. The clause that keeps a bear out
+/// lets a Dragon Engine in.
+#[test]
+fn an_artifact_creature_is_still_an_artifact() {
+    let (mut game, key) = staged();
+    let engine = creature(84_100, cards::DRAGON_ENGINE, PlayerId::One);
+    let engine_id = engine.card.id;
+    game.battlefield.push(engine);
+    game.tap_permanent(engine_id);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    activate_at(&mut game, key, engine_id);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == engine_id)
+            .is_some_and(|permanent| !permanent.tapped),
+        "it is a creature and it is an artifact, and the untap wanted the second",
+    );
+}
+
+/// Nothing in the ability asks the target to be tapped. Pointing it at an
+/// untapped artifact is legal and simply does nothing, and the mana and
+/// the tap are spent all the same.
+#[test]
+fn an_untapped_artifact_is_a_legal_target_and_nothing_happens() {
+    let (mut game, key) = staged();
+    let lotus = game
+        .put_onto_battlefield(PlayerId::One, cards::BLACK_LOTUS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    assert!(
+        untap_offered_at(&game, key, lotus),
+        "the ability does not ask whether its target is tapped",
+    );
+    activate_at(&mut game, key, lotus);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == lotus)
+            .is_some_and(|permanent| !permanent.tapped),
+        "the Lotus was untapped before and is untapped after",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == key)
+            .is_some_and(|permanent| permanent.tapped),
+        "and the Key paid its tap for nothing",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.colorless, 0,
+        "along with the mana",
     );
 }
