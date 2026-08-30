@@ -343,3 +343,29 @@ fn tapped_creatures_cannot_pay_the_saddle() {
         "four power that is already tapped is no power at all",
     );
 }
+
+/// "A split card's characteristics are a combination of its two halves while
+/// it is not on the stack." The card the Bronco turns over is in a library,
+/// so Life // Death is worth {G} and {1}{B} together: three, not one.
+#[test]
+fn a_split_card_off_the_top_costs_both_halves() {
+    let (mut game, bronco) = staged(&[], &[cards::LIFE_DEATH]);
+    let before = game.players[PlayerId::One.index()].life;
+
+    attack(&mut game, bronco);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::LIFE_DEATH],
+        "the one card it revealed",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        before - 3,
+        "one for the Life half and two for the Death half",
+    );
+}

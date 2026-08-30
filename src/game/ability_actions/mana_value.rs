@@ -84,7 +84,7 @@ impl Game {
             return self
                 .catalog
                 .get(card.definition)
-                .map(|definition| definition.rules.printed_mana_cost().mana_value());
+                .map(crate::card::CardDefinition::card_mana_value);
         }
         match self.retired_objects.get(&id) {
             Some(RetiredObject::Permanent { mana_value, .. }) => Some(*mana_value),
@@ -92,7 +92,7 @@ impl Game {
             Some(RetiredObject::Card(card)) => self
                 .catalog
                 .get(card.definition)
-                .map(|definition| definition.rules.printed_mana_cost().mana_value()),
+                .map(crate::card::CardDefinition::card_mana_value),
             None => None,
         }
     }

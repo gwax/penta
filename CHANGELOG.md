@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A split card is worth both halves anywhere but the stack.** Its mana
+  value was read off the first half alone, so a Caustic Bronco turning over
+  Life // Death charged its controller one life rather than three, and a mill
+  that totalled what it buried counted the same way. Cards read in a zone now
+  combine their halves; a predicate that names one presented face still
+  measures that face, and every other layout still answers with the face it
+  is defined by.
+
 - **A transforming back face keeps the colour its indicator prints.** A back
   face has no mana cost, and colour was derived from the mana cost alone, so
   three of them turned over colourless: Tamiyo, Seasoned Scholar was not blue,

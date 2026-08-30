@@ -617,6 +617,28 @@ impl CardDefinition {
         self.parts.iter().find(|part| part.id == id)
     }
 
+    /// The mana value of the card itself, as read anywhere but the stack. A
+    /// split card's characteristics are the combination of its halves while
+    /// it is not on the stack, so Life // Death is worth three in a library
+    /// even though neither half is; every other layout answers with the face
+    /// the card is defined by, which for a transforming card is its front.
+    ///
+    /// A predicate that reads one presented face -- "target creature card
+    /// with mana value 2 or less" naming a half -- still measures that face
+    /// rather than the card, and is unaffected by this.
+    #[must_use]
+    pub fn card_mana_value(&self) -> u16 {
+        let CardStructure::Split { parts, .. } = &self.structure else {
+            return self.rules.printed_mana_cost().mana_value();
+        };
+        parts
+            .iter()
+            .filter_map(|id| self.part(*id))
+            .filter_map(CardPart::mana_cost)
+            .map(ManaCost::mana_value)
+            .fold(0, u16::saturating_add)
+    }
+
     #[must_use]
     pub fn play_option(&self, id: PlayOptionId) -> Option<&PlayOptionDef> {
         self.play_options.iter().find(|option| option.id == id)

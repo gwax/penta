@@ -29,7 +29,7 @@ impl Game {
         let mana_value = cards
             .iter()
             .filter_map(|card| self.catalog.get(card.definition))
-            .map(|definition| definition.rules.printed_mana_cost().mana_value())
+            .map(super::CardDefinition::card_mana_value)
             .fold(0_u16, u16::saturating_add);
         (count, mana_value)
     }
