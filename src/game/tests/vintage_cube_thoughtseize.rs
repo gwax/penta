@@ -33,6 +33,12 @@ fn staged(hand: &[CardDefinitionId]) -> (Game, GameObjectId) {
 /// offered.
 fn seize(game: &mut Game, spell: GameObjectId, wanted: Option<CardDefinitionId>) {
     cast_at_two(game, spell);
+    answer_choices(game, wanted);
+}
+
+/// Resolves whatever is waiting, taking the card named by `wanted` when the
+/// choice is offered.
+fn answer_choices(game: &mut Game, wanted: Option<CardDefinitionId>) {
     for _ in 0..16 {
         if let Some(decision) = game
             .pending_decisions
@@ -212,5 +218,88 @@ fn the_whole_hand_is_revealed_lands_and_all() {
     assert!(
         in_graveyard(&game, cards::SERRA_ANGEL),
         "the Angel is the one that went",
+    );
+}
+
+/// "You choose a nonland card from it": the hand belongs to the target and
+/// the choice does not.
+#[test]
+fn the_choice_belongs_to_the_caster() {
+    let (mut game, spell) = staged(&[cards::GRIZZLY_BEARS, cards::LIGHTNING_BOLT]);
+    cast_at_two(&mut game, spell);
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the choice is put to somebody");
+    assert_eq!(
+        decision.player,
+        PlayerId::One,
+        "the caster picks the card out of the other player's hand",
+    );
+    assert!(
+        game.apply(
+            PlayerId::Two,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![decision.options[0].id],
+            },
+        )
+        .is_err(),
+        "and the player whose hand it is cannot answer it for them",
+    );
+}
+
+/// "Target player" is any player. Aimed at yourself it reveals your own
+/// hand, takes your own card, and still costs the two life.
+#[test]
+fn it_can_be_aimed_at_yourself() {
+    let (mut game, spell) = staged(&[]);
+    let bears = game
+        .build_zone(PlayerId::One, &[cards::GRIZZLY_BEARS])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[0].hand.push(bears);
+    let life = game.players[0].life;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == spell
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::One))
+            }
+            _ => false,
+        })
+        .expect("nothing stops it pointing at its own caster");
+    game.apply(PlayerId::One, cast).expect("it is castable");
+    answer_choices(&mut game, Some(cards::GRIZZLY_BEARS));
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+        "you discarded your own creature",
+    );
+    assert_eq!(
+        game.players[0].life,
+        life - 2,
+        "and paid the two life for the privilege",
     );
 }
