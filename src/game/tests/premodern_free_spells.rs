@@ -37,6 +37,12 @@ fn settle(game: &mut Game) {
 /// offered. A counterspell needs something to point at, so the stack always
 /// holds one.
 fn free_cast(spell: CardDefinitionId, islands: usize) -> (Game, Option<Action>) {
+    free_cast_over(spell, &vec![cards::ISLAND; islands])
+}
+
+/// The same, with the lands named rather than counted: what the cost asks
+/// for is the Island type, and a card can carry that without being one.
+fn free_cast_over(spell: CardDefinitionId, lands: &[CardDefinitionId]) -> (Game, Option<Action>) {
     let mut game = ready();
     game.stack.push(crate::game::tests::spell(
         21_000,
@@ -44,10 +50,10 @@ fn free_cast(spell: CardDefinitionId, islands: usize) -> (Game, Option<Action>) 
         PlayerId::Two,
         0,
     ));
-    for index in 0..islands {
+    for (index, definition) in lands.iter().enumerate() {
         game.battlefield.push(creature(
             10_000 + u32::try_from(index).expect("small"),
-            cards::ISLAND,
+            *definition,
             PlayerId::One,
         ));
     }
@@ -189,4 +195,65 @@ fn pyrokinesis_needs_a_red_card_to_exile() {
             if card == pyro_id && choices.costs().alternative().is_some())
     });
     assert!(!free, "a blue card is not a red card");
+}
+
+/// A Daze with no Island is still a Daze: what the missing land costs is
+/// the alternative, not the card.
+#[test]
+fn daze_without_an_island_is_still_castable_for_its_printed_cost() {
+    let (mut game, free) = free_cast(cards::DAZE, 0);
+    assert!(free.is_none(), "nothing to return");
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(20_000))),
+        "two mana is what it says on the card",
+    );
+}
+
+/// "An Island you control" is a land with the Island type, which a Tundra
+/// has and a Plains does not.
+#[test]
+fn daze_takes_any_land_with_the_island_type() {
+    assert!(
+        free_cast_over(cards::DAZE, &[cards::TUNDRA]).1.is_some(),
+        "a Tundra is an Island as well as a Plains",
+    );
+    assert!(
+        free_cast_over(cards::DAZE, &[cards::PLAINS]).1.is_none(),
+        "and a Plains is not one at all",
+    );
+}
+
+/// "The mana value of the spell is determined by only its mana cost, no
+/// matter what the total cost to cast that spell was." A Daze that cost an
+/// Island and no mana is still a two-drop on the stack.
+#[test]
+fn a_free_daze_is_still_worth_two() {
+    let (mut game, cast) = free_cast(cards::DAZE, 1);
+    game.apply(PlayerId::One, cast.expect("one Island pays for it"))
+        .expect("it is cast");
+
+    let daze = game
+        .stack
+        .iter()
+        .find(|object| object.card.definition.card_definition() == Some(cards::DAZE))
+        .expect("it is on the stack");
+    assert_eq!(
+        game.stack_spell_mana_value(daze),
+        2,
+        "an alternative cost is what was paid, not what it is worth",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .filter(|card| card.definition == cards::ISLAND)
+            .count(),
+        1,
+        "and the Island came back to hand rather than dying",
+    );
 }
