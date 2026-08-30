@@ -943,3 +943,44 @@ fn cleanup_discard_advances_directly_to_the_next_upkeep() {
     assert_eq!(game.active_player, PlayerId::Two);
     assert_eq!(game.decision_player(), Some(PlayerId::Two));
 }
+
+/// "Each player discards their hand, then draws seven cards" is two
+/// instructions rather than one per player: every discard happens before any
+/// draw, so nobody is drawing into a table that is still emptying its hands.
+#[test]
+fn the_wheel_finishes_every_discard_before_any_draw() {
+    let mut game = ready_game();
+    let wheel = card(10_000, cards::WHEEL_OF_FORTUNE, PlayerId::One);
+    game.players[0].hand.push(wheel.clone());
+    game.players[0]
+        .hand
+        .push(card(10_001, cards::MOUNTAIN, PlayerId::One));
+    game.players[1]
+        .hand
+        .push(card(10_002, cards::MOUNTAIN, PlayerId::Two));
+    game.players[0].mana_pool.red = 3;
+    let event_start = game.events.len();
+
+    game.apply(
+        PlayerId::One,
+        cast_action(wheel.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let mut discarded = Vec::new();
+    let mut first_draw = None;
+    for (index, event) in game.events[event_start..].iter().enumerate() {
+        match event {
+            GameEvent::CardsDiscarded { player, .. } => discarded.push((index, *player)),
+            GameEvent::CardDrawn { .. } if first_draw.is_none() => first_draw = Some(index),
+            _ => {}
+        }
+    }
+    let first_draw = first_draw.expect("somebody drew");
+    assert_eq!(discarded.len(), 2, "both hands went: {discarded:?}");
+    assert!(
+        discarded.iter().all(|(index, _)| *index < first_draw),
+        "and both before the first card was drawn: {discarded:?} then {first_draw}",
+    );
+}
