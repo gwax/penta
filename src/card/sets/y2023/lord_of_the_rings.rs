@@ -16,72 +16,6 @@ use crate::mana_cost;
 use crate::{ObjectSetBindingIndex, TargetIndex};
 
 // LTR 0 — The One Ring
-/// "Protection from everything" for a player: the shorter list that applies
-/// to a player rather than to a permanent. No source it names can damage
-/// them, target them, or enchant them -- and it asks about the source's
-/// qualities rather than about who controls it, so this shuts off the
-/// controller's own targeted spells too for the turn it lasts.
-static PROTECTION_FROM_EVERYTHING: AppliedEffectDef = AppliedEffectDef::Rule(
-    AppliedRuleDef::PlayerProtectionFrom(ObjectPredicateDef::Any),
-);
-
-/// An intervening-if rather than part of the effect: a One Ring reanimated
-/// or put onto the battlefield never puts the trigger on the stack at all.
-static RING_PROTECTS_ITS_BEARER: EffectDef = EffectDef::Apply {
-    recipient: EffectRecipientDef::Controller,
-    effect: PROTECTION_FROM_EVERYTHING,
-    duration: ResolvedEffectDurationDef::UntilYourNextTurn,
-};
-
-/// The counter goes on first and the draw counts every burden counter after
-/// it, so the first activation draws one card and each later one draws one
-/// more. Two instructions in one resolution: nothing gets priority between
-/// them, and the upkeep that charges for them comes later.
-static RING_DRAWS: [EffectDef; 2] = [
-    EffectDef::AddCounters {
-        object: EffectRecipientDef::Source,
-        kind: CounterKind::Burden,
-        amount: ValueDef::Constant(1),
-    },
-    EffectDef::DrawCards {
-        recipient: EffectRecipientDef::Controller,
-        amount: ValueDef::CountersOnSource(CounterKind::Burden),
-    },
-];
-
-static THE_ONE_RING_ABILITIES: [AbilityDef; 4] = [
-    abilities::indestructible(),
-    AbilityDef::triggered_if(
-        "When this artifact enters, if you cast it, you gain protection from everything until \
-         your next turn.",
-        TriggerEventDef::zone_changed(
-            ObjectPredicateDef::Source,
-            None,
-            Some(ZoneKind::Battlefield),
-        ),
-        &TriggerConditionDef::SourceWasCast,
-        RING_PROTECTS_ITS_BEARER,
-    ),
-    AbilityDef::triggered(
-        "At the beginning of your upkeep, you lose 1 life for each burden counter on this \
-         artifact.",
-        TriggerEventDef::StepBegins {
-            step: TurnStepDef::Upkeep,
-            player: PlayerRelation::You,
-        },
-        EffectDef::LoseLife {
-            recipient: EffectRecipientDef::Controller,
-            amount: ValueDef::CountersOnSource(CounterKind::Burden),
-        },
-    ),
-    AbilityDef::activated(
-        "{T}: Put a burden counter on this artifact, then draw a card for each burden counter \
-         on it.",
-        &[AbilityCostDef::TapSource],
-        EffectDef::Sequence(&RING_DRAWS),
-    ),
-];
-
 pub(in crate::card::sets) static THE_ONE_RING: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("93de9042-cc62-4ade-8d8d-68fdbc84bfae"),
     "The One Ring",
@@ -91,7 +25,59 @@ pub(in crate::card::sets) static THE_ONE_RING: CardRecord = CardRecord::new(
     // that runs out faster than it looks like it will.
     CardRules::new_artifact(mana_cost!("{4}"))
         .with_supertype(CardSupertype::Legendary)
-        .with_abilities(&THE_ONE_RING_ABILITIES),
+        .with_abilities(&[
+            abilities::indestructible(),
+            // An intervening-if rather than part of the effect: a One Ring reanimated
+            // or put onto the battlefield never puts the trigger on the stack at all.
+            AbilityDef::triggered_if(
+                "When this artifact enters, if you cast it, you gain protection from everything until \
+                 your next turn.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                &TriggerConditionDef::SourceWasCast,
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Controller,
+                    // Protection checks source qualities rather than controller, so this also
+                    // shuts off the controller's own targeted spells for the turn it lasts.
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::PlayerProtectionFrom(
+                        ObjectPredicateDef::Any,
+                    )),
+                    duration: ResolvedEffectDurationDef::UntilYourNextTurn,
+                },
+            ),
+            AbilityDef::triggered(
+                "At the beginning of your upkeep, you lose 1 life for each burden counter on this \
+                 artifact.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                },
+                EffectDef::LoseLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::CountersOnSource(CounterKind::named("burden")),
+                },
+            ),
+            AbilityDef::activated(
+                "{T}: Put a burden counter on this artifact, then draw a card for each burden counter \
+                 on it.",
+                &[AbilityCostDef::TapSource],
+                // The counter goes on first, then the draw counts every burden counter.
+                EffectDef::Sequence(&[
+                    EffectDef::AddCounters {
+                        object: EffectRecipientDef::Source,
+                        kind: CounterKind::named("burden"),
+                        amount: ValueDef::Constant(1),
+                    },
+                    EffectDef::DrawCards {
+                        recipient: EffectRecipientDef::Controller,
+                        amount: ValueDef::CountersOnSource(CounterKind::named("burden")),
+                    },
+                ]),
+            ),
+        ]),
 );
 
 // LTR 7 — Eagles of the North

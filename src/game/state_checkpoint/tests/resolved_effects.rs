@@ -93,6 +93,48 @@ fn resolved_continuous_effects_round_trip_order_provenance_expiration_and_frozen
 }
 
 #[test]
+fn resolved_player_rules_round_trip_their_recipient_and_expiration() {
+    let mut game = crate::game::tests::ready_game();
+    game.battlefield.clear();
+    game.step = Step::PrecombatMain;
+    game.active_player = PlayerId::One;
+    game.priority = PlayerId::One;
+    let spell = crate::game::tests::card(
+        60_010,
+        crate::card::cards::TEFERIS_PROTECTION,
+        PlayerId::One,
+    );
+    let spell_id = spell.id;
+    game.players[PlayerId::One.index()].hand.push(spell);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == spell_id))
+        .expect("Teferi's Protection is castable");
+    game.apply(PlayerId::One, cast).expect("the spell is cast");
+    crate::game::tests::pass_priority_pair(&mut game);
+
+    assert!(game.life_total_cannot_change(PlayerId::One));
+    let (wire, rebuilt) = rebuild_current_checkpoint(&game, PlayerId::One, 60_011);
+    let rules = wire["checkpoint"]["resolvedPlayerRules"]
+        .as_array()
+        .expect("the resolved player rule is checkpointed");
+    assert_eq!(rules.len(), 1);
+    assert_eq!(rules[0]["affectedSeat"], PlayerId::One.index());
+    assert!(rebuilt.life_total_cannot_change(PlayerId::One));
+    assert!(!rebuilt.life_total_cannot_change(PlayerId::Two));
+
+    let mut rebuilt = rebuilt;
+    rebuilt.commit_next_turn(PlayerId::Two, Vec::new());
+    assert!(rebuilt.life_total_cannot_change(PlayerId::One));
+    rebuilt.commit_next_turn(PlayerId::One, Vec::new());
+    assert!(!rebuilt.life_total_cannot_change(PlayerId::One));
+}
+
+#[test]
 fn resolved_continuous_effect_locator_operation_mismatches_fail_closed() {
     let mut game = crate::game::tests::ready_game();
     let target = game

@@ -854,8 +854,8 @@ impl Game {
                 self.players[1].counters.count(CounterKind::Poison),
             ],
             energy_counters: [
-                self.players[0].counters.count(CounterKind::Energy),
-                self.players[1].counters.count(CounterKind::Energy),
+                self.players[0].counters.count(CounterKind::named("energy")),
+                self.players[1].counters.count(CounterKind::named("energy")),
             ],
             counters: [PlayerId::One, PlayerId::Two].map(|player| {
                 self.players[player.index()]

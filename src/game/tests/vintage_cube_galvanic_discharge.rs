@@ -21,7 +21,9 @@ fn staged(theirs: CardDefinitionId, energy: u16) -> (Game, GameObjectId, GameObj
         .expect("one card");
     let held = card.id;
     game.players[0].hand.push(card);
-    game.players[0].counters.set(CounterKind::Energy, energy);
+    game.players[0]
+        .counters
+        .set(CounterKind::named("energy"), energy);
     game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
     game.turns_started = [5, 5];
     game.active_player = PlayerId::One;
@@ -31,7 +33,7 @@ fn staged(theirs: CardDefinitionId, energy: u16) -> (Game, GameObjectId, GameObj
 }
 
 fn energy(game: &Game) -> u16 {
-    game.players[0].counters.count(CounterKind::Energy)
+    game.players[0].counters.count(CounterKind::named("energy"))
 }
 
 fn alive(game: &Game, id: GameObjectId) -> bool {

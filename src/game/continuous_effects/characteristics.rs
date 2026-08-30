@@ -313,6 +313,24 @@ impl Game {
             })
     }
 
+    /// Whether a spell or ability may target this player after applying both
+    /// protection and player hexproof. Hexproof is controller-relative;
+    /// protection is source-relative and can stop the player's own spell.
+    pub(super) fn player_can_be_targeted_by(
+        &self,
+        player: PlayerId,
+        targeting_controller: PlayerId,
+        source: GameObjectId,
+        source_is_spell: bool,
+    ) -> bool {
+        (player == targeting_controller
+            || !self.player_rule_applies(
+                player,
+                AppliedRuleDef::PlayerRule(crate::card::PlayerRuleDef::Hexproof),
+            ))
+            && !self.player_is_protected_from(player, source, source_is_spell)
+    }
+
     /// A protection outlives the permanent that granted it, so what decides
     /// whether it still applies is its own recorded duration.
     fn resolved_protection_is_active(

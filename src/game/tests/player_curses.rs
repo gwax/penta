@@ -48,6 +48,67 @@ fn an_enchant_player_spell_targets_and_attaches_to_that_player() {
     assert_eq!(curse.chosen_player, None);
 }
 
+fn player_is_a_bolt_target(game: &Game, caster: PlayerId, target: PlayerId) -> bool {
+    let mut game = game.clone();
+    game.active_player = caster;
+    game.priority = caster;
+    game.step = Step::PrecombatMain;
+    game.legal_actions(caster).into_iter().any(|action| {
+        matches!(
+            action,
+            Action::CastSpell { card, ref choices, .. }
+                if game.players[caster.index()]
+                    .hand
+                    .iter()
+                    .any(|held| held.id == card && held.definition == cards::LIGHTNING_BOLT)
+                    && choices.iter_targets().any(|chosen| *chosen == Target::Player(target))
+        )
+    })
+}
+
+#[test]
+fn witchbane_orb_destroys_your_curses_and_gives_you_hexproof() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let yours = attached_curse(10_100, cards::CURSE_OF_THE_BLOODY_TOME, PlayerId::One);
+    let theirs = attached_curse(10_101, cards::CURSE_OF_DEATH_S_HOLD, PlayerId::Two);
+    let yours_id = yours.card.id;
+    let theirs_id = theirs.card.id;
+    game.battlefield.extend([yours, theirs]);
+    for (player, id) in [(PlayerId::One, 10_110), (PlayerId::Two, 10_111)] {
+        game.players[player.index()]
+            .hand
+            .push(card(id, cards::LIGHTNING_BOLT, player));
+        game.add_unrestricted_mana(player, ManaColor::Red, 1);
+    }
+
+    game.put_onto_battlefield(PlayerId::One, cards::WITCHBANE_ORB)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == yours_id),
+        "every Curse attached to the Orb's controller is destroyed",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == theirs_id),
+        "a Curse attached to the other player is untouched",
+    );
+    assert!(
+        player_is_a_bolt_target(&game, PlayerId::One, PlayerId::One),
+        "hexproof still allows your own spell to target you",
+    );
+    assert!(
+        !player_is_a_bolt_target(&game, PlayerId::Two, PlayerId::One),
+        "an opponent's spell cannot target a player with hexproof",
+    );
+}
+
 #[test]
 fn bitterheart_witch_finds_a_curse_and_has_it_arrive_attached() {
     let mut game = ready_game();

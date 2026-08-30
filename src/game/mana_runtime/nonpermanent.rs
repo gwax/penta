@@ -26,8 +26,7 @@ impl Game {
                 !definition.costs.as_slice().is_empty()
                     && definition.costs.iter().all(|cost| match cost {
                         AbilityCostDef::PayLife(amount) => {
-                            self.players[controller.index()].life
-                                >= i16::try_from(*amount).unwrap_or(i16::MAX)
+                            self.can_pay_life(controller, *amount)
                         }
                         _ => false,
                     })

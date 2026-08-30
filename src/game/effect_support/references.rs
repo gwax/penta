@@ -681,11 +681,7 @@ impl Game {
                 .into_iter()
                 .collect(),
             ObjectSetDef::LegalTargets(target) => {
-                let slot = scoped.target_slot(target);
-                Self::chosen_targets(object, slot)
-                    .filter(|target| self.stack_ability_target_is_legal(object, slot, *target))
-                    .filter(|target| !matches!(target, Target::Player(_)))
-                    .collect()
+                self.effect_legal_target_objects(target, object, scoped)
             }
             ObjectSetDef::Binding(binding) => context.object_group(binding).to_vec(),
             ObjectSetDef::ZoneChangeSuccessorsOfBinding(binding) => {
@@ -720,6 +716,9 @@ impl Game {
                 .object_reference_target(reference, object, context, scoped)
                 .map(|reference| self.permanents_targeted_by(reference))
                 .unwrap_or_default(),
+            ObjectSetDef::PlayerAttachments(query) => {
+                self.effect_player_attachments(query, object, context)
+            }
             ObjectSetDef::Query(query) => {
                 self.objects_matching_effect_query(query, object, context, scoped)
             }
@@ -790,6 +789,48 @@ impl Game {
                 .into_iter()
                 .collect(),
         }
+    }
+
+    fn effect_legal_target_objects(
+        &self,
+        target: TargetIndex,
+        object: &StackObject,
+        scoped: ScopedEffect,
+    ) -> Vec<Target> {
+        let slot = scoped.target_slot(target);
+        Self::chosen_targets(object, slot)
+            .filter(|target| self.stack_ability_target_is_legal(object, slot, *target))
+            .filter(|target| !matches!(target, Target::Player(_)))
+            .collect()
+    }
+
+    fn effect_player_attachments(
+        &self,
+        query: PlayerAttachmentQueryDef,
+        object: &StackObject,
+        context: &EffectResolutionContext,
+    ) -> Vec<Target> {
+        let source = object.source.unwrap_or(object.id);
+        self.battlefield
+            .iter()
+            .filter(|permanent| {
+                permanent.attached_player.is_some_and(|player| {
+                    self.player_relation_matches_for_source(
+                        player,
+                        query.player,
+                        object.controller,
+                        source,
+                        context.trigger,
+                    )
+                }) && self.trigger_object_matches(
+                    query.object,
+                    &self.trigger_event_object(permanent),
+                    source,
+                    false,
+                )
+            })
+            .map(|permanent| Target::Permanent(permanent.card.id))
+            .collect()
     }
 
     fn cards_drawn_this_turn_in_hand(&self, player: PlayerId) -> Vec<Target> {

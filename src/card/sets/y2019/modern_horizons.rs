@@ -621,12 +621,12 @@ pub(in crate::card::sets) static FORCE_OF_VIGOR: CardRecord = CardRecord::new_wi
 static HEXDRINKER_AT_LEAST_THREE: ObjectPredicateDef = ObjectPredicateDef::All(&[
     ObjectPredicateDef::Source,
     ObjectPredicateDef::CounterCount {
-        kind: CounterKind::Level,
+        kind: CounterKind::named("level"),
         comparison: ComparisonDef::GreaterOrEqual,
         amount: 3,
     },
     ObjectPredicateDef::CounterCount {
-        kind: CounterKind::Level,
+        kind: CounterKind::named("level"),
         comparison: ComparisonDef::Less,
         amount: 8,
     },
@@ -635,7 +635,7 @@ static HEXDRINKER_AT_LEAST_THREE: ObjectPredicateDef = ObjectPredicateDef::All(&
 static HEXDRINKER_AT_LEAST_EIGHT: ObjectPredicateDef = ObjectPredicateDef::All(&[
     ObjectPredicateDef::Source,
     ObjectPredicateDef::CounterCount {
-        kind: CounterKind::Level,
+        kind: CounterKind::named("level"),
         comparison: ComparisonDef::GreaterOrEqual,
         amount: 8,
     },
@@ -669,7 +669,7 @@ static HEXDRINKER_ABILITIES: [AbilityDef; 3] = [
         &[AbilityCostDef::Mana(mana_cost!("{1}"))],
         EffectDef::AddCounters {
             object: EffectRecipientDef::Source,
-            kind: CounterKind::Level,
+            kind: CounterKind::named("level"),
             amount: ValueDef::Constant(1),
         },
     )

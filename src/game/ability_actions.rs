@@ -354,8 +354,7 @@ impl Game {
                             )
                             .is_empty(),
                         AbilityCostDef::PayLife(amount) => {
-                            self.players[player.index()].life
-                                < i16::try_from(*amount).unwrap_or(i16::MAX)
+                            !self.can_pay_life(player, *amount)
                         }
                         // Nobody chooses, so the only question is whether the
                         // hand is big enough to pay.

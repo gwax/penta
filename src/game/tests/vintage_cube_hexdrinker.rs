@@ -61,7 +61,7 @@ fn set_level(game: &mut Game, hexdrinker: GameObjectId, level: u16) {
         .iter_mut()
         .find(|permanent| permanent.card.id == hexdrinker)
         .expect("it is on the battlefield");
-    permanent.add_counters(CounterKind::Level, level);
+    permanent.add_counters(CounterKind::named("level"), level);
 }
 
 fn body(game: &Game, hexdrinker: GameObjectId) -> &Permanent {
@@ -96,7 +96,10 @@ fn it_starts_as_a_two_one_and_levels_one_counter_at_a_time() {
     assert_eq!(game.toughness(body(&game, hexdrinker)), Some(1));
 
     level_up(&mut game, hexdrinker);
-    assert_eq!(body(&game, hexdrinker).counters(CounterKind::Level), 1);
+    assert_eq!(
+        body(&game, hexdrinker).counters(CounterKind::named("level")),
+        1
+    );
     assert_eq!(
         game.power(body(&game, hexdrinker)),
         Some(2),
@@ -104,7 +107,10 @@ fn it_starts_as_a_two_one_and_levels_one_counter_at_a_time() {
     );
 
     level_up(&mut game, hexdrinker);
-    assert_eq!(body(&game, hexdrinker).counters(CounterKind::Level), 2);
+    assert_eq!(
+        body(&game, hexdrinker).counters(CounterKind::named("level")),
+        2
+    );
     assert!(
         level_ups(&game, hexdrinker).is_empty(),
         "and the mana is spent",

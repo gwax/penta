@@ -50,7 +50,7 @@ pub(in crate::card::sets) static GLIMMER_LENS: CardRecord = CardRecord::new(
 /// and counts for whatever he comes back to.
 static OTHARRI_EXPERIENCE: ValueDef = ValueDef::PlayerCounters {
     player: PlayerRelation::You,
-    kind: CounterKind::Experience,
+    kind: CounterKind::named("experience"),
 };
 
 /// "Then" is the order that matters: the counter is his first, so the
@@ -58,7 +58,7 @@ static OTHARRI_EXPERIENCE: ValueDef = ValueDef::PlayerCounters {
 static OTHARRI_ATTACK: [EffectDef; 2] = [
     EffectDef::AddCounters {
         object: EffectRecipientDef::Controller,
-        kind: CounterKind::Experience,
+        kind: CounterKind::named("experience"),
         amount: ValueDef::Constant(1),
     },
     EffectDef::create_creature_token(&["Rebel"], &[ManaColor::Red], 2, 2)
@@ -139,7 +139,7 @@ static STAFF_DRAW_COST: [AbilityCostDef; 3] = [
     AbilityCostDef::Mana(mana_cost!("{W}")),
     AbilityCostDef::TapSource,
     AbilityCostDef::RemoveCountersFromSource {
-        kind: CounterKind::Story,
+        kind: CounterKind::named("story"),
         amount: 1,
     },
 ];
@@ -154,7 +154,7 @@ static STAFF_ABILITIES: [AbilityDef; 3] = [
         STAFF_COUNTS_THE_STORY,
         EffectDef::AddCounters {
             object: EffectRecipientDef::Source,
-            kind: CounterKind::Story,
+            kind: CounterKind::named("story"),
             amount: ValueDef::Constant(1),
         },
     ),

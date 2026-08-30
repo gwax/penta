@@ -390,7 +390,10 @@ impl Game {
                                     && !self.is_protected_from_object(permanent, source, true)
                             })
                     }
-                    Target::Player(_) | Target::Card(_) | Target::Spell(_) => true,
+                    Target::Player(targeted) => {
+                        self.player_can_be_targeted_by(*targeted, player, source, true)
+                    }
+                    Target::Card(_) | Target::Spell(_) => true,
                 })
             })
             .collect()

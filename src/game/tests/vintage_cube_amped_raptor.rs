@@ -113,7 +113,7 @@ fn casting_it_digs_past_the_lands() {
     cast_the_raptor(&mut game);
 
     assert_eq!(
-        game.players[0].counters.count(CounterKind::Energy),
+        game.players[0].counters.count(CounterKind::named("energy")),
         2,
         "two energy counters"
     );
@@ -146,7 +146,7 @@ fn the_exiled_card_is_bought_with_energy() {
     game.apply(PlayerId::One, cast).expect("energy pays for it");
 
     assert_eq!(
-        game.players[0].counters.count(CounterKind::Energy),
+        game.players[0].counters.count(CounterKind::named("energy")),
         1,
         "one energy for a mana value of 1"
     );
@@ -158,7 +158,9 @@ fn the_exiled_card_is_bought_with_energy() {
 fn too_little_energy_is_no_cast() {
     let mut game = staged();
     cast_the_raptor(&mut game);
-    game.players[0].counters.set(CounterKind::Energy, 0);
+    game.players[0]
+        .counters
+        .set(CounterKind::named("energy"), 0);
 
     let bolt = game.players[0]
         .exile
@@ -183,7 +185,7 @@ fn one_put_onto_the_battlefield_only_gets_the_energy() {
     settle(&mut game);
 
     assert_eq!(
-        game.players[0].counters.count(CounterKind::Energy),
+        game.players[0].counters.count(CounterKind::named("energy")),
         2,
         "the energy is unconditional"
     );
@@ -219,7 +221,7 @@ fn the_card_it_found_cannot_be_cast_after_the_trigger() {
     settle(&mut game);
 
     assert_eq!(
-        game.players[0].counters.count(CounterKind::Energy),
+        game.players[0].counters.count(CounterKind::named("energy")),
         2,
         "the energy is still there to spend on something else",
     );

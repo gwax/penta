@@ -1,9 +1,9 @@
 use super::{
-    Action, CardBehavior, CombatDamageStage, CommittedTriggerEvent, ContinuousEffectExpiration,
-    CounterKind, DeclarativeAbilityDef, DeferredBeginTurnEffect, EffectResolutionContext, Game,
-    GameEvent, GameObjectId, GameResult, InstalledTriggerLifetime, ManaPool, PendingProcedure,
-    PlayerId, ReplacementEffectDef, ReplacementEventDef, Step, TriggerContext, TurnPhaseDef,
-    TurnPhaseResume, TurnStepDef, one_or_none,
+    Action, AppliedRuleDef, CardBehavior, CombatDamageStage, CommittedTriggerEvent,
+    ContinuousEffectExpiration, CounterKind, DeclarativeAbilityDef, DeferredBeginTurnEffect,
+    EffectResolutionContext, Game, GameEvent, GameObjectId, GameResult, InstalledTriggerLifetime,
+    ManaPool, PendingProcedure, PlayerId, ReplacementEffectDef, ReplacementEventDef, Step,
+    TriggerContext, TurnPhaseDef, TurnPhaseResume, TurnStepDef, one_or_none,
 };
 
 mod begin_turn;
@@ -140,14 +140,14 @@ impl Game {
     pub(super) fn spend_energy(&mut self, player: PlayerId, amount: u16) -> bool {
         if self.players[player.index()]
             .counters
-            .count(CounterKind::Energy)
+            .count(CounterKind::named("energy"))
             < amount
         {
             return false;
         }
         self.players[player.index()]
             .counters
-            .remove(CounterKind::Energy, amount);
+            .remove(CounterKind::named("energy"), amount);
         true
     }
 
@@ -159,8 +159,24 @@ impl Game {
         self.cannot_gain_life[player.index()]
     }
 
+    pub(super) fn life_total_cannot_change(&self, player: PlayerId) -> bool {
+        self.player_rule_applies(
+            player,
+            AppliedRuleDef::PlayerRule(crate::card::PlayerRuleDef::LifeTotalCannotChange),
+        )
+    }
+
+    /// CR 118.4: a nonzero life payment is impossible while the player's
+    /// life total cannot change, even when they have enough life numerically.
+    pub(super) fn can_pay_life(&self, player: PlayerId, amount: u16) -> bool {
+        amount == 0
+            || (!self.life_total_cannot_change(player)
+                && i16::try_from(amount)
+                    .is_ok_and(|amount| self.players[player.index()].life >= amount))
+    }
+
     pub(super) fn gain_life(&mut self, player: PlayerId, amount: u16) {
-        if amount == 0 || self.cannot_gain_life(player) {
+        if amount == 0 || self.cannot_gain_life(player) || self.life_total_cannot_change(player) {
             return;
         }
         let amount = amount.saturating_mul(self.life_gain_multiplier(player));
@@ -209,6 +225,9 @@ impl Game {
     /// Life loss that is not damage: no source deals it, nothing that
     /// triggers on damage sees it, and prevention does not apply.
     pub(super) fn lose_life(&mut self, player: PlayerId, amount: u16) {
+        if amount == 0 || self.life_total_cannot_change(player) {
+            return;
+        }
         let amount_as_i16 = i16::try_from(amount).unwrap_or(i16::MAX);
         self.players[player.index()].life -= amount_as_i16;
         if amount > 0 {
@@ -218,11 +237,13 @@ impl Game {
     }
 
     pub(super) fn deal_damage(&mut self, player: PlayerId, amount: u16) {
-        let amount_as_i16 = i16::try_from(amount).unwrap_or(i16::MAX);
-        self.players[player.index()].life -= amount_as_i16;
+        if !self.life_total_cannot_change(player) {
+            let amount_as_i16 = i16::try_from(amount).unwrap_or(i16::MAX);
+            self.players[player.index()].life -= amount_as_i16;
+        }
         // Damage to a player is life lost, which is what the clauses reading
         // it ask about: how the life went is not part of the question.
-        if amount > 0 {
+        if amount > 0 && !self.life_total_cannot_change(player) {
             self.lost_life_this_turn[player.index()] = true;
         }
         self.events.push(GameEvent::DamageDealt { player, amount });
@@ -432,6 +453,10 @@ impl Game {
                 .expiration
                 .survives_turn_start(self.active_player, turns_started)
         });
+        self.resolved_player_rules.retain(|rule| {
+            rule.expiration
+                .survives_turn_start(self.active_player, turns_started)
+        });
         self.ongoing_effects.retain(|effect| {
             effect
                 .expiration
@@ -568,6 +593,8 @@ impl Game {
             .retain(|permission| permission.expiration.survives_untap_step(active));
         self.resolved_player_protections
             .retain(|protection| protection.expiration.survives_untap_step(active));
+        self.resolved_player_rules
+            .retain(|rule| rule.expiration.survives_untap_step(active));
         self.ongoing_effects
             .retain(|effect| effect.expiration.survives_untap_step(active));
         for permanent in &mut self.battlefield {
@@ -619,6 +646,8 @@ impl Game {
             .retain(|permission| permission.expiration.survives_end_of_combat());
         self.resolved_player_protections
             .retain(|protection| protection.expiration.survives_end_of_combat());
+        self.resolved_player_rules
+            .retain(|rule| rule.expiration.survives_end_of_combat());
         self.ongoing_effects
             .retain(|effect| effect.expiration.survives_end_of_combat());
     }
@@ -693,6 +722,8 @@ impl Game {
             .retain(|permission| permission.expiration.survives_cleanup());
         self.resolved_player_protections
             .retain(|protection| protection.expiration.survives_cleanup());
+        self.resolved_player_rules
+            .retain(|rule| rule.expiration.survives_cleanup());
         self.ongoing_effects
             .retain(|effect| effect.expiration.survives_cleanup());
         self.damage_preventions
@@ -859,8 +890,10 @@ impl Game {
             self.players[player.index()].mana_pool = ManaPool::default();
             self.players[player.index()].mana.clear();
             if mana_burn && amount > 0 {
-                let amount_as_i16 = i16::try_from(amount).unwrap_or(i16::MAX);
-                self.players[player.index()].life -= amount_as_i16;
+                if !self.life_total_cannot_change(player) {
+                    let amount_as_i16 = i16::try_from(amount).unwrap_or(i16::MAX);
+                    self.players[player.index()].life -= amount_as_i16;
+                }
                 self.events.push(GameEvent::ManaBurn { player, amount });
             }
         }

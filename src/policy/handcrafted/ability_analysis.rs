@@ -480,6 +480,9 @@ impl HandcraftedPolicy {
             crate::card::ObjectSetDef::Query(query) => {
                 Self::target_condition_in_object_predicate(query.object)
             }
+            crate::card::ObjectSetDef::PlayerAttachments(query) => {
+                Self::target_condition_in_object_predicate(query.object)
+            }
             crate::card::ObjectSetDef::One(_)
             | crate::card::ObjectSetDef::Binding(_)
             | crate::card::ObjectSetDef::ZoneChangeSuccessorsOfBinding(_)

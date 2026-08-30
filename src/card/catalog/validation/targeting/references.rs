@@ -417,6 +417,9 @@ fn validate_object_set_target_references(
             validate_target_index(target, target_count)
         }
         ObjectSetDef::Query(query) => validate_query(query, target_count, scope),
+        ObjectSetDef::PlayerAttachments(query) => {
+            validate_object_predicate_references(query.object, target_count, scope)
+        }
         // The pile is named by which permanent exiled the cards, so there is
         // no player or target reference in it to validate.
         ObjectSetDef::LinkedExiles(_) => Ok(()),
@@ -644,6 +647,7 @@ fn validate_resolving_applied_effect(
             // A player's protection is likewise a rule about the player: an
             // object gets protection as a keyword instead.
             | AppliedRuleDef::PlayerProtectionFrom(_)
+            | AppliedRuleDef::PlayerRule(_)
             | AppliedRuleDef::RedirectDamageFromTo { .. },
         ) => {
             if matches!(recipient.0, EffectRecipientSetDef::Objects(_)) {

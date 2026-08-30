@@ -97,11 +97,38 @@ mod tests {
     fn ordinary_counter_names_are_values_not_enum_variants() {
         let first = CounterKind::named("quest");
         let same_name = CounterKind::named("quest");
-        let different = CounterKind::named("lore");
+        let different = CounterKind::named("time");
 
         assert_eq!(first, same_name);
         assert_ne!(first, different);
         assert_eq!(CounterKind::named("charge").name(), "charge");
+    }
+
+    #[test]
+    fn only_counters_with_standalone_rules_are_intrinsic_named_counters() {
+        use crate::{CounterFamily, IntrinsicCounter};
+
+        for (name, kind, intrinsic) in [
+            ("loyalty", CounterKind::Loyalty, IntrinsicCounter::Loyalty),
+            ("lore", CounterKind::Lore, IntrinsicCounter::Lore),
+            (
+                "finality",
+                CounterKind::Finality,
+                IntrinsicCounter::Finality,
+            ),
+            ("stun", CounterKind::Stun, IntrinsicCounter::Stun),
+            ("poison", CounterKind::Poison, IntrinsicCounter::Poison),
+        ] {
+            assert_eq!(CounterKind::named(name), kind);
+            assert_eq!(kind.family(), CounterFamily::IntrinsicNamed(intrinsic));
+        }
+
+        for name in ["energy", "time", "burden", "charge"] {
+            assert!(
+                matches!(CounterKind::named(name).family(), CounterFamily::Named(_)),
+                "{name} only has meaning when a mechanic or card refers to it"
+            );
+        }
     }
 
     #[test]

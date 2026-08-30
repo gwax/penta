@@ -21,7 +21,9 @@ fn staged(energy: u16) -> (Game, GameObjectId, GameObjectId) {
     game.turns_started = [2, 1];
     drain_pending(&mut game);
     game.players[0].life = 20;
-    game.players[0].counters.set(CounterKind::Energy, energy);
+    game.players[0]
+        .counters
+        .set(CounterKind::named("energy"), energy);
     game.active_player = PlayerId::One;
     game.step = Step::PrecombatMain;
     game.priority = PlayerId::One;
@@ -29,7 +31,7 @@ fn staged(energy: u16) -> (Game, GameObjectId, GameObjectId) {
 }
 
 fn energy(game: &Game) -> u16 {
-    game.players[0].counters.count(CounterKind::Energy)
+    game.players[0].counters.count(CounterKind::named("energy"))
 }
 
 fn permanent(game: &Game, id: GameObjectId) -> &Permanent {
@@ -118,7 +120,9 @@ fn neither_himself_nor_theirs_counts() {
     game.battlefield.clear();
     game.players[0].hand.clear();
     game.players[0].life = 20;
-    game.players[0].counters.set(CounterKind::Energy, 0);
+    game.players[0]
+        .counters
+        .set(CounterKind::named("energy"), 0);
     game.active_player = PlayerId::One;
     game.step = Step::PrecombatMain;
     game.priority = PlayerId::One;

@@ -136,6 +136,10 @@ pub enum ObjectSetDef {
     /// neither a query nor a binding can say: nothing chose them here, and
     /// the spell is still on the stack holding them.
     PermanentsTargetedBy(ObjectRefDef),
+    /// Battlefield permanents attached to a player in the named relation.
+    /// Controller and owner stay independent: a Curse an opponent controls
+    /// can still be attached to you.
+    PlayerAttachments(PlayerAttachmentQueryDef),
     Query(ObjectQueryDef),
     /// Every battlefield permanent the referenced attachment may legally
     /// attach to under its current characteristics. Unlike a target query,
@@ -295,6 +299,7 @@ impl EffectRecipientDef {
                 | ObjectSetDef::PermanentsControlledBy(_)
                 | ObjectSetDef::MatchingBinding { .. }
                 | ObjectSetDef::PermanentsTargetedBy(_)
+                | ObjectSetDef::PlayerAttachments(_)
                 | ObjectSetDef::LegalAttachmentHosts(_)
                 | ObjectSetDef::LinkedExiles(_)
                 | ObjectSetDef::BottomOfGraveyard(_)
@@ -322,6 +327,7 @@ impl EffectRecipientDef {
                 | ObjectSetDef::PermanentsControlledBy(_)
                 | ObjectSetDef::MatchingBinding { .. }
                 | ObjectSetDef::PermanentsTargetedBy(_)
+                | ObjectSetDef::PlayerAttachments(_)
                 | ObjectSetDef::LegalAttachmentHosts(_)
                 | ObjectSetDef::LinkedExiles(_)
                 | ObjectSetDef::BottomOfGraveyard(_)

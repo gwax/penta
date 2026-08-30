@@ -349,7 +349,14 @@ impl Game {
         player: PlayerId,
         rule: AppliedRuleDef,
     ) -> bool {
-        self.player_static_rule_applies(player, AppliedEffectDef::Rule(rule))
+        self.resolved_player_rules.iter().any(|resolved| {
+            resolved.affected_player == player
+                && AppliedRuleDef::PlayerRule(resolved.rule) == rule
+                && self.continuous_effect_expiration_is_active(
+                    resolved.expiration,
+                    resolved.source.object,
+                )
+        }) || self.player_static_rule_applies(player, AppliedEffectDef::Rule(rule))
     }
 
     /// Whether any live static ability applies `wanted` to this player.

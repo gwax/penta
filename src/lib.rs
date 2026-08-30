@@ -50,7 +50,7 @@ pub use card::{
     EffectRecipientSetDef, EffectSubjectKind, EmblemCharacteristics, FaceDownCharacteristics,
     FlexibleManaSymbol, FreePlayDef, FreePlayDurationDef, GrantedAbilityValidationError,
     HybridPair, ImplementationStatus, InstalledTriggerDef, InstalledTriggerLifetimeDef,
-    KeywordAbility, KeywordCounter, LikelihoodDef, ManaCost, ManaCostParseError,
+    IntrinsicCounter, KeywordAbility, KeywordCounter, LikelihoodDef, ManaCost, ManaCostParseError,
     ManaCostParseErrorKind, ManaRestrictionDef, ManaSelectionDef, ManaSpendEffectDef, ManaSplit,
     ManaTypeDef, ManaTypeFilterDef, ManaTypeSetDef, ManaTypeSourceDef, MeldComponentDef,
     MeldRecipeDef, MeldResultDef, ModalSpellDef, ModeDef, ModeSetDef, ObjectPredicateDef,

@@ -141,6 +141,10 @@ pub(super) struct GameSnapshot {
     /// a game in which nobody is protected.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) resolved_player_protections: Vec<ResolvedPlayerProtectionSnapshot>,
+    /// Simple resolving player rules. Additive: an older checkpoint had none
+    /// because no supported card could create one.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(super) resolved_player_rules: Vec<ResolvedPlayerRuleSnapshot>,
     pub(super) spells_cast_this_turn: [u16; 2],
     pub(super) spells_cast_last_turn: [u16; 2],
     /// Additive: older checkpoints have no predicate-filterable cast history.

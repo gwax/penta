@@ -1339,7 +1339,7 @@ pub(in crate::card::sets) static GOBLIN_ANARCHOMANCER: CardRecord = CardRecord::
 static VOIDWALKER_EXILES_IT: [ReplacementEffectDef; 2] = [
     ReplacementEffectDef::MoveToZone(ZoneKind::Exile),
     ReplacementEffectDef::PlaceCountersOnMovedObject {
-        kind: CounterKind::Void,
+        kind: CounterKind::named("void"),
         amount: 1,
     },
 ];
@@ -1354,7 +1354,7 @@ static VOIDWALKER_WATCHES_THEIR_GRAVEYARD: ReplacementEventDef =
     };
 
 static VOIDWALKER_MARKED_CARDS: ObjectQueryDef = ObjectQueryDef::matching(
-    ObjectPredicateDef::HasCounter(CounterKind::Void),
+    ObjectPredicateDef::HasCounter(CounterKind::named("void")),
     &[ZoneKind::Exile],
     PlayerRelation::Opponent,
 );

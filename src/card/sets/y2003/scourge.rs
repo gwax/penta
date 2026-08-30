@@ -7,11 +7,12 @@ use crate::card::sets::y2012::magic_2013 as catalog_m13;
 use crate::card::sets::y2019::modern_horizons as catalog_mh1;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AppliedEffectDef, ArrivalAttachmentDef, BasicLandType, CardArt, CardRules, CardSet, CardType,
-    ComparisonDef, CostModificationDef, CounterKind, EffectDef, EffectPaymentCostDef,
-    EffectPaymentDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef, PayOrDef,
-    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, StackTargetKindDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AppliedEffectDef, AppliedRuleDef, ArrivalAttachmentDef, AttackDefenderScopeDef,
+    AttackRestrictionDef, BasicLandType, CardArt, CardRules, CardSet, CardType, ComparisonDef,
+    CostModificationDef, CounterKind, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef, PayOrDef, PlayerRelation,
+    PlayerSetDef, ResolvedEffectDurationDef, StackTargetKindDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -1198,13 +1199,52 @@ pub(in crate::card::sets) static EXTRA_ARMS: CardRecord = CardRecord::new(
 );
 
 // SCG 93 — Form of the Dragon
-// Audit: metadata-only — Card rules have not been implemented.
 pub(in crate::card::sets) static FORM_OF_THE_DRAGON: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("2058bcb4-50ac-4323-ab49-3b80a5891894"),
     "Form of the Dragon",
     crate::card::CardArt::new("2058bcb4-50ac-4323-ab49-3b80a5891894", "Carl Critchlow"),
     crate::card::CardSet::Scourge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{4}{R}{R}{R}")).with_abilities(&[
+        AbilityDef::triggered_with_targets(
+            "At the beginning of your upkeep, this enchantment deals 5 damage to any target.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(5),
+            },
+        ),
+        AbilityDef::triggered(
+            "At the beginning of each end step, your life total becomes 5.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::End,
+                player: PlayerRelation::Any,
+            },
+            EffectDef::SetLifeTotal {
+                recipient: EffectRecipientDef::Controller,
+                total: ValueDef::Constant(5),
+            },
+        ),
+        AbilityDef::static_ability(
+            "Creatures without flying can't attack you.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Controller,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::AttackRestriction(
+                    AttackRestrictionDef::prohibit(
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::HasKeyword(
+                            crate::card::KeywordAbility::Flying,
+                        )),
+                        AttackDefenderScopeDef::AffectedPlayer,
+                    ),
+                )),
+            },
+        ),
+    ]),
 );
 
 // SCG 94 — Goblin Brigand

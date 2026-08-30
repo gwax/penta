@@ -3,11 +3,11 @@ use crate::card::{AppliedEffectDef, AppliedRuleDef};
 
 use super::model::{
     ResolvedAttackRestrictionSnapshot, ResolvedPlayPermissionSnapshot,
-    ResolvedPlayRestrictionSnapshot, ResolvedPlayerProtectionSnapshot,
+    ResolvedPlayRestrictionSnapshot, ResolvedPlayerProtectionSnapshot, ResolvedPlayerRuleSnapshot,
 };
 use super::{
     AbilitySourceRef, ContinuousEffectTimestamp, GameObjectId, ResolvedAttackRestriction,
-    ResolvedPlayPermission, ResolvedPlayRestriction, ResolvedPlayerProtection,
+    ResolvedPlayPermission, ResolvedPlayRestriction, ResolvedPlayerProtection, ResolvedPlayerRule,
     ability_origin_from_snapshot, event, expiration_snapshot, parse_expiration,
     resolved_applied_effect_locator, semantics, wire,
 };
@@ -57,6 +57,51 @@ pub(super) fn resolved_player_protection_snapshot(
         source: event::ability_source_snapshot(protection.source),
         affected_seat: protection.affected_player.index(),
         expiration: expiration_snapshot(protection.expiration),
+    })
+}
+
+pub(super) fn resolved_player_rule_snapshot(
+    catalog: &CardCatalog,
+    resolved: &ResolvedPlayerRule,
+) -> Option<ResolvedPlayerRuleSnapshot> {
+    let AppliedEffectDef::Rule(authored) = resolved.definition else {
+        return None;
+    };
+    if authored != AppliedRuleDef::PlayerRule(resolved.rule) {
+        return None;
+    }
+    Some(ResolvedPlayerRuleSnapshot {
+        definition: resolved_applied_effect_locator(catalog, resolved.source, resolved.definition)?,
+        source: event::ability_source_snapshot(resolved.source),
+        affected_seat: resolved.affected_player.index(),
+        expiration: expiration_snapshot(resolved.expiration),
+    })
+}
+
+pub(super) fn parse_resolved_player_rule(
+    catalog: &CardCatalog,
+    snapshot: &ResolvedPlayerRuleSnapshot,
+) -> Result<ResolvedPlayerRule, String> {
+    let source = AbilitySourceRef {
+        object: GameObjectId(snapshot.source.object),
+        ability: ability_origin_from_snapshot(snapshot.source.ability),
+    };
+    if !semantics::applied_effect_locator_matches_source(&snapshot.definition, source) {
+        return Err("checkpoint player-rule locator disagrees with its source ability".to_owned());
+    }
+    let definition = semantics::catalog_applied_effect(catalog, &snapshot.definition)
+        .ok_or("checkpoint player-rule locator is absent from this catalog")?;
+    let AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(rule)) = definition else {
+        return Err(
+            "checkpoint player-rule locator does not name a supported player rule".to_owned(),
+        );
+    };
+    Ok(ResolvedPlayerRule {
+        definition,
+        source,
+        affected_player: wire::player_from_index(snapshot.affected_seat)?,
+        expiration: parse_expiration(snapshot.expiration)?,
+        rule,
     })
 }
 

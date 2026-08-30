@@ -150,6 +150,20 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Player-scoped declarative rules, attachment queries, and simultaneous
+  phasing.** Witchbane Orb destroys only Curses attached to its controller and
+  gives that player hexproof. Form of the Dragon resets its controller to five
+  life at every end step, deals five damage each upkeep, and keeps nonflying
+  creatures from attacking that player without shielding their planeswalkers.
+  Teferi's Protection reuses The One Ring's player-protection rule, adds a
+  duration-aware life-total lock, phases out a player's permanents and anything
+  attached to them as one event, and exiles itself. Resolved player rules are
+  an additive checkpoint member; checkpoint format 9, replay version 2, and
+  protocol 29 are unchanged. Named counters now distinguish the closed set
+  whose presence has a standalone game-rules consequence from open-vocabulary
+  mechanic and card counters such as energy, time, and burden without changing
+  their checkpoint keys.
+
 - **Composable mana types and immediate triggered-mana choices.** `AddMana`
   now builds its output from an independent type source (fixed, chosen on the
   source, or produced by the triggering mana ability) and selection rule (one,

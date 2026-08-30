@@ -153,12 +153,16 @@ impl KeywordCounter {
     }
 }
 
-/// A counter's rules-shaped identity. Power/toughness counters and keyword
-/// counters are families with intrinsic behavior; everything else is named.
+include!("rules_primitives/intrinsic_counters.rs");
+
+/// A counter's rules-shaped identity. Power/toughness counters, keyword
+/// counters, and a small closed set of named counters have intrinsic behavior;
+/// card- and mechanic-defined counters remain ordinary named values.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum CounterFamily {
     PowerToughness(PowerToughnessCounter),
     Keyword(KeywordCounter),
+    IntrinsicNamed(IntrinsicCounter),
     Named(CounterName),
 }
 
@@ -188,33 +192,13 @@ impl CounterKind {
     pub const Trample: Self = Self::keyword(KeywordCounter::Trample);
     pub const Vigilance: Self = Self::keyword(KeywordCounter::Vigilance);
 
-    pub const Loyalty: Self = Self::named("loyalty");
+    pub const Loyalty: Self = Self::intrinsic_named(IntrinsicCounter::Loyalty);
     /// The counter a Saga counts its chapters with (CR 714). Placed by the
     /// rules rather than by anything printed on the card.
-    pub const Lore: Self = Self::named("lore");
-    pub const Finality: Self = Self::named("finality");
-    pub const Stun: Self = Self::named("stun");
-    pub const Poison: Self = Self::named("poison");
-    pub const Energy: Self = Self::named("energy");
-    /// Dauthi Voidwalker's mark on a card it exiled, which is how its own
-    /// activation finds that pile again later.
-    pub const Void: Self = Self::named("void");
-    /// Dark Depths counts down to nothing with these, which is the whole of
-    /// what the land does.
-    pub const Ice: Self = Self::named("ice");
-    /// What Staff of the Storyteller counts its draws with.
-    pub const Story: Self = Self::named("story");
-    /// What a leveler counts its level with (CR 711.2b): the count is the
-    /// permanent's level, and the bands printed on it are read off that.
-    pub const Level: Self = Self::named("level");
-    /// A counter a player keeps rather than a permanent, like poison and
-    /// energy: "you get an experience counter" adds to the player's own
-    /// pile, and nothing takes them away again.
-    pub const Experience: Self = Self::named("experience");
-    /// What The One Ring charges its upkeep with: one more every time it
-    /// draws, and never removed.
-    pub const Burden: Self = Self::named("burden");
-    pub const Luck: Self = Self::named("luck");
+    pub const Lore: Self = Self::intrinsic_named(IntrinsicCounter::Lore);
+    pub const Finality: Self = Self::intrinsic_named(IntrinsicCounter::Finality);
+    pub const Stun: Self = Self::intrinsic_named(IntrinsicCounter::Stun);
+    pub const Poison: Self = Self::intrinsic_named(IntrinsicCounter::Poison);
 
     /// Whether this is the counter a Saga reads its chapters with.
     #[must_use]
@@ -252,7 +236,7 @@ impl CounterKind {
         Self::named("fade"),
         Self::named("depletion"),
         Self::named("wish"),
-        Self::Level,
+        Self::named("level"),
         Self::Finality,
         Self::Deathtouch,
         Self::DoubleStrike,
@@ -273,13 +257,13 @@ impl CounterKind {
         Self::named("rev"),
         Self::named("hatchling"),
         Self::Poison,
-        Self::Energy,
-        Self::Void,
-        Self::Ice,
-        Self::Story,
-        Self::Experience,
-        Self::Burden,
-        Self::Luck,
+        Self::named("energy"),
+        Self::named("void"),
+        Self::named("ice"),
+        Self::named("story"),
+        Self::named("experience"),
+        Self::named("burden"),
+        Self::named("luck"),
     ];
 
     const KNOWN_NAMES: [&'static str; 54] = [
@@ -344,6 +328,10 @@ impl CounterKind {
         Self(CounterName::new(name).key())
     }
 
+    const fn intrinsic_named(counter: IntrinsicCounter) -> Self {
+        Self::named(counter.name())
+    }
+
     #[must_use]
     pub const fn power_toughness(power: i16, toughness: i16) -> Self {
         let counter = PowerToughnessCounter::new(power, toughness);
@@ -370,7 +358,13 @@ impl CounterKind {
     pub const fn family(self) -> CounterFamily {
         let bytes = self.0.to_le_bytes();
         match self.0 >> COUNTER_FAMILY_SHIFT {
-            0 => CounterFamily::Named(CounterName(self.0 & COUNTER_PAYLOAD_MASK)),
+            0 => {
+                let name = CounterName(self.0 & COUNTER_PAYLOAD_MASK);
+                match IntrinsicCounter::from_name(name) {
+                    Some(counter) => CounterFamily::IntrinsicNamed(counter),
+                    None => CounterFamily::Named(name),
+                }
+            }
             1 => CounterFamily::PowerToughness(PowerToughnessCounter {
                 negative: ((self.0 >> 32) & 1) != 0,
                 power: u16::from_le_bytes([bytes[2], bytes[3]]),
@@ -388,7 +382,9 @@ impl CounterKind {
     pub const fn power_toughness_bonus(self) -> (i16, i16) {
         match self.family() {
             CounterFamily::PowerToughness(counter) => counter.bonus(),
-            CounterFamily::Keyword(_) | CounterFamily::Named(_) => (0, 0),
+            CounterFamily::Keyword(_)
+            | CounterFamily::IntrinsicNamed(_)
+            | CounterFamily::Named(_) => (0, 0),
         }
     }
 
@@ -427,7 +423,9 @@ impl CounterKind {
     pub const fn granted_keyword(self) -> Option<KeywordAbility> {
         match self.family() {
             CounterFamily::Keyword(counter) => Some(counter.ability()),
-            CounterFamily::PowerToughness(_) | CounterFamily::Named(_) => None,
+            CounterFamily::PowerToughness(_)
+            | CounterFamily::IntrinsicNamed(_)
+            | CounterFamily::Named(_) => None,
         }
     }
 }

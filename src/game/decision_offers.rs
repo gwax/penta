@@ -274,14 +274,13 @@ impl Game {
     ) -> bool {
         match payment {
             ResolvedEffectPayment::Mana(cost) => self.can_pay_cost(player, cost, 0),
-            ResolvedEffectPayment::Life(amount) => i16::try_from(amount)
-                .is_ok_and(|amount| self.players[player.index()].life >= amount),
+            ResolvedEffectPayment::Life(amount) => self.can_pay_life(player, amount),
             // Unlike life, energy cannot be spent past nothing: a player
             // short of the amount cannot pay at all.
             ResolvedEffectPayment::Energy(amount) => {
                 self.players[player.index()]
                     .counters
-                    .count(CounterKind::Energy)
+                    .count(CounterKind::named("energy"))
                     >= amount
             }
             // A short library is not a failure to pay, so this is always
@@ -309,7 +308,7 @@ impl Game {
             ResolvedEffectPayment::ChosenEnergy => {
                 self.players[player.index()]
                     .counters
-                    .count(CounterKind::Energy)
+                    .count(CounterKind::named("energy"))
                     >= 1
             }
             // Payable only when the creatures on the board could add up to

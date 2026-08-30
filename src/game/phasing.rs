@@ -17,35 +17,94 @@ impl Game {
         context: &super::EffectResolutionContext,
         scoped: super::ScopedEffect,
     ) {
-        for target in self.effect_recipients(recipient, object, context, scoped) {
-            if let super::Target::Permanent(id) = target {
-                self.phase_out(id);
-            }
-        }
+        let ids = self
+            .effect_recipients(recipient, object, context, scoped)
+            .into_iter()
+            .filter_map(|target| match target {
+                super::Target::Permanent(id) => Some(id),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        self.phase_out_group(ids);
     }
 
+    #[cfg(test)]
     pub(super) fn phase_out(&mut self, id: GameObjectId) {
-        let Some(index) = self
-            .battlefield
-            .iter()
-            .position(|permanent| permanent.card.id == id)
-        else {
-            return;
-        };
-        let permanent = self.battlefield.remove(index);
-        self.phased_out.push(permanent);
+        self.phase_out_group(vec![id]);
+    }
+
+    /// Phases a set out simultaneously, including every Aura, Equipment, or
+    /// Fortification attached to one of its members. An attached permanent
+    /// phases indirectly even when another player controls it.
+    fn phase_out_group(&mut self, mut ids: Vec<GameObjectId>) {
+        let mut cursor = 0;
+        while cursor < ids.len() {
+            let host = ids[cursor];
+            for attached in self
+                .battlefield
+                .iter()
+                .filter(|permanent| permanent.attached_to == Some(host))
+                .map(|permanent| permanent.card.id)
+            {
+                if !ids.contains(&attached) {
+                    ids.push(attached);
+                }
+            }
+            cursor += 1;
+        }
+
+        let mut remaining = Vec::with_capacity(self.battlefield.len());
+        for permanent in self.battlefield.drain(..) {
+            if ids.contains(&permanent.card.id) {
+                self.phased_out.push(permanent);
+            } else {
+                remaining.push(permanent);
+            }
+        }
+        self.battlefield = remaining;
     }
 
     /// Phases in everything of this player's that is waiting, which happens
     /// before they untap rather than as part of untapping.
     pub(super) fn phase_in_for(&mut self, player: PlayerId) {
-        let returning: Vec<usize> = self
+        let phased_ids = self
+            .phased_out
+            .iter()
+            .map(|permanent| permanent.card.id)
+            .collect::<Vec<_>>();
+        let mut returning_ids = self
+            .phased_out
+            .iter()
+            .filter(|permanent| {
+                permanent.controller == player
+                    && permanent
+                        .attached_to
+                        .is_none_or(|host| !phased_ids.contains(&host))
+            })
+            .map(|permanent| permanent.card.id)
+            .collect::<Vec<_>>();
+        let mut cursor = 0;
+        while cursor < returning_ids.len() {
+            let host = returning_ids[cursor];
+            for attached in self
+                .phased_out
+                .iter()
+                .filter(|permanent| permanent.attached_to == Some(host))
+                .map(|permanent| permanent.card.id)
+            {
+                if !returning_ids.contains(&attached) {
+                    returning_ids.push(attached);
+                }
+            }
+            cursor += 1;
+        }
+        let returning = self
             .phased_out
             .iter()
             .enumerate()
-            .filter(|(_, permanent)| permanent.controller == player)
+            .filter(|(_, permanent)| returning_ids.contains(&permanent.card.id))
             .map(|(index, _)| index)
-            .collect();
+            .collect::<Vec<_>>();
         for index in returning.into_iter().rev() {
             let permanent = self.phased_out.remove(index);
             self.battlefield.push(permanent);
