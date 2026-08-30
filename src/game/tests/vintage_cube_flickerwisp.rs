@@ -183,3 +183,67 @@ fn he_cannot_name_himself() {
     assert!(named.contains(&bears_id));
     assert!(!named.contains(&wisp), "he is not another permanent");
 }
+
+/// "If a token is exiled this way, it will cease to exist and won't return
+/// to the battlefield." The delayed trigger still comes, and there is
+/// nothing left for it to give back.
+#[test]
+fn a_token_he_takes_never_comes_back() {
+    let mut game = staged();
+    game.put_onto_battlefield(PlayerId::Two, cards::ESIKA_S_CHARIOT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let cat = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Token)
+        .expect("the Chariot brought Cats")
+        .card
+        .id;
+
+    arrive(&mut game, cat);
+    assert!(
+        game.players[1].exile.is_empty(),
+        "a token that leaves the battlefield is not in exile either",
+    );
+
+    end_step(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == cat),
+        "and the end step has nothing to return",
+    );
+}
+
+/// "If the permanent that returns to the battlefield has any abilities that
+/// trigger at the beginning of the end step, those abilities won't trigger
+/// that turn." It was in exile when the step began, and coming back partway
+/// through it is too late to have been there.
+#[test]
+fn what_returns_misses_the_end_step_it_returns_in() {
+    let mut game = staged();
+    let virtue = game
+        .put_onto_battlefield(PlayerId::One, cards::VIRTUE_OF_LOYALTY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let wisp = arrive(&mut game, virtue);
+
+    end_step(&mut game);
+
+    assert!(
+        on_battlefield(&game, cards::VIRTUE_OF_LOYALTY),
+        "the Virtue is back before the turn is over",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == wisp)
+            .expect("the Wisp is still there")
+            .counters(CounterKind::PlusOnePlusOne),
+        0,
+        "but its end step trigger never happened, so nothing grew",
+    );
+}
