@@ -203,3 +203,59 @@ fn it_cannot_return_another_avatar() {
         "an Avatar in the graveyard is not on offer",
     );
 }
+
+/// "Whenever this permanent enters *or attacks*": the second half, and the
+/// planeswalker half of what it may buy back. Both go untested by the entry
+/// cases above.
+#[test]
+fn attacking_mills_again_and_buys_back_a_planeswalker() {
+    let (mut game, overlord) = staged();
+    cast(&mut game, overlord, false);
+    assert!(is_a_creature(&game), "the printed price is a body at once");
+
+    // A fresh graveyard with one thing worth having in it, and a Horror that
+    // has been here since the turn began.
+    game.players[0].graveyard.clear();
+    let jace = game
+        .build_zone(PlayerId::One, &[cards::JACE_THE_MIND_SCULPTOR])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[0].graveyard.push(jace);
+    let body = on_battlefield(&game).expect("it resolved").card.id;
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+    let library_before = game.players[0].library.len();
+
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: body,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .expect("a 5/5 may attack");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].library.len(),
+        library_before - 4,
+        "attacking mills four of its own",
+    );
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::JACE_THE_MIND_SCULPTOR),
+        "and a planeswalker is as returnable as a creature",
+    );
+}
