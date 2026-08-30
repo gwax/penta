@@ -346,3 +346,44 @@ fn cracking_her_clue_can_be_the_draw_that_turns_her() {
         "which was the third draw of the turn",
     );
 }
+
+/// "You can activate one of Tamiyo, Seasoned Scholar's loyalty abilities the
+/// turn she enters the battlefield. However, you may do so only during one of
+/// your main phases when the stack is empty." She often arrives in the middle
+/// of combat, which is exactly when she cannot be used.
+#[test]
+fn her_loyalty_abilities_wait_for_a_main_phase() {
+    let mut game = transformed(&[cards::GIANT_GROWTH]);
+    let tamiyo = tamiyo_on_battlefield(&game).card.id;
+    let loyalties = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(|action| {
+                matches!(
+                    action,
+                    Action::ActivateAbility { source, ability: AbilityOrigin::Printed { .. }, .. }
+                        if *source == tamiyo
+                )
+            })
+            .count()
+    };
+    assert!(
+        loyalties(&game) > 0,
+        "your own main phase with an empty stack is when she works",
+    );
+
+    // The step she usually arrives in, on the turn she flipped.
+    game.step = Step::DeclareBlockers;
+    game.priority = PlayerId::One;
+    assert_eq!(
+        loyalties(&game),
+        0,
+        "combat is no time for a loyalty ability",
+    );
+
+    // And their turn is not yours, main phase or not.
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    assert_eq!(loyalties(&game), 0, "nor is their main phase");
+}
