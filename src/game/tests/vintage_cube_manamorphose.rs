@@ -127,3 +127,83 @@ fn the_hybrid_half_takes_either_colour() {
         );
     }
 }
+
+/// "You choose which color or colors of mana to add before you draw a card."
+/// While the question is still on the table nothing has been drawn.
+#[test]
+fn the_colours_are_chosen_before_the_card_is_drawn() {
+    let (mut game, morph) = staged();
+    let hand = game.players[0].hand.len();
+    let library = game.players[0].library.len();
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == morph))
+        .expect("a red and a generic pays for it");
+    game.apply(PlayerId::One, cast).expect("it is castable");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert!(
+        !game.pending_decisions.is_empty(),
+        "it asks which colours to add",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand - 1,
+        "and the only card that has left the hand is the Manamorphose itself",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        library,
+        "the draw waits until the colours are settled",
+    );
+}
+
+/// "In any combination of colors": the five colours and nothing else, so
+/// there is no way to ask it for colourless.
+#[test]
+fn it_offers_colours_and_no_colourless() {
+    let (mut game, morph) = staged();
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == morph))
+        .expect("a red and a generic pays for it");
+    game.apply(PlayerId::One, cast).expect("it is castable");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("it asks which colour to add");
+    let labels = decision
+        .options
+        .iter()
+        .map(|option| option.label.clone())
+        .collect::<Vec<_>>();
+    assert_eq!(labels.len(), 5, "five colours on offer: {labels:?}");
+    assert!(
+        !labels
+            .iter()
+            .any(|label| label.eq_ignore_ascii_case("colorless")),
+        "and colourless is not one of them: {labels:?}",
+    );
+}
