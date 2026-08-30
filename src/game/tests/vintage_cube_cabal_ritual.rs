@@ -85,3 +85,39 @@ fn the_graveyard_is_counted_on_resolution() {
         "threshold was reached before it resolved",
     );
 }
+
+/// "Cards in your graveyard": theirs is a different graveyard, however deep
+/// it is.
+#[test]
+fn only_your_own_graveyard_counts() {
+    let (mut game, ritual) = staged(6);
+    game.players[1].graveyard.clear();
+    for index in 0..10 {
+        let id = 71_500 + index;
+        game.players[1]
+            .graveyard
+            .push(card(id, cards::MOUNTAIN, PlayerId::Two));
+    }
+
+    assert_eq!(
+        cast(&mut game, ritual),
+        3,
+        "ten of theirs and six of yours is still six",
+    );
+}
+
+/// The Ritual is on the stack while it resolves, not in the graveyard, so
+/// the card that would have been the seventh is itself. Six behind it is
+/// three mana, and the seventh card only arrives once the mana is already
+/// added.
+#[test]
+fn it_does_not_count_itself() {
+    let (mut game, ritual) = staged(6);
+
+    assert_eq!(cast(&mut game, ritual), 3, "it counted six, not seven");
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        7,
+        "and then it became the seventh",
+    );
+}
