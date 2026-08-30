@@ -347,23 +347,24 @@ pub(super) fn shared_resolving_apply(
     // Long-lived effects must consist entirely of leaves the permanent can
     // store. Until-end-of-turn retains the nonbattlefield ability-grant case.
     let long_lived = resolving_effect_supports_long_duration(effect);
-    let duration_is_supported = matches!(
-        duration,
-        // An end-of-combat effect expires one step earlier than an
-        // end-of-turn one and is stored the same way, so whatever the shorter
-        // duration can carry the longer one can too.
-        ResolvedEffectDurationDef::UntilEndOfTurn | ResolvedEffectDurationDef::UntilEndOfCombat
-    ) || duration == ResolvedEffectDurationDef::UntilYourNextUpkeep
-        && long_lived
-        || matches!(
-            duration,
-            ResolvedEffectDurationDef::UntilYourNextTurn | ResolvedEffectDurationDef::Permanent
-        ) && long_lived
-        || duration == ResolvedEffectDurationDef::WhileSourceTapped && while_source_tapped
-        // Stored exactly the way an indefinite effect is; what differs is
-        // only the question asked before it is read, and the source being
-        // there is asked of the same battlefield the layers walk.
-        || duration == ResolvedEffectDurationDef::WhileSourceRemains && long_lived;
+    let next_matching_cast = matches!(
+        effect,
+        AppliedEffectDef::Rule(AppliedRuleDef::MayCastAsThoughItHadFlash(_))
+    );
+    // While-source-remains is stored like an indefinite effect; only its live
+    // reader asks whether the recorded source is still on the battlefield.
+    let requires_long_lived = duration.contains(ResolvedEffectDurationDef::UntilYourNextUpkeep)
+        || duration.contains(ResolvedEffectDurationDef::UntilYourNextTurn)
+        || duration.contains(ResolvedEffectDurationDef::WhileSourceRemains);
+    let duration_is_supported = if duration == ResolvedEffectDurationDef::Permanent {
+        long_lived
+    } else {
+        (!requires_long_lived || long_lived)
+            && (!duration.contains(ResolvedEffectDurationDef::WhileSourceTapped)
+                || while_source_tapped)
+            && (!duration.contains(ResolvedEffectDurationDef::UntilNextMatchingCast)
+                || next_matching_cast)
+    };
     if !duration_is_supported || !shared_effect_recipient(recipient) {
         return false;
     }
@@ -765,7 +766,6 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::BecomeMonarch { .. }
                     | EffectDef::VoteForPermanentToExile { .. }
                     | EffectDef::DamageCannotBePreventedThisTurn
-                    | EffectDef::GrantFlashToNextSorcery
                     | EffectDef::ExileLinkedToSource { .. }
                     | EffectDef::MayPlayWithoutPaying { .. }
                     | EffectDef::ExileGrantingOwnerPlay { .. }

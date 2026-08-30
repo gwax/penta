@@ -772,7 +772,11 @@ fn parse_permanent(
     permanent.cast_at_instant_speed = state.cast_at_instant_speed;
     permanent.became_aura = state.became_aura;
     permanent.copy_effect = copy_effect;
-    permanent.copy_expiration = state.copy_expiration.map(parse_expiration).transpose()?;
+    permanent.copy_expiration = state
+        .copy_expiration
+        .as_ref()
+        .map(parse_expiration)
+        .transpose()?;
     permanent.copied_from = state
         .copied_from
         .as_ref()

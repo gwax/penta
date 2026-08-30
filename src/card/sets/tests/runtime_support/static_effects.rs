@@ -274,7 +274,6 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::BecomeMonarch { .. }
         | EffectDef::VoteForPermanentToExile { .. }
-        | EffectDef::GrantFlashToNextSorcery
         | EffectDef::Randomized { .. }
         | EffectDef::Choose(_)
         | EffectDef::SimultaneousChoose(_)
@@ -614,9 +613,9 @@ fn shared_static_applied_rule(recipient: EffectRecipientDef, rule: AppliedRuleDe
         }
         // Read where a cast is offered, against the card being cast, so what
         // it names has to be answerable there the same way.
-        AppliedRuleDef::MayCastAsThoughItHadFlash(object) => {
+        AppliedRuleDef::MayCastAsThoughItHadFlash(permission) => {
             matches!(recipient.0, EffectRecipientSetDef::Players(_))
-                && shared_object_predicate(object)
+                && shared_object_predicate(permission.object)
         }
         _ => true,
     }

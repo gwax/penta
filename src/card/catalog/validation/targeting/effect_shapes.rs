@@ -574,6 +574,9 @@ fn validate_effect_target_shapes(
             duration,
         } => {
             validate_applied_effect_shapes(recipient, effect, targets, false)?;
+            if !duration_is_valid_for_applied_effect(duration, effect) {
+                return Err(GrantedAbilityValidationError::UnsupportedResolvingAppliedEffect);
+            }
             if applied_effect_adds_ability(effect)
                 && recipient_may_name_nonbattlefield_object(
                     recipient,
@@ -619,7 +622,6 @@ fn validate_effect_target_shapes(
         | EffectDef::ModifyCost(_)
         | EffectDef::None
         | EffectDef::DamageCannotBePreventedThisTurn
-            | EffectDef::GrantFlashToNextSorcery
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::MayPlayWithoutPaying { .. }
         | EffectDef::Cascade

@@ -641,12 +641,23 @@ fn wheel_discards_both_hands_and_draws_seven() {
 #[test]
 fn wheel_draws_in_active_player_order_when_cast_by_the_nonactive_player() {
     let mut game = ready_game();
+    let quicken = card(9_999, cards::QUICKEN, PlayerId::One);
     let wheel = card(10_000, cards::WHEEL_OF_FORTUNE, PlayerId::One);
-    game.players[0].hand.push(wheel.clone());
+    game.players[0]
+        .hand
+        .extend([quicken.clone(), wheel.clone()]);
+    game.players[0].mana_pool.blue = 1;
     game.players[0].mana_pool.red = 3;
     game.active_player = PlayerId::Two;
     game.priority = PlayerId::One;
-    game.sorcery_flash_grants[0] = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(quicken.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+    game.priority = PlayerId::One;
     let event_start = game.events.len();
 
     game.apply(

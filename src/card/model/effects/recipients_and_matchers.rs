@@ -426,38 +426,6 @@ impl EffectRecipientDef {
     }
 }
 
-/// The lifetime of a continuous effect created by a resolving spell or
-/// ability. Static effects use [`EffectDef::StaticApply`] instead: they are
-/// derived live from the ability that creates them and have no stored
-/// expiration.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum ResolvedEffectDurationDef {
-    Permanent,
-    UntilEndOfTurn,
-    /// Until the beginning of the resolving ability's controller's next
-    /// upkeep, which outlives the cleanup that ends an until-end-of-turn
-    /// effect.
-    UntilYourNextUpkeep,
-    /// Until the next turn of the effect's controller begins. The affected
-    /// turn is captured when the resolving effect is created.
-    UntilYourNextTurn,
-    /// Until the current combat phase ends. Shorter than
-    /// [`Self::UntilEndOfTurn`]: it expires as the end-of-combat step
-    /// finishes rather than waiting for cleanup, so a creature pumped for one
-    /// combat is back to its printed size in the postcombat main phase.
-    UntilEndOfCombat,
-    /// For as long as the effect's own source stays tapped. Unlike every
-    /// other resolving duration this one has no deadline: the artifact that
-    /// tapped to make it decides when it ends by untapping.
-    WhileSourceTapped,
-    /// "For as long as this creature remains on the battlefield." The same
-    /// open-ended shape as [`Self::WhileSourceTapped`] with a weaker
-    /// condition: the source has only to still be there. A source that
-    /// leaves and returns is a new object, so what it left behind stays
-    /// ended.
-    WhileSourceRemains,
-}
-
 /// How long a resolved control-changing effect lasts.
 ///
 /// Source-dependent control changes are deliberately separate from ordinary

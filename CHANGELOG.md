@@ -276,6 +276,19 @@ distinguishes snapshots of the covered source and build inputs.
   have been removed. Existing action and checkpoint vocabulary already
   expresses all six cards, so protocol 29, replay version 2, and checkpoint
   format 9 are unchanged.
+- **One declarative cast-timing permission, including Quicken's one-shot
+  form.** Static and resolving effects now grant the same predicate-driven
+  "cast as though it had flash" rule. The permission says only which spells it
+  covers; resolving effects separately compose their expiration conditions.
+  Quicken lasts until either the turn ends or the next matching spell is
+  actually cast, while Leyline of Anticipation and Teferi rely on their static
+  source and ordinary authored duration. Every overlapping Quicken ends on
+  that same cast. Suspend's hand action asks the shared "could begin to cast"
+  timing question without casting anything, so one Quicken can authorize any
+  number of sorcery cards to be suspended before an actual sorcery expires it.
+  Checkpoint format 10 replaces the standalone Quicken counters with resolved
+  timing permissions and is advertised as `reconstruction.checkpoint.v10`;
+  protocol 29 and replay version 2 are unchanged.
 
 - **A target somebody else chooses.** "That player chooses target player who
   controls more creatures than they do" hands the choice to a player who
@@ -905,9 +918,10 @@ distinguishes snapshots of the covered source and build inputs.
   can now be narrowed to the moments its player could cast a sorcery, which
   is what "can cast spells only any time they could cast a sorcery" prints;
   and a player can hold a permission to cast matching spells as though they
-  had flash, for whatever duration granted it. Unlike the counted grant that
-  covers one sorcery, the permission is spent by nothing and lasts on its
-  own terms. Teferi, Time Raveler prints both halves.
+  had flash, for whatever duration granted it. Teferi's permission lasts on
+  its ordinary authored duration; Quicken composes end-of-turn and
+  next-matching-cast expiration conditions. Teferi, Time Raveler prints both
+  halves.
 
 - **A printed "while" clause is part of the event.** A trigger can now carry
   a condition checked where its event is matched and never rechecked as the

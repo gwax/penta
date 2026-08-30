@@ -144,7 +144,7 @@ impl Game {
                     object: GameObjectId(grant.object),
                     ability: catalog_ability(&catalog, &grant.ability)
                         .ok_or("nonbattlefield ability grant locator is absent from this catalog")?,
-                    expiration: parse_expiration(grant.expiration)?,
+                    expiration: parse_expiration(&grant.expiration)?,
                     source: grant.source.map(ability_origin_from_snapshot),
                 })
             })
@@ -157,7 +157,6 @@ impl Game {
         let damage_redirects = checkpoint
             .damage_redirects
             .iter()
-            .copied()
             .map(prevention::parse_damage_redirect)
             .collect::<Result<Vec<_>, _>>()?;
         let resolved_play_restrictions = checkpoint
@@ -268,7 +267,6 @@ impl Game {
                     )
                 })
                 .collect(),
-            sorcery_flash_grants: checkpoint.sorcery_flash_grants,
             cannot_gain_life: checkpoint.cannot_gain_life,
             // Only ever holds anything while one combat damage step is being
             // dealt, which is not a moment a checkpoint is taken.

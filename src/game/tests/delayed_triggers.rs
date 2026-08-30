@@ -431,7 +431,7 @@ fn until_next_turn_listener_survives_an_extra_turn_and_expires_for_jaces_control
 }
 
 #[test]
-fn stacked_quickens_are_all_spent_by_the_same_next_sorcery() {
+fn stacked_quickens_all_expire_on_the_same_next_sorcery() {
     let mut game = ready_game();
     let quickens = [
         card(10_000, cards::QUICKEN, PlayerId::One),
@@ -458,7 +458,7 @@ fn stacked_quickens_are_all_spent_by_the_same_next_sorcery() {
         pass_priority_pair(&mut game);
         game.priority = PlayerId::One;
     }
-    assert_eq!(game.sorcery_flash_grants[0], 2);
+    assert_eq!(game.resolved_play_permissions.len(), 2);
 
     let cast = game
         .legal_actions(PlayerId::One)
@@ -468,7 +468,7 @@ fn stacked_quickens_are_all_spent_by_the_same_next_sorcery() {
     game.apply(PlayerId::One, cast).unwrap();
     game.priority = PlayerId::One;
 
-    assert_eq!(game.sorcery_flash_grants[0], 0);
+    assert!(game.resolved_play_permissions.is_empty());
     assert!(
         !game.legal_actions(PlayerId::One).iter().any(
             |action| matches!(action, Action::CastSpell { card, .. } if *card == sorceries[1].id)
@@ -478,7 +478,36 @@ fn stacked_quickens_are_all_spent_by_the_same_next_sorcery() {
 }
 
 #[test]
-fn quicken_consumes_its_grant_for_the_selected_sorcery_part() {
+fn leyline_of_anticipation_opens_every_spell_timing_window_while_it_remains() {
+    let mut game = ready_game();
+    let leyline = game
+        .put_onto_battlefield(PlayerId::One, cards::LEYLINE_OF_ANTICIPATION)
+        .expect("Leyline is cataloged");
+    let sorcery = card(10_010, cards::MIND_TWIST, PlayerId::One);
+    game.players[0].hand.push(sorcery.clone());
+    game.players[0].mana_pool.black = 1;
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::One;
+    game.step = Step::PrecombatMain;
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == sorcery.id))
+    );
+
+    game.battlefield
+        .retain(|permanent| permanent.card.id != leyline);
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == sorcery.id))
+    );
+}
+
+#[test]
+fn quicken_expires_for_the_selected_sorcery_part() {
     let definition_id = CardDefinitionId::new(10_068);
     let instant = CardRules::new_instant(ManaCost::default());
     let sorcery = CardRules::new_sorcery(ManaCost::default());
@@ -492,7 +521,7 @@ fn quicken_consumes_its_grant_for_the_selected_sorcery_part() {
     game.active_player = PlayerId::Two;
     game.priority = PlayerId::One;
     game.step = Step::PrecombatMain;
-    game.sorcery_flash_grants[0] = 1;
+    grant_next_sorcery_flash(&mut game);
 
     let cast_second_part = game
         .legal_actions(PlayerId::One)
@@ -508,7 +537,7 @@ fn quicken_consumes_its_grant_for_the_selected_sorcery_part() {
     game.apply(PlayerId::One, cast_second_part).unwrap();
     game.priority = PlayerId::One;
 
-    assert_eq!(game.sorcery_flash_grants[0], 0);
+    assert!(game.resolved_play_permissions.is_empty());
     assert!(
         !game.legal_actions(PlayerId::One).iter().any(
             |action| matches!(action, Action::CastSpell { card, .. } if *card == next_sorcery.id)
@@ -532,7 +561,7 @@ fn quicken_preserves_its_grant_for_the_selected_instant_part() {
     game.active_player = PlayerId::Two;
     game.priority = PlayerId::One;
     game.step = Step::PrecombatMain;
-    game.sorcery_flash_grants[0] = 1;
+    grant_next_sorcery_flash(&mut game);
 
     let cast_second_part = game
         .legal_actions(PlayerId::One)
@@ -548,7 +577,7 @@ fn quicken_preserves_its_grant_for_the_selected_instant_part() {
     game.apply(PlayerId::One, cast_second_part).unwrap();
     game.priority = PlayerId::One;
 
-    assert_eq!(game.sorcery_flash_grants[0], 1);
+    assert_eq!(game.resolved_play_permissions.len(), 1);
     assert!(
         game.legal_actions(PlayerId::One).iter().any(
             |action| matches!(action, Action::CastSpell { card, .. } if *card == next_sorcery.id)
@@ -888,3 +917,5 @@ fn an_attack_requirement_yields_when_the_creature_cannot_attack() {
         "a tapped creature cannot attack, so it is not held against its controller"
     );
 }
+
+include!("delayed_triggers/cast_timing.rs");

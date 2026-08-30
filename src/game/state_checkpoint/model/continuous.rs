@@ -121,7 +121,7 @@ pub(in crate::game::state_checkpoint) enum ResolvedContinuousOperationSnapshot {
     },
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(
     tag = "kind",
     rename_all = "camelCase",
@@ -141,5 +141,9 @@ pub(in crate::game::state_checkpoint) enum ContinuousEffectExpirationSnapshot {
     /// Additive: a checkpoint written before this duration existed restores
     /// no such effect, because nothing could have made one.
     WhileSourceRemains,
+    NextMatchingCast,
+    AnyOf {
+        expirations: Vec<ContinuousEffectExpirationSnapshot>,
+    },
     Never,
 }

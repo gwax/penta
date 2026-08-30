@@ -119,7 +119,6 @@ pub(super) struct GameSnapshot {
     /// with nobody wearing the crown, which is how every game starts.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) monarch: Option<usize>,
-    pub(super) sorcery_flash_grants: [u8; 2],
     /// Who has been told they cannot gain life for the rest of the game.
     /// Additive: a checkpoint written before this existed means nobody had
     /// been, which is where every game starts.

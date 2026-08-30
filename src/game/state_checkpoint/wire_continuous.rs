@@ -24,7 +24,7 @@ fn parse_resolved_continuous_effect(
         source,
         timestamp: ContinuousEffectTimestamp(state.timestamp),
         component_order: state.component_order,
-        expiration: parse_expiration(state.expiration)?,
+        expiration: parse_expiration(&state.expiration)?,
         kind: parse_resolved_operation(definition, &state.operation)?,
     })
 }

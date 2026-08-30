@@ -858,12 +858,16 @@ fn validate_applied_effect_shapes(
         // is, the same way the permissions below name a player. A timing
         // permission names its player for the same reason: no object has a
         // casting window of its own.
-        AppliedEffectDef::Rule(
-            AppliedRuleDef::GrantsAlternativeCastFromGraveyard { object, .. }
-            | AppliedRuleDef::MayCastAsThoughItHadFlash(object),
-        ) => {
+        AppliedEffectDef::Rule(AppliedRuleDef::GrantsAlternativeCastFromGraveyard {
+            object,
+            ..
+        }) => {
             validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
             validate_object_predicate_shape(object, targets)
+        }
+        AppliedEffectDef::Rule(AppliedRuleDef::MayCastAsThoughItHadFlash(permission)) => {
+            validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
+            validate_object_predicate_shape(permission.object, targets)
         }
         AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromGraveyard(permission)) => {
             validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;

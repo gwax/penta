@@ -338,8 +338,8 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
         }
         // Read where a cast is offered, against the card being cast, just
         // like the other player-facing play permissions above.
-        AppliedEffectDef::Rule(AppliedRuleDef::MayCastAsThoughItHadFlash(object)) => {
-            static_object_predicate_supported(object)
+        AppliedEffectDef::Rule(AppliedRuleDef::MayCastAsThoughItHadFlash(permission)) => {
+            static_object_predicate_supported(permission.object)
         }
         // Both predicates are read against an object the trigger walk
         // already has in hand: what arrived, and what carries the ability.

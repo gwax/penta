@@ -13,6 +13,21 @@ pub enum SetOperationDef<T> {
     Set(T),
 }
 
+/// A permission to begin casting matching spells as though they had flash.
+/// The surrounding static or resolving effect supplies the affected player
+/// and duration; this value supplies only the spell predicate.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct CastTimingPermissionDef {
+    pub object: ObjectPredicateDef,
+}
+
+impl CastTimingPermissionDef {
+    #[must_use]
+    pub const fn new(object: ObjectPredicateDef) -> Self {
+        Self { object }
+    }
+}
+
 /// Creature subtypes named by one layer-4 operation.
 ///
 /// `all` remains semantic rather than expanding to the engine's current list,
@@ -540,7 +555,7 @@ pub enum AppliedRuleDef {
     /// permission rather than a granted keyword: nothing about the card
     /// changes, and the permission belongs to the player it was given to for
     /// as long as its own duration lasts.
-    MayCastAsThoughItHadFlash(ObjectPredicateDef),
+    MayCastAsThoughItHadFlash(CastTimingPermissionDef),
     /// "If that creature would die this turn, exile it instead." A
     /// replacement over the death itself rather than over the damage that
     /// caused it: it applies however the creature would die, and it outlives

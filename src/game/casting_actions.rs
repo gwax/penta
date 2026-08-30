@@ -115,6 +115,34 @@ impl Game {
         self.add_castable_spell_actions(player, None, actions);
     }
 
+    /// Whether the selected spell form may begin to be cast in the current
+    /// priority window. Suspend asks this exact question without casting the
+    /// card, so the timing rule lives beside ordinary cast enumeration rather
+    /// than inside the suspend procedure.
+    pub(super) fn spell_form_timing_allows(
+        &self,
+        definition: &CardDefinition,
+        card: &super::CardInstance,
+        player: PlayerId,
+        option: &PlayOptionDef,
+        types: CardTypeSet,
+    ) -> bool {
+        let part_has_flash = match &option.form {
+            crate::card::SpellForm::Part(part) => definition
+                .part(*part)
+                .is_some_and(|part| part.rules.has_executable_keyword(KeywordAbility::Flash)),
+            crate::card::SpellForm::Combined(parts) => parts.iter().any(|part| {
+                definition
+                    .part(*part)
+                    .is_some_and(|part| part.rules.has_executable_keyword(KeywordAbility::Flash))
+            }),
+        };
+        types.contains(CardType::Instant)
+            || part_has_flash
+            || self.cast_as_though_it_had_flash(card, player, option)
+            || self.sorcery_speed_window(player)
+    }
+
     /// Every way `player` could cast `card` right now, ignoring the timing
     /// its type would normally impose. An offer made during a resolution is
     /// answered then or not at all (CR 608.2f), so a sorcery on the top of a
@@ -253,36 +281,13 @@ impl Game {
                 {
                     continue;
                 }
-                let part_has_flash = match &option.form {
-                    crate::card::SpellForm::Part(part) => {
-                        definition.part(*part).is_some_and(|part| {
-                            part.rules.has_executable_keyword(KeywordAbility::Flash)
-                        })
-                    }
-                    crate::card::SpellForm::Combined(parts) => parts.iter().any(|part| {
-                        definition.part(*part).is_some_and(|part| {
-                            part.rules.has_executable_keyword(KeywordAbility::Flash)
-                        })
-                    }),
-                };
-                // A granted flash covers the next sorcery whenever it is
-                // cast, so it only matters when the timing would refuse. The
-                // counted grant is spent by one spell; a permission that
-                // names what it covers lasts for its own duration and is
-                // spent by nothing.
-                let granted_flash = (types.contains(CardType::Sorcery)
-                    && self.sorcery_flash_grants[player.index()] > 0)
-                    || self.cast_as_though_it_had_flash(card, player, option);
                 // An offer made during a resolution is answered then or not
                 // at all (CR 608.2f), so it ignores the timing the card's
                 // type would otherwise impose -- which is the only way a
                 // cascaded sorcery, or one an Arcanist points at mid-combat,
                 // is ever cast at all.
                 if offer.is_none()
-                    && !types.contains(CardType::Instant)
-                    && !part_has_flash
-                    && !granted_flash
-                    && !self.sorcery_speed_window(player)
+                    && !self.spell_form_timing_allows(definition, card, player, option, types)
                 {
                     continue;
                 }

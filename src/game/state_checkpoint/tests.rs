@@ -472,6 +472,53 @@ fn a_face_down_exile_keeps_who_may_look_at_it() {
     );
 }
 
+#[test]
+fn checkpoint_round_trips_quickens_composed_timing_permission_duration() {
+    let mut game = crate::game::tests::ready_game();
+    let quicken = crate::game::tests::card(94_100, crate::card::cards::QUICKEN, PlayerId::One);
+    let sorcery = crate::game::tests::card(94_101, crate::card::cards::MIND_TWIST, PlayerId::One);
+    game.players[0]
+        .hand
+        .extend([quicken.clone(), sorcery.clone()]);
+    game.players[0].mana_pool.blue = 1;
+    game.put_onto_battlefield(PlayerId::One, crate::card::cards::SWAMP)
+        .expect("a Swamp pays for the reconstructed sorcery");
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::One;
+
+    game.apply(
+        PlayerId::One,
+        crate::game::tests::cast_action(quicken.id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("Quicken can be cast");
+    crate::game::tests::pass_priority_pair(&mut game);
+    game.priority = PlayerId::One;
+    assert_eq!(game.resolved_play_permissions.len(), 1);
+
+    let (wire, mut rebuilt) = rebuild_current_checkpoint(&game, PlayerId::One, 94_102);
+    assert!(wire["checkpoint"].get("sorceryFlashGrants").is_none());
+    assert_eq!(
+        wire["checkpoint"]["resolvedPlayPermissions"][0]["expiration"],
+        serde_json::json!({
+            "kind": "anyOf",
+            "expirations": [
+                { "kind": "endOfTurn" },
+                { "kind": "nextMatchingCast" },
+            ],
+        })
+    );
+    assert_eq!(rebuilt.resolved_play_permissions.len(), 1);
+    let cast = rebuilt
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == sorcery.id))
+        .expect("the reconstructed Quicken permission still opens the sorcery cast");
+    rebuilt
+        .apply(PlayerId::One, cast)
+        .expect("the reconstructed cast succeeds");
+    assert!(rebuilt.resolved_play_permissions.is_empty());
+}
+
 include!("tests/resolved_effects.rs");
 
 include!("tests/prevention_and_replacements.rs");

@@ -554,7 +554,6 @@ impl Game {
                 .map(exile_play::permission_snapshot)
                 .collect(),
             monarch: self.monarch.map(PlayerId::index),
-            sorcery_flash_grants: self.sorcery_flash_grants,
             cannot_gain_life: self.cannot_gain_life,
             turn_phase_queue: self
                 .turn_phase_queue

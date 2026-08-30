@@ -736,7 +736,6 @@ fn validate_effect_references(
         | EffectDef::AddManaEqualTo { .. }
         | EffectDef::CreateEmblem { .. }
         | EffectDef::DamageCannotBePreventedThisTurn
-            | EffectDef::GrantFlashToNextSorcery
         // The ballot is a predicate, not a target: nothing is pointed at.
         | EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::VoteForPermanentToExile { .. }

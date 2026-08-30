@@ -106,7 +106,7 @@ EffectDef::ScheduleTurnPhases(_) | EffectDef::TakeExtraTurn { .. } |
 EffectDef::PutSourceOntoBattlefieldAttacking | EffectDef::BecomeMonarch { .. }
 | EffectDef::VoteForPermanentToExile { .. } |
 EffectDef::DamageCannotBePreventedThisTurn |
-EffectDef::GrantFlashToNextSorcery | EffectDef::ExileLinkedToSource { .. } |
+EffectDef::ExileLinkedToSource { .. } |
 EffectDef::PermitLookAtExiled { .. } |
 EffectDef::MayPlayWithoutPaying { .. } | EffectDef::ExileGrantingOwnerPlay { .. } |
 EffectDef::ExileGrantingControllerPlayThisTurn { .. } |
