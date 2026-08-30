@@ -447,6 +447,7 @@ mod vintage_cube_fiery_confluence;
 mod vintage_cube_figure_of_destiny;
 mod vintage_cube_fire_covenant;
 mod vintage_cube_flame_of_anor;
+mod vintage_cube_flame_slash;
 mod vintage_cube_flash;
 mod vintage_cube_flickerwisp;
 mod vintage_cube_force_of_negation;
