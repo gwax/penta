@@ -256,3 +256,42 @@ fn it_escapes_a_second_time_from_the_graveyard_it_died_into() {
     );
     assert_eq!(game.players[0].exile.len(), 10, "ten cards paid for them");
 }
+
+/// "Phlage's first ability causes you to sacrifice it if you didn't cast it,
+/// or if it was cast using any permission other than an escape ability."
+/// Reanimating it buys one Helix and nothing else.
+#[test]
+fn put_onto_the_battlefield_it_still_sacrifices_itself() {
+    let (mut game, _phlage) = staged(0);
+    let mine = game.players[0].life;
+    let theirs = game.players[1].life;
+    game.put_onto_battlefield(PlayerId::One, cards::PHLAGE_TITAN_OF_FIRES_FURY)
+        .expect("cataloged");
+    settle(&mut game);
+
+    assert!(
+        !on_battlefield(&game),
+        "arriving without a cast is not escaping",
+    );
+    assert_eq!(game.players[1].life, theirs - 3, "the Helix still happened");
+    assert_eq!(game.players[0].life, mine + 3, "on both halves");
+}
+
+/// "Escape's permission doesn't change when you may cast the spell from your
+/// graveyard." It is still a creature spell, so it waits for your own main
+/// phase like any other.
+#[test]
+fn escape_is_still_a_creature_spell() {
+    let (mut game, phlage) = staged(5);
+    let buried = bury(&mut game, phlage);
+    assert!(
+        !casts_of(&game, buried).is_empty(),
+        "five cards and four mana escape it on your own main phase",
+    );
+
+    game.active_player = PlayerId::Two;
+    assert!(
+        casts_of(&game, buried).is_empty(),
+        "permission to cast it from there is not permission to cast it now",
+    );
+}
