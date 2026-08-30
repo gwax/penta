@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **An intervening "if it was cast this way" survives its source.** The
+  condition asks how the source got here rather than where it is now, so it is
+  read from a retired permanent as well as from the battlefield and the stack.
+  A Thieving Skydiver killed with his arrival trigger on the stack still gains
+  control of the artifact he named; if it is an Equipment it stays attached to
+  whatever it was on, because there is no longer a Skydiver to move it to.
+
 - **Zone-change triggers now keep both sides of the move.** A committed move
   records the old object's last-known identity and the exact new object in the
   destination instead of overloading one ID and guessing through the global

@@ -530,12 +530,21 @@ impl Game {
                             .find(|candidate| candidate.id == source)
                             .is_some_and(|candidate| candidate.cast_from_zone.is_some())
                 }
+                // "If it was kicked" is a fact about how the source was cast
+                // rather than about where it is now, so it survives the source:
+                // a Thieving Skydiver killed with his arrival trigger still on
+                // the stack was kicked when it resolves, and still steals.
                 TriggerConditionDef::SourceCastWith(kind) => {
                     self.battlefield
                         .iter()
                         .find(|permanent| permanent.card.id == source)
                         .is_some_and(|permanent| permanent.cast_alternative == Some(*kind))
                         || self.stack_object_cast_with(source) == Some(*kind)
+                        || matches!(
+                            self.retired_objects.get(&source),
+                            Some(RetiredObject::Permanent { permanent, .. })
+                                if permanent.cast_alternative == Some(*kind)
+                        )
                 }
                 TriggerConditionDef::SourceLoyalty { comparison, amount } => self
                     .battlefield

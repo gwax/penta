@@ -91,15 +91,6 @@ fn cast_kicked_for(game: &mut Game, card: GameObjectId, wanted: u16, target: Gam
             .first()
             .map(|pending| pending.observation.clone())
         {
-            eprintln!(
-                "DECISION {:?} options {:?}",
-                decision.prompt,
-                decision
-                    .options
-                    .iter()
-                    .map(|o| (o.id, o.label.clone(), o.card))
-                    .collect::<Vec<_>>()
-            );
             let options: Vec<_> = decision
                 .options
                 .iter()
@@ -307,5 +298,147 @@ fn what_he_took_stays_taken_after_he_dies() {
             .controller,
         PlayerId::One,
         "it does not go home when the thief does",
+    );
+}
+
+/// "Thieving Skydiver's ability can target an artifact you already control.
+/// You'll attach it to Thieving Skydiver if it's an Equipment." Stealing from
+/// yourself gains you nothing, but it does move the Boots.
+#[test]
+fn he_can_take_an_equipment_off_your_own_creature() {
+    let (mut game, skydiver) = staged(4);
+    let bear = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let greaves = game
+        .put_onto_battlefield(PlayerId::One, cards::LIGHTNING_GREAVES)
+        .expect("cataloged");
+    assert!(game.try_attach(greaves, bear), "they start on the Bears");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    cast_kicked_for(&mut game, skydiver, 2, greaves);
+
+    let body = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::THIEVING_SKYDIVER)
+        .expect("he resolved");
+    assert_eq!(
+        game.attached_host(greaves),
+        Some(body.card.id),
+        "his own ability pulls them off the Bears and onto him",
+    );
+}
+
+/// "If you put a permanent with a kicker ability onto the battlefield without
+/// casting it, you can't kick it." Arriving without a cast is not arriving
+/// kicked, so the trigger asks for nothing.
+#[test]
+fn arriving_without_a_cast_is_never_kicked() {
+    let (mut game, _skydiver) = staged(0);
+    let key = game
+        .put_onto_battlefield(PlayerId::Two, cards::MANIFOLD_KEY)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::One, cards::THIEVING_SKYDIVER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    settle(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == key)
+            .expect("their Key is still there")
+            .controller,
+        PlayerId::Two,
+        "no cast means no kick, however much mana was lying around",
+    );
+}
+
+/// "If the Equipment can't be attached to Thieving Skydiver, most likely
+/// because Thieving Skydiver has left the battlefield before its triggered
+/// ability resolves, the Equipment remains attached to whatever it's
+/// currently attached to." Killing the thief in response saves the Bears
+/// their Boots, but not their owner: the theft half still happens.
+#[test]
+fn killing_him_in_response_leaves_the_equipment_where_it_was() {
+    let (mut game, skydiver) = staged(4);
+    let bear = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let greaves = game
+        .put_onto_battlefield(PlayerId::Two, cards::LIGHTNING_GREAVES)
+        .expect("cataloged");
+    assert!(game.try_attach(greaves, bear), "they start on their Bears");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell {
+                card: id, choices, ..
+            } => *id == skydiver && choices.x() == 2,
+            _ => false,
+        })
+        .expect("a kicked cast for X=2 is on offer");
+    game.apply(PlayerId::One, action).expect("it is cast");
+
+    // Let him resolve and name the Boots, then stop with the trigger waiting.
+    for _ in 0..16 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options: Vec<_> = decision
+                .options
+                .iter()
+                .filter(|option| option.card.is_some_and(|(object, _)| object == greaves))
+                .map(|option| option.id)
+                .take(1)
+                .collect();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the Boots are a legal target");
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let thief = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::THIEVING_SKYDIVER)
+        .expect("he is on the battlefield with his trigger still waiting")
+        .card
+        .id;
+    game.move_permanents_to_graveyard(&[thief]);
+    settle(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == greaves)
+            .expect("the Boots are still on the battlefield")
+            .controller,
+        PlayerId::One,
+        "the theft resolves without him",
+    );
+    assert_eq!(
+        game.attached_host(greaves),
+        Some(bear),
+        "but with nobody to attach them to, they stay on the Bears",
     );
 }
