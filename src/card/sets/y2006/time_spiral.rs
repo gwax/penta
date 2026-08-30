@@ -376,7 +376,7 @@ pub(in crate::card::sets) static GEMSTONE_CAVERNS: CardRecord = CardRecord::new(
                     },
                     arrival: crate::card::BattlefieldArrivalDef {
                         counters: Some(TokenCountersDef {
-                            kind: CounterKind::Luck,
+                            kind: CounterKind::named("luck"),
                             amount: ValueDef::Constant(1),
                         }),
                         ..crate::card::BattlefieldArrivalDef::DEFAULT

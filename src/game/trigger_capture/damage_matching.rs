@@ -146,6 +146,7 @@ impl Game {
                     | ObjectSetDef::LegalTargets(_)
                     | ObjectSetDef::Query(_)
                     | ObjectSetDef::PermanentsTargetedBy(_)
+                    | ObjectSetDef::PlayerAttachments(_)
                     | ObjectSetDef::LegalAttachmentHosts(_)
                     | ObjectSetDef::LinkedExiles(_)
                     | ObjectSetDef::CardsDrawnThisTurnInHand(_)

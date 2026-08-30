@@ -280,6 +280,9 @@ fn validate_object_set_shape(
         | ObjectSetDef::PermanentsControlledBy(player) => {
             validate_player_reference_shape(player, targets)
         }
+        ObjectSetDef::PlayerAttachments(query) => {
+            validate_object_predicate_shape(query.object, targets)
+        }
         ObjectSetDef::LegalTargets(target) => {
             validate_target_projection(target, targets, RecipientExpectation::Object)
         }
@@ -721,6 +724,7 @@ fn recipient_may_name_nonbattlefield_object(
                 | ObjectRefDef::SourceOfTargetedStackObject(_),
             )
             | ObjectSetDef::PermanentsTargetedBy(_)
+            | ObjectSetDef::PlayerAttachments(_)
             | ObjectSetDef::LegalAttachmentHosts(_)
             | ObjectSetDef::SharingNameWith(_)
             | ObjectSetDef::PermanentsControlledBy(_),
@@ -784,6 +788,7 @@ fn recipient_nonbattlefield_zones_support_flashback(
                 | ObjectRefDef::DamagedObject,
             )
             | ObjectSetDef::PermanentsTargetedBy(_)
+            | ObjectSetDef::PlayerAttachments(_)
             | ObjectSetDef::LegalAttachmentHosts(_)
             | ObjectSetDef::SharingNameWith(_)
             | ObjectSetDef::PermanentsControlledBy(_),
@@ -895,6 +900,7 @@ fn validate_applied_effect_shapes(
             | AppliedRuleDef::CannotDrawMoreThanEachTurn(_)
             | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::RevealsDrawnCards
+            | AppliedRuleDef::PlayerRule(_)
             | AppliedRuleDef::DoublesTokensCreated,
         ) => validate_recipient_shape(recipient, targets, RecipientExpectation::Player),
         // The cap names the players it applies to; the predicate picks out

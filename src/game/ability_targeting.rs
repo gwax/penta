@@ -374,8 +374,12 @@ impl Game {
                     actors.chooser,
                     source,
                     context,
-                ) && !self.player_is_protected_from(*player, source, source_is_spell)
-                    && self.player_object_count(*player, object, zones, source) > theirs
+                ) && self.player_can_be_targeted_by(
+                    *player,
+                    actors.ability_controller,
+                    source,
+                    source_is_spell,
+                ) && self.player_object_count(*player, object, zones, source) > theirs
             })
             .map(Target::Player)
             .collect()
@@ -415,7 +419,12 @@ impl Game {
                         actors.chooser,
                         source,
                         context,
-                    ) && !self.player_is_protected_from(*player, source, source_is_spell)
+                    ) && self.player_can_be_targeted_by(
+                        *player,
+                        actors.ability_controller,
+                        source,
+                        source_is_spell,
+                    )
                 })
                 .map(Target::Player)
                 .collect(),
@@ -484,7 +493,14 @@ impl Game {
     ) -> Vec<Target> {
         let mut targets = [PlayerId::One, PlayerId::Two]
             .into_iter()
-            .filter(|player| !self.player_is_protected_from(*player, source, source_is_spell))
+            .filter(|player| {
+                self.player_can_be_targeted_by(
+                    *player,
+                    actors.ability_controller,
+                    source,
+                    source_is_spell,
+                )
+            })
             .map(Target::Player)
             .collect::<Vec<_>>();
         targets.extend(
@@ -524,7 +540,12 @@ impl Game {
                     actors.chooser,
                     source,
                     context,
-                ) && !self.player_is_protected_from(*player, source, source_is_spell)
+                ) && self.player_can_be_targeted_by(
+                    *player,
+                    actors.ability_controller,
+                    source,
+                    source_is_spell,
+                )
             })
             .map(Target::Player)
             .collect::<Vec<_>>();

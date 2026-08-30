@@ -2,11 +2,47 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, CopyExceptionsDef,
-    EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectRefDef, PlayerRefDef, ZoneKind,
-    ZonePlacement,
+    AbilityDef, AbilityTargetDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet,
+    CardType, CopyExceptionsDef, EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectRefDef,
+    PlayerRefDef, PlayerRelation, PlayerRuleDef, ResolvedEffectDurationDef,
+    SpellResolutionDestinationDef, ZoneKind, ZonePlacement,
 };
 use crate::{TargetIndex, mana_cost};
+
+// C17 8 — Teferi's Protection
+pub(in crate::card::sets) static TEFERIS_PROTECTION: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("77f130c7-0138-4a1a-9f67-62d2c302dc48"),
+    "Teferi's Protection",
+    CardArt::new("77f130c7-0138-4a1a-9f67-62d2c302dc48", "Chase Stone"),
+    CardSet::Commander2017,
+    CardRules::new_instant(mana_cost!("{2}{W}")).with_ability(
+        AbilityDef::spell(
+            "Until your next turn, your life total can't change and you gain protection from everything. All permanents you control phase out. (While they're phased out, they're treated as though they don't exist. They phase in before you untap during your untap step.)\nExile Teferi's Protection.",
+            EffectDef::Sequence(&[
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Controller,
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
+                            PlayerRuleDef::LifeTotalCannotChange,
+                        )),
+                        AppliedEffectDef::Rule(AppliedRuleDef::PlayerProtectionFrom(
+                            ObjectPredicateDef::Any,
+                        )),
+                    ]),
+                    duration: ResolvedEffectDurationDef::UntilYourNextTurn,
+                },
+                EffectDef::PhaseOut {
+                    object: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::Any,
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                },
+            ]),
+        )
+        .with_resolution_destination(SpellResolutionDestinationDef::Exile),
+    ),
+);
 
 // C17 37 — Fractured Identity
 static A_NONLAND_PERMANENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one_permanent(
@@ -54,6 +90,7 @@ pub(in crate::card::sets) static FRACTURED_IDENTITY: CardRecord = CardRecord::ne
     )),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&FRACTURED_IDENTITY];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&TEFERIS_PROTECTION, &FRACTURED_IDENTITY];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

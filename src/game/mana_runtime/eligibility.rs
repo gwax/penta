@@ -35,8 +35,7 @@ impl Game {
                 AbilityCostDef::Mana(cost) => self.pool_covers_cost(permanent.controller, *cost),
                 AbilityCostDef::MillCards(_) => false,
                 AbilityCostDef::PayLife(amount) => {
-                    self.players[permanent.controller.index()].life
-                        >= i16::try_from(*amount).unwrap_or(i16::MAX)
+                    self.can_pay_life(permanent.controller, *amount)
                 }
                 AbilityCostDef::RemoveCountersFromSource { .. }
                 | AbilityCostDef::RemoveAnyNumberOfCountersFromSource(_)

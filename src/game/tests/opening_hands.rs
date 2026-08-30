@@ -199,7 +199,7 @@ fn gemstone_caverns_is_only_offered_to_the_nonstarting_player_with_a_card_to_exi
         .find(|permanent| permanent.card.definition == caverns)
         .expect("Gemstone Caverns begins on the battlefield");
     assert_eq!(entered.controller, PlayerId::Two);
-    assert_eq!(entered.counters(CounterKind::Luck), 1);
+    assert_eq!(entered.counters(CounterKind::named("luck")), 1);
     assert!(
         game.players[1]
             .exile

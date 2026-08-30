@@ -64,7 +64,9 @@ fn burden(game: &Game) -> u16 {
     game.battlefield
         .iter()
         .find(|permanent| permanent.card.definition == cards::THE_ONE_RING)
-        .map_or(0, |permanent| permanent.counters(CounterKind::Burden))
+        .map_or(0, |permanent| {
+            permanent.counters(CounterKind::named("burden"))
+        })
 }
 
 fn ring_activations(game: &Game) -> Vec<Action> {
@@ -271,7 +273,7 @@ fn the_upkeep_charges_one_life_for_each_burden_counter() {
     cast_the_ring(&mut game, ring);
     for permanent in &mut game.battlefield {
         if permanent.card.definition == cards::THE_ONE_RING {
-            permanent.add_counters(CounterKind::Burden, 3);
+            permanent.add_counters(CounterKind::named("burden"), 3);
         }
     }
     let before = game.players[0].life;

@@ -267,6 +267,18 @@ impl BlockRestrictionDef {
     );
 }
 
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum PlayerRuleDef {
+    /// The affected player cannot be targeted by spells or abilities their
+    /// opponents control. Unlike protection, this does not prevent damage or
+    /// make an Aura that is already attached fall off.
+    Hexproof,
+    /// The affected player's life total cannot change. They cannot gain or
+    /// lose life, and a nonzero life payment cannot be made, but damage can
+    /// still be dealt when another rule says it cannot be prevented.
+    LifeTotalCannotChange,
+}
+
 /// A continuous rule modification applied to one object or player.
 ///
 /// Keeping these leaves separate from characteristic operations makes their
@@ -517,6 +529,8 @@ pub enum AppliedRuleDef {
     /// protection asks about the source's qualities rather than about who
     /// controls it, which is what makes "from everything" a real cost.
     PlayerProtectionFrom(ObjectPredicateDef),
+    /// A simple rule whose subject is the affected player.
+    PlayerRule(PlayerRuleDef),
     /// "That player can't gain life for the rest of the game." A prohibition
     /// on the player rather than a replacement of the gain: nothing is
     /// multiplied down to zero, the life simply never arrives, and nothing

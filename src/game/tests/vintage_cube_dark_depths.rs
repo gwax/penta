@@ -61,7 +61,7 @@ fn ice(game: &Game, depths: GameObjectId) -> u16 {
     game.battlefield
         .iter()
         .find(|permanent| permanent.card.id == depths)
-        .map_or(0, |permanent| permanent.counters(CounterKind::Ice))
+        .map_or(0, |permanent| permanent.counters(CounterKind::named("ice")))
 }
 
 /// Every removal activation Dark Depths is offering right now.

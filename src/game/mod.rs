@@ -186,8 +186,8 @@ use continuous_state::{
     ContinuousEffectTimestamp, NonbattlefieldAbilityGrant, ResolvedAbilityOperation,
     ResolvedAttackRestriction, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
     ResolvedOngoingEffect, ResolvedPlayPermission, ResolvedPlayRestriction,
-    ResolvedPlayerProtection, ResolvedPowerToughnessOperation, StaticAppliedEffect,
-    StaticEffectTraversal,
+    ResolvedPlayerProtection, ResolvedPlayerRule, ResolvedPowerToughnessOperation,
+    StaticAppliedEffect, StaticEffectTraversal,
 };
 use decision_state::{
     ApplicableBeginTurnReplacement, BalanceAction, BalancePhase, BalanceTask, CounteredSpellZone,
@@ -688,6 +688,9 @@ pub struct Game {
     /// and Auras -- is asked of this list wherever a player could be on the
     /// receiving end.
     resolved_player_protections: Vec<ResolvedPlayerProtection>,
+    /// Resolving player-facing rules such as hexproof and a frozen life
+    /// total. Static versions remain derived live from their source.
+    resolved_player_rules: Vec<ResolvedPlayerRule>,
     /// Resolving play permissions, the mirror of the prohibitions above.
     /// "You may cast spells from your graveyard this turn" is aimed at a
     /// player and lasts no longer than the turn, so nothing on the

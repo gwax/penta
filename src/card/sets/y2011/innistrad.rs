@@ -15,12 +15,12 @@ use crate::card::{
     InstalledTriggerDef, KeywordAbility, ManaColor, MillUntilDef, MoveObjectsDef,
     ObjectChoiceBindingDef, ObjectCounterValueDef, ObjectPredicateDef, ObjectQueryDef,
     ObjectRefDef, ObjectSetDef, PartitionGroupDef, PayOrDef, PlayActionMatcherDef,
-    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, QuantifierDef,
-    ReplacementConditionDef, ReplacementEffectDef, ResolvedEffectDurationDef, RevealObjectsDef,
-    RoundingDef, SacrificedAmountDef, SimultaneousChooseDef, SpellAdditionalCostCountDef,
-    SpellAdditionalCostDef, SpendModeDef, TargetChooserDef, TargetConditionDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    PlayRestrictionDef, PlayerAttachmentQueryDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    QuantifierDef, ReplacementConditionDef, ReplacementEffectDef, ResolvedEffectDurationDef,
+    RevealObjectsDef, RoundingDef, SacrificedAmountDef, SimultaneousChooseDef,
+    SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef, TargetChooserDef,
+    TargetConditionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::ids::{
     AdditionalCostObjectIndex, ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex,
@@ -6557,13 +6557,35 @@ pub(in crate::card::sets) static TREPANATION_BLADE: CardRecord = CardRecord::new
 );
 
 // ISD 236 — Witchbane Orb
-// Audit: metadata-only — Needs player hexproof and identifying and destroying all Curses attached to that player.
 pub(in crate::card::sets) static WITCHBANE_ORB: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("53e0bf16-62f5-4b62-96e8-bc7e049bcf89"),
     "Witchbane Orb",
     crate::card::CardArt::new("53e0bf16-62f5-4b62-96e8-bc7e049bcf89", "John Avon"),
     crate::card::CardSet::Innistrad,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[
+        abilities::enters_trigger(
+            "When this artifact enters, destroy all Curses attached to you.",
+            EffectDef::Destroy {
+                object: EffectRecipientDef::objects(ObjectSetDef::PlayerAttachments(
+                    PlayerAttachmentQueryDef::new(
+                        PlayerRelation::You,
+                        ObjectPredicateDef::Subtype("Curse"),
+                    ),
+                )),
+                can_regenerate: true,
+                then: None,
+            },
+        ),
+        AbilityDef::static_ability(
+            "You have hexproof. (You can't be the target of spells or abilities your opponents control, including Aura spells.)",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Controller,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
+                    crate::card::PlayerRuleDef::Hexproof,
+                )),
+            },
+        ),
+    ]),
 );
 
 // ISD 237 — Wooden Stake

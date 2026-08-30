@@ -389,7 +389,7 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
             | AppliedRuleDef::MayPlayAnyNumberOfLands
             | AppliedRuleDef::CannotDrawMoreThanEachTurn(_)
             | AppliedRuleDef::NoMaximumHandSize
-            | AppliedRuleDef::RevealsDrawnCards
+            | AppliedRuleDef::RevealsDrawnCards | AppliedRuleDef::PlayerRule(_)
             | AppliedRuleDef::DoublesTokensCreated,
         ) => true,
         AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
@@ -535,8 +535,7 @@ fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRule
         // gaining life.
         | AppliedRuleDef::MayCastAsThoughItHadFlash(_)
         | AppliedRuleDef::CannotGainLife
-        // A player's protection belongs to the player too.
-        | AppliedRuleDef::PlayerProtectionFrom(_)
+        | AppliedRuleDef::PlayerProtectionFrom(_) | AppliedRuleDef::PlayerRule(_)
         // No printed static says "if it would die, exile it instead": every
         // card that says it is a resolving effect with a duration on it.
         | AppliedRuleDef::ExileInsteadOfDying
@@ -740,6 +739,7 @@ fn static_object_set_supported(objects: ObjectSetDef) -> bool {
         | ObjectSetDef::ZoneChangeSuccessorsOfBinding(_)
         | ObjectSetDef::MatchingBinding { .. }
         | ObjectSetDef::PermanentsTargetedBy(_)
+        | ObjectSetDef::PlayerAttachments(_)
         | ObjectSetDef::LegalAttachmentHosts(_)
         | ObjectSetDef::LinkedExiles(_)
         | ObjectSetDef::CardsDrawnThisTurnInHand(_)

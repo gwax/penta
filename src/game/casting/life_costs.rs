@@ -38,6 +38,9 @@ impl Game {
     /// life only down to zero (CR 118.4), so their life total is the bound;
     /// paying none is always available.
     pub(super) fn maximum_x_for_life(&self, player: PlayerId) -> u16 {
+        if self.life_total_cannot_change(player) {
+            return 0;
+        }
         u16::try_from(self.players[player.index()].life.max(0)).unwrap_or(u16::MAX)
     }
 
@@ -192,6 +195,9 @@ impl Game {
         player: PlayerId,
         payment: u16,
     ) -> Option<u16> {
+        if self.life_total_cannot_change(player) {
+            return (payment == 0).then_some(0);
+        }
         u16::try_from(self.players[player.index()].life.max(0))
             .unwrap_or(u16::MAX)
             .checked_sub(payment)

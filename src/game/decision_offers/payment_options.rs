@@ -44,7 +44,7 @@ impl Game {
             ResolvedEffectPayment::ChosenEnergy => {
                 for amount in 1..=self.players[player.index()]
                     .counters
-                    .count(CounterKind::Energy)
+                    .count(CounterKind::named("energy"))
                 {
                     options.push(DecisionOption {
                         id: u32::from(amount),

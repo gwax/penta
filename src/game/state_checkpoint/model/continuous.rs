@@ -60,6 +60,16 @@ pub(in crate::game::state_checkpoint) struct ResolvedPlayerProtectionSnapshot {
     pub(in crate::game::state_checkpoint) expiration: ContinuousEffectExpirationSnapshot,
 }
 
+/// A resolved player rule rehydrated from its authored applied-effect leaf.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(in crate::game::state_checkpoint) struct ResolvedPlayerRuleSnapshot {
+    pub(in crate::game::state_checkpoint) definition: AppliedEffectLocator,
+    pub(in crate::game::state_checkpoint) source: AbilitySourceSnapshot,
+    pub(in crate::game::state_checkpoint) affected_seat: usize,
+    pub(in crate::game::state_checkpoint) expiration: ContinuousEffectExpirationSnapshot,
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(in crate::game::state_checkpoint) enum SetOperationSnapshot {

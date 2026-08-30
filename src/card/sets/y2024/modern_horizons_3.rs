@@ -349,7 +349,7 @@ static PRISON_ENTERS: [EffectDef; 3] = [
     // upkeep tax is already covered, and the second is not.
     EffectDef::AddPlayerCounters {
         recipient: EffectRecipientDef::Controller,
-        kind: CounterKind::Energy,
+        kind: CounterKind::named("energy"),
         amount: ValueDef::Constant(2),
     },
 ];
@@ -686,7 +686,7 @@ static RAPTOR_DIGS: EffectDef = EffectDef::ExileFromTopUntil {
 static RAPTOR_ENTERS: [EffectDef; 2] = [
     EffectDef::AddPlayerCounters {
         recipient: EffectRecipientDef::Controller,
-        kind: CounterKind::Energy,
+        kind: CounterKind::named("energy"),
         amount: ValueDef::Constant(2),
     },
     EffectDef::IfCondition {
@@ -807,7 +807,7 @@ static DISCHARGE_DAMAGE: EffectDef = EffectDef::DealDamage {
 static DISCHARGE_EFFECTS: [EffectDef; 2] = [
     EffectDef::AddPlayerCounters {
         recipient: EffectRecipientDef::Controller,
-        kind: CounterKind::Energy,
+        kind: CounterKind::named("energy"),
         amount: ValueDef::Constant(3),
     },
     EffectDef::PayOr(PayOrDef::optional(
@@ -2594,7 +2594,7 @@ static GUIDE_OF_SOULS_PAYOFF: [EffectDef; 2] = [
     },
     EffectDef::AddPlayerCounters {
         recipient: EffectRecipientDef::Controller,
-        kind: CounterKind::Energy,
+        kind: CounterKind::named("energy"),
         amount: ValueDef::Constant(1),
     },
 ];

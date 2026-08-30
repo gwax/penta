@@ -94,7 +94,11 @@ fn their_dying_creature_is_exiled_with_a_counter() {
         "nothing of theirs reaches a graveyard",
     );
     let card = exiled(&game, PlayerId::Two, cards::GRIZZLY_BEARS).expect("it is exiled instead");
-    assert_eq!(card.counters(CounterKind::Void), 1, "with a void counter");
+    assert_eq!(
+        card.counters(CounterKind::named("void")),
+        1,
+        "with a void counter"
+    );
 }
 
 /// "From anywhere" is the whole card: a discard is exiled the same way.
@@ -118,7 +122,11 @@ fn a_card_they_discard_is_exiled_too() {
         "the discard is exiled",
     );
     let card = exiled(&game, PlayerId::Two, cards::LIGHTNING_BOLT).expect("it is exiled");
-    assert_eq!(card.counters(CounterKind::Void), 1, "with a void counter");
+    assert_eq!(
+        card.counters(CounterKind::named("void")),
+        1,
+        "with a void counter"
+    );
 }
 
 /// Your own graveyard is untouched: the clause names an opponent's.

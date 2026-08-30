@@ -14,7 +14,7 @@ pub(super) fn player_counters(observation: &Value) -> Result<[Counters; 2], Stri
         return Ok([PlayerId::One, PlayerId::Two].map(|player| {
             let mut counters = Counters::new();
             counters.set(CounterKind::Poison, poison[player.index()]);
-            counters.set(CounterKind::Energy, energy[player.index()]);
+            counters.set(CounterKind::named("energy"), energy[player.index()]);
             counters
         }));
     };
@@ -41,7 +41,8 @@ pub(super) fn player_counters(observation: &Value) -> Result<[Counters; 2], Stri
     let counters = [one?, two?];
     for player in [PlayerId::One, PlayerId::Two] {
         if counters[player.index()].count(CounterKind::Poison) != poison[player.index()]
-            || counters[player.index()].count(CounterKind::Energy) != energy[player.index()]
+            || counters[player.index()].count(CounterKind::named("energy"))
+                != energy[player.index()]
         {
             return Err("playerCounters disagree with poison or energy projections".into());
         }

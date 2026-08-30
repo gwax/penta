@@ -188,6 +188,11 @@ impl Game {
                 play_restriction::parse_resolved_player_protection(&catalog, protection)
             })
             .collect::<Result<Vec<_>, _>>()?;
+        let resolved_player_rules = checkpoint
+            .resolved_player_rules
+            .iter()
+            .map(|rule| play_restriction::parse_resolved_player_rule(&catalog, rule))
+            .collect::<Result<Vec<_>, _>>()?;
         let mut game = Self {
             format,
             arrived: None,
@@ -279,6 +284,7 @@ impl Game {
             resolved_attack_restrictions,
             resolved_play_permissions,
             resolved_player_protections,
+            resolved_player_rules,
             emblems: Vec::new(),
             spells_cast_this_turn: checkpoint.spells_cast_this_turn,
             total_spells_cast: checkpoint.spells_cast_this_game,

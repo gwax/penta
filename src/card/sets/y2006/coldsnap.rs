@@ -56,7 +56,7 @@ static MARIT_LAGE: TokenCharacteristics =
         .with_abilities(&MARIT_LAGE_ABILITIES);
 
 static DEPTHS_HAS_NO_ICE: TriggerConditionDef = TriggerConditionDef::SourceCounters {
-    kind: CounterKind::Ice,
+    kind: CounterKind::named("ice"),
     comparison: ComparisonDef::Equal,
     amount: 0,
 };
@@ -84,7 +84,7 @@ static DEPTHS_ABILITIES: [AbilityDef; 3] = [
         "Dark Depths enters with ten ice counters on it.",
         ReplacementEffectDef::ModifyBattlefieldEntry(
             BattlefieldEntryModificationDef::AddCounters {
-                kind: CounterKind::Ice,
+                kind: CounterKind::named("ice"),
                 amount: 10,
             },
         ),
@@ -94,7 +94,7 @@ static DEPTHS_ABILITIES: [AbilityDef; 3] = [
         &DEPTHS_REMOVE_COST,
         EffectDef::RemoveCounters {
             object: EffectRecipientDef::Source,
-            kind: CounterKind::Ice,
+            kind: CounterKind::named("ice"),
             amount: ValueDef::Constant(1),
         },
     ),

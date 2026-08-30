@@ -222,6 +222,7 @@ impl Game {
             turn_phase_resume: None,
             resolved_play_restrictions: Vec::new(),
             resolved_player_protections: Vec::new(),
+            resolved_player_rules: Vec::new(),
             resolved_attack_restrictions: Vec::new(),
             resolved_play_permissions: Vec::new(),
             emblems: Vec::new(),

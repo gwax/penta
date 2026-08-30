@@ -193,7 +193,7 @@ impl Game {
                     energy
                         > self.players[player.index()]
                             .counters
-                            .count(CounterKind::Energy)
+                            .count(CounterKind::named("energy"))
                 })
             {
                 continue;

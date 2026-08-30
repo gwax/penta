@@ -221,6 +221,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                     | ObjectSetDef::BottomOfGraveyard(_)
                     | ObjectSetDef::LegalTargets(_)
                     | ObjectSetDef::PermanentsTargetedBy(_)
+                    | ObjectSetDef::PlayerAttachments(_)
                     | ObjectSetDef::LegalAttachmentHosts(_)
                     | ObjectSetDef::SharingNameWith(_)
                     | ObjectSetDef::SharingNameWithBinding { .. }

@@ -158,6 +158,18 @@ pub(super) struct ResolvedPlayerProtection {
     pub(super) quality: crate::card::ObjectPredicateDef,
 }
 
+/// A resolving player-facing rule whose authored definition is all the
+/// runtime needs beyond its affected player and expiration. Static versions
+/// of the same rules remain source-derived from the battlefield.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct ResolvedPlayerRule {
+    pub(super) definition: AppliedEffectDef,
+    pub(super) source: AbilitySourceRef,
+    pub(super) affected_player: PlayerId,
+    pub(super) expiration: ContinuousEffectExpiration,
+    pub(super) rule: crate::card::PlayerRuleDef,
+}
+
 /// A resolving attack prohibition after its protected player has been
 /// frozen. Static creature-scoped attack restrictions remain source-derived;
 /// this is for effects such as Island Sanctuary that protect a player for a

@@ -853,8 +853,7 @@ impl Game {
             .filter_map(|choice| {
                 // Activation costs, which no cast-time colour permission reaches.
                 let (locked, life) = Self::locked_mana_payment(cost, &choice, false)?;
-                let affordable = i16::try_from(life)
-                    .is_ok_and(|life| self.players[player.index()].life >= life)
+                let affordable = self.can_pay_life(player, life)
                     && self.can_pay_cost_for(player, locked, x, purpose);
                 affordable.then(|| (!choice.alternatives().is_empty()).then_some(choice))
             })

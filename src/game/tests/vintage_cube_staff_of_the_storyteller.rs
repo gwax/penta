@@ -35,7 +35,9 @@ fn story(game: &Game, staff: GameObjectId) -> u16 {
     game.battlefield
         .iter()
         .find(|permanent| permanent.card.id == staff)
-        .map_or(0, |permanent| permanent.counters(CounterKind::Story))
+        .map_or(0, |permanent| {
+            permanent.counters(CounterKind::named("story"))
+        })
 }
 
 fn tokens(game: &Game) -> Vec<&Permanent> {

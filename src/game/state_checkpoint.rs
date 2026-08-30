@@ -16,10 +16,10 @@ use super::{
     ResolvedContinuousEffectKind, ResolvedDamagePrevention, ResolvedDamagePreventionCapacity,
     ResolvedDamagePreventionCoverage, ResolvedDamageRecipientMatcher, ResolvedDamageRedirect,
     ResolvedDamageSourceMatcher, ResolvedOngoingEffect, ResolvedPlayPermission,
-    ResolvedPlayRestriction, ResolvedPlayerProtection, ResolvedPowerToughnessOperation,
-    RetiredObject, ScopedEffect, StackAbilityPayload, StackAbilityResolver, StackObject,
-    StackObjectKind, Step, TriggerCapture, TriggerContext, TurnPhaseResume, ZoneMoveCause,
-    cast_source_zone_from_label,
+    ResolvedPlayRestriction, ResolvedPlayerProtection, ResolvedPlayerRule,
+    ResolvedPowerToughnessOperation, RetiredObject, ScopedEffect, StackAbilityPayload,
+    StackAbilityResolver, StackObject, StackObjectKind, Step, TriggerCapture, TriggerContext,
+    TurnPhaseResume, ZoneMoveCause, cast_source_zone_from_label,
 };
 use crate::card::ManaCost;
 use crate::card::{
@@ -281,6 +281,11 @@ impl Game {
                     .iter()
                     .map(|protection| protection.source.object),
             )
+            .chain(
+                self.resolved_player_rules
+                    .iter()
+                    .map(|rule| rule.source.object),
+            )
             .chain(self.spell_cast_history_this_turn.iter().copied())
             .chain(
                 self.damage_redirects
@@ -446,6 +451,13 @@ impl Game {
             .collect::<Vec<_>>();
         let has_unlocated_resolved_player_rule = has_unlocated_resolved_player_rule
             || resolved_player_protections.len() != self.resolved_player_protections.len();
+        let resolved_player_rules = self
+            .resolved_player_rules
+            .iter()
+            .filter_map(|rule| play_restriction::resolved_player_rule_snapshot(&self.catalog, rule))
+            .collect::<Vec<_>>();
+        let has_unlocated_resolved_player_rule = has_unlocated_resolved_player_rule
+            || resolved_player_rules.len() != self.resolved_player_rules.len();
         let has_unlocated_resolved_player_rule = has_unlocated_resolved_player_rule
             || resolved_play_permissions.len() != self.resolved_play_permissions.len();
         // Phased-out permanents follow the battlefield in the observation,
@@ -555,6 +567,7 @@ impl Game {
             resolved_attack_restrictions,
             resolved_play_permissions,
             resolved_player_protections,
+            resolved_player_rules,
             spells_cast_this_turn: self.spells_cast_this_turn,
             spells_cast_this_game: self.total_spells_cast,
             spells_cast_last_turn: self.spells_cast_last_turn,

@@ -9,11 +9,11 @@ use super::{
     PowerToughnessOperationDef, QuantifierDef, ResolvedAbilityOperation, ResolvedAttackRestriction,
     ResolvedContinuousEffect, ResolvedContinuousEffectKind, ResolvedDamageRedirect,
     ResolvedEffectDurationDef, ResolvedPlayPermission, ResolvedPlayRestriction,
-    ResolvedPlayerProtection, ResolvedPowerToughnessOperation, RetiredObject, ScopedEffect,
-    StackObject, StackObjectKind, Target, TargetIndex, TargetSelection, TargetSlotId,
+    ResolvedPlayerProtection, ResolvedPlayerRule, ResolvedPowerToughnessOperation, RetiredObject,
+    ScopedEffect, StackObject, StackObjectKind, Target, TargetIndex, TargetSelection, TargetSlotId,
     TriggerConditionDef, TriggerContext, ZoneKind, abilities,
 };
-use crate::card::TargetChooserDef;
+use crate::card::{PlayerAttachmentQueryDef, TargetChooserDef};
 
 #[derive(Clone, Copy)]
 struct ResolvedAppliedEffect<'a> {
@@ -439,6 +439,18 @@ impl Game {
                             expiration,
                             quality,
                         });
+                }
+                true
+            }
+            AppliedRuleDef::PlayerRule(rule) => {
+                if let Target::Player(affected_player) = target {
+                    self.resolved_player_rules.push(ResolvedPlayerRule {
+                        definition,
+                        source,
+                        affected_player,
+                        expiration,
+                        rule,
+                    });
                 }
                 true
             }
