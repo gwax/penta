@@ -442,3 +442,133 @@ fn killing_him_in_response_leaves_the_equipment_where_it_was() {
         "but with nobody to attach them to, they stay on the Bears",
     );
 }
+
+/// "The spell's mana value remains unchanged, no matter what the total cost
+/// to cast it was." A Skydiver kicked for three cost five mana and is still
+/// a two-drop on the battlefield.
+#[test]
+fn kicking_him_does_not_change_what_he_costs() {
+    let (mut game, skydiver) = staged(5);
+    let key = game
+        .put_onto_battlefield(PlayerId::Two, cards::MANIFOLD_KEY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    cast_kicked_for(&mut game, skydiver, 3, key);
+
+    let body = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::THIEVING_SKYDIVER)
+        .expect("he arrived");
+    assert_eq!(
+        game.permanent_mana_value(body),
+        2,
+        "the kicker is a cost increase, not a bigger card",
+    );
+}
+
+/// "If a card or token enters as a copy of a permanent, the new permanent
+/// isn't kicked, even if the original was." A Metamorph copying a kicked
+/// Skydiver arrives having been cast as a Metamorph, so its own arrival
+/// steals nothing.
+#[test]
+fn a_copy_of_him_was_never_kicked_itself() {
+    let (mut game, skydiver) = staged(5);
+    let key = game
+        .put_onto_battlefield(PlayerId::Two, cards::MANIFOLD_KEY)
+        .expect("cataloged");
+    let second_key = game
+        .put_onto_battlefield(PlayerId::Two, cards::MANIFOLD_KEY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    cast_kicked_for(&mut game, skydiver, 1, key);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == key)
+            .expect("the first Key is still there")
+            .controller,
+        PlayerId::One,
+        "the kicked Skydiver took one",
+    );
+
+    // A Metamorph copying him is cast as a Metamorph, kicker or no kicker.
+    let metamorph = game
+        .build_zone(PlayerId::One, &[cards::PHYREXIAN_METAMORPH])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let metamorph_id = metamorph.id;
+    game.players[0].hand.push(metamorph);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 5);
+    let body = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::THIEVING_SKYDIVER)
+        .expect("he is on the battlefield")
+        .card
+        .id;
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == metamorph_id))
+        .expect("five mana casts it");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    for _ in 0..12 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .find(|option| option.card.is_some_and(|(object, _)| object == body))
+                .map_or_else(|| vec![decision.options[0].id], |option| vec![option.id]);
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the answer is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    settle(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::THIEVING_SKYDIVER)
+            .count()
+            + game
+                .battlefield
+                .iter()
+                .filter(|permanent| permanent.card.definition == cards::PHYREXIAN_METAMORPH)
+                .count(),
+        2,
+        "there are two Skydivers on the battlefield now",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == second_key)
+            .expect("the second Key is still there")
+            .controller,
+        PlayerId::Two,
+        "and the copy, never having been kicked, took nothing",
+    );
+}
