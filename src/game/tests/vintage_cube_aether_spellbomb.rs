@@ -156,3 +156,44 @@ fn the_bounce_needs_a_creature() {
 
     assert!(activation(&game, spellbomb, 0).is_none());
 }
+
+/// "Its owner's hand", not its controller's: a creature you have taken goes
+/// back to the player who owns it, which is what makes the Spellbomb a poor
+/// way to keep something you stole.
+#[test]
+fn a_stolen_creature_goes_back_to_its_owner() {
+    let (mut game, spellbomb) = staged();
+    let mut bears = creature(280_100, cards::GRIZZLY_BEARS, PlayerId::Two);
+    // Owned by them and controlled by you, which is the only board where the
+    // two halves of "owner's hand" come apart.
+    bears.controller = PlayerId::One;
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    game.players[1].hand.clear();
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    let bounce = activation(&game, spellbomb, 0).expect("blue pays for it");
+    game.apply(PlayerId::One, bounce).expect("it activates");
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears_id),
+        "the creature left the battlefield",
+    );
+    assert!(
+        game.players[0].hand.is_empty(),
+        "controlling it is not owning it",
+    );
+    assert_eq!(
+        game.players[1]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::GRIZZLY_BEARS],
+        "and it went home to the player who owns it",
+    );
+}
