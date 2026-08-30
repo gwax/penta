@@ -161,3 +161,42 @@ fn an_empty_hand_cannot_pay_for_the_draw() {
         "there is nothing to discard for it",
     );
 }
+
+/// The rest of the cost, which the file tests only one piece of: "{1}, {T},
+/// Discard a card, Sacrifice this token" wants an untapped Blood and the
+/// mana as well, and either one missing takes the ability off the table.
+#[test]
+fn the_tap_and_the_mana_are_costs_too() {
+    let (mut game, held) = staged();
+    cast(&mut game, held);
+    let blood = bloods(&game)[0];
+    game.players[0]
+        .hand
+        .push(card(112_700, cards::MOUNTAIN, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    let offered = |game: &Game| {
+        game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == blood),
+        )
+    };
+    let tap = |game: &mut Game, tapped| {
+        for permanent in &mut game.battlefield {
+            if permanent.card.id == blood {
+                permanent.tapped = tapped;
+            }
+        }
+    };
+
+    assert!(offered(&game), "a card, a mana, and an untapped token");
+
+    tap(&mut game, true);
+    assert!(!offered(&game), "a tapped Blood has nothing left to tap");
+
+    tap(&mut game, false);
+    game.players[0].mana_pool.colorless = 0;
+    assert!(
+        !offered(&game),
+        "and the one generic mana is not free either"
+    );
+}
