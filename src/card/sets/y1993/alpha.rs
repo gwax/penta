@@ -4251,7 +4251,6 @@ pub(in crate::card::sets) static FORCE_OF_NATURE: CardRecord = CardRecord::new_w
 );
 
 // LEA 195 — Fungusaur
-// Audit: partial — Simultaneous damage from multiple creatures produces one trigger per source instead of one trigger for the event.
 pub(in crate::card::sets) static FUNGUSAUR: CardRecord = CardRecord::new_with_legacy_id(
     481,
     "Fungusaur",
@@ -4266,10 +4265,7 @@ pub(in crate::card::sets) static FUNGUSAUR: CardRecord = CardRecord::new_with_le
                 kind: CounterKind::PlusOnePlusOne,
                 amount: ValueDef::Constant(1),
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "Simultaneous damage from multiple creatures produces one trigger per source instead of one trigger for the event.",
-        )),
+        ),
     ]),
 );
 
