@@ -215,3 +215,84 @@ fn no_offspring_no_token() {
 
     assert_eq!(trainers(&game).len(), 1);
 }
+
+/// "If the spell resolves but the creature with offspring leaves the
+/// battlefield before the offspring ability resolves, you'll still create a
+/// token copy of it."
+#[test]
+fn the_token_still_arrives_when_he_does_not_survive_his_own_trigger() {
+    let (mut game, trainer) = staged(&[
+        cards::MOUNTAIN,
+        cards::FOREST,
+        cards::ISLAND,
+        cards::SWAMP,
+        cards::MOUNTAIN,
+    ]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 6);
+
+    cast_for(&mut game, trainer, true);
+
+    // Far enough for him to resolve onto the battlefield and no further:
+    // the offspring trigger is what is still waiting.
+    let body = loop {
+        if let Some(permanent) = trainers(&game).first() {
+            break permanent.card.id;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the spell is on the stack");
+    };
+    game.destroy_permanent(body);
+    game.check_state_based_actions();
+    settle_taking(&mut game, None);
+
+    let bodies = trainers(&game);
+    assert_eq!(bodies.len(), 1, "the token was made all the same");
+    assert!(
+        bodies[0].card.definition.is_token(),
+        "and what is left is the copy rather than the card",
+    );
+    assert_eq!(
+        (game.power(bodies[0]), game.toughness(bodies[0])),
+        (Some(1), Some(1)),
+        "a 1/1 of him",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::THUNDERTRAP_TRAINER),
+        "while he himself is in the graveyard",
+    );
+}
+
+/// "If the spell is countered, the offspring ability will not trigger, and
+/// no token will be created." Paying the six buys nothing at all.
+#[test]
+fn a_countered_trainer_leaves_no_token_behind() {
+    let (mut game, trainer) = staged(&[cards::MOUNTAIN, cards::FOREST, cards::ISLAND]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 6);
+    game.players[1]
+        .hand
+        .push(card(93_900, cards::COUNTERSPELL, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    cast_for(&mut game, trainer, true);
+
+    game.priority = PlayerId::Two;
+    let counter = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(93_900))
+        })
+        .expect("two blue answers him");
+    game.apply(PlayerId::Two, counter).expect("it is cast");
+    settle_taking(&mut game, None);
+
+    assert!(trainers(&game).is_empty(), "no body and no copy of one");
+    assert!(
+        game.players[0].hand.is_empty(),
+        "and nothing was dug up either",
+    );
+}
