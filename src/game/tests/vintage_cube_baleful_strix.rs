@@ -86,3 +86,78 @@ fn its_damage_is_lethal_whatever_it_hits() {
         "one point from a source with deathtouch is lethal",
     );
 }
+
+/// Flying is not just a flag on the permanent: a ground creature is not
+/// offered as a blocker for it, and a flier is.
+#[test]
+fn only_a_flier_may_block_it() {
+    let (mut game, strix) = staged();
+    let bears = creature(86_200, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let angel = creature(86_201, cards::SERRA_ANGEL, PlayerId::Two);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.declare_attacker(strix, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+
+    let blockers = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::DeclareBlocker { blocker, attacker } if attacker == strix => Some(blocker),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        blockers,
+        vec![angel_id],
+        "the Angel flies and the Bears do not",
+    );
+    assert!(!blockers.contains(&bears_id));
+}
+
+/// The draw is a triggered ability, so it is on the stack in its own right:
+/// answering the body before the trigger resolves still leaves the card.
+#[test]
+fn the_card_is_drawn_even_if_the_bird_is_answered() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(86_300, cards::GIANT_GROWTH, PlayerId::One));
+    let strix = game
+        .put_onto_battlefield(PlayerId::One, cards::BALEFUL_STRIX)
+        .expect("cataloged");
+    // The trigger is waiting; the Bird is not.
+    game.begin_trigger_placement();
+    game.destroy_permanent(strix);
+    game.check_state_based_actions();
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield.is_empty(),
+        "the Bird was answered before its trigger resolved",
+    );
+    assert_eq!(
+        game.players[0]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::GIANT_GROWTH],
+        "and the card it drew is a card it drew",
+    );
+}
