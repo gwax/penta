@@ -932,3 +932,45 @@ fn a_milled_firebolt_flashes_back_and_stays_a_one_drop() {
         "one, from the printed cost: the five it was paid for is not its size",
     );
 }
+
+/// "You must still follow any timing restrictions and permissions, including
+/// those based on the card's type. For instance, you can cast a sorcery using
+/// flashback only when you could normally cast a sorcery." The graveyard is
+/// another zone, not another clock.
+#[test]
+fn a_flashback_sorcery_still_waits_for_your_main_phase() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    let buried = card(73_600, cards::FIREBOLT, PlayerId::One);
+    let buried_id = buried.id;
+    game.players[0].graveyard.push(buried);
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 4;
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let flashbacks = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == buried_id))
+            .count()
+    };
+    assert!(
+        flashbacks(&game) > 0,
+        "your own main phase with an empty stack is when a sorcery may be cast",
+    );
+
+    // Their turn, where five mana buys nothing at all.
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    assert_eq!(
+        flashbacks(&game),
+        0,
+        "and flashback does not make a sorcery an instant",
+    );
+}
