@@ -343,3 +343,77 @@ fn the_breach_cannot_splice_itself() {
         "one plain cast and no spliced one: it is its own only copy",
     );
 }
+
+/// "You reveal all cards you intend to splice at the same time. Each
+/// individual card can be spliced only once onto any one spell." Two more
+/// Breaches in hand are two more clauses on the one cast, and neither of
+/// them is ever offered twice.
+#[test]
+fn two_cards_splice_onto_one_cast_and_neither_twice() {
+    let (mut game, breach_id) = breach_with(&[
+        cards::SERRA_ANGEL,
+        cards::GRIZZLY_BEARS,
+        cards::SAVANNAH_LIONS,
+    ]);
+    let mut spliced = Vec::new();
+    for id in [97_700, 97_701] {
+        let card = card(id, cards::THROUGH_THE_BREACH, PlayerId::One);
+        spliced.push(card.id);
+        game.players[0].hand.push(card);
+    }
+    // {4}{R} for the cast and {2}{R}{R} twice over for the two splices.
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 4);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 4);
+
+    let offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == breach_id => {
+                Some(choices.spliced().to_vec())
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        offered.iter().all(|set| {
+            let mut unique = set.clone();
+            unique.sort_unstable();
+            unique.dedup();
+            unique.len() == set.len()
+        }),
+        "no card is spliced onto the same spell twice: {offered:?}",
+    );
+
+    let both = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == breach_id
+                    && choices.spliced().len() == 2
+                    && spliced.iter().all(|id| choices.spliced().contains(id))
+            }
+            _ => false,
+        })
+        .expect("both may be revealed at once");
+    game.apply(PlayerId::One, both).expect("it is cast");
+    settle(&mut game);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::SERRA_ANGEL
+                || permanent.card.definition == cards::GRIZZLY_BEARS
+                || permanent.card.definition == cards::SAVANNAH_LIONS)
+            .count(),
+        3,
+        "the spell's own clause and both spliced onto it",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.total(),
+        0,
+        "five for the cast and four for each splice",
+    );
+}
