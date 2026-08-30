@@ -297,3 +297,110 @@ fn killing_it_gives_them_their_spells_back() {
         "with the Voice gone they may cast again",
     );
 }
+
+/// "Although the Warrior tokens enter as attacking creatures, they were never
+/// declared as attacking creatures. Abilities that trigger whenever a
+/// creature attacks won't trigger when the tokens enter attacking." A Gleam
+/// of Battle counts the declaration, so it grows the Voice and nothing else.
+#[test]
+fn the_tokens_were_never_declared_as_attackers() {
+    let (mut game, voice) = staged();
+    game.put_onto_battlefield(PlayerId::One, cards::GLEAM_OF_BATTLE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+
+    attack_with(&mut game, voice);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == voice)
+            .expect("the Voice is attacking")
+            .counters(CounterKind::PlusOnePlusOne),
+        1,
+        "the one creature that was declared got its counter",
+    );
+    assert!(
+        warriors(&game)
+            .iter()
+            .all(|warrior| warrior.counters(CounterKind::PlusOnePlusOne) == 0),
+        "and the tokens, which arrived attacking, were never declared",
+    );
+}
+
+/// "You choose the player, planeswalker, or battle each Warrior token is
+/// attacking. They don't all have to attack the same one, and they don't
+/// have to attack the same one as the creature with mobilize."
+#[test]
+fn each_warrior_picks_what_it_is_attacking() {
+    let (mut game, voice) = staged();
+    let walker = game
+        .put_onto_battlefield(PlayerId::Two, cards::WRENN_AND_SIX)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: voice,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .expect("the Voice attacks the player");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+
+    // Each token is asked where it is attacking, and the planeswalker is one
+    // of the answers even though the Voice went at the player.
+    let mut sent_at_the_walker = 0;
+    for _ in 0..16 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            // The tokens are made as the mobilize trigger resolves, and the
+            // question comes with them.
+            if game.stack.is_empty() && game.pending_triggers.is_empty() {
+                break;
+            }
+            let priority = game.priority;
+            if game.apply(priority, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        };
+        let walker_option = decision
+            .options
+            .iter()
+            .find(|option| option.card.is_some_and(|(object, _)| object == walker));
+        let option = walker_option.map_or_else(
+            || decision.options.first().expect("something is offered").id,
+            |option| {
+                sent_at_the_walker += 1;
+                option.id
+            },
+        );
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![option],
+            },
+        )
+        .expect("the answer is legal");
+    }
+    settle(&mut game);
+
+    assert_eq!(
+        sent_at_the_walker, 2,
+        "both tokens could be pointed at the planeswalker the Voice ignored",
+    );
+    assert_eq!(warriors(&game).len(), 2, "and both are attacking something");
+}
