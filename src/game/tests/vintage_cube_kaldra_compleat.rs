@@ -294,3 +294,129 @@ fn the_germ_dies_when_the_equipment_leaves_it() {
         .expect("the new wearer is there");
     assert_eq!(game.power(lions), Some(7), "2 plus five");
 }
+
+/// First strike and the exile clause together: a blocker big enough to
+/// survive the damage is exiled in the first-strike step, so it is not there
+/// to strike back in the ordinary one.
+#[test]
+fn first_strike_exiles_the_blocker_before_it_can_answer() {
+    let (mut game, _kaldra, theirs) = staged(&[cards::WORLDSPINE_WURM]);
+    let blocker = theirs[0];
+    let germ_id = germ(&game).card.id;
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(germ_id, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+    game.step = Step::DeclareBlockers;
+    game.declare_blocker(blocker, germ_id);
+    game.finish_declaring_blockers();
+    settle(&mut game);
+
+    // Stop as soon as the first-strike damage has been dealt.
+    for _ in 0..12 {
+        if game.step == Step::CombatDamage {
+            break;
+        }
+        game.advance_step();
+        settle(&mut game);
+    }
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == blocker),
+        "the Wurm is exiled by the first-strike damage",
+    );
+
+    for _ in 0..12 {
+        if game.step == Step::PostcombatMain {
+            break;
+        }
+        game.advance_step();
+        settle(&mut game);
+    }
+
+    let germ = germ(&game);
+    assert_eq!(
+        germ.damage, 0,
+        "and a creature in exile deals no ordinary combat damage back",
+    );
+}
+
+/// "Whenever this creature deals combat damage to a creature" is asked of
+/// each creature damaged, not of the block as a whole. However the five
+/// damage is split across a gang block, nothing that took any of it is left
+/// standing with damage marked on it.
+#[test]
+fn every_blocker_it_damages_is_exiled() {
+    let (mut game, _kaldra, theirs) = staged(&[cards::WORLDSPINE_WURM, cards::WORLDSPINE_WURM]);
+    let germ_id = germ(&game).card.id;
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(germ_id, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+    game.step = Step::DeclareBlockers;
+    for blocker in &theirs {
+        game.declare_blocker(*blocker, germ_id);
+    }
+    game.finish_declaring_blockers();
+    settle(&mut game);
+    for _ in 0..12 {
+        if game.step == Step::PostcombatMain {
+            break;
+        }
+        game.advance_step();
+        settle(&mut game);
+    }
+
+    assert!(
+        !game.players[1].exile.is_empty(),
+        "the damage it did assign exiled what it hit",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| theirs.contains(&permanent.card.id))
+            .all(|permanent| permanent.damage == 0),
+        "and no Wurm is left standing with Kaldra's damage marked on it",
+    );
+    assert!(
+        game.players[1].graveyard.is_empty(),
+        "a 15/15 does not die to five; it is exiled or it is untouched",
+    );
+}
+
+/// Legendary: the second one is put into the graveyard, and its Germ goes
+/// with it for want of anything to wear.
+#[test]
+fn a_second_kaldra_is_a_legend_too_many() {
+    let (mut game, _kaldra, _) = staged(&[]);
+    game.put_onto_battlefield(PlayerId::One, cards::KALDRA_COMPLEAT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    settle(&mut game);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::KALDRA_COMPLEAT)
+            .count(),
+        1,
+        "one Kaldra stands",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::KALDRA_COMPLEAT),
+        "and the other is in the graveyard, indestructible or not",
+    );
+}
