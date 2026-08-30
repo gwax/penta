@@ -347,3 +347,64 @@ fn the_emblem_reaches_neither_creatures_nor_the_other_graveyard() {
         "and their graveyard is not yours: {castable:?}",
     );
 }
+
+/// Retrace is a way to pay, not a way to break timing: the instant in the
+/// graveyard is castable whenever an instant would be, and the sorcery only
+/// when a sorcery would be.
+#[test]
+fn the_emblem_leaves_each_card_its_own_timing() {
+    let (mut game, wrenn) = staged(&[cards::LIGHTNING_BOLT, cards::CHAIN_LIGHTNING]);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == wrenn)
+    {
+        permanent.set_counters(CounterKind::Loyalty, 7);
+    }
+    let ultimate = loyalty_action(&game, wrenn, 2).expect("seven loyalty pays for it");
+    game.apply(PlayerId::One, ultimate).expect("it activates");
+    settle(&mut game);
+    for index in 0..2 {
+        game.players[0]
+            .hand
+            .push(card(110_800 + index, cards::MOUNTAIN, PlayerId::One));
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 4);
+
+    let castable = |game: &Game| {
+        let mut definitions = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .filter_map(|action| match action {
+                Action::CastSpell { card, .. } => game.players[0]
+                    .graveyard
+                    .iter()
+                    .find(|held| held.id == card)
+                    .map(|held| held.definition),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        definitions.sort_unstable();
+        definitions.dedup();
+        definitions
+    };
+
+    let mut both = vec![cards::LIGHTNING_BOLT, cards::CHAIN_LIGHTNING];
+    both.sort_unstable();
+    assert_eq!(
+        castable(&game),
+        both,
+        "your own main phase with an empty stack casts either one",
+    );
+
+    // Their turn, where a sorcery may not be cast at all.
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    assert_eq!(
+        castable(&game),
+        vec![cards::LIGHTNING_BOLT],
+        "and retrace does not make the sorcery an instant",
+    );
+}
