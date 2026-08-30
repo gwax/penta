@@ -245,3 +245,87 @@ fn tapping_a_dual_for_one_colour_spends_the_other() {
         "and a tapped land offers neither colour",
     );
 }
+
+/// "Land type changing effects that change a dual land's land type will
+/// remove the old land types completely." A Blood Moon makes every nonbasic
+/// land a Mountain, and a Badlands keeps neither of its own types.
+#[test]
+fn a_blood_moon_takes_both_of_a_duals_types() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    let badlands = game
+        .put_onto_battlefield(PlayerId::One, cards::BADLANDS)
+        .expect("cataloged");
+    game.battlefield
+        .push(creature(64_000, cards::BLOOD_MOON, PlayerId::One));
+    drain_pending(&mut game);
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.empty_mana_pools();
+
+    let land = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == badlands)
+        .expect("it is on the battlefield");
+    assert_eq!(
+        game.effective_subtypes(land).as_ref(),
+        &["Mountain"],
+        "the Swamp went with the rest of what it was",
+    );
+    assert_eq!(
+        colors_of(&game, badlands),
+        vec![ManaColor::Red],
+        "so it makes red and nothing else",
+    );
+}
+
+/// "Text-changing effects that just change one of the two land types will
+/// leave the other type unaffected." A Magical Hack turning its Swamp into
+/// an Island leaves the Mountain where it was.
+#[test]
+fn magical_hack_changes_one_of_a_duals_types_and_leaves_the_other() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    let badlands = game
+        .put_onto_battlefield(PlayerId::One, cards::BADLANDS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let hack = card(64_100, cards::MAGICAL_HACK, PlayerId::One);
+    let hack_id = hack.id;
+    game.players[0].hand.push(hack);
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.empty_mana_pools();
+    game.players[0].mana_pool.blue = 1;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(hack_id, vec![Target::Permanent(badlands)], Vec::new(), 0),
+    )
+    .expect("a Badlands has land types to rewrite");
+    pass_priority_pair(&mut game);
+    choose_decision_by_label(&mut game, PlayerId::One, "Swamp → Island");
+
+    let land = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == badlands)
+        .expect("it is on the battlefield");
+    assert_eq!(
+        game.effective_subtypes(land).as_ref(),
+        &["Island", "Mountain"],
+        "one word was rewritten and the other was not",
+    );
+    let mut colors = colors_of(&game, badlands);
+    colors.sort_by_key(|color| format!("{color:?}"));
+    assert_eq!(
+        colors,
+        vec![ManaColor::Blue, ManaColor::Red],
+        "and the black went with the Swamp",
+    );
+}
