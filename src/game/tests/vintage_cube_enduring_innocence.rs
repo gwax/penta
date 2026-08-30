@@ -184,3 +184,54 @@ fn it_comes_back_without_its_creature_types() {
         "and nothing at all once the creature is gone: they were creature types",
     );
 }
+
+/// "If a creature enters with counters, those counters are included." A
+/// Walking Ballista is a 0/0 on paper and whatever X paid for on arrival, so
+/// the size the Glimmer reads is the one the counters make.
+#[test]
+fn counters_an_arrival_brings_count_toward_the_two() {
+    for (x, drew) in [(2, true), (3, false)] {
+        let (mut game, _) = staged();
+        game.players[0].hand.clear();
+        let ballista = game
+            .build_zone(PlayerId::One, &[cards::WALKING_BALLISTA])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        let ballista_id = ballista.id;
+        game.players[0].hand.push(ballista);
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2 * x);
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+
+        let cast = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => *card == ballista_id && choices.x() == x,
+                _ => false,
+            })
+            .unwrap_or_else(|| panic!("a Ballista for X={x} is castable"));
+        game.apply(PlayerId::One, cast).expect("it is cast");
+        settle(&mut game);
+
+        let arrival = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::WALKING_BALLISTA)
+            .expect("it resolved");
+        assert_eq!(
+            game.power(arrival),
+            Some(i16::try_from(x).expect("a small X")),
+            "the counters are its whole body",
+        );
+        assert_eq!(
+            game.players[0].hand.len(),
+            usize::from(drew),
+            "X={x} arrives as a {x}/{x}, which the clause {} read as small enough",
+            if drew { "does" } else { "does not" },
+        );
+    }
+}
