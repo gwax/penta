@@ -240,3 +240,66 @@ fn it_exiles_an_indestructible_artifact() {
     );
     assert_eq!(game.players[0].life, 22, "and the Mite paid out on the way");
 }
+
+/// "Target noncreature artifact" does not say whose: the Mite is as happy to
+/// eat your own Lotus, which is how it answers a Winter Orb you played
+/// yourself.
+#[test]
+fn it_eats_your_own_artifact_as_readily_as_theirs() {
+    let (mut game, mite) = staged();
+    let own_lotus = game
+        .put_onto_battlefield(PlayerId::One, cards::BLACK_LOTUS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert!(
+        offered_targets(&game, mite).contains(&own_lotus),
+        "your own artifact is a legal target",
+    );
+
+    let action = activation(&game, mite).expect("one green and a sacrifice");
+    game.apply(PlayerId::One, action).expect("it activates");
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::BLACK_LOTUS),
+        "and it goes to its owner's exile",
+    );
+}
+
+/// The sacrifice is a cost, so answering the Mite by removing its target
+/// costs you the Mite anyway: the ability fizzles, and the two life is
+/// already yours.
+#[test]
+fn the_cost_is_paid_even_when_the_target_is_gone() {
+    let (mut game, mite) = staged();
+    let lotus = game
+        .put_onto_battlefield(PlayerId::Two, cards::BLACK_LOTUS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.players[0].life = 20;
+    let event_start = game.events().len();
+
+    let action = activation(&game, mite).expect("one green and a sacrifice");
+    game.apply(PlayerId::One, action).expect("it activates");
+    game.move_permanents_to_graveyard(&[lotus]);
+    drain_pending(&mut game);
+
+    assert!(
+        game.events()[event_start..]
+            .iter()
+            .any(|event| matches!(event, GameEvent::AbilityFizzled { .. })),
+        "with its only target gone the ability does nothing",
+    );
+    assert!(
+        game.players[1].exile.is_empty(),
+        "nothing was exiled: the Lotus is in the graveyard",
+    );
+    assert_eq!(
+        game.players[0].life, 22,
+        "but the Mite is dead all the same"
+    );
+}
