@@ -157,7 +157,7 @@ fn foretelling_exiles_it_for_two() {
 
 /// It is a special action on your own turn only, and only with the mana.
 #[test]
-fn foretelling_is_your_own_main_phase_with_two_mana() {
+fn foretelling_is_your_own_turn_with_two_mana() {
     let (mut game, fireball) = staged(&[]);
     assert!(
         foretell_action(&game, fireball).is_none(),
@@ -271,5 +271,56 @@ fn a_foretold_card_is_hidden_from_them() {
         yours.exiles[PlayerId::One.index()].len(),
         1,
         "and you know what you exiled",
+    );
+}
+
+/// "You can do so any time you have priority during your turn, including in
+/// response to spells and abilities." The reminder text says only "during
+/// your turn", and that is not the sorcery window it looks like: every step
+/// of your own turn is your turn, and a spell waiting on the stack does not
+/// close it.
+#[test]
+fn foretelling_is_not_a_sorcery_window() {
+    let (mut game, fireball) = staged(&[]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+
+    for step in [Step::Upkeep, Step::BeginningOfCombat, Step::End] {
+        game.step = step;
+        assert!(
+            foretell_action(&game, fireball).is_some(),
+            "{step:?} is a step of your own turn",
+        );
+    }
+
+    game.step = Step::PrecombatMain;
+    game.stack
+        .push(spell(20_000, cards::LIGHTNING_BOLT, PlayerId::Two, 0));
+    assert!(
+        foretell_action(&game, fireball).is_some(),
+        "and their spell is exactly the thing you get to answer",
+    );
+}
+
+/// "Casting a foretold card from exile follows the timing rules for that
+/// card. If you foretell an instant card, you can cast it as soon as the
+/// next player's turn." A later turn need not be a later turn of yours.
+#[test]
+fn a_foretold_instant_is_ready_on_their_turn() {
+    let (mut game, fireball) = staged(&[]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    let action = foretell_action(&game, fireball).expect("it is foretellable");
+    game.apply(PlayerId::One, action).expect("it foretells");
+    let exiled = in_exile(&game).expect("it is in exile");
+
+    game.turns_started[PlayerId::Two.index()] += 1;
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 4);
+
+    assert!(
+        !casts(&game, exiled).is_empty(),
+        "an instant does not wait for your own next turn",
     );
 }

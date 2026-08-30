@@ -37,10 +37,12 @@ impl Game {
         })
     }
 
-    /// "During your turn": the same window a sorcery gets, because that is
-    /// what the keyword says rather than what the card's type would allow.
+    /// "Any time you have priority during your turn" (CR 702.143a): the
+    /// reminder text says only "during your turn", and the rule means that
+    /// literally. Not a sorcery window -- a foretell can be taken in
+    /// response to a spell, or in the middle of your own combat.
     pub(super) fn add_foretell_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
-        if player != self.active_player || !self.step.is_main() || !self.stack.is_empty() {
+        if player != self.active_player {
             return;
         }
         if !self.can_pay_cost_for(player, FORETELL_COST, 0, &ManaPaymentPurpose::Other) {

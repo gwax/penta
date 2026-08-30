@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **Foretell is not a sorcery-speed action.** "During your turn" in the
+  reminder text is the whole restriction: CR 702.143a lets you take the
+  special action any time you have priority on your own turn. The action was
+  offered only in a main phase with an empty stack, so a foretell could not
+  answer a removal spell or be held until after combat. It is now offered
+  whenever its controller has priority during their own turn.
+
 - **Mana Drain pays out at your next main phase, whichever one that is.** The
   delayed ability waited for a precombat main phase, so a Drain cast in your
   own main phase or during your combat held its mana until the following turn.
