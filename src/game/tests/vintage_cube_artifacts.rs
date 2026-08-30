@@ -743,3 +743,71 @@ fn killing_the_germ_leaves_the_nettlecyst_behind() {
         "two power and toughness of its own, and one for the Equipment itself",
     );
 }
+
+/// The Basalt Monolith is the Grim Monolith's break-even cousin: three mana
+/// out and three mana to stand it back up, "as often as you can pay for it".
+/// The loop makes no mana, which is why the card is played with something
+/// that makes the untap cheaper.
+#[test]
+fn the_basalt_monolith_taps_for_three_and_costs_three_to_stand_up() {
+    let mut game = ready_game();
+    let monolith = game
+        .put_onto_battlefield(PlayerId::One, cards::BASALT_MONOLITH)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let tap_for_mana = |game: &mut Game| {
+        game.apply(
+            PlayerId::One,
+            Action::ActivateManaAbility {
+                source: monolith,
+                ability: mana_ability_for(game, monolith, ManaColor::Colorless),
+                color: ManaColor::Colorless,
+                counters_removed: None,
+                cost_object: None,
+                combination: None,
+                triggered_mana: None,
+            },
+        )
+        .expect("it taps for mana");
+    };
+
+    tap_for_mana(&mut game);
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.colorless,
+        3,
+        "three colourless for the tap",
+    );
+
+    game.players[PlayerId::One.index()].mana_pool.colorless = 2;
+    assert!(
+        activation(&game, monolith).is_none(),
+        "two does not pay the untap",
+    );
+    game.players[PlayerId::One.index()].mana_pool.colorless = 3;
+    let untap = activation(&game, monolith).expect("three does");
+    game.apply(PlayerId::One, untap).expect("it is activated");
+    resolve(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.colorless,
+        0,
+        "the untap cost exactly what the tap made",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == monolith)
+            .expect("still on the battlefield")
+            .tapped,
+        "and it is standing again",
+    );
+
+    // "As often as you can pay for it": nothing about the loop is once a turn.
+    tap_for_mana(&mut game);
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.colorless,
+        3,
+        "the second tap is as good as the first",
+    );
+}
