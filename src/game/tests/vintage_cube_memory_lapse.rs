@@ -207,3 +207,50 @@ fn a_flashback_spell_is_exiled_rather_than_stacked() {
         "flashback exiles it wherever the counter would have sent it",
     );
 }
+
+/// "Put it on top of its owner's library": the owner, not the player who
+/// cast it. A spell cast off somebody else's card -- which is what Ragavan's
+/// exile leaves on the stack -- goes home to the library it came from.
+#[test]
+fn the_card_goes_to_its_owners_library_and_not_its_casters() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[1].hand.clear();
+    game.players[0].library.clear();
+    game.players[1].library.clear();
+
+    let mut borrowed = spell(77_000, cards::SERRA_ANGEL, PlayerId::One, 0);
+    borrowed.card.owner = PlayerId::Two;
+    let borrowed_id = borrowed.id;
+    game.stack.push(borrowed);
+
+    let lapse = card(77_001, cards::MEMORY_LAPSE, PlayerId::Two);
+    let lapse_id = lapse.id;
+    game.players[1].hand.push(lapse);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+
+    game.apply(
+        PlayerId::Two,
+        cast_action(lapse_id, vec![Target::Spell(borrowed_id)], Vec::new(), 0),
+    )
+    .expect("the Lapse answers it");
+    settle(&mut game);
+
+    assert!(
+        game.players[0].library.is_empty(),
+        "casting it does not make it yours",
+    );
+    assert_eq!(
+        game.players[1].library.last().map(|card| card.definition),
+        Some(cards::SERRA_ANGEL),
+        "it is on top of the library of the player who owns it",
+    );
+    assert!(
+        game.players[0].graveyard.is_empty() && game.players[1].graveyard.len() == 1,
+        "and the only card in a graveyard is the Lapse itself",
+    );
+}
