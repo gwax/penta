@@ -172,3 +172,77 @@ fn an_empty_search_still_costs_the_sacrifice() {
     );
     assert!(game.battlefield.is_empty(), "and nothing came back for it");
 }
+
+/// Casts it, paying with the one artifact on the battlefield.
+fn cast_paying_with(game: &mut Game, tinker: GameObjectId, payment: GameObjectId) {
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, sacrifices, .. }
+                if *card == tinker && sacrifices.contains(&payment))
+        })
+        .expect("that artifact pays for it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+}
+
+/// "Because the search requires you to find a card with certain
+/// characteristics, you don't have to find the card if you don't want to."
+/// The Lotus is right there and stays right there; the Mox is gone all the
+/// same.
+#[test]
+fn the_search_may_be_declined_with_an_artifact_in_the_library() {
+    let (mut game, tinker) = staged(&[cards::MOX_SAPPHIRE], &[cards::BLACK_LOTUS]);
+    let mox = game.battlefield[0].card.id;
+    cast_paying_with(&mut game, tinker, mox);
+    pass_priority_pair(&mut game);
+
+    let decision = game.observe(PlayerId::One).decision.expect("a search");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: Vec::new(),
+        },
+    )
+    .expect("taking nothing is allowed");
+    drain_pending(&mut game);
+
+    assert!(
+        !on_battlefield(&game, cards::BLACK_LOTUS),
+        "nothing was taken",
+    );
+    assert_eq!(
+        game.players[0]
+            .library
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::BLACK_LOTUS],
+        "and it is still in the library it was shuffled back into",
+    );
+    assert!(
+        !on_battlefield(&game, cards::MOX_SAPPHIRE),
+        "the sacrifice was a cost, and costs are not refunded",
+    );
+}
+
+/// "Sacrifice an artifact" reads a type, not a role: an artifact creature is
+/// an artifact, and paying with one is the same trade at a worse price.
+#[test]
+fn an_artifact_creature_can_pay_the_cost() {
+    let (mut game, tinker) = staged(&[cards::PHYREXIAN_REVOKER], &[cards::BLACK_LOTUS]);
+    let revoker = game.battlefield[0].card.id;
+
+    assert_eq!(
+        payments(&game, tinker),
+        vec![revoker],
+        "the Revoker is the artifact on offer",
+    );
+
+    cast_paying_with(&mut game, tinker, revoker);
+    drain_pending(&mut game);
+
+    assert!(!on_battlefield(&game, cards::PHYREXIAN_REVOKER));
+    assert!(on_battlefield(&game, cards::BLACK_LOTUS));
+}
