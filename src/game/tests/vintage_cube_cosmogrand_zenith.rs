@@ -184,3 +184,111 @@ fn their_spells_are_not_yours() {
         "their Bolt did not make your Growth the second spell",
     );
 }
+
+/// "The ability resolves before the spell that caused it to trigger.
+/// Notably, if your second spell is a creature spell and you choose the
+/// second mode, the resulting creature won't get a +1/+1 counter."
+#[test]
+fn the_creature_that_triggered_it_arrives_too_late_for_a_counter() {
+    let (mut game, zenith, held) = staged(&[cards::LIGHTNING_BOLT, cards::LLANOWAR_ELVES]);
+
+    cast(&mut game, held[0], 1);
+    cast(&mut game, held[1], 1);
+
+    assert_eq!(counters_on(&game, zenith), 1, "the Zenith grew");
+    let elves = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::LLANOWAR_ELVES)
+        .expect("the Elves resolved after the trigger did")
+        .card
+        .id;
+    assert_eq!(
+        counters_on(&game, elves),
+        0,
+        "and the spell that triggered it was still on the stack at the time",
+    );
+}
+
+/// "It resolves even if that spell is countered or otherwise leaves the
+/// stack without resolving."
+#[test]
+fn countering_the_second_spell_does_not_undo_the_trigger() {
+    let (mut game, _zenith, held) = staged(&[cards::LIGHTNING_BOLT, cards::LIGHTNING_BOLT]);
+    let counter = game
+        .build_zone(PlayerId::Two, &[cards::COUNTERSPELL])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let counter_id = counter.id;
+    game.players[1].hand.push(counter);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    cast(&mut game, held[0], 0);
+    let bolt = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == held[1]))
+        .expect("the second Bolt is castable");
+    game.apply(PlayerId::One, bolt).expect("it is cast");
+
+    // The trigger goes on the stack above the Bolt and so resolves first,
+    // which is the ruling: answer its mode, then counter the Bolt still
+    // sitting underneath.
+    let bolt_on_stack = game
+        .stack
+        .iter()
+        .find(|object| object.card.definition == cards::LIGHTNING_BOLT)
+        .expect("the Bolt is on the stack")
+        .id;
+    for _ in 0..12 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: vec![decision.options[0].id],
+                },
+            )
+            .expect("the mode is chosen");
+            continue;
+        }
+        if let Some(answer) = game
+            .legal_actions(PlayerId::Two)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == counter_id
+                    && choices.targets().iter().any(|selection| {
+                        selection.targets().contains(&Target::Spell(bolt_on_stack))
+                    }))
+            })
+        {
+            game.apply(PlayerId::Two, answer).expect("it is cast");
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    settle(&mut game, 0);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "the Bolt was countered",
+    );
+    assert_eq!(
+        soldiers(&game),
+        2,
+        "and the trigger it caused paid out all the same",
+    );
+}
