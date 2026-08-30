@@ -173,3 +173,67 @@ fn the_last_counter_lets_him_untap() {
     game.commit_next_turn(PlayerId::One, Vec::new());
     assert!(!permanent(&game, baloth).tapped, "and then he untaps");
 }
+
+/// "Whenever *you* sacrifice a land": a land fed to their own Zuran Orb
+/// across the table is not one of yours, so nothing wakes him.
+#[test]
+fn their_land_sacrifice_is_not_yours() {
+    let (mut game, card) = staged(1);
+    let baloth = resolve_him(&mut game, card);
+    let orb = game
+        .put_onto_battlefield(PlayerId::Two, cards::ZURAN_ORB)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::FOREST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    let before = game.battlefield.len();
+    // Their Orb is theirs to activate, so the window has to be theirs.
+    game.priority = PlayerId::Two;
+
+    let feed = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == orb))
+        .expect("their own land pays for their own Orb");
+    game.apply(PlayerId::Two, feed).expect("it activates");
+    settle(&mut game);
+
+    assert_eq!(game.players[1].life, 22, "they gained the two");
+    assert_eq!(
+        game.battlefield.len(),
+        before - 1,
+        "the land left and nothing arrived to replace it",
+    );
+    assert_eq!(
+        permanent(&game, baloth).counters(CounterKind::Stun),
+        6,
+        "and he is still asleep",
+    );
+}
+
+/// Both halves of "{4}, Sacrifice a land" are costs: without the land there
+/// is nothing to feed him, and without the mana there is no way to ask.
+#[test]
+fn the_drain_needs_the_mana_and_the_land_alike() {
+    let (mut game, card) = staged(0);
+    let baloth = resolve_him(&mut game, card);
+    let offered = |game: &Game| {
+        game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == baloth),
+        )
+    };
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 4);
+    assert!(!offered(&game), "four mana and no land is not a cost paid");
+
+    game.put_onto_battlefield(PlayerId::One, cards::FOREST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert!(offered(&game), "with a land to give, it is on offer");
+
+    game.players[0].mana_pool = ManaPool::default();
+    assert!(!offered(&game), "and the land alone does not pay for it");
+}
