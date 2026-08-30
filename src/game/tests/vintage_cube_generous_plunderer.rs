@@ -171,3 +171,89 @@ fn he_has_menace() {
 
     assert!(game.permanent_has_executable_keyword(body, KeywordAbility::Menace));
 }
+
+/// "You don't choose a target for the first triggered ability at the time it
+/// triggers. Rather, a second 'reflexive' ability triggers when you create a
+/// Treasure token this way. You choose a target for that ability as it goes
+/// on the stack. Each player may respond to this triggered ability as
+/// normal." So the Treasure you keep exists before the gift is even on the
+/// stack, and the gift waits there for an answer.
+#[test]
+fn the_gift_is_a_separate_trigger_the_table_may_respond_to() {
+    let (mut game, _) = staged();
+    game.active_player = PlayerId::One;
+    game.priority = PlayerId::One;
+    game.step = Step::Upkeep;
+    game.handle_upkeep_triggers();
+
+    // Put the upkeep trigger on the stack and let it resolve into the offer.
+    for _ in 0..8 {
+        if game
+            .pending_decisions
+            .first()
+            .is_some_and(|pending| pending.observation.options.len() == 2)
+        {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let offer = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the upkeep asks whether to make a Treasure");
+    assert!(
+        offer
+            .options
+            .iter()
+            .all(|option| option.card.is_none() || option.label == "Decline"),
+        "and it names nobody: {:?}",
+        offer.options,
+    );
+    let accept = offer
+        .options
+        .iter()
+        .find(|option| option.label != "Decline")
+        .expect("it can be accepted")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: offer.id,
+            options: vec![accept],
+        },
+    )
+    .expect("accepting is legal");
+
+    assert_eq!(
+        treasures(&game, PlayerId::One).len(),
+        1,
+        "your own Treasure is made as the offer is accepted",
+    );
+    assert!(
+        treasures(&game, PlayerId::Two).is_empty(),
+        "theirs is not, because the gift has not resolved yet",
+    );
+    assert!(
+        game.pending_decisions.iter().any(|pending| {
+            pending
+                .observation
+                .prompt
+                .contains("choose target opponent")
+        }),
+        "the gift is its own ability, and names its target on the way to the stack: {:?}",
+        game.pending_decisions
+            .iter()
+            .map(|pending| pending.observation.prompt.clone())
+            .collect::<Vec<_>>(),
+    );
+
+    settle(&mut game, true);
+
+    let gift = treasures(&game, PlayerId::Two);
+    assert_eq!(gift.len(), 1, "and then they get theirs");
+    assert!(gift[0].tapped, "tapped, as the gift says");
+}

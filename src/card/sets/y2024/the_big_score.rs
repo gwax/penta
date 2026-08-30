@@ -188,16 +188,14 @@ static AN_OPPONENT_PLUNDERER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly
     AbilityTargetPredicate::Player(PlayerRelation::Opponent),
 )];
 
-/// Yours untapped and theirs tapped, which is the whole of the bargain: the
-/// Treasure you keep is usable this turn and the one you hand over is not.
-static PLUNDERER_TREASURES: EffectDef = EffectDef::Sequence(&PLUNDERER_TREASURE_PAIR);
+/// Yours untapped, which is the half you choose to take. Theirs is the
+/// reflexive trigger's business, and arrives tapped: the Treasure you keep is
+/// usable this turn and the one you hand over is not.
+static PLUNDERER_TREASURE: EffectDef = EffectDef::create_token(crate::card::tokens::treasure());
 
-static PLUNDERER_TREASURE_PAIR: [EffectDef; 2] = [
-    EffectDef::create_token(crate::card::tokens::treasure()),
-    EffectDef::create_token(crate::card::tokens::treasure())
-        .with_controller(PlayerRefDef::Target(TargetIndex::PRIMARY))
-        .entering_tapped(),
-];
+static PLUNDERER_GIFT: EffectDef = EffectDef::create_token(crate::card::tokens::treasure())
+    .with_controller(PlayerRefDef::Target(TargetIndex::PRIMARY))
+    .entering_tapped();
 
 /// Artifacts they control as the trigger resolves, which is what makes the
 /// Treasure handed over on the upkeep into damage on the attack.
@@ -207,24 +205,29 @@ static THEIR_ARTIFACTS: ObjectQueryDef = ObjectQueryDef::matching(
     PlayerRelation::Opponent,
 );
 
-static PLUNDERER_ABILITIES: [AbilityDef; 3] = [
+static PLUNDERER_ABILITIES: [AbilityDef; 4] = [
     abilities::menace(),
-    // The opponent is named as the upkeep trigger goes on the stack rather
-    // than when the Treasure is actually made, which is the one place this
-    // differs from the printed reflexive trigger -- and with two players
-    // there is only ever the one opponent to name.
-    AbilityDef::triggered_with_targets(
-        "At the beginning of your upkeep, you may create a Treasure token. When you do, target \
-         opponent creates a tapped Treasure token.",
+    // Nobody is named here: "you may create a Treasure token" is all this
+    // half does, and declining it ends the matter.
+    AbilityDef::triggered(
+        "At the beginning of your upkeep, you may create a Treasure token.",
         TriggerEventDef::StepBegins {
             step: TurnStepDef::Upkeep,
             player: PlayerRelation::You,
         },
-        &AN_OPPONENT_PLUNDERER,
         EffectDef::May {
             player: EffectRecipientDef::Controller,
-            effect: &PLUNDERER_TREASURES,
+            effect: &PLUNDERER_TREASURE,
         },
+    ),
+    // "When you do": a reflexive trigger, which is why the opponent is named
+    // only once the Treasure exists, and why either player may respond to
+    // the gift without touching the Treasure that prompted it.
+    AbilityDef::triggered_with_targets(
+        "When you do, target opponent creates a tapped Treasure token.",
+        TriggerEventDef::OptionalEffectTaken(ObjectPredicateDef::Source),
+        &AN_OPPONENT_PLUNDERER,
+        PLUNDERER_GIFT,
     ),
     // "Defending player" is the opponent in a two-player game, whether the
     // attack is aimed at them or at something they control.

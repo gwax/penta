@@ -438,6 +438,8 @@ impl Game {
             } => {
                 if options.contains(&1) {
                     self.resolve_effect_def(effect, &object, context);
+                    // "When you do", once the clause has actually happened.
+                    self.capture_optional_effect_taken(&object);
                 }
             }
             DecisionContinuation::ChooseCounter {

@@ -30,6 +30,7 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         TriggerEventDef::Tapped(_)
         | TriggerEventDef::Attacks(_)
         | TriggerEventDef::Exerted(_)
+        | TriggerEventDef::OptionalEffectTaken(_)
         | TriggerEventDef::Sacrificed { .. }
         | TriggerEventDef::AttackDeclared { .. }
         | TriggerEventDef::CardsExiled { .. }

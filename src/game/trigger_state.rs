@@ -442,6 +442,11 @@ pub(super) enum CommittedTriggerEvent {
     Exerted {
         object: TriggerEventObject,
     },
+    /// The controller of a "you may ..." clause accepted it, which is what
+    /// the reflexive "when you do" half watches.
+    OptionalEffectTaken {
+        object: TriggerEventObject,
+    },
     /// A permanent was sacrificed, captured before it left so what it was
     /// is still readable.
     Sacrificed {
@@ -469,6 +474,7 @@ impl CommittedTriggerEvent {
             Self::Transformed { object }
             | Self::Cycled { object }
             | Self::Exerted { object }
+            | Self::OptionalEffectTaken { object }
             | Self::AttacksAndIsNotBlocked { object } => TriggerContext {
                 object: Some(object.id),
                 zone_change_result: None,

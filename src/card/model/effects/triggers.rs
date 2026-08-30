@@ -206,6 +206,16 @@ pub enum TriggerEventDef {
     /// you do, ..." watches. An ability that watches it is also what makes
     /// the creature exertable at all: nothing else on the card says so.
     Exerted(ObjectPredicateDef),
+    /// "When you do", for the reflexive half of a "you may ..." clause
+    /// (CR 603.1c).
+    ///
+    /// The optional clause is part of another ability's resolution rather
+    /// than an event on the board, so what this watches is the moment its
+    /// controller accepts the offer. The reflexive ability then goes on the
+    /// stack on its own, chooses its own targets, and can be responded to --
+    /// which is why "at the beginning of your upkeep, you may create a
+    /// Treasure token" names nobody until the Treasure actually exists.
+    OptionalEffectTaken(ObjectPredicateDef),
     /// "Whenever you sacrifice a Clue." A sacrifice is a way of putting a
     /// permanent into a graveyard rather than a thing that happens to it
     /// there, so it is its own event: a Clue somebody destroyed went to the

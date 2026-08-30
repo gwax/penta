@@ -89,6 +89,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                     .is_none_or(|maximum| declaration.minimum <= maximum)
         }
         TriggerEventDef::Exerted(attacker) => shared_object_predicate(attacker),
+        // Published as the "you may" clause of another ability on the same
+        // object is accepted, so what it names is that object.
+        TriggerEventDef::OptionalEffectTaken(taker) => shared_object_predicate(taker),
         // Published from every site that sacrifices, before the permanent
         // leaves, so what it was is still readable.
         TriggerEventDef::Sacrificed { object, .. } => shared_object_predicate(object),

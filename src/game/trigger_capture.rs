@@ -22,6 +22,28 @@ mod graveyard;
 include!("trigger_capture/drawing.rs");
 
 impl Game {
+    /// "When you do": the reflexive half of a "you may ..." clause, captured
+    /// once its controller has accepted the offer and the optional clause has
+    /// resolved. The reflexive ability is an ordinary trigger from there --
+    /// it goes on the stack by itself, names its own targets, and either
+    /// player may respond to it.
+    pub(super) fn capture_optional_effect_taken(&mut self, object: &super::StackObject) {
+        let Some(event_object) = object
+            .source
+            .and_then(|source| {
+                self.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == source)
+            })
+            .map(|permanent| self.trigger_event_object(permanent))
+        else {
+            return;
+        };
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::OptionalEffectTaken {
+            object: event_object,
+        });
+    }
+
     pub(super) fn capture_battlefield_triggers(&mut self, event: &CommittedTriggerEvent) {
         let listeners = self.battlefield_trigger_listeners();
         self.capture_battlefield_triggers_from_snapshot(&listeners, event);

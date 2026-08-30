@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **"When you do" is a reflexive trigger.** A "you may ..." clause taken by its
+  controller now publishes an event of its own, so the second half is an
+  ordinary triggered ability: it goes on the stack by itself, names its targets
+  as it does, and either player may respond before it resolves. Generous
+  Plunderer no longer names the opponent as its upkeep trigger goes on the
+  stack; the Treasure you keep exists first, and the gift is asked about after.
+
 - **An intervening "if it was cast this way" survives its source.** The
   condition asks how the source got here rather than where it is now, so it is
   read from a retired permanent as well as from the battlefield and the stack.

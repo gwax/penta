@@ -188,6 +188,13 @@ impl Game {
             | (
                 TriggerEventDef::Transforms(predicate),
                 CommittedTriggerEvent::Transformed { object },
+            )
+            // Exert and "when you do" are both a choice made inside something
+            // else, published so the reflexive half can watch for it.
+            | (TriggerEventDef::Exerted(predicate), CommittedTriggerEvent::Exerted { object })
+            | (
+                TriggerEventDef::OptionalEffectTaken(predicate),
+                CommittedTriggerEvent::OptionalEffectTaken { object },
             ) => self.trigger_object_matches_for_controller(
                 predicate, object, source, false, controller,
             ),
@@ -467,11 +474,6 @@ impl Game {
                     controller.unwrap_or(*player),
                     TriggerContext::empty(),
                 ) && self.trigger_object_matches_for_controller(
-                    predicate, object, source, false, controller,
-                )
-            }
-            (TriggerEventDef::Exerted(predicate), CommittedTriggerEvent::Exerted { object }) => {
-                self.trigger_object_matches_for_controller(
                     predicate, object, source, false, controller,
                 )
             }
