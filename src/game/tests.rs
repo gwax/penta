@@ -668,6 +668,7 @@ mod vintage_cube_thundertrap_trainer;
 mod vintage_cube_tidehollow_sculler;
 mod vintage_cube_tifa_lockhart;
 mod vintage_cube_time_spiral;
+mod vintage_cube_timetwister;
 mod vintage_cube_tinker;
 mod vintage_cube_tireless_tracker;
 mod vintage_cube_tishanas_tidebinder;
