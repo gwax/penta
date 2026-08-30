@@ -171,3 +171,40 @@ fn the_monk_has_prowess() {
         "1/1, the Equipment, and prowess for the third Bolt",
     );
 }
+
+/// "Spells that were cast before a permanent with flurry count. If that
+/// permanent was the first spell you cast that turn, the next spell you cast
+/// that turn is your second spell." The count is the turn's, not the
+/// Equipment's: casting the Cutter itself fills the first slot.
+#[test]
+fn casting_the_cutter_itself_is_the_first_spell() {
+    let (mut game, bolts) = staged();
+    game.return_permanent_to_hand(cutter(&game).card.id);
+    drain_pending(&mut game);
+    let cutter_card = game.players[0]
+        .hand
+        .iter()
+        .find(|card| card.definition == cards::CORI_STEEL_CUTTER)
+        .expect("back in hand")
+        .id;
+
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(cutter_card, Vec::new(), Vec::new(), 0),
+    )
+    .expect("the Cutter is castable");
+    settle(&mut game, true);
+    assert!(
+        monks(&game).is_empty(),
+        "its own cast is the first spell, and nothing triggers off the first",
+    );
+
+    bolt(&mut game, bolts[0], true);
+
+    assert_eq!(
+        monks(&game).len(),
+        1,
+        "so the one spell after it is already the second",
+    );
+}
