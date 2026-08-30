@@ -304,3 +304,88 @@ fn a_flashback_card_is_offered_both_permissions() {
         "the three that escape would have eaten are untouched",
     );
 }
+
+/// "After an escaped spell resolves, it returns to its owner's graveyard ...
+/// Perhaps it will escape again." Six other cards is two Bolts out of one.
+#[test]
+fn an_escaped_spell_can_escape_again() {
+    let (mut game, _breach) = staged(&[
+        cards::LIGHTNING_BOLT,
+        cards::PLAINS,
+        cards::ISLAND,
+        cards::SWAMP,
+        cards::MOUNTAIN,
+        cards::FOREST,
+        cards::GRIZZLY_BEARS,
+    ]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 2);
+
+    for attempt in 0..2 {
+        let action = escapes(&game, cards::LIGHTNING_BOLT)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { choices, .. } => choices
+                    .targets()
+                    .iter()
+                    .any(|selection| selection.targets().contains(&Target::Player(PlayerId::Two))),
+                _ => false,
+            })
+            .unwrap_or_else(|| panic!("three more cards pay for escape {attempt}"));
+        game.apply(PlayerId::One, action).expect("it escapes");
+        settle(&mut game);
+    }
+
+    assert_eq!(game.players[1].life, 14, "the same Bolt, twice");
+    assert_eq!(
+        game.players[0].exile.len(),
+        6,
+        "three cards each time, and none of them the Bolt",
+    );
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::LIGHTNING_BOLT],
+        "which is back again, wanting only three more",
+    );
+}
+
+/// "If a card has no mana cost, its escape cost is an unpayable cost, so you
+/// can't cast it for that cost." An Ancestral Vision has none to be equal to.
+#[test]
+fn a_card_with_no_mana_cost_cannot_escape() {
+    let (mut game, _breach) = staged(&[
+        cards::ANCESTRAL_VISION,
+        cards::PLAINS,
+        cards::ISLAND,
+        cards::SWAMP,
+    ]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 8);
+
+    assert!(
+        escapes(&game, cards::ANCESTRAL_VISION).is_empty(),
+        "no mana cost is not a cost of zero: there is nothing to pay",
+    );
+}
+
+/// "Escape's permission doesn't change when you may cast the spell from your
+/// graveyard." A Firebolt is still a sorcery, so their turn is no time for
+/// it.
+#[test]
+fn escape_does_not_change_when_a_sorcery_may_be_cast() {
+    let (mut game, _breach) =
+        staged(&[cards::FIREBOLT, cards::PLAINS, cards::ISLAND, cards::SWAMP]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 5);
+    assert!(
+        !escapes(&game, cards::FIREBOLT).is_empty(),
+        "your own main phase is the time for it",
+    );
+
+    game.active_player = PlayerId::Two;
+    assert!(
+        escapes(&game, cards::FIREBOLT).is_empty(),
+        "and their turn is not, escape or no escape",
+    );
+}
