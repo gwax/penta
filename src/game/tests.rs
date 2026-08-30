@@ -179,6 +179,7 @@ mod isd_manor_gargoyle;
 mod isd_memorys_journey;
 mod isd_olivia_voldaren;
 mod isd_random_graveyard;
+mod isd_skirsdag_high_priest;
 mod isd_token_cards;
 mod jade_statue;
 mod keymaster_rogue;
