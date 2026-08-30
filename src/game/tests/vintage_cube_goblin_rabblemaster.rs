@@ -42,18 +42,11 @@ fn staged(
     (game, rabblemaster, friends)
 }
 
-/// Passes until the game stops, answering nothing: this card asks no
-/// questions of its own.
+/// Passes until the game stops. The card asks nothing of its own, but two
+/// Rabblemasters put two triggers up at once and the game wants them
+/// ordered, so any waiting question is answered with the first option.
 fn settle(game: &mut Game) {
-    for _ in 0..24 {
-        if game.stack.is_empty() && game.pending_triggers.is_empty() {
-            break;
-        }
-        let player = game.priority;
-        if game.apply(player, Action::PassPriority).is_err() {
-            break;
-        }
-    }
+    drain_pending(game);
     game.check_state_based_actions();
 }
 
@@ -240,4 +233,140 @@ fn attacking_alone_grows_it_by_nothing() {
         Some(2),
         "still a 2/2",
     );
+}
+
+/// "Although Goblin Rabblemaster doesn't force itself to attack, if you
+/// control two of them, they'll force each other to attack if able."
+#[test]
+fn two_of_them_force_each_other() {
+    let (mut game, rabblemaster, friends) = staged(&[cards::GOBLIN_RABBLEMASTER], 0);
+    let other = friends[0];
+    reach_declare_attackers(&mut game);
+
+    for (id, description) in [(rabblemaster, "the first"), (other, "the second")] {
+        assert!(
+            game.permanent_has_executable_keyword(
+                permanent(&game, id),
+                KeywordAbility::AttacksEachCombatIfAble
+            ),
+            "{description} Rabblemaster is another Rabblemaster's other Goblin",
+        );
+    }
+}
+
+/// "If, during your declare attackers step, a creature that must attack if
+/// able ... hasn't been under your control continuously since the turn
+/// began (and doesn't have haste), then it doesn't attack." The
+/// requirement is still on it; being unable is what excuses it.
+#[test]
+fn a_goblin_that_arrived_this_turn_stays_home() {
+    let (mut game, _rabblemaster, _friends) = staged(&[], 0);
+    let newcomer = token_permanent(
+        90_500,
+        tokens::creature(&["Goblin"], &[ManaColor::Red], 1, 1),
+        PlayerId::One,
+    );
+    let newcomer_id = newcomer.card.id;
+    game.battlefield.push(newcomer);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == newcomer_id)
+        .expect("it was just pushed")
+        .entered_controller_turn = game.turns_started[PlayerId::One.index()];
+    reach_declare_attackers(&mut game);
+
+    assert!(
+        game.permanent_has_executable_keyword(
+            permanent(&game, newcomer_id),
+            KeywordAbility::AttacksEachCombatIfAble
+        ),
+        "it is a Goblin and it was handed the requirement",
+    );
+    while let Some(action) = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::DeclareAttacker { .. }))
+    {
+        game.apply(PlayerId::One, action).expect("it attacks");
+    }
+    assert!(
+        !permanent(&game, newcomer_id).attacking,
+        "no haste and no history, so it never had the chance",
+    );
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("a Goblin that cannot attack does not hold the step open");
+}
+
+/// "The number of attacking Goblins is counted as the last ability
+/// resolves, and the bonus is locked in at that time." Two of the crowd
+/// die afterwards and the Rabblemaster is no smaller for it.
+#[test]
+fn the_bonus_is_locked_in_and_does_not_follow_the_board() {
+    let (mut game, rabblemaster, _friends) = staged(&[], 2);
+    send_everything(&mut game);
+    assert_eq!(
+        game.power(permanent(&game, rabblemaster)),
+        Some(5),
+        "two staged Goblins and the one its combat trigger made",
+    );
+
+    let doomed = attacking_goblins_other_than(&game, rabblemaster);
+    assert_eq!(doomed.len(), 3, "the whole crowd is there to be thinned");
+    for id in &doomed[..2] {
+        game.destroy_permanent(*id);
+    }
+    settle(&mut game);
+
+    assert_eq!(
+        game.power(permanent(&game, rabblemaster)),
+        Some(5),
+        "the count was taken once and is not recounted",
+    );
+}
+
+/// The same rule read forwards: a Goblin removed before the trigger
+/// resolves was never part of the count.
+#[test]
+fn a_goblin_removed_in_response_is_never_counted() {
+    let (mut game, rabblemaster, _friends) = staged(&[], 2);
+    declare_everything(&mut game);
+    let doomed = attacking_goblins_other_than(&game, rabblemaster);
+    assert_eq!(doomed.len(), 3, "three of them made it to the attack");
+    game.destroy_permanent(doomed[0]);
+    settle(&mut game);
+
+    assert_eq!(
+        game.power(permanent(&game, rabblemaster)),
+        Some(4),
+        "two other attacking Goblins were there when the count was taken",
+    );
+}
+
+/// Every Goblin the board can send, up to the point where the attack
+/// trigger is waiting to resolve.
+fn declare_everything(game: &mut Game) {
+    reach_declare_attackers(game);
+    while let Some(action) = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::DeclareAttacker { .. }))
+    {
+        game.apply(PlayerId::One, action).expect("it attacks");
+    }
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("every Goblin that had to attack did");
+}
+
+/// The same, with the attack trigger resolved.
+fn send_everything(game: &mut Game) {
+    declare_everything(game);
+    settle(game);
+}
+
+fn attacking_goblins_other_than(game: &Game, rabblemaster: GameObjectId) -> Vec<GameObjectId> {
+    game.battlefield
+        .iter()
+        .filter(|permanent| permanent.attacking && permanent.card.id != rabblemaster)
+        .map(|permanent| permanent.card.id)
+        .collect()
 }
