@@ -473,3 +473,138 @@ fn remanding_a_copy_leaves_nothing_to_return() {
         "the Bolt that was copied still resolved, and the copy never did",
     );
 }
+
+/// "Once you've activated Kitsa's last ability, any changes to Kitsa's power
+/// won't stop the ability from resolving." Killing her is the largest change
+/// there is, and the copy still happens.
+#[test]
+fn killing_her_after_the_activation_does_not_stop_the_copy() {
+    let (mut game, kitsa, held) = staged(&[cards::LIGHTNING_BOLT]);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == kitsa)
+        .expect("she is there")
+        .set_counters(CounterKind::PlusOnePlusOne, 2);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == held[0]
+                    && choices.targets().iter().any(|selection| {
+                        selection.targets().contains(&Target::Player(PlayerId::Two))
+                    })
+            }
+            _ => false,
+        })
+        .expect("the Bolt can point at them");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    resolve_above(&mut game, 1);
+
+    let offers = copy_offers(&game, kitsa);
+    assert!(!offers.is_empty(), "she is big enough to copy");
+    game.apply(PlayerId::One, offers[0].clone())
+        .expect("it activates");
+    game.move_permanents_to_graveyard(&[kitsa]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[1].life, 14,
+        "the Bolt and its copy both landed, with nobody left to have made it",
+    );
+}
+
+/// "The copy will have the same targets as the spell it's copying unless you
+/// choose new ones." The Bolt goes at the player and its copy is pointed at
+/// a creature instead.
+#[test]
+fn the_copy_may_be_pointed_somewhere_else() {
+    let (mut game, kitsa, held) = staged(&[cards::LIGHTNING_BOLT]);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == kitsa)
+        .expect("she is there")
+        .set_counters(CounterKind::PlusOnePlusOne, 2);
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == held[0]
+                    && choices.targets().iter().any(|selection| {
+                        selection.targets().contains(&Target::Player(PlayerId::Two))
+                    })
+            }
+            _ => false,
+        })
+        .expect("the Bolt can point at them");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    resolve_above(&mut game, 1);
+    let offers = copy_offers(&game, kitsa);
+    game.apply(PlayerId::One, offers[0].clone())
+        .expect("it activates");
+
+    // The copy asks where it is pointed, and the Bears are one of the answers.
+    for _ in 0..12 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            if game.stack.is_empty() && game.pending_triggers.is_empty() {
+                break;
+            }
+            let priority = game.priority;
+            if game.apply(priority, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        };
+        // The copy's target options name what they point at in their labels
+        // rather than carrying the object.
+        let wanted = decision
+            .options
+            .iter()
+            .find(|option| option.label.contains("Grizzly Bears"))
+            .map_or_else(
+                || {
+                    decision
+                        .options
+                        .iter()
+                        .map(|option| option.id)
+                        .take(decision.minimum.max(1).min(decision.maximum))
+                        .collect()
+                },
+                |option| vec![option.id],
+            );
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: wanted,
+            },
+        )
+        .expect("the answer is legal");
+    }
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears),
+        "the copy went at the Bears and killed them",
+    );
+    assert_eq!(
+        game.players[1].life, 17,
+        "while the Bolt itself still went at the player",
+    );
+}
