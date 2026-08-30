@@ -196,3 +196,38 @@ fn it_cannot_throw_itself() {
         "and it is still here",
     );
 }
+
+/// "A boast ability can be activated at any point after the creature with
+/// that ability has been declared as an attacker ... during the postcombat
+/// main phase, during the end step." Attacking is what opens it, and combat
+/// ending does not close it again.
+#[test]
+fn the_boast_outlasts_the_combat_that_opened_it() {
+    let (mut game, bombardiers, others) = staged(&[cards::GRIZZLY_BEARS]);
+    attack(&mut game, bombardiers);
+
+    // Out of combat entirely, in your own postcombat main phase.
+    game.step = Step::EndOfCombat;
+    game.advance_step();
+    game.finish_rules_procedure();
+    assert_eq!(game.step, Step::PostcombatMain);
+    assert!(
+        !boasts(&game, bombardiers).is_empty(),
+        "the attack is what it asks about, and that already happened",
+    );
+
+    // And still in the end step, which is the last window the ruling names.
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+    assert!(
+        !boasts(&game, bombardiers).is_empty(),
+        "the end step is late but not too late",
+    );
+
+    boast_throwing(&mut game, bombardiers, others[0]);
+
+    assert_eq!(
+        game.players[1].life, 16,
+        "two plus the Bears' two, thrown after the combat was over",
+    );
+}
