@@ -420,3 +420,47 @@ fn a_second_kaldra_is_a_legend_too_many() {
         "and the other is in the graveyard, indestructible or not",
     );
 }
+
+/// "Equip only as a sorcery": moving it is a main-phase action, so the
+/// Germ cannot hand the package to a fresh body in the middle of their
+/// combat.
+#[test]
+fn the_equip_waits_for_your_own_main_phase() {
+    let (mut game, kaldra, _) = staged(&[]);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 7);
+
+    let equips = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(|action| {
+                matches!(
+                    action,
+                    Action::ActivateAbility { source, targets, .. }
+                        if *source == kaldra
+                            && targets
+                                .iter()
+                                .any(|slot| slot.targets().contains(&Target::Permanent(mine)))
+                )
+            })
+            .count()
+    };
+    assert!(
+        equips(&game) > 0,
+        "your own main phase with an empty stack is when it moves",
+    );
+
+    // Their turn, where seven mana moves nothing.
+    game.active_player = PlayerId::Two;
+    game.step = Step::DeclareBlockers;
+    game.priority = PlayerId::One;
+
+    assert_eq!(
+        equips(&game),
+        0,
+        "and equip is a sorcery-speed ability whatever the mana says",
+    );
+}
