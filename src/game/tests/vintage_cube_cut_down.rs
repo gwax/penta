@@ -106,3 +106,76 @@ fn pumping_it_out_of_range_takes_the_target_away() {
         "three and three is six, and out of reach",
     );
 }
+
+/// The same rule enforced on the way down: a creature that grows while the
+/// spell is on the stack is no longer a legal target, so nothing is
+/// destroyed and the spell is countered on resolution.
+#[test]
+fn growing_in_response_leaves_it_with_nothing_to_destroy() {
+    let (mut game, cut, victim) = staged(cards::GRIZZLY_BEARS);
+    game.apply(
+        PlayerId::One,
+        cast_action(cut, vec![Target::Permanent(victim)], Vec::new(), 0),
+    )
+    .expect("a 2/2 is a legal target when it is cast");
+
+    pump(&mut game, victim, 1, 1);
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == victim),
+        "a 3/3 totals six and the spell cannot touch it",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::CUT_DOWN),
+        "the spell had no legal target left and was countered",
+    );
+}
+
+/// "The total power and toughness of a creature is determined by adding its
+/// power and toughness." Adding, not counting: a creature whose power has
+/// been pushed below zero brings its own total down, and a Serra Angel out
+/// of range at 4/4 is in range at -2/6.
+#[test]
+fn a_negative_power_lowers_the_total() {
+    let (mut game, cut, victim) = staged(cards::SERRA_ANGEL);
+    assert!(!offered_at(&game, cut, victim), "four and four is eight");
+
+    pump(&mut game, victim, -6, 2);
+
+    let shrunk = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == victim)
+        .expect("six toughness keeps it alive");
+    assert_eq!(
+        (game.power(shrunk), game.toughness(shrunk)),
+        (Some(-2), Some(6)),
+        "power goes below zero rather than stopping there",
+    );
+    assert!(
+        offered_at(&game, cut, victim),
+        "minus two and six is four, which is in range",
+    );
+}
+
+/// "Target creature" does not say whose. Nothing stops it from answering
+/// your own.
+#[test]
+fn your_own_creature_is_a_legal_target() {
+    let (mut game, cut, _victim) = staged(cards::GRIZZLY_BEARS);
+    let mine = creature(86_002, cards::GRIZZLY_BEARS, PlayerId::One);
+    let mine_id = mine.card.id;
+    game.battlefield.push(mine);
+
+    assert!(
+        offered_at(&game, cut, mine_id),
+        "a 2/2 of your own is in range like any other",
+    );
+}
