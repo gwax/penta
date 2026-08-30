@@ -25,6 +25,21 @@ fn staged() -> (Game, GameObjectId) {
 /// Answers the trigger, sending its damage at `wanted`.
 fn settle(game: &mut Game, wanted: Target) {
     for _ in 0..32 {
+        // Two blockers means the attacker divides its damage, which the
+        // engine asks about before any of it is dealt.
+        if let Some((player, action)) =
+            [PlayerId::One, PlayerId::Two]
+                .into_iter()
+                .find_map(|player| {
+                    game.legal_actions(player)
+                        .into_iter()
+                        .find(|action| matches!(action, Action::AssignCombatDamage { .. }))
+                        .map(|action| (player, action))
+                })
+        {
+            game.apply(player, action).expect("the assignment is legal");
+            continue;
+        }
         if let Some(decision) = game
             .pending_decisions
             .first()
@@ -174,4 +189,93 @@ fn it_has_haste() {
     assert!(game.permanent_has_executable_keyword(permanent, KeywordAbility::Haste));
     assert_eq!(game.power(permanent), Some(3));
     assert_eq!(game.toughness(permanent), Some(3));
+}
+
+/// "If lethal damage is dealt to Screaming Nemesis, its last ability still
+/// triggers." Five at a 3/3 kills it, and the scream is still five.
+#[test]
+fn lethal_damage_still_screams() {
+    let (mut game, nemesis) = staged();
+
+    game.damage_target_from(None, Some(Target::Permanent(nemesis)), 5);
+    settle(&mut game, Target::Player(PlayerId::Two));
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == nemesis),
+        "the Spirit died of it",
+    );
+    assert_eq!(
+        game.players[1].life, 15,
+        "and passed on every point on the way out",
+    );
+}
+
+/// "Once its ability causes it to deal damage to a player, that player won't
+/// be able to gain life for the rest of the game. It doesn't matter if
+/// Screaming Nemesis remains on the battlefield or not."
+#[test]
+fn the_lock_outlives_the_spirit() {
+    let (mut game, nemesis) = staged();
+
+    game.damage_target_from(None, Some(Target::Permanent(nemesis)), 1);
+    settle(&mut game, Target::Player(PlayerId::Two));
+    game.move_permanents_to_graveyard(&[nemesis]);
+    game.check_state_based_actions();
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == nemesis),
+        "the Spirit is gone",
+    );
+
+    game.gain_life(PlayerId::Two, 5);
+    assert_eq!(
+        game.players[1].life, 19,
+        "what it did to them is not undone by killing it",
+    );
+}
+
+/// "If Screaming Nemesis is dealt damage by multiple sources at once, such as
+/// by two creatures blocking it, its last ability triggers once and one
+/// target is dealt that much damage."
+#[test]
+fn two_blockers_at_once_are_one_scream() {
+    let (mut game, nemesis) = staged();
+    let first = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let second = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+
+    game.declare_attacker(nemesis, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    settle(&mut game, Target::Player(PlayerId::Two));
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+    game.declare_blocker(first, nemesis);
+    game.declare_blocker(second, nemesis);
+    game.finish_declaring_blockers();
+    settle(&mut game, Target::Player(PlayerId::Two));
+    for _ in 0..12 {
+        if game.step == Step::PostcombatMain {
+            break;
+        }
+        game.advance_step();
+        settle(&mut game, Target::Player(PlayerId::Two));
+    }
+
+    assert_eq!(
+        game.players[1].life, 16,
+        "four from two bears, screamed back once rather than twice",
+    );
 }
