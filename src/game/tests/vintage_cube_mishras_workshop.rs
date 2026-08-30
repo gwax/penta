@@ -105,3 +105,70 @@ fn its_mana_will_not_pay_for_a_creature_spell() {
         "two mana that may go anywhere is what it was missing",
     );
 }
+
+/// An artifact creature spell is an artifact spell, and three is exactly
+/// what a Dragon Engine wants.
+#[test]
+fn its_mana_casts_an_artifact_creature_too() {
+    let mut game = staged(&[cards::DRAGON_ENGINE]);
+    assert!(
+        castable(&game, cards::DRAGON_ENGINE),
+        "an artifact creature is still an artifact spell",
+    );
+
+    let card = game.players[0].hand[0].id;
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card: id, .. } if *id == card))
+        .expect("it is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::DRAGON_ENGINE),
+        "and it resolved on Workshop mana alone",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.colorless, 0,
+        "all three of them went into it",
+    );
+}
+
+/// "Spend this mana only to cast artifact spells" is about casting. An
+/// artifact already on the battlefield activating an ability is not
+/// casting anything, so the Workshop's mana cannot pay for it.
+#[test]
+fn its_mana_will_not_pay_an_artifacts_activated_ability() {
+    let mut game = staged(&[]);
+    let icy = creature(88_000, cards::ICY_MANIPULATOR, PlayerId::One);
+    let icy_id = icy.card.id;
+    game.battlefield.push(icy);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == icy_id)
+    {
+        permanent.entered_controller_turn = 0;
+    }
+    assert_eq!(game.players[0].mana_pool.colorless, 3);
+
+    let offered = |game: &Game| {
+        game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == icy_id),
+        )
+    };
+    assert!(
+        !offered(&game),
+        "three mana that may only be cast with is no mana at all here",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    assert!(
+        offered(&game),
+        "one mana with no strings attached is what it wanted",
+    );
+}
