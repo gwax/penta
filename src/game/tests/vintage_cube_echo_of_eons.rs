@@ -191,3 +191,54 @@ fn the_graveyard_cast_costs_the_flashback_price() {
         "two mana is one short of the flashback cost",
     );
 }
+
+/// "A spell cast using flashback will always be exiled afterward, whether it
+/// resolves, is countered, or leaves the stack in some other way." And the
+/// Echo need not have been cast to get there: a discarded one flashes back
+/// just the same.
+#[test]
+fn a_countered_flashback_is_exiled_rather_than_buried() {
+    let (mut game, echo) = staged(&[], &[cards::COUNTERSPELL]);
+    let discarded = game.players[0]
+        .hand
+        .pop()
+        .filter(|card| card.id == echo)
+        .expect("the Echo was the only card in hand");
+    game.players[0].graveyard.push(discarded);
+    let counterspell = game.players[1].hand[0].id;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    let flashback = casts(&game, echo)
+        .into_iter()
+        .next()
+        .expect("a discarded Echo still flashes back");
+    game.apply(PlayerId::One, flashback).expect("it casts");
+    let on_stack = game.stack.last().expect("the Echo is waiting").id;
+    game.apply(PlayerId::One, Action::PassPriority)
+        .expect("the window is theirs");
+    game.apply(
+        PlayerId::Two,
+        cast_action(counterspell, vec![Target::Spell(on_stack)], Vec::new(), 0),
+    )
+    .expect("the Counterspell answers it");
+    pass_priority_pair(&mut game);
+    settle(&mut game);
+
+    assert!(game.players[0].hand.is_empty(), "no fresh seven");
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::ECHO_OF_EONS),
+        "the flashback exiles it even so",
+    );
+    assert!(
+        !game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::ECHO_OF_EONS),
+        "and there is nothing left to flash back a second time",
+    );
+}
