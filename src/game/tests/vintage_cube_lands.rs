@@ -170,6 +170,12 @@ const FAST_LANDS: [(CardDefinitionId, [ManaColor; 2]); 10] = [
 /// The clause counts the lands already there, so the boundary sits between a
 /// second and a third: a fastland is the fourth land you play, and that is
 /// the one that arrives tapped.
+///
+/// The other half of the printed ruling -- that a fastland entering
+/// alongside other lands does not count those -- cannot be observed with
+/// this catalog: every effect here that puts more than one land onto the
+/// battlefield puts them tapped, so the count never decides anything. See
+/// `the_titan_taps_a_fastland_that_would_have_come_in_untapped`.
 #[test]
 fn a_fastland_enters_untapped_only_while_the_board_is_small() {
     for (definition, _) in FAST_LANDS {

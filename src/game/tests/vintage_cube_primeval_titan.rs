@@ -150,3 +150,54 @@ fn it_tramples() {
         "a 6/6 trampler",
     );
 }
+
+/// Two lands at once, one of them a fastland. "If one of these lands enters
+/// at the same time as one or more other lands, it doesn't take those lands
+/// into consideration" -- but what the Titan says wins either way: it puts
+/// them onto the battlefield tapped, so the Marsh is tapped on an empty
+/// board, where its own clause would have let it in untapped.
+#[test]
+fn the_titan_taps_a_fastland_that_would_have_come_in_untapped() {
+    let (mut game, _titan) = staged(&[
+        (58_300, cards::BLOOMING_MARSH),
+        (58_301, cards::FOREST),
+        (58_302, cards::MOUNTAIN),
+    ]);
+
+    let search = accept_the_search(&mut game);
+    let wanted = [cards::BLOOMING_MARSH, cards::FOREST]
+        .into_iter()
+        .map(|definition| {
+            search
+                .options
+                .iter()
+                .find(|option| {
+                    option
+                        .card
+                        .and_then(|(_, characteristics)| characteristics.card_definition())
+                        == Some(definition)
+                })
+                .unwrap_or_else(|| panic!("{definition:?} is on offer"))
+                .id
+        })
+        .collect::<Vec<_>>();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: search.id,
+            options: wanted,
+        },
+    )
+    .expect("taking both is legal");
+    drain_pending(&mut game);
+
+    let marsh = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::BLOOMING_MARSH)
+        .expect("the Marsh arrived");
+    assert!(
+        marsh.tapped,
+        "the Titan said tapped, and no land count argues with that",
+    );
+}
