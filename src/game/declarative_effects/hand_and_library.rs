@@ -149,9 +149,9 @@ impl Game {
     }
 
     /// Cascade (CR 702.85), whole. The bound is the cascading spell's own
-    /// mana value, read off the stack object the trigger came from, so a
-    /// spell that has left the stack cascades into nothing rather than into
-    /// everything.
+    /// mana value, which is a fact about the spell rather than about where it
+    /// is: a countered spell still cascades, and still cascades into
+    /// something cheaper than it was.
     fn cascade(&mut self, object: &StackObject) {
         let player = object.controller;
         let Some(limit) = self.cascading_spell_mana_value(object) else {
@@ -237,6 +237,10 @@ impl Game {
             .find(|candidate| candidate.id == source)
             .and_then(|candidate| self.stack_object_event_object(candidate))
             .map(|event| event.mana_value)
+            // "If a spell with cascade is countered, the cascade ability will
+            // still resolve normally": the spell it came from is gone by
+            // then, and what it cost is last known information.
+            .or_else(|| self.current_or_last_known_mana_value(source))
     }
 
     /// "Then put all cards exiled this way on the bottom of your library in

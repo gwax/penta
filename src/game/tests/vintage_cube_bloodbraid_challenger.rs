@@ -303,3 +303,132 @@ fn it_escapes_from_the_graveyard() {
         "and with nothing else down there it stays put",
     );
 }
+
+/// "If a spell with cascade is countered, the cascade ability will still
+/// resolve normally." Cascade triggers on the cast, and nothing that happens
+/// to the spell afterwards takes it back.
+#[test]
+fn countering_it_does_not_take_the_cascade_back() {
+    let (mut game, challenger) = staged(&[
+        cards::SERRA_ANGEL,
+        cards::LIGHTNING_BOLT,
+        cards::MOUNTAIN,
+        cards::FOREST,
+    ]);
+    let counter = game
+        .build_zone(PlayerId::Two, &[cards::COUNTERSPELL])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let counter_id = counter.id;
+    game.players[1].hand.push(counter);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == challenger))
+        .expect("five mana casts it");
+    game.apply(PlayerId::One, action).expect("it casts");
+
+    // Answer the Challenger itself while its cascade trigger waits above it.
+    let on_stack = game
+        .stack
+        .iter()
+        .find(|object| object.card.definition == cards::BLOODBRAID_CHALLENGER)
+        .expect("the Challenger is on the stack")
+        .id;
+    let answer = loop {
+        if let Some(action) = game
+            .legal_actions(PlayerId::Two)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::CastSpell { card, choices, .. }
+                    if *card == counter_id
+                        && choices
+                            .targets()
+                            .iter()
+                            .any(|selection| selection.targets().contains(&Target::Spell(on_stack))))
+            })
+        {
+            break action;
+        }
+        let priority = game.priority;
+        game.apply(priority, Action::PassPriority)
+            .expect("somebody may pass while both are on the stack");
+    };
+    game.apply(PlayerId::Two, answer).expect("it casts");
+    settle(&mut game);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::BLOODBRAID_CHALLENGER),
+        "the Challenger was countered",
+    );
+    let offer = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("and its cascade still turned a card up to offer");
+    assert!(
+        offer.options.iter().any(|option| option.label == "Decline"),
+        "which is the ordinary cascade question: {:?}",
+        offer.options,
+    );
+}
+
+/// "Cascade triggers when you cast the spell, meaning that it resolves
+/// before that spell. If you end up casting the exiled card, it will go on
+/// the stack above the spell with cascade." So what cascade found is already
+/// on the battlefield while the Challenger is still waiting.
+#[test]
+fn what_cascade_found_resolves_first() {
+    let (mut game, challenger) = staged(&[
+        cards::SERRA_ANGEL,
+        cards::GRIZZLY_BEARS,
+        cards::MOUNTAIN,
+        cards::FOREST,
+    ]);
+    cast(&mut game, challenger);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, .. } => game.players[0]
+                .exile
+                .iter()
+                .any(|exiled| exiled.id == *card && exiled.definition == cards::GRIZZLY_BEARS),
+            _ => false,
+        })
+        .expect("the Bears may be cast from exile");
+    game.apply(PlayerId::One, action).expect("it casts");
+
+    let order = game
+        .stack
+        .iter()
+        .map(|object| object.card.definition)
+        .collect::<Vec<_>>();
+    let bears = order
+        .iter()
+        .position(|definition| *definition == cards::GRIZZLY_BEARS)
+        .expect("the Bears are on the stack");
+    let challenger_at = order
+        .iter()
+        .position(|definition| *definition == cards::BLOODBRAID_CHALLENGER)
+        .expect("the Challenger is still under them");
+    assert!(
+        bears > challenger_at,
+        "what cascade found sits above the spell that found it: {order:?}",
+    );
+
+    settle(&mut game);
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS),
+        "and both resolved in that order",
+    );
+}

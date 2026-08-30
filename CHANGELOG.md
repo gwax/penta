@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A countered spell still cascades.** The bound cascade digs against is the
+  cascading spell's own mana value, which is a fact about the spell rather
+  than about where it is; reading it only off the stack meant a Bloodbraid
+  Challenger answered with a Counterspell dug for nothing at all. It now falls
+  back to last known information, so the ability resolves normally and still
+  looks for something cheaper than the spell that was countered.
+
 - **"When you do" is a reflexive trigger.** A "you may ..." clause taken by its
   controller now publishes an event of its own, so the second half is an
   ordinary triggered ability: it goes on the stack by itself, names its targets
