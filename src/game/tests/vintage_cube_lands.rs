@@ -779,3 +779,48 @@ fn every_shock_land_asks_for_its_own_two_life() {
         }
     }
 }
+
+/// The same clause on the path it was printed for: a land played from hand
+/// as the turn's land drop, rather than put onto the battlefield by a test
+/// or an effect.
+#[test]
+fn a_fastland_played_from_hand_reads_the_same_board() {
+    for (existing, tapped) in [(2, false), (3, true)] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[PlayerId::One.index()].hand.clear();
+        for index in 0..existing {
+            game.battlefield
+                .push(creature(63_100 + index, cards::FOREST, PlayerId::One));
+        }
+        let sanctum = card(63_200, cards::BOTANICAL_SANCTUM, PlayerId::One);
+        let sanctum_id = sanctum.id;
+        game.players[PlayerId::One.index()].hand.push(sanctum);
+
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+
+        game.apply(
+            PlayerId::One,
+            Action::PlayLand {
+                card: sanctum_id,
+                option: PlayOptionId::DEFAULT,
+            },
+        )
+        .expect("the land drop is there to be taken");
+        drain_pending(&mut game);
+
+        assert_eq!(
+            game.battlefield
+                .iter()
+                // A land played from hand is a new object on the
+                // battlefield and does not keep the id it had in hand.
+                .find(|permanent| permanent.card.definition == cards::BOTANICAL_SANCTUM)
+                .expect("it entered")
+                .tapped,
+            tapped,
+            "played as the land drop with {existing} other lands",
+        );
+    }
+}
