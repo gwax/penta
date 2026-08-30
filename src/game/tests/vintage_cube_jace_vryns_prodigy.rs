@@ -330,3 +330,47 @@ fn the_flipped_planeswalker_may_move_at_once() {
         "and the plus took him to six",
     );
 }
+
+/// "You can control two of this permanent, one front-face up and the other
+/// back-face up, at the same time." The legend rule reads names, and the two
+/// faces do not share one.
+#[test]
+fn a_flipped_jace_stands_beside_an_unflipped_one() {
+    let (mut game, jace) = staged(4);
+    loot(&mut game, jace);
+    assert!(
+        permanent_named(&game, "Jace, Telepath Unbound").is_some(),
+        "the fifth card flipped him",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::JACE_VRYN_S_PRODIGY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        permanent_named(&game, "Jace, Telepath Unbound").is_some(),
+        "the planeswalker is still there",
+    );
+    assert!(
+        permanent_named(&game, "Jace, Vryn's Prodigy").is_some(),
+        "and so is the Wizard: two names, not one",
+    );
+}
+
+/// "A double-faced permanent with its back face up has a mana value equal to
+/// the mana value of its front face." The planeswalker face prints no cost
+/// of its own, and two is what the Wizard cost.
+#[test]
+fn the_flipped_planeswalker_keeps_the_front_faces_mana_value() {
+    let (mut game, jace) = staged(4);
+    loot(&mut game, jace);
+
+    let walker = permanent_named(&game, "Jace, Telepath Unbound").expect("he flipped");
+
+    assert_eq!(
+        game.permanent_mana_value(walker),
+        2,
+        "one and a blue is what he is worth on either face",
+    );
+}
