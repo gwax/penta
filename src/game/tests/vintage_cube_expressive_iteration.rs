@@ -239,3 +239,81 @@ fn two_cards_fill_the_first_two_destinations() {
     );
     assert!(exile(&game).is_empty(), "with nothing left to exile");
 }
+
+/// "If it's a land, you can't play it unless you have a land play
+/// available." The permission is to play the card, not to break the rule
+/// about how many lands a turn holds.
+#[test]
+fn an_exiled_land_still_wants_a_land_drop() {
+    let (mut game, iteration) = staged(&[cards::ISLAND, cards::SWAMP, cards::LIGHTNING_BOLT]);
+    game.players[0].lands_played_this_turn = 1;
+
+    cast_iteration(&mut game, iteration, |prompt, offered| {
+        let wanted = if prompt.contains("hand") {
+            cards::SWAMP
+        } else {
+            cards::LIGHTNING_BOLT
+        };
+        offered
+            .iter()
+            .position(|definition| *definition == wanted)
+            .expect("it is on offer")
+    });
+
+    assert_eq!(exile(&game), vec![cards::ISLAND]);
+    let exiled = game.players[0].exile[0].id;
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if *card == exiled)),
+        "the land drop was already spent this turn",
+    );
+
+    game.players[0].lands_played_this_turn = 0;
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if *card == exiled)),
+        "and with one available the same card is playable",
+    );
+}
+
+/// "You must still pay all costs." The Iteration spends the two mana it was
+/// cast with, and the Bolt it exiled waits for a red one.
+#[test]
+fn an_exiled_spell_still_costs_what_it_costs() {
+    let (mut game, iteration) = staged(&[cards::ISLAND, cards::SWAMP, cards::LIGHTNING_BOLT]);
+
+    cast_iteration(&mut game, iteration, |prompt, offered| {
+        let wanted = if prompt.contains("hand") {
+            cards::SWAMP
+        } else {
+            cards::ISLAND
+        };
+        offered
+            .iter()
+            .position(|definition| *definition == wanted)
+            .expect("it is on offer")
+    });
+
+    assert_eq!(exile(&game), vec![cards::LIGHTNING_BOLT]);
+    let exiled = game.players[0].exile[0].id;
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == exiled)),
+        "permission to play it is not a discount on it",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == exiled)),
+        "one red mana is what it was waiting for",
+    );
+}
