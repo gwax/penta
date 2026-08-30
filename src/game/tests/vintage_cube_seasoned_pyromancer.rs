@@ -161,3 +161,71 @@ fn the_graveyard_half_exiles_him_for_two_more() {
     assert!(game.players[0].graveyard.is_empty(), "the card is exiled");
     assert_eq!(game.players[0].exile.len(), 1);
 }
+
+/// "If you have fewer than two cards in hand as the first ability resolves,
+/// you'll discard your hand, then draw two cards regardless of how many you
+/// discarded." One card in hand is one discard, one Elemental, and two
+/// cards drawn all the same.
+#[test]
+fn one_card_in_hand_is_discarded_and_two_are_still_drawn() {
+    let mut game = staged(&[cards::LIGHTNING_BOLT], &[cards::FOREST, cards::MOUNTAIN]);
+    game.put_onto_battlefield(PlayerId::One, cards::SEASONED_PYROMANCER)
+        .expect("cataloged");
+
+    settle_discarding(&mut game, &[cards::LIGHTNING_BOLT]);
+
+    assert_eq!(
+        game.players[0]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::MOUNTAIN, cards::FOREST],
+        "two cards were drawn off a single discard",
+    );
+    assert_eq!(elementals(&game), 1, "and the one nonland card paid once");
+    assert_eq!(game.players[0].graveyard.len(), 1);
+}
+
+/// The same rule at nothing: an empty hand discards nothing, makes no
+/// Elemental, and the two cards are drawn anyway.
+#[test]
+fn an_empty_hand_discards_nothing_and_still_draws_two() {
+    let mut game = staged(&[], &[cards::FOREST, cards::MOUNTAIN]);
+    game.put_onto_battlefield(PlayerId::One, cards::SEASONED_PYROMANCER)
+        .expect("cataloged");
+
+    settle_discarding(&mut game, &[]);
+
+    assert_eq!(game.players[0].hand.len(), 2, "the draw is unconditional");
+    assert_eq!(elementals(&game), 0, "nothing was discarded to pay for one");
+    assert!(
+        game.players[0].graveyard.is_empty(),
+        "and nothing went to the graveyard",
+    );
+}
+
+/// The second ability is printed to be activated from the graveyard, and
+/// only from there: the Pyromancer standing on the battlefield with five
+/// mana up is not offered it.
+#[test]
+fn the_graveyard_half_is_not_offered_from_the_battlefield() {
+    let mut game = staged(&[], &[cards::FOREST, cards::MOUNTAIN]);
+    let pyromancer = game
+        .put_onto_battlefield(PlayerId::One, cards::SEASONED_PYROMANCER)
+        .expect("cataloged");
+    settle_discarding(&mut game, &[]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 5);
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == pyromancer)
+        ),
+        "the exile cost wants the card in the graveyard, not the creature on the board",
+    );
+    assert_eq!(
+        elementals(&game),
+        0,
+        "and no Elemental turned up while nobody was looking",
+    );
+}
