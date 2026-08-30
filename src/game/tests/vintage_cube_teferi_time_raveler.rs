@@ -257,3 +257,72 @@ fn the_minus_three_draws_with_no_target() {
 
     assert_eq!(game.players[0].library.len(), 1, "you drew regardless");
 }
+
+/// "If an effect allows opponents to cast a spell as though it had flash, the
+/// restriction of Teferi's first ability takes precedence over that
+/// permission." A Leyline of Anticipation is exactly such an effect, and it
+/// buys them nothing while he is out.
+#[test]
+fn a_flash_permission_does_not_beat_the_restriction() {
+    let (mut game, _teferi, _mine, _ponder, their_bolt) = staged();
+    game.put_onto_battlefield(PlayerId::Two, cards::LEYLINE_OF_ANTICIPATION)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+
+    assert!(
+        !can_cast(&game, PlayerId::Two, their_bolt),
+        "permission to cast as though it had flash is not permission to ignore him",
+    );
+}
+
+/// "If you do choose a target and the target permanent is an illegal target
+/// by the time the ability tries to resolve, the ability doesn't resolve.
+/// You don't draw a card."
+#[test]
+fn a_bounce_with_no_target_left_draws_nothing() {
+    let (mut game, teferi, _mine, _ponder, _theirs) = staged();
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let hand = game.players[0].hand.len();
+    let library = game.players[0].library.len();
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == teferi
+                    && targets
+                        .iter()
+                        .any(|slot| slot.targets().contains(&Target::Permanent(bears)))
+            }
+            _ => false,
+        })
+        .expect("the minus can name their Bears");
+    game.apply(PlayerId::One, action).expect("it activates");
+
+    // Answering it by killing what it named: the ability has nothing left to
+    // return, so none of it happens.
+    game.move_permanents_to_graveyard(&[bears]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand,
+        "no card was drawn, because the ability never resolved",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        library,
+        "and the library is where it was",
+    );
+}
