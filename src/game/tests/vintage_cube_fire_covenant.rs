@@ -211,3 +211,77 @@ fn the_life_is_paid_on_casting() {
     assert_eq!(game.players[0].life, 15, "paid while it is on the stack");
     assert_eq!(game.stack.len(), 1);
 }
+
+/// "You must distribute at least 1 damage to each target." Two damage across
+/// two creatures is one apiece and nothing else: no offer names a creature
+/// and then gives it none.
+#[test]
+fn every_creature_it_names_takes_at_least_one() {
+    let (game, covenant, creatures) = staged(&[cards::SERRA_ANGEL, cards::GRIZZLY_BEARS]);
+    let (angel, bears) = (creatures[0], creatures[1]);
+
+    let two_target_splits = casts(&game, covenant)
+        .into_iter()
+        .filter(|choices| choices.x() == 2)
+        .filter_map(|choices| {
+            let selection = choices.targets().first()?.clone();
+            let angel_share = selection.amount_for(Target::Permanent(angel));
+            let bears_share = selection.amount_for(Target::Permanent(bears));
+            (angel_share.is_some() && bears_share.is_some())
+                .then(|| (angel_share.unwrap_or(0), bears_share.unwrap_or(0)))
+        })
+        .collect::<Vec<_>>();
+
+    assert!(
+        !two_target_splits.is_empty(),
+        "two damage can be spread across both",
+    );
+    assert!(
+        two_target_splits
+            .iter()
+            .all(|(angel_share, bears_share)| *angel_share >= 1 && *bears_share >= 1),
+        "and never with a share of nothing: {two_target_splits:?}",
+    );
+}
+
+/// "You divide the damage as you cast the spell. You can't redistribute the
+/// damage if any of the target creatures becomes illegal before the spell
+/// resolves." Killing one of the two in response wastes its point rather
+/// than moving it to the survivor.
+#[test]
+fn the_split_cannot_be_redistributed_after_the_fact() {
+    let (mut game, covenant, creatures) = staged(&[cards::SERRA_ANGEL, cards::WORLDSPINE_WURM]);
+    let (angel, wurm) = (creatures[0], creatures[1]);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            let Action::CastSpell { card, choices, .. } = action else {
+                return false;
+            };
+            *card == covenant
+                && choices.x() == 2
+                && choices.targets().iter().any(|selection| {
+                    selection.amount_for(Target::Permanent(angel)) == Some(1)
+                        && selection.amount_for(Target::Permanent(wurm)) == Some(1)
+                })
+        })
+        .expect("two life split one and one");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    // The Angel leaves before it resolves; its point of damage goes with it.
+    game.move_permanents_to_graveyard(&[angel]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert_eq!(
+        damage_on(&game, wurm),
+        Some(1),
+        "the Wurm takes the one it was assigned, not the Angel's as well",
+    );
+    assert_eq!(
+        game.players[0].life, 18,
+        "and the two life is spent either way"
+    );
+}
