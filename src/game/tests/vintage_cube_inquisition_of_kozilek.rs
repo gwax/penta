@@ -206,3 +206,93 @@ fn their_hand_is_revealed() {
         .count();
     assert_eq!(revealed, 2, "both cards were shown, not just the one taken");
 }
+
+/// "If you target yourself with this spell, you must reveal your entire hand
+/// to the other players just as any other player would." Pointing it at
+/// yourself is legal, and it is a reveal rather than a look either way.
+#[test]
+fn aimed_at_yourself_it_reveals_your_own_hand() {
+    let (mut game, spell) = staged(&[]);
+    for definition in [cards::GRIZZLY_BEARS, cards::LIGHTNING_BOLT] {
+        let card = game
+            .build_zone(PlayerId::One, &[definition])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        game.players[0].hand.push(card);
+    }
+    let before = game.events.len();
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == spell
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::One))
+            }
+            _ => false,
+        })
+        .expect("you are a legal target for your own Inquisition");
+    game.apply(PlayerId::One, cast).expect("it is castable");
+    for _ in 0..16 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .find(|option| {
+                    matches!(
+                        option.card,
+                        Some((_, ObjectCharacteristics::Card { definition, .. }))
+                            if definition == cards::GRIZZLY_BEARS
+                    )
+                })
+                .map(|option| vec![option.id])
+                .unwrap_or_default();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let revealed = game.events[before..]
+        .iter()
+        .filter(|event| {
+            matches!(
+                event,
+                GameEvent::CardRevealed {
+                    player: PlayerId::One,
+                    ..
+                }
+            )
+        })
+        .count();
+    assert_eq!(revealed, 2, "your whole hand is shown, both cards of it");
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+        "and you discard what you chose out of your own hand",
+    );
+}
