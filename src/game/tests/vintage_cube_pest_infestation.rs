@@ -205,3 +205,47 @@ fn a_pest_pays_a_life_when_it_dies() {
 
     assert_eq!(game.players[0].life, life + 1);
 }
+
+/// "If any artifacts or enchantments were chosen as targets, and all of them
+/// are illegal targets as Pest Infestation tries to resolve, it won't resolve
+/// and none of its effects will happen. No Pests will be created." Naming
+/// nothing is a cast that still makes Pests; naming something that then
+/// leaves is not.
+#[test]
+fn a_spell_whose_only_target_is_gone_makes_no_pests() {
+    let (mut game, spell, theirs) = staged(3, &[cards::SOL_RING]);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == spell
+                    && choices.x() == 1
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(theirs[0]))
+            }
+            _ => false,
+        })
+        .expect("three mana names the Sol Ring for an X of one");
+    game.apply(PlayerId::One, action).expect("it is castable");
+
+    // Answered in response: the one thing it was pointed at is gone.
+    game.move_permanents_to_graveyard(&[theirs[0]]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert_eq!(
+        pests(&game),
+        0,
+        "with its only target illegal the spell does not resolve at all",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::PEST_INFESTATION),
+        "and it goes to the graveyard having done nothing",
+    );
+}
