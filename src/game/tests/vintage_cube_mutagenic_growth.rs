@@ -151,3 +151,63 @@ fn it_is_a_green_card_worth_one_mana() {
         "and the card is green whether or not a green mana ever paid for it",
     );
 }
+
+/// "You choose how to pay for each Phyrexian mana symbol at the same time you
+/// would choose modes or a value for X." Both ways are on offer as the spell
+/// is cast, and they are two different casts rather than one the engine
+/// settles for you.
+#[test]
+fn both_ways_to_pay_are_offered_as_the_spell_is_cast() {
+    let (mut game, growth, bears) = staged();
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+
+    let with_life = cast_at(&game, growth, bears, true).expect("twenty life pays it");
+    let with_mana = cast_at(&game, growth, bears, false).expect("so does the green mana");
+    assert_ne!(with_life, with_mana, "and they are not the same cast");
+
+    game.apply(PlayerId::One, with_mana).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(power(&game, bears), Some(4), "the Bears grew");
+    assert_eq!(
+        game.players[0].life, 20,
+        "and paying the mana costs no life at all",
+    );
+}
+
+/// "Target creature" does not say whose. Pumping their blocker is a strange
+/// play, but the spell allows it.
+#[test]
+fn it_can_point_at_a_creature_they_control() {
+    let (mut game, growth, _bears) = staged();
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let action = cast_at(&game, growth, theirs, true).expect("their Bears are a legal target");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(power(&game, theirs), Some(4), "their Bears grew");
+    assert_eq!(game.players[0].life, 18, "on your two life");
+}
+
+/// Paying at exactly two life is legal and leaves you at zero, which the
+/// game notices immediately.
+#[test]
+fn paying_the_last_two_life_loses_the_game() {
+    let (mut game, growth, bears) = staged();
+    game.players[0].life = 2;
+
+    let action = cast_at(&game, growth, bears, true).expect("two life is exactly enough");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[0].life, 0);
+    assert!(
+        game.result.is_some(),
+        "nobody survives paying their last two life",
+    );
+}
