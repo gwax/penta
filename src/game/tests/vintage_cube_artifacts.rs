@@ -678,3 +678,68 @@ fn the_opponent_may_spend_the_wishes_they_were_given() {
     );
     assert_eq!(talisman.counters(CounterKind::named("wish")), 1);
 }
+
+/// "If the Phyrexian Germ token is destroyed, the Equipment remains on the
+/// battlefield as with any other Equipment." What living weapon gives you is
+/// a body to start with, not a body the Equipment depends on.
+#[test]
+fn killing_the_germ_leaves_the_nettlecyst_behind() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let nettlecyst = game
+        .put_onto_battlefield(PlayerId::One, cards::NETTLECYST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+    let germ = game
+        .battlefield
+        .iter()
+        .find(|permanent| {
+            is_token_with(
+                permanent,
+                tokens::creature(&["Phyrexian", "Germ"], &[ManaColor::Black], 0, 0),
+            )
+        })
+        .expect("living weapon made one")
+        .card
+        .id;
+
+    game.destroy_permanent(germ);
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != germ),
+        "the Germ is gone",
+    );
+    let equipment = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == nettlecyst)
+        .expect("the Equipment is not");
+    assert!(
+        equipment.attached_to.is_none(),
+        "and it is attached to nothing now",
+    );
+
+    // Which is the point of the ruling: it is an Equipment again, waiting
+    // for the next creature.
+    let bears = creature(56_200, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    game.players[PlayerId::One.index()].mana_pool.colorless = 2;
+    equip_to(&mut game, nettlecyst, bears_id);
+    game.check_state_based_actions();
+
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears_id)
+        .expect("still there");
+    assert_eq!(
+        (game.power(bears), game.toughness(bears)),
+        (Some(3), Some(3)),
+        "two power and toughness of its own, and one for the Equipment itself",
+    );
+}
