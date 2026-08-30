@@ -261,3 +261,60 @@ fn it_cannot_block_an_ordinary_attacker() {
         "shadow blocks only shadow",
     );
 }
+
+/// "Tokens still die while Dauthi Voidwalker is on the battlefield." What
+/// the replacement names is a card, and a token is not one.
+#[test]
+fn a_token_of_theirs_still_dies() {
+    let (mut game, _voidwalker, _ids) = staged(&[]);
+    let token = token_permanent(
+        95_400,
+        tokens::creature(&["Bird"], &[ManaColor::White], 1, 1),
+        PlayerId::Two,
+    );
+    let token_id = token.card.id;
+    game.battlefield.push(token);
+    let exiled_before = game.players[1].exile.len();
+
+    game.move_permanents_to_graveyard(&[token_id]);
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == token_id),
+        "it left the battlefield",
+    );
+    assert_eq!(
+        game.players[1].exile.len(),
+        exiled_before,
+        "and nothing of theirs was exiled with a counter",
+    );
+}
+
+/// "Abilities that would trigger when those creatures die won't trigger."
+/// A Messenger Drake that is exiled instead of dying draws its controller
+/// nothing.
+#[test]
+fn a_death_trigger_of_theirs_never_fires() {
+    let (mut game, _voidwalker, ids) = staged(&[cards::MESSENGER_DRAKE]);
+    let held = game.players[1].hand.len();
+
+    game.move_permanents_to_graveyard(&[ids[0]]);
+    settle(&mut game);
+
+    assert!(
+        exiled(&game, PlayerId::Two, cards::MESSENGER_DRAKE).is_some(),
+        "it was exiled rather than buried",
+    );
+    assert!(
+        !in_graveyard(&game, PlayerId::Two, cards::MESSENGER_DRAKE),
+        "so it never reached the graveyard",
+    );
+    assert_eq!(
+        game.players[1].hand.len(),
+        held,
+        "and a creature that did not die draws nobody a card",
+    );
+}
