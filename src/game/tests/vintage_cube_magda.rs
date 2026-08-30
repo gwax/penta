@@ -139,37 +139,26 @@ fn tapping_a_nondwarf_makes_nothing() {
     assert_eq!(treasures(&game), 0, "the clause names Dwarves");
 }
 
-/// Five Treasures find an artifact and put it onto the battlefield.
-#[test]
-fn five_treasures_fetch_an_artifact() {
-    let (mut game, magda) = staged(&[]);
-    give_treasures(&mut game, 5);
-    let ring = game
-        .build_zone(PlayerId::One, &[cards::SOL_RING])
-        .expect("cataloged")
-        .into_iter()
-        .next()
-        .expect("one card");
-    game.players[0].library.push(ring);
-
+/// Activates Magda's search and answers everything it asks, taking `wanted`
+/// when it is on the menu. Paying five Treasures is itself a decision and
+/// the search is the one after it, so the answers are given in a loop.
+fn fetch_with(game: &mut Game, magda: GameObjectId, wanted: CardDefinitionId) {
     let action = game
         .legal_actions(PlayerId::One)
         .into_iter()
         .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == magda))
         .expect("five Treasures pay for it");
     game.apply(PlayerId::One, action).expect("it activates");
-    // Paying five Treasures is itself a decision, and the search is the one
-    // after it, so answer whatever is asked until the Ring is on the menu.
     for _ in 0..8 {
-        settle(&mut game);
-        let Some(seat) = deciding(&game) else { break };
+        settle(game);
+        let Some(seat) = deciding(game) else { break };
         let decision = game.observe(seat).decision.expect("just checked");
-        let wanted = decision.options.iter().find(|option| {
+        let found = decision.options.iter().find(|option| {
             option
                 .card
-                .is_some_and(|(_, found)| found.card_definition() == Some(cards::SOL_RING))
+                .is_some_and(|(_, found)| found.card_definition() == Some(wanted))
         });
-        let options = wanted.map_or_else(
+        let options = found.map_or_else(
             || {
                 decision
                     .options
@@ -189,7 +178,23 @@ fn five_treasures_fetch_an_artifact() {
         )
         .expect("the answer is legal");
     }
-    settle(&mut game);
+    settle(game);
+}
+
+/// Five Treasures find an artifact and put it onto the battlefield.
+#[test]
+fn five_treasures_fetch_an_artifact() {
+    let (mut game, magda) = staged(&[]);
+    give_treasures(&mut game, 5);
+    let ring = game
+        .build_zone(PlayerId::One, &[cards::SOL_RING])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[0].library.push(ring);
+
+    fetch_with(&mut game, magda, cards::SOL_RING);
 
     assert!(
         game.battlefield
@@ -237,4 +242,65 @@ fn a_treasure_makes_one_mana_of_any_colour() {
         .collect::<Vec<_>>();
 
     assert_eq!(colors.len(), 5, "all five colours: {colors:?}");
+}
+
+/// "For the triggered ability to trigger, a Dwarf you control has to
+/// actually change from untapped to tapped. If an effect attempts to tap a
+/// Dwarf you control while it is already tapped, the ability won't trigger."
+#[test]
+fn tapping_a_dwarf_that_is_already_tapped_makes_nothing() {
+    let (mut game, magda) = staged(&[]);
+    game.tap_permanent(magda);
+    settle(&mut game);
+    assert_eq!(treasures(&game), 1, "the first tap was a change");
+
+    game.tap_permanent(magda);
+    settle(&mut game);
+
+    assert_eq!(
+        treasures(&game),
+        1,
+        "and tapping what is already tapped changes nothing",
+    );
+}
+
+/// "A Dwarf you control": theirs is not yours, however Dwarven.
+#[test]
+fn a_dwarf_they_control_makes_nothing() {
+    let (mut game, _magda) = staged(&[]);
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::DWARVEN_DEMOLITION_TEAM)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    game.tap_permanent(theirs);
+    settle(&mut game);
+
+    assert_eq!(treasures(&game), 0, "she watches her own side only");
+}
+
+/// The search names an artifact card or a Dragon card, and a Shivan Dragon
+/// is the second of those without being the first.
+#[test]
+fn five_treasures_can_find_a_dragon_instead() {
+    let (mut game, magda) = staged(&[]);
+    give_treasures(&mut game, 5);
+    let dragon = game
+        .build_zone(PlayerId::One, &[cards::SHIVAN_DRAGON])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[0].library.push(dragon);
+
+    fetch_with(&mut game, magda, cards::SHIVAN_DRAGON);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SHIVAN_DRAGON),
+        "a Dragon that is no artifact at all is still what the ability names",
+    );
+    assert_eq!(treasures(&game), 0, "and all five Treasures paid for it");
 }
