@@ -12,6 +12,13 @@ use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 // CON 15 — Path to Exile
+// Audit: partial — "The controller of the exiled creature isn't required to
+// search their library for a basic land. If that player doesn't, the player
+// won't shuffle their library." A declined search shuffles here all the same,
+// because a search that may be declined and a mandatory search that fails to
+// find are both `minimum: 0` with an empty answer, and only the second one
+// shuffles. Telling them apart needs an authored flag on `SearchZone`, which
+// every one of its ninety-odd construction sites would have to name.
 pub(in crate::card::sets) static PATH_TO_EXILE: CardRecord = CardRecord::new_with_legacy_id(
     2189,
     "Path to Exile",
@@ -33,7 +40,8 @@ pub(in crate::card::sets) static PATH_TO_EXILE: CardRecord = CardRecord::new_wit
             // The searcher is the creature's controller, read from the announced
             // target: by now the creature is in exile and cannot be asked. A minimum
             // of zero is the printed "may" -- declining to search and searching
-            // without finding are the same answer from a hidden zone.
+            // without finding are the same answer here, which is what the audit
+            // note above is about.
             EffectDef::SearchZone {
                 player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
                     TargetIndex::PRIMARY,
