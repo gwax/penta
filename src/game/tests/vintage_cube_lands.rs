@@ -721,3 +721,55 @@ fn a_blood_moon_leaves_cycling_from_hand_alone() {
         "the copy in hand is not a land on the battlefield, so it cycles as printed",
     );
 }
+
+/// The clause is one shared ability, but carrying it is per-card: each of the
+/// ten asks its own two-life question, and the answer is what tapped means
+/// for it. Nothing else in the cycle would notice a member printed without
+/// the clause -- it would simply arrive untapped for free.
+#[test]
+fn every_shock_land_asks_for_its_own_two_life() {
+    for (definition, _) in SHOCK_LANDS {
+        for pay in [false, true] {
+            let mut game = ready_game();
+            game.battlefield.clear();
+            let life = game.players[0].life;
+            game.players[0]
+                .hand
+                .push(card(10_500, definition, PlayerId::One));
+            game.apply(
+                PlayerId::One,
+                Action::PlayLand {
+                    card: CardInstanceId(10_500),
+                    option: PlayOptionId::DEFAULT,
+                },
+            )
+            .unwrap_or_else(|error| panic!("{definition:?} is playable: {error}"));
+
+            let decision = game
+                .observe(PlayerId::One)
+                .decision
+                .unwrap_or_else(|| panic!("{definition:?} asks about its two life"));
+            game.apply(
+                PlayerId::One,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: vec![u32::from(pay)],
+                },
+            )
+            .expect("both answers are offered");
+            drain_pending(&mut game);
+
+            let entered = game
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.definition == definition)
+                .unwrap_or_else(|| panic!("{definition:?} entered"));
+            assert_eq!(entered.tapped, !pay, "{definition:?} paying {pay}");
+            assert_eq!(
+                game.players[0].life,
+                if pay { life - 2 } else { life },
+                "{definition:?} paying {pay}",
+            );
+        }
+    }
+}
