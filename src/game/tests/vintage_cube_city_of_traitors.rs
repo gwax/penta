@@ -168,3 +168,50 @@ fn their_land_drop_leaves_it_alone() {
 
     assert!(alive(&game, city), "\"you play\" is not \"they play\"");
 }
+
+/// The sacrifice is a triggered ability rather than part of playing the
+/// land, so there is a window under it: the City is still on the battlefield
+/// while the trigger waits, and the mana it makes outlives it.
+#[test]
+fn its_mana_can_be_taken_while_the_sacrifice_waits() {
+    let (mut game, city, held) = staged(&[cards::FOREST]);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == held[0]))
+        .expect("the land drop is available");
+    game.apply(PlayerId::One, action).expect("it is played");
+    for _ in 0..4 {
+        if !game.stack.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert_eq!(game.stack.len(), 1, "the sacrifice is on the stack");
+    assert!(
+        alive(&game, city),
+        "and the City is still standing under it"
+    );
+    let add = Action::ActivateManaAbility {
+        source: city,
+        ability: mana_ability_for(&game, city, ManaColor::Colorless),
+        color: ManaColor::Colorless,
+        counters_removed: None,
+        cost_object: None,
+        combination: None,
+        triggered_mana: None,
+    };
+    game.apply(PlayerId::One, add).expect("it taps in response");
+    drain_pending(&mut game);
+
+    assert!(!alive(&game, city), "the trigger still takes it");
+    assert_eq!(
+        game.players[0].mana_pool.colorless, 2,
+        "and the two it made are still in the pool",
+    );
+}
