@@ -177,3 +177,66 @@ fn a_ballista_with_no_counters_cannot_shoot() {
         "the shot needs a counter to pay with",
     );
 }
+
+/// "A casting cost of {X}{X} means that you pay twice X." Five mana is an X
+/// of two with one left over, not an X of three.
+#[test]
+fn the_doubled_x_is_paid_twice_over() {
+    let (game, ballista) = staged(3);
+    let castable = |game: &Game| {
+        let mut values = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .filter_map(|action| match action {
+                Action::CastSpell { card, choices, .. } if card == ballista => Some(choices.x()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        values.sort_unstable();
+        values.dedup();
+        values
+    };
+    assert_eq!(castable(&game), vec![0, 1, 2, 3], "six mana reaches three");
+
+    let mut game = game;
+    game.players[0].mana_pool.colorless = 5;
+
+    assert_eq!(
+        castable(&game),
+        vec![0, 1, 2],
+        "and one mana short of six is one counter short of three",
+    );
+}
+
+/// "If Walking Ballista has been dealt damage ... this limits how many times
+/// you'll be able to remove +1/+1 counters from it in a single turn. For
+/// example, if it has three +1/+1 counters on it and has been dealt 1 damage
+/// this turn, it will be destroyed immediately after you activate the ability
+/// a second time and you won't be able to activate it a third time."
+#[test]
+fn damage_already_on_it_cuts_the_shots_short() {
+    let (mut game, ballista) = staged(3);
+    cast(&mut game, ballista, 3);
+    let id = on_battlefield(&game).expect("it resolved").card.id;
+    game.damage_target_from_kind(None, Some(Target::Permanent(id)), 1, false);
+    resolve(&mut game);
+    assert!(
+        on_battlefield(&game).is_some(),
+        "one damage on a 3/3 is nothing yet",
+    );
+
+    shoot(&mut game, id);
+    assert_eq!(counters(&game), 2, "a 2/2 with one damage still stands");
+
+    shoot(&mut game, id);
+
+    assert_eq!(game.players[1].life, 18, "both shots got there");
+    assert!(
+        on_battlefield(&game).is_none(),
+        "and the second one left a 1/1 with lethal damage on it",
+    );
+    assert!(
+        abilities(&game, id).is_empty(),
+        "so the third counter never gets to shoot",
+    );
+}
