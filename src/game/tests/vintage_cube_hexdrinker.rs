@@ -201,3 +201,100 @@ fn level_eight_is_protected_from_everything() {
         "and nothing can block it either",
     );
 }
+
+/// Whether the other player's Flame Slash can be aimed at it. A sorcery
+/// needs their turn and an empty stack, which is the only reason this is
+/// not the same helper as the Bolt.
+fn slash_can_hit(game: &Game, hexdrinker: GameObjectId) -> bool {
+    let mut game = game.clone();
+    game.players[1]
+        .hand
+        .push(card(96_700, cards::FLAME_SLASH, PlayerId::Two));
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+    game.legal_actions(PlayerId::Two).into_iter().any(|action| {
+        matches!(
+            action,
+            Action::CastSpell { card, ref choices, .. }
+                if card == CardInstanceId(96_700)
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(hexdrinker))
+        )
+    })
+}
+
+/// "Protection from instants means Hexdrinker can't be the target of instant
+/// spells ... Nothing other than these events is prevented or illegal." A
+/// sorcery is nothing other than these events, and four damage kills a 4/4.
+#[test]
+fn a_sorcery_still_answers_the_lower_band() {
+    let (mut game, hexdrinker) = staged(0);
+    set_level(&mut game, hexdrinker, 3);
+
+    assert!(!bolt_can_hit(&game, hexdrinker), "an instant cannot");
+    assert!(
+        slash_can_hit(&game, hexdrinker),
+        "and a sorcery is not what the protection names",
+    );
+
+    set_level(&mut game, hexdrinker, 5);
+
+    assert!(
+        !slash_can_hit(&game, hexdrinker),
+        "at eight counters it is protected from everything, sorceries included",
+    );
+}
+
+/// "If an effect has set Hexdrinker's power and/or toughness to a specific
+/// value after it entered the battlefield, leveling up won't change that
+/// characteristic." The band still hands over its keyword; what it cannot
+/// do is win a layer it entered first.
+#[test]
+fn a_later_set_power_and_toughness_survives_leveling_up() {
+    let (mut game, hexdrinker) = staged(0);
+    attach_constant_resolved_characteristics(
+        &mut game,
+        hexdrinker,
+        &[AppliedEffectDef::set_base_power_toughness(
+            ValueDef::Constant(1),
+            ValueDef::Constant(1),
+        )],
+        ContinuousEffectExpiration::Never,
+    );
+    assert_eq!(
+        (
+            game.power(body(&game, hexdrinker)),
+            game.toughness(body(&game, hexdrinker))
+        ),
+        (Some(1), Some(1)),
+        "the effect landed on a 2/1",
+    );
+
+    set_level(&mut game, hexdrinker, 3);
+
+    assert_eq!(
+        (
+            game.power(body(&game, hexdrinker)),
+            game.toughness(body(&game, hexdrinker))
+        ),
+        (Some(1), Some(1)),
+        "the band would say 4/4 and it is later that says 1/1",
+    );
+    assert!(
+        !bolt_can_hit(&game, hexdrinker),
+        "and the half of the band that is not a size still arrives",
+    );
+
+    set_level(&mut game, hexdrinker, 5);
+
+    assert_eq!(
+        (
+            game.power(body(&game, hexdrinker)),
+            game.toughness(body(&game, hexdrinker))
+        ),
+        (Some(1), Some(1)),
+        "eight counters do not move it either",
+    );
+}
