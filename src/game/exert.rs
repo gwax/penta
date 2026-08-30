@@ -12,6 +12,15 @@
 //! captured here waits for the declaration to finish the way every other
 //! attack trigger does.
 
+// Audit: partial -- "If you gain control of another player's creature until
+// end of turn and exert it, it will untap during that player's untap step."
+// An owed skip is stored on the permanent as a count, not against the player
+// who exerted it, so a borrowed creature carries the debt home and misses its
+// owner's untap step instead. Separating the two shapes -- exert's "your next
+// untap step" from Barl's Cage's "its controller's next untap step" -- means
+// recording the owing player, which is a checkpoint-model change. No card in
+// the Vintage Cube pool gains control of a creature until end of turn.
+
 use crate::card::{DeclarativeAbilityDef, TriggerEventDef};
 use crate::ids::GameObjectId;
 

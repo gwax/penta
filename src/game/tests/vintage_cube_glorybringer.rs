@@ -251,3 +251,103 @@ fn exert_is_not_offered_after_the_declaration() {
         "nor later in the combat it started",
     );
 }
+
+/// "A creature an opponent controls": your own board is not on the menu,
+/// however tempting a blocker you no longer want might be.
+#[test]
+fn the_trigger_does_not_name_your_own_creature() {
+    let (mut game, dragon, bears, _their_dragon) = staged();
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+
+    attack_with(&mut game, dragon);
+    game.apply(PlayerId::One, Action::ExertAttacker { attacker: dragon })
+        .expect("it exerts");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+
+    let choice = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the reflexive trigger asks for its target");
+    let offered = choice
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(instance, _)| instance))
+        .collect::<Vec<_>>();
+
+    assert!(offered.contains(&bears), "their bear is on the menu");
+    assert!(
+        !offered.contains(&mine),
+        "yours is not, whoever would rather it were: {offered:?}",
+    );
+}
+
+/// "If an exerted creature is already untapped during your next untap step
+/// (most likely because it had vigilance or an effect untapped it), exert's
+/// effect preventing it from untapping expires without having done
+/// anything." The step it was owed is the step it is spent on, tapped or
+/// not: it does not wait around for the next one.
+#[test]
+fn an_exert_owed_by_an_untapped_creature_expires_unspent() {
+    let (mut game, dragon, _bears, _their_dragon) = staged();
+    attack_with(&mut game, dragon);
+    game.apply(PlayerId::One, Action::ExertAttacker { attacker: dragon })
+        .expect("it exerts");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+    drain_pending(&mut game);
+
+    // Standing in for the vigilance or the untapper: it is not tapped when
+    // the untap step it owes comes around.
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == dragon)
+    {
+        permanent.tapped = false;
+    }
+    game.commit_next_turn(PlayerId::Two, Vec::new());
+    drain_pending(&mut game);
+    game.commit_next_turn(PlayerId::One, Vec::new());
+    drain_pending(&mut game);
+
+    let after = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == dragon)
+        .expect("it is still there");
+    assert!(!after.tapped, "there was nothing for the skip to do");
+    assert_eq!(
+        after.skipped_untap_steps, 0,
+        "and it was spent on that step all the same",
+    );
+
+    // Which is to say the turn after is an ordinary one.
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == dragon)
+    {
+        permanent.tapped = true;
+    }
+    game.commit_next_turn(PlayerId::Two, Vec::new());
+    drain_pending(&mut game);
+    game.commit_next_turn(PlayerId::One, Vec::new());
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == dragon)
+            .expect("still there")
+            .tapped,
+        "the Dragon untaps normally once the exert is behind it",
+    );
+}
