@@ -212,3 +212,70 @@ fn the_emblem_makes_a_robot_out_of_an_artifact() {
         "and it is a creature now",
     );
 }
+
+/// "The resulting artifact creature will be able to attack if it's been
+/// under your control continuously since the turn began. That is, it doesn't
+/// matter how long it's been a creature, just how long it's been on the
+/// battlefield." The Robot the emblem makes attacks the turn it is made.
+#[test]
+fn the_robot_attacks_the_turn_it_is_animated() {
+    let (mut game, tezzeret, ids) = staged(&[cards::SOL_RING]);
+    let ring = ids[0];
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == tezzeret)
+        .expect("he is here")
+        .add_counters(CounterKind::Loyalty, 3);
+    activate(&mut game, tezzeret, -7, None);
+
+    game.step = Step::BeginningOfCombat;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: ring,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .expect("the Ring has been here all turn, whatever it has been");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+    drain_pending(&mut game);
+
+    assert!(
+        permanent(&game, ring).attacking,
+        "so the Robot is attacking",
+    );
+}
+
+/// "If a card in your library has {X} in its mana cost, X is 0 for the
+/// purpose of determining its mana value." A Walking Ballista costs {X}{X}
+/// and is therefore a one-drop the search may take.
+#[test]
+fn the_minus_three_counts_an_x_cost_as_zero() {
+    let (mut game, tezzeret, _) = staged(&[]);
+    for (index, definition) in [cards::SERRA_ANGEL, cards::WALKING_BALLISTA]
+        .into_iter()
+        .enumerate()
+    {
+        game.players[0].library.push(card(
+            97_100 + u32::try_from(index).expect("a small library"),
+            definition,
+            PlayerId::One,
+        ));
+    }
+
+    activate(&mut game, tezzeret, -3, None);
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::WALKING_BALLISTA),
+        "an {{X}}{{X}} artifact is a mana value of nothing at all",
+    );
+}
