@@ -152,3 +152,77 @@ fn tapping_draws_for_both_players() {
         "and the opponent it named draws too",
     );
 }
+
+/// The half the file's own comment claims and never shows: vigilance means
+/// she can attack and still tap for the draw, which is why the two abilities
+/// sit on the same card.
+#[test]
+fn she_attacks_and_still_taps_for_the_draw() {
+    let (mut game, loran, _) = staged(&[]);
+    settle(&mut game, None);
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: loran,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .expect("a 2/1 may attack");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == loran)
+            .expect("she is attacking")
+            .tapped,
+        "vigilance kept her untapped",
+    );
+    let draw = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == loran))
+        .expect("so the tap is still there to spend");
+    game.apply(PlayerId::One, draw).expect("it activates");
+    settle(&mut game, None);
+
+    assert_eq!(game.players[0].hand.len(), 1, "you drew");
+    assert_eq!(
+        game.players[1]
+            .hand
+            .iter()
+            .filter(|card| card.definition == cards::SAVANNAH_LIONS)
+            .count(),
+        1,
+        "and so did the opponent, in the middle of being attacked",
+    );
+}
+
+/// "Artifact or enchantment": the other half of the entry trigger.
+#[test]
+fn arriving_answers_an_enchantment_too() {
+    let (mut game, _loran, board) = staged(&[(cards::EXPLORATION, PlayerId::Two)]);
+
+    settle(&mut game, Some(board[0]));
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == board[0]),
+        "the enchantment was destroyed",
+    );
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::EXPLORATION),
+        "and it is in its owner's graveyard",
+    );
+}
