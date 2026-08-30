@@ -1,6 +1,7 @@
 //! Modern Horizons cards cataloged for the Vintage Cube pool.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::CostQuantityDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules,
@@ -8,8 +9,8 @@ use crate::card::{
     DiscardFollowUpDef, DiscardSelectionDef, EffectDef, EffectRecipientDef, EmblemCharacteristics,
     ExilePlayDurationDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
     ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
-    SpellAdditionalCostDef, SpendModeDef, TokenCharacteristics, TriggerConditionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    SpellAdditionalCostDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -266,14 +267,11 @@ pub(in crate::card::sets) static FORCE_OF_NEGATION: CardRecord = CardRecord::new
         // Exiled rather than discarded, the same way the green half of the cycle
         // spends its card: what pays is gone without ever becoming a graveyard
         // card.
-        .with_alternative_additional_cost(
-            &SpellAdditionalCostDef::new(
-                ObjectPredicateDef::Color(ManaColor::Blue),
-                ZoneKind::Hand,
-                1,
-            )
-            .spent(SpendModeDef::Exile),
-        )
+        .with_alternative_additional_cost(&SpellAdditionalCostDef::exile(
+            ObjectPredicateDef::Color(ManaColor::Blue),
+            ZoneKind::Hand,
+            CostQuantityDef::Fixed(1),
+        ))
         .with_alternative_condition(&NOT_YOUR_TURN),
         AbilityDef::spell_with_targets(
             "Counter target noncreature spell. If that spell is countered this way, exile it \
@@ -539,12 +537,11 @@ pub(in crate::card::sets) static FORCE_OF_VIGOR: CardRecord = CardRecord::new_wi
         )
         // Exiled rather than discarded: the card is spent without ever becoming a
         // graveyard card, which is what "exile a green card" means.
-        .with_alternative_additional_cost(&SpellAdditionalCostDef::new(
+        .with_alternative_additional_cost(&SpellAdditionalCostDef::exile(
             ObjectPredicateDef::Color(ManaColor::Green),
             ZoneKind::Hand,
-            1,
-        )
-        .spent(SpendModeDef::Exile))
+            CostQuantityDef::Fixed(1),
+        ))
         .with_alternative_condition(&NOT_YOUR_TURN),
         AbilityDef::spell_with_targets(
             "Destroy up to two target artifacts and/or enchantments.",
@@ -805,10 +802,9 @@ pub(in crate::card::sets) static WRENN_AND_SIX: CardRecord = CardRecord::new(
                                     // Retrace's own cost: the card's mana cost, plus a land out of your hand.
                                     // Discarding is what an ordinary hand cost does, so nothing else has to be
                                     // said about how the land is spent.
-                                    .with_alternative_additional_cost(&SpellAdditionalCostDef::new(
+                                    .with_alternative_additional_cost(&SpellAdditionalCostDef::discard(
                                         ObjectPredicateDef::HasType(CardType::Land),
-                                        ZoneKind::Hand,
-                                        1,
+                                        CostQuantityDef::Fixed(1),
                                     )),
                                 }),
                             },

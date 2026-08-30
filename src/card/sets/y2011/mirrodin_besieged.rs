@@ -1,6 +1,7 @@
 //! Mirrodin Besieged cards cataloged as cross-format rules-engine test cases.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::CostQuantityDef;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y2010::scars_of_mirrodin::{
     ARTIFACTS_YOU_CONTROL, METALCRAFT, metalcraft_value,
@@ -16,10 +17,10 @@ use crate::card::{
     EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectQueryDef,
     ObjectRefDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, ScaledValueDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef,
-    SpellResolutionDestinationDef, SpendModeDef, TargetChooserDef, TokenStatsDef,
-    TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
-    ZonePlacement, abilities,
+    ResolvedEffectDurationDef, ScaledValueDef, SpellAdditionalCostDef,
+    SpellResolutionDestinationDef, TargetChooserDef, TokenStatsDef, TriggerConditionDef,
+    TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement,
+    abilities,
 };
 use crate::{ObjectSetBindingIndex, TargetIndex, mana_cost};
 
@@ -803,15 +804,10 @@ pub(in crate::card::sets) static VIVISECTION: CardRecord = CardRecord::new(
         AbilityDef::spell_with_additional_cost(
             "As an additional cost to cast this spell, sacrifice a creature.\nDraw three cards.",
             &[],
-            SpellAdditionalCostDef {
-                or_life: None,
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zone: ZoneKind::Battlefield,
-                count: 1,
-                counted: SpellAdditionalCostCountDef::Printed,
-                spend: SpendModeDef::ByZone,
-                or: None,
-            },
+            SpellAdditionalCostDef::sacrifice(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                CostQuantityDef::Fixed(1),
+            ),
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(3),

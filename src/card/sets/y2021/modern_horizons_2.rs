@@ -1,6 +1,7 @@
 //! Modern Horizons 2 cards cataloged as cross-format rules-engine test cases.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::CostQuantityDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AlternativeCastKindDef, AppliedEffectDef, BasicLandType, CardArt, CardRules, CardSet,
@@ -12,7 +13,7 @@ use crate::card::{
     MillLoopDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
     ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef,
     ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    SetOperationDef, SpellAdditionalCostDef, SpendModeDef, TargetChooserDef, TriggerConditionDef,
+    SetOperationDef, SpellAdditionalCostDef, TargetChooserDef, TriggerConditionDef,
     TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::{AdditionalCostIndex, ObjectSetBindingIndex, TargetIndex, mana_cost};
@@ -97,14 +98,11 @@ pub(in crate::card::sets) static SOLITUDE: CardRecord = CardRecord::new(
                 Some("Evoke—Exile a white card from your hand."),
                 EffectDef::None,
             )
-            .with_alternative_additional_cost(
-                &SpellAdditionalCostDef::new(
-                    ObjectPredicateDef::Color(ManaColor::White),
-                    ZoneKind::Hand,
-                    1,
-                )
-                .spent(SpendModeDef::Exile),
-            ),
+            .with_alternative_additional_cost(&SpellAdditionalCostDef::exile(
+                ObjectPredicateDef::Color(ManaColor::White),
+                ZoneKind::Hand,
+                CostQuantityDef::Fixed(1),
+            )),
             abilities::evoke_sacrifice(
                 "When this creature enters, if it was evoked, sacrifice it.",
             ),
@@ -207,14 +205,11 @@ pub(in crate::card::sets) static SUBTLETY: CardRecord = CardRecord::new_with_leg
                 Some("Evoke—Exile a blue card from your hand."),
                 EffectDef::None,
             )
-            .with_alternative_additional_cost(
-                &SpellAdditionalCostDef::new(
-                    ObjectPredicateDef::Color(ManaColor::Blue),
-                    ZoneKind::Hand,
-                    1,
-                )
-                .spent(SpendModeDef::Exile),
-            ),
+            .with_alternative_additional_cost(&SpellAdditionalCostDef::exile(
+                ObjectPredicateDef::Color(ManaColor::Blue),
+                ZoneKind::Hand,
+                CostQuantityDef::Fixed(1),
+            )),
             abilities::evoke_sacrifice(
                 "When this creature enters, if it was evoked, sacrifice it.",
             ),
@@ -311,15 +306,19 @@ pub(in crate::card::sets) static BONE_SHARDS: CardRecord = CardRecord::new_with_
                     ObjectPredicateDef::HasType(CardType::Planeswalker),
                 ]),
             )],
-            SpellAdditionalCostDef::new(
-                ObjectPredicateDef::HasType(CardType::Creature),
-                ZoneKind::Battlefield,
-                1,
-            )
             // The second half of "sacrifice a creature or discard a card". Which half
             // is paid is settled as the spell is cast: both spend a card the caster
             // already had, and the enumeration offers every one of them.
-            .or(&SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Hand, 1)),
+            SpellAdditionalCostDef::choice(&[
+                SpellAdditionalCostDef::sacrifice(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    CostQuantityDef::Fixed(1),
+                ),
+                SpellAdditionalCostDef::discard(
+                    ObjectPredicateDef::Any,
+                    CostQuantityDef::Fixed(1),
+                ),
+            ]),
             EffectDef::Destroy {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 can_regenerate: true,
@@ -398,12 +397,11 @@ pub(in crate::card::sets) static GRIEF: CardRecord = CardRecord::new(
                 Some("Evoke—Exile a black card from your hand."),
                 EffectDef::None,
             )
-            .with_alternative_additional_cost(&SpellAdditionalCostDef::new(
+            .with_alternative_additional_cost(&SpellAdditionalCostDef::exile(
                 ObjectPredicateDef::Color(ManaColor::Black),
                 ZoneKind::Hand,
-                1,
-            )
-            .spent(SpendModeDef::Exile)),
+                CostQuantityDef::Fixed(1),
+            )),
             abilities::evoke_sacrifice("When this creature enters, if it was evoked, sacrifice it."),
         ]),
 );
@@ -540,8 +538,11 @@ pub(in crate::card::sets) static FURY: CardRecord = CardRecord::new_with_legacy_
                 Some("Evoke—Exile a red card from your hand."),
                 EffectDef::None,
             )
-            .with_alternative_additional_cost(&SpellAdditionalCostDef::new(ObjectPredicateDef::Color(ManaColor::Red), ZoneKind::Hand, 1)
-                    .spent(SpendModeDef::Exile)),
+            .with_alternative_additional_cost(&SpellAdditionalCostDef::exile(
+                ObjectPredicateDef::Color(ManaColor::Red),
+                ZoneKind::Hand,
+                CostQuantityDef::Fixed(1),
+            )),
             // Evoke's own sacrifice. It is a separate trigger because it happens
             // after the Elemental has arrived, alongside the damage trigger rather
             // than instead of it -- which is why an evoked Fury still burns.
@@ -570,10 +571,9 @@ pub(in crate::card::sets) static MINE_COLLAPSE: CardRecord = CardRecord::new_wit
         )
         // A Mountain, not a red source: what the cost names is the land type, so a
         // Sacred Foundry pays it and a Mountain that has stopped being one does not.
-        .with_alternative_additional_cost(&SpellAdditionalCostDef::new(
+        .with_alternative_additional_cost(&SpellAdditionalCostDef::sacrifice(
             ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
-            ZoneKind::Battlefield,
-            1,
+            CostQuantityDef::Fixed(1),
         ))
         // "If it's your turn" gates only the free cast. The printed cost is always
         // available, which is why this is a condition on the alternative rather
@@ -736,14 +736,11 @@ pub(in crate::card::sets) static ENDURANCE: CardRecord = CardRecord::new(
                 Some("Evoke—Exile a green card from your hand."),
                 EffectDef::None,
             )
-            .with_alternative_additional_cost(
-                &SpellAdditionalCostDef::new(
-                    ObjectPredicateDef::Color(ManaColor::Green),
-                    ZoneKind::Hand,
-                    1,
-                )
-                .spent(SpendModeDef::Exile),
-            ),
+            .with_alternative_additional_cost(&SpellAdditionalCostDef::exile(
+                ObjectPredicateDef::Color(ManaColor::Green),
+                ZoneKind::Hand,
+                CostQuantityDef::Fixed(1),
+            )),
             abilities::evoke_sacrifice(
                 "When this creature enters, if it was evoked, sacrifice it.",
             ),

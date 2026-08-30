@@ -1,6 +1,7 @@
 //! Dark Ascension card records used by the built-in ISD–M14 Standard deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::CostQuantityDef;
 use crate::card::sets::y2011::innistrad::morbid_entry_counters;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
@@ -10,9 +11,8 @@ use crate::card::{
     KeywordAbility, LifeConditionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
     PlayActionMatcherDef, PlayRestrictionDef, PlayerAttachmentQueryDef, PlayerRelation,
     QuantifierDef, ReplacementEffectDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    ScaledValueDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef,
-    TargetConditionDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    ScaledValueDef, SpellAdditionalCostDef, TargetConditionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -21,15 +21,11 @@ static FATEFUL_HOUR: TriggerConditionDef = TriggerConditionDef::ControllerLifeAt
 
 /// "As an additional cost to cast this spell, exile a creature card from your
 /// graveyard."
-static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef {
-    or_life: None,
-    object: ObjectPredicateDef::HasType(CardType::Creature),
-    zone: ZoneKind::Graveyard,
-    count: 1,
-    counted: SpellAdditionalCostCountDef::Printed,
-    spend: SpendModeDef::ByZone,
-    or: None,
-};
+static EXILE_A_CREATURE_CARD: SpellAdditionalCostDef = SpellAdditionalCostDef::exile(
+    ObjectPredicateDef::HasType(CardType::Creature),
+    ZoneKind::Graveyard,
+    CostQuantityDef::Fixed(1),
+);
 
 static MORBID_A_CREATURE_DIED: TriggerConditionDef = TriggerConditionDef::CreatureDiedThisTurn;
 

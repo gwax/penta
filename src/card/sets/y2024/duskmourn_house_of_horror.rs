@@ -2,6 +2,7 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::CardComposition;
+use crate::card::CostQuantityDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
@@ -13,8 +14,8 @@ use crate::card::{
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef,
     PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementConditionDef,
     ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SetOperationDef,
-    SpellAdditionalCostDef, SpendModeDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef,
-    TurnPhaseDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    SpellAdditionalCostDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef, TurnPhaseDef,
+    TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -124,8 +125,11 @@ pub(in crate::card::sets) static ABHORRENT_OCULUS: CardRecord = CardRecord::new_
             &[],
             // Six cards out of your own graveyard, exiled to pay. Nothing is chosen
             // after the fact: the additional cost travels with the cast.
-            SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Graveyard, 6)
-                    .spent(SpendModeDef::Exile),
+            SpellAdditionalCostDef::exile(
+                ObjectPredicateDef::Any,
+                ZoneKind::Graveyard,
+                CostQuantityDef::Fixed(6),
+            ),
             EffectDef::None,
         ),
         abilities::flying(),

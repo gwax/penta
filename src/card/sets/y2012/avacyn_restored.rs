@@ -1,6 +1,7 @@
 //! Avacyn Restored card records used by the built-in ISD–M14 Standard deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::CostQuantityDef;
 use crate::card::sets::y1993::alpha;
 use crate::card::sets::y2003::mirrodin as catalog_mrd;
 use crate::card::{
@@ -13,9 +14,9 @@ use crate::card::{
     EffectRecipientDef, KeywordAbility, ManaColor, ManaRestrictionDef, ManaSpendEffectDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation,
     PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostCountDef, SpellAdditionalCostDef,
-    SpendModeDef, TargetChooserDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostDef, TargetChooserDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -1791,15 +1792,10 @@ pub(in crate::card::sets) static BONE_SPLINTERS: CardRecord = CardRecord::new_wi
         &[AbilityTargetDef::exactly_one_permanent(
             ObjectPredicateDef::HasType(CardType::Creature),
         )],
-        SpellAdditionalCostDef {
-            or_life: None,
-            object: ObjectPredicateDef::HasType(CardType::Creature),
-            zone: ZoneKind::Battlefield,
-            count: 1,
-            counted: SpellAdditionalCostCountDef::Printed,
-            spend: SpendModeDef::ByZone,
-            or: None,
-        },
+        SpellAdditionalCostDef::sacrifice(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            CostQuantityDef::Fixed(1),
+        ),
         EffectDef::Destroy {
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             can_regenerate: true,

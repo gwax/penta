@@ -1,14 +1,15 @@
 //! Theros Beyond Death cards cataloged for the Vintage Cube.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::CostQuantityDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
     AppliedEffectDef, AppliedRuleDef, CardArt, CardChoiceSourceDef, CardRules, CardSet,
     CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, EffectDef,
     EffectRecipientDef, ManaColor, MoveObjectsDef, ObjectChoiceBindingDef, ObjectPredicateDef,
     ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, RandomizeObjectOrderDef,
-    SpellAdditionalCostDef, SpendModeDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -170,7 +171,11 @@ pub(in crate::card::sets) static UNDERWORLD_BREACH: CardRecord = CardRecord::new
                     // Three cards out of your own graveyard, exiled to pay. The card being cast
                     // is on the stack by the time costs are paid, so "other" takes care of
                     // itself: it is not there to be chosen.
-                    .with_alternative_additional_cost(&SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Graveyard, 3)),
+                    .with_alternative_additional_cost(&SpellAdditionalCostDef::exile(
+                        ObjectPredicateDef::Any,
+                        ZoneKind::Graveyard,
+                        CostQuantityDef::Fixed(3),
+                    )),
                 }),
             },
         ),
@@ -276,8 +281,11 @@ pub(in crate::card::sets) static URO_TITAN_OF_NATURE_S_WRATH: CardRecord = CardR
             // Five cards out of your own graveyard, exiled to pay. The card being cast
             // is on the stack by the time costs are paid, so "other" takes care of
             // itself: it is not there to be chosen.
-            .with_alternative_additional_cost(&SpellAdditionalCostDef::new(ObjectPredicateDef::Any, ZoneKind::Graveyard, 5)
-                    .spent(SpendModeDef::Exile)),
+            .with_alternative_additional_cost(&SpellAdditionalCostDef::exile(
+                ObjectPredicateDef::Any,
+                ZoneKind::Graveyard,
+                CostQuantityDef::Fixed(5),
+            )),
         ]),
 );
 

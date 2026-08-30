@@ -1,6 +1,7 @@
 //! New Phyrexia cards used to exercise Phyrexian mana.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::CostQuantityDef;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y2010::scars_of_mirrodin::METALCRAFT;
 use crate::card::{
@@ -1556,10 +1557,9 @@ pub(in crate::card::sets) static ICHOR_EXPLOSION: CardRecord = CardRecord::new(
         AbilityDef::spell_with_additional_cost(
             "As an additional cost to cast this spell, sacrifice a creature.\nAll creatures get -X/-X until end of turn, where X is the sacrificed creature's power.",
             &[],
-            SpellAdditionalCostDef::new(
+            SpellAdditionalCostDef::sacrifice(
                 ObjectPredicateDef::HasType(CardType::Creature),
-                ZoneKind::Battlefield,
-                1,
+                CostQuantityDef::Fixed(1),
             ),
             EffectDef::Apply {
                 recipient: EffectRecipientDef::matching_objects(
@@ -1929,13 +1929,12 @@ pub(in crate::card::sets) static ARTILLERIZE: CardRecord = CardRecord::new(
         AbilityDef::spell_with_additional_cost(
             "As an additional cost to cast this spell, sacrifice an artifact or creature.\nThis spell deals 5 damage to any target.",
             &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::AnyTarget)],
-            SpellAdditionalCostDef::new(
+            SpellAdditionalCostDef::sacrifice(
                 ObjectPredicateDef::AnyOf(&[
                     ObjectPredicateDef::HasType(CardType::Artifact),
                     ObjectPredicateDef::HasType(CardType::Creature),
                 ]),
-                ZoneKind::Battlefield,
-                1,
+                CostQuantityDef::Fixed(1),
             ),
             EffectDef::DealDamage {
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),

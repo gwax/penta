@@ -3,9 +3,9 @@
 //! the card itself is in its owner's graveyard.
 
 use super::*;
+use crate::card::CostQuantityDef;
 use crate::card::{
-    CardType, DeclarativeAbilityDef, ObjectPredicateDef, SpellAdditionalCostCountDef,
-    SpellAdditionalCostDef, SpendModeDef, ZoneKind,
+    CardType, DeclarativeAbilityDef, ObjectPredicateDef, SpellAdditionalCostDef, ZoneKind,
 };
 
 fn staged_skaab(
@@ -177,13 +177,11 @@ fn both_skaabs_explicitly_exile_their_graveyard_costs() {
             .expect("the Skaab spell declares its creature-card cost");
         assert_eq!(
             cost,
-            SpellAdditionalCostDef::new(
+            SpellAdditionalCostDef::exile(
                 ObjectPredicateDef::HasType(CardType::Creature),
                 ZoneKind::Graveyard,
-                count,
-            )
-            .counted(SpellAdditionalCostCountDef::Printed)
-            .spent(SpendModeDef::Exile),
+                CostQuantityDef::Fixed(count),
+            ),
             "{} should explicitly exile exactly {count} creature cards",
             card.name,
         );

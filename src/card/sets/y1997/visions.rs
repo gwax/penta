@@ -1,6 +1,7 @@
 //! Visions cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::CostQuantityDef;
 use crate::card::sets::y2010::worldwake as catalog_wwk;
 use crate::card::sets::y2012::avacyn_restored as catalog_avr;
 use crate::card::sets::y2012::return_to_ravnica as catalog_rtr;
@@ -9,9 +10,8 @@ use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
     ArrivalAttachmentDef, BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef,
     EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef, PlayerRefDef,
-    PlayerRelation, SpellAdditionalCostCountDef, SpellAdditionalCostDef, SpendModeDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    PlayerRelation, SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::card::{
     AppliedEffectDef, AppliedRuleDef, AttackDefenderScopeDef, AttackRestrictionDef, CounterKind,
@@ -964,15 +964,10 @@ pub(in crate::card::sets) static FIREBLAST: CardRecord = CardRecord::new_with_le
         // Two Mountains off the battlefield, which is why the card is a finisher
         // rather than a burn spell: it is cast from an empty board on the turn the
         // lands stop mattering.
-        .with_alternative_additional_cost(&SpellAdditionalCostDef {
-            or_life: None,
-            object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
-            zone: ZoneKind::Battlefield,
-            count: 2,
-            counted: SpellAdditionalCostCountDef::Printed,
-            spend: SpendModeDef::ByZone,
-            or: None,
-        }),
+        .with_alternative_additional_cost(&SpellAdditionalCostDef::sacrifice(
+            ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),
+            CostQuantityDef::Fixed(2),
+        )),
     ]),
 );
 
@@ -1383,14 +1378,6 @@ pub(in crate::card::sets) static MORTAL_WOUND: CardRecord = CardRecord::new(
 );
 
 // VIS 114 — Natural Order
-/// A green creature, wherever the card is looking for one. The sacrifice and
-/// the search name the same thing, which is what makes this a trade rather
-/// than a tutor.
-static A_GREEN_CREATURE: ObjectPredicateDef = ObjectPredicateDef::All(&[
-    ObjectPredicateDef::HasType(CardType::Creature),
-    ObjectPredicateDef::Color(ManaColor::Green),
-]);
-
 pub(in crate::card::sets) static NATURAL_ORDER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("0845f0b0-9413-4ddd-861d-9607636bebc6"),
     "Natural Order",
@@ -1406,19 +1393,20 @@ pub(in crate::card::sets) static NATURAL_ORDER: CardRecord = CardRecord::new(
             &[],
             // Paid as the spell is cast, so a board with nothing green on it cannot
             // cast this at all.
-            SpellAdditionalCostDef {
-                or_life: None,
-                object: A_GREEN_CREATURE,
-                zone: ZoneKind::Battlefield,
-                count: 1,
-                counted: SpellAdditionalCostCountDef::Printed,
-                spend: SpendModeDef::ByZone,
-                or: None,
-            },
+            SpellAdditionalCostDef::sacrifice(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Color(ManaColor::Green),
+                ]),
+                CostQuantityDef::Fixed(1),
+            ),
             EffectDef::SearchZone {
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
-                object: A_GREEN_CREATURE,
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Color(ManaColor::Green),
+                ]),
                 minimum: 0,
                 maximum: ValueDef::Constant(1),
                 reveal: false,
