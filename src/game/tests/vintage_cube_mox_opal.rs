@@ -155,3 +155,69 @@ fn a_second_copy_cannot_stay() {
         vec![cards::MOX_OPAL],
     );
 }
+
+/// "If you control Mox Opal and one other artifact, then have a second Mox
+/// Opal enter the battlefield as your third artifact, you can't activate
+/// either one's mana ability before putting one into your graveyard due to
+/// the legend rule." The third artifact is the one that has to go, so the
+/// count is back to two before anybody has priority.
+#[test]
+fn a_second_opal_never_turns_metalcraft_on() {
+    let (mut game, opal) = staged(1);
+    assert!(
+        mana_action(&game, opal, ManaColor::Blue).is_none(),
+        "two artifacts is not metalcraft to begin with",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::MOX_OPAL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+    for _ in 0..8 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            break;
+        };
+        let options = decision
+            .options
+            .iter()
+            .map(|option| option.id)
+            .take(decision.minimum.max(1))
+            .collect();
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .expect("the offered choice is legal");
+        game.check_state_based_actions();
+    }
+
+    let survivor = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Card(cards::MOX_OPAL))
+        .expect("one Opal stays")
+        .card
+        .id;
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| {
+                game.permanent_types(permanent)
+                    .is_some_and(|types| types.contains(CardType::Artifact))
+            })
+            .count(),
+        2,
+        "the third artifact was the copy that had to go",
+    );
+    assert!(
+        mana_action(&game, survivor, ManaColor::Blue).is_none(),
+        "so metalcraft was never on when anybody could act",
+    );
+}
