@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **Necromancy reads its intervening if when the trigger resolves.** Its
+  entry trigger is printed "when this enchantment enters, if it's on the
+  battlefield", and the condition was recorded in the text but not in the
+  ability, so an enchantment answered between resolving and reanimating
+  still pulled a creature out of a graveyard and left it on the battlefield
+  with nothing attached to it. It now reanimates nothing, as Animate Dead's
+  identical clause already did.
+
 - **A prohibition on being made to sacrifice reaches an offer as well as an
   order.** "Spells and abilities your opponents control can't cause you to
   sacrifice permanents" was read as covering only sacrifices a player had no

@@ -196,3 +196,45 @@ fn it_survives_the_window_before_it_attaches() {
         "no creature card to reanimate, and it still stands",
     );
 }
+
+/// "When this enchantment enters, **if it's on the battlefield**": an
+/// intervening if, read again as the trigger resolves. An enchantment
+/// answered in that window reanimates nothing.
+#[test]
+fn an_enchantment_answered_before_its_trigger_resolves_reanimates_nothing() {
+    let (mut game, necromancy) = staged();
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == necromancy))
+        .expect("three mana casts it");
+    game.apply(PlayerId::One, action).expect("it is cast");
+
+    // Far enough for the enchantment itself to resolve onto the battlefield
+    // and no further: its own entry trigger is what is still waiting.
+    let source = loop {
+        if let Some(permanent) = enchantment(&game) {
+            break permanent.card.id;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the spell is on the stack");
+    };
+
+    game.destroy_permanent(source);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert!(
+        angel(&game).is_none(),
+        "nothing was put onto the battlefield"
+    );
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "the Angel is where it was",
+    );
+}

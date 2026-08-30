@@ -704,7 +704,18 @@ pub(in crate::card::sets) static NECROMANCY: CardRecord = CardRecord::new_with_l
             abilities::flash(),
             // Any graveyard, not only your own: the card is a reanimation spell for
             // whatever died, whoever owned it.
-            abilities::enters_trigger_with_targets("When this enchantment enters, if it's on the battlefield, it becomes an Aura with \"enchant creature put onto the battlefield with Necromancy.\" Put target creature card from a graveyard onto the battlefield under your control and attach this enchantment to it.", &[AbilityTargetDef::exactly_one(
+            AbilityDef::triggered_if_with_targets("When this enchantment enters, if it's on the battlefield, it becomes an Aura with \"enchant creature put onto the battlefield with Necromancy.\" Put target creature card from a graveyard onto the battlefield under your control and attach this enchantment to it.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                // "If it's on the battlefield" is an intervening if, read again as
+                // the trigger resolves: an enchantment answered in that window
+                // reanimates nothing rather than pulling a creature out of a
+                // graveyard from somewhere else.
+                &const { TriggerConditionDef::SourceOnBattlefield },
+                &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::HasType(CardType::Creature),
                     zones: &[ZoneKind::Graveyard],
