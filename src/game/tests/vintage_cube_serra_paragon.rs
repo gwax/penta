@@ -301,3 +301,40 @@ fn the_land_half_also_costs_your_land_drop() {
         "and the spell half is still there to be spent",
     );
 }
+
+/// "Once during *each* of your turns": spending it does not spend it for
+/// good. The turn after, the graveyard is open again.
+#[test]
+fn the_once_a_turn_returns_next_turn() {
+    let (mut game, _paragon) = staged(&[cards::MOUNTAIN, cards::GRIZZLY_BEARS]);
+    play_from_graveyard(&mut game, cards::GRIZZLY_BEARS);
+    let mountain = buried(&game, cards::MOUNTAIN).expect("it is buried");
+    assert!(
+        graveyard_play(&game, mountain).is_none(),
+        "this turn's one play has been spent",
+    );
+
+    // Their turn and then yours again.
+    for _ in 0..2 {
+        game.finish_cleanup();
+        game.start_next_turn();
+        drain_pending(&mut game);
+    }
+    assert_eq!(game.active_player, PlayerId::One);
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.players[0].lands_played_this_turn = 0;
+
+    let mountain = buried(&game, cards::MOUNTAIN).expect("still buried");
+    assert!(
+        graveyard_play(&game, mountain).is_some(),
+        "and the new turn brings the play back",
+    );
+
+    play_from_graveyard(&mut game, cards::MOUNTAIN);
+
+    assert!(
+        on_battlefield(&game, cards::MOUNTAIN).is_some(),
+        "the land came back on the second turn as well",
+    );
+}
