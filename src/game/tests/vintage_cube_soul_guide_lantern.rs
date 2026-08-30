@@ -282,3 +282,57 @@ fn the_draw_costs_one_more_than_the_sweep() {
         "the free sacrifice needs no mana; the draw needs one",
     );
 }
+
+/// "Exile target card from a graveyard" with no graveyard to reach into: the
+/// trigger has no legal target, so it never goes on the stack and nothing is
+/// asked. The Lantern still arrives.
+#[test]
+fn an_empty_pair_of_graveyards_asks_nothing() {
+    let (mut game, card) = staged(&[], &[]);
+
+    cast_lantern(&mut game, card, None);
+
+    assert!(
+        game.pending_decisions.is_empty(),
+        "there was nothing to point it at",
+    );
+    assert!(game.stack.is_empty(), "and nothing waiting to resolve");
+    let lantern = on_battlefield(&game);
+    assert_eq!(
+        offers(&game, lantern),
+        vec![1, 2],
+        "it landed with both of its sacrifices ready",
+    );
+    assert!(
+        game.players[0].exile.is_empty() && game.players[1].exile.is_empty(),
+        "and exiled nothing on the way in",
+    );
+}
+
+/// Both sacrifices spend the same tap, so a Lantern that is already tapped
+/// offers neither -- the mana is only half of what each one costs.
+#[test]
+fn a_tapped_lantern_offers_neither_sacrifice() {
+    // Empty graveyards, so the entry trigger asks nothing and the Lantern
+    // is simply standing there when the question is put to it.
+    let (mut game, card) = staged(&[], &[]);
+    cast_lantern(&mut game, card, None);
+    let lantern = on_battlefield(&game);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert_eq!(
+        offers(&game, lantern),
+        vec![1, 2],
+        "untapped, both are open"
+    );
+
+    for permanent in &mut game.battlefield {
+        if permanent.card.id == lantern {
+            permanent.tapped = true;
+        }
+    }
+
+    assert!(
+        offers(&game, lantern).is_empty(),
+        "a tapped Lantern has no tap left to give",
+    );
+}
