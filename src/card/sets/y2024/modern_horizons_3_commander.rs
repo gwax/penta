@@ -5,10 +5,11 @@ use crate::card::CostQuantityDef;
 use crate::card::{
     AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef,
-    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, SpellAdditionalCostDef, SumValueDef, TriggerEventDef, ValueDef,
-    ZoneKind, ZonePlacement, abilities,
+    CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, EffectBindingLabelDef, EffectDef,
+    EffectOutputBindingDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    SpellAdditionalCostDef, SumValueDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::ids::ObjectSetBindingIndex;
 use crate::{TargetIndex, mana_cost};
@@ -74,21 +75,27 @@ pub(in crate::card::sets) static BARROWGOYF: CardRecord = CardRecord::new_with_l
             TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
-                effect: &EffectDef::Mill {
-                    player: EffectRecipientDef::Controller,
-                    amount: ValueDef::TriggerEventAmount,
-                    binding: Some(ObjectSetBindingIndex::PRIMARY),
+                effect: &EffectDef::Sequence(&[
+                    EffectDef::BindOutput {
+                        effect: &EffectDef::Mill {
+                            player: EffectRecipientDef::Controller,
+                            amount: ValueDef::TriggerEventAmount,
+                        },
+                        binding: EffectOutputBindingDef::Objects("milled_cards"),
+                    },
                     // A minimum of zero is the second "you may": milling and taking nothing is
                     // a legal answer, and a pile with no creature in it never asks.
-                    then: Some(&EffectDef::Choose(ChooseDef {
+                    EffectDef::Choose(ChooseDef {
                         binding: ObjectChoiceBindingDef::Objects(BARROWGOYF_TAKEN),
                         unchosen: None,
                         chooser: PlayerRefDef::EffectController,
                         // "From among them" is what the mill just put there, not what the
                         // graveyard already held -- and only a creature card among those.
-                        candidates: ObjectSetDef::MatchingBinding {
-                            binding: ObjectSetBindingIndex::PRIMARY,
-                            object: ObjectPredicateDef::HasType(CardType::Creature),
+                        candidates: ObjectSetDef::Matching {
+                            objects: &ObjectSetDef::NamedBinding(&EffectBindingLabelDef(
+                                "milled_cards",
+                            )),
+                            object: &ObjectPredicateDef::HasType(CardType::Creature),
                         },
                         exclude: None,
                         minimum: 0,
@@ -99,8 +106,8 @@ pub(in crate::card::sets) static BARROWGOYF: CardRecord = CardRecord::new_with_l
                             zone: ZoneKind::Hand,
                             placement: ZonePlacement::Top,
                         },
-                    })),
-                },
+                    }),
+                ]),
             },
         ),
     ]),

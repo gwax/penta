@@ -32,14 +32,6 @@ use crate::card::{
 use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
 
-/// The largest power among your creatures, which is one creature's size
-/// rather than a count of them.
-static GREATEST_POWER_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
-    ObjectPredicateDef::HasType(CardType::Creature),
-    &[ZoneKind::Battlefield],
-    PlayerRelation::You,
-);
-
 // M13 1 — Ajani, Caller of the Pride
 pub(in crate::card::sets) static AJANI_CALLER_OF_THE_PRIDE: CardRecord =
     CardRecord::new_with_legacy_id(
@@ -1091,8 +1083,6 @@ pub(in crate::card::sets) static JACE_MEMORY_ADEPT: CardRecord = CardRecord::new
                     EffectDef::Mill {
                         player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                         amount: ValueDef::Constant(1),
-                        binding: None,
-                        then: None,
                     },
                 ]),
             ),
@@ -1105,8 +1095,6 @@ pub(in crate::card::sets) static JACE_MEMORY_ADEPT: CardRecord = CardRecord::new
                 EffectDef::Mill {
                     player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     amount: ValueDef::Constant(10),
-                    binding: None,
-                    then: None,
                 },
             ),
             AbilityDef::activated_with_targets(
@@ -1194,8 +1182,6 @@ pub(in crate::card::sets) static MIND_SCULPT: CardRecord = CardRecord::new_with_
         EffectDef::Mill {
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::Constant(7),
-            binding: None,
-            then: None,
         },
     )),
 );
@@ -1478,8 +1464,6 @@ pub(in crate::card::sets) static VEDALKEN_ENTRANCER: CardRecord = CardRecord::ne
             EffectDef::Mill {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(2),
-                binding: None,
-                then: None,
             },
         ),
     ),
@@ -3383,7 +3367,7 @@ pub(in crate::card::sets) static FUNGAL_SPROUTING: CardRecord = CardRecord::new_
     CardSet::Magic2013,
     CardRules::new_sorcery(mana_cost!("{3}{G}")).with_ability(AbilityDef::spell(
         "Create X 1/1 green Saproling creature tokens, where X is the greatest power among creatures you control.",
-        EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1).with_art(CardArt::new("dd67de8a-3879-4d03-a716-6e907d597b25", "Brad Rigney")).with_count(ValueDef::GreatestPowerAmong(&GREATEST_POWER_YOU_CONTROL)),
+        EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1).with_art(CardArt::new("dd67de8a-3879-4d03-a716-6e907d597b25", "Brad Rigney")).with_count(abilities::greatest_power_you_control()),
     )),
 );
 
@@ -3411,7 +3395,7 @@ pub(in crate::card::sets) static GARRUK_PRIMAL_HUNTER: CardRecord = CardRecord::
                 &[AbilityCostDef::Loyalty(-3)],
                 EffectDef::DrawCards {
                     recipient: EffectRecipientDef::Controller,
-                    amount: ValueDef::GreatestPowerAmong(&GREATEST_POWER_YOU_CONTROL),
+                    amount: abilities::greatest_power_you_control(),
                 },
             ),
             AbilityDef::activated(
@@ -4228,8 +4212,6 @@ pub(in crate::card::sets) static SANDS_OF_DELIRIUM: CardRecord = CardRecord::new
         EffectDef::Mill {
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             amount: ValueDef::ChosenX,
-            binding: None,
-            then: None,
         },
     )),
 );

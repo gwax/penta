@@ -1,7 +1,7 @@
 use super::{
-    CardType, CardTypeSet, CostConfiguration, EffectResolutionContext, Game, GameObjectId,
-    ObjectPredicateDef, PlayOptionDef, PlayerId, PlayerRelation, RetiredObject, ScopedEffect,
-    StackObject, Target, TriggerContext, ValueDef,
+    CardType, CardTypeSet, CostConfiguration, EffectRecipientDef, EffectResolutionContext, Game,
+    GameObjectId, ObjectPredicateDef, PlayOptionDef, PlayerId, PlayerRelation, RetiredObject,
+    ScopedEffect, StackObject, Target, TriggerContext, ValueDef,
 };
 use crate::card::SpellCastQueryDef;
 
@@ -474,6 +474,16 @@ impl Game {
             ValueDef::BoundObjectCount(binding) => {
                 i32::try_from(context.object_group(binding).len()).unwrap_or(i32::MAX)
             }
+            ValueDef::CountObjects(objects) => i32::try_from(
+                self.effect_recipients(
+                    EffectRecipientDef::objects(*objects),
+                    object,
+                    context,
+                    scoped,
+                )
+                .len(),
+            )
+            .unwrap_or(i32::MAX),
             // Everybody's spells, minus the one carrying the ability: it was
             // counted as it was cast, and storm copies what came before it.
             ValueDef::SpellsCastBeforeThisTurn => i32::from(
@@ -595,17 +605,28 @@ impl Game {
                 object.source.unwrap_or(object.id),
                 context.trigger,
             ),
-            // Zero when nothing matches, which is what "the greatest power
-            // among creatures you control" is worth with no creatures.
-            ValueDef::GreatestPowerAmong(query) => self
-                .objects_matching_effect_query(*query, object, context, scoped)
-                .into_iter()
-                .filter_map(|target| match target {
-                    Target::Permanent(id) => self.current_or_last_known_power(id),
-                    Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
-                })
-                .max()
-                .map_or(0, i32::from),
+            ValueDef::AggregateObjectValues(aggregate) => {
+                let values = self
+                    .effect_objects(aggregate.objects, object, context, scoped)
+                    .into_iter()
+                    .filter_map(|target| {
+                        let id = match target {
+                            Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => id,
+                            Target::Player(_) => return None,
+                        };
+                        match aggregate.select {
+                            crate::card::ObjectValueDef::ManaValue => {
+                                self.current_or_last_known_mana_value(id).map(i32::from)
+                            }
+                            crate::card::ObjectValueDef::Power => {
+                                self.current_or_last_known_power(id).map(i32::from)
+                            }
+                        }
+                    });
+                match aggregate.operation {
+                    crate::card::AggregateOperationDef::Maximum => values.max().unwrap_or(0),
+                }
+            }
             ValueDef::AnyMatchingObject(query) => i32::from(self.any_battlefield_object_matches(
                 query,
                 object.source.unwrap_or(object.id),

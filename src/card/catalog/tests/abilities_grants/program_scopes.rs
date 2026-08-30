@@ -739,8 +739,6 @@ fn merged_effect_vocabulary_preserves_local_target_bounds() {
         EffectDef::Mill {
             player: recipient,
             amount: ValueDef::DividedAmongTargets,
-            binding: None,
-            then: None,
         },
         EffectDef::Apply {
             recipient,

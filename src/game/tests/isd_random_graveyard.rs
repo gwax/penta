@@ -1,7 +1,6 @@
 //! Replay-stable random graveyard returns from Innistrad.
 
 use super::*;
-use crate::ObjectSetBindingIndex;
 
 fn ghoulraiser_result(seed: u64) -> CardDefinitionId {
     let mut game = ready_game_with_seed(seed);
@@ -282,24 +281,29 @@ fn random_returns_compose_selection_with_a_zone_move() {
         let effect = card.rules.ability_clauses()[0]
             .declarative_effect()
             .expect("the random return is declarative");
-        let EffectDef::SelectAtRandomFromZone {
-            source,
-            binding,
-            then,
-            ..
-        } = effect
-        else {
+        let EffectDef::Sequence([selection, movement]) = effect else {
+            panic!("{} should compose selection and movement", card.name);
+        };
+        let EffectDef::BindOutput { effect, binding } = *selection else {
+            panic!("{} should bind the random selection", card.name);
+        };
+        let EffectDef::SelectAtRandomFromZone { source, .. } = *effect else {
             panic!("{} should select randomly before moving", card.name);
         };
         assert_eq!(source, ZoneKind::Graveyard);
-        assert_eq!(binding, ObjectSetBindingIndex::PRIMARY);
-        let EffectDef::MoveToZone { object, zone, .. } = *then else {
+        assert_eq!(
+            binding,
+            crate::card::EffectOutputBindingDef::Objects("random_graveyard_cards")
+        );
+        let EffectDef::MoveToZone { object, zone, .. } = *movement else {
             panic!("{} should use an ordinary zone move", card.name);
         };
         assert_eq!(zone, ZoneKind::Hand);
         assert_eq!(
             object,
-            EffectRecipientDef::objects(ObjectSetDef::Binding(binding))
+            EffectRecipientDef::objects(ObjectSetDef::NamedBinding(
+                &crate::card::EffectBindingLabelDef("random_graveyard_cards"),
+            ))
         );
     }
 }

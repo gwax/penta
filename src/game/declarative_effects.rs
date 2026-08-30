@@ -7,6 +7,7 @@ use super::{
 };
 use crate::card::ArrivalAttachmentDef;
 mod attachment;
+mod bound_outputs;
 mod damage;
 mod exile_to_play;
 mod hand_and_library;
@@ -42,6 +43,9 @@ impl Game {
                     None,
                 );
             }
+            EffectDef::BindOutput { .. } => {
+                self.resolve_bound_output_effect(scoped, object, context);
+            }
             EffectDef::Randomized {
                 likelihood,
                 on_success,
@@ -73,6 +77,18 @@ impl Game {
             }
             EffectDef::ChooseObjectOrder(definition) => {
                 self.queue_choose_object_order(definition, object, context, scoped);
+            }
+            EffectDef::Mill { .. } => {
+                let _ = self.resolve_mill_effect(scoped, object, context);
+            }
+            EffectDef::MillUntil(_) => {
+                let _ = self.resolve_mill_until_effect(scoped, object, context);
+            }
+            EffectDef::SelectAtRandomFromZone { .. } => {
+                let _ = self.resolve_random_zone_selection_effect(scoped, object, context);
+            }
+            EffectDef::RevealAtRandomFromHand { .. } => {
+                let _ = self.resolve_random_hand_reveal_effect(scoped, object, context);
             }
             EffectDef::LookAtObjects(definition) => {
                 self.queue_look_at_objects(definition, object, context, scoped);
@@ -241,18 +257,14 @@ impl Game {
             | EffectDef::BuryGraveyard { .. }
             | EffectDef::Discard { .. }
             | EffectDef::DiscardCards { .. }
-            | EffectDef::Mill { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }
             | EffectDef::ExileOneFromEachZone(_)
             | EffectDef::MillWhileMatching(_)
-            | EffectDef::SelectAtRandomFromZone { .. }
             | EffectDef::ExileTopAndMayCast { .. }
-            | EffectDef::MillUntil { .. }
             | EffectDef::ExileFromTopUntil { .. }
             | EffectDef::Cascade
             | EffectDef::LookAtHand { .. }
             | EffectDef::LookAtRandomCardInHand { .. }
-            | EffectDef::RevealAtRandomFromHand { .. }
             | EffectDef::RevealHand { .. }
             | EffectDef::SearchZone { .. }
             | EffectDef::ChooseCards { .. }

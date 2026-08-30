@@ -184,21 +184,26 @@ pub enum EffectDef {
     RevealAndClassifyCards(super::RevealAndClassifyCardsDef),
     /// Concatenate previously bound collections in authored order.
     CombineObjects(super::CombineObjectsDef),
+    /// Declare one string-labeled object-set binding and resolve an effect
+    /// whose output may populate it. The declaration itself creates the empty
+    /// set, so a conditional effect that produces nothing is distinct from a
+    /// reference to a label that was never declared.
+    BindOutput {
+        effect: &'static EffectDef,
+        binding: super::EffectOutputBindingDef,
+    },
     /// Choose one distinct member for each of several predicates.
     ChooseOneOfEach(super::ChooseOneOfEachDef),
     /// Choose between two previously bound groups.
     ChooseGroup(super::ChooseGroupDef),
-    /// Picks one matching card from a player's zone with the recorded RNG,
-    /// binds that card, and continues. Nothing moves: the continuation says
-    /// what happens to the selected card. When nothing matches, it binds an
-    /// empty set and still continues.
+    /// Picks matching cards from a player's zone with the recorded RNG.
+    /// Nothing moves. Wrap this in [`Self::BindOutput`] when later steps need
+    /// the selected objects.
     SelectAtRandomFromZone {
         player: EffectRecipientDef,
         source: ZoneKind,
         object: ObjectPredicateDef,
         amount: ValueDef,
-        binding: ObjectSetBindingIndex,
-        then: &'static EffectDef,
     },
     /// Names a card while this effect resolves, binds every card of that name
     /// where it looks, and continues. "Discards all cards with that name" is
@@ -536,7 +541,7 @@ pub enum EffectDef {
     },
     /// Reveal from the top of a library until a matching card turns up.
     /// Held behind a reference the way a top-card selection is: what it
-    /// takes, where the match goes, and what runs afterwards are four
+    /// takes, where the match goes, and where its output is bound are several
     /// knobs rather than one.
     ///
     /// Distinct from [`Self::Mill`], whose count is known before it starts:
@@ -575,14 +580,6 @@ pub enum EffectDef {
     Mill {
         player: EffectRecipientDef,
         amount: ValueDef,
-        /// Where the milled cards are saved for `then` to speak about, by
-        /// the identity they have in the graveyard. "Put a creature card
-        /// from among them into your hand" names what this mill put there
-        /// rather than what the graveyard already held.
-        binding: Option<ObjectSetBindingIndex>,
-        /// What happens once the cards are in the graveyard. A mill resolves
-        /// without stopping to ask, so unlike a search this runs inline.
-        then: Option<&'static EffectDef>,
     },
     /// "That player exiles the top N cards of their library. Until end of
     /// turn, you may play those cards without paying their mana costs."
@@ -657,8 +654,8 @@ pub enum EffectDef {
         then: &'static EffectDef,
     },
     /// "…then mill a card. If an Insect card was milled this way, … and
-    /// repeat this process." The mill belongs to the loop because a binding
-    /// cannot carry its answer back out of the step that wrote it.
+    /// repeat this process." The mill belongs to the loop because its output
+    /// controls whether that same body runs again, not a later sequence step.
     MillWhileMatching(&'static MillLoopDef),
     /// "Target opponent exiles the top card of their library, a card at
     /// random from their graveyard, and a card at random from their hand."
@@ -675,17 +672,14 @@ pub enum EffectDef {
     },
     /// Every card in the named player's hand is revealed to everyone.
     ///
-    /// Reveal one card chosen at random from a player's hand, bind it, and
-    /// continue.
+    /// Reveal one card chosen at random from a player's hand. Wrap this in
+    /// [`Self::BindOutput`] when a later step needs the revealed object.
     ///
     /// The card does not move; what changes is that everyone has seen it and
     /// the following clause can read it. An empty hand reveals nothing and
-    /// binds nothing, so the continuation still runs and simply finds no
-    /// bound object.
+    /// produces no object output.
     RevealAtRandomFromHand {
         player: EffectRecipientDef,
-        binding: ObjectBindingIndex,
-        then: &'static EffectDef,
     },
     /// Nothing moves; what changes is what the table knows. It is a separate
     /// step from whatever reads the hand afterwards, because the reveal
@@ -919,6 +913,8 @@ pub enum EffectDef {
         /// answered, and would see nothing.
         then: Option<&'static EffectDef>,
     },
+    /// Resolve authored sibling instructions in order. A [`Self::BindOutput`]
+    /// step explicitly publishes its labeled result to later siblings.
     Sequence(&'static [EffectDef]),
     /// Randomizes each recipient player's library. Effects that shuffle
     /// cards from other zones into a library first express those zone moves

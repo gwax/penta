@@ -5,9 +5,9 @@ use crate::card::{
     CostAmountDef, CostModificationDef, DamageEventMatcherDef, DamageRecipientMatcherDef,
     DamageSourceMatcherDef, DeclarativeAbilityDef, EffectDef, EffectRecipientDef,
     EffectRecipientSetDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, ReplacementEffectDef,
-    ReplacementEventDef, SetOperationDef, SpellCostConditionDef, TriggerConditionDef, ValueDef,
-    ZoneKind,
+    ObjectValueAggregateDef, ObjectValueDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    PowerToughnessOperationDef, ReplacementEffectDef, ReplacementEventDef, SetOperationDef,
+    SpellCostConditionDef, TriggerConditionDef, ValueDef, ZoneKind,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -736,8 +736,10 @@ fn static_object_set_supported(objects: ObjectSetDef) -> bool {
             | ObjectRefDef::DamagedObject,
         )
         | ObjectSetDef::Binding(_)
+        | ObjectSetDef::NamedBinding(_)
         | ObjectSetDef::ZoneChangeSuccessorsOfBinding(_)
         | ObjectSetDef::MatchingBinding { .. }
+        | ObjectSetDef::Matching { .. }
         | ObjectSetDef::PermanentsTargetedBy(_)
         | ObjectSetDef::PlayerAttachments(_)
         | ObjectSetDef::LegalAttachmentHosts(_)

@@ -34,8 +34,6 @@ pub(in crate::card::sets) static JACE_WIELDER_OF_MYSTERIES: CardRecord =
                         EffectDef::Mill {
                             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                             amount: ValueDef::Constant(2),
-                            binding: None,
-                            then: None,
                         },
                         EffectDef::DrawCards {
                             recipient: EffectRecipientDef::Controller,

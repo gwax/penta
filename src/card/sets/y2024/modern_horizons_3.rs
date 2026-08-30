@@ -8,15 +8,15 @@ use crate::card::{
     CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, CharacteristicOperationDef,
     ChoiceVisibilityDef, ChooseDef, ClassifyObjectsDef, ComparisonDef, ControlDurationDef,
     CopyExceptionsDef, CostQuantityDef, CounterKind, CreatureTypeSetDef, DrawEventMatcherDef,
-    EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, EmblemCharacteristics,
-    ExiledCastPermissionDef, HalvedValueDef, InstalledTriggerDef, InstalledTriggerLifetimeDef,
-    ManaColor, ManaCost, ManaSpendEffectDef, MoveObjectsDef, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PayOrDef, PileExileDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef, ResolvedEffectDurationDef,
-    RevealObjectsDef, RoundingDef, SetOperationDef, SimultaneousChooseDef, SpellAdditionalCostDef,
-    SumValueDef, TargetConditionDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePickDef, ZonePlacement, abilities,
-    tokens,
+    EffectBindingLabelDef, EffectDef, EffectOutputBindingDef, EffectPaymentCostDef,
+    EffectPaymentDef, EffectRecipientDef, EmblemCharacteristics, ExiledCastPermissionDef,
+    HalvedValueDef, InstalledTriggerDef, InstalledTriggerLifetimeDef, ManaColor, ManaCost,
+    ManaSpendEffectDef, MoveObjectsDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PayOrDef, PileExileDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, RevealObjectsDef, RoundingDef,
+    SetOperationDef, SimultaneousChooseDef, SpellAdditionalCostDef, SumValueDef,
+    TargetConditionDef, TokenCountersDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueComparisonDef, ValueDef, ZoneKind, ZonePickDef, ZonePlacement, abilities, tokens,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex};
 use crate::{TargetIndex, mana_cost};
@@ -959,21 +959,27 @@ pub(in crate::card::sets) static SIX: CardRecord = CardRecord::new(
                 "Whenever Six attacks, mill three cards. You may put a land card from among them \
                  into your hand.",
                 TriggerEventDef::attacks(ObjectPredicateDef::Source),
-                EffectDef::Mill {
-                    player: EffectRecipientDef::Controller,
-                    amount: ValueDef::Constant(3),
-                    binding: Some(ObjectSetBindingIndex::PRIMARY),
+                EffectDef::Sequence(&[
+                    EffectDef::BindOutput {
+                        effect: &EffectDef::Mill {
+                            player: EffectRecipientDef::Controller,
+                            amount: ValueDef::Constant(3),
+                        },
+                        binding: EffectOutputBindingDef::Objects("milled_cards"),
+                    },
                     // A minimum of zero is the "you may": milling three and taking nothing is a
                     // legal answer, and a pile with no land in it never asks.
-                    then: Some(&EffectDef::Choose(ChooseDef {
+                    EffectDef::Choose(ChooseDef {
                         binding: ObjectChoiceBindingDef::Objects(SIX_TAKEN_LAND),
                         unchosen: None,
                         chooser: PlayerRefDef::EffectController,
                         // "From among them" is what the mill just put there, not what the graveyard
                         // already held -- and only a land among those.
-                        candidates: ObjectSetDef::MatchingBinding {
-                            binding: ObjectSetBindingIndex::PRIMARY,
-                            object: ObjectPredicateDef::HasType(CardType::Land),
+                        candidates: ObjectSetDef::Matching {
+                            objects: &ObjectSetDef::NamedBinding(&EffectBindingLabelDef(
+                                "milled_cards",
+                            )),
+                            object: &ObjectPredicateDef::HasType(CardType::Land),
                         },
                         exclude: None,
                         minimum: 0,
@@ -984,8 +990,8 @@ pub(in crate::card::sets) static SIX: CardRecord = CardRecord::new(
                             zone: ZoneKind::Hand,
                             placement: ZonePlacement::Top,
                         },
-                    })),
-                },
+                    }),
+                ]),
             ),
             AbilityDef::static_ability(
                 "During your turn, nonland permanent cards in your graveyard have retrace. (You \

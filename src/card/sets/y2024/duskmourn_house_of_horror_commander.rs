@@ -77,8 +77,6 @@ pub(in crate::card::sets) static URSINE_MONSTROSITY: CardRecord = CardRecord::ne
                 EffectDef::Mill {
                     player: EffectRecipientDef::Controller,
                     amount: ValueDef::Constant(1),
-                    binding: None,
-                    then: None,
                 },
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Source,

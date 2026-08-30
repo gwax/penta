@@ -4,7 +4,7 @@ use super::super::{
     BasicLandType, ComparisonDef, CounterKind, ManaColor, ObjectPredicateDef, PlayerRelation,
     ZoneKind,
 };
-use super::{DamageSourceGroupDef, ObjectRefDef, PlayerSetDef};
+use super::{DamageSourceGroupDef, ObjectRefDef, ObjectSetDef, PlayerSetDef};
 
 /// Where an object must sit relative to another object in the same ordered
 /// zone. Libraries and graveyards are stored bottom/oldest first, so `Above`
@@ -106,6 +106,31 @@ impl ObjectCounterValueDef {
     pub const fn new(object: ObjectRefDef, kind: CounterKind) -> Self {
         Self { object, kind }
     }
+}
+
+/// Which scalar characteristic to project from every member of an object set.
+/// Selection and aggregation stay independent so the same set can be measured
+/// by mana value or power without another card-shaped value.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum ObjectValueDef {
+    ManaValue,
+    Power,
+}
+
+/// How a projected collection of object values becomes one effect value.
+/// Every operation returns zero for an empty collection.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum AggregateOperationDef {
+    Maximum,
+}
+
+/// A composable object-set value: resolve `objects`, project `select` from
+/// each member, then combine the resulting values with `operation`.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ObjectValueAggregateDef {
+    pub objects: ObjectSetDef,
+    pub select: ObjectValueDef,
+    pub operation: AggregateOperationDef,
 }
 
 impl SourceMatchValueDef {
@@ -306,14 +331,15 @@ pub enum ValueDef {
         player: PlayerRelation,
         source: Option<DamageSourceGroupDef>,
     },
-    /// The largest power among the matching objects, or zero when nothing
-    /// matches. Distinct from a count: "the greatest power among creatures
-    /// you control" asks one creature how big it is rather than asking how
-    /// many there are.
-    GreatestPowerAmong(&'static ObjectQueryDef),
+    /// Resolve an object set, select one scalar characteristic from each
+    /// member, and aggregate the collection into one value.
+    AggregateObjectValues(&'static ObjectValueAggregateDef),
     /// How many objects match, for the "for each" clauses. Held by reference
     /// so that `ValueDef` stays small enough to embed freely.
     CountMatchingObjects(&'static ObjectQueryDef),
+    /// How many objects are in a resolved set. Unlike a query, this can count
+    /// the output of an earlier effect after those objects have moved.
+    CountObjects(&'static ObjectSetDef),
     /// How many matching permanents are attached to the named player.
     CountMatchingPlayerAttachments(&'static PlayerAttachmentQueryDef),
     /// How many spells matching the query have been cast this turn.
@@ -386,9 +412,9 @@ pub enum ValueDef {
     MatchedCardTypes,
     /// What those same matched objects add up to in mana value. "You lose
     /// life equal to that card's mana value" reads the card the step before
-    /// it revealed, and a mill follow-up reads the cards the mill just moved.
-    /// Those cards are gone from their old zone by the time this is asked,
-    /// so the number travels rather than the card.
+    /// it revealed and moved through a nested collection workflow. Those
+    /// cards are gone from their old zone by the time this is asked, so the
+    /// number travels rather than the card.
     MatchedManaValue,
     /// How many objects an earlier step in this resolution bound. "For each
     /// creature exiled this way" counts what the exile actually took, which

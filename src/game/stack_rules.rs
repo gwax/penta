@@ -52,7 +52,8 @@ impl Game {
     #[allow(clippy::too_many_lines)]
     pub(super) fn effect_applies_to_source(effect: EffectDef, expected: AppliedEffectDef) -> bool {
         match effect {
-            EffectDef::WithBattlefieldArrival { effect, .. } => {
+            EffectDef::BindOutput { effect, .. }
+            | EffectDef::WithBattlefieldArrival { effect, .. } => {
                 Self::effect_applies_to_source(*effect, expected)
             }
             EffectDef::WithZoneMoveResult { effect, then, .. } => {
@@ -78,7 +79,6 @@ impl Game {
             | EffectDef::SearchZone {
                 then: Some(then), ..
             }
-            | EffectDef::SelectAtRandomFromZone { then, .. }
             | EffectDef::PermitLookAtExiled { then, .. } => {
                 Self::effect_applies_to_source(*then, expected)
             }
@@ -183,6 +183,7 @@ impl Game {
             | EffectDef::ExileTopAndMayCast { .. }
             | EffectDef::MayCastTargetWithoutPaying { .. }
             | EffectDef::Mill { .. }
+            | EffectDef::SelectAtRandomFromZone { .. }
             | EffectDef::SearchZonesAndExileRest { .. }
             | EffectDef::MillUntil { .. }
             | EffectDef::ExileFromTopUntil { .. }

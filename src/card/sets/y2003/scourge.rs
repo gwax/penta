@@ -400,8 +400,6 @@ pub(in crate::card::sets) static BRAIN_FREEZE: CardRecord = CardRecord::new_with
             EffectDef::Mill {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(3),
-                binding: None,
-                then: None,
             },
         ),
         abilities::storm(),

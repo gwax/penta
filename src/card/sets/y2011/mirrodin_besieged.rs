@@ -946,8 +946,6 @@ pub(in crate::card::sets) static HORRIFYING_REVELATION: CardRecord = CardRecord:
             EffectDef::Mill {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(1),
-                binding: None,
-                then: None,
             },
         ]),
     )),
@@ -2331,8 +2329,6 @@ pub(in crate::card::sets) static DECIMATOR_WEB: CardRecord = CardRecord::new(
             EffectDef::Mill {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(6),
-                binding: None,
-                then: None,
             },
         ]),
     )),
@@ -2891,8 +2887,6 @@ pub(in crate::card::sets) static SHRIEKHORN: CardRecord = CardRecord::new(
             EffectDef::Mill {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 amount: ValueDef::Constant(2),
-                binding: None,
-                then: None,
             },
         ),
     ]),

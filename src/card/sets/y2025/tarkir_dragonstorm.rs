@@ -4,12 +4,13 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, CreatedTokensDef, EffectDef,
-    EffectPaymentDef, EffectRecipientDef, FreePlayDef, FreePlayDurationDef, InstalledTriggerDef,
-    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PayOrDef,
-    PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    QuantifierDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, CreatedTokensDef,
+    EffectBindingLabelDef, EffectDef, EffectOutputBindingDef, EffectPaymentDef, EffectRecipientDef,
+    FreePlayDef, FreePlayDurationDef, InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PayOrDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, QuantifierDef,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ObjectSetBindingIndex, TargetIndex};
 use crate::mana_cost;
@@ -326,16 +327,22 @@ pub(in crate::card::sets) static TERSA_LIGHTSHATTER: CardRecord = CardRecord::ne
                     comparison: ComparisonDef::GreaterOrEqual,
                     amount: 7,
                 },
-                EffectDef::SelectAtRandomFromZone {
-                    player: EffectRecipientDef::Controller,
-                    source: ZoneKind::Graveyard,
-                    object: ObjectPredicateDef::Any,
-                    amount: ValueDef::Constant(1),
-                    binding: ObjectSetBindingIndex::PRIMARY,
-                    then: &EffectDef::ExileGrantingControllerPlayThisTurn {
-                        object: EffectRecipientDef::objects(ObjectSetDef::Binding(ObjectSetBindingIndex::PRIMARY)),
+                EffectDef::Sequence(&[
+                    EffectDef::BindOutput {
+                        effect: &EffectDef::SelectAtRandomFromZone {
+                            player: EffectRecipientDef::Controller,
+                            source: ZoneKind::Graveyard,
+                            object: ObjectPredicateDef::Any,
+                            amount: ValueDef::Constant(1),
+                        },
+                        binding: EffectOutputBindingDef::Objects("random_graveyard_card"),
                     },
-                },
+                    EffectDef::ExileGrantingControllerPlayThisTurn {
+                        object: EffectRecipientDef::objects(ObjectSetDef::NamedBinding(
+                            &EffectBindingLabelDef("random_graveyard_card"),
+                        )),
+                    },
+                ]),
             ),
         ]),
 );
