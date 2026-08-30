@@ -305,3 +305,96 @@ fn a_blood_moon_leaves_neither_the_type_nor_the_verge() {
         "a nonbasic land that is a Mountain taps for red and nothing else",
     );
 }
+
+/// "If you control a Plains or a Swamp": theirs is not yours, so a Swamp
+/// across the table leaves the Bleachbone Verge a black source only.
+#[test]
+fn a_land_they_control_does_not_switch_the_verge_on() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let verge = game
+        .put_onto_battlefield(PlayerId::One, cards::BLEACHBONE_VERGE)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::SWAMP)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::PLAINS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        offered_colors(&game, verge),
+        vec![ManaColor::Black],
+        "the condition counts what you control, not what is on the table",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::PLAINS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let mut expected = vec![ManaColor::White, ManaColor::Black];
+    expected.sort_unstable();
+    assert_eq!(
+        offered_colors(&game, verge),
+        expected,
+        "and one of your own answers it",
+    );
+}
+
+/// The condition is read as the ability is offered rather than remembered:
+/// lose the Plains and the white half goes with it.
+#[test]
+fn losing_the_land_takes_the_conditional_half_back_off() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let verge = game
+        .put_onto_battlefield(PlayerId::One, cards::BLEACHBONE_VERGE)
+        .expect("cataloged");
+    let plains = game
+        .put_onto_battlefield(PlayerId::One, cards::PLAINS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(offered_colors(&game, verge).len(), 2, "both halves are on");
+
+    game.move_permanents_to_graveyard(&[plains]);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        offered_colors(&game, verge),
+        vec![ManaColor::Black],
+        "with the Plains gone the white half is gone too",
+    );
+}
+
+/// Both halves cost the same tap, so the Verge makes one mana a turn
+/// whichever colour it was.
+#[test]
+fn tapping_for_one_half_spends_the_other() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let verge = game
+        .put_onto_battlefield(PlayerId::One, cards::BLEACHBONE_VERGE)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::One, cards::PLAINS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let ability = mana_ability_for(&game, verge, ManaColor::White);
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: verge,
+            ability,
+            color: ManaColor::White,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("the white half activates");
+
+    assert_eq!(game.players[0].mana_pool.white, 1);
+    assert!(
+        offered_colors(&game, verge).is_empty(),
+        "a tapped Verge offers neither colour",
+    );
+}
