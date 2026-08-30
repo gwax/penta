@@ -25,6 +25,12 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **Mana Drain pays out at your next main phase, whichever one that is.** The
+  delayed ability waited for a precombat main phase, so a Drain cast in your
+  own main phase or during your combat held its mana until the following turn.
+  It now triggers at the beginning of whichever main phase of yours comes
+  first, which for those two cases is that same turn's postcombat main.
+
 - **A countered spell still cascades.** The bound cascade digs against is the
   cascading spell's own mana value, which is a fact about the spell rather
   than about where it is; reading it only off the stack meant a Bloodbraid

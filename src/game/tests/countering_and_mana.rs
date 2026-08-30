@@ -667,3 +667,54 @@ fn a_drain_that_counters_nothing_still_pays_its_controller() {
         "two for the Decay's mana value, countered or not",
     );
 }
+
+/// "If you cast Mana Drain during your precombat main phase or during your
+/// combat phase, its delayed triggered ability will trigger at the beginning
+/// of that turn's postcombat main phase." Your next main phase can be one you
+/// are already in the middle of a turn with.
+#[test]
+fn a_drain_cast_in_your_own_main_phase_pays_out_after_combat() {
+    let mut game = ready_game();
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let bolt = card(19_070, cards::LIGHTNING_BOLT, PlayerId::Two);
+    let drain = card(19_071, cards::MANA_DRAIN, PlayerId::One);
+    game.players[1].hand.push(bolt.clone());
+    game.players[0].hand.push(drain.clone());
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+
+    // Their Bolt, cast into your own main phase, is what the Drain answers.
+    game.apply(PlayerId::One, Action::PassPriority).unwrap();
+    game.apply(
+        PlayerId::Two,
+        cast_action(bolt.id, vec![Target::Player(PlayerId::One)], Vec::new(), 0),
+    )
+    .unwrap();
+    let bolt_on_stack = game.stack.last().expect("the Bolt is waiting").id;
+    game.apply(PlayerId::Two, Action::PassPriority).unwrap();
+    game.apply(
+        PlayerId::One,
+        cast_action(drain.id, vec![Target::Spell(bolt_on_stack)], Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    assert!(game.stack.is_empty(), "the Bolt was countered");
+    assert_eq!(
+        game.players[0].mana_pool.colorless, 0,
+        "and the main phase it waits for has not begun",
+    );
+
+    game.step = Step::EndOfCombat;
+    game.advance_step();
+    game.finish_rules_procedure();
+    assert_eq!(game.step, Step::PostcombatMain);
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.players[0].mana_pool.colorless, 1,
+        "one for the Bolt, in the same turn it was countered",
+    );
+}

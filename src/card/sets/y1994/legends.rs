@@ -1247,6 +1247,20 @@ pub(in crate::card::sets) static LAND_EQUILIBRIUM: CardRecord = CardRecord::new(
 );
 
 // LEG 65 — Mana Drain
+/// "Your next main phase" is whichever main phase comes next: a Drain cast
+/// in your own precombat main, or during your combat, pays out in that same
+/// turn's postcombat main rather than waiting a turn.
+static MANA_DRAIN_MAIN_PHASES: [TriggerEventDef; 2] = [
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::PrecombatMain,
+        player: PlayerRelation::You,
+    },
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::PostcombatMain,
+        player: PlayerRelation::You,
+    },
+];
+
 /// The mana arrives later, so the amount is read from what the countered
 /// spell was rather than from anything still on the stack.
 static MANA_DRAIN_EFFECT: [EffectDef; 2] = [
@@ -1256,11 +1270,8 @@ static MANA_DRAIN_EFFECT: [EffectDef; 2] = [
         placement: ZonePlacement::Top,
     },
     EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
-        "At the beginning of your next precombat main phase, add colorless mana equal to that spell's mana value.",
-        TriggerEventDef::StepBegins {
-            step: TurnStepDef::PrecombatMain,
-            player: PlayerRelation::You,
-        },
+        "At the beginning of your next main phase, add an amount of {C} equal to that spell's mana value.",
+        TriggerEventDef::AnyOf(&MANA_DRAIN_MAIN_PHASES),
         EffectDef::AddManaEqualTo {
             color: ManaColor::Colorless,
             amount: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
