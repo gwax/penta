@@ -308,3 +308,99 @@ fn one_surviving_target_still_resolves_the_rest() {
     );
     assert_eq!(game.players[1].life, 18, "and the burn mode still landed");
 }
+
+/// "If a mode requires a target, you can select that mode only if there's a
+/// legal target available." With no artifact anywhere, the shatter is not
+/// on the menu and the other two still are.
+#[test]
+fn the_shatter_is_not_offered_without_an_artifact() {
+    let (game, confluence) = staged();
+
+    let offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == confluence => {
+                Some(choices.modes().to_vec())
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert!(!offered.is_empty(), "the spell is castable");
+    assert!(
+        offered.iter().all(|modes| !modes.contains(&SHATTER)),
+        "nothing to destroy, so the mode cannot be taken: {offered:?}",
+    );
+    assert!(
+        offered.iter().any(|modes| modes == &[SWEEP, BURN, BURN]),
+        "and the untargeted modes are still free to mix: {offered:?}",
+    );
+}
+
+/// "Each time you select that mode, you can choose a different target, or
+/// you can choose the same target." The second copy finds the artifact
+/// already gone and does nothing, which is the price of naming it twice.
+#[test]
+fn two_shatters_may_name_the_same_artifact_twice() {
+    let (mut game, confluence) = staged();
+    let key = game
+        .put_onto_battlefield(PlayerId::Two, cards::MANIFOLD_KEY)
+        .expect("cataloged");
+    let idol = game
+        .put_onto_battlefield(PlayerId::Two, cards::GUARDIAN_IDOL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    cast_with(
+        &mut game,
+        confluence,
+        &[BURN, SHATTER, SHATTER],
+        &[Target::Permanent(key), Target::Permanent(key)],
+    );
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == key),
+        "the Key is destroyed",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == idol),
+        "and the Idol that was never named is untouched",
+    );
+}
+
+/// "If the first or second modes are chosen multiple times, each of those
+/// modes represents a separate damage-dealing event." Three burns are three
+/// events of two, not one of six -- which is what anything preventing a
+/// point per source would read.
+#[test]
+fn three_burns_are_three_separate_damage_events() {
+    let (mut game, confluence) = staged();
+    game.players[1].life = 20;
+    let before = game.events.len();
+
+    cast_with(&mut game, confluence, &[BURN, BURN, BURN], &[]);
+
+    let dealt = game.events[before..]
+        .iter()
+        .filter_map(|event| match event {
+            GameEvent::DamageDealt {
+                player: PlayerId::Two,
+                amount,
+            } => Some(*amount),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        dealt,
+        vec![2, 2, 2],
+        "three deliveries of two rather than one of six",
+    );
+    assert_eq!(game.players[1].life, 14, "and six life all the same");
+}
