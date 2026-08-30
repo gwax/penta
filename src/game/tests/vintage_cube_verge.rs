@@ -398,3 +398,58 @@ fn tapping_for_one_half_spends_the_other() {
         "a tapped Verge offers neither colour",
     );
 }
+
+/// The Boros verge's other named type, and the land that is both at once:
+/// a Plains switches the red half on by itself, and a Plateau answers the
+/// condition with either half of what it is.
+#[test]
+fn a_plains_or_a_plateau_switches_the_sunbillow_verge_on() {
+    for companion in [cards::PLAINS, cards::PLATEAU] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let verge = game
+            .put_onto_battlefield(PlayerId::One, cards::SUNBILLOW_VERGE)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        assert_eq!(
+            offered_colors(&game, verge),
+            vec![ManaColor::White],
+            "alone it is a white source",
+        );
+
+        game.put_onto_battlefield(PlayerId::One, companion)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        let mut offered = offered_colors(&game, verge);
+        offered.sort_unstable();
+        let mut expected = vec![ManaColor::White, ManaColor::Red];
+        expected.sort_unstable();
+        assert_eq!(offered, expected, "{companion:?} answers the condition");
+    }
+}
+
+/// The condition reads the types a land has, not the ones it was printed
+/// with, in the direction that adds them too: a Yavimaya makes the Island a
+/// Forest, and that is the Forest the Wastewood Verge was asking for.
+#[test]
+fn a_granted_land_type_answers_the_condition() {
+    let (mut game, verge) = staged(&[cards::ISLAND]);
+    assert_eq!(
+        offered_colors(&game, verge),
+        vec![ManaColor::Green],
+        "an Island is neither of its types",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::YAVIMAYA_CRADLE_OF_GROWTH)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let mut offered = offered_colors(&game, verge);
+    offered.sort_unstable();
+    let mut expected = vec![ManaColor::Black, ManaColor::Green];
+    expected.sort_unstable();
+    assert_eq!(
+        offered, expected,
+        "every land is a Forest now, the Island included",
+    );
+}
