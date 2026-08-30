@@ -200,3 +200,77 @@ fn a_card_that_leaves_in_response_counters_the_spell() {
         "and went to its owner's graveyard",
     );
 }
+
+/// "Abilities such as shroud and protection function only on the
+/// battlefield unless otherwise specified. A creature card with shroud may
+/// be targeted by Animate Dead."
+#[test]
+fn a_creature_card_with_shroud_is_still_a_legal_target() {
+    let (mut game, animate) = staged(&[cards::NEUROK_COMMANDO]);
+
+    assert!(
+        game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+            if *card == animate
+                && choices.iter_targets().any(|target| matches!(
+                    target,
+                    Target::Card(chosen) if *chosen == CardInstanceId(89_000)
+                )))
+        }),
+        "shroud is not something a card in a graveyard has",
+    );
+
+    cast(&mut game, animate);
+
+    assert!(
+        permanent(&game, cards::NEUROK_COMMANDO).is_some(),
+        "and it came back like anything else",
+    );
+}
+
+/// "If Animate Dead isn't on the battlefield as its triggered ability
+/// resolves, none of its effects happen. The creature card won't be
+/// returned to the battlefield." The intervening if is read on resolution,
+/// so an Aura answered in response reanimates nothing.
+#[test]
+fn an_aura_answered_before_its_trigger_resolves_reanimates_nothing() {
+    let (mut game, animate) = staged(&[cards::SERRA_ANGEL]);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == animate))
+        .expect("two mana casts it");
+    game.apply(PlayerId::One, action).expect("it is cast");
+
+    // Far enough for the Aura itself to resolve onto the battlefield, and
+    // no further: its own entry trigger is what is still waiting.
+    let aura = loop {
+        if let Some(aura) = permanent(&game, cards::ANIMATE_DEAD) {
+            break aura.card.id;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the spell is on the stack");
+    };
+    assert!(
+        !game.pending_triggers.is_empty() || !game.stack.is_empty(),
+        "the entry trigger has not resolved yet",
+    );
+
+    game.destroy_permanent(aura);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert!(
+        permanent(&game, cards::SERRA_ANGEL).is_none(),
+        "nothing was returned",
+    );
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "the Angel is where it was",
+    );
+}
