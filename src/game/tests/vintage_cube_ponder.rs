@@ -7,15 +7,24 @@ use super::*;
 /// The library's last element is its top, so the Angel pushed first is the
 /// bottom card and never gets looked at.
 fn staged() -> (Game, GameObjectId) {
-    let mut game = ready_game();
+    staged_with(
+        0,
+        &[
+            cards::SERRA_ANGEL,
+            cards::GRIZZLY_BEARS,
+            cards::LIGHTNING_BOLT,
+            cards::MOUNTAIN,
+        ],
+    )
+}
+
+/// The same, with the library named bottom-first and the randomiser seeded,
+/// for the two questions that need a shorter library or a real shuffle.
+fn staged_with(seed: u64, library: &[CardDefinitionId]) -> (Game, GameObjectId) {
+    let mut game = ready_game_with_seed(seed);
     game.battlefield.clear();
     game.players[0].library.clear();
-    for definition in [
-        cards::SERRA_ANGEL,
-        cards::GRIZZLY_BEARS,
-        cards::LIGHTNING_BOLT,
-        cards::MOUNTAIN,
-    ] {
+    for definition in library.iter().copied() {
         let card = game
             .build_zone(PlayerId::One, &[definition])
             .expect("cataloged")
@@ -159,4 +168,53 @@ fn shuffling_still_draws() {
 
     assert_eq!(game.players[0].hand.len(), 1, "a card either way");
     assert_eq!(game.players[0].library.len(), 3);
+}
+
+/// "If you choose to shuffle your library, that includes the three cards you
+/// just looked at and put back on top of it." Twenty-four seeded games say
+/// so: the card put on top is not always the card drawn, and the bottom
+/// card that was never looked at turns up in the draw too.
+#[test]
+fn a_shuffle_takes_the_three_with_it() {
+    let library = [
+        cards::SERRA_ANGEL,
+        cards::GRIZZLY_BEARS,
+        cards::LIGHTNING_BOLT,
+        cards::MOUNTAIN,
+    ];
+    let draws = (0..24)
+        .map(|seed| {
+            let (mut game, spell) = staged_with(seed, &library);
+            ponder(&mut game, spell, cards::GRIZZLY_BEARS, true);
+            drawn(&game)
+        })
+        .collect::<Vec<_>>();
+
+    assert!(
+        draws.iter().any(|hand| hand != &vec![cards::GRIZZLY_BEARS]),
+        "the arrangement was washed away rather than kept on top: {draws:?}",
+    );
+    assert!(
+        draws.iter().any(|hand| hand == &vec![cards::SERRA_ANGEL]),
+        "and the card under the three was in the shuffle as well: {draws:?}",
+    );
+}
+
+/// A library shorter than three is looked at entirely, and reordering what
+/// is there still decides the draw.
+#[test]
+fn a_short_library_is_looked_at_as_far_as_it_goes() {
+    let (mut game, spell) = staged_with(0, &[cards::LIGHTNING_BOLT, cards::GRIZZLY_BEARS]);
+    ponder(&mut game, spell, cards::LIGHTNING_BOLT, false);
+
+    assert_eq!(
+        drawn(&game),
+        vec![cards::LIGHTNING_BOLT],
+        "two cards were all there was, and the deeper one was put on top",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        1,
+        "with the other one left behind",
+    );
 }
