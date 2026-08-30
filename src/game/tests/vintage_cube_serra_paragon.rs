@@ -338,3 +338,38 @@ fn the_once_a_turn_returns_next_turn() {
         "the land came back on the second turn as well",
     );
 }
+
+/// "From your graveyard": theirs is a different graveyard, and the Angel
+/// reaches into neither it nor the cards in it.
+#[test]
+fn it_does_not_reach_into_their_graveyard() {
+    let (mut game, _paragon) = staged(&[]);
+    let theirs = card(91_800, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let theirs_id = theirs.id;
+    game.players[1].graveyard.push(theirs);
+
+    assert!(
+        graveyard_play(&game, theirs_id).is_none(),
+        "the Bear in their graveyard is not one of yours",
+    );
+}
+
+/// The Paragon grants the permission and nothing else: what comes back is
+/// cast, so its own mana cost is still owed. An empty pool leaves the
+/// permission with nothing to spend on it.
+#[test]
+fn the_spell_it_frees_still_costs_its_mana() {
+    let (mut game, _paragon) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = buried(&game, cards::GRIZZLY_BEARS).expect("it is buried");
+    assert!(
+        graveyard_play(&game, bears).is_some(),
+        "with the mana up it is on offer",
+    );
+
+    game.players[0].mana_pool = ManaPool::default();
+
+    assert!(
+        graveyard_play(&game, bears).is_none(),
+        "and the permission does not pay for it",
+    );
+}
