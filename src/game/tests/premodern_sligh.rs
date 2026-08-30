@@ -382,6 +382,77 @@ fn the_free_fireblast_sacrifices_its_mountains() {
     );
 }
 
+/// The Fireblast casts on offer with `lands` on the battlefield and nothing
+/// in the mana pool.
+fn fireblast_casts_from(lands: &[CardDefinitionId]) -> (Game, Vec<Action>) {
+    let mut game = ready();
+    for definition in lands {
+        game.put_onto_battlefield(PlayerId::One, *definition)
+            .expect("cataloged");
+    }
+    drain_pending(&mut game);
+    let fireblast = card(20_000, cards::FIREBLAST, PlayerId::One);
+    let fireblast_id = fireblast.id;
+    game.players[PlayerId::One.index()].hand.push(fireblast);
+    game.players[PlayerId::One.index()].mana_pool = ManaPool::default();
+
+    let casts = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == fireblast_id))
+        .collect();
+    (game, casts)
+}
+
+/// "Two Mountains" is the land type rather than the card name, which is what
+/// makes the cube's duals pay for it: a Taiga and a Sacred Foundry are two
+/// Mountains between them.
+#[test]
+fn any_two_mountains_pay_for_fireblast() {
+    let (_, casts) = fireblast_casts_from(&[cards::TAIGA, cards::SACRED_FOUNDRY]);
+
+    assert!(
+        casts.iter().any(|action| matches!(action,
+            Action::CastSpell { choices, sacrifices, .. }
+                if choices.costs().alternative().is_some() && sacrifices.len() == 2)),
+        "a Taiga and a Sacred Foundry are Mountains enough",
+    );
+}
+
+/// And a land with no Mountain about it is not one of the two, however many
+/// of them there are.
+#[test]
+fn other_lands_do_not_pay_for_fireblast() {
+    let (_, casts) = fireblast_casts_from(&[cards::ISLAND, cards::SWAMP, cards::FOREST]);
+
+    assert!(
+        casts.is_empty(),
+        "three lands and not a Mountain among them",
+    );
+}
+
+/// The sacrifice is of your own lands: their Mountains are no help at all.
+#[test]
+fn their_mountains_do_not_pay_for_your_fireblast() {
+    let mut game = ready();
+    for _ in 0..2 {
+        game.put_onto_battlefield(PlayerId::Two, cards::MOUNTAIN)
+            .expect("cataloged");
+    }
+    drain_pending(&mut game);
+    let fireblast = card(20_000, cards::FIREBLAST, PlayerId::One);
+    let fireblast_id = fireblast.id;
+    game.players[PlayerId::One.index()].hand.push(fireblast);
+    game.players[PlayerId::One.index()].mana_pool = ManaPool::default();
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::CastSpell { card, .. } if *card == fireblast_id)
+        ),
+        "you cannot sacrifice what you do not control",
+    );
+}
+
 /// The Lavamancer spends two cards per shot, and the player picks which two,
 /// so each pair is its own offered activation.
 fn lavamancer_with_graveyard(cards_in_graveyard: usize) -> (Game, Vec<Action>) {
