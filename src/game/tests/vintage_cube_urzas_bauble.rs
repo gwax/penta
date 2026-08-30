@@ -4,7 +4,13 @@ use super::*;
 
 /// The Bauble on the battlefield, with a card to draw and a hand to peek at.
 fn staged(their_hand: &[CardDefinitionId]) -> (Game, GameObjectId) {
-    let mut game = ready_game();
+    staged_with_seed(0, their_hand)
+}
+
+/// The same board on a chosen seed, for the half of the card that is a die
+/// roll rather than a choice.
+fn staged_with_seed(seed: u64, their_hand: &[CardDefinitionId]) -> (Game, GameObjectId) {
+    let mut game = ready_game_with_seed(seed);
     game.battlefield.clear();
     game.players[0].hand.clear();
     game.players[1].hand.clear();
@@ -216,5 +222,39 @@ fn the_other_player_is_shown_nothing() {
     assert!(
         game.observe(PlayerId::Two).last_seen_hand.is_none(),
         "and they were told nothing about which one",
+    );
+}
+
+/// "Look at a card at random": which of the three is shown is the game's
+/// choice and not yours, so seeds that differ show cards that differ.
+#[test]
+fn which_card_is_shown_is_a_die_roll() {
+    let mut seen = Vec::new();
+    for seed in 0..8 {
+        let (mut game, bauble) = staged_with_seed(
+            seed,
+            &[
+                cards::LIGHTNING_BOLT,
+                cards::GRIZZLY_BEARS,
+                cards::SERRA_ANGEL,
+            ],
+        );
+
+        crack_it(&mut game, bauble, PlayerId::Two);
+
+        let shown = game
+            .observe(PlayerId::One)
+            .last_seen_hand
+            .expect("you looked at something")
+            .1[0]
+            .1;
+        seen.push(shown);
+    }
+    seen.sort_unstable();
+    seen.dedup();
+
+    assert!(
+        seen.len() > 1,
+        "eight seeds do not all show the same card: {seen:?}",
     );
 }
