@@ -246,3 +246,125 @@ fn she_comes_down_on_their_turn() {
         "flash is what lets the free cast answer an attacker",
     );
 }
+
+/// Evokes her and stops with both of her triggers on the stack, ordered so
+/// the exile resolves first, with `victim` named for it.
+fn evoke_to_both_triggers(game: &mut Game, solitude: GameObjectId, victim: GameObjectId) {
+    let evoke = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == solitude && choices.costs().alternative().is_some()
+            }
+            _ => false,
+        })
+        .expect("the white card in hand pays for the evoke");
+    game.apply(PlayerId::One, evoke).expect("it is castable");
+    for _ in 0..10 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            if game.stack.len() == 2
+                && game
+                    .stack
+                    .iter()
+                    .all(|object| object.kind == StackObjectKind::TriggeredAbility)
+            {
+                return;
+            }
+            let priority = game.priority;
+            if game.apply(priority, Action::PassPriority).is_err() {
+                return;
+            }
+            continue;
+        };
+        let options = if decision.kind == DecisionKind::TriggerOrder {
+            let mut ordered = decision.options.clone();
+            ordered.sort_by_key(|option| {
+                !option
+                    .ability_text
+                    .as_ref()
+                    .is_some_and(|text| text.contains("exile up to one"))
+            });
+            ordered.iter().map(|option| option.id).collect()
+        } else {
+            decision
+                .options
+                .iter()
+                .filter(|option| option.card.is_some_and(|(id, _)| id == victim))
+                .map(|option| option.id)
+                .take(1)
+                .collect()
+        };
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .expect("the decision accepts what it offered");
+    }
+}
+
+/// "If you pay the evoke cost, you can have the creature's own triggered
+/// ability resolve before the evoke triggered ability. You can cast spells
+/// after that ability resolves but before you have to sacrifice the
+/// creature." Both triggers go on the stack together, and the order they
+/// resolve in is yours.
+#[test]
+fn the_exile_may_resolve_before_the_sacrifice_that_follows_it() {
+    let (mut game, solitude) = staged(
+        &[cards::SWORDS_TO_PLOWSHARES, cards::LIGHTNING_BOLT],
+        &[cards::GRIZZLY_BEARS],
+    );
+    let bears = theirs(&game, cards::GRIZZLY_BEARS)
+        .expect("their creature is out")
+        .card
+        .id;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+
+    evoke_to_both_triggers(&mut game, solitude, bears);
+    assert_eq!(game.stack.len(), 2, "both triggers are waiting");
+
+    pass_priority_pair(&mut game);
+
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+        "the exile resolved first",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SOLITUDE),
+        "and Solitude is still on the battlefield under the sacrifice",
+    );
+    let bolt = game.players[0]
+        .hand
+        .iter()
+        .find(|card| card.definition == cards::LIGHTNING_BOLT)
+        .expect("still in hand")
+        .id;
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == bolt)),
+        "the window before the sacrifice is a window for spells",
+    );
+
+    settle(&mut game, None);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SOLITUDE),
+        "the sacrifice still comes",
+    );
+}
