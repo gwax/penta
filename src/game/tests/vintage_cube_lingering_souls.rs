@@ -119,3 +119,74 @@ fn flashback_still_waits_for_a_main_phase() {
         "and nowhere else: flashback changes the zone, not the timing",
     );
 }
+
+/// "A spell cast using flashback will always be exiled afterward, whether it
+/// resolves, is countered, or leaves the stack in some other way."
+#[test]
+fn a_countered_flashback_is_exiled_all_the_same() {
+    let (mut game, souls) = staged(true);
+    game.players[1]
+        .hand
+        .push(card(127_100, cards::COUNTERSPELL, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == souls))
+        .expect("the flashback cost is payable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    game.priority = PlayerId::Two;
+    let counter = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(127_100))
+        })
+        .expect("two blue answers it");
+    game.apply(PlayerId::Two, counter).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert!(spirits(&game).is_empty(), "no Spirits were made");
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::LINGERING_SOULS),
+        "and the card is exiled rather than back in the graveyard",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .all(|card| card.definition != cards::LINGERING_SOULS),
+        "there is no second flashback waiting",
+    );
+}
+
+/// "The mana value of the spell is determined only by its mana cost, no
+/// matter what the total cost to cast the spell was." Flashed back for
+/// {1}{B}, it is still the three-drop it prints.
+#[test]
+fn a_flashed_back_souls_is_still_worth_three() {
+    let (mut game, souls) = staged(true);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == souls))
+        .expect("the flashback cost is payable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    let spell = game
+        .stack
+        .iter()
+        .find(|object| object.card.definition.card_definition() == Some(cards::LINGERING_SOULS))
+        .expect("it is on the stack");
+    assert_eq!(
+        game.stack_spell_mana_value(spell),
+        3,
+        "the flashback cost is what was paid, not what it is worth",
+    );
+}
