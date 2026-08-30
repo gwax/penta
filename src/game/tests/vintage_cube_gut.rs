@@ -199,3 +199,101 @@ fn a_wide_attack_triggers_it_once() {
         "two attackers, one trigger, one Skeleton",
     );
 }
+
+/// "Gut doesn't have to be among the attacking creatures." The trigger
+/// watches the declaration rather than her.
+#[test]
+fn she_need_not_attack_herself() {
+    let (mut game, gut) = staged(&[cards::GRIZZLY_BEARS, cards::BLACK_LOTUS]);
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+        .expect("staged")
+        .card
+        .id;
+
+    attack_with(&mut game, bears, true);
+
+    assert!(
+        skeleton(&game).is_some(),
+        "somebody attacked, which is all the trigger asks",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == gut)
+            .is_some_and(|permanent| !permanent.attacking),
+        "and Gut stayed home while it happened",
+    );
+}
+
+/// Answers what is asked, taking the first option that is not a refusal:
+/// the sacrifice, and any draw offered along the way.
+fn settle_taking_offers(game: &mut Game) {
+    for _ in 0..16 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .find(|option| option.label != "Decline")
+                .map(|option| vec![option.id])
+                .unwrap_or_default();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the decision accepts what it offered");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+}
+
+/// "Although the Skeleton is an attacking creature, it was never declared as
+/// an attacking creature ... abilities that trigger whenever a creature
+/// attacks won't trigger when it enters the battlefield attacking." An
+/// Isperia across the table sees the one attacker that was declared.
+#[test]
+fn the_skeleton_is_attacking_without_having_attacked() {
+    let (mut game, gut) = staged(&[cards::BLACK_LOTUS]);
+    game.put_onto_battlefield(PlayerId::Two, cards::ISPERIA_SUPREME_JUDGE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    let held = game.players[1].hand.len();
+
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: gut,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .expect("she attacks");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+    settle_taking_offers(&mut game);
+
+    let skeleton = skeleton(&game).expect("the Skeleton was made");
+    assert!(skeleton.attacking, "it is attacking");
+    assert_eq!(
+        game.players[1].hand.len(),
+        held + 1,
+        "and the one card is for Gut alone: the Skeleton never declared",
+    );
+}
