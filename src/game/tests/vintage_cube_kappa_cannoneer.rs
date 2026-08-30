@@ -103,3 +103,65 @@ fn it_improvises_and_wards() {
             .is_some_and(|rules| rules.rules_text().contains("Ward {4}")),
     );
 }
+
+/// "Another artifact *you control*": the Mox they play is not one of yours,
+/// so the Turtle stays the size it was.
+#[test]
+fn their_artifact_does_not_grow_it() {
+    let (mut game, cannoneer) = staged();
+    let before = permanent(&game, cannoneer).counters(CounterKind::PlusOnePlusOne);
+
+    game.put_onto_battlefield(PlayerId::Two, cards::MOX_JET)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        permanent(&game, cannoneer).counters(CounterKind::PlusOnePlusOne),
+        before,
+        "an artifact across the table is nothing to it",
+    );
+}
+
+/// "It can't be blocked *this turn*": the counter is permanent and the
+/// evasion is not, so a turn later it can be blocked like anything else.
+#[test]
+fn the_unblockable_lasts_only_that_turn() {
+    let (mut game, cannoneer) = staged();
+    game.put_onto_battlefield(PlayerId::One, cards::MOX_JET)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    // Their turn and then yours again.
+    for _ in 0..2 {
+        game.finish_cleanup();
+        game.start_next_turn();
+        drain_pending(&mut game);
+    }
+    assert_eq!(game.active_player, PlayerId::One);
+
+    let blocker = creature(98_100, cards::SERRA_ANGEL, PlayerId::Two);
+    game.battlefield.push(blocker);
+    game.step = Step::DeclareBlockers;
+    game.attackers_declared = true;
+    if let Some(attacker) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == cannoneer)
+    {
+        attacker.attacking = true;
+        attacker.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+        attacker.tapped = false;
+    }
+
+    assert_eq!(
+        permanent(&game, cannoneer).counters(CounterKind::PlusOnePlusOne),
+        2,
+        "the counters the Mox gave it are still there",
+    );
+    assert!(
+        game.legal_actions(PlayerId::Two).iter().any(
+            |action| matches!(action, Action::DeclareBlocker { attacker, .. } if *attacker == cannoneer)
+        ),
+        "but the evasion belonged to the turn the Mox arrived",
+    );
+}
