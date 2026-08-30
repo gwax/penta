@@ -277,3 +277,69 @@ fn a_dead_bronco_is_remembered_as_saddled() {
         "and it was saddled when it left, so they still pay",
     );
 }
+
+/// "If the revealed card's mana cost includes {X}, X is 0 for the purpose of
+/// determining its mana value." A Walking Ballista is printed {X}{X}, which
+/// off the top of a library is nothing at all.
+#[test]
+fn an_x_in_the_revealed_cost_counts_as_zero() {
+    let (mut game, bronco) = staged(&[], &[cards::WALKING_BALLISTA]);
+    let before = [
+        game.players[PlayerId::One.index()].life,
+        game.players[PlayerId::Two.index()].life,
+    ];
+
+    attack(&mut game, bronco);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::WALKING_BALLISTA],
+        "it still comes to hand",
+    );
+    assert_eq!(
+        [
+            game.players[PlayerId::One.index()].life,
+            game.players[PlayerId::Two.index()].life,
+        ],
+        before,
+        "and an unpaid X is worth nothing to either of you",
+    );
+}
+
+/// "You may activate a permanent's saddle ability even if that permanent is
+/// already saddled." It buys nothing, but nothing stops it either.
+#[test]
+fn an_already_saddled_mount_may_be_saddled_again() {
+    let (mut game, bronco) = staged(&[cards::GRIZZLY_BEARS; 4], &[]);
+
+    let saddle = saddle_action(&game, bronco).expect("eight power is enough");
+    game.apply(PlayerId::One, saddle).expect("it activates");
+    settle(&mut game);
+    assert!(saddled(&game, bronco));
+
+    assert!(
+        saddle_action(&game, bronco).is_some(),
+        "the bears still standing may pay for it a second time",
+    );
+}
+
+/// "Tap any number of other untapped creatures you control": a creature that
+/// is already tapped has nothing left to give.
+#[test]
+fn tapped_creatures_cannot_pay_the_saddle() {
+    let (mut game, bronco) = staged(&[cards::GRIZZLY_BEARS, cards::GRIZZLY_BEARS], &[]);
+    for permanent in &mut game.battlefield {
+        if permanent.card.definition == cards::GRIZZLY_BEARS {
+            permanent.tapped = true;
+        }
+    }
+
+    assert!(
+        saddle_action(&game, bronco).is_none(),
+        "four power that is already tapped is no power at all",
+    );
+}
