@@ -326,3 +326,144 @@ fn two_wards_are_two_bills_and_one_unpaid_counters_it() {
         "the countered spell is in their graveyard",
     );
 }
+
+/// Answers whatever is pending, keeping a copy pointed where the original
+/// was, then runs the stack down.
+fn settle_keeping_the_target(game: &mut Game, wanted: Target) {
+    for _ in 0..24 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let option = match &game
+                .pending_decisions
+                .first()
+                .expect("it is pending")
+                .continuation
+            {
+                DecisionContinuation::CopyStackObject { target_lists, .. } => target_lists
+                    .iter()
+                    .position(|targets| flatten_target_selections(targets) == [wanted])
+                    .and_then(|index| u32::try_from(index).ok()),
+                _ => decision.options.first().map(|option| option.id),
+            };
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: option.map(|id| vec![id]).unwrap_or_default(),
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+}
+
+/// "Whenever you cast *or copy* an instant or sorcery spell." A Fork is
+/// three Pests all by itself: the Bolt cast, the Fork cast, and the copy
+/// the Fork makes.
+#[test]
+fn copying_a_spell_is_a_pest_as_well_as_casting_one() {
+    let (mut game, _witch) = staged(&[cards::LIGHTNING_BOLT, cards::FORK], &[]);
+    for color in [ManaColor::Red, ManaColor::Black] {
+        game.add_unrestricted_mana(PlayerId::One, color, 4);
+    }
+    let bolt = game.players[0]
+        .hand
+        .iter()
+        .find(|card| card.definition == cards::LIGHTNING_BOLT)
+        .expect("the Bolt is in hand")
+        .id;
+    let fork = game.players[0]
+        .hand
+        .iter()
+        .find(|card| card.definition == cards::FORK)
+        .expect("the Fork is in hand")
+        .id;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(bolt, vec![Target::Player(PlayerId::Two)], Vec::new(), 0),
+    )
+    .expect("the Bolt is cast");
+    let on_stack = game
+        .stack
+        .iter()
+        .find(|object| object.card.definition.card_definition() == Some(cards::LIGHTNING_BOLT))
+        .expect("the Bolt is on the stack")
+        .id;
+    game.apply(
+        PlayerId::One,
+        cast_action(fork, vec![Target::Spell(on_stack)], Vec::new(), 0),
+    )
+    .expect("the Fork answers it");
+    settle_keeping_the_target(&mut game, Target::Player(PlayerId::Two));
+
+    assert_eq!(
+        pests(&game),
+        3,
+        "one for the Bolt, one for the Fork, and one for the copy",
+    );
+    assert_eq!(
+        game.players[1].life, 14,
+        "and both Bolts found the same player",
+    );
+}
+
+/// "Whenever this creature becomes the target of a spell *or ability* an
+/// opponent controls." Every other ward test here is a Bolt; a Sorcerer's
+/// tap ability is billed the same three life, and declining counters the
+/// ability rather than the spell.
+#[test]
+fn ward_bills_an_ability_too() {
+    let (mut game, witch) = staged(&[], &[]);
+    let sorcerer = game
+        .put_onto_battlefield(PlayerId::Two, cards::PRODIGAL_SORCERER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    game.priority = PlayerId::Two;
+
+    let ping = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == sorcerer
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets().contains(&Target::Permanent(witch)))
+            }
+            _ => false,
+        })
+        .expect("the Sorcerer can point at her");
+    game.apply(PlayerId::Two, ping).expect("it activates");
+    settle(&mut game);
+    answer_ward(&mut game, PlayerId::Two, false);
+
+    assert_eq!(
+        game.players[1].life, 20,
+        "declining costs them nothing but the ability",
+    );
+    let witch = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == witch)
+        .expect("she is still there");
+    assert_eq!(witch.damage, 0, "the countered ability dealt nothing");
+}
