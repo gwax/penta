@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A prohibition on being made to sacrifice reaches an offer as well as an
+  order.** "Spells and abilities your opponents control can't cause you to
+  sacrifice permanents" was read as covering only sacrifices a player had no
+  say in, so Tamiyo, Collector of Tales let her own controller feed a
+  Desecration Demon a creature each combat. Her ruling is explicit that an
+  option to sacrifice is one you cannot take, and the same now holds whether
+  the effect orders the sacrifice or offers it. Where such an effect has a
+  branch for having sacrificed nothing, that branch is what happens.
+
 - **A split card or Room is worth both halves anywhere but the stack.** Its
   mana value was read off the first half alone, so a Caustic Bronco turning
   over Life // Death charged its controller one life rather than three, a

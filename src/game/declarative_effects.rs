@@ -355,9 +355,20 @@ impl Game {
                     let Target::Player(player) = target else {
                         continue;
                     };
-                    // A prohibition on being forced to sacrifice does not
-                    // reach an offer the player is free to decline.
-                    if !optional && !self.can_be_forced_to_sacrifice(player, object.controller) {
+                    // A prohibition on being made to sacrifice reaches an
+                    // offer as readily as an order: "if that spell or ability
+                    // gives you the option to sacrifice a permanent, you
+                    // can't take that option" (Tamiyo, Collector of Tales).
+                    // Nothing was sacrificed, so what is left is the branch
+                    // for having sacrificed nothing.
+                    if !self.can_be_forced_to_sacrifice(player, object.controller) {
+                        if let Some(effect) = otherwise {
+                            self.resolve_effect_def(
+                                scoped.with_effect(*effect),
+                                object,
+                                context.clone(),
+                            );
+                        }
                         continue;
                     }
                     let followup = then.map(|effect| SacrificeFollowup {

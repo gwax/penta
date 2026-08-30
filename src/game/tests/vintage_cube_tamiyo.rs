@@ -381,3 +381,87 @@ fn the_cleanup_discard_is_a_game_rule_she_does_not_touch() {
         "the game rules trimmed the hand to seven all the same",
     );
 }
+
+/// "If that spell or ability gives you the option to sacrifice a permanent
+/// or to discard a card, you can't take that option." A Desecration Demon
+/// asks each combat and pays for the answer; with Tamiyo out there is no
+/// answer to give, and without her the same board feeds it.
+#[test]
+fn an_optional_sacrifice_is_not_an_option_either() {
+    for with_tamiyo in [false, true] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        if with_tamiyo {
+            game.battlefield.push(tamiyo(98_100));
+        }
+        let bears = creature(98_101, cards::GRIZZLY_BEARS, PlayerId::One);
+        let bears_id = bears.card.id;
+        game.battlefield.push(bears);
+        let demon = creature(98_102, cards::DESECRATION_DEMON, PlayerId::Two);
+        let demon_id = demon.card.id;
+        game.battlefield.push(demon);
+        game.turns_started = [5, 5];
+        game.active_player = PlayerId::Two;
+        game.priority = PlayerId::Two;
+        game.step = Step::BeginningOfCombat;
+        game.begin_step_triggers();
+
+        // Feed the Demon whenever it asks, which is the whole question:
+        // with Tamiyo out it never asks.
+        let mut fed = false;
+        for _ in 0..16 {
+            if let Some(decision) = game
+                .pending_decisions
+                .first()
+                .map(|pending| pending.observation.clone())
+            {
+                let options = decision
+                    .options
+                    .iter()
+                    .filter(|option| option.card.is_some_and(|(object, _)| object == bears_id))
+                    .map(|option| option.id)
+                    .take(decision.maximum)
+                    .collect::<Vec<_>>();
+                fed |= !options.is_empty();
+                game.apply(
+                    decision.player,
+                    Action::ChooseDecision {
+                        decision: decision.id,
+                        options,
+                    },
+                )
+                .expect("the offered choice is legal");
+                continue;
+            }
+            if game.stack.is_empty() && game.pending_triggers.is_empty() {
+                break;
+            }
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+        game.check_state_based_actions();
+
+        let demon = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == demon_id)
+            .expect("the Demon is still there");
+        if with_tamiyo {
+            assert!(!fed, "the option to sacrifice was never on the table");
+            assert!(!demon.tapped, "so the Demon was not paid off");
+            assert_eq!(demon.counters(CounterKind::PlusOnePlusOne), 0);
+            assert!(
+                game.battlefield
+                    .iter()
+                    .any(|permanent| permanent.card.id == bears_id),
+                "and the creature it wanted is still there",
+            );
+        } else {
+            assert!(fed, "without her the option is a real one");
+            assert!(demon.tapped, "and taking it keeps the Demon home");
+            assert_eq!(demon.counters(CounterKind::PlusOnePlusOne), 1);
+        }
+    }
+}
