@@ -387,3 +387,24 @@ fn her_loyalty_abilities_wait_for_a_main_phase() {
     game.priority = PlayerId::One;
     assert_eq!(loyalties(&game), 0, "nor is their main phase");
 }
+
+/// "The back face of a transforming double-faced card usually has a color
+/// indicator that defines its color." Hers is blue, which the face has no
+/// mana cost to say any other way.
+#[test]
+fn the_planeswalker_side_is_still_blue() {
+    let game = transformed(&[]);
+    let colors = game.permanent_colors(tamiyo_on_battlefield(&game));
+
+    assert!(
+        ManaColor::Blue
+            .color_index()
+            .is_some_and(|index| colors[index]),
+        "the colour indicator is what she is read from",
+    );
+    assert_eq!(
+        colors.iter().filter(|painted| **painted).count(),
+        1,
+        "and blue is the whole of it",
+    );
+}

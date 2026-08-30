@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A transforming back face keeps the colour its indicator prints.** A back
+  face has no mana cost, and colour was derived from the mana cost alone, so
+  three of them turned over colourless: Tamiyo, Seasoned Scholar was not blue,
+  Revealing Eye was not black, and Ulvenwald Behemoth was not green. Each now
+  states the indicator it is printed with, which is what protection, "target
+  blue permanent", and every other colour question reads.
+
 - **Foretell is not a sorcery-speed action.** "During your turn" in the
   reminder text is the whole restriction: CR 702.143a lets you take the
   special action any time you have priority on your own turn. The action was

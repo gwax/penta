@@ -2063,6 +2063,10 @@ pub(in crate::card::sets) static TAMIYO_INQUISITIVE_STUDENT: CardRecord = CardRe
             const {
                 CardRules::new_planeswalker_without_mana_cost(&const { ["Tamiyo"] })
                 .with_supertype(CardSupertype::Legendary)
+                // The back face has no mana cost to read a colour off, and
+                // prints a colour indicator instead: she is blue on both
+                // sides.
+                .printed_colors(&const { [ManaColor::Blue] })
                 .with_starting_loyalty(2)
                 .with_abilities(&const { [
                     AbilityDef::activated(

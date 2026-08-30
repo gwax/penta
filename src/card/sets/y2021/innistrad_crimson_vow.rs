@@ -4,8 +4,8 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AppliedEffectDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef,
-    EffectDef, EffectRecipientDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
     ResolvedEffectDurationDef, ScaledValueDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
 };
 use crate::ids::{ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex};
@@ -63,6 +63,9 @@ pub(in crate::card::sets) static CONCEALING_CURTAINS: CardRecord = CardRecord::n
             "Revealing Eye",
             const {
                 CardRules::new_creature_without_mana_cost(&const { ["Eye", "Horror"] }, 3, 4)
+                    // A back face has no mana cost to read a colour off; the
+                    // colour indicator is what says she is still black.
+                    .printed_colors(&const { [ManaColor::Black] })
                 .with_abilities(&const { [
                     abilities::menace(),
                     AbilityDef::triggered_with_targets(
@@ -197,6 +200,8 @@ pub(in crate::card::sets) static ULVENWALD_ODDITY: CardRecord = CardRecord::new_
             "Ulvenwald Behemoth",
             const {
                 CardRules::new_creature_without_mana_cost(&const { ["Beast", "Horror"] }, 8, 8)
+                    // Same again: the indicator keeps the Behemoth green.
+                    .printed_colors(&const { [ManaColor::Green] })
                 .with_abilities(&const { [
                     abilities::trample(),
                     abilities::haste(),
