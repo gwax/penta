@@ -167,3 +167,59 @@ fn a_freshly_played_orc_has_to_wait() {
         "summoning sickness stops the tap",
     );
 }
+
+/// With two lands that have the type, which one is spent belongs to the
+/// activation: both are offered, and taking the Taiga leaves the Forest to
+/// tap for mana of its own.
+#[test]
+fn which_forest_is_spent_is_chosen_when_it_is_activated() {
+    let (mut game, orc) = staged(&[cards::FOREST, cards::TAIGA]);
+    let land_of = |game: &Game, definition| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == definition)
+            .expect("it is there")
+            .card
+            .id
+    };
+    let forest = land_of(&game, cards::FOREST);
+    let taiga = land_of(&game, cards::TAIGA);
+
+    let mut offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility {
+                source,
+                cost_object,
+                ..
+            } if source == orc => cost_object,
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    offered.sort_unstable();
+    offered.dedup();
+    let mut both = vec![forest, taiga];
+    both.sort_unstable();
+    assert_eq!(offered, both, "either land pays for it");
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateManaAbility { source, cost_object, .. }
+                    if *source == orc && *cost_object == Some(taiga)
+            )
+        })
+        .expect("the Taiga is one of the choices");
+    game.apply(PlayerId::One, action).expect("it activates");
+
+    assert_eq!(lands_of(&game, cards::TAIGA), 0, "the named land went");
+    assert_eq!(
+        lands_of(&game, cards::FOREST),
+        1,
+        "and the one that was not named stayed",
+    );
+}
