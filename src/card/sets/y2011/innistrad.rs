@@ -4321,13 +4321,43 @@ pub(in crate::card::sets) static KESSIG_WOLF: CardRecord = CardRecord::new_with_
 );
 
 // ISD 152 — Kruin Outlaw // Terror of Kruin Pass
-// Audit: metadata-only — Needs menace as an executable minimum-blocker constraint granted to Werewolves on the back face.
-pub(in crate::card::sets) static KRUIN_OUTLAW: CardRecord = CardRecord::new(
+pub(in crate::card::sets) static KRUIN_OUTLAW: CardRecord = CardRecord::new_dfc(
     PrintingAnchor::scryfall("ec00d2d2-6597-474a-9353-345bbedfe57e"),
-    "Kruin Outlaw",
-    crate::card::CardArt::new("ec00d2d2-6597-474a-9353-345bbedfe57e", "David Rapoza"),
-    crate::card::CardSet::Innistrad,
-    crate::card::CardRules::unsupported(),
+    "Kruin Outlaw // Terror of Kruin Pass",
+    CardArt::new("ec00d2d2-6597-474a-9353-345bbedfe57e", "David Rapoza"),
+    CardSet::Innistrad,
+    &[
+        (
+            "Kruin Outlaw",
+            CardRules::new_creature(
+                mana_cost!("{1}{R}{R}"),
+                &["Human", "Rogue", "Werewolf"],
+                2,
+                2,
+            )
+            .with_abilities(&[abilities::first_strike(), WEREWOLF_FRONT_TRANSFORM]),
+        ),
+        (
+            "Terror of Kruin Pass",
+            CardRules::new_creature_without_mana_cost(&["Werewolf"], 3, 3)
+                .printed_colors(&[ManaColor::Red])
+                .with_abilities(&[
+                    abilities::double_strike(),
+                    AbilityDef::static_ability(
+                        "Werewolves you control have menace. (A creature with menace can't be blocked except by two or more creatures.)",
+                        EffectDef::StaticApply {
+                            recipient: EffectRecipientDef::matching_objects(
+                                ObjectPredicateDef::Subtype("Werewolf"),
+                                &[ZoneKind::Battlefield],
+                                PlayerRelation::You,
+                            ),
+                            effect: AppliedEffectDef::add_ability(&abilities::menace()),
+                        },
+                    ),
+                    WEREWOLF_BACK_TRANSFORM,
+                ]),
+        ),
+    ],
 );
 
 // ISD 153 — Night Revelers
