@@ -4,8 +4,8 @@ use super::continuous_effects::StaticEffectKind;
 use super::{
     AppliedEffectDef, BasicLandType, CardSupertype, CardType, CharacteristicOperationDef,
     ContinuousEffectTimestamp, ControlFlow, CounterKind, DeclarativeAbilityDef, EffectDef, Game,
-    GameObjectId, KeywordAbility, ObjectPredicateDef, ObjectQueryDef, Permanent, PlayerId,
-    PlayerRelation, PowerToughnessOperationDef, ResolvedContinuousEffectKind,
+    GameObjectId, KeywordAbility, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, Permanent,
+    PlayerId, PlayerRelation, PowerToughnessOperationDef, ResolvedContinuousEffectKind,
     ResolvedPowerToughnessOperation, RetiredObject, TriggerContext, ValueDef,
 };
 
@@ -375,6 +375,26 @@ impl Game {
             // what it carries, and the bonus follows every counter.
             ValueDef::CountersOnSource(kind) => {
                 i32::from(self.current_or_last_known_counters(source, kind))
+            }
+            // The static ability names the object whose counters matter.
+            // CreatingSource follows the affected token's captured
+            // provenance to that exact battlefield incarnation. There is no
+            // last-known fallback: an orphaned token reads zero.
+            ValueDef::CountersOnObject(counted) => {
+                let object = match counted.object {
+                    ObjectRefDef::Source => Some(source),
+                    ObjectRefDef::CreatingSource => self.creating_source_of(source),
+                    _ => None,
+                };
+                i32::from(
+                    object
+                        .and_then(|object| {
+                            self.battlefield
+                                .iter()
+                                .find(|permanent| permanent.card.id == object)
+                        })
+                        .map_or(0, |permanent| permanent.counters(counted.kind)),
+                )
             }
             // Domain, read live off the board: the Kavu resizes as lands
             // with new basic types arrive and leave.

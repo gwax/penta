@@ -167,6 +167,7 @@ fn validate_object_reference(
             }
         }
         ObjectRefDef::Source
+        | ObjectRefDef::CreatingSource
         | ObjectRefDef::ZoneChangeSuccessor(_)
         | ObjectRefDef::ZoneChangeResultOfTriggeringObject
         | ObjectRefDef::AbilityGrantSource
@@ -501,6 +502,9 @@ fn validate_value_target_references(
         // same as any other object reference in the program.
         ValueDef::ObjectPower(reference) | ValueDef::ObjectManaValue(reference) => {
             validate_object_reference(reference, target_count, scope)
+        }
+        ValueDef::CountersOnObject(counted) => {
+            validate_object_reference(counted.object, target_count, scope)
         }
         ValueDef::CountSpellsCastThisTurn(_)
         | ValueDef::Constant(_)

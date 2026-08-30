@@ -43,6 +43,9 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::DevotionTo(_)
         | ValueDef::BasicLandTypesControlled(_)
         | ValueDef::LibrarySize(_) => true,
+        ValueDef::CountersOnObject(counted) => {
+            matches!(counted.object, ObjectRefDef::Source | ObjectRefDef::CreatingSource)
+        }
         ValueDef::CountMatchingObjects(query)
         | ValueDef::AnyMatchingObject(query)
         | ValueDef::DistinctNamesAmong(query)
@@ -143,6 +146,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::IfTargetMatches(_)
         | ValueDef::IfMatchingObjectCount(_)
         | ValueDef::CountersOnSource(_)
+        | ValueDef::CountersOnObject(_)
         | ValueDef::CardsDrawnThisTurn(_)
         | ValueDef::LandsPlayedThisTurn(_)
         | ValueDef::LifeGainedThisTurn(_)

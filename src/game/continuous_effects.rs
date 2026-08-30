@@ -900,6 +900,7 @@ impl Game {
             | EffectRecipientSetDef::Objects(
                 ObjectSetDef::One(
                     ObjectRefDef::Binding(_)
+                    | ObjectRefDef::CreatingSource
                     | ObjectRefDef::ZoneChangeSuccessor(_)
                     | ObjectRefDef::ZoneChangeResultOfTriggeringObject
                     | ObjectRefDef::ResolvingObject

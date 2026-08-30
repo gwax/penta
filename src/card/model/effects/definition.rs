@@ -12,8 +12,7 @@ pub enum EffectDef {
         object: EffectRecipientDef,
         then: &'static EffectDef,
     },
-    /// Add or remove a resolved amount of one fixed or previously chosen kind
-    /// of counter.
+    /// Add or remove a resolved amount of one fixed or previously chosen counter kind.
     ModifyCounters {
         object: EffectRecipientDef,
         kind: CounterKindDef,
@@ -27,9 +26,8 @@ pub enum EffectDef {
     },
     AddMana(AddManaEffectDef),
     /// Adds mana of one colour, however much a value says. Mana abilities use
-    /// [`Self::AddMana`] with a fixed amount so the mana planner can read
-    /// them without resolving anything; this is for the effects that cannot
-    /// know their amount until they resolve.
+    /// [`Self::AddMana`] so the planner can read them without resolution;
+    /// this is for effects that cannot know their amount until they resolve.
     AddManaEqualTo {
         color: ManaColor,
         amount: ValueDef,
