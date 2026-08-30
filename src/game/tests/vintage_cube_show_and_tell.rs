@@ -182,3 +182,99 @@ fn a_hand_with_nothing_it_names_is_skipped() {
         "and the spell resolved",
     );
 }
+
+/// "The current player chooses first, then each other player chooses in turn
+/// order. After all choices are made, the cards are put onto the battlefield
+/// simultaneously." So the first question is the caster's, and answering it
+/// puts nothing anywhere: the board is still empty while the other player
+/// decides.
+#[test]
+fn the_caster_chooses_first_and_nothing_lands_until_both_have() {
+    let (mut game, spell) = staged(&[cards::GRIZZLY_BEARS], &[cards::SERRA_ANGEL]);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == spell))
+        .expect("three mana casts it");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let first = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("somebody is asked what to put down");
+    assert_eq!(
+        first.player,
+        PlayerId::One,
+        "the player whose turn it is chooses first",
+    );
+    let bears = first
+        .options
+        .iter()
+        .find(|option| {
+            option.card.is_some_and(|(_, characteristics)| {
+                characteristics.card_definition() == Some(cards::GRIZZLY_BEARS)
+            })
+        })
+        .expect("the Bears are on offer")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: first.id,
+            options: vec![bears],
+        },
+    )
+    .expect("choosing them is legal");
+
+    assert!(
+        game.battlefield.is_empty(),
+        "nothing is on the battlefield while the other player is still choosing",
+    );
+    let second = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("and then they are asked");
+    assert_eq!(second.player, PlayerId::Two, "in turn order after you");
+}
+
+/// "An artifact, creature, enchantment, or land card": a planeswalker is
+/// none of those, and neither is an instant, so a hand of them is not asked.
+#[test]
+fn it_names_four_types_and_no_others() {
+    let (mut game, spell) = staged(
+        &[cards::WRENN_AND_SIX, cards::LIGHTNING_BOLT],
+        &[cards::GRIZZLY_BEARS],
+    );
+
+    cast_putting_down(
+        &mut game,
+        spell,
+        &[cards::WRENN_AND_SIX, cards::LIGHTNING_BOLT],
+    );
+
+    assert!(
+        controller_of(&game, cards::WRENN_AND_SIX).is_none(),
+        "a planeswalker is not one of the four",
+    );
+    assert!(
+        controller_of(&game, cards::LIGHTNING_BOLT).is_none(),
+        "and an instant is not either",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        2,
+        "both are still in hand, the Show and Tell having left it",
+    );
+}
