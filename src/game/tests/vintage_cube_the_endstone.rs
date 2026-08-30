@@ -163,3 +163,95 @@ fn their_end_step_leaves_your_life_alone() {
 
     assert_eq!(game.players[0].life, 3, "their end step is not yours");
 }
+
+/// "The Endstone's first ability resolves before the spell that caused it to
+/// trigger." The card is drawn while that spell is still waiting.
+#[test]
+fn the_draw_resolves_before_the_spell_that_caused_it() {
+    let (mut game, held) = staged(&[cards::LIGHTNING_BOLT]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    let library = game.players[0].library.len();
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == held[0]))
+        .expect("one red mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    for _ in 0..4 {
+        if game.stack.len() == 2 {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert_eq!(
+        game.stack.last().map(|object| object.kind),
+        Some(StackObjectKind::TriggeredAbility),
+        "the trigger went on top of the spell that caused it",
+    );
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.players[0].library.len(),
+        library - 1,
+        "and it resolved first, drawing the card",
+    );
+    assert!(
+        game.stack
+            .iter()
+            .any(|object| object.kind == StackObjectKind::Spell),
+        "while the Bolt is still on the stack, unresolved",
+    );
+}
+
+/// "It resolves even if that spell is countered or otherwise leaves the
+/// stack without resolving." The draw is not part of the spell.
+#[test]
+fn the_draw_happens_even_when_the_spell_is_countered() {
+    let (mut game, held) = staged(&[cards::LIGHTNING_BOLT]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.players[1].hand.clear();
+    let counterspell = card(119_500, cards::COUNTERSPELL, PlayerId::Two);
+    let counterspell_id = counterspell.id;
+    game.players[1].hand.push(counterspell);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+    let library = game.players[0].library.len();
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == held[0]))
+        .expect("one red mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    game.apply(PlayerId::One, Action::PassPriority)
+        .expect("the window is theirs");
+    let bolt = game
+        .stack
+        .iter()
+        .find(|object| object.kind == StackObjectKind::Spell)
+        .expect("the Bolt is under the trigger")
+        .id;
+    game.apply(
+        PlayerId::Two,
+        cast_action(counterspell_id, vec![Target::Spell(bolt)], Vec::new(), 0),
+    )
+    .expect("the Counterspell answers it");
+    settle(&mut game);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "the Bolt was countered",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        library - 1,
+        "and the draw it caused happened all the same",
+    );
+}
