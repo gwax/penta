@@ -262,3 +262,87 @@ fn a_look_may_be_declined_with_something_worth_taking() {
         "so all five went to the bottom",
     );
 }
+
+/// "You may reveal a creature or land card from among them": the other three
+/// of the five are looked at and nothing more. What is offered is the whole
+/// difference between this and a Sleight of Hand.
+#[test]
+fn only_the_creature_and_the_land_are_on_offer() {
+    let (mut game, spell) = staged(&FIVE_CARDS);
+
+    let cast = casts(&game, spell)
+        .into_iter()
+        .next()
+        .expect("the free cast is on offer");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the look asks which card to take");
+    let mut offered = decision
+        .options
+        .iter()
+        .filter_map(|option| match option.card {
+            Some((_, ObjectCharacteristics::Card { definition, .. })) => Some(definition),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    offered.sort_unstable();
+    let mut wanted = vec![cards::FOREST, cards::GRIZZLY_BEARS];
+    wanted.sort_unstable();
+
+    assert_eq!(
+        offered, wanted,
+        "the Bolt, the Recall and the Counterspell were seen and not offered",
+    );
+}
+
+/// "Put the rest on the bottom of your library": under whatever was already
+/// down there, rather than back on top where they would be drawn again.
+#[test]
+fn the_rest_go_under_the_cards_that_were_already_at_the_bottom() {
+    let mut library = vec![cards::MOUNTAIN; 3];
+    library.extend(FIVE_CARDS);
+    let (mut game, spell) = staged(&library);
+
+    let cast = casts(&game, spell)
+        .into_iter()
+        .next()
+        .expect("the free cast is on offer");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle_taking(&mut game, Some(cards::FOREST));
+
+    assert_eq!(hand(&game), vec![cards::FOREST], "the land was taken");
+    let library = game.players[0]
+        .library
+        .iter()
+        .map(|card| card.definition)
+        .collect::<Vec<_>>();
+    assert_eq!(library.len(), 7, "one of the eight went to hand");
+    assert_eq!(
+        &library[4..],
+        [cards::MOUNTAIN; 3],
+        "the three that were never looked at are the top of the library now",
+    );
+    let mut under = library[..4].to_vec();
+    under.sort_unstable();
+    let mut rest = vec![
+        cards::LIGHTNING_BOLT,
+        cards::GRIZZLY_BEARS,
+        cards::ANCESTRAL_RECALL,
+        cards::COUNTERSPELL,
+    ];
+    rest.sort_unstable();
+    assert_eq!(under, rest, "and the four left over are beneath them");
+}
