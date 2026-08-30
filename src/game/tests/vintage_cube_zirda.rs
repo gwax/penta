@@ -54,25 +54,119 @@ fn its_own_ability_still_costs_one() {
     );
 }
 
-/// A four-mana ability elsewhere costs two with Zirda out.
-#[test]
-fn it_takes_two_off_another_permanents_ability() {
-    let (mut game, _, ids) = staged(&[cards::ICY_MANIPULATOR]);
-    let icy = ids[0];
+/// Whether `player` is offered any activation of `source`.
+fn can_activate(game: &Game, player: PlayerId, source: GameObjectId) -> bool {
+    game.legal_actions(player).iter().any(
+        |action| matches!(action, Action::ActivateAbility { source: activated, .. } if *activated == source),
+    )
+}
+
+/// Backdates a permanent so a tap cost is not the thing being measured.
+fn settle_in(game: &mut Game, source: GameObjectId) {
     if let Some(permanent) = game
         .battlefield
         .iter_mut()
-        .find(|permanent| permanent.card.id == icy)
+        .find(|permanent| permanent.card.id == source)
     {
         permanent.entered_controller_turn = 0;
     }
+}
+
+/// A Basalt Monolith already tapped. Untapped it pays for its own untap
+/// with the three colourless it makes, which would answer the question
+/// whether or not the discount applied; tapped, the cost is the only
+/// thing standing between its controller and the ability.
+fn tapped_monolith(game: &mut Game, source: GameObjectId) {
+    settle_in(game, source);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == source)
+    {
+        permanent.tapped = true;
+    }
+}
+
+/// A Basalt Monolith's {3} to untap costs {1} with Zirda out, and its
+/// printed {3} without: the same board twice, with the Fox removed in
+/// between, so the discount is what the difference measures.
+#[test]
+fn it_takes_two_off_another_permanents_ability() {
+    let (mut game, zirda, ids) = staged(&[cards::BASALT_MONOLITH]);
+    let monolith = ids[0];
+    tapped_monolith(&mut game, monolith);
     game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
 
     assert!(
-        game.legal_actions(PlayerId::One).iter().any(
-            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == icy)
-        ),
-        "a one-mana ability after the discount is payable with one mana",
+        can_activate(&game, PlayerId::One, monolith),
+        "three minus two is one, and one mana pays it",
+    );
+
+    game.battlefield
+        .retain(|permanent| permanent.card.id != zirda);
+
+    assert!(
+        !can_activate(&game, PlayerId::One, monolith),
+        "and with the Fox gone the printed three is what it costs",
+    );
+}
+
+/// "Abilities you activate" is only yours. An opponent's Monolith pays its
+/// printed three while your Zirda watches.
+#[test]
+fn an_opponents_ability_is_not_discounted() {
+    let (mut game, _zirda, _) = staged(&[]);
+    let monolith = creature(109_600, cards::BASALT_MONOLITH, PlayerId::Two);
+    let monolith_id = monolith.card.id;
+    game.battlefield.push(monolith);
+    tapped_monolith(&mut game, monolith_id);
+    game.priority = PlayerId::Two;
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+
+    assert!(
+        !can_activate(&game, PlayerId::Two, monolith_id),
+        "your discount does not reach their abilities",
+    );
+
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 2);
+
+    assert!(
+        can_activate(&game, PlayerId::Two, monolith_id),
+        "three of their own mana still does it",
+    );
+}
+
+/// "An activated mana ability is one that produces mana as it resolves, not
+/// one that costs mana to activate." A Celestial Prism's {2} to make a
+/// mana is one of those, and Zirda leaves it alone.
+#[test]
+fn a_mana_ability_is_not_discounted() {
+    let (mut game, _zirda, ids) = staged(&[cards::CELESTIAL_PRISM]);
+    let prism = ids[0];
+    settle_in(&mut game, prism);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: prism,
+            ability: mana_ability_for(&game, prism, ManaColor::White),
+            color: ManaColor::White,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("two mana pays for it");
+
+    assert_eq!(
+        game.players[0].mana_pool.colorless, 0,
+        "both were spent, because the discount never applied",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.white, 1,
+        "and the one mana it makes arrived",
     );
 }
 
