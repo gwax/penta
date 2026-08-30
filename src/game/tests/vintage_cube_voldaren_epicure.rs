@@ -123,3 +123,41 @@ fn the_blood_is_an_artifact() {
     assert!(types.contains(CardType::Artifact));
     assert!(!types.contains(CardType::Creature));
 }
+
+/// Summoning sickness belongs to creatures: the Blood is an artifact, so the
+/// turn it arrives is as good as any for cashing it in.
+#[test]
+fn the_blood_may_be_cashed_the_turn_it_arrives() {
+    let (mut game, held) = staged();
+    cast(&mut game, held);
+    let blood = bloods(&game)[0];
+    game.players[0]
+        .hand
+        .push(card(112_600, cards::MOUNTAIN, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    assert!(
+        game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == blood)
+        ),
+        "a token that just arrived taps like any other artifact",
+    );
+}
+
+/// "Discard a card" is part of the cost, so an empty hand is a Blood that
+/// cannot be spent however much mana is available.
+#[test]
+fn an_empty_hand_cannot_pay_for_the_draw() {
+    let (mut game, held) = staged();
+    cast(&mut game, held);
+    let blood = bloods(&game)[0];
+    game.players[0].hand.clear();
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == blood)
+        ),
+        "there is nothing to discard for it",
+    );
+}
