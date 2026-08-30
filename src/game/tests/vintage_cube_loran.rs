@@ -226,3 +226,102 @@ fn arriving_answers_an_enchantment_too() {
         "and it is in its owner's graveyard",
     );
 }
+
+/// Runs until the entry trigger asks, and reports what it offers.
+fn offered_targets(game: &mut Game) -> Vec<GameObjectId> {
+    for _ in 0..16 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the trigger asks")
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(object, _)| object))
+        .collect()
+}
+
+/// "Destroy", which is a word an indestructible artifact ignores. Naming the
+/// Plate is legal -- the trigger restricts what it may point at by type and
+/// nothing else -- and it is still there afterwards.
+#[test]
+fn an_indestructible_artifact_survives_being_named() {
+    let (mut game, _loran, board) = staged(&[(cards::DARKSTEEL_PLATE, PlayerId::Two)]);
+    let plate = board[0];
+
+    assert!(
+        offered_targets(&mut game).contains(&plate),
+        "indestructible is not untargetable",
+    );
+    settle(&mut game, Some(plate));
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == plate),
+        "destroying it is what fails, not naming it",
+    );
+}
+
+/// "You and target opponent each draw a card": your own draw is not a
+/// target, and the one target there is cannot be you.
+#[test]
+fn the_draw_names_an_opponent_and_never_you() {
+    let (mut game, loran, _) = staged(&[]);
+    settle(&mut game, None);
+
+    let named = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } if source == loran => Some(targets),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(named.len(), 1, "one opponent is one way to activate her");
+    assert_eq!(
+        named[0]
+            .iter()
+            .flat_map(TargetSelection::targets)
+            .collect::<Vec<_>>(),
+        vec![&Target::Player(PlayerId::Two)],
+        "the opponent is named and you are not",
+    );
+}
+
+/// The half of the symmetry that is not symmetrical at all: against an empty
+/// library, the card she hands the opponent is the one they cannot draw.
+#[test]
+fn the_shared_draw_can_be_the_thing_that_kills() {
+    let (mut game, loran, _) = staged(&[]);
+    settle(&mut game, None);
+    game.players[1].library.clear();
+
+    let draw = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == loran))
+        .expect("tapping is the whole cost");
+    game.apply(PlayerId::One, draw).expect("it activates");
+    settle(&mut game, None);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::One,
+            reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+        }),
+        "she drew her own card and they could not draw theirs",
+    );
+}
