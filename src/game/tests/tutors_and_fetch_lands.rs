@@ -946,3 +946,52 @@ fn a_fetch_may_be_cracked_on_their_turn() {
     );
     assert_eq!(game.players[0].life, 19, "the life was paid on their turn");
 }
+
+/// "Put it onto the battlefield" and nothing about tapping: what a Delta
+/// finds is ready to use, which is the whole reason the fetch is played
+/// on the turn the mana is wanted rather than the turn before.
+#[test]
+fn what_a_fetch_finds_arrives_untapped() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let delta = game
+        .put_onto_battlefield(PlayerId::One, cards::POLLUTED_DELTA)
+        .expect("cataloged");
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(14_300, cards::UNDERGROUND_SEA, PlayerId::One));
+
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source: actual, .. } if *actual == delta)
+        })
+        .expect("the fetch is offered");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    drain_pending(&mut game);
+
+    let sea = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::UNDERGROUND_SEA)
+        .expect("the Sea was found");
+    assert!(!sea.tapped, "it comes in ready");
+    let sea = sea.card.id;
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: sea,
+            ability: mana_ability_for(&game, sea, ManaColor::Blue),
+            color: ManaColor::Blue,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("and taps for mana the same turn");
+
+    assert_eq!(game.players[0].mana_pool.blue, 1);
+}
