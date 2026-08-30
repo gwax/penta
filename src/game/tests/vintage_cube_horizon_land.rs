@@ -240,3 +240,45 @@ fn the_life_is_paid_rather_than_dealt() {
     );
     assert!(game.result.is_some(), "and zero life is a loss");
 }
+
+/// The draw wants a mana as well as the tap and the land: with an empty pool
+/// there is nothing on offer but the mana ability itself.
+#[test]
+fn the_draw_wants_a_mana_of_its_own() {
+    let (game, grove) = staged_land(cards::WATERLOGGED_GROVE);
+
+    let offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| match action {
+            Action::ActivateAbility { source, .. } => *source == grove,
+            _ => false,
+        })
+        .count();
+    assert_eq!(
+        offered, 0,
+        "an empty pool cannot pay the one the draw costs",
+    );
+    assert!(
+        !mana_colors(&game, grove).is_empty(),
+        "though the land still taps for its colours",
+    );
+}
+
+/// The draw costs a mana, a tap and the land itself, and no life at all: a
+/// player at one life may still cash the Grove in.
+#[test]
+fn the_grove_may_be_cashed_in_at_one_life() {
+    let (mut game, grove) = staged_land(cards::WATERLOGGED_GROVE);
+    game.players[0].life = 1;
+    let before = game.players[0].hand.len();
+
+    cash_in(&mut game, grove);
+
+    assert_eq!(game.players[0].hand.len(), before + 1, "the card is drawn");
+    assert_eq!(
+        game.players[0].life, 1,
+        "and the life is only what the mana ability charges",
+    );
+    assert!(game.result.is_none(), "so nobody dies for a card");
+}
