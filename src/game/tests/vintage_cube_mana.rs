@@ -619,3 +619,76 @@ fn a_mox_cast_this_turn_taps_for_mana_this_turn() {
         "and it is on the battlefield rather than in hand",
     );
 }
+
+/// CR 118.4: a player may pay life down to exactly zero. One life is enough
+/// for one activation, and the game notices immediately what that cost.
+#[test]
+fn the_confluence_may_be_paid_with_your_last_life() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let land = game
+        .put_onto_battlefield(PlayerId::One, cards::MANA_CONFLUENCE)
+        .expect("cataloged");
+    game.players[PlayerId::One.index()].life = 1;
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: land,
+            ability: mana_ability_for(&game, land, ManaColor::Blue),
+            color: ManaColor::Blue,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("one life is exactly one life");
+
+    assert_eq!(game.players[PlayerId::One.index()].mana_pool.blue, 1);
+    assert_eq!(game.players[PlayerId::One.index()].life, 0);
+    game.check_state_based_actions();
+    assert!(
+        game.result.is_some(),
+        "and the mana is the last thing you ever spend",
+    );
+}
+
+/// The tap is half the cost, so a Confluence that has already made its mana
+/// makes no more this turn however much life is left.
+#[test]
+fn a_tapped_confluence_offers_nothing() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let land = game
+        .put_onto_battlefield(PlayerId::One, cards::MANA_CONFLUENCE)
+        .expect("cataloged");
+    game.players[PlayerId::One.index()].life = 20;
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: land,
+            ability: mana_ability_for(&game, land, ManaColor::Green),
+            color: ManaColor::Green,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("it taps for green");
+
+    let offered = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == land)
+        .map(|permanent| game.mana_ability_activations(permanent).len())
+        .expect("it is still on the battlefield");
+    assert_eq!(offered, 0, "one mana a turn, whatever the life total");
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        19,
+        "and only the one life was paid",
+    );
+}
