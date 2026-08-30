@@ -179,3 +179,71 @@ fn a_discarded_colossus_goes_back_and_is_shuffled_in() {
         "shuffled in rather than left on top, where it would just be redrawn",
     );
 }
+
+/// "The -1/-1 counters remain on the creature indefinitely. They're not
+/// removed ... at end of turn." Ordinary damage wears off in the cleanup
+/// step; what infect does instead is the reason it is worth the drawback.
+#[test]
+fn the_counters_outlast_the_turn_that_marked_damage_does_not() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let colossus = creature(95_060, cards::BLIGHTSTEEL_COLOSSUS, PlayerId::One);
+    let colossus_id = colossus.card.id;
+    game.battlefield.push(colossus);
+    let bears = creature(95_061, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let poisoned = creature(95_062, cards::SERRA_ANGEL, PlayerId::Two);
+    let poisoned_id = poisoned.card.id;
+    game.battlefield.push(poisoned);
+    let bruised = creature(95_063, cards::SERRA_ANGEL, PlayerId::Two);
+    let bruised_id = bruised.card.id;
+    game.battlefield.push(bruised);
+
+    // One Angel takes two from the Colossus, the other two from the Bears.
+    game.damage_target_from_kind(
+        Some(colossus_id),
+        Some(Target::Permanent(poisoned_id)),
+        2,
+        true,
+    );
+    game.damage_target_from_kind(
+        Some(bears_id),
+        Some(Target::Permanent(bruised_id)),
+        2,
+        false,
+    );
+    drain_pending(&mut game);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == bruised_id)
+            .expect("it survived")
+            .damage,
+        2,
+        "the ordinary two is marked damage",
+    );
+
+    game.finish_cleanup();
+
+    let poisoned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == poisoned_id)
+        .expect("still a 2/2");
+    assert_eq!(
+        poisoned.counters(CounterKind::MinusOneMinusOne),
+        2,
+        "the counters are still there a turn later",
+    );
+    assert_eq!(game.toughness(poisoned), Some(2), "and still shrink it");
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == bruised_id)
+            .expect("still a 4/4")
+            .damage,
+        0,
+        "while the marked damage is gone, which is the whole difference",
+    );
+}
