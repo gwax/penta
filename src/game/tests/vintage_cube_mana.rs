@@ -563,3 +563,59 @@ fn a_mana_creature_waits_a_turn_and_then_makes_its_mana() {
         assert_eq!(game.players[0].mana_pool.amount(color), 1);
     }
 }
+
+/// A Mox costs nothing and is not a creature, so the turn it is cast is the
+/// turn it makes mana: cast it off an empty pool and tap it straight away.
+#[test]
+fn a_mox_cast_this_turn_taps_for_mana_this_turn() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    let mox = game
+        .build_zone(PlayerId::One, &[cards::MOX_EMERALD])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let mox_id = mox.id;
+    game.players[0].hand.push(mox);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == mox_id))
+        .expect("nothing is exactly what it costs");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+
+    let entered = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::MOX_EMERALD)
+        .expect("it resolved onto the battlefield")
+        .card
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: entered,
+            ability: mana_ability_for(&game, entered, ManaColor::Green),
+            color: ManaColor::Green,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("an artifact has no summoning sickness to wait out");
+
+    assert_eq!(game.players[0].mana_pool.green, 1);
+    assert!(
+        game.players[0].hand.is_empty(),
+        "and it is on the battlefield rather than in hand",
+    );
+}
