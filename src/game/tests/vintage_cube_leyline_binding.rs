@@ -204,3 +204,98 @@ fn a_land_is_not_a_legal_target() {
         "their land is still there: the trigger found nothing to name",
     );
 }
+
+/// "Leyline Binding's domain ability doesn't change its mana value, which is
+/// always 6." Five basic land types buy it for one white mana, and the spell
+/// on the stack is still a six-drop.
+#[test]
+fn the_discount_does_not_change_what_it_is_worth() {
+    let (mut game, binding) = staged(&[
+        cards::PLAINS,
+        cards::ISLAND,
+        cards::SWAMP,
+        cards::MOUNTAIN,
+        cards::FOREST,
+    ]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.battlefield
+        .push(creature(220_200, cards::GRIZZLY_BEARS, PlayerId::Two));
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == binding))
+        .expect("one white pays for it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    let spell = game
+        .stack
+        .iter()
+        .find(|object| object.card.definition.card_definition() == Some(cards::LEYLINE_BINDING))
+        .expect("it is on the stack");
+    assert_eq!(
+        game.stack_spell_mana_value(spell),
+        6,
+        "a discount is a discount and not a smaller card",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.white, 0,
+        "and the one mana it actually cost was paid",
+    );
+}
+
+/// "If a token is exiled, it ceases to exist. It won't be returned to the
+/// battlefield." The Binding leaving gives back a card and has nothing to
+/// give back for a token.
+#[test]
+fn a_token_it_exiles_never_comes_back() {
+    let (mut game, binding) = staged(&[
+        cards::PLAINS,
+        cards::ISLAND,
+        cards::SWAMP,
+        cards::MOUNTAIN,
+        cards::FOREST,
+    ]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    let token = token_permanent(
+        220_300,
+        tokens::creature(&["Bird"], &[ManaColor::White], 1, 1),
+        PlayerId::Two,
+    );
+    let token_id = token.card.id;
+    game.battlefield.push(token);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == binding))
+        .expect("one white pays for it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == token_id),
+        "the Bird was exiled",
+    );
+
+    let enchantment = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::LEYLINE_BINDING)
+        .expect("it resolved")
+        .card
+        .id;
+    game.destroy_permanent(enchantment);
+    settle(&mut game);
+
+    assert!(
+        game.battlefield.is_empty()
+            || !game.battlefield.iter().any(|permanent| is_token_with(
+                permanent,
+                tokens::creature(&["Bird"], &[ManaColor::White], 1, 1)
+            )),
+        "a token that left the battlefield has nothing to come back as",
+    );
+}
