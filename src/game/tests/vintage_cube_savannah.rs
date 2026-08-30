@@ -204,3 +204,44 @@ fn every_original_dual_taps_for_its_own_two() {
         );
     }
 }
+
+/// "The mana abilities associated with both of its basic land types" are two
+/// abilities on one land, and they share its tap: a Scrubland makes one mana
+/// a turn, of whichever colour you asked for, and then offers nothing.
+#[test]
+fn tapping_a_dual_for_one_colour_spends_the_other() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let land = game
+        .put_onto_battlefield(PlayerId::One, cards::SCRUBLAND)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    assert_eq!(colors_of(&game, land).len(), 2, "white and black on offer");
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: land,
+            ability: mana_ability_for(&game, land, ManaColor::White),
+            color: ManaColor::White,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("it taps for white");
+
+    assert_eq!(game.players[0].mana_pool.white, 1);
+    assert_eq!(
+        game.players[0].mana_pool.black, 0,
+        "the other half was never paid for",
+    );
+    assert!(
+        colors_of(&game, land).is_empty(),
+        "and a tapped land offers neither colour",
+    );
+}
