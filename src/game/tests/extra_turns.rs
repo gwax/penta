@@ -662,3 +662,49 @@ fn extra_turn_effect_schedules_multiple_recipients_in_apnap_order() {
     game.start_next_turn();
     assert_eq!(game.active_player, PlayerId::One);
 }
+
+/// "If multiple extra-turn effects resolve in the same turn, take them in the
+/// reverse of the order that the effects resolved. In other words, the most
+/// recently created extra turn is taken first." Two Time Warps, and the
+/// second one cast is the first one taken.
+#[test]
+fn the_most_recently_created_extra_turn_is_taken_first() {
+    let mut game = ready_game();
+    game.players[0].hand.clear();
+    let mut warps = Vec::new();
+    for index in 0..2 {
+        let warp = card(10_400 + index, cards::TIME_WARP, PlayerId::One);
+        warps.push(warp.id);
+        game.players[0].hand.push(warp);
+    }
+    game.players[0].mana_pool.blue = 4;
+    game.players[0].mana_pool.colorless = 6;
+
+    // Their extra turn is created first, yours second.
+    for (warp, player) in warps.into_iter().zip([PlayerId::Two, PlayerId::One]) {
+        game.apply(
+            PlayerId::One,
+            cast_action(warp, vec![Target::Player(player)], Vec::new(), 0),
+        )
+        .expect("five mana casts it");
+        pass_priority_pair(&mut game);
+    }
+    assert_eq!(
+        game.extra_turns,
+        vec![PlayerId::Two, PlayerId::One],
+        "queued in the order they resolved",
+    );
+
+    game.start_next_turn();
+    assert_eq!(
+        game.active_player,
+        PlayerId::One,
+        "and taken from the other end: the newest extra turn goes first",
+    );
+    game.start_next_turn();
+    assert_eq!(
+        game.active_player,
+        PlayerId::Two,
+        "then the one made before it",
+    );
+}
