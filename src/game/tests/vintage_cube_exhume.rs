@@ -235,3 +235,40 @@ fn the_only_creature_card_is_the_only_answer() {
         "which is mandatory rather than optional",
     );
 }
+
+/// "Each player": the active player chooses first and the other after, and
+/// the creatures arrive together rather than one at a time. So answering
+/// your own question puts nothing onto the battlefield while they are still
+/// deciding.
+#[test]
+fn the_caster_chooses_first_and_both_arrive_together() {
+    let (mut game, exhume) = staged(&[cards::SERRA_ANGEL], &[cards::SAVANNAH_LIONS]);
+
+    cast(&mut game, exhume);
+    let (first, offered) = pending(&game).expect("somebody is being asked");
+    assert_eq!(
+        first,
+        PlayerId::One,
+        "the player whose turn it is chooses first",
+    );
+    assert_eq!(
+        offered,
+        vec![cards::SERRA_ANGEL],
+        "out of their own graveyard",
+    );
+
+    take(&mut game, cards::SERRA_ANGEL);
+    assert!(
+        controller_of(&game, cards::SERRA_ANGEL).is_none(),
+        "and nothing has arrived while the other player is still choosing",
+    );
+    let (second, _) = pending(&game).expect("and then they are asked");
+    assert_eq!(second, PlayerId::Two, "in turn order after the caster");
+
+    take(&mut game, cards::SAVANNAH_LIONS);
+    assert!(
+        controller_of(&game, cards::SERRA_ANGEL).is_some()
+            && controller_of(&game, cards::SAVANNAH_LIONS).is_some(),
+        "both come back once both have been named",
+    );
+}
