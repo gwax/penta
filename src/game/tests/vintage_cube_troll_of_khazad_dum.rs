@@ -125,17 +125,16 @@ fn menace_still_takes_only_two() {
     assert!(may_finish(&game), "and two is");
 }
 
-/// Swampcycling: one mana and the card itself for a Swamp out of the
-/// library.
-#[test]
-fn swampcycling_finds_a_swamp() {
+/// Player One with the Troll in hand, `library` beneath it, and the one
+/// black mana swampcycling asks for.
+fn holding_the_troll(library: &[CardDefinitionId]) -> (Game, GameObjectId) {
     let mut game = ready_game();
     game.battlefield.clear();
     game.players[0].hand.clear();
     game.players[0].library.clear();
-    for definition in [cards::FOREST, cards::SWAMP, cards::MOUNTAIN] {
+    for definition in library {
         let card = game
-            .build_zone(PlayerId::One, &[definition])
+            .build_zone(PlayerId::One, &[*definition])
             .expect("cataloged")
             .into_iter()
             .next()
@@ -155,16 +154,42 @@ fn swampcycling_finds_a_swamp() {
     game.step = Step::PrecombatMain;
     game.priority = PlayerId::One;
     game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+    (game, troll_id)
+}
 
-    let action = game
-        .legal_actions(PlayerId::One)
+/// The swampcycling activation, if it is on offer.
+fn cycling_action(game: &Game, troll: GameObjectId) -> Option<Action> {
+    game.legal_actions(PlayerId::One)
         .into_iter()
-        .find(|action| match action {
-            Action::ActivateAbility { source, .. } => *source == troll_id,
-            _ => false,
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == troll))
+}
+
+/// Runs until the search asks, and reports what it offers.
+fn offered_by_the_search(game: &mut Game) -> Vec<CardDefinitionId> {
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the search asks")
+        .options
+        .iter()
+        .filter_map(|option| match option.card {
+            Some((_, ObjectCharacteristics::Card { definition, .. })) => Some(definition),
+            _ => None,
         })
-        .expect("swampcycling is activatable from hand");
-    game.apply(PlayerId::One, action).expect("it activates");
+        .collect()
+}
+
+/// Runs the activation out, taking `wanted` when the search asks for it.
+fn settle_taking(game: &mut Game, wanted: CardDefinitionId) {
     for _ in 0..12 {
         if let Some(decision) = game
             .pending_decisions
@@ -178,7 +203,7 @@ fn swampcycling_finds_a_swamp() {
                     matches!(
                         option.card,
                         Some((_, ObjectCharacteristics::Card { definition, .. }))
-                            if definition == cards::SWAMP
+                            if definition == wanted
                     )
                 })
                 .map(|option| option.id);
@@ -201,6 +226,16 @@ fn swampcycling_finds_a_swamp() {
         }
     }
     game.check_state_based_actions();
+}
+
+/// Swampcycling: one mana and the card itself for a Swamp out of the
+/// library.
+#[test]
+fn swampcycling_finds_a_swamp() {
+    let (mut game, troll) = holding_the_troll(&[cards::FOREST, cards::SWAMP, cards::MOUNTAIN]);
+    let action = cycling_action(&game, troll).expect("swampcycling is activatable from hand");
+    game.apply(PlayerId::One, action).expect("it activates");
+    settle_taking(&mut game, cards::SWAMP);
 
     assert!(
         game.players[0]
@@ -218,129 +253,79 @@ fn swampcycling_finds_a_swamp() {
     );
 }
 
+/// "Unlike the normal cycling ability, typecycling doesn't allow you to draw
+/// a card." The Swamp is the whole of what the mana bought: the two cards it
+/// was shuffled back among are still in the library.
+#[test]
+fn swampcycling_draws_nothing() {
+    let (mut game, troll) = holding_the_troll(&[cards::FOREST, cards::SWAMP, cards::MOUNTAIN]);
+    let action = cycling_action(&game, troll).expect("swampcycling is activatable");
+    game.apply(PlayerId::One, action).expect("it activates");
+    settle_taking(&mut game, cards::SWAMP);
+
+    assert_eq!(
+        game.players[0]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::SWAMP],
+        "the search is the whole of it, with no draw on top",
+    );
+    assert_eq!(game.players[0].library.len(), 2, "and the rest stayed put");
+}
+
+/// "Typecycling is a form of cycling", and cycling is an activated ability
+/// with no timing restriction of its own: their turn, their spell on the
+/// stack, and the Troll still turns into a Swamp.
+#[test]
+fn swampcycling_is_not_sorcery_speed() {
+    let (mut game, troll) = holding_the_troll(&[cards::SWAMP]);
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::One;
+    game.stack
+        .push(spell(20_000, cards::LIGHTNING_BOLT, PlayerId::Two, 0));
+
+    assert!(
+        cycling_action(&game, troll).is_some(),
+        "an instant-speed answer to being short a land",
+    );
+}
+
+/// The ability is a hand ability: the discard is its cost, so a Troll that
+/// is already in the graveyard has nothing to pay with.
+#[test]
+fn swampcycling_is_only_offered_from_hand() {
+    let (mut game, troll) = holding_the_troll(&[cards::SWAMP]);
+    let card = game.players[0].hand.pop().expect("the Troll was in hand");
+    game.players[0].graveyard.push(card);
+
+    assert!(
+        cycling_action(&game, troll).is_none(),
+        "the graveyard is not a zone it cycles from",
+    );
+}
+
 /// It cycles for a Swamp and nothing else.
 #[test]
 fn swampcycling_offers_only_swamps() {
-    let mut game = ready_game();
-    game.battlefield.clear();
-    game.players[0].hand.clear();
-    game.players[0].library.clear();
-    for definition in [cards::FOREST, cards::SWAMP, cards::MOUNTAIN] {
-        let card = game
-            .build_zone(PlayerId::One, &[definition])
-            .expect("cataloged")
-            .into_iter()
-            .next()
-            .expect("one card");
-        game.players[0].library.push(card);
-    }
-    let troll = game
-        .build_zone(PlayerId::One, &[cards::TROLL_OF_KHAZAD_DUM])
-        .expect("cataloged")
-        .into_iter()
-        .next()
-        .expect("one card");
-    let troll_id = troll.id;
-    game.players[0].hand.push(troll);
-    game.turns_started = [5, 5];
-    game.active_player = PlayerId::One;
-    game.step = Step::PrecombatMain;
-    game.priority = PlayerId::One;
-    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
-    let action = game
-        .legal_actions(PlayerId::One)
-        .into_iter()
-        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == troll_id))
-        .expect("swampcycling is activatable");
+    let (mut game, troll) = holding_the_troll(&[cards::FOREST, cards::SWAMP, cards::MOUNTAIN]);
+    let action = cycling_action(&game, troll).expect("swampcycling is activatable");
     game.apply(PlayerId::One, action).expect("it activates");
-    for _ in 0..8 {
-        if !game.pending_decisions.is_empty() {
-            break;
-        }
-        let priority = game.priority;
-        if game.apply(priority, Action::PassPriority).is_err() {
-            break;
-        }
-    }
 
-    let decision = game
-        .pending_decisions
-        .first()
-        .map(|pending| pending.observation.clone())
-        .expect("the search asks");
-    let offered = decision
-        .options
-        .iter()
-        .filter_map(|option| match option.card {
-            Some((_, ObjectCharacteristics::Card { definition, .. })) => Some(definition),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-    assert_eq!(offered, vec![cards::SWAMP]);
+    assert_eq!(offered_by_the_search(&mut game), vec![cards::SWAMP]);
 }
 
 /// "A Swamp card" is a card with the Swamp land type, basic or not: a Bayou
 /// is a Swamp Forest and answers the search, where a Mountain does not.
 #[test]
 fn swampcycling_finds_a_nonbasic_swamp() {
-    let mut game = ready_game();
-    game.battlefield.clear();
-    game.players[0].hand.clear();
-    game.players[0].library.clear();
-    for definition in [cards::MOUNTAIN, cards::BAYOU] {
-        let card = game
-            .build_zone(PlayerId::One, &[definition])
-            .expect("cataloged")
-            .into_iter()
-            .next()
-            .expect("one card");
-        game.players[0].library.push(card);
-    }
-    let troll = game
-        .build_zone(PlayerId::One, &[cards::TROLL_OF_KHAZAD_DUM])
-        .expect("cataloged")
-        .into_iter()
-        .next()
-        .expect("one card");
-    let troll_id = troll.id;
-    game.players[0].hand.push(troll);
-    game.turns_started = [5, 5];
-    game.active_player = PlayerId::One;
-    game.step = Step::PrecombatMain;
-    game.priority = PlayerId::One;
-    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
-
-    let action = game
-        .legal_actions(PlayerId::One)
-        .into_iter()
-        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == troll_id))
-        .expect("swampcycling is activatable");
+    let (mut game, troll) = holding_the_troll(&[cards::MOUNTAIN, cards::BAYOU]);
+    let action = cycling_action(&game, troll).expect("swampcycling is activatable");
     game.apply(PlayerId::One, action).expect("it activates");
-    for _ in 0..8 {
-        if !game.pending_decisions.is_empty() {
-            break;
-        }
-        let priority = game.priority;
-        if game.apply(priority, Action::PassPriority).is_err() {
-            break;
-        }
-    }
 
-    let decision = game
-        .pending_decisions
-        .first()
-        .map(|pending| pending.observation.clone())
-        .expect("the search asks");
-    let offered = decision
-        .options
-        .iter()
-        .filter_map(|option| match option.card {
-            Some((_, ObjectCharacteristics::Card { definition, .. })) => Some(definition),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
     assert_eq!(
-        offered,
+        offered_by_the_search(&mut game),
         vec![cards::BAYOU],
         "the type is what is searched for, not the printing",
     );
