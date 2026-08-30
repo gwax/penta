@@ -181,3 +181,34 @@ fn the_bonus_wears_off() {
 
     assert_eq!(stats(&game, hierarch), (Some(0), Some(1)), "back to a 0/1");
 }
+
+/// "Exalted abilities won't trigger if you attack a player with one creature
+/// and a planeswalker with another." Two attackers is two attackers however
+/// they are split up, and the file's other case sends both at the player.
+#[test]
+fn splitting_two_attackers_between_defenders_is_not_attacking_alone() {
+    let (mut game, hierarch, others) = staged(&[cards::SAVANNAH_LIONS]);
+    let lions = others[0];
+    let mut walker = creature(87_000, cards::VRASKA_THE_UNSEEN, PlayerId::Two);
+    walker.set_counters(CounterKind::Loyalty, 5);
+    let walker_id = walker.card.id;
+    game.battlefield.push(walker);
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(hierarch, AttackDefender::Player(PlayerId::Two));
+    game.declare_attacker(lions, AttackDefender::Planeswalker(walker_id));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+
+    assert_eq!(
+        stats(&game, hierarch),
+        (Some(0), Some(1)),
+        "she is still the 0/1 she was",
+    );
+    assert_eq!(
+        stats(&game, lions),
+        (Some(2), Some(1)),
+        "and the Lions gained nothing either",
+    );
+}
