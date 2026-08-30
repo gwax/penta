@@ -324,3 +324,91 @@ fn the_bonus_belongs_to_the_chainsaw_rather_than_its_host() {
         "and the two counters went with the Chainsaw onto the 2/1",
     );
 }
+
+/// "Whenever one or more creatures die" names no controller and no side of
+/// the table: your own creature dying revs it as readily as theirs, and
+/// "up to one target creature" will point at one of yours too.
+#[test]
+fn your_own_creatures_count_at_both_ends() {
+    let (mut game, saw, _theirs) = staged(&[]);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let spare = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let equipment = cast(&mut game, saw, Some(mine));
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == mine),
+        "three damage killed a bear of your own",
+    );
+    assert_eq!(
+        rev_counters(&game, equipment),
+        1,
+        "and it revved off that death like any other",
+    );
+
+    game.move_permanents_to_graveyard(&[spare]);
+    settle(&mut game);
+
+    assert_eq!(
+        rev_counters(&game, equipment),
+        2,
+        "a second creature of yours is a second batch",
+    );
+}
+
+/// The creature wearing it dying is one of the deaths it watches for: the
+/// Chainsaw revs, and comes off the creature it can no longer be attached
+/// to.
+#[test]
+fn the_equipped_creature_dying_revs_it_and_leaves_it_bare() {
+    let (mut game, saw, _theirs) = staged(&[]);
+    let host = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let equipment = cast(&mut game, saw, None);
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let equip = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, targets, .. }
+                if *source == equipment
+                    && targets
+                        .iter()
+                        .any(|slot| slot.targets().contains(&Target::Permanent(host))))
+        })
+        .expect("equip is activatable");
+    game.apply(PlayerId::One, equip).expect("it equips");
+    settle(&mut game);
+    assert_eq!(rev_counters(&game, equipment), 0, "nothing has died yet");
+
+    game.move_permanents_to_graveyard(&[host]);
+    settle(&mut game);
+
+    assert_eq!(
+        rev_counters(&game, equipment),
+        1,
+        "the creature wearing it is a creature dying",
+    );
+    let equipment = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == equipment)
+        .expect("the Equipment stays behind");
+    assert!(
+        equipment.attached_to.is_none(),
+        "with nothing left to be attached to",
+    );
+}
