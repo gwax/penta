@@ -228,3 +228,53 @@ fn a_dead_host_leaves_the_sword_bare() {
         "with nothing left to attach itself to",
     );
 }
+
+/// "Once the last ability has triggered, changing the power or toughness of
+/// the creature won't stop you from returning Sword of the Meek and
+/// attaching it to the creature." A Giant Growth in response makes a 4/4 of
+/// the Merfolk, and the Sword comes back to it regardless.
+#[test]
+fn pumping_the_host_after_the_trigger_changes_nothing() {
+    let mut game = staged();
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let growth = card(84_500, cards::GIANT_GROWTH, PlayerId::One);
+    let growth_id = growth.id;
+    game.players[0].hand.push(growth);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    let servant = game
+        .put_onto_battlefield(PlayerId::One, cards::MERFOLK_OF_THE_PEARL_TRIDENT)
+        .expect("cataloged");
+
+    // The trigger is waiting; the Merfolk stops being a 1/1 under it.
+    for _ in 0..4 {
+        if !game.stack.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert_eq!(game.stack.len(), 1, "the Sword's trigger is on the stack");
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(growth_id, vec![Target::Permanent(servant)], Vec::new(), 0),
+    )
+    .expect("one green mana pumps it");
+    settle(&mut game, true);
+
+    assert_eq!(
+        power_toughness(&game, servant),
+        (Some(5), Some(6)),
+        "1/1 plus three plus the Sword's own +1/+2",
+    );
+    let sword = sword_on_battlefield(&game).expect("the Sword still came back");
+    assert_eq!(
+        sword.attached_to,
+        Some(servant),
+        "and it is wearing the creature that is no longer a 1/1",
+    );
+}
