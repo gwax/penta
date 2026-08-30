@@ -216,3 +216,54 @@ fn the_energy_survives_the_turn() {
         "the cleanup takes mana and damage, not energy",
     );
 }
+
+/// "You can't pay more energy counters than you have." The bank at the
+/// moment it asks is three plus whatever was already there, and the
+/// amounts it offers stop at exactly that.
+#[test]
+fn it_offers_every_amount_up_to_the_bank_and_no_more() {
+    for banked in [0, 2] {
+        let (mut game, held, bears) = staged(cards::GRIZZLY_BEARS, banked);
+        let cast = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    *card == held
+                        && choices.targets().iter().any(|selection| {
+                            selection.targets().contains(&Target::Permanent(bears))
+                        })
+                }
+                _ => false,
+            })
+            .expect("it can point at the Bears");
+        game.apply(PlayerId::One, cast).expect("it is cast");
+        for _ in 0..8 {
+            if !game.pending_decisions.is_empty() {
+                break;
+            }
+            let priority = game.priority;
+            if game.apply(priority, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+
+        let decision = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+            .expect("it asks how much to pay");
+        let mut offered = decision
+            .options
+            .iter()
+            .map(|option| option.id)
+            .collect::<Vec<_>>();
+        offered.sort_unstable();
+
+        assert_eq!(
+            offered,
+            (0..=u32::from(banked) + 3).collect::<Vec<_>>(),
+            "three from the spell and {banked} banked, and nothing above it",
+        );
+    }
+}
