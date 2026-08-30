@@ -379,6 +379,7 @@ mod vintage_cube_carnage_interpreter;
 mod vintage_cube_caryatid;
 mod vintage_cube_cathar_commando;
 mod vintage_cube_caustic_bronco;
+mod vintage_cube_chain_lightning;
 mod vintage_cube_chainsaw;
 mod vintage_cube_chandra;
 mod vintage_cube_chromatic_star;
