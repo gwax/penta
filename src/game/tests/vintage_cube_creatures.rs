@@ -804,6 +804,46 @@ fn bristly_bill_grows_a_creature_when_a_land_arrives() {
     );
 }
 
+/// "A landfall ability triggers whenever a land you control enters for any
+/// reason ... whenever a spell or ability puts a land onto the battlefield
+/// under your control." Playing it is one way in and not the only one -- and
+/// it is a land *you* control, so theirs is nothing to him.
+#[test]
+fn bristly_bill_counts_a_land_nobody_played() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let bill = creature(89_020, cards::BRISTLY_BILL_SPINE_SOWER, PlayerId::One);
+    let bill_id = bill.card.id;
+    game.battlefield.push(bill);
+
+    // Their land arrives first, and Bill has nothing to say about it.
+    game.put_onto_battlefield(PlayerId::Two, cards::FOREST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let counters = |game: &Game| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == bill_id)
+            .map(|permanent| permanent.counters(CounterKind::PlusOnePlusOne))
+    };
+    assert_eq!(
+        counters(&game),
+        Some(0),
+        "a land you do not control is not landfall"
+    );
+
+    // Yours does, put there by an effect rather than played.
+    game.put_onto_battlefield(PlayerId::One, cards::FOREST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        counters(&game),
+        Some(1),
+        "and no land drop was needed for the trigger",
+    );
+}
+
 /// Doubling reads each creature's own count, so a creature with none gains
 /// none and every other one gains what it already had.
 #[test]
