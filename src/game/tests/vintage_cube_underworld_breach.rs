@@ -389,3 +389,61 @@ fn escape_does_not_change_when_a_sorcery_may_be_cast() {
         "and their turn is not, escape or no escape",
     );
 }
+
+/// "If it is a permanent spell, it enters the battlefield and will return to
+/// its owner's graveyard if it dies later." Every other test here escapes an
+/// instant or a sorcery, which goes back down as it resolves; a creature
+/// stays where it lands.
+#[test]
+fn an_escaped_permanent_stays_on_the_battlefield() {
+    let (mut game, _breach) = staged(&[
+        cards::GRIZZLY_BEARS,
+        cards::PLAINS,
+        cards::ISLAND,
+        cards::SWAMP,
+    ]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    let action = escapes(&game, cards::GRIZZLY_BEARS)
+        .into_iter()
+        .next()
+        .expect("two mana and three cards pay for it");
+    game.apply(PlayerId::One, action).expect("it escapes");
+    settle(&mut game);
+
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+        .expect("the creature resolved onto the battlefield");
+    assert_eq!(
+        (game.power(bears), game.toughness(bears)),
+        (Some(2), Some(2)),
+        "a 2/2 like any other",
+    );
+    assert!(
+        game.players[0].graveyard.is_empty(),
+        "the graveyard is empty: three cards paid and the Bears is standing",
+    );
+    assert_eq!(
+        game.players[0].exile.len(),
+        3,
+        "and the three that paid are in exile",
+    );
+
+    // "It will return to its owner's graveyard if it dies later."
+    let bears = bears.card.id;
+    game.destroy_permanent(bears);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::GRIZZLY_BEARS],
+        "and dying is what puts it back where it escaped from",
+    );
+}
