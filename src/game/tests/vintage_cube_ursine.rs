@@ -278,3 +278,77 @@ fn the_requirement_does_not_follow_the_rest_of_the_board() {
         "the Lions are under no requirement at all",
     );
 }
+
+/// "If, during your declare attackers step, Ursine Monstrosity ... hasn't
+/// been under your control continuously since your turn began (and doesn't
+/// have haste), then it doesn't attack." The requirement is on it and being
+/// unable is what excuses it.
+#[test]
+fn a_bear_that_arrived_this_turn_stays_home() {
+    let (mut game, bear) = staged(&[cards::GRIZZLY_BEARS], &[]);
+    game.turns_started = [2, 1];
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bear)
+        .expect("it is there")
+        .entered_controller_turn = game.turns_started[PlayerId::One.index()];
+    begin_combat(&mut game);
+
+    assert_eq!(
+        (
+            game.power(bear_of(&game, bear)),
+            game.toughness(bear_of(&game, bear))
+        ),
+        (Some(4), Some(4)),
+        "the trigger still resolved and still fed it",
+    );
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::DeclareAttacker { attacker, .. } if *attacker == bear)
+        ),
+        "no haste and no history, so it never had the chance",
+    );
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .contains(&Action::FinishDeclaringAttackers),
+        "and a bear that cannot attack does not hold the step open",
+    );
+}
+
+/// "If your turn has multiple combat phases, the last ability triggers at
+/// the beginning of each of them." Each one mills its own card and grants
+/// its own bonus, worked out as that trigger resolves and kept for the
+/// turn: the first is still +1/+1 after the second makes it +2/+2, so a
+/// 3/3 that saw two combats is a 6/6 rather than a 5/5.
+#[test]
+fn a_second_combat_mills_again_and_recounts() {
+    let (mut game, bear) = staged(&[cards::GRIZZLY_BEARS, cards::LIGHTNING_BOLT], &[]);
+    game.turns_started = [2, 1];
+
+    begin_combat(&mut game);
+    assert_eq!(
+        game.power(bear_of(&game, bear)),
+        Some(4),
+        "one creature card in the graveyard is one type",
+    );
+
+    begin_combat(&mut game);
+
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        2,
+        "the second combat milled its own card",
+    );
+    assert_eq!(
+        (
+            game.power(bear_of(&game, bear)),
+            game.toughness(bear_of(&game, bear))
+        ),
+        (Some(6), Some(6)),
+        "one type when the first resolved and two when the second did, both kept",
+    );
+}
