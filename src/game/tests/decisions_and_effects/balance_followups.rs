@@ -155,3 +155,59 @@ fn balance_defers_one_apnap_trigger_batch_until_its_decisions_finish() {
             .all(|object| object.kind == StackObjectKind::TriggeredAbility)
     );
 }
+
+/// "Balance doesn't have targets, so permanents that can't be targeted, such
+/// as a creature with shroud or protection from white, are valid choices to
+/// be sacrificed." A Neurok Commando is chosen and sacrificed like anything
+/// else.
+#[test]
+fn balance_sacrifices_a_shrouded_creature_it_could_never_have_targeted() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[1].hand.clear();
+    let balance = card(10_040, cards::BALANCE, PlayerId::One);
+    game.players[0].hand.push(balance.clone());
+    game.battlefield
+        .push(creature(10_041, cards::NEUROK_COMMANDO, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    game.apply(
+        PlayerId::One,
+        cast_action(balance.id, Vec::new(), Vec::new(), 0),
+    )
+    .unwrap();
+    pass_priority_pair(&mut game);
+
+    let sacrifice = game
+        .observe(PlayerId::Two)
+        .decision
+        .expect("their only creature is one more than your none");
+    assert!(sacrifice.prompt.contains("creature"));
+    assert_eq!(
+        sacrifice.options.len(),
+        1,
+        "shroud is no reason to leave it out of the choice",
+    );
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: sacrifice.id,
+            options: vec![sacrifice.options[0].id],
+        },
+    )
+    .unwrap();
+
+    assert!(
+        game.battlefield.is_empty(),
+        "and it is sacrificed like anything else",
+    );
+    assert_eq!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .filter(|card| card.definition == cards::NEUROK_COMMANDO)
+            .count(),
+        1,
+    );
+}
