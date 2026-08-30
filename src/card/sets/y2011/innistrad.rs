@@ -3055,6 +3055,7 @@ pub(in crate::card::sets) static GHOULRAISER: CardRecord = CardRecord::new(
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Graveyard,
                 object: GHOULRAISER_ZOMBIE_CARD,
+                amount: ValueDef::Constant(1),
                 binding: ObjectSetBindingIndex::PRIMARY,
                 then: &RETURN_RANDOM_GRAVEYARD_CARD_TO_HAND,
             },
@@ -3850,6 +3851,7 @@ pub(in crate::card::sets) static CHARMBREAKER_DEVILS: CardRecord = CardRecord::n
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Graveyard,
                 object: CHARMBREAKER_INSTANT_OR_SORCERY,
+                amount: ValueDef::Constant(1),
                 binding: ObjectSetBindingIndex::PRIMARY,
                 then: &RETURN_RANDOM_GRAVEYARD_CARD_TO_HAND,
             },
@@ -5410,13 +5412,22 @@ pub(in crate::card::sets) static LUMBERKNOT: CardRecord = CardRecord::new_with_l
 );
 
 // ISD 192 — Make a Wish
-// Audit: metadata-only — Needs deterministic random selection of two cards from your graveyard.
 pub(in crate::card::sets) static MAKE_A_WISH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d0a8508d-25a7-4fb2-8aa3-349275f80c42"),
     "Make a Wish",
-    crate::card::CardArt::new("d0a8508d-25a7-4fb2-8aa3-349275f80c42", "Howard Lyon"),
-    crate::card::CardSet::Innistrad,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("d0a8508d-25a7-4fb2-8aa3-349275f80c42", "Howard Lyon"),
+    CardSet::Innistrad,
+    CardRules::new_sorcery(mana_cost!("{3}{G}")).with_ability(AbilityDef::spell(
+        "Return two cards at random from your graveyard to your hand.",
+        EffectDef::SelectAtRandomFromZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Graveyard,
+            object: ObjectPredicateDef::Any,
+            amount: ValueDef::Constant(2),
+            binding: ObjectSetBindingIndex::PRIMARY,
+            then: &RETURN_RANDOM_GRAVEYARD_CARD_TO_HAND,
+        },
+    )),
 );
 
 // ISD 193 — Mayor of Avabruck // Howlpack Alpha
@@ -5850,6 +5861,7 @@ pub(in crate::card::sets) static WOODLAND_SLEUTH: CardRecord = CardRecord::new(
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Graveyard,
                 object: WOODLAND_SLEUTH_CREATURE_CARD,
+                amount: ValueDef::Constant(1),
                 binding: ObjectSetBindingIndex::PRIMARY,
                 then: &RETURN_RANDOM_GRAVEYARD_CARD_TO_HAND,
             },
