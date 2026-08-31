@@ -264,3 +264,78 @@ fn she_is_a_seven_seven_with_four_keywords() {
         );
     }
 }
+
+/// The other half of the same ruling: "If you choose it as the artifact
+/// card, you could also put into your hand a creature card, and vice versa."
+/// An Ornithopter answering the artifact question leaves the creature
+/// question open for whatever else is in the pile.
+#[test]
+fn taking_an_artifact_creature_as_the_artifact_leaves_the_creature_pick() {
+    let dig = [
+        cards::ORNITHOPTER,
+        cards::GRIZZLY_BEARS,
+        cards::ISLAND,
+        cards::ISLAND,
+        cards::ISLAND,
+        cards::ISLAND,
+        cards::ISLAND,
+        cards::ISLAND,
+        cards::ISLAND,
+        cards::ISLAND,
+    ];
+    let mut game = staged(&dig, 5);
+
+    game.put_onto_battlefield(PlayerId::One, cards::ATRAXA_GRAND_UNIFIER)
+        .expect("cataloged");
+    let asked = resolve_dig(&mut game, |prompt, _| {
+        prompt.contains("artifact") || prompt.contains("creature")
+    });
+
+    assert_eq!(
+        asked
+            .iter()
+            .find(|(prompt, _)| prompt.contains("creature"))
+            .map(|(_, offered)| offered.clone()),
+        Some(vec![cards::GRIZZLY_BEARS]),
+        "the Thopter is spoken for, and the Bears are still a creature card",
+    );
+    let mut taken = hand(&game);
+    taken.sort_unstable();
+    let mut both = vec![cards::ORNITHOPTER, cards::GRIZZLY_BEARS];
+    both.sort_unstable();
+    assert_eq!(taken, both, "so both come home");
+}
+
+/// "Reveal the top ten cards of your library" with fewer than ten there
+/// reveals what there is. Four cards is four questions worth of material and
+/// no shortfall to make up.
+#[test]
+fn a_library_shorter_than_ten_reveals_what_it_has() {
+    let dig = [
+        cards::SOL_RING,
+        cards::GRIZZLY_BEARS,
+        cards::LIGHTNING_BOLT,
+        cards::ISLAND,
+    ];
+    let mut game = staged(&dig, 0);
+
+    game.put_onto_battlefield(PlayerId::One, cards::ATRAXA_GRAND_UNIFIER)
+        .expect("cataloged");
+    let asked = resolve_dig(&mut game, |_, _| true);
+
+    let mut taken = hand(&game);
+    taken.sort_unstable();
+    let mut expected = dig.to_vec();
+    expected.sort_unstable();
+    assert_eq!(taken, expected, "all four are one of each type");
+    assert!(
+        game.players[0].library.is_empty(),
+        "and the library that had four cards has none left",
+    );
+    assert!(
+        asked
+            .iter()
+            .all(|(_, offered)| !offered.contains(&cards::MOUNTAIN)),
+        "nothing was revealed that was not there",
+    );
+}
