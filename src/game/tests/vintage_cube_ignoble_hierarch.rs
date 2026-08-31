@@ -147,3 +147,45 @@ fn he_exalts_himself() {
 
     assert_eq!(stats(&game, hierarch), (Some(1), Some(2)));
 }
+
+/// "Exalted won't trigger if you attack with multiple creatures and all but
+/// one of them are removed from combat." Attacking alone is settled as
+/// attackers are declared, and nothing afterwards revisits it.
+#[test]
+fn killing_the_second_attacker_does_not_exalt_the_first() {
+    let (mut game, _hierarch, others) = staged(&[cards::GRIZZLY_BEARS, cards::SAVANNAH_LIONS]);
+    let bears = others[0];
+    let lions = others[1];
+
+    attack_with(&mut game, &[bears, lions]);
+    assert_eq!(stats(&game, bears), (Some(2), Some(2)), "two attackers");
+
+    game.move_permanents_to_graveyard(&[lions]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert_eq!(
+        stats(&game, bears),
+        (Some(2), Some(2)),
+        "the Bears are alone now and were not alone then",
+    );
+}
+
+/// Exalted is a triggered ability and each source has its own: two Hierarchs
+/// are two triggers, and the lone attacker takes both.
+#[test]
+fn two_hierarchs_exalt_twice() {
+    let (mut game, _hierarch, others) = staged(&[cards::IGNOBLE_HIERARCH, cards::GRIZZLY_BEARS]);
+    let bears = others[1];
+
+    attack_with(&mut game, &[bears]);
+    // Two triggers at once is an ordering question, which the file's plain
+    // settle does not answer.
+    drain_pending(&mut game);
+
+    assert_eq!(
+        stats(&game, bears),
+        (Some(4), Some(4)),
+        "one +1/+1 from each of them",
+    );
+}
