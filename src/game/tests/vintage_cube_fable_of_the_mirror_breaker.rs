@@ -289,3 +289,186 @@ fn the_reflection_cannot_copy_itself() {
         "it is not among its own choices",
     );
 }
+
+/// Reaches the Reflection with a mana up and returns its id.
+fn reflection_ready(game: &mut Game) -> GameObjectId {
+    next_turn(game);
+    next_turn(game);
+    let reflection = game
+        .battlefield
+        .iter()
+        .find(|permanent| {
+            permanent.card.definition == ObjectKind::Card(cards::FABLE_OF_THE_MIRROR_BREAKER)
+        })
+        .map(|permanent| permanent.card.id)
+        .expect("the Reflection is there");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    reflection
+}
+
+/// Every permanent the Reflection is offering to copy right now.
+fn copy_targets(game: &Game, reflection: GameObjectId) -> Vec<Target> {
+    game.legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } if source == reflection => Some(
+                targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .copied()
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect()
+}
+
+/// "Another target nonlegendary creature you control" is three restrictions,
+/// and only the first had a test. A legend of yours and a creature of theirs
+/// are both out of reach.
+#[test]
+fn it_copies_only_your_own_nonlegendary_creatures() {
+    let (mut game, _fable) = staged(&[]);
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let legend = game
+        .put_onto_battlefield(PlayerId::One, cards::THALIA_GUARDIAN_OF_THRABEN)
+        .expect("cataloged");
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    settle(&mut game);
+    let reflection = reflection_ready(&mut game);
+
+    let offered = copy_targets(&game, reflection);
+    assert!(
+        offered.contains(&Target::Permanent(bears)),
+        "the Bears are yours and nonlegendary: {offered:?}",
+    );
+    assert!(
+        !offered.contains(&Target::Permanent(legend)),
+        "a legend of your own is not copyable",
+    );
+    assert!(
+        !offered.contains(&Target::Permanent(theirs)),
+        "and neither is a creature you do not control",
+    );
+}
+
+/// "Any enters-the-battlefield abilities of the copied creature will trigger
+/// when the token enters." A copied Epicure pings and leaves its own Blood.
+#[test]
+fn the_copy_brings_the_enters_trigger_with_it() {
+    let (mut game, _fable) = staged(&[]);
+    let epicure = game
+        .put_onto_battlefield(PlayerId::One, cards::VOLDAREN_EPICURE)
+        .expect("cataloged");
+    settle(&mut game);
+    let reflection = reflection_ready(&mut game);
+    let life = game.players[1].life;
+    let bloods = |game: &Game| {
+        game.battlefield
+            .iter()
+            .filter(|permanent| game.effective_subtypes(permanent).contains(&"Blood"))
+            .count()
+    };
+    let before = bloods(&game);
+
+    let activation = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == reflection
+                    && targets
+                        .iter()
+                        .any(|slot| slot.targets().contains(&Target::Permanent(epicure)))
+            }
+            _ => false,
+        })
+        .expect("the Epicure is a legal thing to copy");
+    game.apply(PlayerId::One, activation)
+        .expect("it is activated");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[1].life,
+        life - 1,
+        "the copy entered and its trigger went off",
+    );
+    assert_eq!(bloods(&game), before + 1, "and left a Blood of its own");
+}
+
+/// The copy is what was printed: "it doesn't copy whether the creature has
+/// any counters on it". A Bears grown by a counter is copied as the 2/2 the
+/// card says it is.
+#[test]
+fn the_copy_leaves_the_counters_behind() {
+    let (mut game, _fable) = staged(&[]);
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    settle(&mut game);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bears)
+    {
+        permanent.add_counters(CounterKind::PlusOnePlusOne, 1);
+    }
+    let reflection = reflection_ready(&mut game);
+    assert_eq!(
+        game.power(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == bears)
+                .expect("the Bears are there")
+        ),
+        Some(3),
+        "the original is a 3/3 while the counter is on it",
+    );
+    let before = tokens(&game);
+
+    let activation = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == reflection
+                    && targets
+                        .iter()
+                        .any(|slot| slot.targets().contains(&Target::Permanent(bears)))
+            }
+            _ => false,
+        })
+        .expect("one mana and a tap copies the Bears");
+    game.apply(PlayerId::One, activation)
+        .expect("it is activated");
+    settle(&mut game);
+
+    let copy = tokens(&game)
+        .into_iter()
+        .find(|token| !before.contains(token))
+        .expect("a copy arrived");
+    let copy = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == copy)
+        .expect("still there");
+    assert_eq!(
+        (game.power(copy), game.toughness(copy)),
+        (Some(2), Some(2)),
+        "and the copy is the card, counters and all left behind",
+    );
+}
