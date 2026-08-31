@@ -251,3 +251,60 @@ fn all_seven_are_revealed_whatever_is_taken() {
     );
     assert_eq!(in_hand(&game, cards::SERRA_ANGEL), 1);
 }
+
+/// A library shorter than seven is shown as far as it goes: three cards is
+/// three on offer, and taking them empties it.
+#[test]
+fn a_short_library_shows_what_is_there() {
+    let (mut game, _torsten) = staged(&[cards::FOREST, cards::GRIZZLY_BEARS, cards::PLAINS]);
+
+    assert_eq!(
+        offered(&game).len(),
+        3,
+        "three cards is what there was to reveal",
+    );
+    take(
+        &mut game,
+        &[cards::FOREST, cards::GRIZZLY_BEARS, cards::PLAINS],
+    );
+
+    assert_eq!(in_hand(&game, cards::FOREST), 1);
+    assert_eq!(in_hand(&game, cards::GRIZZLY_BEARS), 1);
+    assert_eq!(in_hand(&game, cards::PLAINS), 1);
+    assert!(
+        game.players[0].library.is_empty(),
+        "and nothing was left to put underneath",
+    );
+}
+
+/// With nothing to reveal the trigger asks nothing at all, and he is on the
+/// battlefield all the same.
+#[test]
+fn an_empty_library_asks_nothing() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].library.clear();
+    game.put_onto_battlefield(PlayerId::One, cards::TORSTEN_FOUNDER_OF_BENALIA)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.turns_started = [7, 7];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    drain_pending(&mut game);
+
+    assert!(
+        game.pending_decisions.is_empty(),
+        "an empty library is nothing to choose from",
+    );
+    assert!(game.players[0].hand.is_empty(), "and nothing came of it");
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::TORSTEN_FOUNDER_OF_BENALIA),
+        "while he is standing there regardless",
+    );
+}
