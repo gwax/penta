@@ -588,6 +588,67 @@ fn each_mox_taps_for_its_own_color_and_no_other() {
     }
 }
 
+/// The other half of CR 302.6: what summoning sickness holds back is a
+/// creature without haste. A Fervor beside the Birds hands the tap back on
+/// the turn they arrive, colours and all.
+#[test]
+fn haste_lets_a_mana_creature_tap_at_once() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let birds = game
+        .put_onto_battlefield(PlayerId::One, cards::BIRDS_OF_PARADISE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let offered = |game: &Game| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == birds)
+            .map(|permanent| {
+                let mut colors = game
+                    .mana_ability_activations(permanent)
+                    .into_iter()
+                    .map(|activation| activation.color)
+                    .collect::<Vec<_>>();
+                colors.sort_unstable();
+                colors
+            })
+            .expect("the Birds are on the battlefield")
+    };
+    assert!(offered(&game).is_empty(), "a fresh Bird taps for nothing");
+
+    game.put_onto_battlefield(PlayerId::One, cards::FERVOR)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let mut expected = ManaColor::COLORS.to_vec();
+    expected.sort_unstable();
+    assert_eq!(
+        offered(&game),
+        expected,
+        "and haste is what the sickness was withholding",
+    );
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: birds,
+            ability: mana_ability_for(&game, birds, ManaColor::Blue),
+            color: ManaColor::Blue,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("the Birds tap the turn they landed");
+    assert_eq!(game.players[0].mana_pool.blue, 1);
+}
+
 /// A mana creature's tap is a creature's tap: it waits for the turn after it
 /// arrives (CR 302.6), unlike the artifacts beside it in the same slot. The
 /// Elves make green and the Birds make whatever you name.
