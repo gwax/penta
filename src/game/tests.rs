@@ -740,6 +740,7 @@ mod vintage_cube_woodfall_primus;
 mod vintage_cube_worldspine_wurm;
 mod vintage_cube_wrath_of_god;
 mod vintage_cube_wrenn_and_six;
+mod vintage_cube_xanders_lounge;
 mod vintage_cube_yawgmoths_will;
 mod vintage_cube_zirda;
 mod wards;
