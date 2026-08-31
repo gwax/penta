@@ -338,3 +338,72 @@ fn up_to_one_lets_him_answer_nothing() {
     );
     assert_eq!(game.players[1].library.len(), 2);
 }
+
+/// "Counter target spell, activated ability, or triggered ability": the
+/// third of the three, which the file never names. A Titan's enters trigger
+/// is countered and the Zombies it promised never arrive.
+#[test]
+fn the_first_mode_counters_a_triggered_ability() {
+    let (mut game, ertai, _angel) = staged();
+    game.put_onto_battlefield(PlayerId::Two, cards::GRAVE_TITAN)
+        .expect("cataloged");
+    // Far enough for the enters trigger to be waiting on the stack.
+    for _ in 0..8 {
+        if !game.stack.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert_eq!(game.stack.len(), 1, "the Titan's trigger is waiting");
+    game.priority = PlayerId::One;
+
+    flash_ertai(&mut game, ertai);
+    answer_mode(&mut game, Some("Counter"));
+    settle(&mut game);
+
+    assert!(
+        !game.battlefield.iter().any(|permanent| is_token_with(
+            permanent,
+            tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
+        )),
+        "the trigger was countered, so it made nothing",
+    );
+    assert_eq!(
+        game.players[1].hand.len(),
+        1,
+        "and its controller drew a card for it",
+    );
+}
+
+/// "Destroy another target creature or planeswalker": the other half of that
+/// line, which loyalty is no answer to.
+#[test]
+fn the_second_mode_destroys_a_planeswalker() {
+    let (mut game, ertai, _angel) = staged();
+    let narset = game
+        .put_onto_battlefield(PlayerId::Two, cards::NARSET_PARTER_OF_VEILS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    flash_ertai(&mut game, ertai);
+    answer_mode(&mut game, Some("Destroy"));
+    settle(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == narset),
+        "she was destroyed with loyalty to spare",
+    );
+    assert_eq!(
+        game.players[1].hand.len(),
+        1,
+        "and her controller drew for her",
+    );
+}
