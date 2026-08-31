@@ -727,6 +727,7 @@ mod vintage_cube_wasteland;
 mod vintage_cube_wight_of_the_reliquary;
 mod vintage_cube_witch_enchanter;
 mod vintage_cube_witherbloom_apprentice;
+mod vintage_cube_wooded_foothills;
 mod vintage_cube_woodfall_primus;
 mod vintage_cube_worldspine_wurm;
 mod vintage_cube_wrath_of_god;
