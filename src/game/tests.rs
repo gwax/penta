@@ -704,6 +704,7 @@ mod vintage_cube_tishanas_tidebinder;
 mod vintage_cube_titania;
 mod vintage_cube_torsten;
 mod vintage_cube_touch_spirit_realm;
+mod vintage_cube_toxic_deluge;
 mod vintage_cube_traveling_chocobo;
 mod vintage_cube_troll_of_khazad_dum;
 mod vintage_cube_twisted_landscape;
