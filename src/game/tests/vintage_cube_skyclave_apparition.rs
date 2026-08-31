@@ -317,3 +317,53 @@ fn answering_it_in_response_exiles_without_paying() {
         "and there was nothing exiled yet when it left, so nobody was paid",
     );
 }
+
+/// "If a creature on the battlefield has {X} in its mana cost, X is
+/// considered to be 0." A Walking Ballista is a nought-drop while it stands
+/// there, so what it owes back is a 0/0 -- a token that arrives and is
+/// buried by state-based actions before anyone can use it.
+#[test]
+fn an_x_cost_creature_pays_back_nothing_that_lives() {
+    let (mut game, apparition) = staged(&[cards::WALKING_BALLISTA]);
+    let ballista = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::WALKING_BALLISTA)
+        .expect("they have it")
+        .card
+        .id;
+    // Put onto the battlefield rather than cast, it arrives with no counters
+    // at all, and a 0/0 does not survive the first state-based check. Two
+    // counters give it a body without giving it a mana cost.
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == ballista)
+        .expect("it is there")
+        .add_counters(CounterKind::PlusOnePlusOne, 2);
+    game.check_state_based_actions();
+
+    cast_apparition(&mut game, apparition, Some(ballista));
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::WALKING_BALLISTA),
+        "an X spell on the battlefield is a nought-drop and well within four",
+    );
+
+    let body = apparition_on_battlefield(&game);
+    game.destroy_permanent(body);
+    settle(&mut game);
+
+    assert!(
+        illusions(&game).is_empty(),
+        "a 0/0 Illusion is one state-based check from the graveyard",
+    );
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::WALKING_BALLISTA),
+        "and the card it took stays where it was put",
+    );
+}
