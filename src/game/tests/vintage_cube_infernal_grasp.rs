@@ -128,3 +128,105 @@ fn a_grasp_that_fizzles_costs_no_life() {
         "and the Grasp is spent either way",
     );
 }
+
+/// "Target creature" names no controller: your own is as legal a target as
+/// theirs, which is a line a deck with a Sheoldred sometimes wants.
+#[test]
+fn it_reaches_your_own_creatures() {
+    let (mut game, grasp, theirs) = staged(cards::GRIZZLY_BEARS);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let named = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == grasp => Some(
+                choices
+                    .iter_targets()
+                    .filter_map(|target| match target {
+                        Target::Permanent(id) => Some(*id),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+    assert!(named.contains(&theirs), "theirs is a creature");
+    assert!(named.contains(&mine), "and so is yours");
+
+    cast_at(&mut game, grasp, mine);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(!alive(&game, mine), "your own Angel is what you destroyed");
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        18,
+        "and the two life is yours to pay either way",
+    );
+}
+
+/// Hexproof is the one thing it cannot answer: a Caryatid is not a legal
+/// target, so the Grasp stays in hand.
+#[test]
+fn a_hexproof_creature_is_no_target_at_all() {
+    let (game, grasp, hexproof) = staged(cards::SYLVAN_CARYATID);
+
+    let named = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == grasp => Some(
+                choices
+                    .iter_targets()
+                    .filter_map(|target| match target {
+                        Target::Permanent(id) => Some(*id),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    assert!(
+        !named.contains(&hexproof),
+        "hexproof takes it off the list: {named:?}",
+    );
+    assert!(
+        named.is_empty(),
+        "and there is nothing else to point it at, so it is uncastable",
+    );
+}
+
+/// The life is not optional and not a cost: at two life the Grasp kills the
+/// creature and then kills you.
+#[test]
+fn it_can_kill_its_own_caster() {
+    let (mut game, grasp, victim) = staged(cards::GRIZZLY_BEARS);
+    game.players[PlayerId::One.index()].life = 2;
+
+    cast_at(&mut game, grasp, victim);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(!alive(&game, victim), "the Bears died first");
+    assert_eq!(game.players[PlayerId::One.index()].life, 0);
+    assert!(
+        matches!(
+            game.result,
+            Some(GameResult::Winner {
+                winner: PlayerId::Two,
+                ..
+            })
+        ),
+        "and then you did: {:?}",
+        game.result,
+    );
+}
