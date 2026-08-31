@@ -190,3 +190,100 @@ fn the_free_plays_lapse_at_end_of_turn() {
         "and gone once the turn is over",
     );
 }
+
+/// "The triggered ability doesn't change when you can play the exiled cards.
+/// If a land card is exiled, you can play it only during your main phase and
+/// only if you have an available land play remaining."
+#[test]
+fn a_land_it_took_still_wants_a_land_drop() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let shinobi = creature(90_040, cards::FALLEN_SHINOBI, PlayerId::One);
+    let shinobi_id = shinobi.card.id;
+    game.battlefield.push(shinobi);
+    game.players[1].library.clear();
+    game.players[1]
+        .library
+        .push(card(90_041, cards::MOUNTAIN, PlayerId::Two));
+
+    game.damage_target_from_kind(
+        Some(shinobi_id),
+        Some(Target::Player(PlayerId::Two)),
+        5,
+        true,
+    );
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+    let taken = game.players[1].exile.first().expect("one card taken").id;
+
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.players[0].lands_played_this_turn = 1;
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .all(|action| !matches!(action, Action::PlayLand { card, .. } if card == taken)),
+        "the land drop was already spent",
+    );
+
+    game.players[0].lands_played_this_turn = 0;
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if card == taken)),
+        "and with one available their Mountain is yours to play",
+    );
+}
+
+/// "Casting an exiled card causes it to leave exile. You can't cast it
+/// multiple times."
+#[test]
+fn a_card_it_took_may_only_be_played_once() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let shinobi = creature(90_050, cards::FALLEN_SHINOBI, PlayerId::One);
+    let shinobi_id = shinobi.card.id;
+    game.battlefield.push(shinobi);
+    game.players[1].library.clear();
+    game.players[1]
+        .library
+        .push(card(90_051, cards::GRIZZLY_BEARS, PlayerId::Two));
+
+    game.damage_target_from_kind(
+        Some(shinobi_id),
+        Some(Target::Player(PlayerId::Two)),
+        5,
+        true,
+    );
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+    let taken = game.players[1].exile.first().expect("one card taken").id;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == taken))
+        .expect("their bear is free to cast");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield.iter().any(
+            |permanent| permanent.card.definition == cards::GRIZZLY_BEARS
+                && permanent.controller == PlayerId::One
+        ),
+        "it arrived under the Shinobi's controller",
+    );
+    assert!(
+        game.players[1].exile.is_empty(),
+        "casting it took it out of exile",
+    );
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .all(|action| !matches!(action, Action::CastSpell { card, .. } if card == taken)),
+        "and there is nothing left to cast a second time",
+    );
+}
