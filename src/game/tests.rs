@@ -463,6 +463,7 @@ mod vintage_cube_flame_slash;
 mod vintage_cube_flash;
 mod vintage_cube_flickerwisp;
 mod vintage_cube_force_of_negation;
+mod vintage_cube_force_of_vigor;
 mod vintage_cube_forth_eorlingas;
 mod vintage_cube_fractured_identity;
 mod vintage_cube_frantic_search;
