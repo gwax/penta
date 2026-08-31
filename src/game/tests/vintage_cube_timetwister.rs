@@ -129,3 +129,79 @@ fn drawing_the_last_seven_is_not_a_loss() {
         "an empty library is not a loss by itself"
     );
 }
+
+/// Stocks Player Two's zones, replacing whatever the fixture dealt them.
+fn stock_them(
+    game: &mut Game,
+    library: &[CardDefinitionId],
+    hand: &[CardDefinitionId],
+    graveyard: &[CardDefinitionId],
+) {
+    game.players[1].library.clear();
+    game.players[1].hand.clear();
+    game.players[1].graveyard.clear();
+    let mut next = 75_000;
+    for (definitions, zone) in [(library, 0), (hand, 1), (graveyard, 2)] {
+        for definition in definitions {
+            let placed = card(next, *definition, PlayerId::Two);
+            next += 1;
+            match zone {
+                0 => game.players[1].library.push(placed),
+                1 => game.players[1].hand.push(placed),
+                _ => game.players[1].graveyard.push(placed),
+            }
+        }
+    }
+}
+
+/// "Each player": the one who cast it is not the only one who wheels. Their
+/// hand and graveyard go back in and they draw seven too, however few cards
+/// they were holding.
+#[test]
+fn it_wheels_the_other_player_as_well() {
+    let (mut game, twister) = staged(&[cards::FOREST; 10], &[cards::ISLAND], &[]);
+    stock_them(
+        &mut game,
+        &[cards::PLAINS; 4],
+        &[cards::SWAMP],
+        &[cards::MOUNTAIN, cards::MOUNTAIN],
+    );
+
+    cast(&mut game, twister);
+
+    assert_eq!(
+        game.players[1].hand.len(),
+        7,
+        "seven for them as much as for you",
+    );
+    assert!(
+        game.players[1].graveyard.is_empty(),
+        "their graveyard went in with everything else",
+    );
+    assert!(
+        game.players[1].library.is_empty(),
+        "and their seven cards were the whole of what they had",
+    );
+    assert_eq!(game.players[0].hand.len(), 7, "and you drew seven as well");
+}
+
+/// A player with fewer than seven cards to their name has to draw from an
+/// empty library, and that is what ends a game rather than the empty library
+/// itself.
+#[test]
+fn a_player_short_of_seven_draws_from_nothing_and_loses() {
+    let (mut game, twister) = staged(&[cards::FOREST; 10], &[cards::ISLAND], &[]);
+    stock_them(&mut game, &[cards::PLAINS], &[cards::SWAMP], &[]);
+
+    cast(&mut game, twister);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::One,
+            reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+        }),
+        "two cards is not seven",
+    );
+}
