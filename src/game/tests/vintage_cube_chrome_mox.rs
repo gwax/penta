@@ -244,3 +244,70 @@ fn a_colourless_imprint_makes_nothing() {
         "a colourless card names no colour, and {{C}} is not among them",
     );
 }
+
+/// The imprint is the price and it is not refunded: answering the Mox
+/// leaves the card exiled where it lies.
+#[test]
+fn killing_the_mox_does_not_hand_the_card_back() {
+    let (mut game, mox) = staged(&[cards::GIANT_GROWTH]);
+    let permanent = cast_imprinting(&mut game, mox, Some(cards::GIANT_GROWTH));
+
+    game.move_permanents_to_graveyard(&[permanent]);
+    game.check_state_based_actions();
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::CHROME_MOX),
+        "the Mox is answered",
+    );
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::GIANT_GROWTH),
+        "and the card it ate is still in exile",
+    );
+    assert!(game.players[0].hand.is_empty(), "nothing came back to hand");
+}
+
+/// Each Mox imprints for itself: two of them are two cards eaten and two
+/// colours made, one apiece.
+#[test]
+fn a_second_mox_imprints_on_its_own_account() {
+    let (mut game, first) = staged(&[cards::GIANT_GROWTH, cards::LIGHTNING_BOLT]);
+    let second = game
+        .build_zone(PlayerId::One, &[cards::CHROME_MOX])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let second_id = second.id;
+    game.players[0].hand.push(second);
+
+    let green = cast_imprinting(&mut game, first, Some(cards::GIANT_GROWTH));
+    // The shared helper hands back whichever Mox it finds first, so the
+    // second one is the permanent that was not there before.
+    cast_imprinting(&mut game, second_id, Some(cards::LIGHTNING_BOLT));
+    let red = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition == ObjectKind::Card(cards::CHROME_MOX))
+        .map(|permanent| permanent.card.id)
+        .find(|id| *id != green)
+        .expect("the second Mox arrived");
+
+    assert_eq!(offered_colors(&game, green), vec![ManaColor::Green]);
+    assert_eq!(
+        offered_colors(&game, red),
+        vec![ManaColor::Red],
+        "the second one reads its own imprint, not the first one's",
+    );
+    assert_eq!(
+        game.players[0].exile.len(),
+        2,
+        "and each of them ate a card",
+    );
+}
