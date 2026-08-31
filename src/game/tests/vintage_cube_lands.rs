@@ -830,3 +830,48 @@ fn a_fastland_played_from_hand_reads_the_same_board() {
         );
     }
 }
+
+/// Urborg and Yavimaya add a land type; they do not add a second copy of one
+/// already there. Raffine's Tower is a Swamp before Urborg says so, so the
+/// pair leaves it a Plains Island Swamp Forest: four colors, with the black
+/// offered once rather than twice.
+#[test]
+fn added_land_types_do_not_double_up_on_a_triome() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.put_onto_battlefield(PlayerId::One, cards::URBORG_TOMB_OF_YAWGMOTH)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::One, cards::YAVIMAYA_CRADLE_OF_GROWTH)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let tower = game
+        .put_onto_battlefield(PlayerId::One, cards::RAFFINES_TOWER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == tower)
+        .expect("it entered")
+        .tapped = false;
+
+    let mut offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility { source, color, .. } if source == tower => Some(color),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    offered.sort_unstable();
+    let mut expected = vec![
+        ManaColor::White,
+        ManaColor::Blue,
+        ManaColor::Black,
+        ManaColor::Green,
+    ];
+    expected.sort_unstable();
+    assert_eq!(
+        offered, expected,
+        "the Swamp Urborg adds is the Swamp it already was",
+    );
+}
