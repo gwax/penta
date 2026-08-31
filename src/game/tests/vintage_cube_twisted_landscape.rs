@@ -266,3 +266,84 @@ fn a_dual_with_the_right_types_is_not_basic_enough() {
         "so the Mountain in hand is still a land drop waiting",
     );
 }
+
+/// The cycling cost is three named colours rather than three mana: black,
+/// red and green buy it and nothing else does.
+#[test]
+fn its_cycling_wants_those_three_colors_and_no_others() {
+    let cycles_with = |colors: [ManaColor; 3]| {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[0].hand.clear();
+        game.players[0].library.clear();
+        let drawn = game
+            .build_zone(PlayerId::One, &[cards::GIANT_GROWTH])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        game.players[0].library.push(drawn);
+        let landscape = game
+            .build_zone(PlayerId::One, &[cards::TWISTED_LANDSCAPE])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        let landscape_id = landscape.id;
+        game.players[0].hand.push(landscape);
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+        for color in colors {
+            game.add_unrestricted_mana(PlayerId::One, color, 1);
+        }
+        game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == landscape_id),
+        )
+    };
+
+    assert!(
+        cycles_with([ManaColor::Black, ManaColor::Red, ManaColor::Green]),
+        "its own three colours pay for it",
+    );
+    assert!(
+        !cycles_with([ManaColor::Black, ManaColor::Black, ManaColor::Black]),
+        "three of one colour is three mana and not this cost",
+    );
+    assert!(
+        !cycles_with([ManaColor::Black, ManaColor::Red, ManaColor::White]),
+        "and two of the three plus a stranger is still short",
+    );
+}
+
+/// Sacrificing is a cost rather than part of the effect, so a library with
+/// none of its three basics in it costs the Landscape all the same.
+#[test]
+fn the_land_is_spent_even_when_it_finds_nothing() {
+    let (mut game, landscape) = staged(&[cards::PLAINS, cards::ISLAND]);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == landscape)
+        })
+        .expect("nothing findable is no reason not to try");
+    game.apply(PlayerId::One, action).expect("it activates");
+    settle(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == landscape),
+        "the land paid its own cost",
+    );
+    assert!(game.battlefield.is_empty(), "and nothing came back for it");
+    assert_eq!(
+        game.players[0].library.len(),
+        2,
+        "the library it searched is the size it was",
+    );
+}
