@@ -248,3 +248,99 @@ fn an_unequipped_jitte_keeps_two_of_its_three_modes() {
         "both counters are spent",
     );
 }
+
+/// Activates a mode and leaves the ability on the stack, so the board can
+/// change underneath it before it resolves.
+fn announce(game: &mut Game, source: GameObjectId, mode: usize) {
+    let wanted = ModeId::from_index(mode).expect("three printed modes");
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source: actual,
+                modes,
+                ..
+            } => *actual == source && modes.as_slice() == [wanted],
+            _ => false,
+        })
+        .expect("that mode is offered");
+    game.apply(PlayerId::One, action)
+        .expect("the ability activates");
+}
+
+/// "If the Jitte is moved after the +2/+2 mode is announced but before it
+/// resolves, the bonus is given to the creature that is equipped when the
+/// ability resolves." The mode names no creature as it is announced; it
+/// reads the Jitte's host where it resolves.
+#[test]
+fn the_pump_finds_whatever_is_equipped_when_it_resolves() {
+    let mut game = ready_game();
+    let (jitte, bears) = jitte_on_bears(&mut game);
+    let angel = creature(52_100, cards::SERRA_ANGEL, PlayerId::One);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == jitte)
+        .expect("it is there")
+        .add_counters(CounterKind::named("charge"), 1);
+
+    announce(&mut game, jitte, 0);
+    // Moved while the ability waits, the way any effect that reattaches an
+    // Equipment would move it.
+    if let Some(equipment) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == jitte)
+    {
+        equipment.attached_to = Some(angel_id);
+    }
+    drain_pending(&mut game);
+
+    let host = permanent(&game, angel_id);
+    assert_eq!(
+        (game.power(host), game.toughness(host)),
+        (Some(6), Some(6)),
+        "the creature equipped as it resolved is the one that grew",
+    );
+    let left_behind = permanent(&game, bears);
+    assert_eq!(
+        (game.power(left_behind), game.toughness(left_behind)),
+        (Some(2), Some(2)),
+        "and the one it was announced beside is a 2/2 still",
+    );
+}
+
+/// "If the Jitte leaves the battlefield after the +2/+2 mode is announced
+/// but before it resolves, the bonus is given to the creature that was most
+/// recently equipped." The counter is spent, the Equipment is gone, and the
+/// bonus still lands.
+#[test]
+fn the_pump_lands_on_the_last_host_even_with_the_jitte_gone() {
+    let mut game = ready_game();
+    let (jitte, bears) = jitte_on_bears(&mut game);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == jitte)
+        .expect("it is there")
+        .add_counters(CounterKind::named("charge"), 1);
+
+    announce(&mut game, jitte, 0);
+    game.move_permanents_to_graveyard(&[jitte]);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != jitte),
+        "the Equipment is gone",
+    );
+    let host = permanent(&game, bears);
+    assert_eq!(
+        (game.power(host), game.toughness(host)),
+        (Some(4), Some(4)),
+        "and the creature it was equipping still gets the +2/+2",
+    );
+}
