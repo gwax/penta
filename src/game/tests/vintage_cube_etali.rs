@@ -340,3 +340,85 @@ fn a_player_too_low_on_life_cannot_pay_the_pip() {
         "one life does not pay a two-life pip",
     );
 }
+
+/// "If you cast any of the exiled cards, you do so as part of the resolution
+/// of the triggered ability... Timing restrictions based on a card's type
+/// are ignored." A sorcery is offered mid-resolution, with a trigger on the
+/// stack and nobody holding priority -- neither of which a sorcery survives
+/// normally.
+#[test]
+fn a_sorcery_may_be_cast_while_the_trigger_is_resolving() {
+    let (mut game, _etali) = staged_holding_offers(&[cards::WRATH_OF_GOD], &[cards::GRIZZLY_BEARS]);
+
+    assert_eq!(
+        free_casts(&game),
+        vec![cards::WRATH_OF_GOD],
+        "a sorcery is on offer inside somebody else's resolution",
+    );
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, .. } => game.players[0]
+                .exile
+                .iter()
+                .any(|exiled| exiled.id == *card && exiled.definition == cards::WRATH_OF_GOD),
+            _ => false,
+        })
+        .expect("the Wrath is castable");
+    game.apply(PlayerId::One, cast)
+        .expect("it is cast for free");
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::ETALI_PRIMAL_CONQUEROR),
+        "and it resolves as a Wrath does, taking Etali with everything else",
+    );
+}
+
+/// "If an exiled card has {X} in its mana cost, you must choose 0 as the
+/// value of X when casting it without paying its mana cost." A Walking
+/// Ballista cast for nothing is a 0/0 with no counters, which the game puts
+/// straight back where it came from.
+#[test]
+fn an_x_cost_cast_for_free_is_cast_for_zero() {
+    let (mut game, _etali) =
+        staged_holding_offers(&[cards::WALKING_BALLISTA], &[cards::GRIZZLY_BEARS]);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                assert_eq!(choices.x(), 0, "no other X is on offer");
+                game.players[0].exile.iter().any(|exiled| {
+                    exiled.id == *card && exiled.definition == cards::WALKING_BALLISTA
+                })
+            }
+            _ => false,
+        })
+        .expect("the Ballista is castable");
+    game.apply(PlayerId::One, cast)
+        .expect("it is cast for free");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::WALKING_BALLISTA),
+        "X was zero, so what arrived was a 0/0",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::WALKING_BALLISTA),
+        "and a 0/0 does not stay on the battlefield",
+    );
+}
