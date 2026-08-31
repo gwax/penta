@@ -419,6 +419,7 @@ mod vintage_cube_deathrite_shaman;
 mod vintage_cube_delayed_blast_fireball;
 mod vintage_cube_descendant_of_storms;
 mod vintage_cube_detectives_phoenix;
+mod vintage_cube_dismember;
 mod vintage_cube_displacer_kitten;
 mod vintage_cube_doomsday;
 mod vintage_cube_dragons_rage_channeler;
