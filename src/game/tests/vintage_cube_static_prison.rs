@@ -303,3 +303,117 @@ fn a_prison_answered_on_the_way_in_jails_nobody() {
         "and nothing is in exile waiting on a Prison that is already gone",
     );
 }
+
+/// "Target nonland permanent an opponent controls": your own board is not on
+/// the list, and neither is a land on theirs.
+#[test]
+fn it_names_only_a_nonland_permanent_of_theirs() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::ISLAND)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::One, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    game.put_onto_battlefield(PlayerId::One, cards::STATIC_PRISON)
+        .expect("cataloged");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("it asks what to jail");
+    assert_eq!(
+        decision
+            .options
+            .iter()
+            .filter_map(|option| option.card.map(|(id, _)| id))
+            .collect::<Vec<_>>(),
+        vec![theirs],
+        "their Bears and nothing else: not their land, and not your Angel",
+    );
+}
+
+/// "Any counters on the exiled permanent will cease to exist. When the card
+/// returns to the battlefield, it will be a new object with no connection to
+/// the card that was exiled." The prisoner comes back the size it was
+/// printed.
+#[test]
+fn the_prisoner_leaves_its_counters_behind() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("it is there")
+        .add_counters(CounterKind::PlusOnePlusOne, 3);
+    let grown = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("it is there");
+    assert_eq!(
+        (game.power(grown), game.toughness(grown)),
+        (Some(5), Some(5)),
+        "a 2/2 with three counters on it",
+    );
+
+    let prison = game
+        .put_onto_battlefield(PlayerId::One, cards::STATIC_PRISON)
+        .expect("cataloged");
+    settle_paying(&mut game, true);
+    drain_pending(&mut game);
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != bears),
+        "the Bears is exiled",
+    );
+
+    game.capture_battlefield_triggers(&CommittedTriggerEvent::StepBegins {
+        step: TurnStepDef::PrecombatMain,
+        player: PlayerId::One,
+    });
+    game.finish_rules_procedure();
+    settle_paying(&mut game, false);
+    drain_pending(&mut game);
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != prison),
+        "the Prison went unpaid for",
+    );
+
+    let returned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+        .expect("and the prisoner walked out");
+    assert_eq!(
+        returned.counters(CounterKind::PlusOnePlusOne),
+        0,
+        "the counters ceased to exist while it was gone",
+    );
+    assert_eq!(
+        (game.power(returned), game.toughness(returned)),
+        (Some(2), Some(2)),
+        "so what came back is the printed 2/2",
+    );
+}
