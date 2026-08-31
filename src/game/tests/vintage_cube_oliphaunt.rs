@@ -187,3 +187,149 @@ fn mountaincycling_is_cycling_for_everything_that_reads_it() {
         "one mana pays the floor, which is where {{1}} minus {{2}} stops",
     );
 }
+
+/// Answers whatever the cycling asks, taking `wanted` when it is offered,
+/// and returns everything the search put on the table.
+fn settle_cycling(game: &mut Game, wanted: Option<CardDefinitionId>) -> Vec<CardDefinitionId> {
+    let mut offered = Vec::new();
+    for _ in 0..12 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let cards = decision
+                .options
+                .iter()
+                .filter_map(|option| {
+                    option
+                        .card
+                        .and_then(|(_, characteristics)| characteristics.card_definition())
+                })
+                .collect::<Vec<_>>();
+            if !cards.is_empty() {
+                offered = cards;
+            }
+            let options = wanted
+                .and_then(|wanted| {
+                    decision
+                        .options
+                        .iter()
+                        .find(|option| {
+                            option
+                                .card
+                                .and_then(|(_, characteristics)| characteristics.card_definition())
+                                == Some(wanted)
+                        })
+                        .map(|option| vec![option.id])
+                })
+                .unwrap_or_else(|| {
+                    decision
+                        .options
+                        .iter()
+                        .map(|option| option.id)
+                        .take(decision.minimum.max(1).min(decision.maximum))
+                        .collect()
+                });
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    offered
+}
+
+/// Cycles the Oliphaunt out of hand.
+fn cycle(game: &mut Game, oliphaunt: GameObjectId) {
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == oliphaunt),
+        )
+        .expect("mountaincycling is offered from hand");
+    game.apply(PlayerId::One, action).expect("it activates");
+}
+
+/// "A Mountain card" is the land type and not the basic land: a Badlands is
+/// a Swamp Mountain, and a Plains is neither.
+#[test]
+fn mountaincycling_finds_any_card_with_the_mountain_type() {
+    let (mut game, oliphaunt, _) = staged(false);
+    game.players[PlayerId::One.index()].library.clear();
+    for (index, definition) in [cards::PLAINS, cards::BADLANDS, cards::MOUNTAIN]
+        .into_iter()
+        .enumerate()
+    {
+        game.players[PlayerId::One.index()].library.push(card(
+            88_200 + u32::try_from(index).expect("small"),
+            definition,
+            PlayerId::One,
+        ));
+    }
+
+    cycle(&mut game, oliphaunt);
+    let mut offered = settle_cycling(&mut game, Some(cards::BADLANDS));
+    offered.sort_unstable();
+    let mut expected = vec![cards::BADLANDS, cards::MOUNTAIN];
+    expected.sort_unstable();
+
+    assert_eq!(
+        offered, expected,
+        "the dual carries the type; the Plains carries neither",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::BADLANDS],
+        "and the one taken is the one that comes",
+    );
+}
+
+/// A search that finds nothing still costs the card: the mana and the
+/// discard are the activation cost, paid before the library is looked at.
+#[test]
+fn cycling_with_no_mountain_still_spends_the_elephant() {
+    let (mut game, oliphaunt, _) = staged(false);
+    game.players[PlayerId::One.index()].library.clear();
+    game.players[PlayerId::One.index()]
+        .library
+        .push(card(88_300, cards::PLAINS, PlayerId::One));
+
+    cycle(&mut game, oliphaunt);
+    let offered = settle_cycling(&mut game, None);
+
+    assert!(offered.is_empty(), "a Plains is not a Mountain card");
+    assert!(
+        game.players[PlayerId::One.index()].hand.is_empty(),
+        "nothing was found to put in hand",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::OLIPHAUNT),
+        "and the Oliphaunt was discarded to ask",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.total(),
+        0,
+        "with the mana spent either way",
+    );
+}
