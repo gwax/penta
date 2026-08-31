@@ -327,3 +327,82 @@ fn a_dead_malcolm_still_loots_and_still_pays() {
         "and the four counters he had when he left still paid for the discard",
     );
 }
+
+/// "If the spell has {X} in its mana cost, you must choose 0 as the value of
+/// X." Free is free at its smallest: the Rabbit arrives as the 1/2 it is
+/// printed as, with no counters bought along the way.
+#[test]
+fn a_free_cast_reads_x_as_zero() {
+    let (mut game, malcolm) = staged(
+        &[],
+        &[
+            cards::JACKED_RABBIT,
+            cards::JACKED_RABBIT,
+            cards::JACKED_RABBIT,
+            cards::JACKED_RABBIT,
+        ],
+    );
+
+    for connection in 1..=4 {
+        connect(&mut game, malcolm, cards::JACKED_RABBIT, connection == 4);
+        assert_eq!(chorus(&game, malcolm), connection);
+    }
+
+    let rabbit = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Card(cards::JACKED_RABBIT))
+        .expect("the fourth discard was cast for nothing");
+    assert_eq!(
+        (game.power(rabbit), game.toughness(rabbit)),
+        (Some(1), Some(2)),
+        "X was zero, so Ravenous brought no counters with it",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.total(),
+        0,
+        "and nothing was paid for any of it",
+    );
+}
+
+/// "You cast the spell as part of the resolution of the ability. You can't
+/// wait to cast the spell later in the turn." Once the offer is declined the
+/// card is an ordinary card in the graveyard, however much mana is lying
+/// around afterwards.
+#[test]
+fn a_declined_offer_does_not_keep_until_later_in_the_turn() {
+    let (mut game, malcolm) = staged(
+        &[],
+        // Drawn from the back, so the Bolt is the fourth card and the
+        // offer is made on it.
+        &[
+            cards::LIGHTNING_BOLT,
+            cards::MOX_JET,
+            cards::MOX_JET,
+            cards::MOX_JET,
+        ],
+    );
+
+    for _ in 0..4 {
+        connect(&mut game, malcolm, cards::LIGHTNING_BOLT, false);
+    }
+    assert_eq!(chorus(&game, malcolm), 4);
+    let discarded = game.players[PlayerId::One.index()]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::LIGHTNING_BOLT)
+        .expect("the fourth discard went to the graveyard")
+        .id;
+
+    game.step = Step::PostcombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 3);
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == discarded)),
+        "the permission ended with the ability that gave it",
+    );
+}
