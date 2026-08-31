@@ -346,3 +346,61 @@ fn the_rest_go_under_the_cards_that_were_already_at_the_bottom() {
     rest.sort_unstable();
     assert_eq!(under, rest, "and the four left over are beneath them");
 }
+
+/// "The first spell *you've* cast this game": what the other player does is
+/// their own business, and a Bolt from across the table leaves the free cast
+/// where it was.
+#[test]
+fn a_spell_of_theirs_does_not_close_your_window() {
+    let (mut game, spell) = staged(&FIVE_CARDS);
+    game.players[1]
+        .hand
+        .push(card(94_800, cards::LIGHTNING_BOLT, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    game.priority = PlayerId::Two;
+    let bolt = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(94_800))
+        })
+        .expect("their Bolt is castable");
+    game.apply(PlayerId::Two, bolt).expect("it is cast");
+    settle_taking(&mut game, None);
+    game.priority = PlayerId::One;
+
+    assert_eq!(
+        casts(&game, spell).len(),
+        1,
+        "with no mana of your own, the one cast on offer is the free one",
+    );
+}
+
+/// A library shorter than five is looked at as far as it goes, and what is
+/// worth taking among it is still taken.
+#[test]
+fn a_short_library_is_looked_at_as_far_as_it_goes() {
+    let (mut game, spell) = staged(&[cards::LIGHTNING_BOLT, cards::FOREST]);
+
+    let cast = casts(&game, spell)
+        .into_iter()
+        .next()
+        .expect("the free cast is on offer");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle_taking(&mut game, Some(cards::FOREST));
+
+    assert_eq!(
+        hand(&game),
+        vec![cards::FOREST],
+        "two cards were all there was, and the land among them came",
+    );
+    assert_eq!(
+        game.players[0]
+            .library
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::LIGHTNING_BOLT],
+        "with the other one put underneath",
+    );
+}
