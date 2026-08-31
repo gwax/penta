@@ -243,3 +243,134 @@ fn she_cannot_protect_their_creature() {
 
     assert!(activation(&game, giver, theirs).is_none());
 }
+
+/// "A permanent gaining protection may cause a spell on the stack to have an
+/// illegal target... that spell doesn't resolve." Which is the play the card
+/// is in every deck for: the answer arrives, and she answers the answer.
+#[test]
+fn protecting_in_response_makes_their_spell_fizzle() {
+    let (mut game, giver, others) = staged(&[cards::SERRA_ANGEL]);
+    let angel = others[0];
+    let bolt = game
+        .build_zone(PlayerId::Two, &[cards::LIGHTNING_BOLT])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let bolt_id = bolt.id;
+    game.players[PlayerId::Two.index()].hand.push(bolt);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    game.priority = PlayerId::Two;
+
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == bolt_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(angel))
+            }
+            _ => false,
+        })
+        .expect("they can point it at the Angel");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    game.priority = PlayerId::One;
+
+    protect(&mut game, giver, angel, "Red");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    let survivor = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == angel)
+        .expect("the Angel is still there");
+    assert_eq!(survivor.damage, 0, "the Bolt did nothing at all");
+    assert!(
+        game.players[PlayerId::Two.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "and was spent being answered",
+    );
+}
+
+/// "All damage that sources of that color would deal to it is prevented."
+/// A red attacker gets its blocker for nothing.
+#[test]
+fn damage_from_the_named_colour_is_prevented() {
+    let (mut game, giver, others) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = others[0];
+    protect(&mut game, giver, bears, "Red");
+
+    let dragon = game
+        .put_onto_battlefield(PlayerId::Two, cards::SHIVAN_DRAGON)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == dragon)
+    {
+        permanent.entered_controller_turn = 0;
+    }
+
+    game.active_player = PlayerId::Two;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(dragon, AttackDefender::Player(PlayerId::One));
+    game.finish_declaring_attackers();
+    drain_pending(&mut game);
+    game.declare_blocker(bears, dragon);
+    game.deal_combat_damage();
+    game.check_state_based_actions();
+
+    let survivor = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("a 2/2 blocking a 5/5 lived");
+    assert_eq!(survivor.damage, 0, "five red damage was prevented");
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == dragon)
+            .expect("the Dragon is there")
+            .damage,
+        2,
+        "and the Bears hit back as usual",
+    );
+}
+
+/// "Can't be enchanted or equipped by Auras or Equipment of that colour."
+/// Equipment is colourless, so naming colourless takes your own Greaves off
+/// the creature as surely as it takes their removal off it.
+#[test]
+fn protection_from_colorless_turns_away_equipment() {
+    let (mut game, giver, others) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = others[0];
+    let greaves = game
+        .put_onto_battlefield(PlayerId::One, cards::LIGHTNING_GREAVES)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let equippable = |game: &Game| {
+        game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source, targets, .. }
+                if *source == greaves
+                    && targets
+                        .iter()
+                        .any(|slot| slot.targets().contains(&Target::Permanent(bears))))
+        })
+    };
+    assert!(equippable(&game), "the Greaves fit before she speaks");
+
+    protect(&mut game, giver, bears, "Colorless");
+
+    assert!(
+        !equippable(&game),
+        "and a colourless Equipment is one of the things protection turns away",
+    );
+}
