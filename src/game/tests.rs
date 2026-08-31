@@ -545,6 +545,7 @@ mod vintage_cube_mana;
 mod vintage_cube_mana_tithe;
 mod vintage_cube_manamorphose;
 mod vintage_cube_manifold_key;
+mod vintage_cube_marsh_flats;
 mod vintage_cube_mastery;
 mod vintage_cube_memory_jar;
 mod vintage_cube_memory_lapse;
