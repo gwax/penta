@@ -251,3 +251,103 @@ fn it_lapses_after_your_next_end_step() {
         "your next end step came and went",
     );
 }
+
+/// "You pay all costs and follow all normal timing rules for cards played
+/// due to the last ability. For example, if the exiled card is a land card,
+/// you may play it only during your main phase while the stack is empty."
+#[test]
+fn a_land_he_exiles_still_wants_a_land_drop() {
+    let (mut game, _inti, bears) = staged(2, 0);
+    game.players[0]
+        .library
+        .push(card(97_200, cards::MOUNTAIN, PlayerId::One));
+
+    attack_and_answer(&mut game, bears, true);
+    let exiled = game.players[0].exile[0].id;
+    assert_eq!(
+        game.players[0].exile[0].definition,
+        cards::MOUNTAIN,
+        "the land off the top is what he found",
+    );
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .all(|action| !matches!(action, Action::PlayLand { card, .. } if card == exiled)),
+        "a land is not played in the middle of an attack",
+    );
+
+    game.step = Step::PostcombatMain;
+    game.priority = PlayerId::One;
+    game.players[0].lands_played_this_turn = 1;
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .all(|action| !matches!(action, Action::PlayLand { card, .. } if card == exiled)),
+        "nor once the turn's land drop is spent",
+    );
+
+    game.players[0].lands_played_this_turn = 0;
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if card == exiled)),
+        "and with a main phase and a land drop it is playable",
+    );
+}
+
+/// The deviation this card carries, pinned: the record declares the target
+/// as the attack trigger goes on the stack rather than by the printed
+/// reflexive trigger, so answering that target counters the whole thing and
+/// the card that would have been discarded is still in hand. On the printed
+/// card the discard is made first and only the counter is lost.
+#[test]
+fn an_answered_target_keeps_the_card_in_hand() {
+    let (mut game, _inti, bears) = staged(2, 3);
+    let held = game.players[0].hand.len();
+
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: bears,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .expect("the bear attacks");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+    pass_until_decision(&mut game);
+
+    let targeting = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the trigger asks for its target");
+    let option = targeting
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(id, _)| id == bears))
+        .expect("the attacking bear is the thing to name")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: targeting.id,
+            options: vec![option],
+        },
+    )
+    .expect("naming it is legal");
+
+    game.destroy_permanent(bears);
+    game.check_state_based_actions();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        held,
+        "nothing was discarded, because the offer never came",
+    );
+    assert!(
+        game.players[0].exile.is_empty(),
+        "and with no discard there is nothing off the top either",
+    );
+}
