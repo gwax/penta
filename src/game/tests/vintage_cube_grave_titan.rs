@@ -134,3 +134,65 @@ fn the_zombies_are_black_and_carry_nothing_of_the_titan() {
         );
     }
 }
+
+/// The Titan's own deathtouch, which until now was only ever checked by its
+/// absence on the Zombies. Six damage would leave a Colossus of Sardia
+/// standing on toughness alone; any of it from a deathtoucher is lethal.
+#[test]
+fn its_deathtouch_kills_what_six_damage_would_not() {
+    let mut game = staged();
+    let titan = game
+        .put_onto_battlefield(PlayerId::One, cards::GRAVE_TITAN)
+        .expect("cataloged");
+    let colossus = game
+        .put_onto_battlefield(PlayerId::Two, cards::COLOSSUS_OF_SARDIA)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+
+    let blocker = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == colossus)
+        .expect("it is there");
+    assert!(
+        game.toughness(blocker)
+            .is_some_and(|toughness| toughness > 6),
+        "it is bigger than the damage it is about to take",
+    );
+    assert!(
+        game.permanent_has_executable_keyword(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == titan)
+                .expect("it is there"),
+            KeywordAbility::Deathtouch
+        ),
+        "and the Titan has what makes the size beside the point",
+    );
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(titan, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    drain_pending(&mut game);
+    game.step = Step::DeclareBlockers;
+    game.declare_blocker(colossus, titan);
+    game.deal_combat_damage();
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == colossus),
+        "a 9/9 that took six from a deathtoucher is a dead 9/9",
+    );
+    assert_eq!(
+        game.players[1].life, 20,
+        "and nothing got past it to the player",
+    );
+}
