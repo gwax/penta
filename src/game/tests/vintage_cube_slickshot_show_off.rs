@@ -176,3 +176,88 @@ fn plotting_it_pays_a_turn_early() {
         "and cost nothing to cast",
     );
 }
+
+/// "Plot only as a sorcery": the special action is available in your own
+/// main phase with the stack empty and nowhere else.
+#[test]
+fn plotting_waits_for_your_own_empty_main_phase() {
+    let (mut game, held, _) = staged(&[cards::LIGHTNING_BOLT]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    let plottable = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::Plot { card } if *card == held))
+    };
+    assert!(plottable(&game), "your own main phase is the window");
+
+    game.step = Step::Upkeep;
+    assert!(!plottable(&game), "an upkeep is not");
+
+    game.step = Step::PrecombatMain;
+    game.active_player = PlayerId::Two;
+    assert!(!plottable(&game), "and neither is their turn");
+}
+
+/// It is a special action rather than an ability, so nothing goes on the
+/// stack for anyone to answer: the card is in exile the moment it is taken.
+#[test]
+fn plotting_puts_nothing_on_the_stack() {
+    let (mut game, held, _) = staged(&[]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    let plot = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::Plot { card } if *card == held))
+        .expect("two mana pays the plot cost");
+    game.apply(PlayerId::One, plot).expect("it plots");
+
+    assert!(game.stack.is_empty(), "no object was put on the stack");
+    assert!(
+        game.pending_triggers.is_empty(),
+        "and nothing triggered off it",
+    );
+    assert_eq!(game.players[0].exile.len(), 1, "the card is simply gone");
+}
+
+/// "You may cast that card from exile ... during your main phase while the
+/// stack is empty." A plotted card is a sorcery-speed cast on a later turn,
+/// not a free instant.
+#[test]
+fn a_plotted_card_is_still_a_sorcery_speed_cast() {
+    let (mut game, held, _) = staged(&[]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    let plot = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::Plot { card } if *card == held))
+        .expect("two mana pays the plot cost");
+    game.apply(PlayerId::One, plot).expect("it plots");
+    let plotted = game.players[0].exile[0].id;
+
+    game.commit_next_turn(PlayerId::Two, Vec::new());
+    game.commit_next_turn(PlayerId::One, Vec::new());
+    game.players[0].mana_pool = ManaPool::default();
+    let castable = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == plotted))
+    };
+
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    assert!(castable(&game), "your own main phase casts it");
+
+    game.step = Step::DeclareBlockers;
+    assert!(!castable(&game), "combat is not a window for it");
+
+    game.step = Step::PrecombatMain;
+    game.active_player = PlayerId::Two;
+    assert!(
+        !castable(&game),
+        "and a free cast is not a free instant on their turn",
+    );
+}
