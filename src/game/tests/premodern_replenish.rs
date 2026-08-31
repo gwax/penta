@@ -816,3 +816,82 @@ fn parallax_wave_hands_each_creature_back_to_its_owner() {
         "and theirs goes back to them",
     );
 }
+
+/// The counter is the cost, so a Wave that has spent all five is a Wave
+/// that can do nothing: it sits there until the upkeep it cannot pay.
+#[test]
+fn a_parallax_wave_with_no_fade_counters_cannot_exile() {
+    for (counters, offered) in [(0, false), (1, true)] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let mut wave = creature(10_000, cards::PARALLAX_WAVE, PlayerId::One);
+        wave.set_counters(CounterKind::named("fade"), counters);
+        let wave_id = wave.card.id;
+        game.battlefield.push(wave);
+        game.battlefield
+            .push(creature(10_010, cards::GRIZZLY_BEARS, PlayerId::Two));
+        game.priority = PlayerId::One;
+
+        assert_eq!(
+            game.legal_actions(PlayerId::One).iter().any(
+                |action| matches!(action, Action::ActivateAbility { source, .. } if *source == wave_id)
+            ),
+            offered,
+            "a Wave with {counters} fade counters",
+        );
+    }
+}
+
+/// What comes back is the card, and a token is not one: a token the Wave
+/// took ceases to exist and has nothing to return as.
+#[test]
+fn a_token_the_wave_exiles_never_comes_back() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mut wave = creature(10_000, cards::PARALLAX_WAVE, PlayerId::One);
+    wave.set_counters(CounterKind::named("fade"), 5);
+    let wave_id = wave.card.id;
+    game.battlefield.push(wave);
+    let token = token_permanent(
+        10_020,
+        tokens::creature(&["Bird"], &[ManaColor::White], 1, 1),
+        PlayerId::Two,
+    );
+    let token_id = token.card.id;
+    game.battlefield.push(token);
+    game.priority = PlayerId::One;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == wave_id
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets() == [Target::Permanent(token_id)])
+            }
+            _ => false,
+        })
+        .expect("a token is a creature and a legal thing to name");
+    game.apply(PlayerId::One, action).expect("it activates");
+    drain_pending(&mut game);
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != token_id),
+        "the Bird was taken",
+    );
+
+    game.destroy_permanent(wave_id);
+    drain_pending(&mut game);
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield.is_empty(),
+        "and what it gives back is cards, of which a token is none",
+    );
+}
