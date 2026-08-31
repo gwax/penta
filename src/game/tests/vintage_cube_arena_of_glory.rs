@@ -185,3 +185,92 @@ fn other_mana_leaves_it_summoning_sick() {
         "nothing about the Soldier gives it haste",
     );
 }
+
+/// "If mana generated this way is spent to pay any part of a creature
+/// spell's cost... that creature spell will gain haste." One of its two red
+/// is part enough.
+#[test]
+fn one_of_the_two_is_enough_to_carry_the_haste() {
+    let (mut game, arena, soldier) = staged(1);
+    exert_for_two_red(&mut game, arena);
+    // Spend one of the Arena's red elsewhere, so what is left of it in the
+    // pool is a single red beside an ordinary one.
+    game.players[0].mana_pool.red = 1;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    cast_soldier(&mut game, soldier);
+
+    assert!(
+        game.permanent_has_executable_keyword(soldier_on_battlefield(&game), KeywordAbility::Haste),
+        "one Arena red among the mana that paid for it is enough",
+    );
+}
+
+/// "If the mana is spent on two different creature spells, each of those
+/// spells will gain haste until end of turn." One activation, two hasty
+/// creatures -- one-drops, so that each spell takes exactly one of the two
+/// red rather than the first spell taking both.
+#[test]
+fn the_two_red_can_haste_two_different_creatures() {
+    let (mut game, arena, _soldier) = staged(1);
+    game.players[0].hand.clear();
+    let mut goblins = Vec::new();
+    for instance in [85_600, 85_601] {
+        let goblin = card(instance, cards::MONSS_GOBLIN_RAIDERS, PlayerId::One);
+        goblins.push(goblin.id);
+        game.players[0].hand.push(goblin);
+    }
+    exert_for_two_red(&mut game, arena);
+
+    for goblin in goblins {
+        let cast = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == goblin))
+            .expect("one red casts a one-drop");
+        game.apply(PlayerId::One, cast).expect("it is cast");
+        drain_pending(&mut game);
+    }
+
+    let hasty = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition == cards::MONSS_GOBLIN_RAIDERS)
+        .filter(|permanent| game.permanent_has_executable_keyword(permanent, KeywordAbility::Haste))
+        .count();
+    assert_eq!(hasty, 2, "the mana carried its rider to both of them");
+}
+
+/// "The mana can be spent on anything, not just creature spells." A
+/// noncreature spell takes it and simply gains nothing.
+#[test]
+fn the_mana_pays_for_noncreature_spells_too() {
+    let (mut game, arena, _soldier) = staged(1);
+    let bolt = card(85_500, cards::LIGHTNING_BOLT, PlayerId::One);
+    let bolt_id = bolt.id;
+    game.players[0].hand.push(bolt);
+    exert_for_two_red(&mut game, arena);
+    let life = game.players[1].life;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == bolt_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::Two))
+            }
+            _ => false,
+        })
+        .expect("the Arena's red pays for a Bolt like any other red");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[1].life, life - 3, "it resolved on their face");
+    assert_eq!(
+        game.players[0].mana_pool.red, 1,
+        "and the other red is still there",
+    );
+}
