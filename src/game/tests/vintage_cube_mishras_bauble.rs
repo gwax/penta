@@ -251,3 +251,64 @@ fn only_the_cracker_sees_what_the_look_found() {
         "their own library stays face down to them as well",
     );
 }
+
+/// A library with nothing on top is still a legal thing to name: the look
+/// finds nothing and the delayed draw is installed all the same.
+#[test]
+fn an_empty_library_is_still_a_legal_target() {
+    let (mut game, bauble) = staged();
+    game.players[1].library.clear();
+
+    crack(&mut game, bauble, PlayerId::Two);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bauble),
+        "it was spent",
+    );
+    assert_eq!(
+        game.installed_triggers.len(),
+        1,
+        "and the card it owes is still owed",
+    );
+
+    game.active_player = PlayerId::Two;
+    game.step = Step::Upkeep;
+    game.handle_upkeep_triggers();
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        1,
+        "which arrives out of your own library, not theirs",
+    );
+}
+
+/// "At the beginning of the *next* turn's upkeep": cracked during an upkeep,
+/// it owes a card rather than paying one on the spot, and the turn that
+/// follows is what pays it. The current turn's upkeep has already begun,
+/// so there is no beginning of it left to catch.
+#[test]
+fn cracking_it_in_an_upkeep_waits_for_the_next_turn() {
+    let (mut game, bauble) = staged();
+    game.step = Step::Upkeep;
+
+    crack(&mut game, bauble, PlayerId::One);
+
+    assert!(
+        game.players[0].hand.is_empty(),
+        "the draw is owed rather than taken",
+    );
+    assert_eq!(game.installed_triggers.len(), 1, "and it is still waiting");
+
+    game.start_next_turn();
+    settle(&mut game);
+
+    assert_eq!(game.players[0].hand.len(), 1, "the next turn pays it");
+    assert!(
+        game.installed_triggers.is_empty(),
+        "and the listener is spent",
+    );
+}
