@@ -321,3 +321,116 @@ fn the_returned_card_is_there_to_be_discarded() {
         "so it went straight back where it came from",
     );
 }
+
+/// "If a Command is copied, the effect that creates the copy will usually
+/// allow you to choose new targets for the copy, but you can't choose new
+/// modes." A Fork of a Command that broke one artifact and burned a player
+/// breaks a second artifact and burns them again.
+#[test]
+fn a_copy_keeps_the_modes_and_may_take_new_targets() {
+    let (mut game, command) = staged(&[], &[cards::SOL_RING, cards::HOWLING_MINE]);
+    let first = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SOL_RING)
+        .expect("they have it")
+        .card
+        .id;
+    let second = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::HOWLING_MINE)
+        .expect("they have it")
+        .card
+        .id;
+    game.players[0]
+        .hand
+        .push(card(283_900, cards::FORK, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 2);
+    let life = game.players[1].life;
+
+    let modes = [mode(2), mode(3)];
+    let targets = [Target::Permanent(first), Target::Player(PlayerId::Two)];
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell {
+                card: id, choices, ..
+            } => {
+                *id == command
+                    && choices.modes() == modes
+                    && choices.iter_targets().copied().collect::<Vec<_>>() == targets
+            }
+            _ => false,
+        })
+        .expect("break the Ring and burn them");
+    game.apply(PlayerId::One, action).expect("it is cast");
+
+    let on_stack = game.stack.last().expect("it is waiting").id;
+    let fork = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == CardInstanceId(283_900)
+                    && choices.iter_targets().any(|target| *target == Target::Spell(on_stack)))
+        })
+        .expect("the Fork can name it");
+    game.apply(PlayerId::One, fork).expect("it is cast");
+
+    // The copy may point its destroy at the other artifact; what it may not
+    // do is choose a different pair of modes.
+    let wanted = [Target::Permanent(second), Target::Player(PlayerId::Two)];
+    for _ in 0..24 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let option = match &game
+                .pending_decisions
+                .first()
+                .expect("it is pending")
+                .continuation
+            {
+                DecisionContinuation::CopyStackObject { target_lists, .. } => target_lists
+                    .iter()
+                    .position(|targets| flatten_target_selections(targets) == wanted)
+                    .and_then(|index| u32::try_from(index).ok()),
+                _ => decision.options.first().map(|option| option.id),
+            };
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: option.map(|id| vec![id]).unwrap_or_default(),
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    drain_pending(&mut game);
+
+    assert!(
+        !on_battlefield(&game, cards::SOL_RING),
+        "the original broke what it named",
+    );
+    assert!(
+        !on_battlefield(&game, cards::HOWLING_MINE),
+        "and the copy broke the other one, which is a new target for the same mode",
+    );
+    assert_eq!(
+        game.players[1].life,
+        life - 4,
+        "with both halves of the burn, two apiece",
+    );
+}
