@@ -151,3 +151,95 @@ fn revolt_is_set_by_your_own_permanent_leaving() {
     push(&mut game, spell, specter);
     assert!(!survives(&game, specter));
 }
+
+/// "The creature's mana value is checked only as Fatal Push resolves", and
+/// so is the revolt condition: a Push cast at a three-drop with nothing gone
+/// yet still kills it if something of yours leaves before it resolves.
+#[test]
+fn revolt_turned_on_in_response_still_counts() {
+    let (mut game, spell, specter) = staged(cards::HYPNOTIC_SPECTER);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.permanent_left_battlefield_this_turn = [false; 2];
+    game.priority = PlayerId::One;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == spell
+                    && choices
+                        .iter_targets()
+                        .any(|chosen| *chosen == Target::Permanent(specter))
+            }
+            _ => false,
+        })
+        .expect("any creature is a legal target");
+    game.apply(PlayerId::One, cast).expect("it is castable");
+    assert!(
+        survives(&game, specter),
+        "nothing has resolved yet and nothing of yours has left",
+    );
+
+    game.destroy_permanent(mine);
+    game.check_state_based_actions();
+    resolve(&mut game);
+
+    assert!(
+        !survives(&game, specter),
+        "revolt was on by the time the question was asked",
+    );
+}
+
+/// "Tokens that leave the battlefield will satisfy a revolt ability."
+#[test]
+fn a_token_of_yours_leaving_sets_revolt() {
+    let (mut game, spell, specter) = staged(cards::HYPNOTIC_SPECTER);
+    let token = token_permanent(
+        95_900,
+        tokens::creature(&["Bird"], &[ManaColor::White], 1, 1),
+        PlayerId::One,
+    );
+    let token_id = token.card.id;
+    game.battlefield.push(token);
+    game.permanent_left_battlefield_this_turn = [false; 2];
+
+    game.destroy_permanent(token_id);
+    resolve(&mut game);
+    assert!(
+        game.permanent_left_battlefield_this_turn[0],
+        "a token is a permanent that left",
+    );
+
+    game.priority = PlayerId::One;
+    push(&mut game, spell, specter);
+
+    assert!(!survives(&game, specter), "and three is within four");
+}
+
+/// "If a creature on the battlefield has {X} in its mana cost, X is
+/// considered to be 0." A Walking Ballista is a nought-drop and dies to a
+/// Push with no revolt at all.
+#[test]
+fn an_x_cost_creature_is_worth_nothing_and_dies() {
+    let (mut game, spell, ballista) = staged(cards::WALKING_BALLISTA);
+    // Placed rather than cast it arrives with no counters, and a 0/0 is
+    // gone before the Push could be aimed at it.
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == ballista)
+        .expect("it is there")
+        .add_counters(CounterKind::PlusOnePlusOne, 2);
+    game.check_state_based_actions();
+    game.priority = PlayerId::One;
+
+    push(&mut game, spell, ballista);
+
+    assert!(
+        !survives(&game, ballista),
+        "an X in the cost is a zero on the battlefield",
+    );
+}
