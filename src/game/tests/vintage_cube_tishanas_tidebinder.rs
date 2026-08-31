@@ -376,3 +376,125 @@ fn an_ability_granted_afterwards_survives_the_silence() {
     );
     assert_eq!(game.power(sorcerer), Some(2), "and so does their +1/+0");
 }
+
+/// "(Mana abilities can't be targeted.)" Nothing in the record excludes
+/// them, because a mana ability never uses the stack and so is never a stack
+/// object to name. The Sorcerer beside it is the control: the same
+/// Tidebinder, entering after a real activation, is asked what to counter.
+#[test]
+fn a_mana_ability_is_not_something_to_counter() {
+    for tap_the_island in [true, false] {
+        let (mut game, tidebinder, ids) = staged(&[cards::PRODIGAL_SORCERER, cards::ISLAND]);
+        if tap_the_island {
+            let island = ids[1];
+            game.apply(
+                PlayerId::Two,
+                Action::ActivateManaAbility {
+                    source: island,
+                    ability: mana_ability_for(&game, island, ManaColor::Blue),
+                    color: ManaColor::Blue,
+                    counters_removed: None,
+                    cost_object: None,
+                    combination: None,
+                    triggered_mana: None,
+                },
+            )
+            .expect("they tap their Island");
+            assert!(
+                game.stack.is_empty(),
+                "a mana ability does not use the stack",
+            );
+            game.priority = PlayerId::One;
+        } else {
+            they_ping_you(&mut game, ids[0]);
+        }
+
+        let cast = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == tidebinder))
+            .expect("flash makes it castable on their turn");
+        game.apply(PlayerId::One, cast).expect("it is cast");
+        pass_priority_pair(&mut game);
+
+        let asked = game
+            .observe(PlayerId::One)
+            .decision
+            .is_some_and(|decision| !decision.options.is_empty());
+        assert_eq!(
+            asked, !tap_the_island,
+            "an activation on the stack is what the trigger has to name, and \
+             mana they made is not one",
+        );
+    }
+}
+
+/// "Checks to see if the source of the ability is an artifact, creature, or
+/// planeswalker as it resolves." A Sorcerer that dies under the trigger is
+/// no permanent at all by then, so the ability is countered and there is
+/// nothing left to silence -- and the Tidebinder is still standing.
+#[test]
+fn a_source_that_dies_first_is_countered_and_nothing_else() {
+    let (mut game, tidebinder, ids) = staged(&[cards::PRODIGAL_SORCERER]);
+    let sorcerer = ids[0];
+    game.players[0].life = 20;
+    they_ping_you(&mut game, sorcerer);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == tidebinder))
+        .expect("flash makes it castable on their turn");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    // As far as the trigger being on the stack with its target named.
+    for _ in 0..16 {
+        if game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::TISHANA_S_TIDEBINDER)
+            && !game.stack.is_empty()
+        {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .take(decision.minimum.max(1))
+                .map(|option| option.id)
+                .collect();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    game.move_permanents_to_graveyard(&[sorcerer]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].life, 20,
+        "the ability was countered whatever became of its source",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::TISHANA_S_TIDEBINDER),
+        "and the Tidebinder is unbothered by having silenced nobody",
+    );
+}
