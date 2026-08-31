@@ -100,6 +100,143 @@ fn the_priest_leaves_a_cast_creature_alone() {
     assert!(game.players[PlayerId::One.index()].exile.is_empty());
 }
 
+/// "If Containment Priest enters the battlefield without being cast, its
+/// ability won't exile itself." She is the one creature her own clause is
+/// never read against.
+#[test]
+fn the_priest_does_not_exile_herself() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+
+    game.put_onto_battlefield(PlayerId::One, cards::CONTAINMENT_PRIEST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::CONTAINMENT_PRIEST),
+        "she arrived without being cast and stayed",
+    );
+    assert!(game.players[PlayerId::One.index()].exile.is_empty());
+}
+
+/// "Won't affect any creatures that were cast, including ones cast from
+/// unusual zones such as your graveyard." A Lurrus permission is a cast, so
+/// what it buys back is safe.
+#[test]
+fn a_creature_cast_from_the_graveyard_is_not_exiled() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.players[PlayerId::One.index()].graveyard.clear();
+    game.put_onto_battlefield(PlayerId::One, cards::CONTAINMENT_PRIEST)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::One, cards::LURRUS_OF_THE_DREAM_DEN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        76_300,
+        cards::GRIZZLY_BEARS,
+        PlayerId::One,
+    ));
+    game.turns_started = [5, 5];
+    game.turn = 9;
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    let buried = game.players[PlayerId::One.index()].graveyard[0].id;
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == buried))
+        .expect("Lurrus lets a two-drop be cast from the graveyard");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS),
+        "a cast is a cast, whatever zone it was cast from",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .exile
+            .iter()
+            .all(|card| card.definition != cards::GRIZZLY_BEARS),
+    );
+}
+
+/// Flash is what makes her an answer rather than a plan: she is castable on
+/// their turn, with their reanimation already on the stack.
+#[test]
+fn flash_lets_her_answer_a_reanimation() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+    game.players[PlayerId::Two.index()].graveyard.clear();
+    game.players[PlayerId::Two.index()].graveyard.push(card(
+        76_400,
+        cards::SERRA_ANGEL,
+        PlayerId::Two,
+    ));
+    let priest = card(76_401, cards::CONTAINMENT_PRIEST, PlayerId::One);
+    let priest_id = priest.id;
+    game.players[PlayerId::One.index()].hand.push(priest);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    let reanimate = card(76_402, cards::REANIMATE, PlayerId::Two);
+    let reanimate_id = reanimate.id;
+    game.players[PlayerId::Two.index()].hand.push(reanimate);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Black, 1);
+    game.turns_started = [5, 5];
+    game.turn = 9;
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+
+    let angel = game.players[PlayerId::Two.index()].graveyard[0].id;
+    game.apply(
+        PlayerId::Two,
+        cast_action(reanimate_id, vec![Target::Card(angel)], Vec::new(), 0),
+    )
+    .expect("they reanimate the Angel");
+    game.priority = PlayerId::One;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == priest_id))
+        .expect("flash makes her castable on their turn with their spell waiting");
+    game.apply(PlayerId::One, cast).expect("she is cast");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SERRA_ANGEL),
+        "the Angel arrived without being cast and was exiled",
+    );
+    assert!(
+        game.players[PlayerId::Two.index()]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+    );
+}
+
 /// Four damage split as the caster likes. The division is a second question
 /// after the targets, because a trigger has no cast to settle it during.
 #[test]
