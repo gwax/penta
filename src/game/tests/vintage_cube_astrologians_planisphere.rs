@@ -297,3 +297,90 @@ fn the_first_two_draws_need_not_have_been_watched() {
         "the third card of the turn is the third card of the turn",
     );
 }
+
+/// "The Hero token enters as a 1/1 creature, then the Equipment becomes
+/// attached to it. Abilities that trigger when a creature enters the
+/// battlefield see that a 1/1 creature entered." A Midnight Guard beside it
+/// is woken by the Hero.
+#[test]
+fn the_hero_arriving_is_a_creature_entering() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    let guard = game
+        .put_onto_battlefield(PlayerId::One, cards::MIDNIGHT_GUARD)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.tap_permanent(guard);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == guard)
+            .is_some_and(|permanent| permanent.tapped),
+        "the Guard is asleep",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::ASTROLOGIAN_S_PLANISPHERE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    settle(&mut game);
+
+    let hero = hero(&game);
+    assert_eq!(
+        (game.power(hero), game.toughness(hero)),
+        (Some(1), Some(1)),
+        "a 1/1 arrived",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == guard)
+            .is_some_and(|permanent| !permanent.tapped),
+        "and the Guard saw a creature enter",
+    );
+}
+
+/// The clause is the equipped creature's, so an Equipment wearing nobody
+/// grows nothing: the spells go by and the counters have nowhere to land.
+#[test]
+fn an_equipment_wearing_nobody_grows_nothing() {
+    let (mut game, planisphere) = staged(&[cards::LIGHTNING_BOLT]);
+    let hero = hero(&game).card.id;
+    game.move_permanents_to_graveyard(&[hero]);
+    settle(&mut game);
+    game.check_state_based_actions();
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let bolt = game.players[0]
+        .hand
+        .iter()
+        .find(|card| card.definition == cards::LIGHTNING_BOLT)
+        .expect("the Bolt is in hand")
+        .id;
+    cast(&mut game, bolt);
+    settle(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == planisphere),
+        "the Equipment is still there",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == bears)
+            .expect("the bear is there")
+            .counters(CounterKind::PlusOnePlusOne),
+        0,
+        "and a creature it is not attached to is no business of its clause",
+    );
+}
