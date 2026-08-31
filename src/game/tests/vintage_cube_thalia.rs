@@ -121,3 +121,87 @@ fn she_strikes_first() {
     assert_eq!(game.power(permanent), Some(2));
     assert_eq!(game.toughness(permanent), Some(1));
 }
+
+/// First strike doing what it is for: blocking a 2/1, she kills it before it
+/// can answer and walks away whole.
+#[test]
+fn her_first_strike_kills_before_it_is_answered() {
+    let (mut game, thalia, _bolt, _bears) = staged(PlayerId::One);
+    let attacker = creature(131_200, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let attacker_id = attacker.card.id;
+    game.battlefield.push(attacker);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    game.active_player = PlayerId::Two;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(attacker_id, AttackDefender::Player(PlayerId::One));
+    game.finish_declaring_attackers();
+    drain_pending(&mut game);
+
+    game.step = Step::DeclareBlockers;
+    game.declare_blocker(thalia, attacker_id);
+    // The step rather than the single wave: first strike is a damage step of
+    // its own, and dealing all of it at once would have them trade.
+    game.advance_step();
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == attacker_id),
+        "two damage first is enough for a 2/1",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == thalia),
+        "and it never got to hit back",
+    );
+}
+
+/// The tax is on spells: a land is played rather than cast, and an ability
+/// is activated rather than cast, so neither one owes her anything.
+#[test]
+fn she_taxes_neither_lands_nor_abilities() {
+    let (mut game, _thalia, _bolt, _bears) = staged(PlayerId::One);
+    let land = card(131_300, cards::MOUNTAIN, PlayerId::One);
+    let land_id = land.id;
+    game.players[0].hand.push(land);
+    let key = game
+        .put_onto_battlefield(PlayerId::One, cards::MANIFOLD_KEY)
+        .expect("cataloged");
+    let lotus = game
+        .put_onto_battlefield(PlayerId::One, cards::BLACK_LOTUS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.players[0].lands_played_this_turn = 0;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if *card == land_id)),
+        "a land is played and never cast",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(
+        game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source, targets, .. }
+                if *source == key
+                    && targets
+                        .iter()
+                        .any(|slot| slot.targets().contains(&Target::Permanent(lotus))))
+        }),
+        "and a one-mana ability still costs one mana",
+    );
+}
