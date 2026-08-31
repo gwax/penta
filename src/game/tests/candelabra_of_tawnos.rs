@@ -120,3 +120,96 @@ fn it_taps_itself_to_pay() {
 
     assert!(tapped(&game, candelabra));
 }
+
+/// "Can be used on an untapped land." Nothing in the ability asks its
+/// targets to be tapped; untapping one that already is does nothing and is
+/// still a legal way to spend it.
+#[test]
+fn an_untapped_land_is_a_legal_target() {
+    let (mut game, candelabra, islands) = candelabra(2, 1);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == islands[0])
+    {
+        permanent.tapped = false;
+    }
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, x: 1, targets, .. }
+                if *source == candelabra
+                    && targets
+                        .iter()
+                        .any(|slot| slot.targets() == [Target::Permanent(islands[0])]))
+        })
+        .expect("a land that is already up is a land");
+    game.apply(PlayerId::One, action).expect("one mana pays it");
+    drain_pending(&mut game);
+
+    assert!(!tapped(&game, islands[0]), "it is still up");
+    assert!(
+        tapped(&game, islands[1]),
+        "and the tapped one was not chosen"
+    );
+}
+
+/// "You may untap your opponent's lands if desired." The ability names
+/// lands and not whose.
+#[test]
+fn it_will_untap_a_land_they_control() {
+    let (mut game, candelabra, _islands) = candelabra(1, 1);
+    let mut theirs = creature(10_200, cards::MOUNTAIN, PlayerId::Two);
+    theirs.tapped = true;
+    let theirs_id = theirs.card.id;
+    game.battlefield.push(theirs);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, x: 1, targets, .. }
+                if *source == candelabra
+                    && targets
+                        .iter()
+                        .any(|slot| slot.targets() == [Target::Permanent(theirs_id)]))
+        })
+        .expect("their Mountain is a land like any other");
+    game.apply(PlayerId::One, action).expect("one mana pays it");
+    drain_pending(&mut game);
+
+    assert!(!tapped(&game, theirs_id), "and it comes up for them");
+}
+
+/// "This is not a mana ability. It is a normal ability and it will resolve
+/// along with other spells and abilities on the stack." So the lands are
+/// still down while it waits there.
+#[test]
+fn it_waits_on_the_stack_like_anything_else() {
+    let (mut game, candelabra, islands) = candelabra(1, 1);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, x: 1, targets, .. }
+                if *source == candelabra
+                    && targets
+                        .iter()
+                        .any(|slot| slot.targets() == [Target::Permanent(islands[0])]))
+        })
+        .expect("one mana for the one land is on offer");
+    game.apply(PlayerId::One, action).expect("one mana pays it");
+
+    assert_eq!(game.stack.len(), 1, "it is on the stack rather than done");
+    assert!(
+        tapped(&game, islands[0]),
+        "and the land is down until it resolves",
+    );
+
+    drain_pending(&mut game);
+
+    assert!(!tapped(&game, islands[0]), "which is when it comes up");
+}
