@@ -332,3 +332,72 @@ fn the_only_target_it_ever_offers_is_the_opponent() {
         "their seat and no other, even with two creatures to name it for",
     );
 }
+
+/// "Until they reveal a creature card": a library with none in it is
+/// revealed to the bottom, and everything revealed is buried. Nothing
+/// arrives, and milling out is not itself a loss.
+#[test]
+fn a_library_with_no_creature_is_buried_whole() {
+    let mut game = staged(&[cards::MOUNTAIN, cards::LIGHTNING_BOLT, cards::PONDER]);
+    game.battlefield
+        .push(creature(200_500, cards::GRIZZLY_BEARS, PlayerId::Two));
+
+    upkeep_of(&mut game, PlayerId::One, true);
+    game.check_state_based_actions();
+
+    assert!(
+        game.players[0].library.is_empty(),
+        "the whole library was revealed looking for a creature",
+    );
+    let mut buried = game.players[0]
+        .graveyard
+        .iter()
+        .map(|card| card.definition)
+        .collect::<Vec<_>>();
+    buried.sort_unstable();
+    let mut expected = vec![cards::MOUNTAIN, cards::LIGHTNING_BOLT, cards::PONDER];
+    expected.sort_unstable();
+    assert_eq!(buried, expected, "and all of it is in the graveyard");
+    assert_eq!(
+        game.result, None,
+        "an empty library is not a loss until it is drawn from",
+    );
+}
+
+/// What the Oath does is put a creature onto the battlefield, which is not
+/// casting it: a Containment Priest answers the Angel it finds.
+#[test]
+fn what_it_finds_was_never_cast() {
+    let mut game = staged(&[cards::SERRA_ANGEL, cards::MOUNTAIN]);
+    // Two of theirs, because the Priest is a creature of yours and the Oath
+    // only fires for the player who is behind.
+    for instance in [200_600, 200_601] {
+        game.battlefield
+            .push(creature(instance, cards::GRIZZLY_BEARS, PlayerId::Two));
+    }
+    game.put_onto_battlefield(PlayerId::One, cards::CONTAINMENT_PRIEST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    upkeep_of(&mut game, PlayerId::One, true);
+    game.check_state_based_actions();
+
+    assert!(
+        !on_battlefield(&game, cards::SERRA_ANGEL),
+        "the Priest answers a creature that arrives without being cast",
+    );
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "and it is exiled rather than buried with the rest",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MOUNTAIN),
+        "the Mountain above it is buried either way",
+    );
+}
