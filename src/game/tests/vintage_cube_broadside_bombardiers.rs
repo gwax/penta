@@ -231,3 +231,104 @@ fn the_boast_outlasts_the_combat_that_opened_it() {
         "two plus the Bears' two, thrown after the combat was over",
     );
 }
+
+/// "Any target": every test above throws across the table, and a creature is
+/// the other thing the clause names.
+#[test]
+fn the_throw_may_be_aimed_at_a_creature() {
+    let (mut game, bombardiers, ids) = staged(&[cards::SERRA_ANGEL]);
+    let titan = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRAVE_TITAN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    attack(&mut game, bombardiers);
+
+    let action = boasts(&game, bombardiers)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                cost_objects,
+                targets,
+                ..
+            } => {
+                cost_objects.contains(&ids[0])
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets().contains(&Target::Permanent(titan)))
+            }
+            _ => false,
+        })
+        .expect("a creature is a thing it may throw the Angel at");
+    game.apply(PlayerId::One, action).expect("it activates");
+    settle(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == titan),
+        "two plus the Angel's five is seven, and a 6/6 does not survive it",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        20,
+        "and their life was never the target",
+    );
+}
+
+/// Menace: the Goblin is blocked by two or by nobody. The constraint shows
+/// up as being unable to finish the declaration with one blocker on it.
+#[test]
+fn menace_asks_for_a_second_blocker() {
+    let (mut game, bombardiers, _) = staged(&[]);
+    let mut blockers = Vec::new();
+    for instance in [98_000, 98_001] {
+        let blocker = creature(instance, cards::GRIZZLY_BEARS, PlayerId::Two);
+        blockers.push(blocker.card.id);
+        game.battlefield.push(blocker);
+    }
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    game.priority = PlayerId::One;
+    attack(&mut game, bombardiers);
+    game.step = Step::DeclareBlockers;
+    game.priority = PlayerId::Two;
+
+    let may_finish = |game: &Game| {
+        game.legal_actions(PlayerId::Two)
+            .iter()
+            .any(|action| matches!(action, Action::FinishDeclaringBlockers))
+    };
+    assert!(may_finish(&game), "blocking with nobody is always allowed");
+
+    game.apply(
+        PlayerId::Two,
+        Action::DeclareBlocker {
+            blocker: blockers[0],
+            attacker: bombardiers,
+        },
+    )
+    .expect("one blocker may be declared");
+    assert!(
+        !may_finish(&game),
+        "but the declaration cannot be finished with only one on it",
+    );
+
+    game.apply(
+        PlayerId::Two,
+        Action::DeclareBlocker {
+            blocker: blockers[1],
+            attacker: bombardiers,
+        },
+    )
+    .expect("the second blocker joins it");
+
+    assert!(
+        may_finish(&game),
+        "and two of them together are what menace asks for",
+    );
+}
