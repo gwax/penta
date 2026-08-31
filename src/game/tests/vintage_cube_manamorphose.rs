@@ -207,3 +207,72 @@ fn it_offers_colours_and_no_colourless() {
         "and colourless is not one of them: {labels:?}",
     );
 }
+
+/// The mana it adds is mana like any other: the two black chosen here are
+/// the two that pay for the Tendrils behind it. And a spell that gave back
+/// everything it cost is still a spell that was cast, so the storm count
+/// carries it and the drain lands twice.
+#[test]
+fn what_it_adds_pays_for_the_next_spell_and_the_storm_counts_it() {
+    let (mut game, morph) = staged();
+    cast(&mut game, morph, &[ManaColor::Black, ManaColor::Black]);
+    assert_eq!(
+        game.players[0].mana_pool.black, 2,
+        "two black and nothing else is in the pool",
+    );
+
+    let tendrils = card(30_000, cards::TENDRILS_OF_AGONY, PlayerId::One);
+    let tendrils_id = tendrils.id;
+    game.players[0].hand.push(tendrils);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            tendrils_id,
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("the Manamorphose paid the coloured half of it");
+
+    for _ in 0..24 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .find(|option| option.label.starts_with("Keep original targets"))
+                .or_else(|| decision.options.first())
+                .map(|option| vec![option.id])
+                .unwrap_or_default();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the copy keeps what it was pointed at");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert_eq!(
+        game.players[1].life,
+        20 - 4,
+        "the Tendrils drained twice: itself and a copy for the Manamorphose",
+    );
+    assert_eq!(game.players[0].life, 20 + 4);
+}
