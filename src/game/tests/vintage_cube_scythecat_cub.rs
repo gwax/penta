@@ -142,3 +142,58 @@ fn the_count_resets_with_the_turn() {
         "a fresh turn starts the count over"
     );
 }
+
+/// "It triggers whenever you play a land, as well as whenever a spell or
+/// ability puts a land onto the battlefield." Every test above takes the
+/// second road; this is the first one.
+#[test]
+fn a_land_played_from_hand_is_landfall_too() {
+    let (mut game, cub) = staged();
+    let held = card(93_000, cards::FOREST, PlayerId::One);
+    let held_id = held.id;
+    game.players[PlayerId::One.index()].hand.push(held);
+    game.players[PlayerId::One.index()].lands_played_this_turn = 0;
+    game.priority = PlayerId::One;
+
+    let play = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == held_id))
+        .expect("the land drop is available");
+    game.apply(PlayerId::One, play).expect("it is played");
+    settle_naming(&mut game, cub);
+
+    assert_eq!(counters(&game, cub), 1, "a land drop is a counter");
+}
+
+/// "A land you control": theirs is not yours, whichever way it arrives.
+#[test]
+fn their_land_is_not_your_landfall() {
+    let (mut game, cub) = staged();
+
+    game.put_onto_battlefield(PlayerId::Two, cards::MOUNTAIN)
+        .expect("cataloged");
+    settle_naming(&mut game, cub);
+
+    assert_eq!(counters(&game, cub), 0, "nothing of yours entered");
+}
+
+/// "If this is the second time this ability has resolved this turn" is that
+/// time and no other: a third land is an ordinary counter again, so three
+/// lands leave her with three counters rather than four.
+#[test]
+fn the_third_land_is_a_counter_and_not_a_doubling() {
+    let (mut game, cub) = staged();
+
+    drop_a_land(&mut game, cub);
+    assert_eq!(counters(&game, cub), 1, "one for the first");
+    drop_a_land(&mut game, cub);
+    assert_eq!(counters(&game, cub), 2, "doubled by the second");
+    drop_a_land(&mut game, cub);
+
+    assert_eq!(
+        counters(&game, cub),
+        3,
+        "and the third adds one rather than doubling again",
+    );
+}
