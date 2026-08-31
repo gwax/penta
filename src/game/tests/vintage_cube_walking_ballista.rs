@@ -240,3 +240,98 @@ fn damage_already_on_it_cuts_the_shots_short() {
         "so the third counter never gets to shoot",
     );
 }
+
+/// "Any target": every test shoots the player, and a creature or a
+/// planeswalker is as good a thing to point at. One point is lethal to a
+/// Savannah Lions, and one comes off a Tamiyo's loyalty.
+#[test]
+fn it_shoots_creatures_and_planeswalkers_too() {
+    let (mut game, ballista) = staged(3);
+    cast(&mut game, ballista, 3);
+    // The card in hand and the permanent are different objects.
+    let ballista = on_battlefield(&game).expect("it resolved").card.id;
+    game.put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    let mut tamiyo = creature(96_100, cards::TAMIYO_COLLECTOR_OF_TALES, PlayerId::Two);
+    tamiyo.add_counters(CounterKind::Loyalty, 5);
+    let tamiyo_id = tamiyo.card.id;
+    game.battlefield.push(tamiyo);
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SAVANNAH_LIONS)
+        .expect("the Lions are on the battlefield")
+        .card
+        .id;
+
+    let shot = abilities(&game, ballista)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility { targets, .. } => targets
+                .iter()
+                .any(|selection| selection.targets().contains(&Target::Permanent(lions))),
+            _ => false,
+        })
+        .expect("the Lions are a legal thing to shoot");
+    game.apply(PlayerId::One, shot).expect("it activates");
+    resolve(&mut game);
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == lions),
+        "one point is all a 2/1 has to spare",
+    );
+
+    // Resolving that shot handed priority across the table.
+    game.priority = PlayerId::One;
+    let shot = abilities(&game, ballista)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility { targets, .. } => targets
+                .iter()
+                .any(|selection| selection.targets().contains(&Target::Permanent(tamiyo_id))),
+            _ => false,
+        })
+        .expect("a planeswalker is a legal thing to shoot");
+    game.apply(PlayerId::One, shot).expect("it activates");
+    resolve(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == tamiyo_id)
+            .expect("she is still there")
+            .counters(CounterKind::Loyalty),
+        4,
+        "and the damage came off her loyalty",
+    );
+    assert_eq!(counters(&game), 1, "two counters spent, one left");
+}
+
+/// Nothing in either ability is a tap, so a Ballista shoots the turn it
+/// lands.
+#[test]
+fn it_shoots_the_turn_it_arrives() {
+    let (mut game, ballista) = staged(1);
+    cast(&mut game, ballista, 1);
+    let ballista = on_battlefield(&game).expect("it resolved").card.id;
+    let life = game.players[1].life;
+    assert_eq!(
+        on_battlefield(&game)
+            .expect("it resolved")
+            .entered_controller_turn,
+        game.turns_started[PlayerId::One.index()],
+        "it came down this turn",
+    );
+
+    shoot(&mut game, ballista);
+
+    assert_eq!(
+        game.players[1].life,
+        life - 1,
+        "and summoning sickness has nothing to say to a cost with no tap in it",
+    );
+}
