@@ -172,3 +172,66 @@ fn a_clue_draws_a_card() {
     assert_eq!(game.players[0].library.len(), before - 1);
     assert_eq!(clues(&game), 3, "and the Clue was spent");
 }
+
+/// "Once it has been blocked, causing it to gain menace by removing cards
+/// from your hand won't cause it to stop being blocked." Menace is read as
+/// blockers are declared and never again.
+#[test]
+fn emptying_your_hand_after_the_block_does_not_undo_it() {
+    let mut game = staged(&[]);
+    let interpreter = arrive(&mut game);
+    for index in 0..2 {
+        game.players[0]
+            .hand
+            .push(card(282_400 + index, cards::MOUNTAIN, PlayerId::One));
+    }
+    let blocker = creature(282_500, cards::SERRA_ANGEL, PlayerId::Two);
+    let blocker_id = blocker.card.id;
+    game.battlefield.push(blocker);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(interpreter, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+    game.step = Step::DeclareBlockers;
+    game.declare_blocker(blocker_id, interpreter);
+
+    // Now it grows and gains menace, with the block already made.
+    game.players[0].hand.clear();
+    let permanent = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == interpreter)
+        .expect("it is there");
+    assert!(
+        game.permanent_has_executable_keyword(permanent, KeywordAbility::Menace),
+        "an empty hand hands it menace",
+    );
+
+    game.deal_combat_damage();
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[1].life, 20,
+        "and the one blocker that was already there still stopped it",
+    );
+}
+
+/// An empty hand is nothing to discard and four Clues all the same.
+#[test]
+fn an_empty_hand_still_buys_four_clues() {
+    let mut game = staged(&[]);
+
+    arrive(&mut game);
+
+    assert_eq!(clues(&game), 4, "the investigating is not conditional");
+    assert!(
+        game.players[0].hand.is_empty(),
+        "and there was nothing to spend"
+    );
+}
