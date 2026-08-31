@@ -325,3 +325,53 @@ fn the_shared_draw_can_be_the_thing_that_kills() {
         "she drew her own card and they could not draw theirs",
     );
 }
+
+/// "Target artifact or enchantment" names no controller: one of yours is as
+/// nameable as one of theirs, which is the only way she answers a Mox you
+/// no longer want.
+#[test]
+fn her_entry_trigger_will_name_your_own_artifact() {
+    let (mut game, _loran, board) = staged(&[(cards::MOX_JET, PlayerId::One)]);
+    let mine = board[0];
+
+    assert!(
+        offered_targets(&mut game).contains(&mine),
+        "your own artifact is on the menu",
+    );
+    settle(&mut game, Some(mine));
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == mine),
+        "and naming it destroys it",
+    );
+}
+
+/// The other end of the same asymmetry: the draw she gives you is a draw
+/// like any other, so an empty library of your own is what the tap costs.
+#[test]
+fn the_shared_draw_can_be_the_thing_that_kills_you() {
+    let (mut game, loran, _) = staged(&[]);
+    settle(&mut game, None);
+    game.players[0].library.clear();
+
+    let draw = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == loran))
+        .expect("tapping is the whole cost");
+    game.apply(PlayerId::One, draw).expect("it activates");
+    settle(&mut game, None);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::Two,
+            reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+        }),
+        "they drew theirs and she could not draw hers",
+    );
+}
