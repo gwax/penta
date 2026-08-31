@@ -261,3 +261,78 @@ fn a_bestowed_phoenix_whose_host_dies_arrives_as_a_creature() {
     );
     assert!(game.has_flying(arrived), "the printed body flies");
 }
+
+/// "If a permanent with bestow enters the battlefield by any method other
+/// than being cast, it will be an enchantment creature. You can't choose to
+/// pay the bestow cost and have it become an Aura." Reanimated, it is a
+/// bird and not an Aura, however many creatures are standing beside it.
+#[test]
+fn a_phoenix_that_was_never_cast_arrives_as_a_bird() {
+    let (mut game, _phoenix, bears) = staged(true, &SIX_MANA_VALUE);
+
+    game.put_onto_battlefield(PlayerId::One, cards::DETECTIVES_PHOENIX)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let permanent = on_battlefield(&game).expect("it arrived");
+    assert_eq!(permanent.attached_to, None, "attached to nothing");
+    let types = game.permanent_types(permanent).expect("it has types");
+    assert!(
+        types.contains(CardType::Creature),
+        "an enchantment creature"
+    );
+    assert!(types.contains(CardType::Enchantment));
+    assert_eq!(game.power(permanent), Some(2), "its own 2/2 body");
+    assert_eq!(
+        game.power(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == bears)
+                .expect("the creature is still there")
+        ),
+        Some(2),
+        "and the creature beside it was never enchanted",
+    );
+}
+
+/// "Enchanted creature gets +2/+2 and has flying and haste." The file reads
+/// the first two; haste is the half that turns a Bears played this turn
+/// into an attacker.
+#[test]
+fn the_host_gains_haste_as_well() {
+    let (mut game, phoenix, bears) = staged(true, &SIX_MANA_VALUE);
+    // The creature arrived this turn, so haste is the only thing that could
+    // let it attack.
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bears)
+    {
+        permanent.entered_controller_turn = game.turns_started[PlayerId::One.index()];
+    }
+    assert!(
+        !game.permanent_has_executable_keyword(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == bears)
+                .expect("it is there"),
+            KeywordAbility::Haste,
+        ),
+        "a Bears has no haste of its own",
+    );
+
+    let cast = bestow_cast(&game, phoenix, bears).expect("bestow is offered");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+
+    let host = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("the creature is still there");
+    assert!(
+        game.permanent_has_executable_keyword(host, KeywordAbility::Haste),
+        "the Aura hands its haste over with the rest",
+    );
+    assert!(game.has_flying(host), "and its flying");
+}
