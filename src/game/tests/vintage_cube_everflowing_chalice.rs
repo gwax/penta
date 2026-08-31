@@ -158,3 +158,57 @@ fn the_counters_are_on_it_as_it_enters() {
         "and it is the same object that entered",
     );
 }
+
+/// "For each charge counter on this artifact" is counted as the ability is
+/// activated, not fixed at the size it was cast. An Inexorable Tide watching
+/// the next spell makes a once-kicked Chalice tap for two.
+#[test]
+fn a_counter_added_later_is_another_mana() {
+    let (mut game, chalice) = staged(2);
+    cast_chalice(&mut game, chalice, 1);
+    assert_eq!(charges(&game), 1, "one kick, one counter");
+
+    game.put_onto_battlefield(PlayerId::One, cards::INEXORABLE_TIDE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let spell = card(94_000, cards::LIGHTNING_BOLT, PlayerId::One);
+    let spell_id = spell.id;
+    game.players[0].hand.push(spell);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(spell_id, vec![Target::Player(PlayerId::Two)], Vec::new(), 0),
+    )
+    .expect("a Bolt is a spell to proliferate off");
+    drain_pending(&mut game);
+
+    assert_eq!(charges(&game), 2, "proliferate gave it another");
+    let tap = mana_abilities(&game)
+        .into_iter()
+        .next()
+        .expect("the mana ability is offered");
+    game.apply(PlayerId::One, tap).expect("it taps");
+    assert_eq!(
+        game.players[0].mana_pool.colorless, 2,
+        "and the ability counts what is on it now",
+    );
+}
+
+/// Kicker is an additional cost, not a bigger mana cost: however many times
+/// it was kicked, the Chalice on the battlefield has mana value zero.
+#[test]
+fn kicking_it_does_not_change_what_it_costs_on_paper() {
+    for (mana, kicks) in [(0, 0), (6, 3)] {
+        let (mut game, chalice) = staged(mana);
+        cast_chalice(&mut game, chalice, kicks);
+
+        assert_eq!(charges(&game), u16::try_from(kicks).expect("small"));
+        assert_eq!(
+            game.permanent_mana_value(on_battlefield(&game)),
+            0,
+            "{kicks} kicks paid {} mana and the card still costs {{0}}",
+            kicks * 2,
+        );
+    }
+}
