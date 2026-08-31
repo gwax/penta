@@ -329,3 +329,64 @@ fn magical_hack_changes_one_of_a_duals_types_and_leaves_the_other() {
         "and the black went with the Swamp",
     );
 }
+
+/// Domain counts basic land types among the lands you control, and a dual
+/// carries two of them on one card. Three lands here are five types, which
+/// is a Leyline Binding for one white -- where five basics would be five
+/// lands.
+#[test]
+fn a_dual_counts_twice_for_domain() {
+    let staged_with = |lands: &[CardDefinitionId]| {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[0].hand.clear();
+        for definition in lands {
+            game.put_onto_battlefield(PlayerId::One, *definition)
+                .expect("cataloged");
+        }
+        // Tapped, so what is castable is decided by the mana in the pool
+        // rather than by what the lands could still make.
+        for permanent in &mut game.battlefield {
+            permanent.tapped = true;
+        }
+        drain_pending(&mut game);
+        let binding = game
+            .build_zone(PlayerId::One, &[cards::LEYLINE_BINDING])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        let id = binding.id;
+        game.players[0].hand.push(binding);
+        game.turns_started = [5, 5];
+        game.turn = 9;
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+        (game, id)
+    };
+    let castable = |game: &Game, card: GameObjectId| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card: id, .. } if *id == card))
+    };
+
+    // One dual is two types, so four of the six mana remain to be paid.
+    let (mut game, binding) = staged_with(&[cards::TROPICAL_ISLAND]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 3);
+    assert!(!castable(&game, binding), "three mana is not enough");
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    assert!(
+        castable(&game, binding),
+        "a Forest Island is two of the five by itself",
+    );
+
+    // Two duals and a basic are five types across three lands.
+    let (mut game, binding) =
+        staged_with(&[cards::TROPICAL_ISLAND, cards::SCRUBLAND, cards::MOUNTAIN]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    assert!(
+        castable(&game, binding),
+        "Forest Island, Swamp Plains and a Mountain is the whole domain",
+    );
+}
