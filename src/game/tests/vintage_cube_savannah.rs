@@ -390,3 +390,51 @@ fn a_dual_counts_twice_for_domain() {
         "Forest Island, Swamp Plains and a Mountain is the whole domain",
     );
 }
+
+/// "This has the mana abilities associated with both of its basic land
+/// types" is not the only thing those types are read for: a card that asks
+/// whether you control a Swamp is answered by an Underground Sea, which is
+/// an Island Swamp and no basic at all.
+#[test]
+fn a_dual_answers_a_card_that_asks_for_one_of_its_basic_types() {
+    let free_offered = |land: Option<CardDefinitionId>| {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[PlayerId::One.index()].hand.clear();
+        if let Some(land) = land {
+            game.put_onto_battlefield(PlayerId::One, land)
+                .expect("cataloged");
+        }
+        game.put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        let snuff = card(97_500, cards::SNUFF_OUT, PlayerId::One);
+        let snuff_id = snuff.id;
+        game.players[PlayerId::One.index()].hand.push(snuff);
+        game.players[PlayerId::One.index()].life = 20;
+        game.empty_mana_pools();
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == snuff_id))
+    };
+
+    assert!(
+        !free_offered(None),
+        "with no land at all the four life buys nothing",
+    );
+    assert!(
+        !free_offered(Some(cards::SAVANNAH)),
+        "and a Forest Plains is not a Swamp",
+    );
+    assert!(
+        free_offered(Some(cards::SWAMP)),
+        "a basic Swamp is the ordinary way to pay it",
+    );
+    assert!(
+        free_offered(Some(cards::UNDERGROUND_SEA)),
+        "and an Underground Sea is a Swamp for exactly as long as it says so",
+    );
+}
