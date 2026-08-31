@@ -148,3 +148,116 @@ fn equipping_something_else_moves_the_trigger() {
     attack_with(&mut game, &[bears_id, rebel]);
     assert_eq!(hand_size(&game), before + 1);
 }
+
+/// "If the Rebel is destroyed, the Equipment stays on the battlefield." What
+/// it loses is its subject: with nothing equipped there is no "equipped
+/// creature" to attack, so a full attack draws nothing -- and the equip cost
+/// is still there to give it a new host.
+#[test]
+fn the_rebel_dying_leaves_the_lens_behind() {
+    let (mut game, lens, rebel) = lensed();
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == rebel)
+        .expect("the Rebel is there")
+        .damage = 2;
+    game.check_state_based_actions();
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == rebel),
+        "two damage is lethal to a 2/2",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == lens),
+        "the Equipment is not attached to what it lost",
+    );
+    assert_eq!(host_of(&game, lens), None, "and it equips nothing");
+
+    let first = creature(70_300, cards::GRIZZLY_BEARS, PlayerId::One);
+    let first_id = first.card.id;
+    game.battlefield.push(first);
+    let second = creature(70_301, cards::SAVANNAH_LIONS, PlayerId::One);
+    let second_id = second.card.id;
+    game.battlefield.push(second);
+    let before = hand_size(&game);
+    attack_with(&mut game, &[first_id, second_id]);
+    assert_eq!(
+        hand_size(&game),
+        before,
+        "an unequipped Lens has no attacker of its own to count",
+    );
+
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    game.players[PlayerId::One.index()].mana_pool.white = 1;
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    *source == lens
+                        && targets
+                            .iter()
+                            .flat_map(crate::casting::TargetSelection::targets)
+                            .any(|target| *target == Target::Permanent(first_id))
+                }
+                _ => false,
+            }),
+        "the equip cost still moves it onto something else",
+    );
+}
+
+/// "The Rebel enters the battlefield as a 2/2 creature, then the Equipment
+/// becomes attached to it. Abilities that trigger when a creature enters the
+/// battlefield see that a 2/2 creature entered." The Goliath counts the
+/// power of what arrived, and what arrived was a 2/2.
+#[test]
+fn what_watches_creatures_enter_sees_a_two_two() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let goliath = game
+        .put_onto_battlefield(PlayerId::One, cards::HAMLETBACK_GOLIATH)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let base = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == goliath)
+        .map(|permanent| game.power(permanent))
+        .expect("the Goliath is there");
+    assert_eq!(base, Some(6));
+
+    game.put_onto_battlefield(PlayerId::One, cards::GLIMMER_LENS)
+        .expect("cataloged");
+    for _ in 0..12 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the trigger goes on the stack and resolves");
+    }
+    choose_decision_by_label(&mut game, PlayerId::One, "Do it");
+    drain_pending(&mut game);
+
+    let grown = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == goliath)
+        .map(|permanent| game.power(permanent))
+        .expect("the Goliath is still there");
+    assert_eq!(
+        grown,
+        Some(8),
+        "two counters for the 2/2 that entered, not zero for a token yet to be sized",
+    );
+}

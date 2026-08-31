@@ -98,6 +98,13 @@ impl Game {
                 self.regenerate_permanent(id);
             }
             self.move_permanents_to_graveyard(&die);
+            // 704.5p again: the host that just died is a host no longer, and
+            // the Equipment on it comes loose in this same check rather than
+            // waiting for the next one. Auras with dead hosts are handled at
+            // the top of this loop; without this an Equipment stays pointed
+            // at a permanent that is not there any more for as long as it
+            // takes a player to get priority again.
+            self.unattach_illegal_non_aura_attachments();
             if !self.pending_decisions.is_empty()
                 || !self.pending_events.is_empty()
                 || !self.pending_procedures.is_empty()

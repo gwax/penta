@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **An Equipment comes loose in the same check that kills its creature.**
+  State-based actions unattached illegal Equipment once, before the pass
+  that puts dead creatures into graveyards, so an Equipment whose host had
+  just died stayed pointed at a permanent that was no longer on the
+  battlefield until some later check. Auras with dead hosts were already
+  handled inside that pass; Equipment now is too.
+
 - **Necromancy reads its intervening if when the trigger resolves.** Its
   entry trigger is printed "when this enchantment enters, if it's on the
   battlefield", and the condition was recorded in the text but not in the
