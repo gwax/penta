@@ -117,6 +117,96 @@ fn a_legendary_spell_paid_with_halfling_mana_cannot_be_countered() {
     );
 }
 
+/// "Spend this mana only to cast a legendary spell": casting is the whole
+/// of the permission. An activated ability is not a spell, so the Halfling's
+/// coloured mana will not pay for one -- and an ordinary mana beside it
+/// will.
+#[test]
+fn the_restricted_mana_does_not_pay_for_an_ability() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let halfling = creature(74_300, cards::DELIGHTED_HALFLING, PlayerId::One);
+    let halfling_id = halfling.card.id;
+    game.battlefield.push(halfling);
+    let icy = game
+        .put_onto_battlefield(PlayerId::One, cards::ICY_MANIPULATOR)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    game.priority = PlayerId::One;
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: halfling_id,
+            ability: mana_ability_for(&game, halfling_id, ManaColor::Green),
+            color: ManaColor::Green,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("it taps for green");
+
+    let icy_offered = |game: &Game| {
+        game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == icy),
+        )
+    };
+    assert!(
+        !icy_offered(&game),
+        "one restricted mana is no mana at all to an ability that wants {{1}}",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(
+        icy_offered(&game),
+        "and an ordinary mana pays the same ability at once",
+    );
+}
+
+/// "Add one mana of any color" is all five, not the one the deck happens to
+/// be built around.
+#[test]
+fn the_restricted_half_offers_every_colour() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let halfling = creature(74_400, cards::DELIGHTED_HALFLING, PlayerId::One);
+    let halfling_id = halfling.card.id;
+    game.battlefield.push(halfling);
+    game.priority = PlayerId::One;
+
+    let mut offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility { source, color, .. } if source == halfling_id => {
+                Some(color)
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    offered.sort_unstable();
+    offered.dedup();
+    let mut expected = vec![
+        ManaColor::White,
+        ManaColor::Blue,
+        ManaColor::Black,
+        ManaColor::Red,
+        ManaColor::Green,
+        ManaColor::Colorless,
+    ];
+    expected.sort_unstable();
+    assert_eq!(
+        offered, expected,
+        "five colours from one ability and colourless from the other",
+    );
+}
+
 /// The colourless half carries neither the restriction nor the rider.
 #[test]
 fn the_halflings_colorless_mana_is_ordinary() {
