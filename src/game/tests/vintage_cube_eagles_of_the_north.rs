@@ -182,3 +182,86 @@ fn plainscycling_finds_the_land() {
             .any(|card| card.definition == cards::PLAINS),
     );
 }
+
+/// "The triggered ability affects only creatures you control at the time it
+/// resolves. Any creatures that come under your control later in the turn
+/// won't be affected."
+#[test]
+fn a_creature_that_arrives_afterwards_is_not_charged() {
+    let (mut game, held, board) = staged(&[cards::GRIZZLY_BEARS]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 5);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == held))
+        .expect("six mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+    assert_eq!(
+        stats(&game, board[0]),
+        (Some(3), Some(2)),
+        "the bear that was there is charged",
+    );
+
+    let latecomer = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        stats(&game, latecomer),
+        (Some(2), Some(1)),
+        "and the one that missed it is what it prints",
+    );
+    assert!(
+        !game.permanent_has_executable_keyword(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == latecomer)
+                .expect("it is there"),
+            KeywordAbility::FirstStrike,
+        ),
+        "with none of the first strike either",
+    );
+}
+
+/// "It lets you search your library for a card with the type or types
+/// indicated by the ability name." A Tundra is a Plains as much as a Plains
+/// is, and a Forest is not one at all.
+#[test]
+fn plainscycling_finds_any_card_with_the_plains_type() {
+    let (mut game, held, _) = staged(&[]);
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(116_200, cards::FOREST, PlayerId::One));
+    game.players[0]
+        .library
+        .push(card(116_201, cards::TUNDRA, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    let cycle = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == held))
+        .expect("plainscycling is offered from hand");
+    game.apply(PlayerId::One, cycle).expect("it activates");
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::TUNDRA),
+        "the dual carries the Plains type and was found by it",
+    );
+    assert!(
+        game.players[0]
+            .library
+            .iter()
+            .any(|card| card.definition == cards::FOREST),
+        "and the Forest was never a candidate",
+    );
+}
