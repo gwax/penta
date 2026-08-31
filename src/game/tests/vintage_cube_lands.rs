@@ -786,6 +786,97 @@ fn every_shock_land_asks_for_its_own_two_life() {
     }
 }
 
+/// Two life is a cost like any other: you may pay it only if you have it.
+/// At one life there is nothing to ask about, so no question is put and the
+/// Fountain simply arrives tapped.
+#[test]
+fn a_shock_land_at_one_life_only_arrives_tapped() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].life = 1;
+    game.players[PlayerId::One.index()].hand.push(card(
+        10_600,
+        cards::HALLOWED_FOUNTAIN,
+        PlayerId::One,
+    ));
+    game.apply(
+        PlayerId::One,
+        Action::PlayLand {
+            card: CardInstanceId(10_600),
+            option: PlayOptionId::DEFAULT,
+        },
+    )
+    .expect("the land drop is available");
+
+    assert!(
+        game.observe(PlayerId::One).decision.is_none(),
+        "a choice with one answer is not a choice",
+    );
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::HALLOWED_FOUNTAIN)
+            .expect("it entered")
+            .tapped,
+        "one life does not buy an untapped land",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        1,
+        "and costs none"
+    );
+}
+
+/// At exactly two it is still a cost you may pay, and paying it is what
+/// ends the game: the Fountain arrives untapped over its controller.
+#[test]
+fn a_shock_land_will_take_your_last_two_life() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].life = 2;
+    game.players[PlayerId::One.index()].hand.push(card(
+        10_700,
+        cards::HALLOWED_FOUNTAIN,
+        PlayerId::One,
+    ));
+    game.apply(
+        PlayerId::One,
+        Action::PlayLand {
+            card: CardInstanceId(10_700),
+            option: PlayOptionId::DEFAULT,
+        },
+    )
+    .expect("the land drop is available");
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("it asks about its two life");
+    assert_eq!(decision.options.len(), 2, "both answers are still offered");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![1],
+        },
+    )
+    .expect("paying is legal at exactly two");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(game.players[PlayerId::One.index()].life, 0);
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::Two,
+            reason: WinReason::OpponentLostAllLife,
+        }),
+        "the land is untapped and the game is over",
+    );
+}
+
 /// The same clause on the path it was printed for: a land played from hand
 /// as the turn's land drop, rather than put onto the battlefield by a test
 /// or an effect.
