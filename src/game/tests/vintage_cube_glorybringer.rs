@@ -351,3 +351,50 @@ fn an_exert_owed_by_an_untapped_creature_expires_unspent() {
         "the Dragon untaps normally once the exert is behind it",
     );
 }
+
+/// "Any abilities that trigger on exerting an attacking creature will
+/// resolve before blockers are declared." Which is the whole appeal: the
+/// blocker is dead before it can be one.
+#[test]
+fn what_it_shoots_never_gets_to_block() {
+    let (mut game, dragon, bears, their_dragon) = staged();
+    // Their Dragon is out of reach of the trigger, so the Bears are the
+    // blocker the exert has to take away.
+    game.battlefield
+        .retain(|permanent| permanent.card.id != their_dragon);
+
+    attack_with(&mut game, dragon);
+    game.apply(PlayerId::One, Action::ExertAttacker { attacker: dragon })
+        .expect("it exerts");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.step,
+        Step::DeclareAttackers,
+        "the trigger resolved inside the declare-attackers step",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != bears),
+        "and their creature is already dead",
+    );
+
+    game.step = Step::DeclareBlockers;
+    game.priority = PlayerId::Two;
+    assert!(
+        !game.legal_actions(PlayerId::Two).iter().any(|action| {
+            matches!(action, Action::DeclareBlocker { blocker, .. } if *blocker == bears)
+        }),
+        "so it is nobody's blocker when blockers are declared",
+    );
+    assert!(
+        game.legal_actions(PlayerId::Two)
+            .iter()
+            .any(|action| matches!(action, Action::FinishDeclaringBlockers)),
+        "and the declaration is theirs to finish with nothing in it",
+    );
+}
