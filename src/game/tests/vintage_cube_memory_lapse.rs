@@ -254,3 +254,71 @@ fn the_card_goes_to_its_owners_library_and_not_its_casters() {
         "and the only card in a graveyard is the Lapse itself",
     );
 }
+
+/// "If that spell is countered this way" is a condition and not a
+/// certainty. A legendary spell paid for with Delighted Halfling mana cannot
+/// be countered, so there is no counter for the replacement to redirect: it
+/// resolves, and nothing goes anywhere near a library.
+///
+/// The game is built here rather than staged, because the fixture hands
+/// Player Two a pool of every colour and what this test needs is a seat
+/// whose only green is the Halfling's.
+#[test]
+fn a_spell_that_cannot_be_countered_is_not_stacked_either() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[1].hand.clear();
+    game.players[1].library.clear();
+    let lapse = card(76_400, cards::MEMORY_LAPSE, PlayerId::One);
+    let lapse_id = lapse.id;
+    game.players[0].hand.push(lapse);
+    let tifa = card(76_401, cards::TIFA_LOCKHART, PlayerId::Two);
+    let tifa_id = tifa.id;
+    game.players[1].hand.push(tifa);
+    let halfling = creature(76_402, cards::DELIGHTED_HALFLING, PlayerId::Two);
+    let halfling_id = halfling.card.id;
+    game.battlefield.push(halfling);
+    game.turns_started = [5, 5];
+    game.turn = 9;
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+    game.apply(
+        PlayerId::Two,
+        Action::ActivateManaAbility {
+            source: halfling_id,
+            ability: mana_ability_for(&game, halfling_id, ManaColor::Green),
+            color: ManaColor::Green,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("the Halfling taps for a colour");
+    let library = game.players[1].library.len();
+
+    cast_and_answer(&mut game, lapse_id, tifa_id);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::TIFA_LOCKHART),
+        "she resolved through it",
+    );
+    assert_eq!(
+        game.players[1].library.len(),
+        library,
+        "and nothing was put on top of their library",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MEMORY_LAPSE),
+        "the Lapse is spent either way",
+    );
+}
