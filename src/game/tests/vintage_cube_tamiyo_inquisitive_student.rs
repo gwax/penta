@@ -408,3 +408,59 @@ fn the_planeswalker_side_is_still_blue() {
         "and blue is the whole of it",
     );
 }
+
+/// "The mana value of a transforming double-faced card is the mana value of
+/// its front face, no matter which face is up." She is a one-drop as a
+/// creature and a one-drop as a planeswalker.
+#[test]
+fn her_mana_value_is_the_front_faces_either_way() {
+    let (game, _tamiyo) = staged(&[]);
+    assert_eq!(
+        game.permanent_mana_value(tamiyo_on_battlefield(&game)),
+        1,
+        "{{U}} on the front face",
+    );
+
+    let game = transformed(&[]);
+    assert_eq!(
+        game.permanent_mana_value(tamiyo_on_battlefield(&game)),
+        1,
+        "and the back face has no mana cost of its own to read",
+    );
+}
+
+/// The body: a 0/3 flier, which is what lets a one-drop attack into a board
+/// and come back with a Clue.
+#[test]
+fn she_flies() {
+    let (game, _tamiyo) = staged(&[]);
+    let tamiyo = tamiyo_on_battlefield(&game);
+
+    assert!(game.has_flying(tamiyo), "flying");
+    assert_eq!(
+        (game.power(tamiyo), game.toughness(tamiyo)),
+        (Some(0), Some(3))
+    );
+}
+
+/// "When you draw your third card in a turn": any turn, theirs included, so
+/// three draws on their turn turn her over just as readily.
+#[test]
+fn three_draws_on_their_turn_turn_her_over_too() {
+    let (mut game, _tamiyo) = staged(&[]);
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+
+    game.draw_cards(PlayerId::One, 2);
+    settle(&mut game);
+    assert!(!is_planeswalker(&game), "two is not three on any turn");
+
+    game.draw_cards(PlayerId::One, 1);
+    settle(&mut game);
+
+    assert!(
+        is_planeswalker(&game),
+        "and the third turns her over on their turn as well",
+    );
+}
