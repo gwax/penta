@@ -119,3 +119,101 @@ fn at_one_life_it_kills_you() {
         "the search was the last thing it did"
     );
 }
+
+/// The line the card is played for: eight cards between the two zones, five
+/// kept and the other three burned.
+#[test]
+fn five_are_kept_and_everything_else_is_exiled() {
+    let (mut game, doomsday) = staged(6, 2, 20);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == doomsday))
+        .expect("three black mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_until_decision(&mut game);
+    let search = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the search asks which five to keep");
+    assert_eq!(search.options.len(), 8, "both zones are searched");
+    assert_eq!(search.minimum, 5, "and five is not a maximum but a number");
+    assert_eq!(search.maximum, 5);
+
+    let five = search
+        .options
+        .iter()
+        .take(5)
+        .map(|option| option.id)
+        .collect::<Vec<_>>();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: search.id,
+            options: five,
+        },
+    )
+    .expect("five of the eight");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].library.len(),
+        5,
+        "five on top of the library"
+    );
+    assert_eq!(
+        game.players[0].exile.len(),
+        3,
+        "and the three it did not want are exiled",
+    );
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::DOOMSDAY],
+        "the graveyard was searched too, and holds only the spell itself",
+    );
+    assert_eq!(game.players[0].life, 10);
+}
+
+/// "You must choose five cards from among them. You can't choose to find
+/// fewer than that."
+#[test]
+fn four_of_the_eight_is_not_an_answer() {
+    let (mut game, doomsday) = staged(6, 2, 20);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == doomsday))
+        .expect("three black mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_until_decision(&mut game);
+    let search = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the search asks which five to keep");
+
+    let four = search
+        .options
+        .iter()
+        .take(4)
+        .map(|option| option.id)
+        .collect::<Vec<_>>();
+    assert!(
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: search.id,
+                options: four,
+            },
+        )
+        .is_err(),
+        "keeping four when five are there is not on offer",
+    );
+}
