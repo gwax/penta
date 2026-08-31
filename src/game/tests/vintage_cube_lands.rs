@@ -100,45 +100,51 @@ fn every_triome_enters_tapped_and_taps_for_each_of_its_three_colors() {
     }
 }
 
+/// Every triome carries its own cycling clause, and each one is three
+/// generic: not offered for less, the discard paid as a cost, and the draw
+/// what resolves afterwards.
 #[test]
-fn a_triome_cycles_from_hand_for_three_generic() {
-    let mut game = ready_game();
-    game.players[PlayerId::One.index()].hand.clear();
-    let triome = card(41_000, cards::RAFFINES_TOWER, PlayerId::One);
-    let triome_id = triome.id;
-    game.players[PlayerId::One.index()].hand.push(triome);
+fn every_triome_cycles_from_hand_for_three_generic() {
+    for (definition, _) in TRIOMES {
+        let mut game = ready_game();
+        game.players[PlayerId::One.index()].hand.clear();
+        let triome = card(41_000, definition, PlayerId::One);
+        let triome_id = triome.id;
+        game.players[PlayerId::One.index()].hand.push(triome);
 
-    assert!(
-        !game.legal_actions(PlayerId::One).iter().any(
-            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == triome_id)
-        ),
-        "cycling is not offered before the three mana is available",
-    );
+        game.players[PlayerId::One.index()].mana_pool.colorless = 2;
+        assert!(
+            !game.legal_actions(PlayerId::One).iter().any(
+                |action| matches!(action, Action::ActivateAbility { source, .. } if *source == triome_id)
+            ),
+            "{definition:?} does not cycle for two",
+        );
 
-    game.players[PlayerId::One.index()].mana_pool.colorless = 3;
-    let library_before = game.players[PlayerId::One.index()].library.len();
-    let action = game
-        .legal_actions(PlayerId::One)
-        .into_iter()
-        .find(
-            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == triome_id),
-        )
-        .expect("cycling is offered from hand");
-    game.apply(PlayerId::One, action).expect("it is activated");
+        game.players[PlayerId::One.index()].mana_pool.colorless = 3;
+        let library_before = game.players[PlayerId::One.index()].library.len();
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(
+                |action| matches!(action, Action::ActivateAbility { source, .. } if *source == triome_id),
+            )
+            .unwrap_or_else(|| panic!("{definition:?} cycles from hand for three"));
+        game.apply(PlayerId::One, action).expect("it is activated");
 
-    assert!(
-        game.players[PlayerId::One.index()]
-            .graveyard
-            .iter()
-            .any(|card| card.definition == cards::RAFFINES_TOWER),
-        "the discard is a cost",
-    );
-    pass_priority_pair(&mut game);
-    assert_eq!(
-        game.players[PlayerId::One.index()].library.len(),
-        library_before - 1,
-        "and the draw is what resolved",
-    );
+        assert!(
+            game.players[PlayerId::One.index()]
+                .graveyard
+                .iter()
+                .any(|card| card.definition == definition),
+            "{definition:?} discards itself as a cost",
+        );
+        pass_priority_pair(&mut game);
+        assert_eq!(
+            game.players[PlayerId::One.index()].library.len(),
+            library_before - 1,
+            "{definition:?} draws on resolution",
+        );
+    }
 }
 
 /// Every fastland, with the two colours its printed clause names.
