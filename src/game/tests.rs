@@ -498,6 +498,7 @@ mod vintage_cube_icetill_explorer;
 mod vintage_cube_ignoble_hierarch;
 mod vintage_cube_imperial_seal;
 mod vintage_cube_infect;
+mod vintage_cube_infernal_grasp;
 mod vintage_cube_inquisition_of_kozilek;
 mod vintage_cube_inti;
 mod vintage_cube_invigorate;
