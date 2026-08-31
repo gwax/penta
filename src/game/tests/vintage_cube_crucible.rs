@@ -185,3 +185,67 @@ fn it_does_not_change_when_a_land_may_be_played() {
         "nor a turn whose land has already been played",
     );
 }
+
+/// What the card is actually for: a fetchland is a land drop that puts
+/// itself in the graveyard, so with a Crucible out it is the same land drop
+/// again every turn. Play it from the graveyard, crack it, and it is back
+/// where it started -- offered again once the turn's drop comes round.
+#[test]
+fn a_fetchland_replayed_from_the_graveyard_sacrifices_itself_back_into_it() {
+    let mut game = staged(true);
+    game.players[0].graveyard.clear();
+    game.players[0]
+        .graveyard
+        .push(card(87_200, cards::WINDSWEPT_HEATH, PlayerId::One));
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(87_201, cards::FOREST, PlayerId::One));
+
+    let play = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == GameObjectId(87_200)))
+        .expect("the Crucible offers the Heath");
+    game.apply(PlayerId::One, play).expect("it is played");
+    drain_pending(&mut game);
+
+    let heath = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::WINDSWEPT_HEATH)
+        .map(|permanent| permanent.card.id)
+        .expect("it arrived as a new permanent");
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == heath))
+        .expect("a fetchland on the battlefield cracks like any other");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::FOREST),
+        "the Forest it went looking for",
+    );
+    let returned = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::WINDSWEPT_HEATH)
+        .map(|card| card.id)
+        .expect("the Heath sacrificed itself back into the graveyard");
+    assert!(
+        land_plays(&game).is_empty(),
+        "this turn's drop was spent playing it",
+    );
+
+    game.players[0].lands_played_this_turn = 0;
+    assert_eq!(
+        land_plays(&game),
+        vec![returned],
+        "and next turn's drop is the same Heath again, new object though it is",
+    );
+}
