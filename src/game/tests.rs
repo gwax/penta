@@ -663,6 +663,7 @@ mod vintage_cube_static_prison;
 mod vintage_cube_stock_up;
 mod vintage_cube_stoneforge;
 mod vintage_cube_stormchasers_talent;
+mod vintage_cube_strip_mine;
 mod vintage_cube_subtlety;
 mod vintage_cube_sunfall;
 mod vintage_cube_suplex;
