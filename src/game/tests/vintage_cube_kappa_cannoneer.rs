@@ -327,3 +327,90 @@ fn improvise_lets_the_artifacts_pay_the_generic() {
         "and artifacts already tapped help with nothing",
     );
 }
+
+/// "Each artifact you tap pays for {1}": the generic half and nothing else,
+/// so a board of artifacts and no blue mana leaves a six-drop uncastable.
+#[test]
+fn improvise_never_pays_the_coloured_pip() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    for definition in [
+        cards::HOWLING_MINE,
+        cards::ICY_MANIPULATOR,
+        cards::DARKSTEEL_PLATE,
+        cards::MANIFOLD_KEY,
+        cards::JADE_STATUE,
+        cards::SOL_RING,
+    ] {
+        game.put_onto_battlefield(PlayerId::One, definition)
+            .expect("cataloged");
+    }
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    let held = card(93_600, cards::KAPPA_CANNONEER, PlayerId::One);
+    let held_id = held.id;
+    game.players[0].hand.push(held);
+    game.turns_started[PlayerId::One.index()] = 5;
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .all(|action| !matches!(action, Action::CastSpell { card, .. } if *card == held_id)),
+        "six artifacts are six generic and no blue at all",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 5);
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .all(|action| !matches!(action, Action::CastSpell { card, .. } if *card == held_id)),
+        "and colourless mana is no more blue than an artifact is",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == held_id)),
+        "one blue is the whole of what improvise cannot cover",
+    );
+}
+
+/// Ward is "whenever this becomes the target of a spell or ability an
+/// opponent controls": your own Bolt aimed at your own Turtle asks for
+/// nothing.
+#[test]
+fn your_own_spell_pays_no_ward() {
+    let (mut game, cannoneer) = staged();
+    let bolt = card(93_700, cards::LIGHTNING_BOLT, PlayerId::One);
+    let bolt_id = bolt.id;
+    game.players[PlayerId::One.index()].hand.push(bolt);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+
+    game.apply(
+        PlayerId::One,
+        cast_action(bolt_id, vec![Target::Permanent(cannoneer)], Vec::new(), 0),
+    )
+    .expect("your own creature is a legal target for your own Bolt");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.pending_decisions.is_empty(),
+        "nobody was asked for four mana",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.total(),
+        0,
+        "the red paid for the Bolt and nothing else was spent",
+    );
+    let turtle = permanent(&game, cannoneer);
+    assert_eq!(turtle.damage, 3, "and the Bolt resolved, ward or no ward");
+}
