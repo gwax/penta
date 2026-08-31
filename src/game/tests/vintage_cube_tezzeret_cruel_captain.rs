@@ -279,3 +279,58 @@ fn the_minus_three_counts_an_x_cost_as_zero() {
         "an {{X}}{{X}} artifact is a mana value of nothing at all",
     );
 }
+
+/// "Whenever an artifact *you control* enters": one of theirs landing is
+/// nothing to him.
+#[test]
+fn an_artifact_of_theirs_does_not_grow_him() {
+    let (mut game, tezzeret, _) = staged(&[]);
+    let before = loyalty(&game, tezzeret);
+
+    game.put_onto_battlefield(PlayerId::Two, cards::SOL_RING)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        loyalty(&game, tezzeret),
+        before,
+        "he counts his own side of the table",
+    );
+}
+
+/// "The emblem's triggered ability doesn't remove any abilities, types,
+/// subtypes, or supertypes the artifact has." A Darksteel Plate made into a
+/// Robot is still an indestructible Equipment artifact underneath it.
+#[test]
+fn the_emblem_adds_a_body_without_taking_anything_away() {
+    let (mut game, tezzeret, ids) = staged(&[cards::DARKSTEEL_PLATE]);
+    let plate = ids[0];
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == tezzeret)
+        .expect("he is here")
+        .add_counters(CounterKind::Loyalty, 3);
+
+    activate(&mut game, tezzeret, -7, None);
+    game.step = Step::BeginningOfCombat;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+
+    let animated = permanent(&game, plate);
+    let types = game.permanent_types(animated).expect("it has types");
+    assert!(types.contains(CardType::Creature), "it is a creature now");
+    assert!(types.contains(CardType::Artifact), "and still an artifact");
+    let subtypes = game.effective_subtypes(animated);
+    assert!(
+        subtypes.contains(&"Robot"),
+        "with the Robot the emblem names: {subtypes:?}",
+    );
+    assert!(
+        subtypes.contains(&"Equipment"),
+        "and the Equipment it already was: {subtypes:?}",
+    );
+    assert!(
+        game.permanent_has_executable_keyword(animated, KeywordAbility::Indestructible),
+        "and the keyword it printed",
+    );
+}
