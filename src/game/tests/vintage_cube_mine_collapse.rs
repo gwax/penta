@@ -188,3 +188,77 @@ fn it_deals_five() {
         "a 5/5 dies to it exactly",
     );
 }
+
+/// "Target creature or planeswalker": the other half of the target line.
+/// Five damage to a planeswalker is five loyalty off it, and a Narset who
+/// started at five is not there afterwards.
+#[test]
+fn it_answers_a_planeswalker_too() {
+    let (mut game, collapse, _angel) = staged(&[cards::MOUNTAIN]);
+    let narset = game
+        .put_onto_battlefield(PlayerId::Two, cards::NARSET_PARTER_OF_VEILS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == narset)
+            .expect("she arrived")
+            .counters(CounterKind::Loyalty),
+        5,
+        "five loyalty to take five damage",
+    );
+
+    let action = casts(&game, collapse, narset)
+        .into_iter()
+        .next()
+        .expect("a planeswalker is a legal target");
+    game.apply(PlayerId::One, action).expect("it casts");
+    settle(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == narset),
+        "damage to a planeswalker is loyalty off it, and five was all she had",
+    );
+}
+
+/// CR 601.2f: a cost increase applies on top of an alternative cost rather
+/// than instead of it. Thalia taxes the free half like any other noncreature
+/// spell, and a Mountain already tapped can be sacrificed but cannot also
+/// pay her -- which is what separates the two halves of this cost.
+#[test]
+fn thalia_taxes_the_free_half_as_well() {
+    let (mut game, collapse, angel) = staged(&[cards::MOUNTAIN]);
+    for permanent in &mut game.battlefield {
+        if permanent.card.definition == cards::MOUNTAIN {
+            permanent.tapped = true;
+        }
+    }
+    assert_eq!(
+        casts(&game, collapse, angel).len(),
+        1,
+        "a tapped Mountain is still a Mountain to sacrifice",
+    );
+
+    game.battlefield.push(creature(
+        131_500,
+        cards::THALIA_GUARDIAN_OF_THRABEN,
+        PlayerId::Two,
+    ));
+    assert!(
+        casts(&game, collapse, angel).is_empty(),
+        "but the sacrifice does not pay the mana she asks for on top of it",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert_eq!(
+        casts(&game, collapse, angel).len(),
+        1,
+        "one mana and the Mountain is the free half again",
+    );
+}
