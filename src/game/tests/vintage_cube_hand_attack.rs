@@ -423,3 +423,107 @@ fn a_bat_answered_in_response_looks_and_takes_nothing() {
         "so the Bolt never left their hand",
     );
 }
+
+/// "You choose a noncreature, nonland card from it." Not "you may": with two
+/// eligible cards in their hand -- one is taken without asking, there being
+/// nothing to decide -- the choice belongs to the Freebooter's controller,
+/// and taking nothing is not one of the answers.
+#[test]
+fn the_freebooter_must_take_one_and_its_controller_picks() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+    for (instance, definition) in [
+        (71_300, cards::LIGHTNING_BOLT),
+        (71_301, cards::COUNTERSPELL),
+    ] {
+        game.players[PlayerId::Two.index()]
+            .hand
+            .push(card(instance, definition, PlayerId::Two));
+    }
+
+    game.put_onto_battlefield(PlayerId::One, cards::KITESAIL_FREEBOOTER)
+        .expect("cataloged");
+    let mut choice = None;
+    for _ in 0..8 {
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            if decision.options.iter().any(|option| {
+                option
+                    .card
+                    .is_some_and(|(_, card)| card.card_definition() == Some(cards::LIGHTNING_BOLT))
+            }) {
+                choice = Some(decision);
+                break;
+            }
+            let taken = decision
+                .options
+                .iter()
+                .take(decision.minimum.max(1))
+                .map(|option| option.id)
+                .collect();
+            game.apply(
+                PlayerId::One,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: taken,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let choice = choice.expect("the Bolt is what the trigger offers");
+    assert_eq!(
+        choice.player,
+        PlayerId::One,
+        "the Freebooter's controller does the choosing, not the player losing the card",
+    );
+    assert_eq!(choice.minimum, 1, "and one is the fewest that may be taken");
+    assert!(
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: choice.id,
+                options: Vec::new(),
+            },
+        )
+        .is_err(),
+        "so declining is not an answer the way the Bat's is",
+    );
+}
+
+/// A hand with nothing eligible in it leaves the trigger nothing to take:
+/// the Freebooter still arrives and the hand is untouched.
+#[test]
+fn a_hand_of_creatures_and_lands_gives_the_freebooter_nothing() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+    for (instance, definition) in [(71_400, cards::GRIZZLY_BEARS), (71_401, cards::FOREST)] {
+        game.players[PlayerId::Two.index()]
+            .hand
+            .push(card(instance, definition, PlayerId::Two));
+    }
+
+    game.put_onto_battlefield(PlayerId::One, cards::KITESAIL_FREEBOOTER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].hand.len(),
+        2,
+        "a creature and a land are not what it takes",
+    );
+    assert!(game.players[PlayerId::Two.index()].exile.is_empty());
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::KITESAIL_FREEBOOTER),
+        "and the body is on the battlefield either way",
+    );
+}
