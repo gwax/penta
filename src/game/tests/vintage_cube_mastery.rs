@@ -193,3 +193,152 @@ fn it_exiles_an_indestructible_creature() {
         "and it is in exile, not a graveyard",
     );
 }
+
+/// "If an effect increases or decreases the cost of spells you cast, that
+/// cost increase is applied to the alternative cost you chose to pay. In
+/// that case, the cost was still paid for the purposes of the effect, even
+/// if you paid more." A Thorn of Amethyst makes the cheap half {2}{B}, and
+/// the opponent still draws for it.
+#[test]
+fn a_tax_raises_the_alternative_cost_without_undoing_it() {
+    let (mut game, mastery, victim) = staged();
+    game.put_onto_battlefield(PlayerId::One, cards::THORN_OF_AMETHYST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    game.empty_mana_pools();
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    let held = game.players[1].hand.len();
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == mastery && choices.costs().alternative().is_some())
+        }),
+        "two mana no longer pays the alternative cost",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    cast_mastery(&mut game, mastery, true);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == victim),
+        "the Angel is exiled all the same",
+    );
+    assert_eq!(
+        game.players[1].hand.len(),
+        held + 1,
+        "and the cost counts as paid, so they draw for it",
+    );
+}
+
+/// "If you copy a Mastery spell and the alternative cost was paid, the copy
+/// will resolve as though the cost was paid." The Fork's copy exiles a
+/// second creature and hands them a second card.
+#[test]
+fn a_copy_of_the_cheap_half_hands_them_another_card() {
+    let (mut game, mastery, victim) = staged();
+    let second = creature(89_100, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let second_id = second.card.id;
+    game.battlefield.push(second);
+    game.players[0]
+        .hand
+        .push(card(89_101, cards::FORK, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 2);
+    let held = game.players[1].hand.len();
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == mastery
+                    && choices.costs().alternative().is_some()
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(victim))
+            }
+            _ => false,
+        })
+        .expect("the cheap half is offered at the Angel");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    let on_stack = game.stack.last().expect("it is waiting").id;
+    let fork = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == CardInstanceId(89_101)
+                    && choices.iter_targets().any(|target| *target == Target::Spell(on_stack)))
+        })
+        .expect("the Fork can name it");
+    game.apply(PlayerId::One, fork).expect("it is cast");
+
+    // The copy resolves first, so it is the one that must be pointed
+    // somewhere else: its retarget is offered as whole target lists rather
+    // than as one card among several.
+    for _ in 0..24 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let option = match &game
+                .pending_decisions
+                .first()
+                .expect("it is pending")
+                .continuation
+            {
+                DecisionContinuation::CopyStackObject { target_lists, .. } => target_lists
+                    .iter()
+                    .position(|targets| {
+                        flatten_target_selections(targets) == [Target::Permanent(second_id)]
+                    })
+                    .and_then(|index| u32::try_from(index).ok()),
+                _ => decision.options.first().map(|option| option.id),
+            };
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: option.map(|id| vec![id]).unwrap_or_default(),
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == victim),
+        "the original exiled what it named",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == second_id),
+        "and the copy exiled the one it was pointed at",
+    );
+    assert_eq!(
+        game.players[1].hand.len(),
+        held + 2,
+        "and the copy resolved as though the cheap cost had been paid for it too",
+    );
+}
