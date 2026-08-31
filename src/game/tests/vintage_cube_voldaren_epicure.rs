@@ -200,3 +200,57 @@ fn the_tap_and_the_mana_are_costs_too() {
         "and the one generic mana is not free either"
     );
 }
+
+/// A token that has been sacrificed goes to the graveyard and then ceases to
+/// exist, so the Blood is not a card in the graveyard afterwards -- nothing
+/// can pick it up, and no second activation is left in it.
+#[test]
+fn the_spent_blood_ceases_to_exist() {
+    let (mut game, held) = staged();
+    cast(&mut game, held);
+    let blood = bloods(&game)[0];
+    game.players[0]
+        .hand
+        .push(card(112_800, cards::MOUNTAIN, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == blood))
+        .expect("the Blood may be cashed");
+    game.apply(PlayerId::One, activate).expect("it activates");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .all(|card| card.definition != ObjectKind::Token),
+        "no token is sitting in the graveyard",
+    );
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == blood)
+        ),
+        "and there is nothing left to activate a second time",
+    );
+}
+
+/// "When this creature enters" is about arriving, not about being cast: an
+/// Epicure put onto the battlefield pings and leaves its Blood all the same.
+#[test]
+fn it_triggers_however_it_arrives() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[1].life = 20;
+
+    game.put_onto_battlefield(PlayerId::One, cards::VOLDAREN_EPICURE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[1].life, 19, "the ping is the trigger's");
+    assert_eq!(bloods(&game).len(), 1, "and so is the Blood");
+}
