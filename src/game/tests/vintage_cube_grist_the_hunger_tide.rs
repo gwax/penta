@@ -438,3 +438,62 @@ fn an_answered_target_saves_the_sacrifice_too() {
     );
     assert_eq!(loyalty(&game, grist), 1, "the loyalty was still paid");
 }
+
+/// "If Grist is no longer on the battlefield as its first loyalty ability
+/// resolves, you will still create a 1/1 Insect token and mill a card. If an
+/// Insect card is milled this way, you won't be able to put a loyalty
+/// counter on Grist, but you will still repeat the process."
+#[test]
+fn the_plus_finishes_without_him() {
+    let (mut game, grist) = staged(&[cards::ISLAND, cards::GRIZZLY_BEARS, cards::BOND_BEETLE]);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateAbility {
+                    source,
+                    ability: AbilityOrigin::Printed { ability, .. },
+                    ..
+                } if *source == grist && *ability == AbilityId(1)
+            )
+        })
+        .expect("the plus is offered");
+    game.apply(PlayerId::One, action).expect("it is activated");
+
+    // Answered with the ability still on the stack.
+    game.destroy_permanent(grist);
+    game.check_state_based_actions();
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == grist),
+        "he is gone before it resolves",
+    );
+    settle(&mut game);
+
+    assert_eq!(
+        insects(&game),
+        2,
+        "a token for each pass, the Beetle on top having repeated it",
+    );
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .filter(|card| card.definition != cards::GRIST_THE_HUNGER_TIDE)
+            .count(),
+        2,
+        "and two cards milled behind them",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GRIST_THE_HUNGER_TIDE),
+        "with Grist himself in the graveyard, having nowhere to take a counter",
+    );
+}
