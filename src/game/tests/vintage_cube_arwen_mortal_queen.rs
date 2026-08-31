@@ -237,3 +237,78 @@ fn two_damage_kills_her_the_moment_the_counter_is_spent() {
     );
     assert!(game.permanent_has_executable_keyword(bear, KeywordAbility::Indestructible));
 }
+
+/// A lifelink counter is lifelink in the doing: the bear she blessed attacks
+/// as a 3/3 and the three damage it deals comes back as life.
+#[test]
+fn the_lifelink_counter_gains_life_in_combat() {
+    let (mut game, arwen, bears) = staged();
+    let offers = blessings(&game, arwen);
+    game.apply(PlayerId::One, offers[0].0.clone())
+        .expect("it activates");
+    drain_pending(&mut game);
+    let life = game.players[PlayerId::One.index()].life;
+
+    game.step = Step::DeclareAttackers;
+    game.priority = PlayerId::One;
+    game.declare_attacker(bears, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    game.finish_declaring_blockers();
+    game.deal_combat_damage();
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        17,
+        "a 2/2 with a +1/+1 counter hits for three",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life + 3,
+        "and the lifelink counter is worth exactly that much",
+    );
+}
+
+/// "Another target creature" names no controller: the blessing may be spent
+/// on a creature across the table, counters and indestructibility and all,
+/// and she still collects her own half.
+#[test]
+fn she_may_bless_a_creature_across_the_table() {
+    let (mut game, arwen, _bears) = staged();
+    game.battlefield
+        .retain(|permanent| permanent.card.definition != cards::GRIZZLY_BEARS);
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let offers = blessings(&game, arwen);
+    assert_eq!(
+        offers.len(),
+        1,
+        "their Angel is the only other creature, and it is a legal one",
+    );
+    assert_eq!(offers[0].1, vec![Target::Permanent(theirs)]);
+    game.apply(PlayerId::One, offers[0].0.clone())
+        .expect("it activates");
+    drain_pending(&mut game);
+
+    let angel = permanent(&game, theirs);
+    assert_eq!(
+        game.power(angel),
+        Some(5),
+        "their creature is the bigger one"
+    );
+    assert!(
+        game.permanent_has_executable_keyword(angel, KeywordAbility::Indestructible),
+        "and it is the one that cannot be destroyed this turn",
+    );
+    let queen = permanent(&game, arwen);
+    assert_eq!(
+        game.power(queen),
+        Some(3),
+        "she takes her half of the bargain whoever the other half went to",
+    );
+}
