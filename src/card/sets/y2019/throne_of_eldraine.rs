@@ -504,8 +504,13 @@ pub(in crate::card::sets) static OKO_THIEF_OF_CROWNS: CardRecord = CardRecord::n
                     // "Loses all abilities and becomes a green Elk creature with base power and
                     // toughness 3/3." Five operations in one clause, and no duration at all:
                     // what Oko does to a Mox is permanent.
+                    //
+                    // "Becomes a green Elk creature" replaces the type line rather than
+                    // adding to it: the Elk "loses any other card types it has (such as
+                    // artifact)", which is why a Mox that has been elked stops answering
+                    // to anything that reads artifacts. Supertypes are untouched.
                     effect: AppliedEffectDef::Composite(&[
-                        AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature)),
+                        AppliedEffectDef::set_card_types(CardTypeSet::single(CardType::Creature)),
                         AppliedEffectDef::set_creature_types(CreatureTypeSetDef::named(&["Elk"])),
                         AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
                         AppliedEffectDef::set_colors(ColorSet::from_colors(&[ManaColor::Green])),

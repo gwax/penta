@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **An Elk is only an Elk.** Oko, Thief of Crowns added the creature type
+  to what his +1 named instead of replacing the type line, so a Mox or a
+  Myr Battlesphere he turned into a 3/3 stayed an artifact and went on
+  answering to everything that reads artifacts. "Becomes a green Elk
+  creature" replaces those types, keeping supertypes, as his ruling spells
+  out.
+
 - **"Until this leaves the battlefield" exiles nothing once it has left.**
   CR 610.3b: a permanent answered while its own exile trigger is still on
   the stack has no later moment to give anything back, so the exile does

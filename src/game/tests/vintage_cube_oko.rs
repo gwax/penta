@@ -132,3 +132,138 @@ fn the_ultimate_exchanges_control() {
     assert_eq!(permanent(&game, mox).controller, PlayerId::Two);
     assert_eq!(permanent(&game, bears).controller, PlayerId::One);
 }
+
+/// "It's just a green Elk. The creature keeps any supertypes it has, but
+/// loses any other card types." An artifact creature comes out the other
+/// side green, no longer an artifact, and no longer a Myr; a legend comes
+/// out still legendary.
+#[test]
+fn the_elk_keeps_its_supertype_and_loses_everything_else() {
+    let (mut game, oko, ids) = staged(&[(cards::MYR_BATTLESPHERE, PlayerId::One)]);
+    let ballista = ids[0];
+
+    let elkify = loyalty_action(&game, oko, &[ballista]).expect("+1 names it");
+    game.apply(PlayerId::One, elkify).expect("it activates");
+    drain_pending(&mut game);
+
+    let elk = permanent(&game, ballista);
+    let types = game.permanent_types(elk).expect("it has types");
+    assert!(types.contains(CardType::Creature), "a creature");
+    assert!(
+        !types.contains(CardType::Artifact),
+        "and not an artifact any more",
+    );
+    let colors = game.permanent_colors(elk);
+    for color in ManaColor::COLORS {
+        let index = color.color_index().expect("a colour has an index");
+        assert_eq!(
+            colors[index],
+            color == ManaColor::Green,
+            "green and nothing else, but {color:?} is {}",
+            colors[index],
+        );
+    }
+    let subtypes = game.effective_subtypes(elk);
+    assert!(subtypes.contains(&"Elk"));
+    assert!(
+        !subtypes.contains(&"Myr"),
+        "the creature types it had are gone: {subtypes:?}",
+    );
+
+    // A legend elked is a legendary Elk.
+    let (mut game, oko, ids) = staged(&[(cards::THALIA_GUARDIAN_OF_THRABEN, PlayerId::One)]);
+    let thalia = ids[0];
+    let elkify = loyalty_action(&game, oko, &[thalia]).expect("+1 names her");
+    game.apply(PlayerId::One, elkify).expect("it activates");
+    drain_pending(&mut game);
+
+    let elk = permanent(&game, thalia);
+    assert_eq!((game.power(elk), game.toughness(elk)), (Some(3), Some(3)));
+    assert!(
+        game.effective_rules(elk)
+            .expect("an Elk has rules")
+            .has_supertype(CardSupertype::Legendary),
+        "the supertype survives what the types do not",
+    );
+}
+
+/// "Nonlethal damage dealt to a creature may become lethal if Oko's second
+/// ability changes its toughness during that turn." Three damage on a 4/4
+/// is a scratch until the 4/4 is an Elk.
+#[test]
+fn damage_already_marked_can_become_lethal() {
+    let (mut game, oko, ids) = staged(&[(cards::SERRA_ANGEL, PlayerId::Two)]);
+    let angel = ids[0];
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == angel)
+    {
+        permanent.damage = 3;
+    }
+    game.check_state_based_actions();
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == angel),
+        "three damage does not kill a 4/4",
+    );
+
+    let elkify = loyalty_action(&game, oko, &[angel]).expect("+1 names their Angel");
+    game.apply(PlayerId::One, elkify).expect("it activates");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == angel),
+        "but it kills a 3/3 that was already carrying it",
+    );
+}
+
+/// "Any counters that change its power and/or toughness" apply whenever they
+/// arrived: a counter put on before the Elk was an Elk still counts
+/// afterwards, and so does one put on after.
+#[test]
+fn counters_still_apply_over_the_elk() {
+    let (mut game, oko, ids) = staged(&[(cards::GRIZZLY_BEARS, PlayerId::One)]);
+    let bears = ids[0];
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bears)
+    {
+        permanent.add_counters(CounterKind::PlusOnePlusOne, 1);
+    }
+
+    let elkify = loyalty_action(&game, oko, &[bears]).expect("+1 names it");
+    game.apply(PlayerId::One, elkify).expect("it activates");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        (
+            game.power(permanent(&game, bears)),
+            game.toughness(permanent(&game, bears))
+        ),
+        (Some(4), Some(4)),
+        "a 3/3 base and the counter it was already carrying",
+    );
+
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bears)
+    {
+        permanent.add_counters(CounterKind::PlusOnePlusOne, 1);
+    }
+    assert_eq!(
+        (
+            game.power(permanent(&game, bears)),
+            game.toughness(permanent(&game, bears))
+        ),
+        (Some(5), Some(5)),
+        "and one put on afterwards counts the same",
+    );
+}
