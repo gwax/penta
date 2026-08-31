@@ -292,3 +292,81 @@ fn countering_the_second_spell_does_not_undo_the_trigger() {
         "and the trigger it caused paid out all the same",
     );
 }
+
+/// "It will count any spells you've cast this turn, which may include
+/// Cosmogrand Zenith itself." The fixture puts him onto the battlefield, so
+/// this is the one that casts him: he is the first spell, and the next one
+/// is the second.
+#[test]
+fn he_counts_himself_when_he_was_cast() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    let zenith = card(87_000, cards::COSMOGRAND_ZENITH, PlayerId::One);
+    let zenith_id = zenith.id;
+    game.players[0].hand.push(zenith);
+    let bolt = card(87_001, cards::LIGHTNING_BOLT, PlayerId::One);
+    let bolt_id = bolt.id;
+    game.players[0].hand.push(bolt);
+    for color in [ManaColor::White, ManaColor::Red, ManaColor::Colorless] {
+        game.add_unrestricted_mana(PlayerId::One, color, 4);
+    }
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    cast(&mut game, zenith_id, 0);
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == zenith_id
+                || permanent.card.definition == cards::COSMOGRAND_ZENITH),
+        "he resolved, and was the first spell of the turn",
+    );
+    assert_eq!(soldiers(&game), 0, "his own cast pays nothing");
+
+    cast(&mut game, bolt_id, 0);
+
+    assert_eq!(
+        soldiers(&game),
+        2,
+        "the Bolt is the second spell because he was the first",
+    );
+}
+
+/// "Each turn": the count starts again, so a spell left over from last turn
+/// does not make this turn's first spell a second.
+#[test]
+fn the_count_starts_again_each_turn() {
+    let (mut game, _, held) = staged(&[
+        cards::LIGHTNING_BOLT,
+        cards::GIANT_GROWTH,
+        cards::LIGHTNING_BOLT,
+    ]);
+
+    cast(&mut game, held[0], 0);
+    assert_eq!(soldiers(&game), 0, "one spell this turn");
+
+    // Round to Player One's turn again.
+    for _ in 0..2 {
+        game.start_next_turn();
+        drain_pending(&mut game);
+    }
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    for color in [ManaColor::Red, ManaColor::Green, ManaColor::Colorless] {
+        game.add_unrestricted_mana(PlayerId::One, color, 6);
+    }
+
+    cast(&mut game, held[1], 0);
+    assert_eq!(
+        soldiers(&game),
+        0,
+        "the first spell of the new turn is a first spell",
+    );
+
+    cast(&mut game, held[2], 0);
+    assert_eq!(soldiers(&game), 2, "and the one after it is the second");
+}
