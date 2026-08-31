@@ -379,3 +379,37 @@ fn a_blood_moon_leaves_it_a_plain_untapped_mountain() {
     );
     assert!(game.players[0].graveyard.is_empty());
 }
+
+/// Surveil 1 with nothing to look at: no question is asked, and the land is
+/// on the battlefield tapped all the same.
+#[test]
+fn an_empty_library_is_surveilled_over() {
+    let (mut game, land) = staged(cards::LIGHTNING_BOLT);
+    game.players[0].library.clear();
+
+    game.priority = PlayerId::One;
+    let play = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == land))
+        .expect("a land drop is available");
+    game.apply(PlayerId::One, play)
+        .expect("the land is playable");
+    drain_pending(&mut game);
+
+    assert!(
+        game.pending_decisions.is_empty(),
+        "an empty library is nothing to look at",
+    );
+    assert!(
+        game.players[0].graveyard.is_empty(),
+        "and nothing was binned",
+    );
+    let falls = the_land(&game).expect("it arrived");
+    assert!(falls.tapped, "tapped, as it always is");
+    assert_eq!(
+        colors_of(&game, falls.card.id),
+        Vec::new(),
+        "and tapped means no mana out of it yet",
+    );
+}
