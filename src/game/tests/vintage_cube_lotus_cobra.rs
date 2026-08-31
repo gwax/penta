@@ -142,3 +142,129 @@ fn a_second_land_pays_again() {
 
     assert_eq!(pool(&game, ManaColor::Green), 2, "one for each land");
 }
+
+/// "Opponents may respond to it before you have that mana." What they cannot
+/// do is take the mana back by answering the Snake: the trigger is its own
+/// object on the stack and resolves without her.
+#[test]
+fn killing_the_cobra_in_response_does_not_stop_the_mana() {
+    let (mut game, cobra) = staged();
+
+    play_land(&mut game, cards::FOREST);
+    assert_eq!(game.stack.len(), 1, "the landfall trigger is waiting");
+
+    game.move_permanents_to_graveyard(&[cobra]);
+    game.check_state_based_actions();
+    settle_choosing(&mut game, "White");
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::LOTUS_COBRA),
+        "the Snake is gone",
+    );
+    assert_eq!(
+        pool(&game, ManaColor::White),
+        1,
+        "and the mana she was owed arrived anyway",
+    );
+}
+
+/// "What makes a fetchland a ritual": the fetchland is a land entering and
+/// so is what it finds, so one land drop pays twice.
+#[test]
+fn a_fetchland_pays_her_twice() {
+    let (mut game, _cobra) = staged();
+    game.players[PlayerId::One.index()].library.clear();
+    game.players[PlayerId::One.index()]
+        .library
+        .push(card(92_000, cards::FOREST, PlayerId::One));
+
+    let fetch = game
+        .put_onto_battlefield(PlayerId::One, cards::WINDSWEPT_HEATH)
+        .expect("cataloged");
+    settle_choosing(&mut game, "Black");
+    assert_eq!(pool(&game, ManaColor::Black), 1, "the Heath itself entered");
+
+    game.priority = PlayerId::One;
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == fetch))
+        .expect("the fetch is offered");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    // The search is answered on the way, and the colour question is the one
+    // the Cobra asks afterwards.
+    for _ in 0..8 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            let priority = game.priority;
+            if game.apply(priority, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        };
+        if decision
+            .options
+            .iter()
+            .any(|option| option.label == "Black")
+        {
+            break;
+        }
+        let options = decision
+            .options
+            .iter()
+            .map(|option| option.id)
+            .take(1)
+            .collect();
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .expect("the search takes the Forest");
+    }
+    settle_choosing(&mut game, "Black");
+
+    assert_eq!(
+        pool(&game, ManaColor::Black),
+        2,
+        "and the land it found entered too",
+    );
+}
+
+/// "One mana of any color" is all five, whichever the deck happens to want.
+#[test]
+fn every_colour_is_on_offer() {
+    let (mut game, _cobra) = staged();
+
+    play_land(&mut game, cards::FOREST);
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        game.apply(priority, Action::PassPriority)
+            .expect("the trigger resolves and asks");
+    }
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the trigger asks which colour to add");
+    let mut labels = decision
+        .options
+        .iter()
+        .map(|option| option.label.clone())
+        .collect::<Vec<_>>();
+    labels.sort();
+    let mut expected = vec!["Black", "Blue", "Green", "Red", "White"];
+    expected.sort_unstable();
+
+    assert_eq!(labels, expected, "five colours and no colourless");
+}
