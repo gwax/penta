@@ -342,3 +342,94 @@ fn an_empty_hand_leaves_an_empty_library_and_a_living_player() {
         "drawing from an empty library is what ends it",
     );
 }
+
+/// "You draw three cards and put two cards back all while Jace's second
+/// ability is resolving. Nothing can happen between the two, and no player
+/// may choose to take actions." With the three drawn and the two not yet
+/// chosen, the ability is still resolving and nobody may respond to the
+/// hand it briefly left you holding.
+#[test]
+fn nobody_acts_between_the_draw_and_the_put_back() {
+    let (mut game, jace) = staged(&[]);
+    let before = game.players[0].hand.len();
+
+    activate(&mut game, jace, 1, None);
+    let seat = deciding(&game).expect("it asks which two go back");
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        before + 3,
+        "the three are drawn and the two are still in hand",
+    );
+    assert_eq!(seat, PlayerId::One, "and the choice is Jace's controller's");
+    // Conceding is always available and is not an action taken in the game
+    // (CR 104.3a); everything else would be a response.
+    assert!(
+        game.legal_actions(PlayerId::Two)
+            .iter()
+            .all(|action| matches!(action, Action::Concede)),
+        "their turn to act never comes: {:?}",
+        game.legal_actions(PlayerId::Two),
+    );
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .all(|action| matches!(action, Action::Concede | Action::ChooseDecision { .. })),
+        "and yours is the choice itself and nothing else: {:?}",
+        game.legal_actions(PlayerId::One),
+    );
+}
+
+/// "Target creature" is any creature: pointed at your own it is a rescue,
+/// and pointed at a token it is a removal spell, because a token put into a
+/// hand ceases to exist.
+#[test]
+fn the_minus_one_can_take_back_your_own_and_unmakes_a_token() {
+    let (mut game, jace) = staged(&[]);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    activate(&mut game, jace, 2, Some(Target::Permanent(mine)));
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+        "your own creature comes back to your own hand",
+    );
+
+    // The same ability, pointed at something with no card behind it.
+    let (mut game, jace) = staged(&[]);
+    let beast = tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3);
+    game.create_token(PlayerId::Two, beast);
+    drain_pending(&mut game);
+    let token = game
+        .battlefield
+        .iter()
+        .find(|permanent| is_token_with(permanent, beast))
+        .expect("the Beast arrived")
+        .card
+        .id;
+    game.priority = PlayerId::One;
+    let hand = game.players[1].hand.len();
+
+    activate(&mut game, jace, 2, Some(Target::Permanent(token)));
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == token),
+        "the token left the battlefield",
+    );
+    assert_eq!(
+        game.players[1].hand.len(),
+        hand,
+        "and nothing arrived in their hand for it",
+    );
+}
