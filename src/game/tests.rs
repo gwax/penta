@@ -666,6 +666,7 @@ mod vintage_cube_sunfall;
 mod vintage_cube_suplex;
 mod vintage_cube_surveil_land;
 mod vintage_cube_sword_of_the_meek;
+mod vintage_cube_sylvan_safekeeper;
 mod vintage_cube_talismans;
 mod vintage_cube_talon_gates_of_madara;
 mod vintage_cube_tamiyo;
