@@ -222,3 +222,95 @@ fn filling_the_graveyard_does_not_turn_it_on() {
 
     assert_eq!(game.players[1].life, 20, "the clause reads one direction");
 }
+
+/// Lifts `index`'s card out of Player One's graveyard, which is what the
+/// end step asks about.
+fn exile_from_graveyard(game: &mut Game, index: usize) {
+    let buried = game.players[0].graveyard[index].id;
+    game.move_target_to_zone(
+        Target::Card(buried),
+        ZoneKind::Exile,
+        ZoneMoveCause::Effect {
+            controller: PlayerId::One,
+        },
+        None,
+        ZonePlacement::Top,
+    );
+    settle(game);
+}
+
+/// "At the beginning of each end step", which the record reads as theirs as
+/// much as yours: a graveyard emptied on their turn pays out on their turn.
+#[test]
+fn their_end_step_pays_out_too() {
+    let (mut game, _gau) = staged(&[cards::LIGHTNING_BOLT]);
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+    exile_from_graveyard(&mut game, 0);
+
+    game.step = Step::PostcombatMain;
+    for _ in 0..16 {
+        settle(&mut game);
+        if game.step == Step::End && game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[1].life, 18,
+        "the end step is theirs and the damage is still yours to deal",
+    );
+}
+
+/// "If Gau is no longer on the battlefield when its last ability resolves,
+/// use its power as it last existed on the battlefield." Answering him
+/// underneath his own trigger does not answer the trigger.
+#[test]
+fn a_dead_gau_still_deals_the_power_he_had() {
+    let (mut game, gau) = staged(&[cards::LIGHTNING_BOLT]);
+    exile_from_graveyard(&mut game, 0);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == gau)
+    {
+        permanent.add_counters(CounterKind::PlusOnePlusOne, 2);
+    }
+
+    // Into the end step and no further: the trigger is on the stack with him
+    // still standing under it.
+    game.step = Step::PostcombatMain;
+    game.priority = PlayerId::One;
+    for _ in 0..16 {
+        if game.step == Step::End && !game.stack.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert_eq!(game.stack.len(), 1, "his end-step trigger is waiting");
+
+    game.move_permanents_to_graveyard(&[gau]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == gau),
+        "he is gone",
+    );
+    assert_eq!(
+        game.players[1].life, 16,
+        "and the four he was is what the trigger throws",
+    );
+}
