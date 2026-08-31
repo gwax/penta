@@ -298,3 +298,52 @@ fn tapping_it_for_mana_does_not_take_it_out_of_combat() {
         Some(AttackDefender::Player(PlayerId::Two)),
     );
 }
+
+/// "A 4/4 white and blue Elemental creature": a land is colourless until it
+/// is woken, and what wakes it says which colours it is.
+#[test]
+fn the_body_it_wakes_up_as_is_white_and_blue() {
+    let (mut game, colonnade) = staged();
+    let colors = |game: &Game| game.permanent_colors(permanent(game, colonnade));
+    assert!(
+        colors(&game).iter().all(|present| !present),
+        "a land is colourless",
+    );
+
+    animate(&mut game, colonnade);
+
+    for color in ManaColor::COLORS {
+        let index = color.color_index().expect("a colour has an index");
+        assert_eq!(
+            colors(&game)[index],
+            color == ManaColor::White || color == ManaColor::Blue,
+            "{color:?} on the animated land",
+        );
+    }
+    assert!(
+        game.effective_subtypes(permanent(&game, colonnade))
+            .contains(&"Elemental"),
+        "and it is an Elemental while it lasts",
+    );
+}
+
+/// The animation sets a base rather than adding to one, and the ability
+/// carries no restriction on how often it is bought: five mana twice over
+/// is the same 4/4, five mana poorer.
+#[test]
+fn animating_it_twice_is_still_a_four_four() {
+    let (mut game, colonnade) = staged();
+    animate(&mut game, colonnade);
+    assert_eq!(game.power(permanent(&game, colonnade)), Some(4));
+
+    animate(&mut game, colonnade);
+
+    assert_eq!(
+        (
+            game.power(permanent(&game, colonnade)),
+            game.toughness(permanent(&game, colonnade))
+        ),
+        (Some(4), Some(4)),
+        "the second animation sets the same base rather than stacking",
+    );
+}
