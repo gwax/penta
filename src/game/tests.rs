@@ -676,6 +676,7 @@ mod vintage_cube_the_one_ring;
 mod vintage_cube_thieving_skydiver;
 mod vintage_cube_third_path_iconoclast;
 mod vintage_cube_thopter_foundry;
+mod vintage_cube_thought_scour;
 mod vintage_cube_thoughtseize;
 mod vintage_cube_thraben_inspector;
 mod vintage_cube_thundertrap_trainer;
