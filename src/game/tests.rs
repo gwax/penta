@@ -390,6 +390,7 @@ mod vintage_cube_caustic_bronco;
 mod vintage_cube_chain_lightning;
 mod vintage_cube_chainsaw;
 mod vintage_cube_chandra;
+mod vintage_cube_channel;
 mod vintage_cube_chromatic_star;
 mod vintage_cube_chrome_mox;
 mod vintage_cube_city_of_traitors;
