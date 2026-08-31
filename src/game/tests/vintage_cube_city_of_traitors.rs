@@ -215,3 +215,53 @@ fn its_mana_can_be_taken_while_the_sacrifice_waits() {
         "and the two it made are still in the pool",
     );
 }
+
+/// "Another land" reads both ways at once: a second City is another land to
+/// the first, and its own trigger still excludes itself. So the new one
+/// stands on the old one's grave.
+#[test]
+fn a_second_city_replaces_the_first() {
+    let (mut game, city, held) = staged(&[cards::CITY_OF_TRAITORS]);
+
+    play_land(&mut game, held[0]);
+
+    assert!(!alive(&game, city), "the first is another land's casualty");
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::CITY_OF_TRAITORS)
+            .count(),
+        1,
+        "and the second did not sacrifice itself",
+    );
+}
+
+/// The trigger asks whether a land was played, not where it was played
+/// from. A Crucible turns the graveyard into a land drop, and a land drop is
+/// what the City cannot survive.
+#[test]
+fn a_land_played_from_the_graveyard_kills_it_too() {
+    let (mut game, city, _) = staged(&[]);
+    game.put_onto_battlefield(PlayerId::One, cards::CRUCIBLE_OF_WORLDS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.players[0].graveyard.clear();
+    let buried = card(88_000, cards::FOREST, PlayerId::One);
+    let buried_id = buried.id;
+    game.players[0].graveyard.push(buried);
+    game.players[0].lands_played_this_turn = 0;
+    game.priority = PlayerId::One;
+
+    play_land(&mut game, buried_id);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::FOREST),
+        "the Forest came out of the graveyard",
+    );
+    assert!(
+        !alive(&game, city),
+        "and playing it is playing a land, wherever it came from",
+    );
+}
