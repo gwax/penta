@@ -68,6 +68,33 @@ fn casts(game: &Game, abrade: GameObjectId) -> Vec<(Vec<ModeId>, Vec<Target>)> {
         .collect()
 }
 
+/// Casts one mode at a target and leaves the spell on the stack.
+fn cast_at_without_resolving(
+    game: &mut Game,
+    abrade: GameObjectId,
+    index: usize,
+    target: GameObjectId,
+) {
+    let wanted = [mode(index)];
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell {
+                card: id, choices, ..
+            } => {
+                *id == abrade
+                    && choices.modes() == wanted
+                    && choices
+                        .iter_targets()
+                        .any(|chosen| *chosen == Target::Permanent(target))
+            }
+            _ => false,
+        })
+        .unwrap_or_else(|| panic!("mode {index} is castable at that permanent"));
+    game.apply(PlayerId::One, action).expect("it is cast");
+}
+
 fn cast_at(game: &mut Game, abrade: GameObjectId, index: usize, target: GameObjectId) {
     let wanted = [mode(index)];
     let action = game
@@ -203,5 +230,52 @@ fn an_indestructible_artifact_survives_the_shatter() {
             .iter()
             .any(|card| card.definition == cards::ABRADE),
         "while the Abrade is spent all the same",
+    );
+}
+
+/// CR 700.2d: the mode is chosen as the spell is cast and never again. An
+/// Abrade pointed at a creature that leaves in response has no artifact half
+/// to fall back on -- it is a burn spell with nothing left to burn.
+#[test]
+fn the_mode_is_fixed_at_cast_and_fizzles_with_its_target() {
+    let (mut game, abrade, ids) = staged(&[cards::GRIZZLY_BEARS, cards::DARKSTEEL_INGOT]);
+    let bears = ids[0];
+
+    cast_at_without_resolving(&mut game, abrade, BURN, bears);
+    game.move_permanents_to_graveyard(&[bears]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert!(
+        on_battlefield(&game, cards::DARKSTEEL_INGOT),
+        "the artifact half was not chosen and cannot be taken now",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::ABRADE),
+        "and the spell is spent either way",
+    );
+}
+
+/// Damage is not destruction: three of it bounces off an indestructible
+/// creature the same way the shatter bounces off an indestructible artifact.
+#[test]
+fn an_indestructible_creature_shrugs_off_the_burn() {
+    let (mut game, abrade, ids) = staged(&[cards::DARKSTEEL_MYR]);
+
+    cast_at(&mut game, abrade, BURN, ids[0]);
+    game.check_state_based_actions();
+
+    let myr = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == ids[0])
+        .expect("the Myr is still there");
+    assert_eq!(myr.damage, 3, "the damage was dealt and marked");
+    assert!(
+        on_battlefield(&game, cards::DARKSTEEL_MYR),
+        "and lethal damage destroys nothing that cannot be destroyed",
     );
 }
