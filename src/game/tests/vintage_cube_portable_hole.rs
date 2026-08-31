@@ -262,3 +262,89 @@ fn bouncing_the_hole_gives_the_permanent_back_too() {
         "and the Hole is in hand to be cast again",
     );
 }
+
+/// "If Portable Hole leaves the battlefield before its ability resolves, the
+/// target permanent won't be exiled." The exile is tied to a Hole that is
+/// there to tie it to.
+#[test]
+fn a_hole_answered_before_its_trigger_resolves_swallows_nothing() {
+    let (mut game, hole, _theirs) = staged(&[cards::GRIZZLY_BEARS]);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == hole))
+        .expect("one white mana casts it");
+    game.apply(PlayerId::One, action).expect("it casts");
+
+    // Far enough for the artifact itself to land and no further: its own
+    // entry trigger is what is still waiting.
+    let landed = loop {
+        if let Some(permanent) = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::PORTABLE_HOLE)
+        {
+            break permanent.card.id;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the spell is on the stack");
+    };
+    game.destroy_permanent(landed);
+    game.check_state_based_actions();
+    settle(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        on_battlefield(&game, cards::GRIZZLY_BEARS),
+        "the bear was never swallowed",
+    );
+    assert!(
+        game.players[1].exile.is_empty(),
+        "and nothing of theirs is in exile",
+    );
+}
+
+/// "If a token is exiled this way, it will cease to exist and won't return
+/// to the battlefield." Breaking the Hole afterwards gives back nothing.
+#[test]
+fn a_token_it_swallows_never_comes_back() {
+    let (mut game, hole, _) = staged(&[]);
+    let token = token_permanent(
+        118_400,
+        tokens::creature(&["Bird"], &[ManaColor::White], 1, 1),
+        PlayerId::Two,
+    );
+    let token_id = token.card.id;
+    game.battlefield.push(token);
+
+    cast_at(&mut game, hole, token_id);
+    settle(&mut game);
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == token_id),
+        "the Bird was swallowed",
+    );
+
+    let landed = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::PORTABLE_HOLE)
+        .expect("the Hole is there")
+        .card
+        .id;
+    game.destroy_permanent(landed);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert!(
+        !game.battlefield.iter().any(|permanent| is_token_with(
+            permanent,
+            tokens::creature(&["Bird"], &[ManaColor::White], 1, 1)
+        )),
+        "a token that left the battlefield has nothing to come back as",
+    );
+}
