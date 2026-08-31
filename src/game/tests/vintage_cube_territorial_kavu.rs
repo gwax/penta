@@ -206,3 +206,118 @@ fn the_mode_is_asked_before_anything_else() {
         "each option names the mode it is",
     );
 }
+
+/// "Among lands you control": a dual of yours is two of the five on one
+/// card, and every land of theirs is none of them.
+#[test]
+fn he_counts_your_types_and_only_yours() {
+    let (mut game, kavu) = staged(&[cards::TROPICAL_ISLAND], &[]);
+    assert_eq!(
+        size(&game, kavu),
+        (Some(2), Some(2)),
+        "a Forest Island is two types on one land",
+    );
+
+    game.battlefield
+        .push(creature(90_600, cards::BADLANDS, PlayerId::Two));
+    game.battlefield
+        .push(creature(90_601, cards::PLAINS, PlayerId::Two));
+
+    assert_eq!(
+        size(&game, kavu),
+        (Some(2), Some(2)),
+        "and their Swamp Mountain and Plains are none of them",
+    );
+}
+
+/// The size is read continuously rather than fixed when he arrived: lose the
+/// lands and the Kavu is a 0/0, which the game does not let stand.
+#[test]
+fn losing_every_land_kills_him() {
+    let (mut game, kavu) = staged(&[cards::MOUNTAIN], &[]);
+    assert_eq!(size(&game, kavu), (Some(1), Some(1)));
+
+    let lands = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition == cards::MOUNTAIN)
+        .map(|permanent| permanent.card.id)
+        .collect::<Vec<_>>();
+    game.move_permanents_to_graveyard(&lands);
+    game.check_state_based_actions();
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == kavu),
+        "with no basic land types he is a 0/0",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::TERRITORIAL_KAVU),
+    );
+}
+
+/// "Exile up to one target card from a graveyard": any graveyard, yours
+/// included, and up to one means none is an answer.
+#[test]
+fn the_second_mode_may_eat_your_own_or_nothing_at_all() {
+    let (mut game, kavu) = staged(&[cards::MOUNTAIN], &[]);
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        90_700,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
+
+    attack(&mut game, kavu);
+    // Take the exile mode, then decline the card it offers.
+    for _ in 0..8 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            let priority = game.priority;
+            if game.apply(priority, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        };
+        let options = if decision.options.len() == 2
+            && decision.options.iter().all(|o| o.ability_text.is_some())
+        {
+            vec![decision.options[1].id]
+        } else {
+            assert!(
+                decision.options.iter().any(|option| {
+                    option.card.is_some_and(|(_, card)| {
+                        card.card_definition() == Some(cards::LIGHTNING_BOLT)
+                    })
+                }),
+                "your own graveyard is a graveyard: {decision:?}",
+            );
+            assert_eq!(decision.minimum, 0, "and up to one means none will do");
+            Vec::new()
+        };
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .expect("the offered choice is legal");
+    }
+
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "nothing was taken, so the Bolt stayed where it was",
+    );
+}
