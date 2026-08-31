@@ -608,16 +608,11 @@ impl Game {
             &mut playable,
         );
         // A land is played rather than cast, and the permission is what
-        // makes that legal from exile; the ordinary land action is where it
-        // shows up.
-        let lands = self
-            .legal_actions(player)
-            .into_iter()
-            .filter(|action| {
-                matches!(action, crate::Action::PlayLand { card: land, .. } if *land == card)
-            })
-            .count();
-        if playable.is_empty() && lands == 0 {
+        // makes that legal from exile. It is asked for without the ordinary
+        // timing gate: this offer is made while an ability resolves, when
+        // the stack is not empty and no land could otherwise be played.
+        let lands = self.offered_land_actions(player, card);
+        if playable.is_empty() && lands.is_empty() {
             self.consume_exile_play_permission(card);
             return;
         }

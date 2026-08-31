@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A hidden land can be played.** "You may play the exiled card" reaches a
+  land, and the offer is answered while the ability that made it resolves --
+  a moment when the stack is not empty and no land could ordinarily be
+  played. Land actions were enumerated only under the ordinary timing gate
+  and never while a decision stood, so a Shelldock Isle or any other
+  hideaway land that hid a land offered nothing at all and simply gave the
+  permission back. The land drop is the one limit the permission does not
+  lift, and playing the land spends it.
+
 - **A Class level is bought from the level directly below it.**
   Stormchaser's Talent gated its level abilities on being *below* the level
   they grant, so a Class at level 1 could buy level 3 outright and skip the

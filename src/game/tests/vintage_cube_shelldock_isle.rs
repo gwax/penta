@@ -319,3 +319,153 @@ fn a_second_activation_offers_it_again() {
         "the same hidden card, offered a second time",
     );
 }
+
+/// "It doesn't matter which library has twenty or fewer cards in it." Their
+/// deck running out unlocks your Isle as surely as yours does.
+#[test]
+fn their_short_library_unlocks_it_too() {
+    let (mut game, isle) = staged(&[cards::BLACK_LOTUS], 30);
+    hide(&mut game, cards::BLACK_LOTUS);
+    game.players[1].library.truncate(20);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == isle)
+    {
+        permanent.tapped = false;
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    assert_eq!(
+        game.players[0].library.len(),
+        29,
+        "yours is nowhere near twenty",
+    );
+    assert!(
+        unlock(&game, isle).is_some(),
+        "and theirs is what the card asks about",
+    );
+}
+
+/// The half that is used every other game: it is an Island underneath.
+#[test]
+fn it_taps_for_blue() {
+    let (mut game, isle) = staged(&[cards::BLACK_LOTUS], 30);
+    hide(&mut game, cards::BLACK_LOTUS);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == isle)
+    {
+        permanent.tapped = false;
+    }
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: isle,
+            ability: mana_ability_for(&game, isle, ManaColor::Blue),
+            color: ManaColor::Blue,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("it taps for blue");
+
+    assert_eq!(game.players[0].mana_pool.blue, 1);
+    assert_eq!(game.players[0].mana_pool.total(), 1, "one mana, no more");
+}
+
+/// "Play the exiled card", not cast it: a land that was hidden is played,
+/// which spends the land drop the turn it happens.
+#[test]
+fn a_hidden_land_is_played_and_costs_the_land_drop() {
+    let (mut game, isle) = staged(&[cards::FOREST], 20);
+    hide(&mut game, cards::FOREST);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == isle)
+    {
+        permanent.tapped = false;
+    }
+    game.players[0].lands_played_this_turn = 0;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    let hidden = game.players[0].exile[0].id;
+
+    unlock_and_settle(&mut game, isle);
+
+    println!(
+        "EXILE {:?}",
+        game.players[0]
+            .exile
+            .iter()
+            .map(|c| c.definition)
+            .collect::<Vec<_>>()
+    );
+    println!(
+        "STACK {} DECISIONS {}",
+        game.stack.len(),
+        game.pending_decisions.len()
+    );
+    for action in game.legal_actions(PlayerId::One) {
+        println!("ACTION {action:?}");
+    }
+    let play = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == hidden))
+        .expect("the hidden land is played rather than cast");
+    game.apply(PlayerId::One, play).expect("it is played");
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::FOREST),
+        "the Forest arrived from exile",
+    );
+    assert!(
+        game.players[0].exile.is_empty(),
+        "and left the exile it was hidden in",
+    );
+    assert_eq!(
+        game.players[0].lands_played_this_turn, 1,
+        "playing a land is playing a land, however it was paid for",
+    );
+}
+
+/// The land drop is the one limit the permission does not lift: with it
+/// already spent there is nothing to offer, and the card stays hidden.
+#[test]
+fn a_hidden_land_needs_a_land_drop_left() {
+    let (mut game, isle) = staged(&[cards::FOREST], 20);
+    hide(&mut game, cards::FOREST);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == isle)
+    {
+        permanent.tapped = false;
+    }
+    game.players[0].lands_played_this_turn = 1;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    unlock_and_settle(&mut game, isle);
+
+    assert!(
+        game.pending_decisions.is_empty(),
+        "an offer nobody could take is not made",
+    );
+    assert_eq!(
+        game.players[0]
+            .exile
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::FOREST],
+        "and the land is still hidden",
+    );
+}

@@ -119,6 +119,13 @@ impl Game {
             let option = option.clone();
             self.spend_graveyard_land_permission(&mut permanent, player, &option);
         }
+        // A land played out of exile may be answering a standing "you may
+        // play the exiled card" offer, which playing it takes rather than
+        // declines -- the same way casting one does.
+        if from == ZoneKind::Exile {
+            self.take_answered_cast_offer(card_id);
+            self.consume_exile_play_permission(card_id);
+        }
         self.enqueue_battlefield_entry(PendingBattlefieldEntry {
             permanent,
             from,

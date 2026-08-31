@@ -4,22 +4,20 @@
 //! targets and pays no cost, so the only questions are whose turn it is,
 //! whether the drop is spent, and which zone the card may be played from.
 
-use super::super::{Action, CardType, Game, PlayActionKind, PlayerId, ZoneKind};
+use super::super::{
+    Action, CardInstance, CardType, Game, GameObjectId, PlayActionKind, PlayerId, ZoneKind,
+};
 
 impl Game {
     pub(in crate::game) fn add_land_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
-        let state = &self.players[player.index()];
         if player != self.active_player
             || !self.step.is_main()
             || !self.stack.is_empty()
-            || (state.lands_played_this_turn > self.additional_land_plays(player)
-                && !self.player_rule_applies(
-                    player,
-                    crate::card::AppliedRuleDef::MayPlayAnyNumberOfLands,
-                ))
+            || !self.land_drop_available(player)
         {
             return;
         }
+        let state = &self.players[player.index()];
         // A graveyard is walked too, for the permissions that reach into it.
         // Nothing there is playable without one, so the ordinary game pays
         // only the cost of the filter below.
@@ -45,43 +43,80 @@ impl Game {
                 self.players
                     .iter()
                     .flat_map(|state| state.exile.iter())
-                    .filter(|card| {
-                        self.exile_play_permission(card.id, player)
-                            .is_some_and(|permission| permission.lands_may_be_played)
-                    })
+                    .filter(|card| self.exile_permission_reaches_lands(card.id, player))
                     .map(|card| (card, ZoneKind::Exile)),
             )
         {
-            let Some(definition) = self.catalog.get(card.definition) else {
-                continue;
-            };
-            actions.extend(
-                definition
-                    .play_options
-                    .iter()
-                    .filter(|option| option.action == PlayActionKind::PlayLand)
-                    .filter(|option| !self.play_is_prohibited(card, player, option))
-                    .filter(|option| match zone {
-                        ZoneKind::Graveyard => {
-                            self.graveyard_play_is_permitted(card, player, option)
-                        }
-                        ZoneKind::Library => {
-                            self.library_top_play_cost(card, player, option).is_some()
-                        }
-                        // The permission was already checked to get here.
-                        _ => true,
-                    })
-                    .filter(|option| match &option.form {
-                        crate::card::SpellForm::Part(part) => definition
-                            .part(*part)
-                            .is_some_and(|part| part.rules.has_type(CardType::Land)),
-                        crate::card::SpellForm::Combined(_) => false,
-                    })
-                    .map(|option| Action::PlayLand {
-                        card: card.id,
-                        option: option.id,
-                    }),
-            );
+            actions.extend(self.land_actions_for(card, player, zone));
         }
+    }
+
+    /// The land plays a card in exile offers `player`, asked without the
+    /// timing gate an ordinary land drop passes.
+    ///
+    /// "You may play the exiled card" is answered while the ability that
+    /// said it resolves, which is a time no land could ordinarily be played:
+    /// the stack is not empty, and it need not even be this player's turn.
+    /// The permission is what makes the play legal then (CR 305.1), and the
+    /// land drop is the only limit it does not lift.
+    pub(in crate::game) fn offered_land_actions(
+        &self,
+        player: PlayerId,
+        card: GameObjectId,
+    ) -> Vec<Action> {
+        if !self.land_drop_available(player) || !self.exile_permission_reaches_lands(card, player) {
+            return Vec::new();
+        }
+        self.players
+            .iter()
+            .flat_map(|state| state.exile.iter())
+            .find(|exiled| exiled.id == card)
+            .map(|exiled| self.land_actions_for(exiled, player, ZoneKind::Exile))
+            .unwrap_or_default()
+    }
+
+    fn exile_permission_reaches_lands(&self, card: GameObjectId, player: PlayerId) -> bool {
+        self.exile_play_permission(card, player)
+            .is_some_and(|permission| permission.lands_may_be_played)
+    }
+
+    /// Whether this player has a land drop left to spend.
+    fn land_drop_available(&self, player: PlayerId) -> bool {
+        self.players[player.index()].lands_played_this_turn <= self.additional_land_plays(player)
+            || self
+                .player_rule_applies(player, crate::card::AppliedRuleDef::MayPlayAnyNumberOfLands)
+    }
+
+    fn land_actions_for(
+        &self,
+        card: &CardInstance,
+        player: PlayerId,
+        zone: ZoneKind,
+    ) -> Vec<Action> {
+        let Some(definition) = self.catalog.get(card.definition) else {
+            return Vec::new();
+        };
+        definition
+            .play_options
+            .iter()
+            .filter(|option| option.action == PlayActionKind::PlayLand)
+            .filter(|option| !self.play_is_prohibited(card, player, option))
+            .filter(|option| match zone {
+                ZoneKind::Graveyard => self.graveyard_play_is_permitted(card, player, option),
+                ZoneKind::Library => self.library_top_play_cost(card, player, option).is_some(),
+                // The permission was already checked to get here.
+                _ => true,
+            })
+            .filter(|option| match &option.form {
+                crate::card::SpellForm::Part(part) => definition
+                    .part(*part)
+                    .is_some_and(|part| part.rules.has_type(CardType::Land)),
+                crate::card::SpellForm::Combined(_) => false,
+            })
+            .map(|option| Action::PlayLand {
+                card: card.id,
+                option: option.id,
+            })
+            .collect()
     }
 }

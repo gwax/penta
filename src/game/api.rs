@@ -168,6 +168,10 @@ impl Game {
                     && offer.player == player
                 {
                     self.add_offered_cast_actions(offer, &mut offered_casts);
+                    // "You may play the exiled card": a land is played
+                    // rather than cast, so the offer stands beside the
+                    // casts rather than being one of them.
+                    offered_casts.extend(self.offered_land_actions(player, offer.card));
                 }
                 let must_take_cast =
                     decision.continuation.cast_offer_is_mandatory() && !offered_casts.is_empty();
