@@ -534,3 +534,85 @@ fn a_red_green_fetch_finds_it_on_their_turn() {
     );
     assert_eq!(game.players[0].life, 19, "the fetch cost its life");
 }
+
+/// The surveil is a triggered ability, so the look happens where the trigger
+/// resolves rather than where the land arrives: a top card that changes
+/// while the trigger waits is the one the Maze sees.
+#[test]
+fn the_look_happens_when_the_trigger_resolves() {
+    let (mut game, land) = staged_with(cards::HEDGE_MAZE, cards::LIGHTNING_BOLT);
+
+    game.priority = PlayerId::One;
+    let play = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == land))
+        .expect("a land drop is available");
+    game.apply(PlayerId::One, play)
+        .expect("the land is playable");
+    assert!(
+        game.pending_decisions.is_empty(),
+        "nothing is asked while the trigger is still on the stack",
+    );
+
+    // In response: whatever put a new card on top, the trigger has not
+    // looked yet.
+    let angel = game
+        .build_zone(PlayerId::One, &[cards::SERRA_ANGEL])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[0].library.push(angel);
+
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the surveil asks about the top card");
+    assert_eq!(
+        decision
+            .options
+            .iter()
+            .filter_map(|option| option
+                .card
+                .and_then(|(_, characteristics)| { characteristics.card_definition() }))
+            .collect::<Vec<_>>(),
+        vec![cards::SERRA_ANGEL],
+        "the card it looks at is the one on top now, not the one on top then",
+    );
+
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: decision.options.iter().map(|option| option.id).collect(),
+        },
+    )
+    .expect("binning it is an answer");
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "and that is the card it bins",
+    );
+    assert!(
+        game.players[0]
+            .library
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "the Bolt is still in the library, one card further down",
+    );
+}
