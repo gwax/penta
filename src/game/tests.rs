@@ -461,6 +461,7 @@ mod vintage_cube_forth_eorlingas;
 mod vintage_cube_fractured_identity;
 mod vintage_cube_frantic_search;
 mod vintage_cube_gadgeteer;
+mod vintage_cube_gaeas_cradle;
 mod vintage_cube_galvanic_blast;
 mod vintage_cube_galvanic_discharge;
 mod vintage_cube_gau;
