@@ -129,3 +129,74 @@ fn its_own_controller_may_target_it() {
         "you may always point your own spells at it",
     );
 }
+
+/// Hexproof answers what is pointed at it and nothing else: a Wrath names
+/// nothing, so the wall dies with the rest of the board.
+#[test]
+fn hexproof_is_no_answer_to_a_sweeper() {
+    let (mut game, caryatid) = staged();
+    game.battlefield
+        .push(creature(88_000, cards::GRIZZLY_BEARS, PlayerId::Two));
+    let wrath = card(88_001, cards::WRATH_OF_GOD, PlayerId::One);
+    let wrath_id = wrath.id;
+    game.players[0].hand.push(wrath);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(wrath_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("four mana casts it");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == caryatid),
+        "nothing was targeted, so hexproof had nothing to say",
+    );
+}
+
+/// Defender keeps it out of an attack and not out of combat: a 0/3 that
+/// blocks is what the two mana actually buys.
+#[test]
+fn defender_leaves_it_free_to_block() {
+    let (mut game, caryatid) = staged();
+    let bears = creature(88_100, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::Two;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(bears_id, AttackDefender::Player(PlayerId::One));
+    game.finish_declaring_attackers();
+    drain_pending(&mut game);
+
+    game.declare_blocker(caryatid, bears_id);
+    game.deal_combat_damage();
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == caryatid),
+        "two damage does not get through three toughness",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        20,
+        "and the attack was stopped at the wall",
+    );
+}
