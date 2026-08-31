@@ -25,6 +25,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A Class level is bought from the level directly below it.**
+  Stormchaser's Talent gated its level abilities on being *below* the level
+  they grant, so a Class at level 1 could buy level 3 outright and skip the
+  price of the level in between. Its rulings are explicit that the second
+  level ability cannot be activated unless the Class is level 2, and the
+  climb is now two activations.
+
 - **A permission that bounds mana value reads the X you chose.** CR 202.3b:
   a spell on the stack has the mana value its chosen X gives it, so Lurrus
   of the Dream-Den reaches a Walking Ballista in the graveyard for X of one

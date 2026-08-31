@@ -114,12 +114,14 @@ pub(in crate::card::sets) static STORMCHASERS_TALENT: CardRecord = CardRecord::n
             )
             .with_activation_timing(ActivationTimingDef::SorcerySpeed)
             // A Class is level 1 with no counters on it, so climbing to two takes one
-            // counter and to three takes two. Each level is bought separately and only
-            // at sorcery speed (CR 717.2b), and only from below it.
+            // counter and to three takes two. Each level is bought separately, only at
+            // sorcery speed (CR 717.2b), and only from the level directly below it:
+            // "you can't activate the first level ability of a Class unless that Class
+            // is level 1."
             .with_activation_condition(&TriggerConditionDef::SourceCounters {
                 kind: CounterKind::named("level"),
-                comparison: ComparisonDef::Less,
-                amount: 1,
+                comparison: ComparisonDef::Equal,
+                amount: 0,
             }),
             AbilityDef::triggered_with_targets(
                 "When this Class becomes level 2, return target instant or sorcery card from your \
@@ -148,10 +150,12 @@ pub(in crate::card::sets) static STORMCHASERS_TALENT: CardRecord = CardRecord::n
                 EffectDef::GainClassLevel { level: 3 },
             )
             .with_activation_timing(ActivationTimingDef::SorcerySpeed)
+            // Level 2 and no further: a Class at level 1 cannot buy its way straight
+            // to three, and one already at three has nothing left to buy.
             .with_activation_condition(&TriggerConditionDef::SourceCounters {
                 kind: CounterKind::named("level"),
-                comparison: ComparisonDef::Less,
-                amount: 2,
+                comparison: ComparisonDef::Equal,
+                amount: 1,
             }),
             AbilityDef::triggered_if(
                 "Whenever you cast an instant or sorcery spell, create a 1/1 blue and red Otter creature \

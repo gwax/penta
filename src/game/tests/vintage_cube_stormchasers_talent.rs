@@ -166,26 +166,33 @@ fn level_three_makes_an_otter_per_spell() {
     assert_eq!(otters(&game), 3, "and another");
 }
 
-/// A level already reached is not for sale again.
+/// "You can't activate the first level ability of a Class unless that Class
+/// is level 1. Similarly, you can't activate the second level ability unless
+/// that Class is level 2." One level is on offer at a time, and a Class at
+/// the top has nothing left to buy.
 #[test]
-fn a_level_is_bought_only_once() {
+fn each_level_is_sold_only_from_the_one_below_it() {
     let (mut game, talent) = staged();
     game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 10);
-    let before = level_ups(&game, talent).len();
-    assert_eq!(before, 2, "both levels are on offer from level 1");
-
-    if let Some(permanent) = game
-        .battlefield
-        .iter_mut()
-        .find(|permanent| permanent.card.id == talent)
-    {
-        permanent.set_counters(CounterKind::named("level"), 2);
-    }
-
-    assert!(
-        level_ups(&game, talent).is_empty(),
-        "a Class at level 3 has nothing left to buy",
+    assert_eq!(
+        level_ups(&game, talent).len(),
+        1,
+        "at level 1 only level 2 is for sale",
     );
+
+    for (counters, expected, note) in [
+        (1, 1, "at level 2 only level 3 is"),
+        (2, 0, "and a Class at level 3 has nothing left to buy"),
+    ] {
+        if let Some(permanent) = game
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == talent)
+        {
+            permanent.set_counters(CounterKind::named("level"), counters);
+        }
+        assert_eq!(level_ups(&game, talent).len(), expected, "{note}");
+    }
 }
 
 /// The Otter has prowess: a noncreature spell pumps it.
@@ -222,10 +229,11 @@ fn the_otter_has_prowess() {
     assert_eq!(power_of(&game), Some(2), "+1/+1 until end of turn");
 }
 
-/// Level 3 may be bought straight from level 1, and the Class passes through
-/// level 2 on the way -- so that clause fires too.
+/// Level 3 is bought from level 2 and not before, so the climb is two
+/// activations -- and the level-2 clause fires on the way, which is the
+/// buyback the deck is paying for.
 #[test]
-fn jumping_to_level_three_still_passes_through_two() {
+fn the_climb_to_three_goes_through_two() {
     let (mut game, talent) = staged();
     let bolt = game
         .build_zone(PlayerId::One, &[cards::LIGHTNING_BOLT])
@@ -234,21 +242,122 @@ fn jumping_to_level_three_still_passes_through_two() {
         .next()
         .expect("one card");
     game.players[0].graveyard.push(bolt);
-    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 6);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 10);
 
-    let jump = level_ups(&game, talent)
+    let first = level_ups(&game, talent)
         .into_iter()
-        .last()
-        .expect("six mana buys level 3 outright");
-    game.apply(PlayerId::One, jump).expect("it levels up");
+        .next()
+        .expect("level 2 is what a level-1 Class may buy");
+    game.apply(PlayerId::One, first).expect("it levels up");
     settle(&mut game);
-
-    assert_eq!(level_counters(&game, talent), 2, "level 3 is two counters");
+    assert_eq!(level_counters(&game, talent), 1, "level 2 is one counter");
     assert!(
         game.players[0]
             .hand
             .iter()
             .any(|card| card.definition == cards::LIGHTNING_BOLT),
-        "and the level-2 clause fired on the way past",
+        "and its clause bought the Bolt back",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 10);
+    let second = level_ups(&game, talent)
+        .into_iter()
+        .next()
+        .expect("and now level 3 is on offer");
+    game.apply(PlayerId::One, second)
+        .expect("it levels up again");
+    settle(&mut game);
+
+    assert_eq!(level_counters(&game, talent), 2, "level 3 is two counters");
+}
+
+/// "The level 3 class ability resolves before the spell that caused it to
+/// trigger. It resolves even if that spell is countered." The Otter is paid
+/// for by the casting rather than by the spell working.
+#[test]
+fn the_otter_arrives_even_if_the_spell_is_countered() {
+    let (mut game, talent) = staged();
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == talent)
+    {
+        permanent.set_counters(CounterKind::named("level"), 2);
+    }
+    let before = otters(&game);
+
+    let spell = card(30_500, cards::ANCESTRAL_RECALL, PlayerId::One);
+    let spell_id = spell.id;
+    game.players[0].hand.push(spell);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    let counter = card(30_501, cards::COUNTERSPELL, PlayerId::Two);
+    let counter_id = counter.id;
+    game.players[1].hand.push(counter);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+    game.priority = PlayerId::One;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == spell_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::One))
+            }
+            _ => false,
+        })
+        .expect("one blue buys an Ancestral Recall");
+    game.apply(PlayerId::One, cast).expect("it is castable");
+
+    // The Otter trigger is put on the stack above the Recall, and anything
+    // it asks is answered before either player has a window.
+    for _ in 0..8 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            break;
+        };
+        let options = decision
+            .options
+            .iter()
+            .map(|option| option.id)
+            .take(decision.minimum.max(1).min(decision.maximum))
+            .collect();
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .expect("the offered choice is legal");
+    }
+    let recall = game
+        .stack
+        .iter()
+        .find(|object| object.presentation().card_definition() == Some(cards::ANCESTRAL_RECALL))
+        .map(|object| object.id)
+        .expect("the Recall is on the stack");
+    game.priority = PlayerId::Two;
+    game.apply(
+        PlayerId::Two,
+        cast_action(counter_id, vec![Target::Spell(recall)], Vec::new(), 0),
+    )
+    .expect("they answer it");
+    settle(&mut game);
+
+    assert_eq!(
+        otters(&game),
+        before + 1,
+        "the trigger resolved under the spell it was cast for",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        0,
+        "and the Recall drew nothing, having been countered",
     );
 }
