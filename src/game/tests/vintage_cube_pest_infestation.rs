@@ -249,3 +249,70 @@ fn a_spell_whose_only_target_is_gone_makes_no_pests() {
         "and it goes to the graveyard having done nothing",
     );
 }
+
+/// The other half of the same ruling: with one of its two targets still
+/// legal the spell resolves, destroys what it can still reach, and makes
+/// every Pest it promised.
+#[test]
+fn one_surviving_target_still_pays_the_pests_in_full() {
+    let (mut game, spell, theirs) = staged(5, &[cards::SOL_RING, cards::HOWLING_MINE]);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == spell
+                    && choices.x() == 2
+                    && theirs.iter().all(|id| {
+                        choices
+                            .iter_targets()
+                            .any(|target| *target == Target::Permanent(*id))
+                    })
+            }
+            _ => false,
+        })
+        .expect("five mana names both for an X of two");
+    game.apply(PlayerId::One, action).expect("it is castable");
+
+    game.move_permanents_to_graveyard(&[theirs[0]]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == theirs[1]),
+        "the target that was still there was destroyed",
+    );
+    assert_eq!(
+        pests(&game),
+        4,
+        "and twice X is twice X however many targets were left",
+    );
+}
+
+/// Nothing in the spell says whose artifacts: your own are as nameable as
+/// theirs, which is what makes it a way to trade your own board in for
+/// bodies.
+#[test]
+fn it_will_name_your_own_artifacts() {
+    let (mut game, spell, _theirs) = staged(3, &[]);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::SOL_RING)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    cast(&mut game, spell, 1, &[mine]);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == mine),
+        "your own Sol Ring is a legal target and it went",
+    );
+    assert_eq!(pests(&game), 2, "with the two Pests it bought");
+}
