@@ -303,3 +303,50 @@ fn the_cost_is_paid_even_when_the_target_is_gone() {
         "but the Mite is dead all the same"
     );
 }
+
+/// "Noncreature" is read as the ability is offered rather than when the
+/// artifact was played: a Jade Statue is on the menu while it stands there
+/// and off it the moment it animates itself.
+#[test]
+fn an_artifact_that_animates_stops_being_a_legal_target() {
+    let (mut game, mite) = staged();
+    let statue = game
+        .put_onto_battlefield(PlayerId::One, cards::JADE_STATUE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    assert!(
+        offered_targets(&game, mite).contains(&statue),
+        "an artifact that is no creature is what the Mite eats",
+    );
+
+    // Its own ability only opens in combat, which is where it becomes one.
+    game.step = Step::BeginningOfCombat;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    let animate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == statue),
+        )
+        .expect("two mana animates it during combat");
+    game.apply(PlayerId::One, animate).expect("it activates");
+    drain_pending(&mut game);
+
+    let animated = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == statue)
+        .expect("it is still there");
+    assert!(
+        game.permanent_types(animated)
+            .is_some_and(|types| types.contains(CardType::Creature)),
+        "it is a creature now",
+    );
+    assert!(
+        !offered_targets(&game, mite).contains(&statue),
+        "and the Mite has nothing to say to a creature",
+    );
+}
