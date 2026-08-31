@@ -143,3 +143,44 @@ fn he_will_kill_his_controller() {
         "which is a loss, checked as a state-based action",
     );
 }
+
+/// A split card off the top is worth both halves anywhere but the stack, so
+/// a Life // Death costs its {G} and its {1}{B} together: three life for
+/// one card.
+#[test]
+fn a_split_card_costs_both_of_its_halves() {
+    let mut game = staged(&[cards::LIFE_DEATH]);
+
+    take_upkeep(&mut game, PlayerId::One);
+
+    assert_eq!(
+        game.players[0]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::LIFE_DEATH],
+        "the card came to hand",
+    );
+    assert_eq!(
+        game.players[0].life, 17,
+        "one for the Life and two for the Death",
+    );
+}
+
+/// With nothing to reveal there is nothing to put into your hand and
+/// nothing to pay for. The draw step is what an empty library punishes, and
+/// that is not this trigger's business.
+#[test]
+fn an_empty_library_reveals_nothing_and_costs_nothing() {
+    let mut game = staged(&[]);
+
+    take_upkeep(&mut game, PlayerId::One);
+
+    assert!(game.players[0].hand.is_empty(), "nothing was revealed");
+    assert_eq!(game.players[0].life, 20, "and nothing was paid for it");
+    assert!(
+        game.result().is_none(),
+        "an empty library is not by itself a loss",
+    );
+}
