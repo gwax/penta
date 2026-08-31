@@ -194,3 +194,50 @@ fn a_blue_symbol_in_the_text_box_adds_nothing() {
         "two devotion against three cards, whatever the Talisman taps for",
     );
 }
+
+/// "Hybrid mana symbols ... do count toward your devotion to their
+/// colour(s)." A Frostburn Weird is {U/R}{U/R}, and either half of a hybrid
+/// pip is a blue pip for a devotion count that asks about blue.
+#[test]
+fn hybrid_pips_count_toward_the_colour_they_offer() {
+    let mut game = staged(4, &[cards::FROSTBURN_WEIRD]);
+
+    play_oracle(&mut game);
+
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::One,
+            reason: WinReason::WonByAnEffect,
+        }),
+        "the Oracle's two and the Weird's two reach four cards",
+    );
+}
+
+/// "If you put an Aura on an opponent's permanent, you still control the
+/// Aura, and mana symbols in its mana cost count towards your devotion."
+/// Devotion asks who controls the permanent, and an Aura is a permanent of
+/// its own however far across the table it is looking.
+#[test]
+fn an_aura_on_their_creature_is_still_your_devotion() {
+    let mut game = staged(4, &[]);
+    let bears = creature(81_500, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let mut aura = creature(81_501, cards::INVISIBILITY, PlayerId::One);
+    aura.attached_to = Some(bears_id);
+    game.battlefield.push(aura);
+    game.check_state_based_actions();
+    drain_pending(&mut game);
+
+    play_oracle(&mut game);
+
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::One,
+            reason: WinReason::WonByAnEffect,
+        }),
+        "the Invisibility is yours and its two blue pips are too",
+    );
+}
