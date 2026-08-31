@@ -155,3 +155,101 @@ fn nobody_acts_between_the_draws_and_the_discards() {
         "and the other player has no window while it waits",
     );
 }
+
+/// The line the card is played for, counted out: two cards deep, two cards
+/// back, and the ones you keep are the ones you drew if that is what you
+/// choose.
+#[test]
+fn it_draws_two_and_discards_two() {
+    let (mut game, search) = staged(3, 0);
+    game.players[0]
+        .hand
+        .push(card(125_400, cards::MOUNTAIN, PlayerId::One));
+    game.players[0]
+        .hand
+        .push(card(125_401, cards::FOREST, PlayerId::One));
+    let library = game.players[0].library.len();
+
+    let discard = cast(&mut game, search);
+    assert!(
+        discard.prompt.to_lowercase().contains("discard"),
+        "the discard is asked first: {}",
+        discard.prompt,
+    );
+    let land_options = discard
+        .options
+        .iter()
+        .filter(|option| {
+            option.card.is_some_and(|(_, characteristics)| {
+                matches!(
+                    characteristics.card_definition(),
+                    Some(definition) if definition == cards::MOUNTAIN || definition == cards::FOREST
+                )
+            })
+        })
+        .map(|option| option.id)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        land_options.len(),
+        2,
+        "the two lands are what you would pitch"
+    );
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: discard.id,
+            options: land_options,
+        },
+    )
+    .expect("two of the four in hand");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].library.len(),
+        library - 2,
+        "two cards off the top",
+    );
+    assert_eq!(
+        game.players[0]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::COUNTERSPELL, cards::COUNTERSPELL],
+        "and the two drawn are what is left",
+    );
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .filter(|card| card.definition != cards::FRANTIC_SEARCH)
+            .count(),
+        2,
+        "with the two pitched behind them",
+    );
+}
+
+/// "You choose which lands to untap as the spell resolves. They aren't
+/// targeted." Nothing is named as it is cast: the lands are picked out of a
+/// decision once it is resolving.
+#[test]
+fn the_lands_are_chosen_on_resolution_and_never_targeted() {
+    let (game, search) = staged(3, 0);
+
+    let casts = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == search))
+        .collect::<Vec<_>>();
+    assert!(!casts.is_empty(), "three mana casts it");
+    for action in &casts {
+        let Action::CastSpell { choices, .. } = action else {
+            unreachable!("filtered to casts")
+        };
+        assert_eq!(
+            choices.iter_targets().count(),
+            0,
+            "a cast of it names nothing at all",
+        );
+    }
+}
