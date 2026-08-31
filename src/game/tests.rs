@@ -399,6 +399,7 @@ mod vintage_cube_courser_of_kruphix;
 mod vintage_cube_coveted_jewel;
 mod vintage_cube_crabomination;
 mod vintage_cube_creatures;
+mod vintage_cube_creeping_tar_pit;
 mod vintage_cube_crop_rotation;
 mod vintage_cube_crucible;
 mod vintage_cube_cryptic_command;
