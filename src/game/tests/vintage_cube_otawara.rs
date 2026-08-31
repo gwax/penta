@@ -252,3 +252,112 @@ fn the_colored_half_survives_any_board() {
         "one blue is the whole of what is left",
     );
 }
+
+/// "If a channel ability requires a target, you may not activate it without
+/// a target just to discard the card." An empty board across the table is
+/// no channel at all, however much mana is up.
+#[test]
+fn an_empty_board_leaves_nothing_to_channel_at() {
+    let (mut game, otawara, _) = staged(&[]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+    assert!(
+        channels(&game, otawara).is_empty(),
+        "nothing on either board is a thing it may return",
+    );
+
+    game.put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    assert!(
+        !channels(&game, otawara).is_empty(),
+        "and a creature to name is what turns it on",
+    );
+}
+
+/// "Discarding the card is part of the cost to activate a channel ability."
+/// It leaves the hand as the ability is announced, and a target that goes
+/// away underneath does not hand the land back.
+#[test]
+fn the_discard_is_a_cost_and_stays_paid() {
+    let (mut game, otawara, _) = staged(&[]);
+    let angel = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    game.priority = PlayerId::One;
+
+    let channel = channels(&game, otawara)
+        .into_iter()
+        .next()
+        .expect("four mana and the card pays for it");
+    game.apply(PlayerId::One, channel).expect("it activates");
+
+    assert!(
+        game.players[0].hand.is_empty(),
+        "the card went as the ability was announced",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::OTAWARA_SOARING_CITY),
+        "and it is in the graveyard already",
+    );
+
+    game.move_permanents_to_graveyard(&[angel]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::OTAWARA_SOARING_CITY),
+        "a target that left underneath it changes nothing about the cost",
+    );
+    assert!(
+        game.players[0].hand.is_empty(),
+        "the land is spent whether or not the ability did anything",
+    );
+}
+
+/// Channel is a hand ability: the land it becomes has only its tap.
+#[test]
+fn a_played_otawara_has_no_channel_left() {
+    let (mut game, otawara, _) = staged(&[]);
+    game.put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.players[0].lands_played_this_turn = 0;
+    game.priority = PlayerId::One;
+
+    let play = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == otawara))
+        .expect("the land drop is available");
+    game.apply(PlayerId::One, play).expect("it is played");
+    drain_pending(&mut game);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+    let played = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::OTAWARA_SOARING_CITY)
+        .expect("it is on the battlefield")
+        .card
+        .id;
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == played)
+        }),
+        "on the battlefield it is a land and nothing else",
+    );
+}
