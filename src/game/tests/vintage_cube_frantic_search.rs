@@ -253,3 +253,65 @@ fn the_lands_are_chosen_on_resolution_and_never_targeted() {
         );
     }
 }
+
+/// The whole reason it is played: pay with three lands, untap those same
+/// three, and the spell has cost nothing but the cards it churned.
+#[test]
+fn the_lands_that_paid_for_it_come_back_up() {
+    let (mut game, search) = staged(3, 0);
+    // The fixture hands the mana over; this line wants the lands to be what
+    // pays, so the pool starts empty and the Islands are untapped.
+    game.players[0].mana_pool = ManaPool::default();
+    let islands = game
+        .battlefield
+        .iter_mut()
+        .filter(|permanent| permanent.controller == PlayerId::One)
+        .map(|permanent| {
+            permanent.tapped = false;
+            permanent.card.id
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(islands.len(), 3, "three Islands and nothing else");
+
+    for island in &islands {
+        game.apply(
+            PlayerId::One,
+            Action::ActivateManaAbility {
+                source: *island,
+                ability: mana_ability_for(&game, *island, ManaColor::Blue),
+                color: ManaColor::Blue,
+                counters_removed: None,
+                cost_object: None,
+                combination: None,
+                triggered_mana: None,
+            },
+        )
+        .expect("each taps for blue");
+    }
+    assert_eq!(untapped_of(&game, PlayerId::One), 0, "all three are tapped");
+
+    // The hand is the Search alone, so the two cards drawn are the only two
+    // that can be discarded and nobody is asked which. The lands are the
+    // whole question.
+    let untap = cast(&mut game, search);
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: untap.id,
+            options: untap.options.iter().map(|option| option.id).collect(),
+        },
+    )
+    .expect("all three of them");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        untapped_of(&game, PlayerId::One),
+        3,
+        "the mana it cost is standing back up",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.total(),
+        0,
+        "and the three blue it was paid with is spent, not refunded",
+    );
+}
