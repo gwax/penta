@@ -462,6 +462,70 @@ fn the_greaves_hand_their_haste_to_whatever_wears_them() {
     assert!(hasty(&game), "and an equipped one does");
 }
 
+/// "You can't use one Lightning Greaves to allow two new creatures to attack
+/// in the same turn." Both moves happen in the main phase, and haste is read
+/// as attackers are declared: whichever creature is wearing them then is the
+/// only one that may swing.
+#[test]
+fn one_pair_of_greaves_hastes_one_attacker_a_turn() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let greaves = game
+        .put_onto_battlefield(PlayerId::One, cards::LIGHTNING_GREAVES)
+        .expect("cataloged");
+    let mut ids = Vec::new();
+    for instance in [83_200, 83_201] {
+        let mut arrival = creature(instance, cards::GRIZZLY_BEARS, PlayerId::One);
+        arrival.entered_controller_turn = game.turns_started[PlayerId::One.index()];
+        ids.push(arrival.card.id);
+        game.battlefield.push(arrival);
+    }
+    drain_pending(&mut game);
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let hasty = |game: &Game, who: GameObjectId| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == who)
+            .is_some_and(|permanent| {
+                game.permanent_has_executable_keyword(permanent, KeywordAbility::Haste)
+            })
+    };
+    assert!(
+        !hasty(&game, ids[0]) && !hasty(&game, ids[1]),
+        "both arrived this turn and neither has haste yet",
+    );
+
+    // Equip is sorcery speed, so both moves are made here, before combat.
+    equip_to(&mut game, greaves, ids[0]);
+    assert!(hasty(&game, ids[0]) && !hasty(&game, ids[1]));
+    equip_to(&mut game, greaves, ids[1]);
+    assert!(
+        hasty(&game, ids[1]) && !hasty(&game, ids[0]),
+        "the haste went with the Greaves rather than staying behind",
+    );
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+    let can_attack = |game: &Game, who: GameObjectId| {
+        game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::DeclareAttacker { attacker, .. } if *attacker == who),
+        )
+    };
+
+    assert!(
+        can_attack(&game, ids[1]),
+        "the one wearing them when attackers are declared may swing",
+    );
+    assert!(
+        !can_attack(&game, ids[0]),
+        "and the one that wore them earlier in the turn may not",
+    );
+}
+
 /// Shroud is the half the opponent notices, and it does not care whose spell
 /// it is: the Greaves protect the creature from its own controller too.
 #[test]
