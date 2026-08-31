@@ -274,3 +274,106 @@ fn a_landless_library_still_eats_the_creature() {
         "except the Bears in the graveyard, which is something",
     );
 }
+
+/// "A land card" and not a basic land card: the search offers everything in
+/// the library that is a land, and none of what is not.
+#[test]
+fn the_search_finds_any_land_at_all() {
+    let (mut game, wight, ids) = staged(
+        &[cards::GRIZZLY_BEARS],
+        &[],
+        &[
+            cards::LIGHTNING_BOLT,
+            cards::FOREST,
+            cards::GAEAS_CRADLE,
+            cards::POLLUTED_DELTA,
+        ],
+    );
+
+    let action = fetches(&game, wight)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility { cost_objects, .. } => cost_objects.contains(&ids[0]),
+            _ => false,
+        })
+        .expect("the Bears can be eaten");
+    game.apply(PlayerId::One, action).expect("it activates");
+    pass_priority_pair(&mut game);
+
+    let mut offered = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the search asks which land to take")
+        .options
+        .iter()
+        .filter_map(|option| {
+            option
+                .card
+                .and_then(|(_, characteristics)| characteristics.card_definition())
+        })
+        .collect::<Vec<_>>();
+    offered.sort_unstable();
+    let mut expected = vec![cards::FOREST, cards::GAEAS_CRADLE, cards::POLLUTED_DELTA];
+    expected.sort_unstable();
+
+    assert_eq!(
+        offered, expected,
+        "a legend and a fetchland are land cards; the Bolt is not",
+    );
+}
+
+/// "Each creature card in your graveyard" counts cards. A token she eats
+/// ceases to exist rather than becoming one, so the meal pays for the land
+/// and leaves her exactly as big as she was.
+#[test]
+fn a_token_she_eats_leaves_no_card_to_count() {
+    let (mut game, wight, _) = staged(&[], &[], &[cards::FOREST]);
+    let beast = tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3);
+    game.create_token(PlayerId::One, beast);
+    drain_pending(&mut game);
+    let token = game
+        .battlefield
+        .iter()
+        .find(|permanent| is_token_with(permanent, beast))
+        .expect("the Beast arrived")
+        .card
+        .id;
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.priority = PlayerId::One;
+    assert_eq!(
+        game.power(permanent(&game, wight)),
+        Some(2),
+        "a 2/2 to start"
+    );
+
+    let action = fetches(&game, wight)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility { cost_objects, .. } => cost_objects.contains(&token),
+            _ => false,
+        })
+        .expect("a token is another creature she can eat");
+    game.apply(PlayerId::One, action).expect("it activates");
+    settle(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::FOREST),
+        "the land was found",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .all(|card| card.definition != ObjectKind::Token),
+        "and the token it cost ceased to exist",
+    );
+    assert_eq!(
+        game.power(permanent(&game, wight)),
+        Some(2),
+        "so there is no creature card behind her to count",
+    );
+}
