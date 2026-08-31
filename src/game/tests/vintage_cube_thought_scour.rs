@@ -136,3 +136,82 @@ fn it_mills_what_there_is_and_no_more() {
     );
     assert_eq!(hand(&game).len(), 1, "and your own draw was never in doubt");
 }
+
+/// A player with hexproof is no target for their opponent's spell, and is
+/// still every bit a target for their own: the Scour may name its caster
+/// while it may not name them.
+#[test]
+fn a_hexproof_player_is_no_target_for_their_opponent() {
+    let (mut game, scour) = staged(PlayerId::Two, &[cards::FOREST, cards::ISLAND]);
+    game.put_onto_battlefield(PlayerId::Two, cards::LEYLINE_OF_SANCTITY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let named = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == scour => Some(
+                choices
+                    .iter_targets()
+                    .filter_map(|target| match target {
+                        Target::Player(player) => Some(*player),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        named,
+        vec![PlayerId::One],
+        "the Leyline takes its controller off the list and leaves the caster on it",
+    );
+}
+
+/// "If the target player is an illegal target when Thought Scour tries to
+/// resolve, it won't resolve and none of its effects will happen. You won't
+/// draw a card." The mill and the draw are one spell, and hexproof arriving
+/// in between takes both.
+#[test]
+fn a_target_that_gains_hexproof_takes_the_draw_with_it() {
+    let (mut game, scour) = staged(PlayerId::Two, &[cards::FOREST, cards::ISLAND]);
+    let held = hand(&game).len();
+    let library = game.players[PlayerId::One.index()].library.len();
+
+    game.apply(
+        PlayerId::One,
+        cast_action(scour, vec![Target::Player(PlayerId::Two)], Vec::new(), 0),
+    )
+    .expect("they are a legal target when it is cast");
+
+    // In response, with the Scour still on the stack.
+    game.put_onto_battlefield(PlayerId::Two, cards::LEYLINE_OF_SANCTITY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert!(
+        graveyard(&game, PlayerId::Two).is_empty(),
+        "nothing was milled: the spell had no legal target left",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library,
+        "and the draw went with it",
+    );
+    assert_eq!(
+        hand(&game).len(),
+        held - 1,
+        "the Scour itself is all that left the caster's hand",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::THOUGHT_SCOUR),
+        "and it is in the graveyard, countered on resolution",
+    );
+}

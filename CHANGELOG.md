@@ -23,6 +23,13 @@ the bot-wire epoch.
 This release reports engine 0.7.0 and protocol 29. The simulation fingerprint
 distinguishes snapshots of the covered source and build inputs.
 
+### Added
+
+- **Leyline of Sanctity has its hexproof.** Its audit line asked for a static
+  player-protection effect, which Witchbane Orb was already using: the
+  Leyline now grants it the same way, so a spell that names its controller
+  has no legal target and a spell that names their permanents is unaffected.
+
 ### Fixed
 
 - **A permanent that leaves for anywhere sets revolt.** "A permanent left

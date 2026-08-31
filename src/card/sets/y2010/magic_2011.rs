@@ -9,15 +9,27 @@ use crate::card::{
 use crate::mana_cost;
 
 // M11 21 — Leyline of Sanctity
-// Audit: partial — The opening-hand action is declarative; player hexproof needs a static player-protection effect.
 pub(in crate::card::sets) static LEYLINE_OF_SANCTITY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("262de9ae-d641-4f0e-af6a-03ce0e1c91d3"),
     "Leyline of Sanctity",
     CardArt::new("262de9ae-d641-4f0e-af6a-03ce0e1c91d3", "Ryan Pancoast"),
     CardSet::Magic2011,
+    // Four mana for nothing at all, or nothing at all for a wall the
+    // discard and the burn cannot see past.
     CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_abilities(&[
         abilities::begin_game_on_battlefield("If this card is in your opening hand, you may begin the game with it on the battlefield."),
-        AbilityDef::not_implemented("You have hexproof. (You can't be the target of spells or abilities your opponents control.)", "Needs a static player-protection effect that grants hexproof to the controller."),
+        AbilityDef::static_ability(
+            "You have hexproof. (You can't be the target of spells or abilities your opponents control.)",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Controller,
+                // The player, not the permanents: what this stops is a spell
+                // that names its controller, and nothing that names a
+                // creature they control.
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
+                    crate::card::PlayerRuleDef::Hexproof,
+                )),
+            },
+        ),
     ]),
 );
 
