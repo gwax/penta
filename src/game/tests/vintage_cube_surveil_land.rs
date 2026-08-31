@@ -442,3 +442,95 @@ fn surveil_is_not_a_draw() {
         );
     }
 }
+
+/// A Wooded Foothills reads "Mountain or Forest card", and the Commercial
+/// District is both. Cracking it on their turn is the line the tapped clause
+/// is supposed to punish and does not: the land arrives tapped for a turn
+/// that was theirs anyway, and the surveil happens at instant speed.
+#[test]
+fn a_red_green_fetch_finds_it_on_their_turn() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    game.players[0].library.clear();
+    for definition in [cards::COMMERCIAL_DISTRICT, cards::LIGHTNING_BOLT] {
+        let card = game
+            .build_zone(PlayerId::One, &[definition])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        game.players[0].library.push(card);
+    }
+    let fetch = game
+        .put_onto_battlefield(PlayerId::One, cards::WOODED_FOOTHILLS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == fetch))
+        .expect("a fetchland is cracked at instant speed");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    for _ in 0..12 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .find(|option| {
+                    matches!(
+                        option.card,
+                        Some((_, ObjectCharacteristics::Card { definition, .. }))
+                            if definition == cards::COMMERCIAL_DISTRICT
+                    )
+                })
+                .or_else(|| decision.options.first())
+                .map(|option| vec![option.id])
+                .unwrap_or_default();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let district =
+        the_land_named(&game, cards::COMMERCIAL_DISTRICT).expect("a Mountain Forest was found");
+    let subtypes = game.effective_subtypes(district);
+    assert!(
+        subtypes.contains(&"Mountain"),
+        "the half the Foothills read"
+    );
+    assert!(subtypes.contains(&"Forest"), "and its other half");
+    assert!(district.tapped, "fetched onto their turn, and still tapped");
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "and the surveil resolved on their turn, binning the Bolt",
+    );
+    assert_eq!(game.players[0].life, 19, "the fetch cost its life");
+}
