@@ -432,17 +432,20 @@ fn vivi_grows_and_burns_on_a_noncreature_spell() {
     assert!(game.players[1].life < 20, "the opponent takes the damage");
 }
 
+/// The five Moxen, with the one colour each of them prints.
+const MOXEN: [(CardDefinitionId, ManaColor); 5] = [
+    (cards::MOX_EMERALD, ManaColor::Green),
+    (cards::MOX_JET, ManaColor::Black),
+    (cards::MOX_PEARL, ManaColor::White),
+    (cards::MOX_RUBY, ManaColor::Red),
+    (cards::MOX_SAPPHIRE, ManaColor::Blue),
+];
+
 /// The five Moxen are one card printed five ways: a free artifact that taps
 /// for exactly one colour. What is worth checking per member is which.
 #[test]
 fn each_mox_taps_for_its_own_color_and_no_other() {
-    for (definition, color) in [
-        (cards::MOX_EMERALD, ManaColor::Green),
-        (cards::MOX_JET, ManaColor::Black),
-        (cards::MOX_PEARL, ManaColor::White),
-        (cards::MOX_RUBY, ManaColor::Red),
-        (cards::MOX_SAPPHIRE, ManaColor::Blue),
-    ] {
+    for (definition, color) in MOXEN {
         let mut game = ready_game();
         game.battlefield.clear();
         let mox = game
@@ -691,4 +694,87 @@ fn a_tapped_confluence_offers_nothing() {
         19,
         "and only the one life was paid",
     );
+}
+
+/// {0} is the whole cost: with no mana anywhere, every Mox in hand is
+/// castable, and casting it is what puts it on the battlefield.
+#[test]
+fn each_mox_is_cast_for_nothing_at_all() {
+    for (definition, _) in MOXEN {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[0].hand.clear();
+        game.empty_mana_pools();
+        let mox = card(66_000, definition, PlayerId::One);
+        let mox_id = mox.id;
+        game.players[0].hand.push(mox);
+        game.turns_started = [5, 5];
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+
+        let cast = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == mox_id))
+            .unwrap_or_else(|| panic!("{definition:?} costs nothing to cast"));
+        game.apply(PlayerId::One, cast)
+            .unwrap_or_else(|error| panic!("{definition:?} is castable: {error}"));
+        drain_pending(&mut game);
+
+        assert!(
+            game.battlefield
+                .iter()
+                .any(|permanent| permanent.card.definition == definition),
+            "{definition:?} arrived",
+        );
+        assert_eq!(
+            game.players[0].mana_pool.total(),
+            0,
+            "{definition:?} took no mana to get there",
+        );
+    }
+}
+
+/// The other half of the contrast the mana creatures draw: an artifact is no
+/// creature, so a Mox that arrived this turn taps for its colour at once.
+#[test]
+fn a_mox_taps_the_turn_it_arrives() {
+    for (definition, color) in MOXEN {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.turns_started = [5, 5];
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+        let mox = game
+            .put_onto_battlefield(PlayerId::One, definition)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        // Left exactly as it landed: this turn's arrival, untouched.
+        assert_eq!(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == mox)
+                .map(|permanent| permanent.entered_controller_turn),
+            Some(game.turns_started[PlayerId::One.index()]),
+            "{definition:?} came down this turn",
+        );
+
+        game.apply(
+            PlayerId::One,
+            Action::ActivateManaAbility {
+                source: mox,
+                ability: mana_ability_for(&game, mox, color),
+                color,
+                counters_removed: None,
+                cost_object: None,
+                combination: None,
+                triggered_mana: None,
+            },
+        )
+        .unwrap_or_else(|error| panic!("{definition:?} taps the turn it lands: {error}"));
+
+        assert_eq!(game.players[0].mana_pool.amount(color), 1);
+    }
 }
