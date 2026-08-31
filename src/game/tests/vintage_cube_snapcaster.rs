@@ -198,3 +198,110 @@ fn it_names_your_own_instants_and_sorceries_and_nothing_else() {
         "and their graveyard is not yours to reach into",
     );
 }
+
+/// "A spell cast using flashback will always be exiled afterward." The Bolt
+/// is cast out of the graveyard, does what it does, and does not come back
+/// for a second Snapcaster.
+#[test]
+fn a_spell_flashed_back_is_exiled_rather_than_buried_again() {
+    let (mut game, ids) = buried(&[cards::LIGHTNING_BOLT]);
+    let bolt = ids[0];
+    flash_in(&mut game, PlayerId::One, bolt);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    let life = game.players[PlayerId::Two.index()].life;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == bolt
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::Two))
+            }
+            _ => false,
+        })
+        .expect("one red pays the flashback cost of a Bolt");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        life - 3,
+        "it resolved out of the graveyard",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .all(|card| card.definition != cards::LIGHTNING_BOLT),
+        "and it did not go back where it came from",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "flashback exiles what it casts",
+    );
+}
+
+/// "The flashback cost is equal to its mana cost": no discount and no
+/// surcharge, so a Counterspell wants its two blue and is not offered for
+/// one.
+#[test]
+fn the_flashback_cost_is_the_printed_mana_cost() {
+    let (mut game, ids) = buried(&[cards::FRANTIC_SEARCH]);
+    let search = ids[0];
+    flash_in(&mut game, PlayerId::Two, search);
+
+    // The Search is {2}{U}, and its flashback cost is the same three mana:
+    // no discount for coming back, and no surcharge either.
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(
+        !can_flash_back(&game, search),
+        "two mana does not pay a three-mana cost",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(
+        can_flash_back(&game, search),
+        "and the third is the whole of what is left to pay",
+    );
+}
+
+/// The grant is "until end of turn", so a card left in the graveyard is an
+/// ordinary card there again on the next turn.
+#[test]
+fn the_grant_is_gone_the_following_turn() {
+    let (mut game, ids) = buried(&[cards::LIGHTNING_BOLT]);
+    let bolt = ids[0];
+    flash_in(&mut game, PlayerId::One, bolt);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    assert!(can_flash_back(&game, bolt), "castable while the turn lasts");
+
+    // The grant expires in the cleanup step, which is where an
+    // until-end-of-turn effect goes away rather than at the turn boundary.
+    game.cleanup();
+    game.start_next_turn();
+    drain_pending(&mut game);
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+
+    assert!(
+        !can_flash_back(&game, bolt),
+        "and an ordinary graveyard card once the turn is over",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "still lying where it was",
+    );
+}
