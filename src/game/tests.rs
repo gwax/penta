@@ -656,6 +656,7 @@ mod vintage_cube_sorin_of_house_markov;
 mod vintage_cube_soul_guide_lantern;
 mod vintage_cube_spell_pierce;
 mod vintage_cube_spells;
+mod vintage_cube_spirebluff_canal;
 mod vintage_cube_springheart_nantuko;
 mod vintage_cube_staff_of_the_storyteller;
 mod vintage_cube_starting_town;
