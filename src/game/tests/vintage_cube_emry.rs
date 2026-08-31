@@ -323,3 +323,96 @@ fn the_permission_does_not_survive_a_trip_back_to_the_graveyard() {
         "what came back is a new object the permission never named",
     );
 }
+
+/// Puts Emry on the battlefield ready to tap, with `graveyard` behind her,
+/// and returns her and the artifact card she will name.
+fn ready_to_tap(graveyard: CardDefinitionId) -> (Game, GameObjectId, CardInstanceId) {
+    let (mut game, _held) = staged(&[], &[graveyard]);
+    let emry = game
+        .put_onto_battlefield(PlayerId::One, cards::EMRY_LURKER_OF_THE_LOCH)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    let card = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == graveyard)
+        .expect("it is in the graveyard")
+        .id;
+    game.priority = PlayerId::One;
+    (game, emry, card)
+}
+
+/// Points her at `card` and lets the ability resolve.
+fn name_it(game: &mut Game, emry: GameObjectId, card: CardInstanceId) {
+    let tap = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == emry
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets().contains(&Target::Card(card)))
+            }
+            _ => false,
+        })
+        .expect("she can point at it");
+    game.apply(PlayerId::One, tap).expect("it activates");
+    drain_pending(game);
+}
+
+/// "You must follow the normal timing permissions and restrictions for the
+/// target artifact card." The permission is a cast, not a time to cast: an
+/// ordinary artifact waits for your main phase.
+#[test]
+fn the_permission_is_no_licence_to_cast_it_whenever() {
+    let (mut game, emry, lotus) = ready_to_tap(cards::HOWLING_MINE);
+    name_it(&mut game, emry, lotus);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    let castable = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == lotus))
+    };
+    assert!(castable(&game), "your own main phase casts it");
+
+    game.step = Step::DeclareBlockers;
+    assert!(!castable(&game), "combat is not a window for an artifact");
+
+    game.step = Step::PrecombatMain;
+    game.active_player = PlayerId::Two;
+    assert!(!castable(&game), "and neither is their turn");
+}
+
+/// "The mana value of the spell remains unchanged, no matter what the total
+/// cost to cast it was." Affinity takes two off what Emry costs and nothing
+/// off what she is worth.
+#[test]
+fn affinity_leaves_her_mana_value_alone() {
+    let (mut game, held) = staged(&[cards::HOWLING_MINE, cards::MANIFOLD_KEY], &[]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    let cast = casts(&game, held)
+        .into_iter()
+        .next()
+        .expect("one blue is the whole price with two artifacts out");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    let spell = game
+        .stack
+        .iter()
+        .next()
+        .map(|object| object.id)
+        .expect("she is on the stack");
+
+    assert_eq!(
+        game.current_or_last_known_mana_value(spell),
+        Some(3),
+        "{{2}}{{U}} is three however little of it was paid",
+    );
+}
