@@ -165,3 +165,165 @@ fn the_unblockable_lasts_only_that_turn() {
         "but the evasion belonged to the turn the Mox arrived",
     );
 }
+
+/// Passes until something waits on an answer, which is where a ward lives.
+fn settle_to_decision(game: &mut Game) {
+    for _ in 0..24 {
+        if game.observe(PlayerId::One).decision.is_some()
+            || game.observe(PlayerId::Two).decision.is_some()
+        {
+            return;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+}
+
+/// Answers the waiting ward decision, paying or declining, and reports the
+/// labels it was offered.
+fn answer_ward(game: &mut Game, pay: bool) -> Vec<String> {
+    let decision = game
+        .observe(PlayerId::Two)
+        .decision
+        .expect("the targeting player was asked about the ward cost");
+    let labels = decision
+        .options
+        .iter()
+        .map(|option| option.label.clone())
+        .collect::<Vec<_>>();
+    let option = decision
+        .options
+        .iter()
+        .find(|option| (option.label != "Decline") == pay)
+        .unwrap_or_else(|| panic!("paying {pay} is offered: {labels:?}"))
+        .id;
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![option],
+        },
+    )
+    .expect("the answer is legal");
+    settle_to_decision(game);
+    labels
+}
+
+/// Player Two bolts the Turtle with `spare` colourless left over for the
+/// ward.
+fn bolt_the_turtle(game: &mut Game, cannoneer: GameObjectId, spare: u16) {
+    game.players[1]
+        .hand
+        .push(card(93_400, cards::LIGHTNING_BOLT, PlayerId::Two));
+    game.players[1].mana_pool.red = 1;
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, spare);
+    game.priority = PlayerId::Two;
+    game.apply(
+        PlayerId::Two,
+        cast_action(
+            CardInstanceId(93_400),
+            vec![Target::Permanent(cannoneer)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("the Bolt is castable");
+    settle_to_decision(game);
+}
+
+/// Ward {4} in the doing rather than in the rules text: declining the four
+/// counters the spell, and the Turtle takes nothing.
+#[test]
+fn a_declined_ward_counters_their_spell() {
+    let (mut game, cannoneer) = staged();
+    bolt_the_turtle(&mut game, cannoneer, 4);
+
+    answer_ward(&mut game, false);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        permanent(&game, cannoneer).damage,
+        0,
+        "the Bolt never resolved",
+    );
+    assert_eq!(
+        game.players[1].mana_pool.colorless, 4,
+        "and the four they had is still theirs",
+    );
+}
+
+/// Paying it lets the spell through, and the four mana is gone.
+#[test]
+fn a_paid_ward_lets_the_bolt_through() {
+    let (mut game, cannoneer) = staged();
+    bolt_the_turtle(&mut game, cannoneer, 4);
+
+    answer_ward(&mut game, true);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        permanent(&game, cannoneer).damage,
+        3,
+        "three damage on a 5/5 that lives through it",
+    );
+    assert_eq!(
+        game.players[1].mana_pool.colorless, 0,
+        "and the ward took its four",
+    );
+}
+
+/// Improvise in the doing: five artifacts stand in for the {5}, so one blue
+/// mana is the whole of what a six-drop costs.
+#[test]
+fn improvise_lets_the_artifacts_pay_the_generic() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    for definition in [
+        cards::HOWLING_MINE,
+        cards::ICY_MANIPULATOR,
+        cards::DARKSTEEL_PLATE,
+        cards::MANIFOLD_KEY,
+        cards::JADE_STATUE,
+    ] {
+        game.put_onto_battlefield(PlayerId::One, definition)
+            .expect("cataloged");
+    }
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    let held = card(93_500, cards::KAPPA_CANNONEER, PlayerId::One);
+    let held_id = held.id;
+    game.players[0].hand.push(held);
+    game.turns_started[PlayerId::One.index()] = 5;
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == held_id)),
+        "five untapped artifacts and a blue mana pay for it",
+    );
+
+    for permanent in &mut game.battlefield {
+        permanent.tapped = true;
+    }
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .all(|action| !matches!(action, Action::CastSpell { card, .. } if *card == held_id)),
+        "and artifacts already tapped help with nothing",
+    );
+}
