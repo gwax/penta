@@ -130,6 +130,27 @@ fn cast_with(game: &mut Game, command: GameObjectId, wanted: &[usize], targets: 
     settle(game);
 }
 
+/// Casts it with the given modes and targets and leaves it on the stack,
+/// so the board can be answered underneath it.
+fn cast_holding(game: &mut Game, command: GameObjectId, wanted: &[usize], targets: &[Target]) {
+    let modes = wanted.iter().copied().map(mode).collect::<Vec<_>>();
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell {
+                card: id, choices, ..
+            } => {
+                *id == command
+                    && choices.modes() == modes
+                    && choices.iter_targets().copied().collect::<Vec<_>>() == targets
+            }
+            _ => false,
+        })
+        .expect("that combination of modes and targets is on offer");
+    game.apply(PlayerId::One, action).expect("it is cast");
+}
+
 fn on_battlefield(game: &Game, definition: CardDefinitionId) -> bool {
     game.battlefield
         .iter()
@@ -433,4 +454,66 @@ fn a_copy_keeps_the_modes_and_may_take_new_targets() {
         life - 4,
         "with both halves of the burn, two apiece",
     );
+}
+
+/// "If all targets for the chosen modes become illegal before the Command
+/// resolves, the spell won't resolve and none of its effects will happen."
+/// The other half of the ruling above: with the artifact cracked and the
+/// player behind a Leyline, there is nothing legal left and the discard the
+/// second mode would have taken does not happen either.
+#[test]
+fn every_target_answered_stops_the_whole_command() {
+    for (hexproof, discarded) in [(false, 1), (true, 0)] {
+        let (mut game, command) = staged(&[], &[cards::BLACK_LOTUS]);
+        let lotus = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::BLACK_LOTUS)
+            .expect("it is here")
+            .card
+            .id;
+        let held = game.players[1].hand.len();
+
+        cast_holding(
+            &mut game,
+            command,
+            &[DISCARD, DESTROY],
+            &[Target::Player(PlayerId::Two), Target::Permanent(lotus)],
+        );
+
+        // They answer what they can: the Lotus is cracked for mana, and in
+        // the version that matters they are not a legal target either.
+        game.priority = PlayerId::Two;
+        game.apply(
+            PlayerId::Two,
+            Action::ActivateManaAbility {
+                source: lotus,
+                ability: mana_ability_for(&game, lotus, ManaColor::Green),
+                color: ManaColor::Green,
+                counters_removed: None,
+                cost_object: None,
+                combination: None,
+                triggered_mana: None,
+            },
+        )
+        .expect("its own ability sacrifices it");
+        if hexproof {
+            game.put_onto_battlefield(PlayerId::Two, cards::LEYLINE_OF_SANCTITY)
+                .expect("cataloged");
+        }
+        settle(&mut game);
+
+        assert_eq!(
+            held - game.players[1].hand.len(),
+            discarded,
+            "with hexproof={hexproof}, the discard is what the spell resolving buys",
+        );
+        assert!(
+            game.players[0]
+                .graveyard
+                .iter()
+                .any(|card| card.definition == cards::KOLAGHAN_S_COMMAND),
+            "and the Command is in the graveyard either way",
+        );
+    }
 }
