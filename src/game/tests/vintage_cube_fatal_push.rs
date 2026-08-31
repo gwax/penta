@@ -243,3 +243,125 @@ fn an_x_cost_creature_is_worth_nothing_and_dies() {
         "an X in the cost is a zero on the battlefield",
     );
 }
+
+/// "Revolt abilities don't care why the permanent left... They're equally
+/// satisfied by an artifact you sacrificed to pay a cost." The line the card
+/// is played for: a fetchland cracked on the way in stretches the Push over
+/// a three-drop.
+#[test]
+fn a_fetchland_sacrificed_for_its_own_cost_sets_revolt() {
+    let (mut game, spell, specter) = staged(cards::HYPNOTIC_SPECTER);
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(97_000, cards::MOUNTAIN, PlayerId::One));
+    let fetch = game
+        .put_onto_battlefield(PlayerId::One, cards::WOODED_FOOTHILLS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.permanent_left_battlefield_this_turn = [false; 2];
+    game.priority = PlayerId::One;
+
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == fetch))
+        .expect("a life and a sacrifice");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    for _ in 0..12 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: decision
+                        .options
+                        .iter()
+                        .map(|option| option.id)
+                        .take(1)
+                        .collect(),
+                },
+            )
+            .expect("the search names the Mountain");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert!(
+        game.permanent_left_battlefield_this_turn[0],
+        "the land was sacrificed to pay for its own ability, and that is a permanent leaving",
+    );
+    game.priority = PlayerId::One;
+    push(&mut game, spell, specter);
+    assert!(!survives(&game, specter), "so three is inside the range");
+}
+
+/// "...or an enchantment you returned to your hand with Cyclonic Rift."
+/// Leaving for the hand is leaving, and it does not matter who sent it
+/// there: their Petty Theft on your Bears turns on your revolt.
+#[test]
+fn a_permanent_of_yours_bounced_to_hand_sets_revolt() {
+    let (mut game, spell, specter) = staged(cards::HYPNOTIC_SPECTER);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let theft = game
+        .build_zone(PlayerId::Two, &[cards::BRAZEN_BORROWER])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let theft_id = theft.id;
+    game.players[1].hand.push(theft);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+    game.permanent_left_battlefield_this_turn = [false; 2];
+
+    game.priority = PlayerId::Two;
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == theft_id
+                    && choices
+                        .iter_targets()
+                        .any(|chosen| *chosen == Target::Permanent(mine))
+            }
+            _ => false,
+        })
+        .expect("the adventure half bounces a nonland permanent of yours");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    resolve(&mut game);
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+        "the Bears went back to hand rather than to the graveyard",
+    );
+    assert!(
+        game.permanent_left_battlefield_this_turn[0],
+        "and a permanent of yours left the battlefield all the same",
+    );
+
+    game.priority = PlayerId::One;
+    push(&mut game, spell, specter);
+    assert!(
+        !survives(&game, specter),
+        "so the Push reaches a three-drop"
+    );
+}

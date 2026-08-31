@@ -430,6 +430,12 @@ impl Game {
         permanent: &Permanent,
         destination: BattlefieldExit,
     ) {
+        // Revolt asks only that a permanent left, not why or where it went:
+        // a creature bounced to hand and an artifact sacrificed to pay a
+        // cost set it as surely as one that died. The batch exit records
+        // this from its own snapshots; the single-permanent paths through
+        // here -- exile and hand -- have nowhere else to record it.
+        self.permanent_left_battlefield_this_turn[permanent.controller.index()] = true;
         self.events.push(GameEvent::PermanentLeftBattlefield {
             controller: permanent.controller,
             card: permanent.card.id,

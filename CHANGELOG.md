@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A permanent that leaves for anywhere sets revolt.** "A permanent left
+  the battlefield under your control this turn" asks only that one did, not
+  why or where it went, and its ruling names a bounce and a sacrificed cost
+  beside a creature that died. Only the batch exit that carries permanents
+  to the graveyard recorded the fact, so a permanent exiled or returned to
+  its owner's hand left no trace of having left: a Fatal Push after their
+  Petty Theft bounced your creature still read as a two-drop's worth of
+  removal. Every exit now records it.
+
 - **A hidden land can be played.** "You may play the exiled card" reaches a
   land, and the offer is answered while the ability that made it resolves --
   a moment when the stack is not empty and no land could ordinarily be
