@@ -257,3 +257,57 @@ fn the_gift_is_a_separate_trigger_the_table_may_respond_to() {
     assert_eq!(gift.len(), 1, "and then they get theirs");
     assert!(gift[0].tapped, "tapped, as the gift says");
 }
+
+/// "Equal to the number of artifacts they control" is counted as the attack
+/// trigger resolves, not as it is put on the stack: an artifact answered in
+/// that window is one they no longer control, and the bill is smaller for
+/// it.
+#[test]
+fn an_artifact_answered_in_response_is_one_they_are_not_billed_for() {
+    let (mut game, plunderer) = staged();
+    let mine = game
+        .put_onto_battlefield(PlayerId::Two, cards::HOWLING_MINE)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::SOL_RING)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(plunderer, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+
+    game.destroy_permanent(mine);
+    game.check_state_based_actions();
+    settle(&mut game, true);
+
+    assert_eq!(
+        game.players[1].life, 19,
+        "one artifact left when the count was taken",
+    );
+}
+
+/// And the same window read the other way: an artifact that arrives before
+/// the trigger resolves is counted too.
+#[test]
+fn an_artifact_that_arrives_in_response_is_billed_for() {
+    let (mut game, plunderer) = staged();
+    game.put_onto_battlefield(PlayerId::Two, cards::HOWLING_MINE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(plunderer, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+
+    game.put_onto_battlefield(PlayerId::Two, cards::SOL_RING)
+        .expect("cataloged");
+    game.check_state_based_actions();
+    settle(&mut game, true);
+
+    assert_eq!(
+        game.players[1].life, 18,
+        "both of them were there when the count was taken",
+    );
+}
