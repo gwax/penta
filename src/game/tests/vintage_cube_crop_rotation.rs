@@ -116,3 +116,156 @@ fn it_answers_on_their_turn_with_the_stack_full() {
         "and the Forest went as the cost",
     );
 }
+
+/// Casts it, giving up `land`, and answers the search by taking `wanted`
+/// when it is offered.
+fn rotate(game: &mut Game, rotation: GameObjectId, land: GameObjectId, wanted: bool) {
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, sacrifices, .. }
+                if *card == rotation && sacrifices.contains(&land))
+        })
+        .expect("that land pays for it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    for _ in 0..12 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = if wanted {
+                decision
+                    .options
+                    .iter()
+                    .map(|option| option.id)
+                    .take(1)
+                    .collect()
+            } else {
+                Vec::new()
+            };
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    drain_pending(game);
+}
+
+/// The sacrifice is a cost rather than part of what resolves: countering the
+/// Rotation takes the search away and leaves the land spent.
+#[test]
+fn a_countered_rotation_still_costs_the_land() {
+    let (mut game, rotation, lands) = staged(1);
+    let counter = card(126_400, cards::COUNTERSPELL, PlayerId::Two);
+    let counter_id = counter.id;
+    game.players[1].hand.push(counter);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, sacrifices, .. }
+                if *card == rotation && sacrifices.contains(&lands[0]))
+        })
+        .expect("the Forest pays for it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != lands[0]),
+        "the land went as the spell was cast, not as it resolved",
+    );
+
+    let spell = game
+        .stack
+        .iter()
+        .next()
+        .map(|object| object.id)
+        .expect("the Rotation is on the stack");
+    game.apply(PlayerId::One, Action::PassPriority)
+        .expect("priority passes");
+    game.apply(
+        PlayerId::Two,
+        cast_action(counter_id, vec![Target::Spell(spell)], Vec::new(), 0),
+    )
+    .expect("they answer it");
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::GAEAS_CRADLE),
+        "nothing was found",
+    );
+    assert!(
+        game.players[0].library.len() == 1,
+        "the Cradle is still in the library",
+    );
+}
+
+/// The search may find nothing: the land is spent either way, and what is
+/// left is a board one land smaller.
+#[test]
+fn declining_the_search_still_spends_the_land() {
+    let (mut game, rotation, lands) = staged(2);
+
+    rotate(&mut game, rotation, lands[0], false);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::GAEAS_CRADLE),
+        "nothing was taken",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::FOREST)
+            .count(),
+        1,
+        "and the land it cost is gone",
+    );
+}
+
+/// "Put that card onto the battlefield" says nothing about tapped, so what
+/// arrives is what the land itself says: a Cradle untapped, a triome tapped.
+#[test]
+fn what_it_finds_arrives_as_that_land_says() {
+    for (definition, tapped) in [(cards::GAEAS_CRADLE, false), (cards::KETRIA_TRIOME, true)] {
+        let (mut game, rotation, lands) = staged(1);
+        game.players[0].library.clear();
+        game.players[0]
+            .library
+            .push(card(126_500, definition, PlayerId::One));
+
+        rotate(&mut game, rotation, lands[0], true);
+
+        let found = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == definition)
+            .unwrap_or_else(|| panic!("{definition:?} was found"));
+        assert_eq!(
+            found.tapped, tapped,
+            "{definition:?} arrives as its own clause says",
+        );
+    }
+}
