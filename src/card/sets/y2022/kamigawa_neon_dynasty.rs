@@ -126,7 +126,7 @@ pub(in crate::card::sets) static TOUCH_THE_SPIRIT_REALM: CardRecord = CardRecord
             )],
             EffectDef::Sequence(&[
                 EffectDef::ExileLinkedToSource {
-                    until_source_leaves: false,
+                    until_source_leaves: true,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     face_down: false,
                     then: None,

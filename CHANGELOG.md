@@ -25,6 +25,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **"Until this leaves the battlefield" exiles nothing once it has left.**
+  CR 610.3b: a permanent answered while its own exile trigger is still on
+  the stack has no later moment to give anything back, so the exile does
+  not happen. The engine had that guard, but Deep-Cavern Bat, Kitesail
+  Freebooter, Leyline Binding, and Touch the Spirit Realm each opted out
+  of it, and so exiled a card or permanent that could never come back.
+  Tidehollow Sculler and Parallax Wave keep the old behavior, which their
+  own rulings call for: neither prints the "until" clause.
+
 - **An Equipment comes loose in the same check that kills its creature.**
   State-based actions unattached illegal Equipment once, before the pass
   that puts dead creatures into graveyards, so an Equipment whose host had

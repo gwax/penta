@@ -299,3 +299,85 @@ fn a_token_it_exiles_never_comes_back() {
         "a token that left the battlefield has nothing to come back as",
     );
 }
+
+/// "If Leyline Binding leaves the battlefield before its enters-the-
+/// battlefield ability resolves, the target permanent won't be exiled."
+/// One ability makes both halves, so with no Binding to give it back there
+/// is nothing for the first half to take (CR 610.3b).
+#[test]
+fn a_binding_answered_in_response_exiles_nothing() {
+    let (mut game, binding) = staged(&[
+        cards::PLAINS,
+        cards::ISLAND,
+        cards::SWAMP,
+        cards::MOUNTAIN,
+        cards::FOREST,
+    ]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    let bears = creature(220_100, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == binding))
+        .expect("one white pays for it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    // Let the enchantment resolve and its trigger go on the stack, then
+    // answer the enchantment underneath it.
+    for _ in 0..8 {
+        if !game.stack.is_empty()
+            && game
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.definition == cards::LEYLINE_BINDING)
+        {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .take(decision.minimum.max(1).min(decision.maximum))
+                .map(|option| option.id)
+                .collect::<Vec<_>>();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the trigger names the Bears");
+            continue;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the trigger goes on the stack");
+    }
+    let enchantment = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::LEYLINE_BINDING)
+        .expect("it resolved")
+        .card
+        .id;
+    game.destroy_permanent(enchantment);
+    settle(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears_id),
+        "the Bears were never exiled",
+    );
+    assert!(
+        game.players[PlayerId::Two.index()].exile.is_empty(),
+        "so nothing is waiting on a Binding that is not there",
+    );
+}

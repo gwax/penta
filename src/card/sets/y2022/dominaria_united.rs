@@ -62,7 +62,7 @@ pub(in crate::card::sets) static LEYLINE_BINDING: CardRecord = CardRecord::new(
             )],
             EffectDef::Sequence(&[
                 EffectDef::ExileLinkedToSource {
-                    until_source_leaves: false,
+                    until_source_leaves: true,
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     face_down: false,
                     then: None,

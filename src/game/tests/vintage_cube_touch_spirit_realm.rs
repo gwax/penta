@@ -171,3 +171,74 @@ fn the_channel_is_offered_only_from_hand() {
         "the enchantment on the battlefield channels nothing",
     );
 }
+
+/// "If Touch the Spirit Realm leaves the battlefield before its first
+/// ability resolves, the target permanent won't be exiled." The exile and
+/// the return are one ability, so an enchantment answered underneath its own
+/// trigger takes nothing with it (CR 610.3b).
+#[test]
+fn an_enchantment_answered_in_response_exiles_nothing() {
+    let (mut game, touch, ids) = staged(&[(cards::SERRA_ANGEL, PlayerId::Two)]);
+    let angel = ids[0];
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == touch))
+        .expect("three mana buys it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    // Let the enchantment itself resolve and its trigger go on the stack,
+    // naming the Angel, then answer the enchantment underneath it.
+    for _ in 0..8 {
+        let enchanted = game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::TOUCH_THE_SPIRIT_REALM);
+        if enchanted && !game.stack.is_empty() {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .filter(|option| option.card.is_some_and(|(object, _)| object == angel))
+                .map(|option| option.id)
+                .take(1)
+                .collect::<Vec<_>>();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the trigger names the Angel");
+            continue;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the trigger goes on the stack");
+    }
+    let enchantment = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::TOUCH_THE_SPIRIT_REALM)
+        .expect("the enchantment resolved")
+        .card
+        .id;
+    game.move_permanents_to_graveyard(&[enchantment]);
+    settle(&mut game, None);
+
+    assert!(
+        on_battlefield(&game, cards::SERRA_ANGEL),
+        "the Angel was never exiled",
+    );
+    assert!(
+        game.players[PlayerId::Two.index()].exile.is_empty(),
+        "so nothing waits on an enchantment that is gone",
+    );
+}

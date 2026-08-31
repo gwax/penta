@@ -213,7 +213,7 @@ pub(in crate::card::sets) static DEEP_CAVERN_BAT: CardRecord = CardRecord::new_w
                         visibility: ChoiceVisibilityDef::Public,
                         then: &EffectDef::Sequence(&[
                             EffectDef::ExileLinkedToSource {
-                                until_source_leaves: false,
+                                until_source_leaves: true,
                                 object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
                                 face_down: false,
                                 then: None,

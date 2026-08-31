@@ -276,3 +276,150 @@ fn the_bat_holds_a_nonland_card_until_it_leaves() {
         "and it comes home when the Bat goes",
     );
 }
+
+/// "If Kitesail Freebooter leaves the battlefield before its enters-the-
+/// battlefield ability resolves, the opponent will reveal their hand, but no
+/// card will be exiled." The Bat's clause is the Freebooter's clause, and it
+/// reads the same way when the body is gone.
+#[test]
+fn a_freebooter_answered_in_response_exiles_nothing() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+    game.players[PlayerId::Two.index()].hand.push(card(
+        71_200,
+        cards::LIGHTNING_BOLT,
+        PlayerId::Two,
+    ));
+
+    let freebooter = game
+        .put_onto_battlefield(PlayerId::One, cards::KITESAIL_FREEBOOTER)
+        .expect("cataloged");
+    for _ in 0..8 {
+        if !game.stack.is_empty() {
+            break;
+        }
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            let chosen = decision
+                .options
+                .iter()
+                .take(decision.minimum.max(1).min(decision.maximum))
+                .map(|option| option.id)
+                .collect::<Vec<_>>();
+            game.apply(
+                PlayerId::One,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: chosen,
+                },
+            )
+            .expect("the trigger names its opponent");
+            continue;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the trigger goes on the stack");
+    }
+    game.move_permanents_to_graveyard(&[freebooter]);
+    game.check_state_based_actions();
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[PlayerId::Two.index()].exile.is_empty(),
+        "nothing is held by a Freebooter that is not there",
+    );
+    assert!(
+        game.players[PlayerId::Two.index()]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "the Bolt stayed in their hand",
+    );
+}
+
+/// "If Deep-Cavern Bat leaves the battlefield before its last ability
+/// resolves, you'll still look at the target opponent's hand, but you won't
+/// exile any cards from it." The trigger is on the stack and independent of
+/// the Bat; what it cannot do without the Bat is hold anything.
+#[test]
+fn a_bat_answered_in_response_looks_and_takes_nothing() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+    game.players[PlayerId::Two.index()].hand.push(card(
+        82_200,
+        cards::LIGHTNING_BOLT,
+        PlayerId::Two,
+    ));
+
+    let bat = game
+        .put_onto_battlefield(PlayerId::One, cards::DEEP_CAVERN_BAT)
+        .expect("cataloged");
+    // Put the trigger on the stack -- answering only the target it asks for
+    // on the way up -- then answer the Bat underneath it.
+    for _ in 0..8 {
+        if !game.stack.is_empty() {
+            break;
+        }
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            let chosen = decision
+                .options
+                .iter()
+                .take(decision.minimum.max(1).min(decision.maximum))
+                .map(|option| option.id)
+                .collect::<Vec<_>>();
+            game.apply(
+                PlayerId::One,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: chosen,
+                },
+            )
+            .expect("the trigger names its opponent");
+            continue;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the trigger goes on the stack");
+    }
+    assert_eq!(game.stack.len(), 1, "the enters trigger is waiting");
+    game.move_permanents_to_graveyard(&[bat]);
+    game.check_state_based_actions();
+
+    for _ in 0..8 {
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            let chosen = decision
+                .options
+                .iter()
+                .take(decision.minimum.max(1).min(decision.maximum))
+                .map(|option| option.id)
+                .collect::<Vec<_>>();
+            game.apply(
+                PlayerId::One,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: chosen,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        assert!(game.apply(player, Action::PassPriority).is_ok());
+    }
+
+    assert!(
+        game.players[PlayerId::Two.index()].exile.is_empty(),
+        "a Bat that is not on the battlefield holds nothing",
+    );
+    assert!(
+        game.players[PlayerId::Two.index()]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "so the Bolt never left their hand",
+    );
+}

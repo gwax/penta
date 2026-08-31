@@ -43,7 +43,7 @@ pub(in crate::card::sets) static KITESAIL_FREEBOOTER: CardRecord = CardRecord::n
                     ]),
                     &EffectDef::Sequence(&[
                         EffectDef::ExileLinkedToSource {
-                            until_source_leaves: false,
+                            until_source_leaves: true,
                             object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
                             face_down: false,
                             then: None,
