@@ -219,3 +219,101 @@ fn its_power_is_read_wherever_the_card_is() {
         "four types left in the graveyard once the Goyf itself was exiled out of it",
     );
 }
+
+/// "The mana value of the spell remains unchanged, no matter what the total
+/// cost to cast it was and no matter whether an alternative cost was paid."
+/// Escaped for {2}{B}, the Goyf on the stack is still the one-drop it
+/// prints.
+#[test]
+fn escaping_does_not_change_what_it_is_worth() {
+    let (mut game, goyf) = staged(&[
+        cards::MOUNTAIN,
+        cards::LIGHTNING_BOLT,
+        cards::SERRA_ANGEL,
+        cards::SOL_RING,
+    ]);
+    let buried = bury(&mut game, goyf);
+
+    let cast = casts_of(&game, buried)
+        .into_iter()
+        .next()
+        .expect("four card types buy the escape");
+    game.apply(PlayerId::One, cast).expect("it escapes");
+
+    let spell = game
+        .stack
+        .iter()
+        .find(|object| object.card.definition.card_definition() == Some(cards::NETHERGOYF))
+        .expect("it is on the stack");
+    assert_eq!(
+        game.stack_spell_mana_value(spell),
+        1,
+        "the escape cost is what was paid, not what it is worth",
+    );
+}
+
+/// "If it is a permanent spell, it enters the battlefield and will return to
+/// its owner's graveyard if it dies later. It can escape again." The second
+/// escape wants its own four types, the first having exiled the ones that
+/// paid for it.
+#[test]
+fn a_goyf_that_dies_again_can_escape_again() {
+    let (mut game, goyf) = staged(&[
+        cards::MOUNTAIN,
+        cards::LIGHTNING_BOLT,
+        cards::SERRA_ANGEL,
+        cards::SOL_RING,
+    ]);
+    let buried = bury(&mut game, goyf);
+    let cast = casts_of(&game, buried)
+        .into_iter()
+        .next()
+        .expect("four card types buy the first escape");
+    game.apply(PlayerId::One, cast).expect("it escapes");
+    settle(&mut game);
+    let first = body(&game).expect("it arrived").card.id;
+
+    game.destroy_permanent(first);
+    game.check_state_based_actions();
+    let returned = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::NETHERGOYF)
+        .expect("it died back to the graveyard")
+        .id;
+    assert!(
+        casts_of(&game, returned).is_empty(),
+        "with nothing else in the graveyard there is nothing to exile",
+    );
+
+    for definition in [
+        cards::FOREST,
+        cards::COUNTERSPELL,
+        cards::GRIZZLY_BEARS,
+        cards::HOWLING_MINE,
+    ] {
+        let card = game
+            .build_zone(PlayerId::One, &[definition])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        game.players[0].graveyard.push(card);
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+
+    let again = casts_of(&game, returned)
+        .into_iter()
+        .next()
+        .expect("a fresh four types buy the second escape");
+    game.apply(PlayerId::One, again).expect("it escapes again");
+    settle(&mut game);
+
+    assert!(body(&game).is_some(), "and it is back on the battlefield");
+    assert_eq!(
+        game.players[0].exile.len(),
+        8,
+        "with both sets of four exiled behind it",
+    );
+}
