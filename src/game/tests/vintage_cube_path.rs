@@ -277,3 +277,112 @@ fn an_answered_creature_leaves_them_no_land_either() {
     );
     assert!(game.battlefield.is_empty());
 }
+
+/// "A basic land card": the supertype and not the type. A library of duals
+/// answers the search with nothing, and the one Plains beside them is the
+/// only thing on offer.
+#[test]
+fn only_a_basic_land_answers_the_search() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let bears = creature(96_300, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    game.players[1].library.clear();
+    for (instance, definition) in [
+        (96_301, cards::TAIGA),
+        (96_302, cards::GAEAS_CRADLE),
+        (96_303, cards::PLAINS),
+    ] {
+        game.players[1]
+            .library
+            .push(card(instance, definition, PlayerId::Two));
+    }
+    let path = card(96_304, cards::PATH_TO_EXILE, PlayerId::One);
+    let path_id = path.id;
+    game.players[0].hand.push(path);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == path_id
+                    && choices
+                        .iter_targets()
+                        .any(|chosen| *chosen == Target::Permanent(bears_id))
+            }
+            _ => false,
+        })
+        .expect("one white mana casts it at that creature");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let offered = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the search asks them which land to take")
+        .options
+        .iter()
+        .filter_map(|option| {
+            option
+                .card
+                .and_then(|(_, characteristics)| characteristics.card_definition())
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        offered,
+        vec![cards::PLAINS],
+        "a Taiga and a Cradle are lands and neither is basic",
+    );
+}
+
+/// It exiles rather than destroys, so what survives destruction does not
+/// survive this -- and a token exiled ceases to exist while its controller
+/// is paid all the same.
+#[test]
+fn exile_answers_what_destruction_cannot() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let myr = game
+        .put_onto_battlefield(PlayerId::Two, cards::DARKSTEEL_MYR)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.players[1].library.clear();
+    game.players[1]
+        .library
+        .push(card(96_400, cards::PLAINS, PlayerId::Two));
+    let path = card(96_401, cards::PATH_TO_EXILE, PlayerId::One);
+    let path_id = path.id;
+    game.players[0].hand.push(path);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+
+    cast_path(&mut game, path_id, myr);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == myr),
+        "indestructible is no answer to being exiled",
+    );
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::DARKSTEEL_MYR),
+        "and it is in exile rather than the graveyard",
+    );
+}
