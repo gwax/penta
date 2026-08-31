@@ -370,3 +370,113 @@ fn the_map_sacrifices_itself() {
 
     assert_eq!(maps(&game).len(), 1, "one Map spent, one left");
 }
+
+/// "Destroy target creature, enchantment, or planeswalker": the third of the
+/// three, which the file never names.
+#[test]
+fn it_reaches_a_planeswalker() {
+    let (mut game, get_lost) = staged(&[cards::NARSET_PARTER_OF_VEILS]);
+    let narset = permanents_of(&game, cards::NARSET_PARTER_OF_VEILS)[0]
+        .card
+        .id;
+
+    cast_at(&mut game, get_lost, narset);
+    game.check_state_based_actions();
+
+    assert!(
+        !on_battlefield(&game, cards::NARSET_PARTER_OF_VEILS),
+        "loyalty is no answer to being destroyed",
+    );
+    assert_eq!(maps(&game).len(), 2, "and they are paid the two Maps");
+}
+
+/// "Target creature you control explores": the Map is theirs and so is what
+/// it may point at. Your creatures are not on its list.
+#[test]
+fn a_map_points_only_at_its_own_controllers_creature() {
+    let (mut game, get_lost) = staged(&[cards::SERRA_ANGEL, cards::GRIZZLY_BEARS]);
+    let angel = permanents_of(&game, cards::SERRA_ANGEL)[0].card.id;
+    cast_at(&mut game, get_lost, angel);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let theirs = permanents_of(&game, cards::GRIZZLY_BEARS)[0].card.id;
+    let map = maps(&game)[0].card.id;
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::Two;
+
+    let offered = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } if source == map => Some(
+                targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .copied()
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    assert!(
+        offered.contains(&Target::Permanent(theirs)),
+        "their own Bears are what the Map explores with: {offered:?}",
+    );
+    assert!(
+        !offered.contains(&Target::Permanent(mine)),
+        "and your Lions are nobody's to point it at",
+    );
+}
+
+/// "If no card is revealed, most likely because that player's library is
+/// empty, the exploring creature receives a +1/+1 counter." Nothing is
+/// revealed and nothing is asked.
+#[test]
+fn exploring_an_empty_library_is_just_a_counter() {
+    let (mut game, get_lost) = staged(&[cards::SERRA_ANGEL, cards::GRIZZLY_BEARS]);
+    let angel = permanents_of(&game, cards::SERRA_ANGEL)[0].card.id;
+    cast_at(&mut game, get_lost, angel);
+    let bears = permanents_of(&game, cards::GRIZZLY_BEARS)[0].card.id;
+    let map = maps(&game)[0].card.id;
+    game.players[1].library.clear();
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::Two;
+
+    let action = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == map
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets().contains(&Target::Permanent(bears)))
+            }
+            _ => false,
+        })
+        .expect("the Map can point at their own Bears");
+    game.apply(PlayerId::Two, action).expect("it activates");
+    settle(&mut game);
+
+    assert!(deciding(&game).is_none(), "there was nothing to ask about");
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == bears)
+            .expect("the Bears are still there")
+            .counters(CounterKind::PlusOnePlusOne),
+        1,
+        "an empty library is still a counter",
+    );
+    assert!(game.players[1].hand.is_empty(), "and nothing came to hand");
+}
