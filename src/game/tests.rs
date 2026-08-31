@@ -571,6 +571,7 @@ mod vintage_cube_narset_parter_of_veils;
 mod vintage_cube_natural_order;
 mod vintage_cube_necromancy;
 mod vintage_cube_nethergoyf;
+mod vintage_cube_nights_whisper;
 mod vintage_cube_ninjutsu;
 mod vintage_cube_nissa;
 mod vintage_cube_no_more_lies;
