@@ -708,3 +708,92 @@ fn the_most_recently_created_extra_turn_is_taken_first() {
         "then the one made before it",
     );
 }
+
+/// "Take an extra turn" is a turn like any other: it untaps what you have
+/// and draws you a card, which is most of why the card is worth its two
+/// mana.
+#[test]
+fn the_extra_turn_untaps_and_draws_like_any_other() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.turn = 9;
+    game.turns_started = [5, 5];
+    let mut land = creature(10_500, cards::ISLAND, PlayerId::One);
+    land.tapped = true;
+    let land_id = land.card.id;
+    game.battlefield.push(land);
+    let time_walk = card(10_501, cards::TIME_WALK, PlayerId::One);
+    let walk_id = time_walk.id;
+    game.players[0].hand.push(time_walk);
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 1;
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(walk_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("two mana casts it");
+    pass_priority_pair(&mut game);
+    let library = game.players[0].library.len();
+
+    game.start_next_turn();
+    drain_pending(&mut game);
+    assert_eq!(game.active_player, PlayerId::One, "the turn is yours again");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == land_id)
+            .expect("the land is there")
+            .tapped,
+        "and it untapped for it",
+    );
+
+    game.step = Step::Upkeep;
+    game.advance_step();
+    drain_pending(&mut game);
+    assert_eq!(
+        game.players[0].library.len(),
+        library - 1,
+        "an extra turn has a draw step like any other",
+    );
+}
+
+/// Two Walks in a turn are two turns, both yours: the ruling about ordering
+/// says nothing different when both extra turns belong to the same player.
+#[test]
+fn two_time_walks_are_two_turns_in_a_row() {
+    let mut game = ready_game();
+    game.players[0].hand.clear();
+    let mut walks = Vec::new();
+    for index in 0..2 {
+        let walk = card(10_600 + index, cards::TIME_WALK, PlayerId::One);
+        walks.push(walk.id);
+        game.players[0].hand.push(walk);
+    }
+    game.players[0].mana_pool.blue = 2;
+    game.players[0].mana_pool.colorless = 2;
+
+    for walk in walks {
+        game.apply(PlayerId::One, cast_action(walk, Vec::new(), Vec::new(), 0))
+            .expect("two mana casts it");
+        pass_priority_pair(&mut game);
+    }
+    assert_eq!(
+        game.extra_turns,
+        vec![PlayerId::One, PlayerId::One],
+        "two extra turns are queued",
+    );
+
+    for expected in [PlayerId::One, PlayerId::One, PlayerId::Two] {
+        game.start_next_turn();
+        assert_eq!(
+            game.active_player, expected,
+            "both extra turns are taken before theirs",
+        );
+    }
+}
