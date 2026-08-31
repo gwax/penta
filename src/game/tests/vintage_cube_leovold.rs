@@ -247,3 +247,110 @@ fn the_draw_may_be_declined() {
 
     assert!(game.players[0].hand.is_empty(), "you declined the card");
 }
+
+/// "If you and a permanent you control each become the target of the same
+/// spell or ability an opponent controls, Leovold's ability will trigger
+/// twice." A Kolaghan's Command that names you and something of yours pays
+/// you two cards for the privilege.
+#[test]
+fn one_spell_naming_two_of_yours_triggers_twice() {
+    let (mut game, leovold) = staged();
+    let command = game
+        .build_zone(PlayerId::Two, &[cards::KOLAGHAN_S_COMMAND])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let held = command.id;
+    game.players[1].hand.push(command);
+    game.players[0]
+        .hand
+        .push(card(110_500, cards::ISLAND, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Black, 1);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+    game.priority = PlayerId::Two;
+
+    // The discard mode names you; the damage mode names your Elf.
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == held
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::One))
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(leovold))
+            }
+            _ => false,
+        })
+        .expect("two modes can name you and your Elf at once");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    // The Command asks Player One for a discard as well as offering the two
+    // draws, so every decision is answered by taking what it offers.
+    for _ in 0..24 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .filter(|option| option.label != "Decline")
+                .map(|option| option.id)
+                .take(decision.minimum.max(1))
+                .collect();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    // One card is discarded to the Command's own mode, so what is left in
+    // hand is what the two triggers drew.
+    assert_eq!(
+        game.players[0].hand.len(),
+        2,
+        "two triggers, two cards, less the one the Command took",
+    );
+}
+
+/// "Your opponents can draw a maximum of one card each on each player's
+/// turn." The bound is not only about their own turn: it is one on yours
+/// too, and the turn rolling over is what gives them another.
+#[test]
+fn the_bound_holds_on_every_players_turn() {
+    let (mut game, _) = staged();
+    game.active_player = PlayerId::One;
+
+    game.draw_cards(PlayerId::Two, 2);
+    assert_eq!(game.players[1].hand.len(), 1, "one on your turn, not two");
+
+    game.start_next_turn();
+    drain_pending(&mut game);
+    let held = game.players[1].hand.len();
+
+    game.draw_cards(PlayerId::Two, 2);
+    assert_eq!(
+        game.players[1].hand.len(),
+        held + 1,
+        "and one more once the turn has turned over",
+    );
+}
