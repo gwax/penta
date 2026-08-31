@@ -153,3 +153,96 @@ fn flame_of_anor_keeps_both_modes_when_the_wizard_dies() {
         "and so did the five damage",
     );
 }
+
+/// "If you control a Wizard": a Wizard of theirs buys you nothing, so the
+/// second mode stays off the table.
+#[test]
+fn their_wizard_does_not_unlock_the_second_mode() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.battlefield
+        .push(creature(76_030, cards::VIVI_ORNITIER, PlayerId::Two));
+    let flame = card(76_031, cards::FLAME_OF_ANOR, PlayerId::One);
+    let flame_id = flame.id;
+    game.players[0].hand.push(flame);
+    game.battlefield
+        .push(creature(76_032, cards::GRIZZLY_BEARS, PlayerId::Two));
+    game.battlefield
+        .push(creature(76_033, cards::BLACK_LOTUS, PlayerId::Two));
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    let pairs = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == flame_id && choices.modes().len() == 2
+            }
+            _ => false,
+        })
+        .count();
+
+    assert_eq!(pairs, 0, "the Wizard is theirs and the clause is yours");
+}
+
+/// The artifact mode, and what happens to a pair when one half loses its
+/// target: CR 608.2b, the spell does as much as it can. The Bears die in
+/// response and the Lotus is destroyed regardless.
+#[test]
+fn a_pair_that_loses_one_target_still_does_the_other() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.battlefield
+        .push(creature(76_040, cards::VIVI_ORNITIER, PlayerId::One));
+    let bears = creature(76_041, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let lotus = creature(76_042, cards::BLACK_LOTUS, PlayerId::Two);
+    let lotus_id = lotus.card.id;
+    game.battlefield.push(lotus);
+    let flame = card(76_043, cards::FLAME_OF_ANOR, PlayerId::One);
+    let flame_id = flame.id;
+    game.players[0].hand.push(flame);
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } if *card == flame_id => {
+                choices.modes() == [ModeId(1), ModeId(2)]
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(bears_id))
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(lotus_id))
+            }
+            _ => false,
+        })
+        .expect("shattering and burning is a legal pair beside a Wizard");
+    game.apply(PlayerId::One, action).expect("it is cast");
+
+    // The creature half loses its target underneath the spell.
+    game.move_permanents_to_graveyard(&[bears_id]);
+    game.check_state_based_actions();
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == lotus_id),
+        "the artifact half went through on its own legal target",
+    );
+    assert!(
+        game.players[PlayerId::Two.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::BLACK_LOTUS),
+    );
+}
