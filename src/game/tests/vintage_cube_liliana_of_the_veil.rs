@@ -396,3 +396,113 @@ fn an_empty_pile_is_a_pile_they_may_choose() {
         "and nothing reached their graveyard",
     );
 }
+
+/// "Target player sacrifices a creature": which creature is theirs to pick,
+/// and the file's edict test gives them only one to give. With two out, the
+/// question goes to them and their answer is what goes.
+#[test]
+fn the_creature_they_give_up_is_theirs_to_choose() {
+    let (mut game, liliana) = staged(3, &[], &[]);
+    let lions = game
+        .put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    let angel = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == liliana
+                    && targets
+                        .iter()
+                        .flat_map(TargetSelection::targets)
+                        .any(|chosen| *chosen == Target::Player(PlayerId::Two))
+            }
+            _ => false,
+        })
+        .expect("the edict is offered at them");
+    game.apply(PlayerId::One, action).expect("it activates");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("somebody is asked which creature goes");
+    assert_eq!(
+        decision.player,
+        PlayerId::Two,
+        "and it is the player losing it",
+    );
+    let keep_the_angel = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(object, _)| object == lions))
+        .map(|option| option.id)
+        .expect("the Lions are one of their answers");
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![keep_the_angel],
+        },
+    )
+    .expect("naming the Lions is legal");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == lions),
+        "what they named is what they lost",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == angel),
+        "and the Angel they kept is still there",
+    );
+}
+
+/// "Target player" is any player: pointed at yourself the edict takes one of
+/// yours, which is a real line when it is the only way to spend the loyalty.
+#[test]
+fn the_edict_may_be_pointed_at_yourself() {
+    let (mut game, liliana) = staged(3, &[], &[]);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    activate(&mut game, liliana, 1, Some(PlayerId::One));
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == mine),
+        "your own creature is what the edict found",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+    );
+}
