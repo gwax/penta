@@ -244,3 +244,97 @@ fn its_power_is_read_out_of_the_graveyard_too() {
         "an instant, a sorcery and an artifact are what is left to count",
     );
 }
+
+/// "It counts card types, not cards. If the only card in all graveyards is a
+/// single artifact creature card, Barrowgoyf will be a 2/3." And a second
+/// card of a type already counted adds nothing at all.
+#[test]
+fn one_card_of_two_types_counts_twice_and_two_of_one_counts_once() {
+    let (mut game, goyf) = staged(&[cards::MYR_BATTLESPHERE], &[]);
+    assert_eq!(
+        stats(&game, goyf),
+        (Some(2), Some(3)),
+        "one artifact creature card is two types",
+    );
+
+    game.players[0]
+        .graveyard
+        .push(card(80_500, cards::GRIZZLY_BEARS, PlayerId::One));
+    assert_eq!(
+        stats(&game, goyf),
+        (Some(2), Some(3)),
+        "a plain creature beside it is a type already counted",
+    );
+
+    game.players[0]
+        .graveyard
+        .push(card(80_501, cards::SOL_RING, PlayerId::One));
+    assert_eq!(
+        stats(&game, goyf),
+        (Some(2), Some(3)),
+        "and so is a plain artifact",
+    );
+
+    game.players[0]
+        .graveyard
+        .push(card(80_502, cards::MOUNTAIN, PlayerId::One));
+    assert_eq!(
+        stats(&game, goyf),
+        (Some(3), Some(4)),
+        "a land is the first new type in the pile",
+    );
+}
+
+/// The keywords the body is played for: what it deals is lethal to anything
+/// and comes back as life.
+#[test]
+fn it_drains_what_it_bites() {
+    let (mut game, goyf) = staged(&[cards::MOUNTAIN, cards::LIGHTNING_BOLT], &[]);
+    let goyf_permanent = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == goyf)
+        .expect("he is there");
+    assert!(
+        game.permanent_has_executable_keyword(goyf_permanent, KeywordAbility::Deathtouch),
+        "deathtouch",
+    );
+    assert!(
+        game.permanent_has_executable_keyword(goyf_permanent, KeywordAbility::Lifelink),
+        "and lifelink",
+    );
+
+    // A 2/3 into a 6/6: deathtouch makes the two lethal, lifelink makes it
+    // two life.
+    let titan = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRAVE_TITAN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let life = game.players[PlayerId::One.index()].life;
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    game.declare_attacker(goyf, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    drain_pending(&mut game);
+    game.declare_blocker(titan, goyf);
+    game.deal_combat_damage();
+    game.check_state_based_actions();
+    settle(&mut game, false);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == titan),
+        "deathtouch kills a 6/6 with two damage",
+    );
+    assert!(
+        game.players[PlayerId::One.index()].life > life,
+        "and lifelink pays for the trade",
+    );
+}
