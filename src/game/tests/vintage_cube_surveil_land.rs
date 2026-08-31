@@ -413,3 +413,32 @@ fn an_empty_library_is_surveilled_over() {
         "and tapped means no mana out of it yet",
     );
 }
+
+/// Surveil is a look and not a draw: a Sheoldred watching the table takes
+/// nothing for it and pays nothing for it, whichever way the card goes.
+#[test]
+fn surveil_is_not_a_draw() {
+    for bin in [false, true] {
+        let (mut game, land) = staged_with(cards::LUSH_PORTICO, cards::LIGHTNING_BOLT);
+        game.battlefield.push(creature(
+            94_000,
+            cards::SHEOLDRED_THE_APOCALYPSE,
+            PlayerId::One,
+        ));
+        let life = game.players[PlayerId::One.index()].life;
+        let hand = game.players[PlayerId::One.index()].hand.len();
+
+        play_and_surveil(&mut game, land, bin);
+
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            life,
+            "looking at the top card is not drawing it, bin={bin}",
+        );
+        assert_eq!(
+            game.players[PlayerId::One.index()].hand.len(),
+            hand - 1,
+            "and the only card that left hand is the land itself",
+        );
+    }
+}
