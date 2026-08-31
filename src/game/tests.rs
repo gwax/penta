@@ -354,6 +354,7 @@ mod vintage_cube_ancient_tomb;
 mod vintage_cube_animate_dead;
 mod vintage_cube_archon_of_cruelty;
 mod vintage_cube_arena_of_glory;
+mod vintage_cube_arid_mesa;
 mod vintage_cube_arrival;
 mod vintage_cube_artifacts;
 mod vintage_cube_arwen_mortal_queen;
