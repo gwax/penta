@@ -255,3 +255,113 @@ fn an_empty_library_still_grows_it() {
         "nothing to reveal is still a counter",
     );
 }
+
+/// "If you reveal a nonland card when a creature explores and leave it on
+/// top of your library, then the creature explores again immediately
+/// afterwards, you'll reveal the same card again." Two Maps, one card, two
+/// counters.
+#[test]
+fn leaving_the_card_on_top_shows_it_to_the_next_explore() {
+    let (mut game, sentinel) = staged();
+    // A second Map, so the same card can be looked at twice.
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(sentinel, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    drain_pending(&mut game);
+    assert_eq!(maps(&game), 2, "one for arriving and one for attacking");
+    let library = game.players[PlayerId::One.index()].library.len();
+
+    explore_with_map(&mut game, sentinel, false);
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library,
+        "the Bears stayed where they were",
+    );
+
+    explore_with_map(&mut game, sentinel, false);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == sentinel)
+            .expect("the Sentinel is there")
+            .counters(CounterKind::PlusOnePlusOne),
+        2,
+        "the same nonland was revealed twice and paid twice",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library,
+        "and it is still on top after both looks",
+    );
+}
+
+/// "Once an ability that causes a creature to explore begins to resolve, no
+/// player may take any other actions until it's done. Notably, opponents
+/// can't try to remove the exploring creature after you reveal a nonland
+/// card but before it receives a counter."
+#[test]
+fn nobody_acts_between_the_reveal_and_the_counter() {
+    let (mut game, sentinel) = staged();
+    let map = game
+        .battlefield
+        .iter()
+        .find(|permanent| game.effective_subtypes(permanent).contains(&"Map"))
+        .expect("the Map is there")
+        .card
+        .id;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let explore = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == map
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|chosen| *chosen == Target::Permanent(sentinel))
+            }
+            _ => false,
+        })
+        .expect("one mana and the Map itself buys an explore");
+    game.apply(PlayerId::One, explore).expect("it activates");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert!(
+        !game.pending_decisions.is_empty(),
+        "the explore is mid-resolution, asking where the card goes",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == sentinel)
+            .expect("the Sentinel is there")
+            .counters(CounterKind::PlusOnePlusOne),
+        1,
+        "the counter is already on, which is what they would want to answer",
+    );
+    // Conceding is always available and is not an action taken in the game
+    // (CR 104.3a); everything else would be a response.
+    assert!(
+        game.legal_actions(PlayerId::Two)
+            .iter()
+            .all(|action| matches!(action, Action::Concede)),
+        "and they have no window at all: {:?}",
+        game.legal_actions(PlayerId::Two),
+    );
+}
