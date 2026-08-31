@@ -120,3 +120,80 @@ fn the_landfall_trigger_may_name_any_creature() {
         "himself, his neighbour, and the creature across the table",
     );
 }
+
+/// The landfall trigger names its target as it goes on the stack, so a
+/// creature answered underneath it takes the trigger with it: nothing else
+/// on the board is grown instead.
+#[test]
+fn a_target_answered_underneath_the_trigger_takes_it_with_them() {
+    let (mut game, bill, mine, _theirs) = staged(&[cards::GRIZZLY_BEARS], &[], 0);
+    let bears = mine[0];
+    game.put_onto_battlefield(PlayerId::One, cards::FOREST)
+        .expect("cataloged");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("landfall asks for its target");
+    let option = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(object, _)| object == bears))
+        .map(|option| option.id)
+        .expect("the Bears are on offer");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![option],
+        },
+    )
+    .expect("naming them is legal");
+
+    game.move_permanents_to_graveyard(&[bears]);
+    game.check_state_based_actions();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        counters_on(&game, bill),
+        0,
+        "the counter went with the creature it was promised to",
+    );
+}
+
+/// The doubling has no restriction on how often it is used: five mana twice
+/// over is four counters where there were one.
+#[test]
+fn the_doubling_may_be_activated_again() {
+    let (mut game, bill, mine, _theirs) = staged(&[cards::GRIZZLY_BEARS], &[], 1);
+    let bears = mine[0];
+
+    for expected in [2, 4] {
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 2);
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+        let double = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(
+                |action| matches!(action, Action::ActivateAbility { source, .. } if *source == bill),
+            )
+            .expect("five mana pays for it");
+        game.apply(PlayerId::One, double).expect("it activates");
+        drain_pending(&mut game);
+
+        assert_eq!(
+            counters_on(&game, bears),
+            expected,
+            "doubling again doubles what the last one left",
+        );
+    }
+}
