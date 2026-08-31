@@ -278,3 +278,60 @@ fn nothing_can_copy_it_while_it_is_still_impending() {
         "and now there is a creature there to copy",
     );
 }
+
+/// "Whenever this permanent enters or attacks": one printed ability with two
+/// ways in, and every test above takes the first. Swinging with the 6/6
+/// makes two more Insects.
+#[test]
+fn attacking_makes_two_more_insects() {
+    let (mut game, overlord) = staged();
+    cast(&mut game, overlord, false);
+    assert_eq!(insects(&game).len(), 2, "two from the way in");
+    let body = on_battlefield(&game).expect("the 6/6 is here").card.id;
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(body, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        insects(&game).len(),
+        4,
+        "two more for the attack, and the first two are still there",
+    );
+    assert!(
+        insects(&game).iter().all(|insect| game.has_flying(insect)),
+        "all of them fliers",
+    );
+}
+
+/// An Overlord still counting down is not a creature, so there is nothing to
+/// declare: the attack half waits for the body the same way the blocking
+/// does.
+#[test]
+fn an_impending_overlord_cannot_attack_for_its_own_trigger() {
+    let (mut game, overlord) = staged();
+    cast(&mut game, overlord, true);
+    let enchantment = on_battlefield(&game).expect("it is here").card.id;
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::DeclareAttacker { attacker, .. } if *attacker == enchantment)
+        }),
+        "an enchantment with time counters is no attacker",
+    );
+    assert_eq!(insects(&game).len(), 2, "so it made nothing further");
+}
