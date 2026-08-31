@@ -308,12 +308,9 @@ fn decline_offer(game: &mut Game) {
     drain_to_decision(game);
 }
 
-/// The permission is the Crab's controller's: one card out of their pile is
-/// castable for nothing while the offer waits.
-///
-/// Audit: partial — the pile is offered one card at a time rather than as a
-/// choice among the three, so which one the permission reaches is the order
-/// they were exiled in rather than the caster's pick.
+/// The permission is the Crab's controller's, and it is a choice among the
+/// pile rather than a queue: all three of their cards stand on offer, and
+/// the one that is cast is whichever the caster names.
 #[test]
 fn one_of_the_three_may_be_cast_for_free() {
     let (mut game, held) = staged_with_their_cards();
@@ -321,13 +318,35 @@ fn one_of_the_three_may_be_cast_for_free() {
     game.players[0].mana_pool = ManaPool::default();
 
     let free = free_casts(&game);
-    assert_eq!(free.len(), 1, "one of theirs, with no mana at all");
+    assert_eq!(free.len(), 3, "all three are on offer, with no mana at all");
     assert!(
-        game.players[1]
+        free.iter().all(|card| game.players[1]
             .exile
             .iter()
-            .any(|exiled| exiled.id == free[0]),
-        "and it is a card out of their zones",
+            .any(|exiled| exiled.id == *card)),
+        "and every one of them is a card out of their zones",
+    );
+
+    // The last of them, which a queue would have reached only after two
+    // declines -- and a decline takes the whole pile's permission.
+    let last = *free.last().expect("three of them");
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == last))
+        .expect("the offer behind the others is answerable too");
+    game.apply(PlayerId::One, cast)
+        .expect("it is cast for free");
+    drain_pending(&mut game);
+
+    assert!(
+        !game.players[1].exile.iter().any(|exiled| exiled.id == last),
+        "the card the caster picked is the one that left exile",
+    );
+    assert_eq!(
+        game.players[1].exile.len(),
+        2,
+        "and the other two stayed where they were",
     );
 }
 

@@ -32,6 +32,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A pile of free casts is cast in the order its caster chooses.** "You may
+  cast any number of spells from among the cards exiled this way" leaves
+  several offers standing at once, and its ruling is explicit that the
+  caster picks the order -- which is what lets one of those spells target
+  another. Only the offer at the head of the decision queue could be
+  answered by casting, so Etali, Primal Conqueror cast its two cards in the
+  order the exile happened to leave them, and Crabomination reached
+  whichever of the three was exiled first. Every standing offer is now
+  answerable while the others wait; declining still takes back only what its
+  own clause granted.
+
 - **A permanent that leaves for anywhere sets revolt.** "A permanent left
   the battlefield under your control this turn" asks only that one did, not
   why or where it went, and its ruling names a bounce and a sacrificed cost

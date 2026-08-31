@@ -81,9 +81,9 @@ impl Game {
                 let option = definition.play_option(choices.play_option())?;
                 let offer = self
                     .pending_decisions
-                    .first()
-                    .and_then(|pending| pending.continuation.cast_offer())
-                    .filter(|offer| offer.player == player && offer.card == *card)
+                    .iter()
+                    .filter_map(|pending| pending.continuation.cast_offer())
+                    .find(|offer| offer.player == player && offer.card == *card)
                     .map(|offer| offer.cost);
                 let cost =
                     self.configured_cast_mana_cost(player, *card, option, choices.costs(), offer)?;

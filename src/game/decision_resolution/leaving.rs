@@ -16,7 +16,10 @@ impl Game {
     /// cast. The offer is answered by the cast itself, so nothing about the
     /// decision resolves and the else branch never runs.
     pub(in crate::game) fn take_answered_cast_offer(&mut self, cast: GameObjectId) {
-        let answered = self.pending_decisions.first().is_some_and(|pending| {
+        // Not only the offer at the head of the queue: one resolution can
+        // leave several standing at once, and which of them is answered by
+        // casting is the caster's choice rather than the queue's order.
+        let Some(answered) = self.pending_decisions.iter().position(|pending| {
             matches!(
                 pending.continuation,
                 DecisionContinuation::MayCastExiled { card, .. }
@@ -25,11 +28,10 @@ impl Game {
                     | DecisionContinuation::MayCastGranted { card, .. }
                     | DecisionContinuation::MayCastAlternative { card, .. } if card == cast
             )
-        });
-        if !answered {
+        }) else {
             return;
-        }
-        let taken = self.pending_decisions.remove(0);
+        };
+        let taken = self.pending_decisions.remove(answered);
         match taken.continuation {
             DecisionContinuation::MayCastGranted {
                 card,

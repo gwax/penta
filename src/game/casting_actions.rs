@@ -81,6 +81,35 @@ impl Game {
         self.add_castable_spell_actions(offer.player, Some(offer), actions);
     }
 
+    /// The casts and land plays offered by the decisions waiting behind the
+    /// one at the head of the queue.
+    ///
+    /// A resolution can leave several offers standing at once -- "you may
+    /// cast any number of spells from among the cards exiled this way" --
+    /// and the order they are taken in is the caster's rather than the
+    /// queue's, so every one of them is answerable while the first waits.
+    pub(super) fn add_actions_for_offers_behind_the_first(
+        &self,
+        player: PlayerId,
+        actions: &mut Vec<Action>,
+    ) {
+        for pending in self.pending_decisions.iter().skip(1) {
+            if let Some(offer) = pending.continuation.cast_offer()
+                && offer.player == player
+            {
+                self.add_offered_cast_actions(offer, actions);
+                actions.extend(self.offered_land_actions(player, offer.card));
+            }
+        }
+    }
+
+    /// The standing offer to cast this card, wherever it sits in the
+    /// decision queue.
+    ///
+    /// One resolution can offer several cards at once -- "you may cast any
+    /// number of spells from among the cards exiled this way" -- and the
+    /// order they are cast in is their caster's to choose, so the offer at
+    /// the head of the queue is not the only one a cast may answer.
     pub(super) fn current_cast_offer(
         &self,
         player: PlayerId,
@@ -88,10 +117,9 @@ impl Game {
         source_zone: CastSourceZone,
     ) -> Option<CastOffer> {
         self.pending_decisions
-            .first()?
-            .continuation
-            .cast_offer()
-            .filter(|offer| {
+            .iter()
+            .filter_map(|pending| pending.continuation.cast_offer())
+            .find(|offer| {
                 offer.player == player && offer.card == card && offer.source_zone == source_zone
             })
     }

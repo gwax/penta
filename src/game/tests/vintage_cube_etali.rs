@@ -137,10 +137,12 @@ fn their_card_is_yours_to_cast_for_free() {
         &[cards::GRIZZLY_BEARS],
     );
 
+    let mut both = vec![cards::LIGHTNING_BOLT, cards::GRIZZLY_BEARS];
+    both.sort_unstable();
     assert_eq!(
         free_casts(&game),
-        vec![cards::LIGHTNING_BOLT],
-        "your own card is offered first",
+        both,
+        "both cards are on offer at once, yours and the one their library turned up",
     );
     assert_eq!(
         game.players[0].mana_pool.total(),
@@ -152,7 +154,7 @@ fn their_card_is_yours_to_cast_for_free() {
     assert_eq!(
         free_casts(&game),
         vec![cards::GRIZZLY_BEARS],
-        "and then their creature, out of their own exile",
+        "declining one leaves the other standing, out of their own exile",
     );
 }
 
@@ -350,9 +352,8 @@ fn a_player_too_low_on_life_cannot_pay_the_pip() {
 fn a_sorcery_may_be_cast_while_the_trigger_is_resolving() {
     let (mut game, _etali) = staged_holding_offers(&[cards::WRATH_OF_GOD], &[cards::GRIZZLY_BEARS]);
 
-    assert_eq!(
-        free_casts(&game),
-        vec![cards::WRATH_OF_GOD],
+    assert!(
+        free_casts(&game).contains(&cards::WRATH_OF_GOD),
         "a sorcery is on offer inside somebody else's resolution",
     );
 
@@ -420,5 +421,73 @@ fn an_x_cost_cast_for_free_is_cast_for_zero() {
             .iter()
             .any(|card| card.definition == cards::WALKING_BALLISTA),
         "and a 0/0 does not stay on the battlefield",
+    );
+}
+
+/// "If you cast more than one of the exiled cards, you choose the order in
+/// which to cast them. A spell you cast this way can be the target of a
+/// later spell you cast this way." Both offers stand together, so the
+/// second card exiled may be cast before the first.
+#[test]
+fn the_order_the_cards_are_cast_in_is_yours_to_choose() {
+    let (mut game, _etali) =
+        staged_holding_offers(&[cards::LIGHTNING_BOLT], &[cards::GRIZZLY_BEARS]);
+    let theirs = game.players[PlayerId::Two.index()]
+        .exile
+        .iter()
+        .find(|card| card.definition == cards::GRIZZLY_BEARS)
+        .expect("their library turned up the Bears")
+        .id;
+
+    // Theirs was exiled second and is cast first, which the queue's own
+    // order would never have allowed.
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == theirs))
+        .expect("the second offer is answerable while the first still stands");
+    game.apply(PlayerId::One, cast)
+        .expect("it is cast for free");
+    drain_to_decision(&mut game);
+
+    let bolt = game.players[PlayerId::One.index()]
+        .exile
+        .iter()
+        .find(|card| card.definition == cards::LIGHTNING_BOLT)
+        .expect("your own card is still exiled and still offered")
+        .id;
+    let bolt_cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == bolt
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::Two))
+            }
+            _ => false,
+        })
+        .expect("and castable after the other one, for nothing");
+    game.apply(PlayerId::One, bolt_cast)
+        .expect("it is cast for free");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS),
+        "their creature arrived under your control's spell",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        17,
+        "and the Bolt was cast afterwards, out of the same resolution",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.total(),
+        0,
+        "neither of them cost anything",
     );
 }

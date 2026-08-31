@@ -165,12 +165,8 @@ pub(in crate::card::sets) static ETALI_PRIMAL_CONQUEROR: CardRecord = CardRecord
                         //
                         // The printed clause states no duration, which means the casting happens as
                         // the ability resolves: a card left uncast stays in exile uncastable rather
-                        // than waiting for later in the turn.
-                        //
-                        // Audit: partial — each exiled card is offered in turn rather than as a
-                        // pile to be cast in an order you choose, so "a spell you cast this way can
-                        // be the target of a later spell you cast this way" only holds when the
-                        // exile order already put them that way.
+                        // than waiting for later in the turn. Every card it turned up is offered at
+                        // once, so the order they are cast in is the caster's.
                         EffectDef::ExileFromTopUntil {
                             player: EffectRecipientDef::EachPlayer,
                             object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),

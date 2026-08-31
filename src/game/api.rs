@@ -175,6 +175,7 @@ impl Game {
                 }
                 let must_take_cast =
                     decision.continuation.cast_offer_is_mandatory() && !offered_casts.is_empty();
+                self.add_actions_for_offers_behind_the_first(player, &mut offered_casts);
                 // Bounded selections are represented by the decision observation rather
                 // than by an eagerly-expanded Cartesian product. Callers submit the
                 // selected option IDs through `ChooseDecision`; `apply` validates the
