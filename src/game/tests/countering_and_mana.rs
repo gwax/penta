@@ -718,3 +718,90 @@ fn a_drain_cast_in_your_own_main_phase_pays_out_after_combat() {
         "one for the Bolt, in the same turn it was countered",
     );
 }
+
+/// A Counterspell is a spell, so a Counterspell may name one: the counter
+/// war resolves from the top down, and the Bolt at the bottom is what is
+/// left standing.
+#[test]
+fn a_counterspell_answering_a_counterspell_lets_the_first_spell_through() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[1].hand.clear();
+    game.players[0].graveyard.clear();
+    game.players[1].graveyard.clear();
+    let bolt = card(19_600, cards::LIGHTNING_BOLT, PlayerId::One);
+    let bolt_id = bolt.id;
+    game.players[0].hand.push(bolt);
+    let mine = card(19_601, cards::COUNTERSPELL, PlayerId::One);
+    let mine_id = mine.id;
+    game.players[0].hand.push(mine);
+    let theirs = card(19_602, cards::COUNTERSPELL, PlayerId::Two);
+    let theirs_id = theirs.id;
+    game.players[1].hand.push(theirs);
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.blue = 2;
+    game.players[1].mana_pool.blue = 2;
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let life = game.players[1].life;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(bolt_id, vec![Target::Player(PlayerId::Two)], Vec::new(), 0),
+    )
+    .expect("the Bolt is cast");
+    let bolt_on_stack = game.stack.last().expect("it is waiting").id;
+
+    game.apply(PlayerId::One, Action::PassPriority)
+        .expect("priority passes to the other seat");
+    game.apply(
+        PlayerId::Two,
+        cast_action(theirs_id, vec![Target::Spell(bolt_on_stack)], Vec::new(), 0),
+    )
+    .expect("they answer the Bolt");
+    let theirs_on_stack = game.stack.last().expect("it is waiting").id;
+
+    game.apply(PlayerId::Two, Action::PassPriority)
+        .expect("priority comes back");
+    game.apply(
+        PlayerId::One,
+        cast_action(mine_id, vec![Target::Spell(theirs_on_stack)], Vec::new(), 0),
+    )
+    .expect("a Counterspell is a spell like any other");
+    assert_eq!(game.stack.len(), 3, "three deep");
+
+    for _ in 0..8 {
+        if game.stack.is_empty() {
+            break;
+        }
+        pass_priority_pair(&mut game);
+    }
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[1].life,
+        life - 3,
+        "the Bolt at the bottom resolved",
+    );
+    assert_eq!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::COUNTERSPELL],
+        "their Counterspell was countered before it could do anything",
+    );
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::COUNTERSPELL, cards::LIGHTNING_BOLT],
+        "and yours resolved first, with the Bolt following it down",
+    );
+}
