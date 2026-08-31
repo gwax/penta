@@ -374,6 +374,30 @@ impl Game {
             )
     }
 
+    /// Whether a graveyard permission still names this card once X has been
+    /// chosen. CR 202.3b: a spell on the stack has the mana value its chosen
+    /// X gives it, so a permission that reads "mana value 2 or less" reaches
+    /// an {X}{X} card at X of one and not at X of two.
+    ///
+    /// A one-shot permission handed out by a resolution names the card
+    /// itself rather than a class of them, so no X can take the card out of
+    /// it.
+    pub(super) fn graveyard_cast_permits_x(
+        &self,
+        card: &CardInstance,
+        player: PlayerId,
+        option: &PlayOptionDef,
+        x: u16,
+    ) -> bool {
+        if self.graveyard_cast_permission(card.id, player).is_some() {
+            return true;
+        }
+        self.matching_play_permission_with_x(card, player, option, x, |permission| {
+            matches!(permission, PlayPermission::Graveyard(_)).then_some(())
+        })
+        .is_some()
+    }
+
     /// The first live permission that names this card and this play option,
     /// as whatever `wanted` reads off it.
     fn matching_play_permission<T>(
@@ -381,6 +405,20 @@ impl Game {
         card: &CardInstance,
         player: PlayerId,
         option: &PlayOptionDef,
+        wanted: impl Fn(PlayPermission) -> Option<T>,
+    ) -> Option<T> {
+        self.matching_play_permission_with_x(card, player, option, 0, wanted)
+    }
+
+    /// The same, reading the card as it would be on the stack for a chosen
+    /// X. Away from the stack X is zero (CR 202.3b), which is what every
+    /// caller but the cast enumeration wants.
+    fn matching_play_permission_with_x<T>(
+        &self,
+        card: &CardInstance,
+        player: PlayerId,
+        option: &PlayOptionDef,
+        x: u16,
         wanted: impl Fn(PlayPermission) -> Option<T>,
     ) -> Option<T> {
         // Only your own cards: no printed permission reaches another
@@ -394,8 +432,11 @@ impl Game {
             },
             PlayActionKind::PlayLand => CharacteristicContext::Hand,
         };
-        let object =
+        let mut object =
             self.printed_trigger_event_object(card.id, card.definition, player, &context)?;
+        object.mana_value = object
+            .mana_value
+            .saturating_add(x.saturating_mul(option.mana_cost.map_or(0, |cost| cost.x_multiplier)));
         let mut found = None;
         let _ = self.visit_play_permissions(player, |source, permission| {
             let Some(restriction) = permission.restriction() else {

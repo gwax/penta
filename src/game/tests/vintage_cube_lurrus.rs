@@ -176,6 +176,78 @@ fn the_permission_belongs_to_him() {
     assert!(castable_from_graveyard(&game, cards::GRIZZLY_BEARS).is_none());
 }
 
+/// "Lurrus doesn't let you play lands from your graveyard." A land is a
+/// permanent card of mana value zero and it is still played rather than
+/// cast, so the permission never reaches it.
+#[test]
+fn a_land_in_the_graveyard_stays_there() {
+    let game = staged(&[cards::MOUNTAIN, cards::GAEAS_CRADLE]);
+
+    assert!(
+        castable_from_graveyard(&game, cards::MOUNTAIN).is_none(),
+        "a basic is not a spell to cast",
+    );
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::PlayLand { card, .. }
+                if game.players[0]
+                    .graveyard
+                    .iter()
+                    .any(|buried| buried.id == *card))
+        }),
+        "and neither half of the permission is a land drop",
+    );
+}
+
+/// "For spells with {X} in their mana costs, use the value chosen for X to
+/// determine the spell's mana value." A Walking Ballista is {X}{X}: at one
+/// it costs two and Lurrus reaches it, and there is no larger X on offer.
+#[test]
+fn an_x_spell_is_reached_only_at_the_x_that_fits() {
+    let mut game = staged(&[cards::WALKING_BALLISTA]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 6);
+
+    let ballista = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::WALKING_BALLISTA)
+        .expect("it is in the graveyard")
+        .id;
+    let mut offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == ballista => Some(choices.x()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    offered.sort_unstable();
+
+    assert_eq!(
+        offered,
+        vec![0, 1],
+        "X of two would be a four-mana permanent, which he does not reach",
+    );
+}
+
+/// The other side of {X}: "if a card in a player's deck has {X} in its mana
+/// cost, X is considered to be 0", so a Ballista in the starting deck is a
+/// zero-drop and leaves him a legal companion.
+#[test]
+fn an_x_permanent_in_the_deck_costs_nothing_for_the_condition() {
+    let mut game = companion::staged(
+        &[cards::WALKING_BALLISTA, cards::RAGAVAN_NIMBLE_PILFERER],
+        &[cards::LURRUS_OF_THE_DREAM_DEN],
+    );
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+    assert_eq!(
+        companion::companion_offers(&game).len(),
+        1,
+        "{{X}}{{X}} in the deck is mana value zero, not four",
+    );
+}
+
 /// The other half of the card: the keyword that keeps it out of the deck in
 /// the first place, and the {3} that fetches it back.
 mod companion {
@@ -183,7 +255,7 @@ mod companion {
 
     /// A game whose player-one sideboard holds `sideboard` and whose starting
     /// deck holds `deck` beside enough Mountains to shuffle.
-    fn staged(deck: &[CardDefinitionId], sideboard: &[CardDefinitionId]) -> Game {
+    pub(super) fn staged(deck: &[CardDefinitionId], sideboard: &[CardDefinitionId]) -> Game {
         let mut main = deck.to_vec();
         while main.len() < 40 {
             main.push(cards::MOUNTAIN);
@@ -213,7 +285,7 @@ mod companion {
         game
     }
 
-    fn companion_offers(game: &Game) -> Vec<Action> {
+    pub(super) fn companion_offers(game: &Game) -> Vec<Action> {
         game.legal_actions(PlayerId::One)
             .into_iter()
             .filter(|action| matches!(action, Action::TakeCompanion { .. }))

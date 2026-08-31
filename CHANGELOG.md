@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A permission that bounds mana value reads the X you chose.** CR 202.3b:
+  a spell on the stack has the mana value its chosen X gives it, so Lurrus
+  of the Dream-Den reaches a Walking Ballista in the graveyard for X of one
+  and not for X of two. The bound was checked against the card where it
+  lay, with X counted as zero, so every X was on offer. Costs printed on
+  the card itself -- flashback, escape, retrace -- are not permissions and
+  are unaffected.
+
 - **An Elk is only an Elk.** Oko, Thief of Crowns added the creature type
   to what his +1 named instead of replacing the type line, so a Mox or a
   Myr Battlesphere he turned into a 3/3 stayed an artifact and went on
