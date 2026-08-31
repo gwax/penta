@@ -260,3 +260,84 @@ fn the_counter_mode_can_be_paid_through() {
         );
     }
 }
+
+/// "If you choose the first and/or second modes but all of the targets
+/// become illegal before it resolves, the spell won't resolve. If you also
+/// chose the last mode, you won't draw any cards." The draws are not their
+/// own spell; they go down with the rest.
+#[test]
+fn losing_every_target_takes_the_draws_with_it() {
+    let (mut game, confluence) = staged();
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let held = game.players[0].hand.len();
+    let library = game.players[0].library.len();
+
+    let bounce = ModeId::from_index(1).expect("the second mode");
+    let draw = ModeId::from_index(2).expect("the third mode");
+    cast_with(
+        &mut game,
+        confluence,
+        &[bounce, draw, draw],
+        &[Target::Permanent(bears)],
+    );
+    game.move_permanents_to_graveyard(&[bears]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        held - 1,
+        "the Confluence left the hand and nothing came back",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        library,
+        "the draws never happened",
+    );
+}
+
+/// "If at least one target is still legal, the spell will resolve but will
+/// have no effect on any illegal targets." One of two creatures leaving is
+/// not the whole of the targets.
+#[test]
+fn one_target_surviving_carries_the_rest_of_the_spell() {
+    let (mut game, confluence) = staged();
+    let first = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let second = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let held = game.players[0].hand.len();
+
+    let bounce = ModeId::from_index(1).expect("the second mode");
+    let draw = ModeId::from_index(2).expect("the third mode");
+    cast_with(
+        &mut game,
+        confluence,
+        &[bounce, bounce, draw],
+        &[Target::Permanent(first), Target::Permanent(second)],
+    );
+    game.move_permanents_to_graveyard(&[first]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == second),
+        "the creature that was still there went back to hand",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        held,
+        "and the draw happened: one card out for the Confluence, one in",
+    );
+}
