@@ -584,3 +584,122 @@ fn it_may_counter_your_own_ability() {
         "and your own Sorcerer is the one left silent",
     );
 }
+
+/// The rider names three types and the coverage above only ever exercises
+/// the creature. A planeswalker's loyalty ability is an activated ability
+/// like any other: countered, and Jace is left with no abilities to
+/// activate at all.
+#[test]
+fn a_planeswalkers_loyalty_ability_is_answered_and_silences_him() {
+    let (mut game, tidebinder, theirs) = staged(&[cards::JACE_THE_MIND_SCULPTOR]);
+    let jace = theirs[0];
+    let before = game.players[1].hand.len();
+
+    let activate = activations(&game, PlayerId::Two, jace)
+        .into_iter()
+        .next()
+        .expect("he has loyalty abilities to spend");
+    game.apply(PlayerId::Two, activate).expect("it activates");
+    game.priority = PlayerId::One;
+
+    flash_it_in(&mut game, tidebinder);
+
+    assert_eq!(
+        game.players[1].hand.len(),
+        before,
+        "whatever he was doing, it did not resolve",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == jace),
+        "he is still standing",
+    );
+    assert!(
+        activations(&game, PlayerId::Two, jace).is_empty(),
+        "with nothing left to activate",
+    );
+}
+
+/// The artifact half of the same rider: a Relic of Sauron whose draw is
+/// countered keeps its body and loses everything it does, mana ability
+/// included.
+#[test]
+fn an_artifacts_ability_is_answered_and_silences_it() {
+    let (mut game, tidebinder, theirs) = staged(&[cards::RELIC_OF_SAURON]);
+    let relic = theirs[0];
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 3);
+    let draw = activations(&game, PlayerId::Two, relic)
+        .into_iter()
+        .find(|action| !matches!(action, Action::ActivateManaAbility { .. }))
+        .expect("three mana and a tap draws two");
+    game.apply(PlayerId::Two, draw).expect("it activates");
+    game.priority = PlayerId::One;
+    let before = game.players[1].hand.len();
+
+    flash_it_in(&mut game, tidebinder);
+
+    assert_eq!(game.players[1].hand.len(), before, "the draw was countered");
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == relic),
+        "the artifact is still there",
+    );
+    assert!(
+        !game
+            .legal_actions(PlayerId::Two)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::ActivateManaAbility { source, .. } if *source == relic
+            )),
+        "and its mana ability went with the rest",
+    );
+}
+
+/// "Counter up to one target activated or triggered ability": a spell is
+/// neither. A Lightning Bolt on the stack is no target for it, and the
+/// Tidebinder arrives with nothing to answer.
+#[test]
+fn a_spell_on_the_stack_is_not_something_it_may_counter() {
+    let (mut game, tidebinder, _theirs) = staged(&[]);
+    game.players[1]
+        .hand
+        .push(card(120_900, cards::LIGHTNING_BOLT, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    let bolt = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(120_900))
+        })
+        .expect("one red casts it");
+    game.apply(PlayerId::Two, bolt).expect("it is cast");
+    game.priority = PlayerId::One;
+    let spell = game.stack.last().expect("the Bolt is on the stack").id;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == tidebinder))
+        .expect("flash makes it castable in response");
+    assert!(
+        !matches!(&cast, Action::CastSpell { choices, .. }
+            if choices.iter_targets().any(|target| *target == Target::Spell(spell))),
+        "the Bolt is no target for it",
+    );
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::TISHANA_S_TIDEBINDER),
+        "the Tidebinder arrived all the same",
+    );
+    assert_eq!(
+        game.players[0].life, 17,
+        "and the Bolt it could not touch resolved",
+    );
+}
