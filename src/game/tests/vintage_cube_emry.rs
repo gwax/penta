@@ -416,3 +416,108 @@ fn affinity_leaves_her_mana_value_alone() {
         "{{2}}{{U}} is three however little of it was paid",
     );
 }
+
+/// "For each artifact *you control*." Their board is not your affinity,
+/// however many rocks are sitting on it.
+#[test]
+fn their_artifacts_do_not_pay_for_her() {
+    let (mut game, held) = staged(&[], &[]);
+    for definition in [cards::HOWLING_MINE, cards::MANIFOLD_KEY] {
+        game.put_onto_battlefield(PlayerId::Two, definition)
+            .expect("cataloged");
+    }
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    assert!(
+        casts(&game, held).is_empty(),
+        "two of their artifacts take nothing off",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    assert!(
+        !casts(&game, held).is_empty(),
+        "and she still costs the full three",
+    );
+}
+
+/// An artifact is an artifact however it got there: two Treasures count for
+/// affinity exactly as two artifact cards do.
+#[test]
+fn artifact_tokens_pay_for_her_too() {
+    let (mut game, held) = staged(&[], &[]);
+    for _ in 0..2 {
+        game.create_token(PlayerId::One, tokens::treasure());
+    }
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    assert!(
+        !casts(&game, held).is_empty(),
+        "two Treasures are two artifacts",
+    );
+}
+
+/// Her ability costs a tap, so the turn she lands she mills and does nothing
+/// else: the Lotus she turned over is hers to name only from her next turn
+/// on.
+#[test]
+fn the_turn_she_arrives_she_only_mills() {
+    let (mut game, held) = staged(&[cards::HOWLING_MINE, cards::MANIFOLD_KEY], &[]);
+    // An artifact on top, so what she mills is something she could name.
+    game.players[0]
+        .library
+        .push(card(117_900, cards::BLACK_LOTUS, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    let cast = casts(&game, held)
+        .into_iter()
+        .next()
+        .expect("she is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+
+    let emry = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::EMRY_LURKER_OF_THE_LOCH)
+        .expect("she arrived")
+        .card
+        .id;
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::BLACK_LOTUS),
+        "the Lotus she milled is sitting there",
+    );
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::ActivateAbility { source, .. } if *source == emry
+            )),
+        "and her tap is a creature's tap, waiting a turn",
+    );
+
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == emry)
+    {
+        permanent.entered_controller_turn = 0;
+    }
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::ActivateAbility { source, .. } if *source == emry
+            )),
+        "which the next turn gives her",
+    );
+}
