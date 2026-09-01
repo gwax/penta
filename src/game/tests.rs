@@ -614,6 +614,7 @@ mod vintage_cube_oust;
 mod vintage_cube_overlord;
 mod vintage_cube_overlord_of_the_mistmoors;
 mod vintage_cube_paradoxical_outcome;
+mod vintage_cube_parallax_wave;
 mod vintage_cube_path;
 mod vintage_cube_pentad_prism;
 mod vintage_cube_pest_infestation;
