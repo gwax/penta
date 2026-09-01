@@ -281,3 +281,155 @@ fn the_treasure_arrives_before_the_spell_and_outlives_a_counter() {
         .expect("he is untouched");
     assert_eq!(dragon.damage, 0, "and the Dragon took no damage at all");
 }
+
+/// "Becomes the target of a spell" does not say whose. Pointing your own
+/// Giant Growth at him is a Treasure, which is a thing you do on purpose.
+#[test]
+fn your_own_spell_targeting_him_pays_out_too() {
+    let (mut game, dragon) = staged();
+    let growth = card(180_400, cards::GIANT_GROWTH, PlayerId::One);
+    let growth_id = growth.id;
+    game.players[0].hand.push(growth);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == growth_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(dragon))
+            }
+            _ => false,
+        })
+        .expect("he is a legal target for your own spell");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(treasures(&game).len(), 1, "a spell of yours is a spell",);
+}
+
+/// "Players can cast spells and activate abilities after the triggered
+/// ability resolves but before the spell that caused it to trigger does."
+/// The Treasure is the point of that window: it is on the battlefield, and
+/// worth its doubled two, while their Bolt is still waiting to resolve.
+#[test]
+fn the_treasure_may_be_spent_while_the_spell_still_waits() {
+    let (mut game, dragon) = staged();
+    let bolt = card(180_500, cards::LIGHTNING_BOLT, PlayerId::Two);
+    let bolt_id = bolt.id;
+    game.players[1].hand.push(bolt);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    game.priority = PlayerId::Two;
+
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == bolt_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(dragon))
+            }
+            _ => false,
+        })
+        .expect("the Dragon is a legal target");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+
+    // Only the trigger resolves; the Bolt is left where it is.
+    for _ in 0..8 {
+        if game.pending_triggers.is_empty() && game.stack.len() == 1 {
+            break;
+        }
+        if game.apply(game.priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert_eq!(game.stack.len(), 1, "their Bolt is still on the stack");
+    let treasure = *treasures(&game).first().expect("the Treasure arrived");
+
+    game.priority = PlayerId::One;
+    let doubled = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateManaAbility {
+                source,
+                ability:
+                    AbilityOrigin::Granted {
+                        source: granter, ..
+                    },
+                ..
+            } => *source == treasure && *granter == dragon,
+            _ => false,
+        })
+        .expect("his Treasure is spendable where it stands");
+    game.apply(PlayerId::One, doubled)
+        .expect("it is sacrificed");
+
+    // A mana ability uses no stack, so nothing has been allowed to resolve
+    // between announcing it and reading the pool.
+    assert_eq!(
+        game.players[0].mana.len(),
+        2,
+        "two mana, paid for by the spell that was aimed at him",
+    );
+    assert_eq!(game.stack.len(), 1, "and their Bolt has still not resolved");
+}
+
+/// "*Treasures you control* have..." -- a Treasure across the table is
+/// theirs, and his grant never reaches it.
+#[test]
+fn their_treasures_are_not_granted_the_second_mana() {
+    let (mut game, dragon) = staged();
+    game.create_token(PlayerId::Two, tokens::treasure());
+    drain_pending(&mut game);
+    // Their seat needs priority, or its offered actions are empty and every
+    // question asked of them answers itself.
+    game.priority = PlayerId::Two;
+    let theirs = *treasures(&game)
+        .first()
+        .expect("their Treasure is on the battlefield");
+    assert!(
+        !game.legal_actions(PlayerId::Two).is_empty(),
+        "the seat is live, so what it is not offered means something",
+    );
+
+    let granted = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .any(|action| match action {
+            Action::ActivateManaAbility {
+                source,
+                ability:
+                    AbilityOrigin::Granted {
+                        source: granter, ..
+                    },
+                ..
+            } => source == theirs && granter == dragon,
+            _ => false,
+        });
+    assert!(!granted, "his grant reaches only the Treasures he controls");
+
+    let own = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateManaAbility { source, .. } if *source == theirs
+            )
+        })
+        .expect("they may still spend their own Treasure");
+    game.apply(PlayerId::Two, own).expect("it is sacrificed");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[1].mana.len(),
+        1,
+        "one mana, which is what a Treasure is printed with",
+    );
+}
