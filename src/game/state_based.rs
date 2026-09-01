@@ -48,6 +48,11 @@ impl Game {
             let battlefield_len = self.battlefield.len();
             let mut regenerate = Vec::new();
             let mut die = Vec::new();
+            // The sweep below only reads, and asks the same land-type
+            // questions of every permanent on the battlefield. It is dropped
+            // by hand before the first mutation, because an answer must not
+            // outlive the board it was given for.
+            let land_types = self.hold_land_type_query_memo();
             for permanent in &self.battlefield {
                 // 704.5m: an Aura attached to nothing, or to something that is
                 // no longer a legal host, is put into its owner's graveyard.
@@ -94,6 +99,7 @@ impl Game {
                     die.push(permanent.card.id);
                 }
             }
+            drop(land_types);
             for id in regenerate {
                 self.regenerate_permanent(id);
             }

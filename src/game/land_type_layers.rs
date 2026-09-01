@@ -132,7 +132,7 @@ impl Game {
             .map(|source| (source, source.timestamp))
             .collect::<Vec<_>>();
         if let Some(prospective) = prospective
-            && self.supplies_land_type_effect(prospective)
+            && self.supplies_land_type_effect_uncached(prospective)
             && !sources
                 .iter()
                 .any(|(source, _)| source.card.id == prospective.card.id)
@@ -209,7 +209,11 @@ impl Game {
         prospective: &Permanent,
     ) -> bool {
         let sources = self.land_type_effect_sources(Some(prospective));
-        self.rules_text_abilities_removed_from_sources(affected, &sources)
+        // Uncached on purpose: `affected` may be the prospective permanent,
+        // which shares an id with the real one it stands in for. The memo is
+        // keyed by id, so answering this from it would describe the wrong
+        // board.
+        self.rules_text_abilities_removed_from_sources_uncached(affected, &sources)
     }
 
     fn rules_text_abilities_removed_from_sources_uncached(

@@ -310,6 +310,10 @@ impl Game {
     }
 
     pub(super) fn battlefield_trigger_listeners(&self) -> Vec<BattlefieldTriggerListener> {
+        // Another long read that asks the same land-type questions once per
+        // permanent, so it is worth one memo for the sweep rather than one
+        // answer per permanent.
+        let _land_types = self.hold_land_type_query_memo();
         let mut listeners = Vec::new();
         // Emblems listen alongside the battlefield, the way they already sit
         // in every other sweep. Nothing about an emblem is in a zone, so the
