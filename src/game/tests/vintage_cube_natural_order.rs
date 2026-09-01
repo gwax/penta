@@ -130,3 +130,61 @@ fn the_search_names_green_creature_cards_only() {
         "the Bolt is not a green creature card: {offered:?}",
     );
 }
+
+/// A *green* creature: a Grizzly Bears is green and a Serra Angel is not, so
+/// a board of white creatures pays for nothing.
+#[test]
+fn only_a_green_creature_pays_for_it() {
+    let (mut game, order) = staged(false);
+    game.put_onto_battlefield(PlayerId::One, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert!(
+        cast_actions(&game, order).is_empty(),
+        "a white creature is no green creature",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let offers = cast_actions(&game, order);
+    assert_eq!(offers.len(), 1, "one green creature, one way to cast it");
+    assert!(
+        matches!(&offers[0], Action::CastSpell { sacrifices, .. } if sacrifices.len() == 1),
+        "and it gives up exactly the one: {offers:?}",
+    );
+}
+
+/// Its ruling: "players can respond to this spell only after it's been cast
+/// and all its costs have been paid. No one can try to destroy the creature
+/// you sacrificed." The Elf is in the graveyard while the spell is still on
+/// the stack.
+#[test]
+fn the_creature_is_gone_before_anybody_may_answer() {
+    let (mut game, order) = staged(true);
+
+    let cast = cast_actions(&game, order)
+        .into_iter()
+        .next()
+        .expect("an Elf and four mana cast it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    assert_eq!(game.stack.len(), 1, "the Order has not resolved");
+    assert!(
+        game.battlefield.is_empty(),
+        "and the Elf is already off the battlefield",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LLANOWAR_ELVES),
+        "in the graveyard, out of reach of an answer",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.total(),
+        0,
+        "with the mana spent as well",
+    );
+}
