@@ -142,7 +142,7 @@ impl Game {
         sources
     }
 
-    fn supplies_land_type_effect(&self, source: &Permanent) -> bool {
+    fn supplies_land_type_effect_uncached(&self, source: &Permanent) -> bool {
         self.with_effective_rules(source, |rules| {
             rules
                 .ability_clauses()
@@ -212,7 +212,7 @@ impl Game {
         self.rules_text_abilities_removed_from_sources(affected, &sources)
     }
 
-    pub(super) fn rules_text_abilities_removed_from_sources(
+    fn rules_text_abilities_removed_from_sources_uncached(
         &self,
         affected: &Permanent,
         sources: &[(&Permanent, ContinuousEffectTimestamp)],
@@ -974,3 +974,4 @@ impl Game {
 }
 
 include!("land_type_layers/effect_inspection.rs");
+include!("land_type_layers/query_memo.rs");

@@ -159,6 +159,7 @@ impl Game {
         if self.result.is_some() {
             return Vec::new();
         }
+        let _land_types = self.hold_land_type_query_memo();
 
         let mut actions = vec![Action::Concede];
         if let Some(decision) = self.pending_decisions.first() {
@@ -843,6 +844,7 @@ impl Game {
     }
 
     pub fn observe(&self, viewer: PlayerId) -> PlayerObservation {
+        let _land_types = self.hold_land_type_query_memo();
         let player = &self.players[viewer.index()];
         let opponent = &self.players[viewer.opponent().index()];
         PlayerObservation {
