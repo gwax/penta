@@ -262,3 +262,86 @@ fn thalia_taxes_the_free_half_as_well() {
         "one mana and the Mountain is the free half again",
     );
 }
+
+/// The Mountain is a cost, not an effect: it is gone as the spell is cast,
+/// so a Counterspell answers the Collapse and leaves the land in the
+/// graveyard all the same.
+#[test]
+fn the_mountain_is_spent_even_when_the_spell_is_countered() {
+    let (mut game, collapse, angel) = staged(&[cards::MOUNTAIN]);
+    game.players[1]
+        .hand
+        .push(card(85_900, cards::COUNTERSPELL, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    let free = casts(&game, collapse, angel)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { choices, .. } if choices.costs().alternative().is_some())
+        })
+        .expect("the free half is on offer");
+    game.apply(PlayerId::One, free).expect("it is cast");
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MOUNTAIN),
+        "the land was sacrificed to announce it",
+    );
+
+    game.priority = PlayerId::Two;
+    let counter = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(85_900))
+        })
+        .expect("two blue answers it");
+    game.apply(PlayerId::Two, counter).expect("it is cast");
+    settle(&mut game);
+
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == angel)
+        .expect("the Angel is untouched");
+    assert_eq!(angel.damage, 0, "the five never happened");
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MOUNTAIN),
+        "and the Mountain is still spent",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::MOUNTAIN),
+        "with nothing left on the battlefield to show for it",
+    );
+}
+
+/// "Target creature or planeswalker" does not say whose: five damage is as
+/// available to your own board as to theirs.
+#[test]
+fn it_may_be_aimed_at_your_own_creature() {
+    let (mut game, collapse, _angel) = staged(&[cards::MOUNTAIN]);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let cast = casts(&game, collapse, mine)
+        .into_iter()
+        .next()
+        .expect("your own creature is a legal target");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != mine),
+        "five damage kills your own bear too",
+    );
+}
