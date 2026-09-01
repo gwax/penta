@@ -279,3 +279,73 @@ fn an_indestructible_creature_shrugs_off_the_burn() {
         "and lethal damage destroys nothing that cannot be destroyed",
     );
 }
+
+/// Neither half says whose permanent it is. Your own artifact is as legal a
+/// target as theirs, which is how an Abrade answers a stolen Sol Ring or
+/// cashes in a Chromatic Star.
+#[test]
+fn it_may_be_aimed_at_your_own_board() {
+    let (mut game, abrade, _) = staged(&[]);
+    let ring = game
+        .put_onto_battlefield(PlayerId::One, cards::SOL_RING)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    cast_at(&mut game, abrade, 1, ring);
+
+    assert!(!on_battlefield(&game, cards::SOL_RING), "the Ring is gone");
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SOL_RING),
+        "destroyed into its own owner's graveyard",
+    );
+}
+
+/// "Destroy" is a word regeneration answers: a shield on an artifact
+/// creature turns the shatter into a tap.
+#[test]
+fn a_regeneration_shield_answers_the_shatter() {
+    let (mut game, abrade, theirs) = staged(&[cards::BALEFUL_STRIX]);
+    let strix = theirs[0];
+    let ward = game
+        .build_zone(PlayerId::One, &[cards::DEATH_WARD])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let ward_id = ward.id;
+    game.players[0].hand.push(ward);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    let shield = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == ward_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(strix))
+            }
+            _ => false,
+        })
+        .expect("an artifact creature is a creature the Ward may shield");
+    game.apply(PlayerId::One, shield).expect("it is cast");
+    settle(&mut game);
+
+    cast_at(&mut game, abrade, 1, strix);
+
+    assert!(
+        on_battlefield(&game, cards::BALEFUL_STRIX),
+        "the shield was spent instead of the permanent",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == strix)
+            .expect("it is there")
+            .tapped,
+        "and regenerating taps it",
+    );
+}
