@@ -169,3 +169,95 @@ fn a_regeneration_shield_saves_the_creature_it_doomed() {
     );
     assert!(survivor.tapped, "regenerating taps what it saves");
 }
+
+/// Trample is half of what the green mana buys: a doubled Lions blocked by a
+/// 1/1 assigns one damage to the blocker and the rest to the player.
+#[test]
+fn it_grants_trample_and_the_rest_goes_through() {
+    let (mut game, lions, held) = staged(1);
+    let chump = creature(99_600, cards::SAVANNAH_LIONS, PlayerId::Two);
+    let chump_id = chump.card.id;
+    game.battlefield.push(chump);
+    game.turns_started = [5, 5];
+    game.turn = 9;
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = true;
+    game.priority = PlayerId::One;
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == lions)
+    {
+        permanent.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+    }
+    let life = game.players[PlayerId::Two.index()].life;
+
+    cast_at(&mut game, held[0], lions);
+    assert_eq!(power_of(&game, lions), Some(4), "a 2/1 doubled");
+    assert!(
+        game.permanent_has_executable_keyword(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == lions)
+                .expect("it is there"),
+            KeywordAbility::Trample,
+        ),
+        "and trampling",
+    );
+
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+    game.declare_blocker(chump_id, lions);
+    game.finish_declaring_blockers();
+    game.deal_combat_damage();
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == chump_id),
+        "the blocker took its lethal one",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        life - 3,
+        "and the other three trampled over it",
+    );
+}
+
+/// "Destroy that creature *if it attacked this turn*": a Berserk spent on a
+/// creature that stayed home is a pump and nothing more.
+#[test]
+fn a_creature_that_did_not_attack_survives_the_end_step() {
+    let (mut game, _lions, held) = staged(1);
+    let home = creature(99_700, cards::GRIZZLY_BEARS, PlayerId::One);
+    let home_id = home.card.id;
+    game.battlefield.push(home);
+
+    cast_at(&mut game, held[0], home_id);
+    assert_eq!(power_of(&game, home_id), Some(4), "a 2/2 doubled");
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == home_id),
+        "it never attacked, so the delayed trigger destroys nothing",
+    );
+}
