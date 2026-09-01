@@ -241,3 +241,146 @@ fn an_aura_on_their_creature_is_still_your_devotion() {
         "the Invisibility is yours and its two blue pips are too",
     );
 }
+
+/// A library of `definitions` and nothing else, listed top of library first.
+fn stacked(definitions: &[CardDefinitionId]) -> Game {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].library.clear();
+    for (offset, definition) in definitions.iter().enumerate().rev() {
+        let id = 81_000 + u32::try_from(offset).expect("a short library");
+        game.players[0]
+            .library
+            .push(card(id, *definition, PlayerId::One));
+    }
+    drain_pending(&mut game);
+    game
+}
+
+/// The library read from the top down, by the offsets [`stacked`] gave out.
+fn from_the_top(game: &Game) -> Vec<u32> {
+    game.players[0]
+        .library
+        .iter()
+        .rev()
+        .map(|card| card.id.0 - 81_000)
+        .collect()
+}
+
+/// The Oracle's trigger with the Oracle in play and a library it cannot
+/// empty: X cards seen, one answer given, and the stack settled after.
+fn look_answering(game: &mut Game, chosen: Option<&str>) {
+    game.put_onto_battlefield(PlayerId::One, cards::THASSAS_ORACLE)
+        .expect("cataloged");
+    let mut asked = None;
+    for _ in 0..8 {
+        asked = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone());
+        if asked.is_some() || game.apply(game.priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let decision = asked.expect("the trigger asks what stays on top");
+    let options = chosen
+        .map(|name| {
+            vec![
+                decision
+                    .options
+                    .iter()
+                    .find(|option| option.label == name)
+                    .unwrap_or_else(|| panic!("{name} was among the cards looked at"))
+                    .id,
+            ]
+        })
+        .unwrap_or_default();
+    game.apply(
+        decision.player,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options,
+        },
+    )
+    .expect("the decision accepts what it offered");
+    settle(game);
+    drain_pending(game);
+}
+
+/// "Put up to one of them on top of your library and the rest on the bottom."
+/// Devotion two looks at two cards; the one kept is the new top card, and the
+/// one passed over goes under everything the Oracle never saw.
+#[test]
+fn the_card_kept_is_the_new_top_and_the_other_goes_under() {
+    let mut game = stacked(&[
+        cards::LORD_OF_ATLANTIS,
+        cards::MOX_SAPPHIRE,
+        cards::BLACK_LOTUS,
+        cards::GRIZZLY_BEARS,
+    ]);
+
+    look_answering(&mut game, Some("Mox Sapphire"));
+
+    assert_eq!(game.result, None, "four cards outrun two devotion");
+    assert_eq!(
+        from_the_top(&game),
+        vec![1, 2, 3, 0],
+        "the Mox stayed on top and the Lord went to the bottom",
+    );
+}
+
+/// "Up to one" allows none of them, and then both looked-at cards are buried
+/// and the third card down is what the next draw finds.
+#[test]
+fn keeping_none_of_them_buries_both() {
+    let mut game = stacked(&[
+        cards::LORD_OF_ATLANTIS,
+        cards::MOX_SAPPHIRE,
+        cards::BLACK_LOTUS,
+        cards::GRIZZLY_BEARS,
+    ]);
+
+    look_answering(&mut game, None);
+
+    let order = from_the_top(&game);
+    assert_eq!(
+        order[..2],
+        [2, 3],
+        "the two cards never looked at rose to the top",
+    );
+    let mut buried = order[2..].to_vec();
+    buried.sort_unstable();
+    assert_eq!(
+        buried,
+        vec![0, 1],
+        "both looked-at cards went to the bottom"
+    );
+}
+
+/// "If your devotion to blue is zero ... you don't look at or move any cards
+/// in your library." An Oracle that has already left asks nothing, and the
+/// library it triggered over is exactly as it was.
+#[test]
+fn zero_devotion_looks_at_nothing_at_all() {
+    let mut game = stacked(&[
+        cards::LORD_OF_ATLANTIS,
+        cards::MOX_SAPPHIRE,
+        cards::BLACK_LOTUS,
+        cards::GRIZZLY_BEARS,
+    ]);
+    let oracle = game
+        .put_onto_battlefield(PlayerId::One, cards::THASSAS_ORACLE)
+        .expect("cataloged");
+    game.battlefield
+        .retain(|permanent| permanent.card.id != oracle);
+
+    settle(&mut game);
+    drain_pending(&mut game);
+
+    assert_eq!(game.result, None, "four cards outrun no devotion");
+    assert_eq!(
+        from_the_top(&game),
+        vec![0, 1, 2, 3],
+        "nothing was looked at, so nothing moved",
+    );
+}
