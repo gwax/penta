@@ -162,3 +162,101 @@ fn losing_the_counters_opens_adapt_again() {
         "an empty creature adapts as readily as it did the first time",
     );
 }
+
+/// "You can always activate an ability that will cause a creature to adapt.
+/// As it resolves, if the creature has a +1/+1 counter on it for any reason,
+/// you simply won't put any counters on it." The five mana is spent and the
+/// Krasis is the size it already was.
+#[test]
+fn adapting_twice_is_five_mana_for_nothing() {
+    let (mut game, krasis, _lions) = staged(&[]);
+    adapt(&mut game, krasis);
+    assert_eq!(
+        size(&game, krasis),
+        (Some(7), Some(7)),
+        "4/4 and three counters"
+    );
+
+    adapt(&mut game, krasis);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == krasis)
+            .expect("it is there")
+            .counters(CounterKind::PlusOnePlusOne),
+        3,
+        "the second adapt adds nothing to what is already there",
+    );
+    assert_eq!(size(&game, krasis), (Some(7), Some(7)));
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.total(),
+        0,
+        "and the mana was spent for it all the same",
+    );
+}
+
+/// "The ability overwrites previous effects that set power and toughness to
+/// specific numbers. Effects that otherwise modify them still apply. The
+/// same is true for +1/+1 counters." A Lions with a counter on it becomes a
+/// 4/4 base and keeps the counter on top.
+#[test]
+fn the_base_it_sets_is_still_read_under_a_counter() {
+    let (mut game, krasis, lions) = staged(&[]);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == lions)
+        .expect("it is there")
+        .add_counters(CounterKind::PlusOnePlusOne, 1);
+    assert_eq!(
+        size(&game, lions),
+        (Some(3), Some(2)),
+        "a 2/1 with a counter on it",
+    );
+
+    attack_and_accept(&mut game, krasis);
+
+    assert_eq!(
+        size(&game, lions),
+        (Some(5), Some(5)),
+        "the base became 4/4 and the counter is still worth its +1/+1",
+    );
+}
+
+/// The trigger is a "you may": declined, the creature it would have named is
+/// left the size it was.
+#[test]
+fn the_trigger_may_be_declined() {
+    let (mut game, krasis, lions) = staged(&[]);
+
+    game.step = Step::DeclareAttackers;
+    game.declare_attacker(krasis, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    for _ in 0..16 {
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            let decline = decision.options.first().expect("an option is offered").id;
+            game.apply(
+                PlayerId::One,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: vec![decline],
+                },
+            )
+            .expect("declining is one of the answers");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert_eq!(
+        size(&game, lions),
+        (Some(2), Some(1)),
+        "the Lions is the 2/1 it was printed as",
+    );
+}
