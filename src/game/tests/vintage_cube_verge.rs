@@ -453,3 +453,52 @@ fn a_granted_land_type_answers_the_condition() {
         "every land is a Forest now, the Island included",
     );
 }
+
+/// "An Island or a Mountain": the other of the Riverpyre's two named types
+/// answers it just as well, and a Volcanic Island is both of them at once.
+#[test]
+fn a_mountain_or_a_volcanic_island_switches_the_riverpyre_verge_on() {
+    for companion in [cards::MOUNTAIN, cards::VOLCANIC_ISLAND] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let verge = game
+            .put_onto_battlefield(PlayerId::One, cards::RIVERPYRE_VERGE)
+            .expect("cataloged");
+        game.put_onto_battlefield(PlayerId::One, companion)
+            .expect("cataloged");
+        drain_pending(&mut game);
+
+        let mut offered = offered_colors(&game, verge);
+        offered.sort_unstable();
+        let mut expected = vec![ManaColor::Blue, ManaColor::Red];
+        expected.sort_unstable();
+        assert_eq!(offered, expected, "{companion:?} answers the condition");
+    }
+}
+
+/// "If you control": a land you control is a land you control, tapped or
+/// not. The Island that already paid for something this turn still switches
+/// the blue half on.
+#[test]
+fn a_tapped_land_still_answers_the_condition() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let verge = game
+        .put_onto_battlefield(PlayerId::One, cards::RIVERPYRE_VERGE)
+        .expect("cataloged");
+    let island = game
+        .put_onto_battlefield(PlayerId::One, cards::ISLAND)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == island)
+        .expect("it is there")
+        .tapped = true;
+
+    let mut offered = offered_colors(&game, verge);
+    offered.sort_unstable();
+    let mut expected = vec![ManaColor::Blue, ManaColor::Red];
+    expected.sort_unstable();
+    assert_eq!(offered, expected, "a tapped Island is still an Island");
+}
