@@ -30,7 +30,25 @@ jobs:
       RUSTC_WRAPPER: sccache
     # Generous on purpose. Nothing waits on this, so a sweep that grows is a
     # reason to let it run, not a reason to trim its coverage.
-    timeout-minutes: 60
+    #
+    # Raised from 60 on 2026-09-01, and not because the sweeps grew. They did
+    # not: the builtin gauntlet has played the same 55 pairings since
+    # 2026-07-30, and Premodern went from seven decks to eight. Between the
+    # nightly of 08-19 and that of 08-20 the work grew 14% and the runtime
+    # grew 433%, and it has been killed at this limit every night since
+    # 08-23, so the tier has reported nothing for eleven nights.
+    #
+    # The cause is an engine slowdown of roughly ten times on constructed
+    # decks under greedy bots -- a path the Random/Random benchmark does not
+    # exercise, which is why no benchmark caught it. Commit d357bbdd recovered
+    # about 1.66x of it; the rest is still out there, with apply_legal_action
+    # now the hot path.
+    #
+    # So this number is a stopgap to get the tier reporting again, not a
+    # measurement of what the sweeps deserve. Put it back to 60 once the
+    # engine is fixed; if it ever needs raising again, check first whether the
+    # engine regressed rather than assuming the sweeps grew.
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -50,7 +68,10 @@ jobs:
   web-sweep:
     name: deferred browser sweeps
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    # Raised with the native sweep above, and for the same reason: this job
+    # went from about five minutes in mid-August to being killed at the limit,
+    # and the browser suites drive the same engine through WASM.
+    timeout-minutes: 180
     env:
       CARGO_INCREMENTAL: "0"
       SCCACHE_GHA_ENABLED: "true"
