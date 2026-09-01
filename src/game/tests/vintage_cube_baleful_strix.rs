@@ -161,3 +161,88 @@ fn the_card_is_drawn_even_if_the_bird_is_answered() {
         "and the card it drew is a card it drew",
     );
 }
+
+/// Deathtouch and trample together: a Wurm blocked by the Strix needs to
+/// assign only one damage as lethal, and the other fourteen go through. The
+/// Bird dies for it, and so does the Wurm.
+#[test]
+fn blocking_a_trampler_kills_it_and_lets_the_rest_through() {
+    let (mut game, strix) = staged();
+    let wurm = game
+        .put_onto_battlefield(PlayerId::Two, cards::WORLDSPINE_WURM)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    game.turns_started = [5, 5];
+    game.turn = 9;
+    game.active_player = PlayerId::Two;
+    game.step = Step::DeclareAttackers;
+    game.priority = PlayerId::Two;
+    let life = game.players[PlayerId::One.index()].life;
+
+    game.declare_attacker(wurm, AttackDefender::Player(PlayerId::One));
+    game.finish_declaring_attackers();
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+    game.declare_blocker(strix, wurm);
+    game.finish_declaring_blockers();
+    settle_combat(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == wurm),
+        "one point of deathtouch damage is lethal to fifteen toughness",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == strix),
+        "and the Wurm was more than enough for a 1/1",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life - 14,
+        "the one it had to assign to the blocker stayed there; the rest trampled",
+    );
+}
+
+/// Resolves combat damage and whatever it sets off.
+fn settle_combat(game: &mut Game) {
+    game.deal_combat_damage();
+    for _ in 0..24 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: decision
+                        .options
+                        .iter()
+                        .map(|option| option.id)
+                        .take(decision.minimum.max(1))
+                        .collect(),
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+}
