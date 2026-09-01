@@ -205,3 +205,134 @@ fn an_empty_board_gives_up_nothing() {
         "and the Edict resolved anyway",
     );
 }
+
+/// "Of their choice": the sacrifice is asked of the player losing the
+/// creature, and which one goes is theirs to say. Given a bear and an Angel
+/// they keep whichever they like -- here the Angel.
+#[test]
+fn the_opponent_chooses_what_they_lose() {
+    let (mut game, edict, theirs) = staged(&[cards::GRIZZLY_BEARS, cards::SERRA_ANGEL]);
+    let angel = theirs[1];
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == edict && choices.modes() == [ModeId(0)]
+            }
+            _ => false,
+        })
+        .expect("the nontoken mode is offered");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("somebody is asked to sacrifice");
+    assert_eq!(
+        decision.player,
+        PlayerId::Two,
+        "the question belongs to the player losing the creature",
+    );
+    assert_eq!(
+        decision.options.len(),
+        2,
+        "and both of their nontoken creatures are on the list",
+    );
+
+    // They give up the bear and keep the Angel, which is the whole of what
+    // "their choice" means.
+    let bear = decision
+        .options
+        .iter()
+        .find(|option| {
+            option.card.is_some_and(|(_, characteristics)| {
+                characteristics.card_definition() == Some(cards::GRIZZLY_BEARS)
+            })
+        })
+        .expect("the bear is one of the two")
+        .id;
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![bear],
+        },
+    )
+    .expect("their choice is theirs to make");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        on_battlefield(&game, angel),
+        "the Angel they chose to keep is still there",
+    );
+    assert!(
+        !on_battlefield(&game, theirs[0]),
+        "and the bear they gave up is not",
+    );
+}
+
+/// A sacrifice is not destruction and names no target: an indestructible Myr
+/// is the creature they have, so the Myr is the creature that goes.
+#[test]
+fn indestructible_and_hexproof_are_no_answer_to_an_edict() {
+    for definition in [cards::DARKSTEEL_MYR, cards::SYLVAN_CARYATID] {
+        let (mut game, edict, theirs) = staged(&[definition]);
+
+        cast_mode(&mut game, edict, 0);
+
+        assert!(
+            !on_battlefield(&game, theirs[0]),
+            "{definition:?} was sacrificed rather than destroyed or targeted",
+        );
+        assert!(
+            game.players[PlayerId::Two.index()]
+                .graveyard
+                .iter()
+                .any(|card| card.definition == definition),
+            "and it is in their graveyard",
+        );
+    }
+}
+
+/// It is an instant: their turn, their attack, and the creature is gone
+/// before it does anything.
+#[test]
+fn it_answers_a_creature_on_their_own_turn() {
+    let (mut game, edict, theirs) = staged(&[cards::GRIZZLY_BEARS]);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == theirs[0])
+        .expect("it is there")
+        .entered_controller_turn = 0;
+    game.active_player = PlayerId::Two;
+    game.step = Step::DeclareAttackers;
+    game.priority = PlayerId::Two;
+    game.declare_attacker(theirs[0], AttackDefender::Player(PlayerId::One));
+    game.finish_declaring_attackers();
+    game.priority = PlayerId::One;
+
+    cast_mode(&mut game, edict, 0);
+
+    assert!(
+        !on_battlefield(&game, theirs[0]),
+        "the attacker was sacrificed mid-combat",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        20,
+        "so nothing of it reached you",
+    );
+}
