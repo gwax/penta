@@ -209,3 +209,93 @@ fn a_token_arriving_is_not_a_spell() {
         "the token that arrived is the only one there is",
     );
 }
+
+/// "Activated abilities of *artifacts* you control": an artifact creature is
+/// an artifact, so its ability is discounted too -- and the reduction eats
+/// the generic and leaves the coloured pip, which is the floor exactly. A
+/// Neurok Replica costs {1}{U} and is bought for one blue.
+#[test]
+fn an_artifact_creatures_ability_is_discounted_to_its_coloured_pip() {
+    let mut game = staged();
+    let replica = game
+        .put_onto_battlefield(PlayerId::One, cards::NEUROK_REPLICA)
+        .expect("cataloged");
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == replica
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(bears))
+            }
+            _ => false,
+        })
+        .expect("one blue is enough once the {1} is shaved off");
+    game.apply(PlayerId::One, activate)
+        .expect("the ability activates");
+    settle(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != bears),
+        "their bear went back to hand",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.total(),
+        0,
+        "and the one blue paid the whole of it",
+    );
+}
+
+/// The same Replica without the Gadgeteer wants both halves of its cost, so
+/// one blue leaves it unactivatable: the discount is what the blue bought.
+#[test]
+fn the_replica_wants_both_halves_without_him() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    let replica = game
+        .put_onto_battlefield(PlayerId::One, cards::NEUROK_REPLICA)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    let activatable = |game: &Game| {
+        game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(
+                action,
+                Action::ActivateAbility { source, .. } if *source == replica
+            )
+        })
+    };
+    assert!(!activatable(&game), "one blue is not {{1}}{{U}}");
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(
+        activatable(&game),
+        "and the generic it wanted is the second"
+    );
+}
