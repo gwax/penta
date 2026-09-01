@@ -260,3 +260,108 @@ fn the_ultimate_exiles_the_library_and_frees_it() {
         "and it is castable from exile with no mana at all",
     );
 }
+
+/// Ultimates with `library` under Player One and takes `wanted` out of it,
+/// returning the exiled card's id.
+fn ultimate_taking(
+    game: &mut Game,
+    library: &[CardDefinitionId],
+    wanted: CardDefinitionId,
+) -> GameObjectId {
+    let source = game
+        .put_onto_battlefield(PlayerId::One, cards::UGIN_EYE_OF_THE_STORMS)
+        .expect("cataloged");
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == source)
+    {
+        permanent.set_counters(CounterKind::Loyalty, 11);
+    }
+    drain_pending(game);
+    let mut target = None;
+    for definition in library {
+        let card = game
+            .build_zone(PlayerId::One, &[*definition])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        if *definition == wanted {
+            target = Some(card.id);
+        }
+        game.players[0].library.push(card);
+    }
+    let ultimate = loyalty_action(game, source, 4).expect("eleven loyalty pays for it");
+    game.apply(PlayerId::One, ultimate).expect("it activates");
+    settle_naming(game, target);
+    // Exiling mints a new object, so what may be cast from there is found by
+    // its card rather than by the id it had in the library.
+    game.players[0]
+        .exile
+        .iter()
+        .find(|card| card.definition == wanted)
+        .expect("the wanted card was exiled")
+        .id
+}
+
+/// "If a spell has {X} in its mana cost, you must choose 0 as the value of X
+/// when casting it without paying its mana cost." A Walking Ballista off the
+/// ultimate is a free 0/0 and nothing more, so it dies where it lands.
+#[test]
+fn a_free_x_spell_is_cast_for_zero() {
+    let mut game = staged();
+    let ballista = ultimate_taking(
+        &mut game,
+        &[cards::WALKING_BALLISTA],
+        cards::WALKING_BALLISTA,
+    );
+
+    let offered: Vec<_> = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == ballista => Some(choices.x()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(offered, vec![0], "zero is the only X on offer");
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == ballista))
+        .expect("it is castable for nothing");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle_naming(&mut game, None);
+    game.check_state_based_actions();
+
+    assert!(
+        !on_battlefield(&game, cards::WALKING_BALLISTA),
+        "an X of zero is a 0/0, and a 0/0 does not stay",
+    );
+}
+
+/// "You must follow the normal timing permissions and restrictions of each
+/// spell you cast using the permission granted by Ugin's last ability." The
+/// permission is about the mana, not the timing: an artifact off the
+/// ultimate still waits for a main phase with an empty stack.
+#[test]
+fn the_free_cast_still_obeys_sorcery_timing() {
+    let mut game = staged();
+    let thopter = ultimate_taking(&mut game, &[cards::ORNITHOPTER], cards::ORNITHOPTER);
+    let castable = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == thopter))
+    };
+    assert!(castable(&game), "your own main phase is its window");
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    assert!(!castable(&game), "a combat step is not");
+
+    game.step = Step::PrecombatMain;
+    game.active_player = PlayerId::Two;
+    assert!(!castable(&game), "and neither is their turn");
+}
