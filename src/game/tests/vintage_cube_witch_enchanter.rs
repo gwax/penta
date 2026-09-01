@@ -194,3 +194,75 @@ fn it_cannot_point_at_your_own_artifact() {
         "and the only one it could point at is gone",
     );
 }
+
+/// "The mana value of a modal double-faced card is based on the
+/// characteristics of the face that's being considered. On the stack or the
+/// battlefield, consider whichever face is up." The Meadow standing there is
+/// a land with no cost printed on it, and worth nothing -- which is the
+/// difference between this and a transforming card, where the front face's
+/// value follows it everywhere.
+#[test]
+fn the_meadow_on_the_battlefield_is_worth_nothing() {
+    let (mut game, held) = staged();
+
+    play_land(&mut game, held, true);
+
+    assert_eq!(
+        game.permanent_mana_value(meadow(&game)),
+        0,
+        "the face that is up is a land, and a land face prints no cost",
+    );
+}
+
+/// "In all other zones, consider only the front face." A Witch Enchanter in
+/// the graveyard is the creature it was printed as: an effect looking for a
+/// land card there finds nothing.
+#[test]
+fn off_the_battlefield_it_is_the_creature_face_only() {
+    let (mut game, held) = staged();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    game.players[0]
+        .graveyard
+        .push(card(94_100, cards::WITCH_ENCHANTER, PlayerId::One));
+    let buried = game.players[0].graveyard.last().expect("it is lying there");
+
+    assert!(
+        game.card_object_matches(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            buried,
+            ZoneKind::Graveyard,
+            held,
+        ),
+        "the front face is a Human Warlock",
+    );
+    assert!(
+        !game.card_object_matches(
+            ObjectPredicateDef::HasType(CardType::Land),
+            buried,
+            ZoneKind::Graveyard,
+            held,
+        ),
+        "and the Meadow is no part of it while it lies there",
+    );
+}
+
+/// Playing the land face spends the land drop, so the other face is not a
+/// second one: what is on offer afterwards is nothing at all.
+#[test]
+fn the_land_face_spends_the_turns_land_drop() {
+    let (mut game, held) = staged();
+    let second = card(94_200, cards::WITCH_ENCHANTER, PlayerId::One);
+    let second_id = second.id;
+    game.players[0].hand.push(second);
+
+    play_land(&mut game, held, true);
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if *card == second_id)),
+        "one land a turn, whichever face it was played on",
+    );
+}
