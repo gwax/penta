@@ -363,6 +363,7 @@ mod vintage_cube_artifacts;
 mod vintage_cube_arwen_mortal_queen;
 mod vintage_cube_astrologians_planisphere;
 mod vintage_cube_atraxa_grand_unifier;
+mod vintage_cube_balance;
 mod vintage_cube_baleful_strix;
 mod vintage_cube_baloth_prime;
 mod vintage_cube_barrowgoyf;
