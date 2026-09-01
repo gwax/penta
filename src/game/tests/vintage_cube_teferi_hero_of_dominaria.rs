@@ -412,3 +412,93 @@ fn a_tucked_token_simply_stops_existing() {
         "and no card joined their library: a token in any other zone is gone",
     );
 }
+
+/// The untap is a delayed trigger rather than something Teferi does: it is
+/// set up when the ability resolves and belongs to nobody afterwards, so
+/// answering him before the end step does not answer it.
+#[test]
+fn the_lands_untap_even_with_teferi_gone() {
+    let (mut game, teferi) = staged(4, 3);
+    assert_eq!(tapped_lands(&game), 3, "three lands down");
+
+    activate(&mut game, teferi, 0, &[]);
+    game.move_permanents_to_graveyard(&[teferi]);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != teferi),
+        "he is in the graveyard before the end step",
+    );
+
+    let lands = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition == cards::ISLAND)
+        .map(|permanent| permanent.card.id)
+        .take(2)
+        .collect::<Vec<_>>();
+    end_step(&mut game, &lands);
+
+    assert_eq!(
+        tapped_lands(&game),
+        1,
+        "and the two lands come back up all the same",
+    );
+}
+
+/// "Target nonland permanent": your own board is on the list and every land
+/// is off it, whoever controls it.
+#[test]
+fn the_minus_three_names_any_nonland_permanent() {
+    let (mut game, teferi) = staged(4, 1);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::MOUNTAIN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let named = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source,
+                ability: AbilityOrigin::Printed { ability, .. },
+                targets,
+                ..
+            } if source == teferi && ability == AbilityId(1) => Some(
+                targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .filter_map(|target| match target {
+                        Target::Permanent(id) => Some(*id),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    assert!(
+        named.contains(&theirs),
+        "their Angel is a nonland permanent"
+    );
+    assert!(named.contains(&mine), "and so is your own bear");
+    assert!(
+        !named.iter().any(|id| {
+            game.battlefield.iter().any(|permanent| {
+                permanent.card.id == *id && permanent.card.definition == cards::MOUNTAIN
+            })
+        }),
+        "the lands are not: {named:?}",
+    );
+}
