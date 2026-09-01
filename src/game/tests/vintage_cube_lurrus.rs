@@ -248,6 +248,46 @@ fn an_x_permanent_in_the_deck_costs_nothing_for_the_condition() {
     );
 }
 
+/// "You must follow the normal timing permissions and restrictions of the
+/// spell you cast from your graveyard." The permission is not haste for
+/// spells: a creature card still wants an empty stack, and waits for one.
+#[test]
+fn the_graveyard_cast_keeps_the_spell_own_timing() {
+    let mut game = staged(&[cards::GRIZZLY_BEARS]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(
+        castable_from_graveyard(&game, cards::GRIZZLY_BEARS).is_some(),
+        "an empty stack in your main phase is when a creature may be cast",
+    );
+
+    // Something of your own on the stack closes the window.
+    game.players[0]
+        .hand
+        .push(card(230_900, cards::LIGHTNING_BOLT, PlayerId::One));
+    let bolt = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(230_900))
+        })
+        .expect("one red casts the Bolt");
+    game.apply(PlayerId::One, bolt).expect("it is cast");
+
+    assert!(
+        castable_from_graveyard(&game, cards::GRIZZLY_BEARS).is_none(),
+        "a creature spell waits for the stack to clear, permission or not",
+    );
+
+    settle(&mut game);
+    game.priority = PlayerId::One;
+    assert!(
+        castable_from_graveyard(&game, cards::GRIZZLY_BEARS).is_some(),
+        "and the permission is still there once it has",
+    );
+}
+
 /// The other half of the card: the keyword that keeps it out of the deck in
 /// the first place, and the {3} that fetches it back.
 mod companion {
