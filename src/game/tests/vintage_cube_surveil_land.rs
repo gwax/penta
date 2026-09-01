@@ -702,3 +702,65 @@ fn their_copy_surveils_their_own_library() {
         "and your library was never touched",
     );
 }
+
+/// Two basic land types and no basic supertype: a search for a basic land
+/// card walks past the Mortuary, and a Wasteland may name it where it may
+/// not name the Swamp beside it.
+#[test]
+fn it_carries_the_types_without_the_supertype() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].library.clear();
+    for (index, definition) in [cards::UNDERGROUND_MORTUARY, cards::SWAMP]
+        .into_iter()
+        .enumerate()
+    {
+        game.players[0].library.push(card(
+            97_500 + u32::try_from(index).expect("two cards"),
+            definition,
+            PlayerId::One,
+        ));
+    }
+    let growth = game
+        .build_zone(PlayerId::One, &[cards::RAMPANT_GROWTH])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let growth_id = growth.id;
+    game.players[0].hand.push(growth);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == growth_id))
+        .expect("two mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_priority_pair(&mut game);
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the search asks");
+    let offered = decision
+        .options
+        .iter()
+        .filter_map(|option| {
+            option
+                .card
+                .and_then(|(_, characteristics)| characteristics.card_definition())
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        offered,
+        vec![cards::SWAMP],
+        "the Swamp is a basic land card and the Mortuary is not",
+    );
+}
