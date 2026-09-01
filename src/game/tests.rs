@@ -422,6 +422,7 @@ mod vintage_cube_dauthi_voidwalker;
 mod vintage_cube_death_greeters_champion;
 mod vintage_cube_deathrite_shaman;
 mod vintage_cube_delayed_blast_fireball;
+mod vintage_cube_delighted_halfling;
 mod vintage_cube_descendant_of_storms;
 mod vintage_cube_detectives_phoenix;
 mod vintage_cube_dismember;
