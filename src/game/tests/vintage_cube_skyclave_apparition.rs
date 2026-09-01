@@ -367,3 +367,81 @@ fn an_x_cost_creature_pays_back_nothing_that_lives() {
         "and the card it took stays where it was put",
     );
 }
+
+/// "When this creature leaves the battlefield" is leaves, not dies: bouncing
+/// the Apparition to its owner's hand pays the Illusion just as killing it
+/// does, and the card it took stays exiled either way.
+#[test]
+fn bouncing_it_pays_the_illusion_too() {
+    let (mut game, apparition) = staged(&[cards::ICY_MANIPULATOR]);
+    let manipulator = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::ICY_MANIPULATOR)
+        .expect("they have it")
+        .card
+        .id;
+    cast_apparition(&mut game, apparition, Some(manipulator));
+
+    let body = apparition_on_battlefield(&game);
+    game.return_permanent_to_hand(body);
+    settle(&mut game);
+
+    let made = illusions(&game);
+    assert_eq!(made.len(), 1, "the leave trigger fired all the same");
+    assert_eq!(made[0].controller, PlayerId::Two, "for the card's owner");
+    assert_eq!(
+        (game.power(made[0]), game.toughness(made[0])),
+        (Some(4), Some(4)),
+        "the size of what it took",
+    );
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::SKYCLAVE_APPARITION),
+        "and the Apparition is back in hand rather than in a graveyard",
+    );
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::ICY_MANIPULATOR),
+        "while what it took is still gone",
+    );
+}
+
+/// Exiling the Apparition itself is another way of leaving, and the answer
+/// is the same: the Illusion is paid and the card it took does not come
+/// back with it.
+#[test]
+fn exiling_it_pays_the_illusion_too() {
+    let (mut game, apparition) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+        .expect("they have it")
+        .card
+        .id;
+    cast_apparition(&mut game, apparition, Some(bears));
+
+    let body = apparition_on_battlefield(&game);
+    game.exile_permanent(body);
+    settle(&mut game);
+
+    let made = illusions(&game);
+    assert_eq!(made.len(), 1, "the leave trigger fired");
+    assert_eq!(
+        (game.power(made[0]), game.toughness(made[0])),
+        (Some(2), Some(2)),
+        "a two-drop is a 2/2 back",
+    );
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+        "and the bear stays where it was put",
+    );
+}
