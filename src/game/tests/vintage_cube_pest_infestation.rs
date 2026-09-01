@@ -316,3 +316,57 @@ fn it_will_name_your_own_artifacts() {
     );
     assert_eq!(pests(&game), 2, "with the two Pests it bought");
 }
+
+/// "Target artifacts and/or enchantments" and nothing else: their creature
+/// and their land are off the list however large X is.
+#[test]
+fn it_names_no_creatures_and_no_lands() {
+    let (game, spell, theirs) = staged(5, &[cards::SOL_RING, cards::GRIZZLY_BEARS, cards::ISLAND]);
+    let (ring, bears, island) = (theirs[0], theirs[1], theirs[2]);
+
+    let named = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == spell => Some(
+                choices
+                    .iter_targets()
+                    .filter_map(|target| match target {
+                        Target::Permanent(id) => Some(*id),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    assert!(named.contains(&ring), "the Sol Ring is an artifact");
+    assert!(!named.contains(&bears), "their bear is neither");
+    assert!(!named.contains(&island), "and nor is their land");
+}
+
+/// Destroying is the half that can fail; the Pests are the half that cannot.
+/// An indestructible artifact shrugs the first off and the tokens arrive
+/// regardless, because "twice X" counts the X and not the wreckage.
+#[test]
+fn an_indestructible_target_still_pays_the_pests() {
+    let (mut game, spell, theirs) = staged(3, &[cards::DARKSTEEL_MYR]);
+    let myr = theirs[0];
+    // The Myr is an artifact creature: an artifact for the targeting, and
+    // indestructible for what follows.
+    cast(&mut game, spell, 1, &[myr]);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == myr),
+        "indestructible is an answer to destroy",
+    );
+    assert_eq!(
+        pests(&game),
+        2,
+        "and the two Pests come whether or not it worked",
+    );
+}
