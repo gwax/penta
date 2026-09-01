@@ -427,3 +427,87 @@ fn only_the_slammed_creature_is_exiled_by_the_sweeper() {
         "the bystander went to the graveyard"
     );
 }
+
+/// Both halves at once: with a creature and an artifact across the table,
+/// each mode is on offer with its own targets, and choosing is the whole of
+/// what "choose one" asks.
+#[test]
+fn both_modes_are_offered_when_both_have_a_target() {
+    let (game, suplex) = staged(&[cards::GRIZZLY_BEARS, cards::HOWLING_MINE]);
+
+    let offered = casts(&game, suplex);
+    assert!(
+        offered
+            .iter()
+            .any(|(modes, _)| modes.as_slice() == [mode(SLAM)]),
+        "the slam is there: {offered:?}",
+    );
+    assert!(
+        offered
+            .iter()
+            .any(|(modes, _)| modes.as_slice() == [mode(ARTIFACT)]),
+        "and so is the artifact half: {offered:?}",
+    );
+    assert!(
+        offered.iter().all(|(modes, _)| modes.len() == 1),
+        "one of them, never both: {offered:?}",
+    );
+}
+
+/// "If that creature *would die* this turn" is a death and not a damaging.
+/// An indestructible Myr takes the three, shrugs off a Wrath after it, and
+/// is never exiled, because nothing ever killed it.
+#[test]
+fn an_indestructible_creature_never_dies_and_so_is_never_exiled() {
+    let (mut game, suplex) = staged(&[cards::DARKSTEEL_MYR]);
+    let myr = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::DARKSTEEL_MYR)
+        .expect("it is out")
+        .card
+        .id;
+
+    cast_at(&mut game, suplex, SLAM, myr);
+
+    assert!(
+        on_battlefield(&game, cards::DARKSTEEL_MYR),
+        "three damage is not lethal to what cannot be destroyed",
+    );
+
+    let wrath = card(190_900, cards::WRATH_OF_GOD, PlayerId::One);
+    let wrath_id = wrath.id;
+    game.players[0].hand.push(wrath);
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 4);
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == wrath_id))
+        .expect("four white casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        on_battlefield(&game, cards::DARKSTEEL_MYR),
+        "and a Wrath is no answer to it either",
+    );
+    assert!(
+        !in_zone(&game.players[1].exile, cards::DARKSTEEL_MYR),
+        "so the replacement never had a death to replace",
+    );
+}
+
+/// It is a sorcery: their turn is no time for it, whatever is standing there
+/// to point at.
+#[test]
+fn it_waits_for_your_own_main_phase() {
+    let (mut game, suplex) = staged(&[cards::GRIZZLY_BEARS]);
+    assert!(
+        !casts(&game, suplex).is_empty(),
+        "your main phase is its window"
+    );
+
+    game.active_player = PlayerId::Two;
+    assert!(casts(&game, suplex).is_empty(), "and their turn is not");
+}
