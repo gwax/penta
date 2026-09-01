@@ -797,3 +797,93 @@ fn two_time_walks_are_two_turns_in_a_row() {
         );
     }
 }
+
+/// The land drop comes with the turn: a Time Walk cast after the land for
+/// the turn was played hands you another one, which is the other half of
+/// what two mana buys.
+#[test]
+fn the_extra_turn_brings_a_fresh_land_drop() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.turn = 9;
+    game.turns_started = [5, 5];
+    let island = card(10_700, cards::ISLAND, PlayerId::One);
+    let island_id = island.id;
+    game.players[0].hand.push(island);
+    let time_walk = card(10_701, cards::TIME_WALK, PlayerId::One);
+    let walk_id = time_walk.id;
+    game.players[0].hand.push(time_walk);
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 1;
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.players[0].lands_played_this_turn = 1;
+
+    let land_drop = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if card == island_id))
+    };
+    assert!(!land_drop(&game), "this turn's land is already played");
+
+    game.apply(
+        PlayerId::One,
+        cast_action(walk_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("two mana casts it");
+    pass_priority_pair(&mut game);
+
+    game.start_next_turn();
+    drain_pending(&mut game);
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    assert_eq!(game.active_player, PlayerId::One, "the turn is yours again");
+    assert_eq!(
+        game.players[0].lands_played_this_turn, 0,
+        "and the count that stopped you started over",
+    );
+    assert!(land_drop(&game), "so the Island is playable after all");
+}
+
+/// "After this one": the turn you are in finishes first, and the extra one
+/// is a turn of its own rather than a continuation.
+#[test]
+fn the_extra_turn_comes_after_the_one_it_was_cast_in() {
+    let mut game = ready_game();
+    game.players[0].hand.clear();
+    game.turn = 9;
+    game.turns_started = [5, 5];
+    let time_walk = card(10_800, cards::TIME_WALK, PlayerId::One);
+    let walk_id = time_walk.id;
+    game.players[0].hand.push(time_walk);
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.colorless = 1;
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let turn = game.turn;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(walk_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("two mana casts it");
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.turn, turn,
+        "the extra turn has not started: this one is still going",
+    );
+    assert_eq!(
+        game.extra_turns,
+        vec![PlayerId::One],
+        "it is queued behind the turn it was cast in",
+    );
+
+    game.start_next_turn();
+    assert_eq!(game.active_player, PlayerId::One, "and then it is yours");
+    assert!(game.turn > turn, "a new turn, not the old one continued");
+}
