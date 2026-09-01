@@ -118,3 +118,98 @@ fn the_copy_is_created_rather_than_cast() {
         "a copy put onto the stack was never cast, so nothing triggered",
     );
 }
+
+/// The chain: the copy resolving offers its own target's controller the same
+/// {R}{R}, which is what the card is named for. Three damage each way, and
+/// the second payer is asked in turn.
+#[test]
+fn the_copy_offers_the_chain_onward() {
+    let mut game = staged(&[]);
+    // Two Mountains' worth of red for the player it comes back at.
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 2);
+    assert_eq!(
+        game.players[1].life, 17,
+        "the original dealt its three as it resolved",
+    );
+
+    pay_and_copy_to(&mut game, PlayerId::Two, Target::Player(PlayerId::One));
+
+    // Let the copy resolve.
+    let before = game.players[0].life;
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        game.players[0].life,
+        before - 3,
+        "and the copy dealt three the other way",
+    );
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the copy's target is asked in turn");
+    assert!(
+        decision
+            .options
+            .iter()
+            .any(|option| option.label == "Pay the cost"),
+        "with two Mountains' worth of red, the chain may go on: {:?}",
+        decision.options,
+    );
+}
+
+/// "If the targeted player or permanent is an illegal target as Chain
+/// Lightning tries to resolve, the spell doesn't resolve and none of its
+/// effects happen. It can't be copied."
+#[test]
+fn a_lost_target_takes_the_copy_with_it() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    for index in 0..2 {
+        game.battlefield
+            .push(creature(80_300 + index, cards::MOUNTAIN, PlayerId::Two));
+    }
+    let bears = creature(80_310, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    let chain = card(80_320, cards::CHAIN_LIGHTNING, PlayerId::One);
+    let chain_id = chain.id;
+    game.players[0].hand.push(chain);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.players[0].mana_pool.red = 1;
+    game.apply(
+        PlayerId::One,
+        cast_action(chain_id, vec![Target::Permanent(bears_id)], Vec::new(), 0),
+    )
+    .expect("one red mana casts it");
+
+    // The bear leaves under the spell.
+    game.move_permanents_to_graveyard(&[bears_id]);
+    game.check_state_based_actions();
+    let their_life = game.players[1].life;
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.events.iter().any(|event| matches!(
+            event,
+            GameEvent::SpellFizzled { definition, .. } if *definition == cards::CHAIN_LIGHTNING
+        )),
+        "it was countered for having no legal target",
+    );
+    assert_eq!(
+        game.players[1].life, their_life,
+        "nothing was dealt to anyone else instead",
+    );
+    assert!(
+        game.observe(PlayerId::Two).decision.is_none(),
+        "and nobody was offered the {{R}}{{R}}",
+    );
+    assert!(game.stack.is_empty(), "with no copy left behind");
+}
