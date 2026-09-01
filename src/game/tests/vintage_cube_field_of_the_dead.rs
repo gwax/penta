@@ -220,3 +220,77 @@ fn a_second_field_doubles_every_arrival() {
 
     assert_eq!(zombies(&game), 4, "and so is the eighth");
 }
+
+/// "Whenever *this land* or another land you control enters": the Field
+/// watches its own arrival, so the Field itself landing as the seventh name
+/// pays out at once rather than waiting for the next land drop.
+#[test]
+fn the_field_arriving_seventh_pays_out_on_itself() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    for definition in [
+        cards::PLAINS,
+        cards::ISLAND,
+        cards::SWAMP,
+        cards::MOUNTAIN,
+        cards::FOREST,
+        cards::TUNDRA,
+    ] {
+        game.put_onto_battlefield(PlayerId::One, definition)
+            .expect("cataloged");
+    }
+    drain_pending(&mut game);
+    settle(&mut game);
+    game.turns_started = [8, 8];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    assert_eq!(zombies(&game), 0, "six names and no Field yet");
+
+    land_arrives(&mut game, cards::FIELD_OF_THE_DEAD, PlayerId::One);
+
+    assert_eq!(
+        zombies(&game),
+        1,
+        "the seventh name was the Field, and it counted itself",
+    );
+}
+
+/// "If you control seven or more lands with different names" is read again
+/// as the trigger resolves. A land answered while the trigger waits takes
+/// the seventh name away with it, and nothing is created.
+#[test]
+fn a_land_lost_while_the_trigger_waits_takes_the_zombie_with_it() {
+    let (mut game, _field) = staged(&[
+        cards::PLAINS,
+        cards::ISLAND,
+        cards::SWAMP,
+        cards::MOUNTAIN,
+        cards::FOREST,
+    ]);
+    let doomed = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::PLAINS)
+        .expect("the Plains is out")
+        .card
+        .id;
+
+    game.put_onto_battlefield(PlayerId::One, cards::TUNDRA)
+        .expect("cataloged");
+    // Onto the stack but not yet resolved, which is the window the second
+    // check of the intervening if belongs to.
+    game.finish_rules_procedure();
+    assert_eq!(game.stack.len(), 1, "the seventh name put the trigger up");
+
+    game.move_permanents_to_graveyard(&[doomed]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert_eq!(
+        zombies(&game),
+        0,
+        "six names by the time it resolved, so nothing was created",
+    );
+}
