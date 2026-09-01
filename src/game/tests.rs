@@ -663,6 +663,7 @@ mod vintage_cube_smugglers_copter;
 mod vintage_cube_snapcaster;
 mod vintage_cube_sneak_attack;
 mod vintage_cube_snuff_out;
+mod vintage_cube_sol_ring;
 mod vintage_cube_solitude;
 mod vintage_cube_sorin_of_house_markov;
 mod vintage_cube_soul_guide_lantern;
