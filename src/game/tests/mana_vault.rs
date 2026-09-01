@@ -349,3 +349,62 @@ fn tapping_it_makes_three_and_buys_the_draw_step_damage() {
         "the draw step charges a life for leaving it tapped",
     );
 }
+
+/// "At the beginning of *your* upkeep": their upkeep is not yours, so the
+/// Vault sits there and asks nothing.
+#[test]
+fn their_upkeep_offers_nothing() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mut vault = creature(10_900, cards::MANA_VAULT, PlayerId::One);
+    vault.tapped = true;
+    game.battlefield.push(vault);
+    for id in 10_901..10_905 {
+        game.battlefield
+            .push(creature(id, cards::MOUNTAIN, PlayerId::One));
+    }
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::Two;
+    game.step = Step::Upkeep;
+
+    game.handle_upkeep_triggers();
+
+    assert!(
+        game.pending_triggers.is_empty(),
+        "nothing triggered on their upkeep",
+    );
+    assert!(
+        game.observe(PlayerId::One).decision.is_none(),
+        "and nobody was asked for four",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::MANA_VAULT)
+            .is_some_and(|permanent| permanent.tapped),
+        "the Vault is where it was",
+    );
+}
+
+/// The same word on the other trigger: a tapped Vault costs its controller
+/// nothing at the beginning of the other player's draw step.
+#[test]
+fn their_draw_step_costs_nothing() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mut vault = creature(10_910, cards::MANA_VAULT, PlayerId::One);
+    vault.tapped = true;
+    game.battlefield.push(vault);
+    game.players[0].life = 20;
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::Two;
+    game.step = Step::Draw;
+
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].life, 20,
+        "their draw step is not yours, however tapped it is",
+    );
+}
